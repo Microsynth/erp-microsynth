@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include microsynth *.css
+recursive-include microsynth *.csv
+recursive-include microsynth *.html
+recursive-include microsynth *.ico
+recursive-include microsynth *.js
+recursive-include microsynth *.json
+recursive-include microsynth *.md
+recursive-include microsynth *.png
+recursive-include microsynth *.py
+recursive-include microsynth *.svg
+recursive-include microsynth *.txt
+recursive-exclude microsynth *.pyc
