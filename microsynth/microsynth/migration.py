@@ -53,6 +53,14 @@ def import_customers(filename):
 This function will update a customer master (including contact & address)
 """
 def update_customer(headers, fields):
+    # if person_id and/or customer_id are missing, skip
+    if not fields[headers['person_id']] or not fields[headers['customer_id']]:
+        print("No ID record, skipping ({0})".format(fields))
+        return
+    # check mandatory fields
+    if not fields[headers['customer_name']] or not fields[headers['first_name']]:
+        print("Mandatory field missing, skipping ({0})".format(fields))
+        return
     # check if the customer exists
     if not frappe.db.exists("Customer", fields[headers['customer_id']]):
         # create customer (force mode to achieve target name)
