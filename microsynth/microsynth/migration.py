@@ -28,7 +28,7 @@ Run from bench like
 """
 def import_customers(filename):
     # load csv file
-    with open(filename, newline='') as csvfile:
+    with open(filename) as csvfile:
         # create reader
         reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
         headers = None
@@ -121,10 +121,11 @@ def update_customer(headers, fields):
     contact.institute = fields[headers['institute']]
     contact.department = fields[headers['department']]
     contact.email_ids = []
-    contact.append("email_ids", {
-        'email_id': fields[headers['email']],
-        'is_primary': 1
-    })
+    if fields[headers['email']]:
+        contact.append("email_ids", {
+            'email_id': fields[headers['email']],
+            'is_primary': 1
+        })
     contact.links = []
     contact.append("links", {
         'link_doctype': "Customer",
