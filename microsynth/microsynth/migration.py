@@ -97,13 +97,20 @@ def update_customer(headers, fields):
     address.address_line1 = fields[headers['address_line1']]
     address.pincode = fields[headers['pincode']]
     address.city = fields[headers['city']]
-    address.country = fields[headers['country']]
+    if frappe.db.exists("Country", fields[headers['country']]):
+        address.country = fields[headers['country']]
+    else:
+        address.country = "Schweiz"
+        print("Country fallback from {0} in {1}".format(fields[headers['country']], fields[headers['customer_id']]))
     address.links = []
     address.append("links", {
         'link_doctype': "Customer",
         'link_name': fields[headers['customer_id']]
     })
-    address.save()
+    try:
+        address.save()
+    except Exception as err:
+        print("Failed to save address: {0}".format(err))
     
     # check if contact exists (force insert onto target id)
     if not frappe.db.exists("Contact", fields[headers['person_id']]):
