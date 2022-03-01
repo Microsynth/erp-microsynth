@@ -1,0 +1,93 @@
+{
+ "creation": "2022-03-01 16:27:48.433400",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "oligo_name",
+  "oligo_type",
+  "sequence",
+  "scale",
+  "purification",
+  "pyhs_cond",
+  "data_sheet",
+  "aliquots",
+  "production_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "oligo_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Oligo Name",
+   "reqd": 1
+  },
+  {
+   "default": "DNA",
+   "fieldname": "oligo_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Oligo Type",
+   "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA"
+  },
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Sequence"
+  },
+  {
+   "default": "Genomics",
+   "fieldname": "scale",
+   "fieldtype": "Select",
+   "label": "Scale",
+   "options": "Genomics\n0.04 \u00b5mol\n0.2 \u00b5mol\n1.0 \u00b5mol\n15 \u00b5mol"
+  },
+  {
+   "default": "Desalted",
+   "fieldname": "purification",
+   "fieldtype": "Select",
+   "label": "Purification",
+   "options": "Desalted\nHPLC + Dialysis\nHPLC\nPAGE\nIEX-HPLC"
+  },
+  {
+   "default": "Dried",
+   "fieldname": "pyhs_cond",
+   "fieldtype": "Select",
+   "label": "Pyhsical Condition",
+   "options": "Dried\n100 nmol/ml"
+  },
+  {
+   "default": "Standard",
+   "fieldname": "data_sheet",
+   "fieldtype": "Select",
+   "label": "Data Sheet",
+   "options": "Standard\nType 1\nType 2\nType 3\nType 4\nType 5\nType 6\nType 7"
+  },
+  {
+   "default": "No",
+   "fieldname": "aliquots",
+   "fieldtype": "Select",
+   "label": "Aliquots",
+   "options": "No\n2 nmol\n5 nmol"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "production_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Production ID"
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-03-01 16:36:14.087486",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Oligo Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
