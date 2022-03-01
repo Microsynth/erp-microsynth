@@ -104,7 +104,7 @@ def update_customer(headers, fields):
         address.country = fields[headers['country']]
     else:
         # check if this is an ISO code match
-        countries = frappe.get_all("Country", filters={'code': fields[headers['country']]}, fields=['name'])
+        countries = frappe.get_all("Country", filters={'code': fields[headers['country']].lower()}, fields=['name'])
         if countries and len(countries) > 0:
             address.country = countries[0]['name']
         else: 
