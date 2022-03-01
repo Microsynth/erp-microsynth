@@ -112,6 +112,13 @@ def update_customer(headers, fields):
         'link_doctype': "Customer",
         'link_name': fields[headers['customer_id']]
     })
+    # get type of address
+    if fields[headers['adr_type']] == "INV":
+        address.is_primary_address = 1
+        address.email_id = fields[headers['email']]         # invoice address: pull email also into address record
+    else:
+        address.is_shipping_address = 1
+        
     try:
         address.save()
     except Exception as err:
