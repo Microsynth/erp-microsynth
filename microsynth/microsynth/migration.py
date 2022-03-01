@@ -75,6 +75,9 @@ def update_customer(headers, fields):
     customer = frappe.get_doc("Customer", fields[headers['customer_id']])
     print("Updating customer {0}...".format(customer.name))
     customer.customer_name = fields[headers['customer_name']]
+    if fields[headers['adr_type']] == "INV" and fields[headers['email']]:
+        customer.invoice_to = fields[headers['email']]
+        
     if not customer.customer_group:
         customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")
     if not customer.territory:
@@ -116,8 +119,10 @@ def update_customer(headers, fields):
     if fields[headers['adr_type']] == "INV":
         address.is_primary_address = 1
         address.email_id = fields[headers['email']]         # invoice address: pull email also into address record
+        address.address_type = "Billing"
     else:
         address.is_shipping_address = 1
+        address.address_type = "Shipping"
         
     try:
         address.save()
