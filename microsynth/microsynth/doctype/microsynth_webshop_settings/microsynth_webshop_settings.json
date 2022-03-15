@@ -1,0 +1,39 @@
+{
+ "creation": "2022-03-15 16:30:28.839575",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "preshared_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "preshared_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Preshared Key",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "modified": "2022-03-15 16:30:28.839575",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Microsynth Webshop Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
