@@ -4,6 +4,7 @@
 
 import frappe
 import json
+from microsynth.microsynth.migration import update_customer
 
 @frappe.whitelist(allow_guest=True)
 def ping():
@@ -14,7 +15,7 @@ def create_update_customer(key, customer_data):
     if check_key(key):
         if type(customer_data) == str:
             customer_data = json.loads(customer_data)
-        frappe.log_error("Customer {0}".format(customer_data['customer_name']))
+            update_customer(customer_data)
         return {'status': 'Success'}
     else:
         return {'status': 'Authentication failed'}
