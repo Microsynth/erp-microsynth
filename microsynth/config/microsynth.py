@@ -107,5 +107,17 @@ def get_data():
                         "is_query_report": True
                    }
             ]
+        },
+        {
+            "label": _("Settings"),
+            "icon": "fa fa-users",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Microsynth Webshop Settings",
+                       "label": _("Microsynth Webshop Settings"),
+                       "description": _("Microsynth Webshop Settings")
+                   }
+            ]
         }
-	]
+    ]
