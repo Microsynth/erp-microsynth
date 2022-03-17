@@ -85,8 +85,8 @@ def update_customer(customer_data):
             adr_type = customer_data['adr_type']
         else:
             adr_type = None
-        if adr_type == "INV" and customer_data['email']:
-            customer.invoice_to = customer_data['email']
+        if adr_type == "INV":
+            customer.invoice_to = customer_data['person_id']
             
         if not customer.customer_group:
             customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")
