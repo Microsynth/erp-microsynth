@@ -109,7 +109,6 @@ def update_customer(customer_data):
         # update contact
         print("Updating address {0}...".format(customer_data['person_id']))
         address = frappe.get_doc("Address", customer_data['person_id'])
-        address.address_type = "Billing"
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
         address.address_line1 = customer_data['address_line1']
         address.pincode = customer_data['pincode']
