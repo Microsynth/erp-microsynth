@@ -48,6 +48,7 @@ This function will update a customer master (including contact & address)
 The function will either accept one customer_data record or a list of the same
 """
 def update_customer(customer_data):
+    error = None
     # make sure data is a dict or list
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
@@ -58,11 +59,13 @@ def update_customer(customer_data):
     else:
         # if person_id and/or customer_id are missing, skip
         if not customer_data['person_id'] or not customer_data['customer_id']:
-            print("No ID record, skipping ({0})".format(customer_data))
+            error = "No ID record, skipping ({0})".format(customer_data)
+            print(error)
             return
         # check mandatory fields
         if not customer_data['customer_name'] or not customer_data['first_name']:
-            print("Mandatory field missing, skipping ({0})".format(customer_data))
+            error = "Mandatory field missing, skipping ({0})".format(customer_data)
+            print(error)
             return
         # check if the customer exists
         if not frappe.db.exists("Customer", customer_data['customer_id']):
@@ -173,4 +176,4 @@ def update_customer(customer_data):
         
         frappe.db.commit()
     
-    return
+    return error

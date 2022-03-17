@@ -15,8 +15,11 @@ def create_update_customer(key, customer_data):
     if check_key(key):
         if type(customer_data) == str:
             customer_data = json.loads(customer_data)
-            update_customer(customer_data)
-        return {'status': 'Success'}
+        error = update_customer(customer_data)
+        if not error:
+            return {'status': 'Success'}
+        else: 
+            return {'status': error}
     else:
         return {'status': 'Authentication failed'}
 
