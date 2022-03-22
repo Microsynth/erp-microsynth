@@ -63,7 +63,7 @@ def update_customer(customer_data):
             print(error)
             return
         # check mandatory fields
-        if not customer_data['customer_name'] or not customer_data['first_name']:
+        if not customer_data['customer_name'] or not customer_data['address_line1']:
             error = "Mandatory field missing, skipping ({0})".format(customer_data)
             print(error)
             return
