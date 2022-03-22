@@ -146,7 +146,7 @@ def update_customer(customer_data):
         
         # check mandatory fields for contact
         if not customer_data['first_name']:
-            error = "Mandatory field missing, skipping ({0})".format(customer_data)
+            error = "Mandatory contact field missing, skipping ({0})".format(customer_data)
             print(error)
         else:
             # check if contact exists (force insert onto target id)
