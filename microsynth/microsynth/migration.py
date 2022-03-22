@@ -143,35 +143,41 @@ def update_customer(customer_data):
         except Exception as err:
             print("Failed to save address: {0}".format(err))
         
-        # check if contact exists (force insert onto target id)
-        if not frappe.db.exists("Contact", customer_data['person_id']):
-            print("Creating contact {0}...".format(customer_data['person_id']))
-            frappe.db.sql("""INSERT INTO `tabContact` 
-                            (`name`, `first_name`) 
-                            VALUES ("{0}", "{1}");""".format(
-                            customer_data['person_id'], customer_data['first_name']))
-        # update contact
-        print("Updating contact {0}...".format(customer_data['person_id']))
-        contact = frappe.get_doc("Contact", customer_data['person_id'])
-        contact.first_name = customer_data['first_name']
-        contact.last_name = customer_data['last_name']
-        contact.full_name = "{first_name} {last_name}".format(first_name=contact.first_name, last_name=contact.last_name)
-        contact.institute = customer_data['institute']
-        contact.department = customer_data['department']
-        contact.email_ids = []
-        if customer_data['email']:
-            contact.append("email_ids", {
-                'email_id': customer_data['email'],
-                'is_primary': 1
+        
+        # check mandatory fields for contact
+        if not customer_data['first_name']:
+            error = "Mandatory field missing, skipping ({0})".format(customer_data)
+            print(error)
+        else:
+            # check if contact exists (force insert onto target id)
+            if not frappe.db.exists("Contact", customer_data['person_id']):
+                print("Creating contact {0}...".format(customer_data['person_id']))
+                frappe.db.sql("""INSERT INTO `tabContact` 
+                                (`name`, `first_name`) 
+                                VALUES ("{0}", "{1}");""".format(
+                                customer_data['person_id'], customer_data['first_name']))
+            # update contact
+            print("Updating contact {0}...".format(customer_data['person_id']))
+            contact = frappe.get_doc("Contact", customer_data['person_id'])
+            contact.first_name = customer_data['first_name']
+            contact.last_name = customer_data['last_name']
+            contact.full_name = "{first_name} {last_name}".format(first_name=contact.first_name, last_name=contact.last_name)
+            contact.institute = customer_data['institute']
+            contact.department = customer_data['department']
+            contact.email_ids = []
+            if customer_data['email']:
+                contact.append("email_ids", {
+                    'email_id': customer_data['email'],
+                    'is_primary': 1
+                })
+            contact.links = []
+            contact.append("links", {
+                'link_doctype': "Customer",
+                'link_name': customer_data['customer_id']
             })
-        contact.links = []
-        contact.append("links", {
-            'link_doctype': "Customer",
-            'link_name': customer_data['customer_id']
-        })
-        contact.address = address.name
-        # extend contact bindings here
-        contact.save(ignore_permissions=True)
+            contact.address = address.name
+            # extend contact bindings here
+            contact.save(ignore_permissions=True)
         
         frappe.db.commit()
     
