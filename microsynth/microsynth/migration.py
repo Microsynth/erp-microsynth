@@ -182,3 +182,85 @@ def update_customer(customer_data):
         frappe.db.commit()
     
     return error
+
+
+"""
+This function imports/updates the item price data from a CSV file
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.import_prices --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/articleExport_with_Header.txt'}"
+"""
+def import_prices(filename):
+    # load csv file
+    with open(filename) as csvfile:
+        # create reader
+        reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
+        headers = None
+        print("Reading file...")
+        # go through rows
+        for row in reader:
+            # if headers are not ready, get them (field_name: id)
+            if not headers:
+                headers = {}
+                for i in range(0, len(row)):
+                    headers[row[i]] = i
+                print("Headers loaded... {0}".format(headers))
+            else:
+                if len(row) == len(headers):
+                    # prepare customer data from rows
+                    price_data = {}
+                    for k, v in headers.items():
+                        price_data[k] = row[v]
+                    update_prices(price_data)
+                else:
+                    frappe.throw("Data length mismatch on {0} (header:{1}/row:{2}".format(row, len(headers), len(row)))
+    return
+
+"""
+This function will update item prices
+"""
+def update_prices(price_data):
+    # check if this item is available
+    if frappe.db.exists("Item", price_data['item_code']):
+        update_pricelist(item_code=price_data['item_code'], 
+            price_list="Sales Prices CHF",
+            price_list_rate=price_data['price_chf'], 
+            min_qty=price_data['item_code'], 
+            currency="CHF")
+        update_pricelist(item_code=price_data['item_code'], 
+            price_list="Sales Prices EUR",
+            price_list_rate=price_data['price_eur'], 
+            min_qty=price_data['item_code'], 
+            currency="EUR")
+        update_pricelist(item_code=price_data['item_code'], 
+            price_list="Sales Prices USD",
+            price_list_rate=price_data['price_usd'], 
+            min_qty=price_data['item_code'], 
+            currency="USD")
+    else:
+        print("Item {0} not found.".format(price_data['item_code']))
+    return
+    
+def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
+    # check if this item price already exists
+    matching_item_prices = frappe.get_all("Item Price", 
+        filters={'item_code': item_code, 'price_list': price_list, 'min_qty': min_qty},
+        fields=['name'])
+    if matching_item_prices and len(matching_item_prices) > 0:
+        item_price = frappe.get_doc("Item Price", matching_item_prices[0]['name'])
+        item_price.price_list_rate = price_list_rate
+        item_price.save()
+    else:
+        item_price = frappe.get_doc({
+            'doctype': "Item Price",
+            'item_code': item_code,
+            'min_qty': min_qty,
+            'price_list': price_list,
+            'buying': 0,
+            'selling': 1,
+            'currency': currency,
+            'price_list_rate': price_list_rate
+        })
+        item_price.insert()
+    frappe.db.commit()
+    return
