@@ -264,3 +264,63 @@ def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
         item_price.insert()
     frappe.db.commit()
     return
+
+"""
+This function imports/updates the discount conditions from a CSV file
+
+Columns are customer_id\titem_code\tdiscount_percent
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.import_discounts --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/discountExport.tab'}"
+"""
+def import_prices(filename):
+    # load csv file
+    with open(filename) as csvfile:
+        # create reader
+        reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
+        print("Reading file...")
+        last_custoemr = None
+        # go through rows
+        for row in reader:
+            # prepare discount data from rows
+            if row[0]:
+                last_customer = row[0]
+            price_data = {
+                'customer': last_customer,
+                'item_code': row[1],
+                'discount_percent': float(row[2])
+            }
+            update_pricing_rule(price_data)
+    return
+
+"""
+This function will update pricing rules
+"""
+def update_pricing_rule(price_data):
+    # check if this pricing rule already exists
+    matching_pricing_rule = frappe.get_all("Pricing Rule", 
+        filters={'item_code': price_data['item_code'], 'customer': price_data['customer']},
+        fields=['name'])
+    if matching_pricing_rule and len(matching_pricing_rule) > 0:
+        pricing_rule = frappe.get_doc("Pricing Rule", matching_pricing_rule[0]['name'])
+        pricing_rule.discount_percentage = price_data['discount_percent']
+        pricing_rule.save()
+    else:
+        pricing_rule = frappe.get_doc({
+            'doctype': "Pricing Rule",
+            'title': "{0} - {1} - {2}p".format(price_data['customer'], price_data['item_code'], price_data['discount_percent']),
+            'apply_on': "Item Code",
+            'price_or_product_discount': "Price",
+            'items': [{
+                'item_code': price_data['item_code']
+            }],
+            'buying': 0,
+            'selling': 1,
+            'applicable_for': "Customer",
+            'customer': price_data['customer'],
+            'rate_or_discount': "Discount Percentage",
+            'discount_percentage': price_data['discount_percent'],
+            'priority': "1"
+        })
+        pricing_rule.insert()
+    frappe.db.commit()
+    return
