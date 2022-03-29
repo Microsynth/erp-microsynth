@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 import csv
 import json
+from frappe.utils import cint
 
 """
 This function imports/updates the customer master data from a CSV file
@@ -221,7 +222,7 @@ This function will update item prices
 """
 def update_prices(price_data):
     # check if this item is available
-    if frappe.db.exists("Item", price_data['item_code']):
+    if frappe.db.exists("Item", price_data['item_code']) and cint(frappe.get_value("Item", price_data['item_code'], "disabled")) == 0:
         update_pricelist(item_code=price_data['item_code'], 
             price_list="Sales Prices CHF",
             price_list_rate=price_data['price_chf'], 
