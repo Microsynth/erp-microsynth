@@ -299,31 +299,35 @@ def import_discounts(filename):
 This function will update pricing rules
 """
 def update_pricing_rule(price_data):
-    # check if this pricing rule already exists
-    matching_pricing_rule = frappe.get_all("Pricing Rule", 
-        filters={'item_code': price_data['item_code'], 'customer': price_data['customer']},
-        fields=['name'])
-    if matching_pricing_rule and len(matching_pricing_rule) > 0:
-        pricing_rule = frappe.get_doc("Pricing Rule", matching_pricing_rule[0]['name'])
-        pricing_rule.discount_percentage = price_data['discount_percent']
-        pricing_rule.save()
+    # check if customer exists
+    if frappe.db.exists("Customer", price_data['customer']):
+        # check if this pricing rule already exists
+        matching_pricing_rule = frappe.get_all("Pricing Rule", 
+            filters={'item_code': price_data['item_code'], 'customer': price_data['customer']},
+            fields=['name'])
+        if matching_pricing_rule and len(matching_pricing_rule) > 0:
+            pricing_rule = frappe.get_doc("Pricing Rule", matching_pricing_rule[0]['name'])
+            pricing_rule.discount_percentage = price_data['discount_percent']
+            pricing_rule.save()
+        else:
+            pricing_rule = frappe.get_doc({
+                'doctype': "Pricing Rule",
+                'title': "{0} - {1} - {2}p".format(price_data['customer'], price_data['item_code'], price_data['discount_percent']),
+                'apply_on': "Item Code",
+                'price_or_product_discount': "Price",
+                'items': [{
+                    'item_code': price_data['item_code']
+                }],
+                'buying': 0,
+                'selling': 1,
+                'applicable_for': "Customer",
+                'customer': price_data['customer'],
+                'rate_or_discount': "Discount Percentage",
+                'discount_percentage': price_data['discount_percent'],
+                'priority': "1"
+            })
+            pricing_rule.insert()
+        frappe.db.commit()
     else:
-        pricing_rule = frappe.get_doc({
-            'doctype': "Pricing Rule",
-            'title': "{0} - {1} - {2}p".format(price_data['customer'], price_data['item_code'], price_data['discount_percent']),
-            'apply_on': "Item Code",
-            'price_or_product_discount': "Price",
-            'items': [{
-                'item_code': price_data['item_code']
-            }],
-            'buying': 0,
-            'selling': 1,
-            'applicable_for': "Customer",
-            'customer': price_data['customer'],
-            'rate_or_discount': "Discount Percentage",
-            'discount_percentage': price_data['discount_percent'],
-            'priority': "1"
-        })
-        pricing_rule.insert()
-    frappe.db.commit()
+        print("Customer {0} not found.".format(price_data['customer']))
     return
