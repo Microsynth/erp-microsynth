@@ -226,17 +226,17 @@ def update_prices(price_data):
         update_pricelist(item_code=price_data['item_code'], 
             price_list="Sales Prices CHF",
             price_list_rate=price_data['price_chf'], 
-            min_qty=price_data['item_code'], 
+            min_qty=price_data['minimum_quantity'], 
             currency="CHF")
         update_pricelist(item_code=price_data['item_code'], 
             price_list="Sales Prices EUR",
             price_list_rate=price_data['price_eur'], 
-            min_qty=price_data['item_code'], 
+            min_qty=price_data['minimum_quantity'], 
             currency="EUR")
         update_pricelist(item_code=price_data['item_code'], 
             price_list="Sales Prices USD",
             price_list_rate=price_data['price_usd'], 
-            min_qty=price_data['item_code'], 
+            min_qty=price_data['minimum_quantity'], 
             currency="USD")
     else:
         print("Item {0} not found.".format(price_data['item_code']))
