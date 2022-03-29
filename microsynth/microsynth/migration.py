@@ -279,18 +279,20 @@ def import_discounts(filename):
         # create reader
         reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
         print("Reading file...")
-        last_custoemr = None
+        last_customer = None
         # go through rows
         for row in reader:
             # prepare discount data from rows
             if row[0]:
                 last_customer = row[0]
-            price_data = {
-                'customer': last_customer,
-                'item_code': row[1],
-                'discount_percent': float(row[2])
-            }
-            update_pricing_rule(price_data)
+            if row[2]:  # only perform in case there is a percentage
+                discount_data = {
+                    'customer': last_customer,
+                    'item_code': row[1],
+                    'discount_percent': float(row[2])
+                }
+                update_pricing_rule(discount_data)
+                print("Imported {0}".format(discount_data))
     return
 
 """
