@@ -1,0 +1,156 @@
+{
+ "autoname": "OLIGO.######",
+ "creation": "2022-03-29 09:34:27.320019",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "oligo_name",
+  "oligo_type",
+  "sequence",
+  "scale",
+  "purification",
+  "phys_cond",
+  "data_sheet",
+  "aliquots",
+  "section_customer",
+  "customer",
+  "column_customer",
+  "customer_name",
+  "section_ids",
+  "web_id",
+  "column_ids",
+  "prod_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "oligo_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Oligo name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "oligo_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Small Text",
+   "label": "Sequence"
+  },
+  {
+   "fieldname": "scale",
+   "fieldtype": "Select",
+   "label": "Scale",
+   "options": "Genomics\n0.04 \u00b5mol\n0.2 \u00b5mol\n1.0 \u00b5mol\n15 \u00b5mol"
+  },
+  {
+   "fieldname": "purification",
+   "fieldtype": "Select",
+   "label": "Purification",
+   "options": "Desalted\nHPLC + Dialysis\nHPLC\nPAGE\nIEX-HPLC"
+  },
+  {
+   "fieldname": "phys_cond",
+   "fieldtype": "Select",
+   "label": "Physical Condition",
+   "options": "Dried\n100 nmol/ml"
+  },
+  {
+   "fieldname": "data_sheet",
+   "fieldtype": "Select",
+   "label": "Data Sheet",
+   "options": "Standard\nType 1\nType 2\nType 3\nType 4\nType 5\nType 6\nType 7"
+  },
+  {
+   "fieldname": "aliquots",
+   "fieldtype": "Select",
+   "label": "Aliquots",
+   "options": "No\n2 nmol\n5 nmol"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_ids",
+   "fieldtype": "Section Break",
+   "label": "IDs"
+  },
+  {
+   "fieldname": "web_id",
+   "fieldtype": "Data",
+   "label": "Web ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_ids",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "prod_id",
+   "fieldtype": "Data",
+   "label": "Production ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_customer",
+   "fieldtype": "Section Break",
+   "label": "Customer"
+  },
+  {
+   "fieldname": "column_customer",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "modified": "2022-03-29 09:48:11.343417",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Oligo",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "search_fields": "oligo_name,prod_id",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "oligo_name",
+ "track_changes": 1
+}
