@@ -272,7 +272,7 @@ Columns are customer_id\titem_code\tdiscount_percent
 Run from bench like
  $ bench execute microsynth.microsynth.migration.import_discounts --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/discountExport.tab'}"
 """
-def import_prices(filename):
+def import_discounts(filename):
     # load csv file
     with open(filename) as csvfile:
         # create reader
