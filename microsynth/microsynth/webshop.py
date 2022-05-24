@@ -96,7 +96,7 @@ def request_quote(key, customer, content, customer_request, contact,
             })
         try:
             qtn_doc.insert(ignore_permissions=True)
-            qtn_doc.submit()
+            # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
             return {'status': True, 'message': 'Quotation created', 
                 'reference': qtn_doc.name}
         except Exception as err:
