@@ -40,6 +40,25 @@ def get_data():
             ]
         },
         {
+            "label": _("Pricing"),
+            "icon": "fa fa-money",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Price List",
+                       "label": _("Price List"),
+                       "description": _("Price List")
+                   },
+                   {
+                        "type": "report",
+                        "name": "Pricing Configurator",
+                        "label": _("Pricing Configurator"),
+                        "doctype": "Price List",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
             "label": _("Accounting"),
             "icon": "fa fa-money",
             "items": [
