@@ -5,6 +5,8 @@
 import frappe
 from frappe import _
 import csv
+import pandas as pd
+import numpy as np
 import json
 from frappe.utils import cint
 
@@ -20,27 +22,19 @@ def import_customers(filename):
     # load csv file
     with open(filename) as csvfile:
         # create reader
-        reader = csv.reader(csvfile, delimiter='\t', quotechar='"')
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
         headers = None
         print("Reading file...")
+        count = 0
+        file_length = len(reader.index)
+        # replace NaN with None
+        reader = reader.replace({np.nan: None})
         # go through rows
-        for row in reader:
-            #fields = row.split("\t")
-            # if headers are not ready, get them (field_name: id)
-            if not headers:
-                headers = {}
-                for i in range(0, len(row)):
-                    headers[row[i]] = i
-                print("Headers loaded... {0}".format(headers))
-            else:
-                if len(row) == len(headers):
-                    # prepare customer data from rows
-                    customer_data = {}
-                    for k, v in headers.items():
-                        customer_data[k] = row[v]
-                    update_customer(customer_data)
-                else:
-                    frappe.throw("Data length mismatch on {0} (header:{1}/row:{2}".format(row, len(headers), len(row)))
+        for index, row in reader.iterrows():
+            count += 1
+            print("...{0}%...".format(int(100 * count / file_length)))
+            #print("{0}".format(row))
+            update_customer(row)
     return
 
 """
@@ -97,7 +91,7 @@ def update_customer(customer_data):
         if 'tax_id' in customer_data:
             customer.tax_id = customer_data['tax_id']
         # extend customer bindings here
-        
+        customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
         
         # check if address exists (force insert onto target id)
