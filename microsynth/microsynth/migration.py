@@ -63,17 +63,17 @@ def update_customer(customer_data):
             print(error)
             return
         # check if the customer exists
-        if not frappe.db.exists("Customer", customer_data['customer_id']):
+        if not frappe.db.exists("Customer", str(customer_data['customer_id'])):
             # create customer (force mode to achieve target name)
-            print("Creating customer {0}...".format(customer_data['customer_id']))
+            print("Creating customer {0}...".format(str(customer_data['customer_id'])))
             frappe.db.sql("""INSERT INTO `tabCustomer` 
                             (`name`, `customer_name`) 
                             VALUES ("{0}", "{1}");""".format(
-                            customer_data['customer_id'], customer_data['customer_name']))
+                            customer_data['customer_id'], str(customer_data['customer_name'])))
                             
             
         # update customer
-        customer = frappe.get_doc("Customer", customer_data['customer_id'])
+        customer = frappe.get_doc("Customer", str(customer_data['customer_id']))
         print("Updating customer {0}...".format(customer.name))
         customer.customer_name = customer_data['customer_name']
         if 'adr_type' in customer_data:
@@ -95,15 +95,15 @@ def update_customer(customer_data):
         customer.save(ignore_permissions=True)       
         
         # check if address exists (force insert onto target id)
-        if not frappe.db.exists("Address", customer_data['person_id']):
-            print("Creating address {0}...".format(customer_data['person_id']))
+        if not frappe.db.exists("Address", str(customer_data['person_id'])):
+            print("Creating address {0}...".format(str(customer_data['person_id'])))
             frappe.db.sql("""INSERT INTO `tabAddress` 
                             (`name`, `address_line1`) 
                             VALUES ("{0}", "{1}");""".format(
-                            customer_data['person_id'], customer_data['address_line1']))
+                            str(customer_data['person_id']), customer_data['address_line1']))
         # update contact
-        print("Updating address {0}...".format(customer_data['person_id']))
-        address = frappe.get_doc("Address", customer_data['person_id'])
+        print("Updating address {0}...".format(str(customer_data['person_id'])))
+        address = frappe.get_doc("Address", str(customer_data['person_id']))
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
         address.address_line1 = customer_data['address_line1']
         address.pincode = customer_data['pincode']
@@ -121,7 +121,7 @@ def update_customer(customer_data):
         address.links = []
         address.append("links", {
             'link_doctype': "Customer",
-            'link_name': customer_data['customer_id']
+            'link_name': str(customer_data['customer_id'])
         })
         # get type of address
         if adr_type == "INV":
@@ -145,15 +145,15 @@ def update_customer(customer_data):
             print(error)
         else:
             # check if contact exists (force insert onto target id)
-            if not frappe.db.exists("Contact", customer_data['person_id']):
-                print("Creating contact {0}...".format(customer_data['person_id']))
+            if not frappe.db.exists("Contact", str(customer_data['person_id'])):
+                print("Creating contact {0}...".format(str(customer_data['person_id'])))
                 frappe.db.sql("""INSERT INTO `tabContact` 
                                 (`name`, `first_name`) 
                                 VALUES ("{0}", "{1}");""".format(
-                                customer_data['person_id'], customer_data['first_name']))
+                                str(customer_data['person_id']), customer_data['first_name']))
             # update contact
-            print("Updating contact {0}...".format(customer_data['person_id']))
-            contact = frappe.get_doc("Contact", customer_data['person_id'])
+            print("Updating contact {0}...".format(str(customer_data['person_id'])))
+            contact = frappe.get_doc("Contact", str(customer_data['person_id']))
             contact.first_name = customer_data['first_name']
             contact.last_name = customer_data['last_name']
             contact.full_name = "{first_name} {last_name}".format(first_name=contact.first_name, last_name=contact.last_name)
@@ -168,7 +168,7 @@ def update_customer(customer_data):
             contact.links = []
             contact.append("links", {
                 'link_doctype': "Customer",
-                'link_name': customer_data['customer_id']
+                'link_name': str(customer_data['customer_id'])
             })
             contact.address = address.name
             # extend contact bindings here
