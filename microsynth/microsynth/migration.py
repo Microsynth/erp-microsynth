@@ -114,7 +114,7 @@ def update_customer(customer_data):
             address.country = customer_data['country']
         else:
             # check if this is an ISO code match
-            countries = frappe.get_all("Country", filters={'code': customer_data['country'].lower()}, fields=['name'])
+            countries = frappe.get_all("Country", filters={'code': (customer_data['country'] or "NA").lower()}, fields=['name'])
             if countries and len(countries) > 0:
                 address.country = countries[0]['name']
             else: 
@@ -178,6 +178,7 @@ def update_customer(customer_data):
                 'link_doctype': "Customer",
                 'link_name': str(int(customer_data['customer_id']))
             })
+            contact.institute_key = customer_data['institute_key']
             contact.address = address.name
             # extend contact bindings here
             contact.save(ignore_permissions=True)
