@@ -25,7 +25,7 @@ frappe.query_reports["Pricing Configurator"] = {
         report.page.add_inner_button(__('Populate with factor'), function () {
            populate_with_factor();
         });
-        /* add event listener for double clicks to move up */
+        // add event listener for double clicks to move up
         cur_page.container.addEventListener("dblclick", function(event) {
             var row = event.delegatedTarget.getAttribute("data-row-index");
             var column = event.delegatedTarget.getAttribute("data-col-index");

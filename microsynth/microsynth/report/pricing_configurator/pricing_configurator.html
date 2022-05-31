@@ -1,0 +1,48 @@
+<style>
+.alternating-rows > tbody > tr:nth-child(odd) {
+    background-color: #eaebeb !important;
+    border: 1px solid white;
+}
+
+.alternating-rows > tbody > tr:nth-child(even) {
+    background-color: #f5f5f5 !important;
+    border: 1px solid white;
+}
+
+.alternating-rows > thead > tr {
+    background-color: #f7ee97 !important;
+    border: 1px solid white;
+}
+</style>
+
+{% var letterhead= filters.letter_head || (frappe.get_doc(":Company", filters.company) && frappe.get_doc(":Company", filters.company).default_letter_head) %}
+{% if(letterhead) { %}
+<div style="margin-bottom: 7px;" class="text-center">
+    {%= frappe.boot.letter_heads[letterhead].header %}
+</div>
+{% } %}
+<h2 class="text-center">{%= __("Price List") %} {%= filters.price_list %}</h2>
+
+<table class="alternating-rows" style="width: 100%;">
+    <thead>
+        <tr>
+            <th>{%= __("Item code") %}</th>
+            <th>{%= __("Item") %}</th>
+            <th>{%= __("UOM") %}</th>
+            <th colspan=2>{%= __("Rate") %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ( var i = 0; i < (data.length - 1); i++ ) { %}
+            {% if (data[i].price_list_rate > 0 ) { %}
+                <tr>
+                    <td>{%= data[i].item_code %}</td>
+                    <td>{%= data[i].item_name %}</td>
+                    <td>{%= data[i].uom %}</td>
+                    <td style="text-align: left; ">{%= data[i].currency %}</td>
+                    <td style="text-align: right; ">{%= data[i].price_list_rate.toLocaleString("DE-ch", {minimumFractionDigits: 2}) %}</td>
+                </tr>
+            {% } %}
+        {% } %}
+    </tbody>
+</table>

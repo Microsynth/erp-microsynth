@@ -22,6 +22,7 @@ def get_columns(filters):
         {"label": _("Item code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
         {"label": _("Item name"), "fieldname": "item_name", "fieldtype": "Data", "width": 120},
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 120},
+        {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 50},
         {"label": "{0} [{1}]".format(_("Reference Rate"), reference_currency), "fieldname": "reference_rate", "fieldtype": "Float", "precision": 2, "width": 150},
         {"label": "{0} [{1}]".format(_("Price List Rate"), price_list_currency), "fieldname": "price_list_rate", "fieldtype": "Float", "precision": 2, "width": 150},
         {"label": _("Discount"), "fieldname": "discount", "fieldtype": "Percent", "precision": 2, "width": 150},
@@ -43,20 +44,24 @@ def get_data(filters):
         conditions += """ AND `item_group` = "{0}" """.format(filters['item_group'])
 
     reference_price_list = get_reference_price_list(filters['price_list'])
+    currency = frappe.get_value("Price List", filters['price_list'], "currency")
     
     sql_query = """
         SELECT
             `item_code`,
             `item_name`,
             `item_group`,
+            `uom`,
             `reference_rate`,
             `price_list_rate`,
-            IF(`reference_rate` IS NULL, 0, 100 * (`reference_rate` - `price_list_rate`) / `reference_rate`) AS `discount`
+            IF(`reference_rate` IS NULL, 0, 100 * (`reference_rate` - `price_list_rate`) / `reference_rate`) AS `discount`,
+            "{currency}" AS `currency`
         FROM
         (SELECT 
             `tabItem`.`item_code`,
             `tabItem`.`item_name`,
             `tabItem`.`item_group`,
+            `tabItem`.`stock_uom` AS `uom`,
             (SELECT
                 `tPref`.`price_list_rate`
              FROM `tabItem Price` AS `tPref`
@@ -80,7 +85,8 @@ def get_data(filters):
            {conditions}
          ORDER BY `tabItem`.`item_code` ASC
         ) AS `raw`;
-    """.format(reference_price_list=reference_price_list, price_list=filters['price_list'], conditions=conditions)
+    """.format(reference_price_list=reference_price_list, 
+        price_list=filters['price_list'], conditions=conditions, currency=currency)
 
     data = frappe.db.sql(sql_query, as_dict=True)
     return data
