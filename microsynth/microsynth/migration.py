@@ -94,6 +94,13 @@ def update_customer(customer_data):
             customer.siret = customer_data['siret']
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
+        if 'is_electronic_invoice' in customer_data:
+            if cint(customer_data['is_electronic_invoice']) == 0:
+                customer.invoicing_method = "Post"
+            else:
+                customer.invoicing_method = "Email"
+        else:
+            customer.invoicing_method = "Email"
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
@@ -190,6 +197,10 @@ def update_customer(customer_data):
                     }).insert()
                 contact.salutation = customer_data['salutation']
             contact.designation = customer_data['title']
+            if customer_data['receive_updates_per_email'] == "Mailing":
+                contact.unsubscribed = 0
+            else:
+                contact.unsubscribed = 1
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
