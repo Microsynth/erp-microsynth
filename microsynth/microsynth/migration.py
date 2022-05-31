@@ -180,6 +180,14 @@ def update_customer(customer_data):
             })
             contact.institute_key = customer_data['institute_key']
             contact.address = address.name
+            if 'salutation' in customer_data['salutation']:
+                if not frappe.db.exists("Salutation"):
+                    frappe.get_doc({
+                        'doctype': 'Salutation',
+                        'salutation': customer_data['salutation']
+                    }).insert()
+                contact.salutation = customer_data['salutation']
+            contact.designation = customer_data['title']
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
