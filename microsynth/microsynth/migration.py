@@ -180,13 +180,13 @@ def update_customer(customer_data):
                 })
             if customer_data['email_cc']:
                 contact.append("email_ids", {
-                    'email_id': customer_data['email'],
+                    'email_id': customer_data['email_cc'],
                     'is_primary': 0
                 })
             contact.phone_nos = []
             if customer_data['phone_number']:
                 contact.append("phone_nos", {
-                    'phone': "+{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
+                    'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
                     'is_primary_phone': 1
                 })
             contact.links = []
