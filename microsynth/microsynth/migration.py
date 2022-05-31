@@ -90,6 +90,8 @@ def update_customer(customer_data):
         
         if 'tax_id' in customer_data:
             customer.tax_id = customer_data['tax_id']
+        if 'currency' in customer_data:
+            customer.default_currency = customer_data['currency']
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
