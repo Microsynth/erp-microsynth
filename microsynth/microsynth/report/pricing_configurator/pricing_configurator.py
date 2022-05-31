@@ -101,6 +101,9 @@ def get_rate(item_code, price_list):
          LIMIT 1;
         """.format(item_code=item_code, price_list=price_list), as_dict=True)[0]['rate']
 
+"""
+This will fill up the missing rates from the reference
+"""
 @frappe.whitelist()
 def populate_from_reference(price_list, item_group=None):
     filters = {
@@ -124,5 +127,56 @@ def populate_from_reference(price_list, item_group=None):
                 'price_list_rate': get_rate(d['item_code'], reference_price_list)
             })
             new_rate.insert()
+    frappe.db.commit()
+    return
+
+"""
+This will set all rates from the reference price list with a factor
+"""
+@frappe.whitelist()
+def populate_with_factor(price_list, item_group=None, factor=1.0):
+    filters = {
+        'price_list': price_list,
+    }
+    if item_group:
+        filters['item_group'] = item_group
+    if type(factor) == str:
+        factor = float(factor)
+    # get base data
+    data = get_data(filters)
+    reference_price_list = get_reference_price_list(filters['price_list'])
+    # set new prices
+    for d in data:
+        if d['reference_rate']:
+            reference_rate = get_rate(d['item_code'], reference_price_list)
+            new_rate = factor * reference_rate
+            set_rate(d['item_code'], price_list, new_rate)
+    return
+
+"""
+This function will set the rate for an item
+"""
+@frappe.whitelist()
+def set_rate(item_code, price_list, rate):
+    existing_item_prices = frappe.get_all("Item Price", 
+        filters={
+            'item_code': item_code,
+            'price_list': price_list
+        }, 
+        fields=['name']
+    )
+    if len(existing_item_prices) > 0:
+        existing_price = frappe.get_doc("Item Price", existing_item_prices[0]['name'])
+        existing_price.price_list_rate = rate
+        existing_price.save()
+    else:
+        # create new price
+        new_rate = frappe.get_doc({
+            'doctype': 'Item Price',
+            'item_code': item_code,
+            'price_list': price_list,
+            'price_list_rate': rate
+        })
+        new_rate.insert()
     frappe.db.commit()
     return
