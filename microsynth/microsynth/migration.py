@@ -233,13 +233,13 @@ def update_customer(customer_data):
                         print("failed to parse subscription date: {0}".format(customer_data['newsletter_registration_date']))
             if 'newsletter_unregistration_date' in customer_data:
                 try:
-                        contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
+                    contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
+                except:
+                    # fallback date only 
+                    try:
+                        contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
                     except:
-                        # fallback date only 
-                        try:
-                            contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
-                        except:
-                            print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
+                        print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
