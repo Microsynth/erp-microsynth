@@ -88,8 +88,8 @@ def update_customer(customer_data):
         if not customer.territory:
             customer.territory = frappe.get_value("Selling Settings", "Selling Settings", "territory")
         
-        if 'tax_id' in customer_data:
-            customer.tax_id = customer_data['tax_id']
+        if 'vat_nr' in customer_data:
+            customer.tax_id = customer_data['vat_nr']
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
         # extend customer bindings here
