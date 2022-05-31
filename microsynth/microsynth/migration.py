@@ -165,6 +165,12 @@ def update_customer(customer_data):
                     'email_id': customer_data['email'],
                     'is_primary': 1
                 })
+            contact.phone_nos = []
+            if customer_data['phone_number']:
+                contact.append("phone_nos", {
+                    'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
+                    'is_primary_phone': 1
+                })
             contact.links = []
             contact.append("links", {
                 'link_doctype': "Customer",
