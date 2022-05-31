@@ -197,8 +197,8 @@ def update_customer(customer_data):
             contact.institute_key = customer_data['institute_key']
             contact.group_leader = customer_data['group_leader']
             contact.address = address.name
-            if 'salutation' in customer_data['salutation']:
-                if not frappe.db.exists("Salutation"):
+            if 'salutation' in customer_data and customer_data['salutation']:
+                if not frappe.db.exists("Salutation", customer_data['salutation']):
                     frappe.get_doc({
                         'doctype': 'Salutation',
                         'salutation': customer_data['salutation']
