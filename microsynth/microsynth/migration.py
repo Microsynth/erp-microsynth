@@ -11,6 +11,11 @@ import json
 from frappe.utils import cint
 from datetime import datetime
 
+PRICE_LIST_NAMES = {
+    'CHF': "Sales Prices CHF",
+    'EUR': "Sales Prices EUR",
+    'USD': "Sales Prices USD"
+}
 """
 This function imports/updates the customer master data from a CSV file
 
@@ -60,7 +65,7 @@ def update_customer(customer_data):
             return
         # check mandatory fields
         if not customer_data['customer_name'] or not customer_data['address_line1']:
-            error = "Mandatory field missing, skipping ({0})".format(customer_data)
+            error = "Mandatory field customer_name or address_line1 missing, skipping ({0})".format(customer_data)
             print(error)
             return
         # check if the customer exists
@@ -95,9 +100,11 @@ def update_customer(customer_data):
             customer.siret = customer_data['siret']
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
-        if 'is_electronic_invoice' in customer_data:
-            if cint(customer_data['is_electronic_invoice']) == 0:
-                customer.invoicing_method = "Post"
+        if 'invoicing_method' in customer_data and customer_data['invoicing_method']:
+            if customer_data['invoicing_method'] in ["Post", "Paynet", "Email", "ARIBA", "Carlo ERBA", "GEP", "Corus", "X-Rechnung", "Scientist"]:
+                customer.invoicing_method = customer_data['invoicing_method']
+            elif customer_data['invoicing_method'] == "PDF":
+                customer.invoicing_method = "Email"
             else:
                 customer.invoicing_method = "Email"
         else:
@@ -287,17 +294,17 @@ def update_prices(price_data):
     # check if this item is available
     if frappe.db.exists("Item", price_data['item_code']) and cint(frappe.get_value("Item", price_data['item_code'], "disabled")) == 0:
         update_pricelist(item_code=price_data['item_code'], 
-            price_list="Sales Prices CHF",
+            price_list=PRICE_LIST_NAMES['CHF'],
             price_list_rate=price_data['price_chf'], 
             min_qty=price_data['minimum_quantity'], 
             currency="CHF")
         update_pricelist(item_code=price_data['item_code'], 
-            price_list="Sales Prices EUR",
+            price_list=PRICE_LIST_NAMES['EUR'],
             price_list_rate=price_data['price_eur'], 
             min_qty=price_data['minimum_quantity'], 
             currency="EUR")
         update_pricelist(item_code=price_data['item_code'], 
-            price_list="Sales Prices USD",
+            price_list=PRICE_LIST_NAMES['USD'],
             price_list_rate=price_data['price_usd'], 
             min_qty=price_data['minimum_quantity'], 
             currency="USD")
