@@ -90,6 +90,8 @@ def update_customer(customer_data):
         
         if 'vat_nr' in customer_data:
             customer.tax_id = customer_data['vat_nr']
+        if 'siret' in customer_data:
+            customer.siret = customer_data['siret']
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
         # extend customer bindings here
