@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import json
 from frappe.utils import cint
+from datetime import datetime
 
 """
 This function imports/updates the customer master data from a CSV file
@@ -101,6 +102,7 @@ def update_customer(customer_data):
                 customer.invoicing_method = "Email"
         else:
             customer.invoicing_method = "Email"
+
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
@@ -176,10 +178,15 @@ def update_customer(customer_data):
                     'email_id': customer_data['email'],
                     'is_primary': 1
                 })
+            if customer_data['email_cc']:
+                contact.append("email_ids", {
+                    'email_id': customer_data['email'],
+                    'is_primary': 0
+                })
             contact.phone_nos = []
             if customer_data['phone_number']:
                 contact.append("phone_nos", {
-                    'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
+                    'phone': "+{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
                     'is_primary_phone': 1
                 })
             contact.links = []
@@ -188,6 +195,7 @@ def update_customer(customer_data):
                 'link_name': str(int(customer_data['customer_id']))
             })
             contact.institute_key = customer_data['institute_key']
+            contact.group_leader = customer_data['group_leader']
             contact.address = address.name
             if 'salutation' in customer_data['salutation']:
                 if not frappe.db.exists("Salutation"):
@@ -201,6 +209,37 @@ def update_customer(customer_data):
                 contact.unsubscribed = 0
             else:
                 contact.unsubscribed = 1
+            contact.room = customer_data['room']
+            contact.punchout_shop = customer_data['punchout_shop_id']
+            contact.punchout_identifier = customer_data['punchout_identifier']
+            if customer_data['newsletter_registration_state'] == "registered":
+                contact.receive_newsletter = "registered"
+            elif customer_data['newsletter_registration_state'] == "unregistered":
+                contact.receive_newsletter = "unregistered"
+            elif customer_data['newsletter_registration_state'] == "pending":
+                contact.receive_newsletter = "pending"
+            elif customer_data['newsletter_registration_state'] == "bounced":
+                contact.receive_newsletter = "bounced"
+            else:
+                contact.receive_newsletter = ""
+            if 'newsletter_registration_date' in customer_data:
+                try:
+                    contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
+                except:
+                    # fallback date only 
+                    try:
+                        contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y")
+                    except:
+                        print("failed to parse subscription date: {0}".format(customer_data['newsletter_registration_date']))
+            if 'newsletter_unregistration_date' in customer_data:
+                try:
+                        contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
+                    except:
+                        # fallback date only 
+                        try:
+                            contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
+                        except:
+                            print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
