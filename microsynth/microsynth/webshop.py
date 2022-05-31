@@ -45,31 +45,30 @@ def check_key(key):
 Request quote will create a new quote (and open the required oligos, if provided)
 """
 @frappe.whitelist(allow_guest=True)
-def request_quote(key, customer, content, customer_request, contact, 
-        delivery_address, invoice_address, client="webshop"):
+def request_quote(key, content, client="webshop"):
     # check access
     if check_key(key):
         # prepare parameters
         if type(content) == str:
             content = json.loads(content)
         # validate input
-        if not frappe.db.exists("Customer", customer):
+        if not frappe.db.exists("Customer", content['customer']):
             return {'success': False, 'message': "Customer not found", 'reference': None}
-        if not frappe.db.exists("Address", delivery_address):
+        if not frappe.db.exists("Address", content['delivery_address']):
             return {'success': False, 'message': "Delivery address not found", 'reference': None}
-        if not frappe.db.exists("Address", invoice_address):
+        if not frappe.db.exists("Address", content['invoice_address']):
             return {'success': False, 'message': "Invoice address not found", 'reference': None}
-        if not frappe.db.exists("Contact", contact):
+        if not frappe.db.exists("Contact", content['contact']):
             return {'success': False, 'message': "Contact not found", 'reference': None}
         # create quotation
         qtn_doc = frappe.get_doc({
             'doctype': "Quotation",
             'quotation_to': "Customer",
-            'party_name': customer,
-            'customer_address': invoice_address,
-            'shipping_address': delivery_address,
-            'contact_person': contact,
-            'customer_request': customer_request
+            'party_name': content['customer'],
+            'customer_address': content['invoice_address'],
+            'shipping_address': content['delivery_address'],
+            'contact_person': content['contact'],
+            'customer_request': content['customer_request']
         })
         # create oligos
         for o in content['oligos']:
@@ -143,20 +142,20 @@ def get_quotation_detail(key, reference, client="webshop"):
 Returns the specific prices for a customer/items
 """
 @frappe.whitelist(allow_guest=True)
-def get_item_prices(key, customer, content, currency="CHF", client="webshop"):
+def get_item_prices(key, content, client="webshop"):
     # check access
     if check_key(key):
-        if frappe.db.exists("Customer", customer):
+        # make sure items are a json object
+        if type(content) == str:
+            content = json.loads(content)
+        if frappe.db.exists("Customer", content['customer']):
             # create virtual sales order to compute prices
             so = frappe.get_doc({
                 'doctype': "Sales Order", 
-                'customer': customer,
-                'currency': currency,
+                'customer': content['customer'],
+                'currency': content['currency'],
                 'delivery_date': date.today()
             })
-            # make sure items are a json object
-            if type(content) == str:
-                content = json.loads(content)
             for i in content['items']:
                 if frappe.db.exists("Item", i['item_code']):
                     so.append('items', {
@@ -186,33 +185,36 @@ def get_item_prices(key, customer, content, currency="CHF", client="webshop"):
 Place an order
 """
 @frappe.whitelist(allow_guest=True)
-def place_order(key, customer, content, customer_request, contact, 
-        delivery_address, invoice_address, quotation=None, client="webshop"):
+def place_order(key, content, client="webshop"):
     # check access
     if check_key(key):
         # prepare parameters
         if type(content) == str:
             content = json.loads(content)
         # validate input
-        if not frappe.db.exists("Customer", customer):
+        if not frappe.db.exists("Customer", content['customer']):
             return {'success': False, 'message': "Customer not found", 'reference': None}
-        if not frappe.db.exists("Address", delivery_address):
+        if not frappe.db.exists("Address", content['delivery_address']):
             return {'success': False, 'message': "Delivery address not found", 'reference': None}
-        if not frappe.db.exists("Address", invoice_address):
+        if not frappe.db.exists("Address", content['invoice_address']):
             return {'success': False, 'message': "Invoice address not found", 'reference': None}
-        if not frappe.db.exists("Contact", contact):
+        if not frappe.db.exists("Contact", content['contact']):
             return {'success': False, 'message': "Contact not found", 'reference': None}
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
-            'customer': customer,
-            'customer_address': invoice_address,
-            'shipping_address': delivery_address,
-            'contact_person': contact,
-            'customer_request': customer_request,
+            'customer': content['customer'],
+            'customer_address': content['invoice_address'],
+            'shipping_address': content['delivery_address'],
+            'contact_person': content['contact'],
+            'customer_request': content['customer_request'],
             'delivery_date': (date.today() + timedelta(days=3))
         })
         # create oligos
+        if 'quotation' in content:
+            quotation = content['quotation']
+        else:
+            quotation = None
         for o in content['oligos']:
             # create or update oligo
             oligo_name = create_oligo(o)
