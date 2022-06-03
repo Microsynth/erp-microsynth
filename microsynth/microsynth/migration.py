@@ -14,7 +14,9 @@ from datetime import datetime, date
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
     'EUR': "Sales Prices EUR",
-    'USD': "Sales Prices USD"
+    'USD': "Sales Prices USD",
+    'SEK': "Sales Prices SEK",
+    'CZK': "Sales Prices CZK"
 }
 """
 This function imports/updates the customer master data from a CSV file
@@ -404,7 +406,7 @@ def update_pricing_rule(price_data):
 """
 Import customer price list
 
-Headers (\t): PriceList ["1234"], BasisPriceListe ["CHF"], GeneralDiscount ["0"], ArticleCode, Discount
+Headers (\t): PriceList ["1234"], BasisPriceList ["CHF"], GeneralDiscount ["0"], ArticleCode, Discount
 
 Run from bench like
  $ bench execute microsynth.microsynth.migration.import_customer_price_lists --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
@@ -413,7 +415,8 @@ def import_customer_price_lists(filename):
     # load csv file
     with open(filename) as csvfile:
         # create reader
-        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', 
+            encoding='utf-8', dtype={'ArticleCode': object})
         print("Reading file...")
         count = 0
         file_length = len(reader.index)
@@ -423,10 +426,10 @@ def import_customer_price_lists(filename):
         for index, row in reader.iterrows():
             count += 1
             print("...{0}%...".format(int(100 * count / file_length)))
-            #print("{0}".format(row))
+            print("{0}".format(row))
             create_update_customer_price_list(
                 pricelist_code = row['PriceList'], 
-                currency = row['BasisPriceListe'], 
+                currency = row['BasisPriceList'], 
                 general_discount = float(row['GeneralDiscount']), 
                 item_code = row['ArticleCode'], 
                 discount = float(row['Discount'])
@@ -434,7 +437,7 @@ def import_customer_price_lists(filename):
     return
 
 def get_long_price_list_name(price_list_code):
-    return "Pricelist {0}".format(pricelist_code)
+    return "Pricelist {0}".format(price_list_code)
         
 def create_update_customer_price_list(pricelist_code, currency, 
         general_discount, item_code, discount, qty=1):
@@ -444,6 +447,7 @@ def create_update_customer_price_list(pricelist_code, currency,
         # create new price list
         pl = frappe.get_doc({
             'doctype': "Price List",
+            'price_list_name': pl_long_name,
             'selling': 1
         })
         pl.insert()
@@ -458,7 +462,7 @@ def create_update_customer_price_list(pricelist_code, currency,
     reference_item_prices = frappe.get_all("Item Price",
         filters={
             'price_list': PRICE_LIST_NAMES[currency],
-            'item_code': item, code,
+            'item_code': item_code,
             'min_qty': qty
         },
         fields=['name', 'valid_from', 'price_list_rate']
@@ -495,7 +499,7 @@ def create_update_customer_price_list(pricelist_code, currency,
                 'price_list_rate': price_list_rate
             })
             price_doc.insert()
-            print("created customer item price {0}".price_doc.name)
+            print("created customer item price {0}".format(price_doc.name))
     return
 
 """
