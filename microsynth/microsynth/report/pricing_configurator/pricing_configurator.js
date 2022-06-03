@@ -29,7 +29,7 @@ frappe.query_reports["Pricing Configurator"] = {
         cur_page.container.addEventListener("dblclick", function(event) {
             var row = event.delegatedTarget.getAttribute("data-row-index");
             var column = event.delegatedTarget.getAttribute("data-col-index");
-            if (parseInt(column) === 5) {
+            if (parseInt(column) === 6) {
                 // fetch value
                 var value = 1;
                 if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {

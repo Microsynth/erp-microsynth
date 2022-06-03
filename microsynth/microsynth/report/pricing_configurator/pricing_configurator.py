@@ -120,17 +120,23 @@ def populate_from_reference(price_list, item_group=None):
     # get base data
     data = get_data(filters)
     reference_price_list = get_reference_price_list(filters['price_list'])
+    general_discount = frappe.get_value("Price List", price_list, "general_discount")
     # set new prices
     for d in data:
         #frappe.throw("{0} - {1}".format(d['reference_rate'], d['price_list_rate']))
         if d['reference_rate'] and not d['price_list_rate']:
             #frappe.throw(d['item_code'])
             # create new price
+            rate = get_rate(d['item_code'], reference_price_list)
+            # rate based on general discount for item groups 3.1 & 3.2
+            group = frappe.get_value("Item", d['item_code'], "item_group")
+            if "3.1 " in group or "3.2" in group:
+                rate = ((100 - general_discount) / 100) * rate
             new_rate = frappe.get_doc({
                 'doctype': 'Item Price',
                 'item_code': d['item_code'],
                 'price_list': price_list,
-                'price_list_rate': get_rate(d['item_code'], reference_price_list)
+                'price_list_rate': rate
             })
             new_rate.insert()
     frappe.db.commit()

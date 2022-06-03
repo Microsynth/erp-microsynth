@@ -10,7 +10,7 @@ import numpy as np
 import json
 from frappe.utils import cint
 from datetime import datetime, date
-
+from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
     'EUR': "Sales Prices EUR",
@@ -434,6 +434,7 @@ def import_customer_price_lists(filename):
                 item_code = row['ArticleCode'], 
                 discount = float(row['Discount'])
             )
+    frappe.db.commit()
     return
 
 def get_long_price_list_name(price_list_code):
@@ -524,7 +525,31 @@ def map_customer_price_list(filename):
         for index, row in reader.iterrows():
             count += 1
             # get and update customer
-            customer = frappe.get_doc("Customer", row['Customer'])
-            customer.default_price_list = get_long_price_list_name(row['PriceList'])
-            print("...{0}%... Linked {0}".format(int(100 * count / file_length)), row['Customer'])
+            if frappe.db.exists("Customer", str(row['Customer'])):
+                customer = frappe.get_doc("Customer", str(row['Customer']))
+                customer.default_price_list = get_long_price_list_name(row['PriceList'])
+                customer.flags.ignore_links = True                      # ignore links (e.g. invoice to contact that is imported later)
+                customer.save()
+                print("...{0}%... Linked {1}".format(int(100 * count / file_length), str(row['Customer'])))
+            else:
+                print("Customer {0} not found!".format(str(row['Customer'])))
+    frappe.db.commit()
+    return
+
+"""
+Go through all price lists and populate missing prices
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.populate_price_lists
+"""
+def populate_price_lists():
+    price_lists = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabPrice List`
+        WHERE `reference_price_list` IS NOT NULL;""", as_dict=True)
+    count = 0
+    for p in price_lists:
+        count += 1
+        print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
+        populate_from_reference(price_list=p['name'])
     return
