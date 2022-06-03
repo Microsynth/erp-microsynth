@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import json
 from frappe.utils import cint
-from datetime import datetime
+from datetime import datetime, date
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -29,7 +29,6 @@ def import_customers(filename):
     with open(filename) as csvfile:
         # create reader
         reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
-        headers = None
         print("Reading file...")
         count = 0
         file_length = len(reader.index)
@@ -400,4 +399,128 @@ def update_pricing_rule(price_data):
         frappe.db.commit()
     else:
         print("Customer {0} not found.".format(price_data['customer']))
+    return
+
+"""
+Import customer price list
+
+Headers (\t): PriceList ["1234"], BasisPriceListe ["CHF"], GeneralDiscount ["0"], ArticleCode, Discount
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.import_customer_price_lists --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
+"""
+def import_customer_price_lists(filename):
+    # load csv file
+    with open(filename) as csvfile:
+        # create reader
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
+        print("Reading file...")
+        count = 0
+        file_length = len(reader.index)
+        # replace NaN with None
+        reader = reader.replace({np.nan: None})
+        # go through rows
+        for index, row in reader.iterrows():
+            count += 1
+            print("...{0}%...".format(int(100 * count / file_length)))
+            #print("{0}".format(row))
+            create_update_customer_price_list(
+                pricelist_code = row['PriceList'], 
+                currency = row['BasisPriceListe'], 
+                general_discount = float(row['GeneralDiscount']), 
+                item_code = row['ArticleCode'], 
+                discount = float(row['Discount'])
+            )
+    return
+
+def get_long_price_list_name(price_list_code):
+    return "Pricelist {0}".format(pricelist_code)
+        
+def create_update_customer_price_list(pricelist_code, currency, 
+        general_discount, item_code, discount, qty=1):
+    pl_long_name = get_long_price_list_name(pricelist_code)
+    # check if it exists
+    if not frappe.db.exists("Price List", pl_long_name):
+        # create new price list
+        pl = frappe.get_doc({
+            'doctype': "Price List",
+            'selling': 1
+        })
+        pl.insert()
+    else:
+        # load existing price list
+        pl = frappe.get_doc("Price List", pl_long_name)
+    # update values
+    pl.reference_price_list = PRICE_LIST_NAMES[currency]
+    pl.general_discount = general_discount
+    pl.save()
+    # find reference prices
+    reference_item_prices = frappe.get_all("Item Price",
+        filters={
+            'price_list': PRICE_LIST_NAMES[currency],
+            'item_code': item, code,
+            'min_qty': qty
+        },
+        fields=['name', 'valid_from', 'price_list_rate']
+    )
+    for ref_price in reference_item_prices:
+        # find item prices
+        item_prices = frappe.get_all("Item Price", 
+            filters={
+                'price_list': pl_long_name,
+                'item_code': item_code,
+                'min_qty': qty,
+                'valid_from': ref_price['valid_from']
+            },
+            fields=['name']
+        )
+        price_list_rate = ((100 - discount) / 100) * ref_price['price_list_rate']
+        if len(item_prices) > 0:
+            # update records
+            for p in item_prices:
+                price_doc = frappe.get_doc("Item Price", p['name'])
+                price_doc.discount = discount
+                price_doc.price_list_rate = price_list_rate
+                price_doc.save()
+                print("updated customer item price {0}".price_doc.name)
+        else:
+            # create customer price record
+            price_doc = frappe.get_doc({
+                'doctype': "Item Price",
+                'item_code': item_code,
+                'min_qty': qty,
+                'price_list': pl_long_name,
+                'valid_from': ref_price['valid_from'],
+                'discount': discount,
+                'price_list_rate': price_list_rate
+            })
+            price_doc.insert()
+            print("created customer item price {0}".price_doc.name)
+    return
+
+"""
+Map customer price lists to customers
+
+Headers (\t): PriceList ["1234"], Customer ["1234"]
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.map_customer_price_list --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
+"""
+def map_customer_price_list(filename):
+    # load csv file
+    with open(filename) as csvfile:
+        # create reader
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
+        print("Reading file...")
+        count = 0
+        file_length = len(reader.index)
+        # replace NaN with None
+        reader = reader.replace({np.nan: None})
+        # go through rows
+        for index, row in reader.iterrows():
+            count += 1
+            # get and update customer
+            customer = frappe.get_doc("Customer", row['Customer'])
+            customer.default_price_list = get_long_price_list_name(row['PriceList'])
+            print("...{0}%... Linked {0}".format(int(100 * count / file_length)), row['Customer'])
     return
