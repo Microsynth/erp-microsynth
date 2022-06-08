@@ -136,7 +136,8 @@ def populate_from_reference(price_list, item_group=None):
                 'doctype': 'Item Price',
                 'item_code': d['item_code'],
                 'price_list': price_list,
-                'price_list_rate': rate
+                'price_list_rate': rate,
+                'qty': 1
             })
             new_rate.insert()
     frappe.db.commit()
