@@ -16,6 +16,11 @@ frappe.query_reports["Pricing Configurator"] = {
             "label": __("Item Group"),
             "fieldtype": "Link",
             "options": "Item Group"
+        },
+        {
+            "fieldname":"discounts",
+            "label": __("Discount"),
+            "fieldtype": "Check"
         }
     ],
     "onload": (report) => {

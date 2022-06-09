@@ -32,6 +32,7 @@ def get_columns(filters):
 def get_data(filters):
     # fetch accounts
     conditions = ""
+    raw_conditions = ""
     #frappe.throw("{0}".format(type(filters)))
     if type(filters) == str:
         filters = json.loads(filters)
@@ -42,12 +43,19 @@ def get_data(filters):
         
     if 'item_group' in filters:
         conditions += """ AND `item_group` = "{0}" """.format(filters['item_group'])
-
+    if 'discounts' in filters:
+        # get general discount 
+        general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")
+        raw_conditions += """ WHERE `all`.`discount` !=0 AND `all`.`discount` != "{0}" """.format(general_discount)
+        
     reference_price_list = get_reference_price_list(filters['price_list'])
     currency = frappe.get_value("Price List", filters['price_list'], "currency")
     
     sql_query = """
         SELECT
+            *
+        FROM
+        (SELECT
             `item_code`,
             `item_name`,
             `item_group`,
@@ -84,9 +92,11 @@ def get_data(filters):
          WHERE `tabItem`.`disabled` = 0
            {conditions}
          ORDER BY `tabItem`.`item_code` ASC
-        ) AS `raw`;
+        ) AS `raw`
+        ) AS `all`
+        {raw_conditions};
     """.format(reference_price_list=reference_price_list, 
-        price_list=filters['price_list'], conditions=conditions, currency=currency)
+        price_list=filters['price_list'], conditions=conditions, raw_conditions=raw_conditions, currency=currency)
 
     data = frappe.db.sql(sql_query, as_dict=True)
     return data
@@ -119,6 +129,7 @@ def populate_from_reference(price_list, item_group=None):
         filters['item_group'] = item_group
     # get base data
     data = get_data(filters)
+    print("Number of data sets: {0}".format(len(data)))
     reference_price_list = get_reference_price_list(filters['price_list'])
     general_discount = frappe.get_value("Price List", price_list, "general_discount")
     # set new prices
