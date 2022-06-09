@@ -150,7 +150,10 @@ def populate_from_reference(price_list, item_group=None):
                 'price_list_rate': rate,
                 'qty': 1
             })
-            new_rate.insert()
+            try:
+                new_rate.insert()
+            except Exception as err:
+                print("Cannot insert {0} in {1}: {2}".format(d['item_code'], price_list, err))
     frappe.db.commit()
     return
 

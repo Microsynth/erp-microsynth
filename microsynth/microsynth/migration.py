@@ -11,6 +11,7 @@ import json
 from frappe.utils import cint
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
+
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
     'EUR': "Sales Prices EUR",
@@ -548,8 +549,11 @@ def populate_price_lists():
         FROM `tabPrice List`
         WHERE `reference_price_list` IS NOT NULL;""", as_dict=True)
     count = 0
+    start_ts = None
     for p in price_lists:
         count += 1
+        start_ts = datetime.now()
         print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
         populate_from_reference(price_list=p['name'])
+        print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
