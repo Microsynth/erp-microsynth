@@ -84,7 +84,31 @@ def get_user_details(key, person_id, client="webshop"):
         }
     else:
         return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Checks if an address record exists
+"""
+@frappe.whitelist(allow_guest=True)
+def address_exists(key, address, client="webshop"):
+    if check_key(key):
+        if type(address) == str:
+            address = json.loads(address)
+        addresses = frappe.get_all("Address", 
+            filters={
+                'address_line1': address['address_line1'] if 'address_line1' in address else None,
+                'pincode': address['pincode'] if 'pincode' in address else None,
+                'city': address['city'] if 'city' in address else None
+            },
+            fields=['name']
+        )
         
+        if len(addresses) > 0:
+            return {'success': True, 'message': "OK", 'address': addresses[0]['name']}
+        else: 
+            return {'success': False, 'message': "Address not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+    
 def check_key(key):
     server_key = frappe.get_value("Microsynth Webshop Settings", "Microsynth Webshop Settings", "preshared_key")
     if server_key == key:
@@ -302,7 +326,7 @@ def place_order(key, content, client="webshop"):
             return {'success': False, 'message': err, 'reference': None}
     else:
         return {'success': False, 'message': 'Authentication failed', 'reference': None}
-
+        
 """
 Inform webshop about customer master change
 """
