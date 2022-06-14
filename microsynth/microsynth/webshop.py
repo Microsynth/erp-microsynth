@@ -67,8 +67,10 @@ def get_user_details(key, person_id, client="webshop"):
                 LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
                 WHERE `tabDynamic Link`.`parenttype` = "Address"
                   AND `tabDynamic Link`.`link_doctype` = "Customer"
-                  AND `tabDynamic Link`.`link_name` = "35276856"
-                ;""".format(customer_id=customer_id), as_dict=True)
+                  AND `tabDynamic Link`.`link_name` = "{customer_id}"
+                  AND (`tabAddress`.`is_primary_address` = 1 
+                       OR `tabAddress`.`name` = "{person_id}")
+                ;""".format(customer_id=customer_id, person_id=person_id), as_dict=True)
             
         # return structure
         return {
