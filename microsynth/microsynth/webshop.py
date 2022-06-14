@@ -256,8 +256,10 @@ def place_order(key, content, client="webshop"):
             'customer_address': content['invoice_address'],
             'shipping_address': content['delivery_address'],
             'contact_person': content['contact'],
-            'customer_request': content['customer_request'],
-            'delivery_date': (date.today() + timedelta(days=3))
+            'customer_request': content['customer_request'] if 'customer_request' in content else None,
+            'delivery_date': (date.today() + timedelta(days=3)),
+            'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
+            'is_punchout': content['is_punchout'] if 'is_punchout' in content else None
         })
         # create oligos
         if 'quotation' in content:
