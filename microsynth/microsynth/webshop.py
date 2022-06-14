@@ -22,17 +22,17 @@ def ping():
 This function will create or update a customer
 """
 @frappe.whitelist(allow_guest=True)
-def create_update_customer(key, customer_data):
+def create_update_customer(key, customer_data, client="webshop"):
     if check_key(key):
         if type(customer_data) == str:
             customer_data = json.loads(customer_data)
         error = update_customer(customer_data)
         if not error:
-            return {'status': True, 'message': "Success"}
+            return {'success': True, 'message': "OK"}
         else: 
-            return {'status': False, 'message': error}
+            return {'success': False, 'message': error}
     else:
-        return {'status': False, 'message': 'Authentication failed'}
+        return {'success': False, 'message': 'Authentication failed'}
 
 def check_key(key):
     server_key = frappe.get_value("Microsynth Webshop Settings", "Microsynth Webshop Settings", "preshared_key")
@@ -96,12 +96,12 @@ def request_quote(key, content, client="webshop"):
         try:
             qtn_doc.insert(ignore_permissions=True)
             # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
-            return {'status': True, 'message': 'Quotation created', 
+            return {'success': True, 'message': 'Quotation created', 
                 'reference': qtn_doc.name}
         except Exception as err:
-            return {'status': False, 'message': err, 'reference': None}
+            return {'success': False, 'message': err, 'reference': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'reference': None}
+        return {'success': False, 'message': 'Authentication failed', 'reference': None}
 
 """
 Returns the quotations for a particular customer
@@ -116,11 +116,11 @@ def get_quotations(key, customer, client="webshop"):
                 filters={'party_name': customer, 'docstatus': 1},
                 fields=['name', 'currency', 'net_total', 'transaction_date', 'customer_request']
             )
-            return {'status': True, 'message': "OK", 'quotations': qtns}
+            return {'success': True, 'message': "OK", 'quotations': qtns}
         else:
-            return {'status': False, 'message': 'Customer not found', 'quotation': None}
+            return {'success': False, 'message': 'Customer not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotations': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotations': None}
 
 """
 Returns the quotations details
@@ -132,11 +132,11 @@ def get_quotation_detail(key, reference, client="webshop"):
         if frappe.db.exists("Quotation", reference):
             # get quotation
             qtn = frappe.get_doc("Quotation", reference)
-            return {'status': True, 'message': "OK", 'quotation': qtn.as_dict()}
+            return {'success': True, 'message': "OK", 'quotation': qtn.as_dict()}
         else:
-            return {'status': False, 'message': 'Quotation not found', 'quotation': None}
+            return {'success': False, 'message': 'Quotation not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotation': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
 
 """
 Returns the specific prices for a customer/items
@@ -163,7 +163,7 @@ def get_item_prices(key, content, client="webshop"):
                         'qty': i['qty']
                     })
                 else:
-                    return {'status': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
+                    return {'success': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
             # temporarily insert
             so.insert(ignore_permissions=True)
             item_prices = []
@@ -175,11 +175,11 @@ def get_item_prices(key, content, client="webshop"):
                 })
             # remove temporary record
             so.delete()
-            return {'status': True, 'message': "OK", 'item_prices': item_prices}
+            return {'success': True, 'message': "OK", 'item_prices': item_prices}
         else:
-            return {'status': False, 'message': 'Customer not found', 'quotation': None}
+            return {'success': False, 'message': 'Customer not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotation': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
 
 """
 Place an order
@@ -242,9 +242,9 @@ def place_order(key, content, client="webshop"):
         try:
             so_doc.insert(ignore_permissions=True)
             so_doc.submit()
-            return {'status': True, 'message': 'Sales Order created', 
+            return {'success': True, 'message': 'Sales Order created', 
                 'reference': so_doc.name}
         except Exception as err:
-            return {'status': False, 'message': err, 'reference': None}
+            return {'success': False, 'message': err, 'reference': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'reference': None}
+        return {'success': False, 'message': 'Authentication failed', 'reference': None}
