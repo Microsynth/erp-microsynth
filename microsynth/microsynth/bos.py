@@ -55,6 +55,48 @@ def check_sales_order_completion(sales_order):
             return
     # all items are either complete or cancelled
     
-    ## TODO: create delivery note
+    ## TODO: create delivery note (leave on draft)
+    
+    ## TODO: create PDF for delivery note and address label
     
     return
+
+"""
+Get deliverable units
+
+Export codes: CH, EU, ROW
+"""
+@frappe.whitelist(allow_guest=True)
+def get_deliverable_units(key, export_code="CH", client="bos"):
+    # check access
+    if check_key(key):
+        deliveries = frappe.db.sql("""
+            SELECT 
+                `tabDelivery Note`.`name`, 
+                `tabAddress`.`country`, 
+                `tabCountry`.`export_code`
+            FROM `tabDelivery Note`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
+            LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+            WHERE `tabDelivery note`.`docstatus` == 0
+              AND `tabCountry`.`export_code` = "{export_code}";""".format(export_code=export_code, as_dict=True)
+            
+        return {'success': True, 'message': 'OK', deliveries: deliveries}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Mark a delivery as packaged
+"""
+@frappe.whitelist(allow_guest=True)
+def deliver_unit(key, delivery_note, client="bos"):
+    # check access
+    if check_key(key):
+        dn = frappe.get_doc("Delivery note", delivery_note)
+        try:
+            dn.submit()
+            return {'success': True, 'message': 'OK'}
+        except Exception as err:
+            return {'success': False, 'message': err}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
