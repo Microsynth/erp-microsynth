@@ -259,7 +259,8 @@ def place_order(key, content, client="webshop"):
             'customer_request': content['customer_request'] if 'customer_request' in content else None,
             'delivery_date': (date.today() + timedelta(days=3)),
             'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
-            'is_punchout': content['is_punchout'] if 'is_punchout' in content else None
+            'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
+            'po_no': content['po_no'] if 'po_no' in content else None
         })
         # create oligos
         if 'quotation' in content:
