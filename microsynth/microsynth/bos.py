@@ -37,6 +37,8 @@ def update_order_item_status(key, web_order_id, oligo_web_id=None, cancel=0, com
                                 i.status = "Cancelled"
                     oligo.save(ignore_permissions=True)
                     frappe.db.commit()
+                    # check and process sales order (in case all is complete)
+                    check_sales_order_completion(sales_order)
                     return {'success': True, 'message': 'OK'}
                 else:
                     return {'success': False, 'message': "Oligo not found"}       
@@ -44,3 +46,15 @@ def update_order_item_status(key, web_order_id, oligo_web_id=None, cancel=0, com
             return {'success': False, 'message': "Order not found"}
     else:
         return {'success': False, 'message': 'Authentication failed'}
+
+def check_sales_order_completion(sales_order):
+    so = frappe.get_doc("Sales Order", sales_order)
+    for i in so.items:
+        if i.status == "Open":
+            # not complete, return
+            return
+    # all items are either complete or cancelled
+    
+    ## TODO: create delivery note
+    
+    return
