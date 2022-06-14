@@ -34,6 +34,56 @@ def create_update_customer(key, customer_data, client="webshop"):
     else:
         return {'success': False, 'message': 'Authentication failed'}
 
+"""
+From a user (AspNetUser), get customer data 
+"""
+@frappe.whitelist(allow_guest=True)
+def get_user_details(key, person_id, client="webshop"):
+    if check_key(key):
+        # get contact
+        contact = frappe.get_doc("Contact", person_id)
+        if not contact:
+            return {'success': False, 'message': "Person not found"}
+        # fetch customer
+        customer_id = None
+        for l in contact.links:
+            if l.link_doctype == "Customer":
+                customer_id = l.link_name
+        if not customer_id:
+            return {'success': False, 'message': "No customer linked"}
+        customer = frappe.get_doc("Customer", customer_id)
+        # fetch addresses
+        addresses = frappe.db.sql(
+            """ SELECT 
+                    `tabAddress`.`name`,
+                    `tabAddress`.`address_type`,
+                    `tabAddress`.`address_line1`,
+                    `tabAddress`.`pincode`,
+                    `tabAddress`.`city`,
+                    `tabAddress`.`country`,
+                    `tabAddress`.`is_shipping_address`,
+                    `tabAddress`.`is_primary_address`
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                  AND `tabDynamic Link`.`link_doctype` = "Customer"
+                  AND `tabDynamic Link`.`link_name` = "35276856"
+                ;""".format(customer_id=customer_id), as_dict=True)
+            
+        # return structure
+        return 
+            {
+                'success': True, 
+                'message': "OK", 
+                'details': {
+                    'contact': contact,
+                    'customer': customer
+                    'addresses': addresses
+                }
+            }
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+        
 def check_key(key):
     server_key = frappe.get_value("Microsynth Webshop Settings", "Microsynth Webshop Settings", "preshared_key")
     if server_key == key:
