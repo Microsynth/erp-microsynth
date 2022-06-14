@@ -71,16 +71,15 @@ def get_user_details(key, person_id, client="webshop"):
                 ;""".format(customer_id=customer_id), as_dict=True)
             
         # return structure
-        return 
-            {
-                'success': True, 
-                'message': "OK", 
-                'details': {
-                    'contact': contact,
-                    'customer': customer
-                    'addresses': addresses
-                }
+        return {
+            'success': True, 
+            'message': "OK", 
+            'details': {
+                'contact': contact,
+                'customer': customer,
+                'addresses': addresses
             }
+        }
     else:
         return {'success': False, 'message': 'Authentication failed'}
         
@@ -298,3 +297,10 @@ def place_order(key, content, client="webshop"):
             return {'success': False, 'message': err, 'reference': None}
     else:
         return {'success': False, 'message': 'Authentication failed', 'reference': None}
+
+"""
+Inform webshop about customer master change
+"""
+def notify_customer_change(customer):
+    ## TODO
+    return
