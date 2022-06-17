@@ -207,3 +207,10 @@ def set_rate(item_code, price_list, rate):
         new_rate.insert()
     frappe.db.commit()
     return
+
+"""
+Pull all items with discounts for external use (~standing quotation)
+"""
+@frappe.whitelist()
+def get_discount_items(price_list):
+    return get_data(filters={'price_list': price_list, 'discounts': 1})

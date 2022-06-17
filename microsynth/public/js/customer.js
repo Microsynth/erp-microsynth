@@ -1,3 +1,12 @@
+try {
+    cur_frm.dashboard.add_transactions([
+        {
+            'label': 'Pre Sales',
+            'items': ['Standing Quotation']
+        }
+    ]);
+} catch { /* do nothing for older versions */ }
+
 frappe.ui.form.on('Customer', {
     refresh(frm) {
         if ((!frm.doc.__islocal) && (frm.doc.default_price_list)) {
