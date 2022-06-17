@@ -22,18 +22,93 @@ def ping():
 This function will create or update a customer
 """
 @frappe.whitelist(allow_guest=True)
-def create_update_customer(key, customer_data):
+def create_update_customer(key, customer_data, client="webshop"):
     if check_key(key):
         if type(customer_data) == str:
             customer_data = json.loads(customer_data)
         error = update_customer(customer_data)
         if not error:
-            return {'status': True, 'message': "Success"}
+            return {'success': True, 'message': "OK"}
         else: 
-            return {'status': False, 'message': error}
+            return {'success': False, 'message': error}
     else:
-        return {'status': False, 'message': 'Authentication failed'}
+        return {'success': False, 'message': 'Authentication failed'}
 
+"""
+From a user (AspNetUser), get customer data 
+"""
+@frappe.whitelist(allow_guest=True)
+def get_user_details(key, person_id, client="webshop"):
+    if check_key(key):
+        # get contact
+        contact = frappe.get_doc("Contact", person_id)
+        if not contact:
+            return {'success': False, 'message': "Person not found"}
+        # fetch customer
+        customer_id = None
+        for l in contact.links:
+            if l.link_doctype == "Customer":
+                customer_id = l.link_name
+        if not customer_id:
+            return {'success': False, 'message': "No customer linked"}
+        customer = frappe.get_doc("Customer", customer_id)
+        # fetch addresses
+        addresses = frappe.db.sql(
+            """ SELECT 
+                    `tabAddress`.`name`,
+                    `tabAddress`.`address_type`,
+                    `tabAddress`.`address_line1`,
+                    `tabAddress`.`pincode`,
+                    `tabAddress`.`city`,
+                    `tabAddress`.`country`,
+                    `tabAddress`.`is_shipping_address`,
+                    `tabAddress`.`is_primary_address`
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                  AND `tabDynamic Link`.`link_doctype` = "Customer"
+                  AND `tabDynamic Link`.`link_name` = "{customer_id}"
+                  AND (`tabAddress`.`is_primary_address` = 1 
+                       OR `tabAddress`.`name` = "{person_id}")
+                ;""".format(customer_id=customer_id, person_id=person_id), as_dict=True)
+            
+        # return structure
+        return {
+            'success': True, 
+            'message': "OK", 
+            'details': {
+                'contact': contact,
+                'customer': customer,
+                'addresses': addresses
+            }
+        }
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Checks if an address record exists
+"""
+@frappe.whitelist(allow_guest=True)
+def address_exists(key, address, client="webshop"):
+    if check_key(key):
+        if type(address) == str:
+            address = json.loads(address)
+        addresses = frappe.get_all("Address", 
+            filters={
+                'address_line1': address['address_line1'] if 'address_line1' in address else None,
+                'pincode': address['pincode'] if 'pincode' in address else None,
+                'city': address['city'] if 'city' in address else None
+            },
+            fields=['name']
+        )
+        
+        if len(addresses) > 0:
+            return {'success': True, 'message': "OK", 'address': addresses[0]['name']}
+        else: 
+            return {'success': False, 'message': "Address not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+    
 def check_key(key):
     server_key = frappe.get_value("Microsynth Webshop Settings", "Microsynth Webshop Settings", "preshared_key")
     if server_key == key:
@@ -96,12 +171,12 @@ def request_quote(key, content, client="webshop"):
         try:
             qtn_doc.insert(ignore_permissions=True)
             # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
-            return {'status': True, 'message': 'Quotation created', 
+            return {'success': True, 'message': 'Quotation created', 
                 'reference': qtn_doc.name}
         except Exception as err:
-            return {'status': False, 'message': err, 'reference': None}
+            return {'success': False, 'message': err, 'reference': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'reference': None}
+        return {'success': False, 'message': 'Authentication failed', 'reference': None}
 
 """
 Returns the quotations for a particular customer
@@ -116,11 +191,11 @@ def get_quotations(key, customer, client="webshop"):
                 filters={'party_name': customer, 'docstatus': 1},
                 fields=['name', 'currency', 'net_total', 'transaction_date', 'customer_request']
             )
-            return {'status': True, 'message': "OK", 'quotations': qtns}
+            return {'success': True, 'message': "OK", 'quotations': qtns}
         else:
-            return {'status': False, 'message': 'Customer not found', 'quotation': None}
+            return {'success': False, 'message': 'Customer not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotations': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotations': None}
 
 """
 Returns the quotations details
@@ -132,11 +207,11 @@ def get_quotation_detail(key, reference, client="webshop"):
         if frappe.db.exists("Quotation", reference):
             # get quotation
             qtn = frappe.get_doc("Quotation", reference)
-            return {'status': True, 'message': "OK", 'quotation': qtn.as_dict()}
+            return {'success': True, 'message': "OK", 'quotation': qtn.as_dict()}
         else:
-            return {'status': False, 'message': 'Quotation not found', 'quotation': None}
+            return {'success': False, 'message': 'Quotation not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotation': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
 
 """
 Returns the specific prices for a customer/items
@@ -163,7 +238,7 @@ def get_item_prices(key, content, client="webshop"):
                         'qty': i['qty']
                     })
                 else:
-                    return {'status': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
+                    return {'success': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
             # temporarily insert
             so.insert(ignore_permissions=True)
             item_prices = []
@@ -175,11 +250,11 @@ def get_item_prices(key, content, client="webshop"):
                 })
             # remove temporary record
             so.delete()
-            return {'status': True, 'message': "OK", 'item_prices': item_prices}
+            return {'success': True, 'message': "OK", 'item_prices': item_prices}
         else:
-            return {'status': False, 'message': 'Customer not found', 'quotation': None}
+            return {'success': False, 'message': 'Customer not found', 'quotation': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'quotation': None}
+        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
 
 """
 Place an order
@@ -207,8 +282,11 @@ def place_order(key, content, client="webshop"):
             'customer_address': content['invoice_address'],
             'shipping_address': content['delivery_address'],
             'contact_person': content['contact'],
-            'customer_request': content['customer_request'],
-            'delivery_date': (date.today() + timedelta(days=3))
+            'customer_request': content['customer_request'] if 'customer_request' in content else None,
+            'delivery_date': (date.today() + timedelta(days=3)),
+            'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
+            'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
+            'po_no': content['po_no'] if 'po_no' in content else None
         })
         # create oligos
         if 'quotation' in content:
@@ -242,9 +320,16 @@ def place_order(key, content, client="webshop"):
         try:
             so_doc.insert(ignore_permissions=True)
             so_doc.submit()
-            return {'status': True, 'message': 'Sales Order created', 
+            return {'success': True, 'message': 'Sales Order created', 
                 'reference': so_doc.name}
         except Exception as err:
-            return {'status': False, 'message': err, 'reference': None}
+            return {'success': False, 'message': err, 'reference': None}
     else:
-        return {'status': False, 'message': 'Authentication failed', 'reference': None}
+        return {'success': False, 'message': 'Authentication failed', 'reference': None}
+        
+"""
+Inform webshop about customer master change
+"""
+def notify_customer_change(customer):
+    ## TODO
+    return
