@@ -16,8 +16,8 @@ def update_order_item_status(key, web_order_id, oligo_web_id=None, cancel=0, com
     # check access
     if check_key(key):
         sales_orders = frappe.get_all("Sales Order", 
-            fields={'docstatus': 1, 'web_order_id': web_order_id}
-            fields=['name']
+            fields={'docstatus': 1, 'web_order_id': web_order_id},
+            filters=['name']
         )
         if len(sales_orders) > 0:
             so = frappe.get_order("Sales Order", sales_orders[0]['name'])
@@ -79,9 +79,9 @@ def get_deliverable_units(key, export_code="CH", client="bos"):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
             LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
             WHERE `tabDelivery note`.`docstatus` == 0
-              AND `tabCountry`.`export_code` = "{export_code}";""".format(export_code=export_code, as_dict=True)
+              AND `tabCountry`.`export_code` = "{export_code}";""".format(export_code=export_code), as_dict=True)
             
-        return {'success': True, 'message': 'OK', deliveries: deliveries}
+        return {'success': True, 'message': 'OK', 'deliveries': deliveries}
     else:
         return {'success': False, 'message': 'Authentication failed'}
 
