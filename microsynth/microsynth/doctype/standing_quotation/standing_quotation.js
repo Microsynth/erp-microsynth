@@ -10,23 +10,25 @@ frappe.ui.form.on('Standing Quotation', {
         }
         
         // populate from price list discount items
-        frm.add_custom_button(__("Populate Discount Items"), function() {
-            frappe.call({
-                'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.get_discount_items",
-                'args': {
-                    "price_list": frm.doc.price_list
-                },
-                'callback': function(response) {
-                    var items = response.message;
-                    for (var i = 0; i < items.length; i++) {
-                        var child = cur_frm.add_child('items');
-                        frappe.model.set_value(child.doctype, child.name, 'item_code', items[i].item_code);
-                        frappe.model.set_value(child.doctype, child.name, 'item_name', items[i].item_name);
+        if (frm.doc.price_list) {
+            frm.add_custom_button(__("Populate Discount Items"), function() {
+                frappe.call({
+                    'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.get_discount_items",
+                    'args': {
+                        "price_list": frm.doc.price_list
+                    },
+                    'callback': function(response) {
+                        var items = response.message;
+                        for (var i = 0; i < items.length; i++) {
+                            var child = cur_frm.add_child('items');
+                            frappe.model.set_value(child.doctype, child.name, 'item_code', items[i].item_code);
+                            frappe.model.set_value(child.doctype, child.name, 'item_name', items[i].item_name);
+                        }
+                        cur_frm.refresh_field('items');
                     }
-                    cur_frm.refresh_field('items');
-                }
+                });
             });
-        });
+        }
     },
     price_list(frm) {
         if (frm.doc.price_list) {
