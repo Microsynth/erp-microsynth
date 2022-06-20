@@ -34,6 +34,13 @@ doctype_js = {
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+# extend Jinja environment
+jenv = {
+    "methods": [
+        "get_price_list_rate:microsynth.microsynth.jinja.get_price_list_rate"
+    ]
+}
+
 # Home Pages
 # ----------
 

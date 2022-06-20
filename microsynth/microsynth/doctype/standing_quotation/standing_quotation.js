@@ -3,6 +3,23 @@
 
 frappe.ui.form.on('Standing Quotation', {
     refresh(frm) {
+        cur_frm.fields_dict['address'].get_query = function(doc) {
+            return {
+                filters: {
+                    'link_doctype': 'Customer',
+                    'link_name': frm.doc.customer
+                }
+            }
+        }
+        cur_frm.fields_dict['contact'].get_query = function(doc) {
+            return {
+                filters: {
+                    'link_doctype': 'Customer',
+                    'link_name': frm.doc.customer
+                }
+            }
+        }
+    
         if ((!frm.doc.__islocal) && (frm.doc.price_list)) {
             frm.add_custom_button(__("Price List"), function() {
                 frappe.set_route("query-report", "Pricing Configurator", {'price_list': frm.doc.price_list});
