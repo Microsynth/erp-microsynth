@@ -135,10 +135,15 @@ def request_quote(key, content, client="webshop"):
             return {'success': False, 'message': "Invoice address not found", 'reference': None}
         if not frappe.db.exists("Contact", content['contact']):
             return {'success': False, 'message': "Contact not found", 'reference': None}
+        if "company" not in content:
+            company = frappe.get_value("Customer", content['customer'], 'default_company')
+            if not company:
+                company = frappe.defaults.get_default('company')
         # create quotation
         qtn_doc = frappe.get_doc({
             'doctype': "Quotation",
             'quotation_to': "Customer",
+            'company': company,
             'party_name': content['customer'],
             'customer_address': content['invoice_address'],
             'shipping_address': content['delivery_address'],
@@ -275,9 +280,14 @@ def place_order(key, content, client="webshop"):
             return {'success': False, 'message': "Invoice address not found", 'reference': None}
         if not frappe.db.exists("Contact", content['contact']):
             return {'success': False, 'message': "Contact not found", 'reference': None}
+        if "company" not in content:
+            company = frappe.get_value("Customer", content['customer'], 'default_company')
+            if not company:
+                company = frappe.defaults.get_default('company')
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
+            'company': company,
             'customer': content['customer'],
             'customer_address': content['invoice_address'],
             'shipping_address': content['delivery_address'],
