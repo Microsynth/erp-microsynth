@@ -104,7 +104,7 @@ def get_data(filters):
 def get_reference_price_list(price_list):
     return frappe.get_value("Price List", price_list, "reference_price_list")
 
-def get_rate(item_code, price_list):
+def get_rate(item_code, price_list, qty=1):
     return frappe.db.sql("""
         SELECT
             IFNULL(`tP`.`price_list_rate`, 0) AS `rate`
@@ -113,9 +113,10 @@ def get_rate(item_code, price_list):
            AND `tP`.`price_list` = "{price_list}"
            AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
            AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
-         ORDER BY `tP`.`valid_from` ASC
+           AND `tP`.`min_qty` < {qty}
+         ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
          LIMIT 1;
-        """.format(item_code=item_code, price_list=price_list), as_dict=True)[0]['rate']
+        """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)[0]['rate']
 
 """
 This will fill up the missing rates from the reference

@@ -1,10 +1,11 @@
 {
- "autoname": "format:SQ-{YY}{customer}",
+ "autoname": "naming_series:",
  "creation": "2022-06-17 10:48:18.077377",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "customer",
   "address",
   "contact",
@@ -13,11 +14,13 @@
   "company",
   "customer_name",
   "price_list",
+  "currency",
   "general_discount",
   "sec_items",
   "items",
   "sec_descriptions",
-  "description"
+  "description",
+  "terms"
  ],
  "fields": [
   {
@@ -98,9 +101,28 @@
    "fieldtype": "Data",
    "label": "Contact Display",
    "read_only": 1
+  },
+  {
+   "fetch_from": "price_list.currency",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "terms",
+   "fieldtype": "Text Editor",
+   "label": "Terms"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "SQ-.YY.#####"
   }
  ],
- "modified": "2022-06-20 21:14:23.534463",
+ "modified": "2022-06-21 08:55:25.441744",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",
