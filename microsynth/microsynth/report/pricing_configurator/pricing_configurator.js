@@ -30,11 +30,14 @@ frappe.query_reports["Pricing Configurator"] = {
         report.page.add_inner_button(__('Populate with factor'), function () {
            populate_with_factor();
         });
+        report.page.add_inner_button(__('Customers'), function () {
+           frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value });
+        });
         // add event listener for double clicks to move up
         cur_page.container.addEventListener("dblclick", function(event) {
             var row = event.delegatedTarget.getAttribute("data-row-index");
             var column = event.delegatedTarget.getAttribute("data-col-index");
-            if (parseInt(column) === 6) {
+            if (parseInt(column) === 7) {
                 // fetch value
                 var value = 1;
                 if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {

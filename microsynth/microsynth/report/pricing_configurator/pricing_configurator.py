@@ -22,10 +22,12 @@ def get_columns(filters):
         {"label": _("Item code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
         {"label": _("Item name"), "fieldname": "item_name", "fieldtype": "Data", "width": 120},
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 120},
+        {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Float", "precision": "1", "width": 60},
         {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 50},
         {"label": "{0} [{1}]".format(_("Reference Rate"), reference_currency), "fieldname": "reference_rate", "fieldtype": "Float", "precision": 2, "width": 150},
         {"label": "{0} [{1}]".format(_("Price List Rate"), price_list_currency), "fieldname": "price_list_rate", "fieldtype": "Float", "precision": 2, "width": 150},
         {"label": _("Discount"), "fieldname": "discount", "fieldtype": "Percent", "precision": 2, "width": 150},
+        {"label": _("Record"), "fieldname": "record", "fieldtype": "Link", "options": "Item Price", "width": 100},
         {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
     ]
 
@@ -59,42 +61,44 @@ def get_data(filters):
             `item_code`,
             `item_name`,
             `item_group`,
+            `qty`,
             `uom`,
             `reference_rate`,
             `price_list_rate`,
             IF(`reference_rate` IS NULL, 0, 100 * (`reference_rate` - `price_list_rate`) / `reference_rate`) AS `discount`,
-            "{currency}" AS `currency`
+            "{currency}" AS `currency`,
+            `record`
         FROM
         (SELECT 
             `tabItem`.`item_code`,
             `tabItem`.`item_name`,
             `tabItem`.`item_group`,
             `tabItem`.`stock_uom` AS `uom`,
+            `tP`.`min_qty` AS `qty`,
+            `tP`.`price_list_rate` AS `price_list_rate`,
             (SELECT
                 `tPref`.`price_list_rate`
              FROM `tabItem Price` AS `tPref`
              WHERE `tPref`.`item_code` = `tabItem`.`item_code`
                AND `tPref`.`price_list` = "{reference_price_list}"
+               AND `tPref`.`min_qty` = `tP`.`min_qty`
                AND (`tPref`.`valid_from` IS NULL OR `tPref`.`valid_from` <= CURDATE())
                AND (`tPref`.`valid_upto` IS NULL OR `tPref`.`valid_upto` >= CURDATE())
              ORDER BY `tPref`.`valid_from` ASC
-             LIMIT 1) AS `reference_rate` ,
-            (SELECT
-                `tP`.`price_list_rate`
-             FROM `tabItem Price` AS `tP`
-             WHERE `tP`.`item_code` = `tabItem`.`item_code`
-               AND `tP`.`price_list` = "{price_list}"
-               AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
-               AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
-             ORDER BY `tP`.`valid_from` ASC
-             LIMIT 1) AS `price_list_rate`
+             LIMIT 1) AS `reference_rate`,
+            `tP`.`name` AS `record`
          FROM `tabItem`
+         LEFT JOIN `tabItem Price` AS `tP` ON
+            `tP`.`item_code` = `tabItem`.`item_code`
+            AND `tP`.`price_list` = "{price_list}"
+            AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
+            AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
          WHERE `tabItem`.`disabled` = 0
            {conditions}
-         ORDER BY `tabItem`.`item_code` ASC
         ) AS `raw`
         ) AS `all`
-        {raw_conditions};
+        {raw_conditions}
+        ORDER BY `all`.`item_code` ASC, `all`.`qty` ASC;
     """.format(reference_price_list=reference_price_list, 
         price_list=filters['price_list'], conditions=conditions, raw_conditions=raw_conditions, currency=currency)
 
@@ -113,7 +117,7 @@ def get_rate(item_code, price_list, qty=1):
            AND `tP`.`price_list` = "{price_list}"
            AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
            AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
-           AND `tP`.`min_qty` < {qty}
+           AND `tP`.`min_qty` <= {qty}
          ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
          LIMIT 1;
         """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)[0]['rate']
