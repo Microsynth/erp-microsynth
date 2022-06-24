@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Standing Quotation",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2022-06-24 09:29:45.877738",
+   "default_value": null,
+   "doc_type": "Standing Quotation",
+   "docstatus": 0,
+   "doctype_or_field": "DocType",
+   "field_name": null,
+   "idx": 0,
+   "modified": "2022-06-24 09:29:45.877738",
+   "modified_by": "Administrator",
+   "name": "Standing Quotation-default_print_format",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "default_print_format",
+   "property_type": "Data",
+   "value": "Standing Quotation"
+  }
+ ],
+ "sync_on_migrate": 1
+}

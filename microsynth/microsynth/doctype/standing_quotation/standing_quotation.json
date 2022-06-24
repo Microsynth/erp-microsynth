@@ -16,6 +16,8 @@
   "price_list",
   "currency",
   "general_discount",
+  "sec_groups",
+  "groups",
   "sec_items",
   "items",
   "sec_descriptions",
@@ -120,9 +122,20 @@
    "fieldtype": "Select",
    "label": "Naming Series",
    "options": "SQ-.YY.#####"
+  },
+  {
+   "fieldname": "sec_groups",
+   "fieldtype": "Section Break",
+   "label": "Groups"
+  },
+  {
+   "fieldname": "groups",
+   "fieldtype": "Table",
+   "label": "Groups",
+   "options": "Standing Quotation Group"
   }
  ],
- "modified": "2022-06-21 08:55:25.441744",
+ "modified": "2022-06-24 09:12:46.617066",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",

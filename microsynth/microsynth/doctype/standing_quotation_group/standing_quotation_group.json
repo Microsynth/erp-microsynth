@@ -1,0 +1,54 @@
+{
+ "creation": "2022-06-24 09:12:26.261615",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "group_name",
+  "col_main",
+  "group_title",
+  "sec_description",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sec_description",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "col_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "group_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group Title",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-06-24 09:21:59.174316",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Standing Quotation Group",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

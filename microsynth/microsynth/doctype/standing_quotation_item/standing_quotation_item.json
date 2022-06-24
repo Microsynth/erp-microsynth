@@ -6,7 +6,8 @@
  "field_order": [
   "item_code",
   "item_name",
-  "qty"
+  "qty",
+  "group"
  ],
  "fields": [
   {
@@ -33,10 +34,16 @@
    "label": "Qty",
    "precision": "3",
    "reqd": 1
+  },
+  {
+   "fieldname": "group",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Group"
   }
  ],
  "istable": 1,
- "modified": "2022-06-21 10:09:49.175531",
+ "modified": "2022-06-24 09:10:56.619582",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation Item",
