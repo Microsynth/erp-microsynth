@@ -21,6 +21,12 @@ def get_data():
                    },
                    {
                        "type": "doctype",
+                       "name": "Standing Quotation",
+                       "label": _("Standing Quotation"),
+                       "description": _("Standing Quotation")                   
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Sales Order",
                        "label": _("Sales Order"),
                        "description": _("Sales Order")                   
