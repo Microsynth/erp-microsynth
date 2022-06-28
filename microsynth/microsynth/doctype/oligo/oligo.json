@@ -20,7 +20,9 @@
   "section_ids",
   "web_id",
   "column_ids",
-  "prod_id"
+  "prod_id",
+  "sec_items",
+  "items"
  ],
  "fields": [
   {
@@ -115,9 +117,21 @@
    "label": "Type",
    "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA",
    "reqd": 1
+  },
+  {
+   "fieldname": "sec_items",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Oligo Item",
+   "reqd": 1
   }
  ],
- "modified": "2022-03-29 09:59:23.152642",
+ "modified": "2022-06-28 09:36:12.720479",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",

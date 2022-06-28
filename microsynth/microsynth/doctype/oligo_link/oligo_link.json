@@ -1,0 +1,39 @@
+{
+ "creation": "2022-06-28 09:28:52.649533",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "oligo",
+  "web_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "oligo",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Oligo",
+   "options": "Oligo",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "oligo.web_id",
+   "fieldname": "web_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Web ID",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-06-28 09:32:17.396314",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Oligo Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

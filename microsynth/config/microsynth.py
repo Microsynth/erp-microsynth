@@ -65,6 +65,24 @@ def get_data():
             ]
         },
         {
+            "label": _("Master Data"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Item",
+                       "label": _("Item"),
+                       "description": _("Item")                   
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Oligo",
+                       "label": _("Oligo"),
+                       "description": _("Oligo")                   
+                   },
+            ]
+        },
+        {
             "label": _("Accounting"),
             "icon": "fa fa-money",
             "items": [
