@@ -19,6 +19,10 @@ PRICE_LIST_NAMES = {
     'SEK': "Sales Prices SEK",
     'CZK': "Sales Prices CZK"
 }
+
+CUSTOMER_HEADER = r"""person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\tadr_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager"""
+CUSTOMER_HEADER_FIELDS = r"""{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{adr_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}"""
+
 """
 This function imports/updates the customer master data from a CSV file
 
@@ -45,6 +49,62 @@ def import_customers(filename):
             update_customer(row)
     return
 
+"""
+This function will create a customer export file from ERP to Gecko
+
+"""
+def export_customers(filename, from_date):
+    # create file
+    f = open(filename, "w")
+    # write header
+    f.write(CUSTOMER_HEADER)
+    # get applicable records changed since from_date
+    data = []
+    for r in records:
+        row = CUSTOMER_HEADER_FIELDS.format(
+            person_id=data['person_id'],
+            customer_id=data['customer_id'],
+            customer_name=data['customer_name'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+            address_line1=data['address_line1'],
+            pincode=data['pincode'],
+            city=data['city'],
+            institute=data['institute'],
+            department=data['department'],
+            country=data['country'],
+            DS_Nr=data['ds_nr'],
+            adr_type=data['adr_type'],
+            vat_nr=data['vat_nr'],
+            siret=data['siret'],
+            currency=data['currency'],
+            is_deleted=data['is_deleted'],
+            default_discount=data['default_discount'],
+            is_electronic_invoice=data['is_electronic_invoice'],
+            receive_updates_per_emailis_punchout_user=data['receive_updates_per_emailis_punchout_user'],
+            punchout_identifier=data['punchout_identifier'],
+            punchout_shop_id=data['punchout_shop_id'],
+            room=data['room'],
+            salutation=data['salutation'],
+            title=data['title'],
+            group_leader=data['group_leader'],
+            email_cc=data['email_cc'],
+            phone_number=data['phone_number'],
+            phone_country=data['phone_country'],
+            institute_key=data['institute_key'],
+            newsletter_registration_state=data['newsletter_registration_state'],
+            newsletter_registration_date=data['newsletter_registration_date'],
+            newsletter_unregistration_date=data['newsletter_unregistration_date'],
+            umr_nr=data['umr_nr'],
+            invoicing_method=data['invoicing_method'],
+            sales_manager=data['sales_manager']
+        )
+        f.write(row)
+    # close file
+    f.close()
+    return
+    
 """
 This function will update a customer master (including contact & address)
 
@@ -78,7 +138,14 @@ def update_customer(customer_data):
                             (`name`, `customer_name`) 
                             VALUES ("{0}", "{1}");""".format(
                             str(int(customer_data['customer_id'])), str(customer_data['customer_name'])))
-                            
+        
+         if 'is_deleted' in customer_data:
+            if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
+                is_deleted = 1
+            else:
+                is_deleted = 0
+        else:
+            is_deleted = 0
             
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
@@ -90,6 +157,7 @@ def update_customer(customer_data):
             adr_type = None
         if adr_type == "INV":
             customer.invoice_to = customer_data['person_id']
+            customer.disabled = is_deleted                              # in case is_deleted (can be 1 or 0) is on the INV record
             
         if not customer.customer_group:
             customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")
@@ -111,7 +179,11 @@ def update_customer(customer_data):
                 customer.invoicing_method = "Email"
         else:
             customer.invoicing_method = "Email"
-
+        if 'sales_manager' in customer_data:
+            users = frappe.db.sql("""SELECT `name` FROM `tabUser` WHERE `username` LIKE "{0}";""".format(customer_data['sales_manager']), as_dict=True)
+            if len(users) > 0:
+                customer.account_manager = users[0]['name']
+                
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
@@ -141,10 +213,11 @@ def update_customer(customer_data):
                 address.country = "Schweiz"
                 print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
         address.links = []
-        address.append("links", {
-            'link_doctype': "Customer",
-            'link_name': str(int(customer_data['customer_id']))
-        })
+        if not is_deleted:
+            address.append("links", {
+                'link_doctype': "Customer",
+                'link_name': str(int(customer_data['customer_id']))
+            })
         # get type of address
         if adr_type == "INV":
             address.is_primary_address = 1
@@ -199,10 +272,11 @@ def update_customer(customer_data):
                     'is_primary_phone': 1
                 })
             contact.links = []
-            contact.append("links", {
-                'link_doctype': "Customer",
-                'link_name': str(int(customer_data['customer_id']))
-            })
+            if not is_deleted:
+                contact.append("links", {
+                    'link_doctype': "Customer",
+                    'link_name': str(int(customer_data['customer_id']))
+                })
             contact.institute_key = customer_data['institute_key']
             contact.group_leader = customer_data['group_leader']
             contact.address = address.name
