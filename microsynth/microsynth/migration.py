@@ -139,7 +139,7 @@ def update_customer(customer_data):
                             VALUES ("{0}", "{1}");""".format(
                             str(int(customer_data['customer_id'])), str(customer_data['customer_name'])))
         
-         if 'is_deleted' in customer_data:
+        if 'is_deleted' in customer_data:
             if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
                 is_deleted = 1
             else:
