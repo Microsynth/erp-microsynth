@@ -20,8 +20,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = r"""person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\tadr_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager"""
-CUSTOMER_HEADER_FIELDS = r"""{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{adr_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\tadr_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{adr_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\n"""
 
 """
 This function imports/updates the customer master data from a CSV file
@@ -59,46 +59,97 @@ def export_customers(filename, from_date):
     # write header
     f.write(CUSTOMER_HEADER)
     # get applicable records changed since from_date
-    data = []
-    for r in records:
+    sql_query = """SELECT 
+           `tabAddress`.`name` AS `person_id`,
+           `tabCustomer`.`name` AS `customer_id`,
+           `tabCustomer`.`customer_name` AS `customer_name`,
+           `tabContact`.`first_name` AS `first_name`,
+           `tabContact`.`last_name` AS `last_name`,
+           `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`address_line1` AS `address_line1`,
+           `tabAddress`.`pincode` AS `pincode`,
+           `tabAddress`.`city` AS `city`,
+           `tabContact`.`institute` AS `institute`,
+           `tabContact`.`department` AS `department`,
+           `tabCountry`.`code` AS `country`,
+           "" AS `ds_nr`,
+           `tabAddress`.`address_type` AS `adr_type`,
+           `tabCustomer`.`tax_id` AS `vat_nr`,
+           `tabCustomer`.`siret` AS `siret`,
+           `tabCustomer`.`default_currency` AS `currency`,
+           `tabCustomer`.`disabled` AS `is_deleted`,
+           `tabPrice List`.`general_discount` AS `default_discount`,
+           0 AS `is_electronic_invoice`,
+           0 AS `receive_updates_per_emailis_punchout_user`,
+           `tabCustomer`.`punchout_identifier` AS `punchout_identifier`,
+           `tabCustomer`.`punchout_shop` AS `punchout_shop_id`,
+           `tabContact`.`room` AS `room`,
+           `tabContact`.`salutation` AS `salutation`,
+           `tabContact`.`designation` AS `title`,
+           `tabContact`.`group_leader` AS `group_leader`,
+           NULL AS `email_cc`,
+           `tabContact`.`phone` AS `phone_number`,
+           `tabCountry`.`code` AS `phone_country`,
+           `tabContact`.`institute_key` AS `institute_key`,
+           `tabContact`.`receive_newsletter` AS `newsletter_registration_state`,
+           `tabContact`.`subscribe_date` AS `newsletter_registration_date`,
+           `tabContact`.`unsubscribe_Date` AS `newsletter_unregistration_date`,
+           NULL AS `umr_nr`,
+           `tabCustomer`.`invoicing_method` AS `invoicing_method`,
+           `tabUser`.`username` AS `sales_manager`
+        FROM `tabAddress`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Address" 
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabContact` ON `tabContact`.`address` = `tabAddress`.`name`
+        LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
+        LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
+        LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+        WHERE `tabCustomer`.`modified` >= "{from_date}"
+           OR `tabAddress`.`modified` >= "{from_date}"
+           OR `tabContact`.`modified` >= "{from_date}"
+    """.format(from_date=from_date)
+    data = frappe.db.sql(sql_query, as_dict=True)
+    for d in data:
         row = CUSTOMER_HEADER_FIELDS.format(
-            person_id=data['person_id'],
-            customer_id=data['customer_id'],
-            customer_name=data['customer_name'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            email=data['email'],
-            address_line1=data['address_line1'],
-            pincode=data['pincode'],
-            city=data['city'],
-            institute=data['institute'],
-            department=data['department'],
-            country=data['country'],
-            DS_Nr=data['ds_nr'],
-            adr_type=data['adr_type'],
-            vat_nr=data['vat_nr'],
-            siret=data['siret'],
-            currency=data['currency'],
-            is_deleted=data['is_deleted'],
-            default_discount=data['default_discount'],
-            is_electronic_invoice=data['is_electronic_invoice'],
-            receive_updates_per_emailis_punchout_user=data['receive_updates_per_emailis_punchout_user'],
-            punchout_identifier=data['punchout_identifier'],
-            punchout_shop_id=data['punchout_shop_id'],
-            room=data['room'],
-            salutation=data['salutation'],
-            title=data['title'],
-            group_leader=data['group_leader'],
-            email_cc=data['email_cc'],
-            phone_number=data['phone_number'],
-            phone_country=data['phone_country'],
-            institute_key=data['institute_key'],
-            newsletter_registration_state=data['newsletter_registration_state'],
-            newsletter_registration_date=data['newsletter_registration_date'],
-            newsletter_unregistration_date=data['newsletter_unregistration_date'],
-            umr_nr=data['umr_nr'],
-            invoicing_method=data['invoicing_method'],
-            sales_manager=data['sales_manager']
+            person_id=d['person_id'],
+            customer_id=d['customer_id'],
+            customer_name=d['customer_name'],
+            first_name=d['first_name'],
+            last_name=d['last_name'],
+            email=d['email'],
+            address_line1=d['address_line1'],
+            pincode=d['pincode'],
+            city=d['city'],
+            institute=d['institute'],
+            department=d['department'],
+            country=d['country'],
+            DS_Nr=d['ds_nr'],
+            adr_type=d['adr_type'],
+            vat_nr=d['vat_nr'],
+            siret=d['siret'],
+            currency=d['currency'],
+            is_deleted=d['is_deleted'],
+            default_discount=d['default_discount'],
+            is_electronic_invoice=d['is_electronic_invoice'],
+            receive_updates_per_emailis_punchout_user=d['receive_updates_per_emailis_punchout_user'],
+            punchout_identifier=d['punchout_identifier'],
+            punchout_shop_id=d['punchout_shop_id'],
+            room=d['room'],
+            salutation=d['salutation'],
+            title=d['title'],
+            group_leader=d['group_leader'],
+            email_cc=d['email_cc'],
+            phone_number=d['phone_number'],
+            phone_country=d['phone_country'],
+            institute_key=d['institute_key'],
+            newsletter_registration_state=d['newsletter_registration_state'],
+            newsletter_registration_date=d['newsletter_registration_date'],
+            newsletter_unregistration_date=d['newsletter_unregistration_date'],
+            umr_nr=d['umr_nr'],
+            invoicing_method=d['invoicing_method'],
+            sales_manager=d['sales_manager']
         )
         f.write(row)
     # close file
@@ -139,7 +190,7 @@ def update_customer(customer_data):
                             VALUES ("{0}", "{1}");""".format(
                             str(int(customer_data['customer_id'])), str(customer_data['customer_name'])))
         
-         if 'is_deleted' in customer_data:
+        if 'is_deleted' in customer_data:
             if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
                 is_deleted = 1
             else:
