@@ -283,7 +283,7 @@ def place_order(key, content, client="webshop"):
         if "company" not in content:
             company = frappe.get_value("Customer", content['customer'], 'default_company')
             if not company:
-                company = frappe.defaults.get_default('company')
+                company = frappe.defaults.get_global_default('company')
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
@@ -298,25 +298,49 @@ def place_order(key, content, client="webshop"):
             'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
             'po_no': content['po_no'] if 'po_no' in content else None
         })
-        # create oligos
+        # quotation reference
         if 'quotation' in content:
             quotation = content['quotation']
         else:
             quotation = None
-        for o in content['oligos']:
-            # create or update oligo
-            oligo_name = create_oligo(o)
-            # insert positions
-            for i in o['items']:
-                if not frappe.db.exists("Item", i['item_code']):
-                    return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
-                        'reference': None}
-                so_doc.append('items', {
-                    'item_code': i['item_code'],
-                    'qty': i['qty'],
-                    'oligo': oligo_name,
-                    'prevdoc_docname': quotation
+        # create oligos
+        if 'oligos' in content:
+            for o in content['oligos']:
+                # create or update oligo
+                oligo_name = create_oligo(o)
+                so_doc.append('oligos', {
+                    'oligo': oligo_name
                 })
+                # insert positions
+                for i in o['items']:
+                    if not frappe.db.exists("Item", i['item_code']):
+                        return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
+                            'reference': None}
+                    so_doc.append('items', {
+                        'item_code': i['item_code'],
+                        'qty': i['qty'],
+                        'oligo': oligo_name,
+                        'prevdoc_docname': quotation
+                    })
+        # create samples
+        if 'samples' in content:
+            for s in content['samples']:
+                # create or update sample
+                sample_name = create_sample(s)
+                # create sample record
+                so_doc.append('samples', {
+                    'sample': sample_name
+                })
+                # insert positions
+                for i in o['items']:
+                    if not frappe.db.exists("Item", i['item_code']):
+                        return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
+                            'reference': None}
+                    so_doc.append('items', {
+                        'item_code': i['item_code'],
+                        'qty': i['qty'],
+                        'prevdoc_docname': quotation
+                    })
         # append items
         for i in content['items']:
             if not frappe.db.exists("Item", i['item_code']):

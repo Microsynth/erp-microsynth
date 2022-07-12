@@ -1,0 +1,39 @@
+{
+ "creation": "2022-07-12 22:18:44.028568",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sample",
+  "web_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "sample",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sample",
+   "options": "Sample",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "sample.web_id",
+   "fieldname": "web_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Web ID",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-07-12 22:18:44.028568",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Sample Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
