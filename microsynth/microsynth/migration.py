@@ -687,3 +687,35 @@ def populate_price_lists():
         populate_from_reference(price_list=p['name'])
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
+
+"""
+Move item price from staggered item to base item
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.move_staggered_item_price --kwargs "{'filename': '/home/libracore/staggered_prices.tab'}"
+"""
+def move_staggered_item_price(filename):
+    with open(filename) as csvfile:
+        # create reader
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
+        print("Reading file...")
+        count = 0
+        file_length = len(reader.index)
+        # replace NaN with None
+        reader = reader.replace({np.nan: None})
+        # go through rows
+        for index, row in reader.iterrows():
+            count += 1
+            print("...{0}%...".format(int(100 * count / file_length)))
+            staggered_item_code = row['ArticleCode']
+            base_item_code = row['BaseArticleCode']
+            min_qty = row['Quantity']
+            matching_item_prices =frappe.get_all("Item Price", {'item_code': staggered_item_code}, fields=['name'])
+            print("{0} with {1} records...".format(staggered_item_code, len(matching_item_prices)))
+            for item_price in matching_item_prices:
+                item_price_doc = frappe.get_doc("Item Price", item_price['name'])
+                item_price_doc.item_code = base_item_code
+                item_price_doc.min_qty = min_qty
+                item_price_doc.save()
+        frappe.db.commit()
+    return
