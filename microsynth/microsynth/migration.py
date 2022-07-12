@@ -575,12 +575,15 @@ def create_update_customer_price_list(pricelist_code, currency,
         pl = frappe.get_doc({
             'doctype': "Price List",
             'price_list_name': pl_long_name,
-            'selling': 1
+            'selling': 1,
+            'currency': currency
         })
         pl.insert()
     else:
         # load existing price list
         pl = frappe.get_doc("Price List", pl_long_name)
+        pl.currency = currency
+        pl.save()
     # update values
     pl.reference_price_list = PRICE_LIST_NAMES[currency]
     pl.general_discount = general_discount
@@ -612,6 +615,7 @@ def create_update_customer_price_list(pricelist_code, currency,
                 price_doc = frappe.get_doc("Item Price", p['name'])
                 price_doc.discount = discount
                 price_doc.price_list_rate = price_list_rate
+                price_doc.currency = currency
                 price_doc.save()
                 print("updated customer item price {0}".price_doc.name)
         else:
@@ -623,7 +627,8 @@ def create_update_customer_price_list(pricelist_code, currency,
                 'price_list': pl_long_name,
                 'valid_from': ref_price['valid_from'],
                 'discount': discount,
-                'price_list_rate': price_list_rate
+                'price_list_rate': price_list_rate,
+                'currency': currency
             })
             price_doc.insert()
             print("created customer item price {0}".format(price_doc.name))
