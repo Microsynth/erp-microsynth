@@ -710,7 +710,7 @@ def move_staggered_item_price(filename):
             staggered_item_code = row['ArticleCode']
             base_item_code = row['BaseArticleCode']
             min_qty = row['Quantity']
-            matching_item_prices =frappe.get_all("Item Price", {'item_code': staggered_item_code}, fields=['name'])
+            matching_item_prices = frappe.get_all("Item Price", filters={'item_code': staggered_item_code}, fields=['name'])
             print("{0} with {1} records...".format(staggered_item_code, len(matching_item_prices)))
             for item_price in matching_item_prices:
                 item_price_doc = frappe.get_doc("Item Price", item_price['name'])
