@@ -617,7 +617,7 @@ def create_update_customer_price_list(pricelist_code, currency,
                 price_doc.price_list_rate = price_list_rate
                 price_doc.currency = currency
                 price_doc.save()
-                print("updated customer item price {0}".price_doc.name)
+                print("updated customer item price {0}".format(price_doc.name))
         else:
             # create customer price record
             price_doc = frappe.get_doc({
