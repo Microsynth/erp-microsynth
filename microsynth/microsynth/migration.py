@@ -575,12 +575,15 @@ def create_update_customer_price_list(pricelist_code, currency,
         pl = frappe.get_doc({
             'doctype': "Price List",
             'price_list_name': pl_long_name,
-            'selling': 1
+            'selling': 1,
+            'currency': currency
         })
         pl.insert()
     else:
         # load existing price list
         pl = frappe.get_doc("Price List", pl_long_name)
+        pl.currency = currency
+        pl.save()
     # update values
     pl.reference_price_list = PRICE_LIST_NAMES[currency]
     pl.general_discount = general_discount
@@ -612,8 +615,9 @@ def create_update_customer_price_list(pricelist_code, currency,
                 price_doc = frappe.get_doc("Item Price", p['name'])
                 price_doc.discount = discount
                 price_doc.price_list_rate = price_list_rate
+                price_doc.currency = currency
                 price_doc.save()
-                print("updated customer item price {0}".price_doc.name)
+                print("updated customer item price {0}".format(price_doc.name))
         else:
             # create customer price record
             price_doc = frappe.get_doc({
@@ -623,7 +627,8 @@ def create_update_customer_price_list(pricelist_code, currency,
                 'price_list': pl_long_name,
                 'valid_from': ref_price['valid_from'],
                 'discount': discount,
-                'price_list_rate': price_list_rate
+                'price_list_rate': price_list_rate,
+                'currency': currency
             })
             price_doc.insert()
             print("created customer item price {0}".format(price_doc.name))
@@ -681,4 +686,36 @@ def populate_price_lists():
         print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
         populate_from_reference(price_list=p['name'])
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
+    return
+
+"""
+Move item price from staggered item to base item
+
+Run from bench like
+ $ bench execute microsynth.microsynth.migration.move_staggered_item_price --kwargs "{'filename': '/home/libracore/staggered_prices.tab'}"
+"""
+def move_staggered_item_price(filename):
+    with open(filename) as csvfile:
+        # create reader
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
+        print("Reading file...")
+        count = 0
+        file_length = len(reader.index)
+        # replace NaN with None
+        reader = reader.replace({np.nan: None})
+        # go through rows
+        for index, row in reader.iterrows():
+            count += 1
+            print("...{0}%...".format(int(100 * count / file_length)))
+            staggered_item_code = row['ArticleCode']
+            base_item_code = row['BaseArticleCode']
+            min_qty = row['Quantity']
+            matching_item_prices = frappe.get_all("Item Price", filters={'item_code': staggered_item_code}, fields=['name'])
+            print("{0} with {1} records...".format(staggered_item_code, len(matching_item_prices)))
+            for item_price in matching_item_prices:
+                item_price_doc = frappe.get_doc("Item Price", item_price['name'])
+                item_price_doc.item_code = base_item_code
+                item_price_doc.min_qty = min_qty
+                item_price_doc.save()
+        frappe.db.commit()
     return

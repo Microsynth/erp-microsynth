@@ -109,7 +109,7 @@ def get_reference_price_list(price_list):
     return frappe.get_value("Price List", price_list, "reference_price_list")
 
 def get_rate(item_code, price_list, qty=1):
-    return frappe.db.sql("""
+    data = frappe.db.sql("""
         SELECT
             IFNULL(`tP`.`price_list_rate`, 0) AS `rate`
          FROM `tabItem Price` AS `tP`
@@ -120,7 +120,11 @@ def get_rate(item_code, price_list, qty=1):
            AND `tP`.`min_qty` <= {qty}
          ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
          LIMIT 1;
-        """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)[0]['rate']
+        """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)
+    if len(data) > 0:
+        return data[0]['rate']
+    else:
+        return 0
 
 """
 This will fill up the missing rates from the reference
