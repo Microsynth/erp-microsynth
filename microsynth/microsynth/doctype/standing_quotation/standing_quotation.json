@@ -135,7 +135,7 @@
    "options": "Standing Quotation Group"
   }
  ],
- "modified": "2022-06-24 09:12:46.617066",
+ "modified": "2022-07-20 08:21:46.617066",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",
@@ -150,6 +150,30 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
    "share": 1,
    "write": 1
   }
