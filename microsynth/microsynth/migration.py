@@ -251,6 +251,8 @@ def update_customer(customer_data):
         address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
         address.address_line1 = customer_data['address_line1']
+        if 'address_line2' in customer_data:
+            address.address_line2 = customer_data['address_line2']
         address.pincode = customer_data['pincode']
         address.city = customer_data['city']
         if frappe.db.exists("Country", customer_data['country']):
