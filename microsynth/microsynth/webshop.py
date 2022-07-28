@@ -362,6 +362,22 @@ def place_order(key, content, client="webshop"):
         return {'success': False, 'message': 'Authentication failed', 'reference': None}
         
 """
+Returns all available countries
+"""
+@frappe.whitelist(allow_guest=True)
+def get_countries(key, client="webshop"):
+    # check access
+    if check_key(key):
+        countries = frappe.db.sql(
+            """SELECT `country_name`, `code`, `export_code`, `default_currency`, `has_night_service`
+               FROM `tabCountry`
+               WHERE `disabled` = 0;""", as_dict=True)
+               
+        return {'success': True, 'message': None, 'countries': countries}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
+        
+"""
 Inform webshop about customer master change
 """
 def notify_customer_change(customer):
