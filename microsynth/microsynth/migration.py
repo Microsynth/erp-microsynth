@@ -230,11 +230,22 @@ def update_customer(customer_data):
                 customer.invoicing_method = "Email"
         else:
             customer.invoicing_method = "Email"
+        if 'electronic_invoice' in customer_data:
+            if cint(customer_data['invoicing_method']) == 1: 
+                customer.invoicing_method = "Email"
+            else:
+                customer.invoicing_method = "Post"
         if 'sales_manager' in customer_data:
             users = frappe.db.sql("""SELECT `name` FROM `tabUser` WHERE `username` LIKE "{0}";""".format(customer_data['sales_manager']), as_dict=True)
             if len(users) > 0:
                 customer.account_manager = users[0]['name']
-                
+        if 'invoice_email' in customer_data:
+            customer.invoice_email = customer_data['invoice_email']
+        if 'default_company' in customer_data:
+            companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
+            if len(companies) > 0:
+                customer.default_company = companies[0]['name']
+            
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
