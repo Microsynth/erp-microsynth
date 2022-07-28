@@ -306,18 +306,18 @@ def update_customer(customer_data):
             contact.institute = customer_data['institute']
             contact.department = customer_data['department']
             contact.email_ids = []
-            if customer_data['email']:
+            if 'email' in customer_data and customer_data['email']:
                 contact.append("email_ids", {
                     'email_id': customer_data['email'],
                     'is_primary': 1
                 })
-            if customer_data['email_cc']:
+            if 'email_cc' in customer_data and customer_data['email_cc']:
                 contact.append("email_ids", {
                     'email_id': customer_data['email_cc'],
                     'is_primary': 0
                 })
             contact.phone_nos = []
-            if customer_data['phone_number']:
+            if 'phone_number' in customer_data and customer_data['phone_number']:
                 contact.append("phone_nos", {
                     'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
                     'is_primary_phone': 1
@@ -328,8 +328,10 @@ def update_customer(customer_data):
                     'link_doctype': "Customer",
                     'link_name': str(int(customer_data['customer_id']))
                 })
-            contact.institute_key = customer_data['institute_key']
-            contact.group_leader = customer_data['group_leader']
+            if 'institute_key' in customer_data:
+                contact.institute_key = customer_data['institute_key']
+            if 'group_leader' in customer_data:
+                contact.group_leader = customer_data['group_leader']
             contact.address = address.name
             if 'salutation' in customer_data and customer_data['salutation']:
                 if not frappe.db.exists("Salutation", customer_data['salutation']):
@@ -338,24 +340,31 @@ def update_customer(customer_data):
                         'salutation': customer_data['salutation']
                     }).insert()
                 contact.salutation = customer_data['salutation']
-            contact.designation = customer_data['title']
-            if customer_data['receive_updates_per_email'] == "Mailing":
+            if 'title' in customer_data:
+                contact.designation = customer_data['title']
+            if 'receive_updates_per_email' in customer_data and customer_data['receive_updates_per_email'] == "Mailing":
                 contact.unsubscribed = 0
             else:
                 contact.unsubscribed = 1
-            contact.room = customer_data['room']
-            contact.punchout_shop = customer_data['punchout_shop_id']
-            contact.punchout_identifier = customer_data['punchout_identifier']
-            if customer_data['newsletter_registration_state'] == "registered":
-                contact.receive_newsletter = "registered"
-            elif customer_data['newsletter_registration_state'] == "unregistered":
-                contact.receive_newsletter = "unregistered"
-            elif customer_data['newsletter_registration_state'] == "pending":
-                contact.receive_newsletter = "pending"
-            elif customer_data['newsletter_registration_state'] == "bounced":
-                contact.receive_newsletter = "bounced"
-            else:
-                contact.receive_newsletter = ""
+            if 'room' in customer_data:
+                contact.room = customer_data['room']
+            if 'punchout_shop_id' in customer_data:
+                contact.punchout_buyer = customer_data['punchout_shop_id']
+            if 'punchout_buyer' in customer_data:
+                contact.punchout_buyer = customer_data['punchout_buyer']
+            if 'punchout_identifier' in customer_data:
+                contact.punchout_identifier = customer_data['punchout_identifier']
+            if 'newsletter_registration_state' in customer_data:
+                if customer_data['newsletter_registration_state'] == "registered":
+                    contact.receive_newsletter = "registered"
+                elif customer_data['newsletter_registration_state'] == "unregistered":
+                    contact.receive_newsletter = "unregistered"
+                elif customer_data['newsletter_registration_state'] == "pending":
+                    contact.receive_newsletter = "pending"
+                elif customer_data['newsletter_registration_state'] == "bounced":
+                    contact.receive_newsletter = "bounced"
+                else:
+                    contact.receive_newsletter = ""
             if 'newsletter_registration_date' in customer_data:
                 try:
                     contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
