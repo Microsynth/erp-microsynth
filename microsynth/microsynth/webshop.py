@@ -375,7 +375,77 @@ def get_countries(key, client="webshop"):
                
         return {'success': True, 'message': None, 'countries': countries}
     else:
-        return {'success': False, 'message': 'Authentication failed', 'quotation': None}
+        return {'success': False, 'message': 'Authentication failed', 'countries': []}
+
+"""
+Update newsletter state
+"""
+@frappe.whitelist(allow_guest=True)
+def update_newsletter_state(key, person_id, newsletter_state, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Contact", person_id):
+            contact = frappe.get_doc("Contact", person_id)
+            contact.receive_newsletter = newsletter_state
+            try:
+                contact.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Update punchout details
+"""
+@frappe.whitelist(allow_guest=True)
+def update_punchout_details(key, person_id, punchout_buyer, punchout_identifier, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Contact", person_id):
+            contact = frappe.get_doc("Contact", person_id)
+            # fetch customer
+            customer_id = None
+            for l in contact.links:
+                if l.link_doctype == "Customer":
+                    customer_id = l.link_name
+            if not customer_id:
+                return {'success': False, 'message': "No customer linked"}
+            customer = frappe.get_doc("Customer", customer_id)
+            customer.punchout_buyer = punchout_buyer
+            customer.punchout_identifier = punchout_identifier
+            try:
+                customer.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Update address GPS data
+"""
+@frappe.whitelist(allow_guest=True)
+def update_address_gps(key, person_id, gps_lat, gps_long, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Address", person_id):
+            address = frappe.get_doc("Address", person_id)
+            address.geo_lat = gps_lat
+            address.gps_long = gps_long
+            try:
+                address.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
         
 """
 Inform webshop about customer master change
