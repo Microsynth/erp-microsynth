@@ -58,11 +58,14 @@ def get_user_details(key, person_id, client="webshop"):
                     `tabAddress`.`name`,
                     `tabAddress`.`address_type`,
                     `tabAddress`.`address_line1`,
+                    `tabAddress`.`address_line2`,
                     `tabAddress`.`pincode`,
                     `tabAddress`.`city`,
                     `tabAddress`.`country`,
                     `tabAddress`.`is_shipping_address`,
-                    `tabAddress`.`is_primary_address`
+                    `tabAddress`.`is_primary_address`,
+                    `tabAddress`.`geo_lat`,
+                    `tabAddress`.`geo_long`
                 FROM `tabDynamic Link`
                 LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
                 WHERE `tabDynamic Link`.`parenttype` = "Address"
@@ -435,8 +438,8 @@ def update_address_gps(key, person_id, gps_lat, gps_long, client="webshop"):
     if check_key(key):
         if frappe.db.exists("Address", person_id):
             address = frappe.get_doc("Address", person_id)
-            address.geo_lat = gps_lat
-            address.gps_long = gps_long
+            address.geo_lat = float(gps_lat)
+            address.geo_long = float(gps_long)
             try:
                 address.save(ignore_permissions=True)
                 return {'success': True, 'message': None}
