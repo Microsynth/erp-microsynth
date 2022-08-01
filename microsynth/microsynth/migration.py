@@ -292,8 +292,13 @@ def update_customer(customer_data):
                 })
             contact.phone_nos = []
             if 'phone_number' in customer_data and customer_data['phone_number']:
+                if 'phone_country' in customer_data:
+                    number = "{0} {1}".format(customer_data['phone_country'] or "", 
+                        customer_data['phone_number'])
+                else:
+                    number = "{0}".format(customer_data['phone_number'])
                 contact.append("phone_nos", {
-                    'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
+                    'phone': number,
                     'is_primary_phone': 1
                 })
             contact.links = []
