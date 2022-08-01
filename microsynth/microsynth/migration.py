@@ -422,6 +422,9 @@ def update_address(customer_data, is_deleted=False):
     else:
         address.is_shipping_address = 1
         address.address_type = "Shipping"
+    if 'customer_address_id' in customer_data:
+        address.customer_address_id = custoemr_data['customer_address_id']
+        
     # extend address bindings here
     
     try:

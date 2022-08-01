@@ -7,7 +7,7 @@
 
 import frappe
 import json
-from microsynth.microsynth.migration import update_customer
+from microsynth.microsynth.migration import update_customer, update_address
 from microsynth.microsynth.utils import create_oligo
 from datetime import date, timedelta
 
@@ -34,6 +34,22 @@ def create_update_customer(key, customer_data, client="webshop"):
     else:
         return {'success': False, 'message': 'Authentication failed'}
 
+"""
+This function will create or update an address
+"""
+@frappe.whitelist(allow_guest=True)
+def create_update_address(key, address, client="webshop"):
+    if check_key(key):
+        if type(address) == str:
+            address = json.loads(address)
+        error = update_address(address)
+        if not error:
+            return {'success': True, 'message': "OK"}
+        else: 
+            return {'success': False, 'message': error}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+        
 """
 From a user (AspNetUser), get customer data 
 """
