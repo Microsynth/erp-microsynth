@@ -177,8 +177,8 @@ def update_customer(customer_data):
             print(error)
             return
         # check mandatory fields
-        if not customer_data['customer_name'] or not customer_data['address_line1']:
-            error = "Mandatory field customer_name or address_line1 missing, skipping ({0})".format(customer_data)
+        if not customer_data['customer_name']: # or not customer_data['address_line1']:
+            error = "Mandatory field customer_name missing, skipping ({0})".format(customer_data)
             print(error)
             return
         # check if the customer exists
@@ -250,53 +250,14 @@ def update_customer(customer_data):
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
         
-        # check if address exists (force insert onto target id)
-        if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
-            print("Creating address {0}...".format(str(int(customer_data['person_id']))))
-            frappe.db.sql("""INSERT INTO `tabAddress` 
-                            (`name`, `address_line1`) 
-                            VALUES ("{0}", "{1}");""".format(
-                            str(int(customer_data['person_id'])), customer_data['address_line1']))
+        # update address
+        update_address(customer_data, is_deleted=is_deleted)     # base address
+        if 'addresses' in customer_data:
+            # multiple addresses:
+            for adr in customer_data['addresses']:
+                update_address(adr, is_deleted=is_deleted)
+                
         # update contact
-        print("Updating address {0}...".format(str(int(customer_data['person_id']))))
-        address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
-        address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
-        address.address_line1 = customer_data['address_line1']
-        if 'address_line2' in customer_data:
-            address.address_line2 = customer_data['address_line2']
-        address.pincode = customer_data['pincode']
-        address.city = customer_data['city']
-        if frappe.db.exists("Country", customer_data['country']):
-            address.country = customer_data['country']
-        else:
-            # check if this is an ISO code match
-            countries = frappe.get_all("Country", filters={'code': (customer_data['country'] or "NA").lower()}, fields=['name'])
-            if countries and len(countries) > 0:
-                address.country = countries[0]['name']
-            else: 
-                address.country = "Schweiz"
-                print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
-        address.links = []
-        if not is_deleted:
-            address.append("links", {
-                'link_doctype': "Customer",
-                'link_name': str(int(customer_data['customer_id']))
-            })
-        # get type of address
-        if adr_type == "INV":
-            address.is_primary_address = 1
-            address.email_id = customer_data['email']        # invoice address: pull email also into address record
-            address.address_type = "Billing"
-        else:
-            address.is_shipping_address = 1
-            address.address_type = "Shipping"
-        # extend address bindings here
-        
-        try:
-            address.save(ignore_permissions=True)
-        except Exception as err:
-            print("Failed to save address: {0}".format(err))
-        
         
         # check mandatory fields for contact
         if not customer_data['first_name']:
@@ -403,6 +364,71 @@ def update_customer(customer_data):
     
     return error
 
+"""
+Processes data to update an address record
+"""
+def update_address(customer_data, is_deleted=False):
+    if not 'person_id' in customer_data:
+        return
+        
+    print("Updating address {0}...".format(str(int(customer_data['person_id']))))
+    # check if address exists (force insert onto target id)
+    if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
+        print("Creating address {0}...".format(str(int(customer_data['person_id']))))
+        frappe.db.sql("""INSERT INTO `tabAddress` 
+                        (`name`, `address_line1`) 
+                        VALUES ("{0}", "{1}");""".format(
+                        str(int(customer_data['person_id'])), 
+                        customer_data['address_line1'] if 'address_lin1' in customer_data else "-"))
+    
+    # update record
+    if 'adr_type' in customer_data:
+        adr_type = customer_data['adr_type']
+    else:
+        adr_type = None
+    address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
+    if 'customer_name' in customer_Data and 'address_line1' in customer_data:
+        address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
+    if 'address_line1' in customer_data:
+        address.address_line1 = customer_data['address_line1']
+    if 'address_line2' in customer_data:
+        address.address_line2 = customer_data['address_line2']
+    if 'pincode' in customer_data:
+        address.pincode = customer_data['pincode']
+    if 'city' in customer_data:
+        address.city = customer_data['city']
+    if 'country' in customer_data:
+        if frappe.db.exists("Country", customer_data['country']):
+            address.country = customer_data['country']
+        else:
+            # check if this is an ISO code match
+            countries = frappe.get_all("Country", filters={'code': (customer_data['country'] or "NA").lower()}, fields=['name'])
+            if countries and len(countries) > 0:
+                address.country = countries[0]['name']
+            else: 
+                address.country = "Schweiz"
+                print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
+    address.links = []
+    if not is_deleted:
+        address.append("links", {
+            'link_doctype': "Customer",
+            'link_name': str(int(customer_data['customer_id']))
+        })
+    # get type of address
+    if adr_type == "INV":
+        address.is_primary_address = 1
+        address.email_id = customer_data['email']        # invoice address: pull email also into address record
+        address.address_type = "Billing"
+    else:
+        address.is_shipping_address = 1
+        address.address_type = "Shipping"
+    # extend address bindings here
+    
+    try:
+        address.save(ignore_permissions=True)
+    except Exception as err:
+        print("Failed to save address: {0}".format(err))
+    return
 
 """
 This function imports/updates the item price data from a CSV file
