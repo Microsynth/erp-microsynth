@@ -231,7 +231,7 @@ def update_customer(customer_data):
         else:
             customer.invoicing_method = "Email"
         if 'electronic_invoice' in customer_data:
-            if cint(customer_data['invoicing_method']) == 1: 
+            if cint(customer_data['electronic_invoice']) == 1: 
                 customer.invoicing_method = "Email"
             else:
                 customer.invoicing_method = "Post"
