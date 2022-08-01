@@ -370,6 +370,8 @@ Processes data to update an address record
 def update_address(customer_data, is_deleted=False):
     if not 'person_id' in customer_data:
         return
+    if not 'person_id' in customer_data:
+        return
         
     print("Updating address {0}...".format(str(int(customer_data['person_id']))))
     # check if address exists (force insert onto target id)
@@ -387,7 +389,7 @@ def update_address(customer_data, is_deleted=False):
     else:
         adr_type = None
     address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
-    if 'customer_name' in customer_Data and 'address_line1' in customer_data:
+    if 'customer_name' in customer_data and 'address_line1' in customer_data:
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
     if 'address_line1' in customer_data:
         address.address_line1 = customer_data['address_line1']
@@ -408,12 +410,13 @@ def update_address(customer_data, is_deleted=False):
             else: 
                 address.country = "Schweiz"
                 print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
-    address.links = []
-    if not is_deleted:
-        address.append("links", {
-            'link_doctype': "Customer",
-            'link_name': str(int(customer_data['customer_id']))
-        })
+    if 'customer_id' in customer_data:
+        address.links = []
+        if not is_deleted:
+            address.append("links", {
+                'link_doctype': "Customer",
+                'link_name': str(int(customer_data['customer_id']))
+            })
     # get type of address
     if adr_type == "INV":
         address.is_primary_address = 1
