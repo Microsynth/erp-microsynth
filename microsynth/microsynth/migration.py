@@ -217,6 +217,8 @@ def update_customer(customer_data):
         
         if 'vat_nr' in customer_data:
             customer.tax_id = customer_data['vat_nr']
+        if 'tax_id' in customer_data:
+            customer.tax_id = customer_data['tax_id']
         if 'siret' in customer_data:
             customer.siret = customer_data['siret']
         if 'currency' in customer_data:
@@ -255,7 +257,7 @@ def update_customer(customer_data):
         if 'addresses' in customer_data:
             # multiple addresses:
             for adr in customer_data['addresses']:
-                update_address(adr, is_deleted=is_deleted)
+                update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
                 
         # update contact
         
@@ -373,10 +375,11 @@ def update_customer(customer_data):
 """
 Processes data to update an address record
 """
-def update_address(customer_data, is_deleted=False):
+def update_address(customer_data, is_deleted=False, customer_id=None):
+    frappe.log_error(customer_data)
     if not 'person_id' in customer_data:
         return None
-    if not 'person_id' in customer_data:
+    if not 'address_line1' in customer_data:
         return None
         
     print("Updating address {0}...".format(str(int(customer_data['person_id']))))
@@ -416,12 +419,12 @@ def update_address(customer_data, is_deleted=False):
             else: 
                 address.country = "Schweiz"
                 print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
-    if 'customer_id' in customer_data:
+    if customer_id or 'customer_id' in customer_data:
         address.links = []
         if not is_deleted:
             address.append("links", {
                 'link_doctype': "Customer",
-                'link_name': str(int(customer_data['customer_id']))
+                'link_name': str(int(customer_id or customer_data['customer_id']))
             })
     # get type of address
     if adr_type == "INV":
@@ -435,12 +438,13 @@ def update_address(customer_data, is_deleted=False):
         address.customer_address_id = custoemr_data['customer_address_id']
         
     # extend address bindings here
-    
+    frappe.log_error("saving")
     try:
         address.save(ignore_permissions=True)
         return address.name
     except Exception as err:
         print("Failed to save address: {0}".format(err))
+        frappe.log_error("Failed to save address: {0}".format(err))
         return None
 
 """
