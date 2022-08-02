@@ -251,7 +251,7 @@ def update_customer(customer_data):
         customer.save(ignore_permissions=True)       
         
         # update address
-        update_address(customer_data, is_deleted=is_deleted)     # base address
+        address_name = update_address(customer_data, is_deleted=is_deleted)     # base address
         if 'addresses' in customer_data:
             # multiple addresses:
             for adr in customer_data['addresses']:
@@ -311,7 +311,8 @@ def update_customer(customer_data):
                 contact.institute_key = customer_data['institute_key']
             if 'group_leader' in customer_data:
                 contact.group_leader = customer_data['group_leader']
-            contact.address = address.name
+            if address_name:
+                contact.address = address_name
             if 'salutation' in customer_data and customer_data['salutation']:
                 if not frappe.db.exists("Salutation", customer_data['salutation']):
                     frappe.get_doc({
@@ -374,9 +375,9 @@ Processes data to update an address record
 """
 def update_address(customer_data, is_deleted=False):
     if not 'person_id' in customer_data:
-        return
+        return None
     if not 'person_id' in customer_data:
-        return
+        return None
         
     print("Updating address {0}...".format(str(int(customer_data['person_id']))))
     # check if address exists (force insert onto target id)
@@ -437,9 +438,10 @@ def update_address(customer_data, is_deleted=False):
     
     try:
         address.save(ignore_permissions=True)
+        return address.name
     except Exception as err:
         print("Failed to save address: {0}".format(err))
-    return
+        return None
 
 """
 This function imports/updates the item price data from a CSV file
