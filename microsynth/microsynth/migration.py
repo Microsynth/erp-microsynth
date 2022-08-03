@@ -172,7 +172,11 @@ def update_customer(customer_data):
             update_customer(c)
     else:
         # if person_id and/or customer_id are missing, skip
-        if not customer_data['person_id'] or not customer_data['customer_id']:
+        if not customer_data['customer_id']:
+            error = "No ID record, skipping ({0})".format(customer_data)
+            print(error)
+            return
+        if not 'addresses' in customer_data and not 'person_id' in customer_data:
             error = "No ID record, skipping ({0})".format(customer_data)
             print(error)
             return

@@ -81,7 +81,8 @@ def get_user_details(key, person_id, client="webshop"):
                     `tabAddress`.`is_shipping_address`,
                     `tabAddress`.`is_primary_address`,
                     `tabAddress`.`geo_lat`,
-                    `tabAddress`.`geo_long`
+                    `tabAddress`.`geo_long`,
+                    `tabAddress`.`customer_address_id`
                 FROM `tabDynamic Link`
                 LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
                 WHERE `tabDynamic Link`.`parenttype` = "Address"
