@@ -112,17 +112,27 @@ def address_exists(key, address, client="webshop"):
     if check_key(key):
         if type(address) == str:
             address = json.loads(address)
-        addresses = frappe.get_all("Address", 
-            filters={
-                'address_line1': address['address_line1'] if 'address_line1' in address else None,
-                'pincode': address['pincode'] if 'pincode' in address else None,
-                'city': address['city'] if 'city' in address else None
-            },
-            fields=['name']
-        )
+        sql_query = """SELECT 
+                `tabAddress`.`name` AS `person_id`,
+                `tabDynamic Link`.`link_name` AS `customer_id`
+            FROM `tabAddress`
+            LEFT JOIN `tabDynamic Link` ON 
+                `tabDynamic Link`.`parent` = `tabAddress`.`name`
+                AND `tabDynamic Link`.`parenttype` = "Address"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+            WHERE `address_line1` LIKE "{0}" """.format(
+                address['address_line1'] if 'address_line1' in address else "%")
+        if 'address_line2' in address:
+            sql_query += """ AND `address_line1` = "{0}" """.format(address['address_line2'])
+        if 'pincode' in address:
+            sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
+        if 'city' in address:
+            sql_query += """ AND `city` = "{0}" """.format(address['city'])
+        addresses = frappe.db.sql(sql_query, as_dict=True)
         
         if len(addresses) > 0:
-            return {'success': True, 'message': "OK", 'address': addresses[0]['name']}
+
+            return {'success': True, 'message': "OK", 'addresses': addresses}
         else: 
             return {'success': False, 'message': "Address not found"}
     else:
