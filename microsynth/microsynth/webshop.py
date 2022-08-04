@@ -7,9 +7,10 @@
 
 import frappe
 import json
-from microsynth.microsynth.migration import update_customer, update_address
+from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
 from microsynth.microsynth.utils import create_oligo
 from datetime import date, timedelta
+from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 
 """
 Ping is a simple interface test function
@@ -406,6 +407,47 @@ def get_countries(key, client="webshop"):
         return {'success': True, 'message': None, 'countries': countries}
     else:
         return {'success': False, 'message': 'Authentication failed', 'countries': []}
+
+"""
+Return all available shipping items for a customer or country
+"""
+@frappe.whitelist(allow_guest=True)
+def get_shipping_items(key, customer_id=None, country=None, client="webshop"):
+    # check access
+    if check_key(key):
+        if not customer_id and not country:
+            return {'success': False, 'message': 'Either customer_id or country is required', 'shipping_items': []}
+        if customer_id:
+            # find by customer id
+            shipping_items = frappe.db.sql(
+            """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+               FROM `tabShipping Item`
+               WHERE `parent` = "{0}" 
+                 AND `parenttype` = "Customer";""".format(str(customer_id)), as_dict=True)
+            if len(shipping_items) > 0:
+                return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
+            else:
+                # find country for fallback
+                primary_address = get_primary_customer_address(str(customer_id))
+                if primary_address:
+                    country = frappe.get_value("Address", primary_address.get('name'), "country")
+                else:
+                    return {'success': False, 'message': 'No data found', 'shipping_items': []}
+        
+        # find by country (this is also the fallback from the customer)
+        if not country:
+            country = frappe.defaults.get_global_default('country')
+        else:
+            country = robust_get_country(country)
+        shipping_items = frappe.db.sql(
+        """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+           FROM `tabShipping Item`
+           WHERE `parent` = "{0}" 
+             AND `parenttype` = "Country";""".format(country), as_dict=True)
+               
+        return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'shipping_items': []}
 
 """
 Update newsletter state

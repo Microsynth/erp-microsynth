@@ -413,16 +413,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
     if 'city' in customer_data:
         address.city = customer_data['city']
     if 'country' in customer_data:
-        if frappe.db.exists("Country", customer_data['country']):
-            address.country = customer_data['country']
-        else:
-            # check if this is an ISO code match
-            countries = frappe.get_all("Country", filters={'code': (customer_data['country'] or "NA").lower()}, fields=['name'])
-            if countries and len(countries) > 0:
-                address.country = countries[0]['name']
-            else: 
-                address.country = "Schweiz"
-                print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
+        address.country = robust_get_country(customer_data['country'])
     if customer_id or 'customer_id' in customer_data:
         address.links = []
         if not is_deleted:
@@ -451,6 +442,20 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         frappe.log_error("Failed to save address: {0}".format(err))
         return None
 
+"""
+Robust country find function: accepts country name or code
+"""
+def robust_get_country(country_name_or_code):
+    if frappe.db.exists("Country", country_name_or_code):
+        return country_name_or_code
+    else:
+        # check if this is an ISO code match
+        countries = frappe.get_all("Country", filters={'code': (country_name_or_code or "NA").lower()}, fields=['name'])
+        if countries and len(countries) > 0:
+            return countries[0]['name']
+        else:
+            return frappe.defaults.get_global_default('country')
+            
 """
 This function imports/updates the item price data from a CSV file
 
