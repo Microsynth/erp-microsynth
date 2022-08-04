@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2022-05-24 15:40:10.493503",
+ "modified": "2022-08-04 20:16:42.079241",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Pricing Configurator",
@@ -19,6 +19,9 @@
  "roles": [
   {
    "role": "Sales User"
+  },
+  {
+   "role": "Sales Manager"
   },
   {
    "role": "Sales Master Manager"
