@@ -18,7 +18,7 @@ def create_oligo(oligo):
         oligo_doc = frappe.get_doc({
             'doctype': 'Oligo',
             'oligo_name': oligo['name'],
-            'web_id': oligo['web_id']
+            'web_id': oligo['oligo_web_id']
         })
         oligo_doc.insert(ignore_permissions=True)
     # update record

@@ -127,11 +127,10 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Oligo Item",
-   "reqd": 1
+   "options": "Oligo Item"
   }
  ],
- "modified": "2022-07-12 22:18:04.178628",
+ "modified": "2022-08-08 21:52:42.508160",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",

@@ -344,6 +344,8 @@ def place_order(key, content, client="webshop"):
         # create oligos
         if 'oligos' in content:
             for o in content['oligos']:
+                if not 'oligo_web_id' in o:
+                    return {'success': False, 'message': "oligo_web_id missing: {0}".format(o), 'reference': None}
                 # create or update oligo
                 oligo_name = create_oligo(o)
                 so_doc.append('oligos', {
