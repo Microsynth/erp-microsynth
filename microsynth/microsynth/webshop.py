@@ -259,7 +259,13 @@ def get_item_prices(key, content, client="webshop"):
         # make sure items are a json object
         if type(content) == str:
             content = json.loads(content)
+        if not 'customer' in content:
+            return {'success': False, 'message': 'Customer parameter missing', 'quotation': None}
+        if not 'items' in content:
+            return {'success': False, 'message': 'Items missing', 'quotation': None}
         if frappe.db.exists("Customer", content['customer']):
+            if not 'currency' in content:
+                content['currency'] = frappe.get_value("Customer", content['customer'], "default_currency")
             # create virtual sales order to compute prices
             so = frappe.get_doc({
                 'doctype': "Sales Order", 
