@@ -288,7 +288,8 @@ def get_item_prices(key, content, client="webshop"):
                 item_prices.append({
                     'item_code': i.item_code,
                     'qty': i.qty,
-                    'rate': i.rate
+                    'rate': i.rate,
+                    'description': i.description
                 })
             # remove temporary record
             so.delete()
