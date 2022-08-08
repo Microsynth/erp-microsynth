@@ -525,3 +525,16 @@ Inform webshop about customer master change
 def notify_customer_change(customer):
     ## TODO
     return
+
+"""
+Return all companies
+"""
+@frappe.whitelist(allow_guest=True)
+def get_companies(key, client="webshop"):
+    # check access
+    if check_key(key):
+        companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
+               
+        return {'success': True, 'message': "OK", 'companies': companies}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'shipping_items': []}
