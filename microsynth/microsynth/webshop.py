@@ -107,7 +107,7 @@ def get_user_details(key, person_id, client="webshop"):
         return {'success': False, 'message': 'Authentication failed'}
 
 """
-Get customer data 
+Get customer data (addresses: only invoice addresses)
 """
 @frappe.whitelist(allow_guest=True)
 def get_customer_details(key, customer_id, client="webshop"):
@@ -138,9 +138,8 @@ def get_customer_details(key, customer_id, client="webshop"):
                 WHERE `tabDynamic Link`.`parenttype` = "Address"
                   AND `tabDynamic Link`.`link_doctype` = "Customer"
                   AND `tabDynamic Link`.`link_name` = "{customer_id}"
-                  AND (`tabAddress`.`is_primary_address` = 1 
-                       OR `tabAddress`.`name` = "{person_id}")
-                ;""".format(customer_id=customer_id, person_id=person_id), as_dict=True)
+                  AND `tabAddress`.`is_primary_address` = 1 
+                ;""".format(customer_id=customer_id), as_dict=True)
             
         # return structure
         return {
