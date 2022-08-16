@@ -107,6 +107,54 @@ def get_user_details(key, person_id, client="webshop"):
         return {'success': False, 'message': 'Authentication failed'}
 
 """
+Get customer data 
+"""
+@frappe.whitelist(allow_guest=True)
+def get_customer_details(key, customer_id, client="webshop"):
+    if check_key(key):
+        # get contact
+        contact = frappe.get_doc("Contact", person_id)
+        if not frappe.db.exists("Customer", customer_id):
+            return {'success': False, 'message': "Customer not found"}
+        # fetch customer
+        customer = frappe.get_doc("Customer", customer_id)
+        # fetch addresses
+        addresses = frappe.db.sql(
+            """ SELECT 
+                    `tabAddress`.`name`,
+                    `tabAddress`.`address_type`,
+                    `tabAddress`.`address_line1`,
+                    `tabAddress`.`address_line2`,
+                    `tabAddress`.`pincode`,
+                    `tabAddress`.`city`,
+                    `tabAddress`.`country`,
+                    `tabAddress`.`is_shipping_address`,
+                    `tabAddress`.`is_primary_address`,
+                    `tabAddress`.`geo_lat`,
+                    `tabAddress`.`geo_long`,
+                    `tabAddress`.`customer_address_id`
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                  AND `tabDynamic Link`.`link_doctype` = "Customer"
+                  AND `tabDynamic Link`.`link_name` = "{customer_id}"
+                  AND (`tabAddress`.`is_primary_address` = 1 
+                       OR `tabAddress`.`name` = "{person_id}")
+                ;""".format(customer_id=customer_id, person_id=person_id), as_dict=True)
+            
+        # return structure
+        return {
+            'success': True, 
+            'message': "OK", 
+            'details': {
+                'customer': customer,
+                'addresses': addresses
+            }
+        }
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
 Checks if an address record exists
 """
 @frappe.whitelist(allow_guest=True)
