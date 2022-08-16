@@ -793,3 +793,39 @@ def move_staggered_item_price(filename):
                 item_price_doc.save()
         frappe.db.commit()
     return
+
+""" 
+Sets the "webshop_address_readonly" from the contacts
+This is used that users cannot change a jointly used customer/address
+
+Run from
+ $ bench execute microsynth.microsynth.migration.set_webshop_address_readonly
+"""
+def set_webshop_address_readonly():
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
+    count = 0
+    for c in customers:
+        count += 1
+        # find number of linked contacts
+        linked_contacts = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+                AND `tabDynamic Link`.`link_name` = "{customer_id}"
+        """.format(customer_id=c['name']), as_dict=True)
+        if len(linked_contacts) > 2:
+            readonly = 1
+        else:
+            readonly = 0
+        if readonly != frappe.get_value("Customer", c['name'], "webshop_address_readonly"):
+            customer = frappe.get_doc("Customer", c['name'])
+            customer.webshop_address_readonly = readonly
+            try:
+                customer.save()
+                print("{1}%... Updated {0}".format(c['name'], int(100 * count / len(customers))))
+            except Exception as err:
+                print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+        else:
+            print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
+    return
