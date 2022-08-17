@@ -112,10 +112,6 @@ Get customer data (addresses: only invoice addresses)
 @frappe.whitelist(allow_guest=True)
 def get_customer_details(key, customer_id, client="webshop"):
     if check_key(key):
-        # get contact
-        contact = frappe.get_doc("Contact", person_id)
-        if not frappe.db.exists("Customer", customer_id):
-            return {'success': False, 'message': "Customer not found"}
         # fetch customer
         customer = frappe.get_doc("Customer", customer_id)
         # fetch addresses
