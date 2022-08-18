@@ -262,7 +262,9 @@ def update_customer(customer_data):
         if 'addresses' in customer_data:
             # multiple addresses:
             for adr in customer_data['addresses']:
-                update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
+                _address_name = update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
+            if not address_name:
+                address_name = _address_name
                 
         # update contact
         
@@ -370,7 +372,7 @@ def update_customer(customer_data):
                         contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
                     except:
                         print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
-            if 'contact_address' in customer_data and frappe.db.exist("Address", customer_data['contact_address']):
+            if 'contact_address' in customer_data and frappe.db.exists("Address", customer_data['contact_address']):
                 contact.address = customer_data['contact_address']
             # extend contact bindings here
             contact.save(ignore_permissions=True)
