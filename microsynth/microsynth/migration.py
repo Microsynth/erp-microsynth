@@ -181,7 +181,7 @@ def update_customer(customer_data):
             print(error)
             return
         # check mandatory fields
-        if not customer_data['customer_name']: # or not customer_data['address_line1']:
+        if not frappe.db.exists("Customer", customer_data['customer_id']) and not customer_data['customer_name']: # or not customer_data['address_line1']:
             error = "Mandatory field customer_name missing, skipping ({0})".format(customer_data)
             print(error)
             return
@@ -205,7 +205,8 @@ def update_customer(customer_data):
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
         print("Updating customer {0}...".format(customer.name))
-        customer.customer_name = customer_data['customer_name']
+        if 'customer_name' in customer_data:
+            customer.customer_name = customer_data['customer_name']
         if 'adr_type' in customer_data:
             adr_type = customer_data['adr_type']
         else:
@@ -369,6 +370,8 @@ def update_customer(customer_data):
                         contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
                     except:
                         print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
+            if 'contact_address' in customer_data and frappe.db.exist("Address", customer_data['contact_address']):
+                contact.address = customer_data['contact_address']
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
