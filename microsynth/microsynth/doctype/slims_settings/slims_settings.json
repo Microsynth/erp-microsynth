@@ -10,7 +10,11 @@
   "sec_credentials",
   "username",
   "col_credentials",
-  "password"
+  "password",
+  "sec_scheduler",
+  "enabled",
+  "col_scheduler",
+  "last_sync"
  ],
  "fields": [
   {
@@ -47,10 +51,31 @@
    "fieldname": "verify_ssl",
    "fieldtype": "Check",
    "label": "Verify SSL"
+  },
+  {
+   "fieldname": "sec_scheduler",
+   "fieldtype": "Section Break",
+   "label": "Scheduler"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "col_scheduler",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_sync",
+   "fieldtype": "Datetime",
+   "label": "Last sync",
+   "read_only": 1
   }
  ],
  "issingle": 1,
- "modified": "2022-08-23 08:05:04.946244",
+ "modified": "2022-08-23 14:56:23.246686",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "SLIMS Settings",
@@ -76,6 +101,5 @@
  ],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC",
- "track_changes": 1
+ "sort_order": "DESC"
 }

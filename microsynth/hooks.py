@@ -121,6 +121,11 @@ jenv = {
 # 		"microsynth.tasks.monthly"
 # 	]
 # }
+scheduler_events = {
+    "hourly": [
+        "microsynth.microsynth.slims.sync"
+    ]
+}
 
 # Testing
 # -------
