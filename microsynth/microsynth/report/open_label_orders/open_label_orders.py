@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 def execute(filters=None):
     columns = get_columns()
@@ -19,8 +20,9 @@ def get_columns():
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 200},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80}
     ]
-    
-def get_data(filters):
+
+@frappe.whitelist()
+def get_data(filters=None):
     open_label_orders = frappe.db.sql("""
         SELECT 
             `tabSales Order`.`name` AS `sales_order`,
@@ -36,8 +38,22 @@ def get_data(filters):
             `tabSales Order`.`product_type` = "Labels"
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
-            AND `tabSequencing Label`.`name` IS NULL;
+            AND `tabSequencing Label`.`name` IS NULL
+        ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     
     return open_label_orders
-            
+    
+@frappe.whitelist()
+def pick_labels(sales_order, from_barcode, to_barcode):
+    # create sequencing labels
+    # TODO
+    
+    # create delivery note
+    dn_content = make_delivery_note(sales_order)
+    dn = frappe.get_doc(dn_content)
+    dn.insert()
+    frappe.db.commit()
+    
+    # return print format
+    return dn.name
