@@ -160,7 +160,14 @@ def get_data():
                        "name": "Microsynth Webshop Settings",
                        "label": _("Microsynth Webshop Settings"),
                        "description": _("Microsynth Webshop Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "SLIMS Settings",
+                       "label": _("SLIMS Settings"),
+                       "description": _("SLIMS Settings")
                    }
+
             ]
         }
     ]
