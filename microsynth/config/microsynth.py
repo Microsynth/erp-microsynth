@@ -46,6 +46,25 @@ def get_data():
             ]
         },
         {
+            "label": _("Sequencing"),
+            "icon": "fa fa-tools",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Sequencing Label",
+                       "label": _("Sequencing Label"),
+                       "description": _("Sequencing Label")
+                   },
+                   {
+                        "type": "report",
+                        "name": "Open Label Orders",
+                        "label": _("Open Label Orders"),
+                        "doctype": "Sequencing Label",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
             "label": _("Pricing"),
             "icon": "fa fa-money",
             "items": [

@@ -56,8 +56,6 @@ def create_update_slims_customer(person_id):
         if r.link_doctype == "Customer":
             customer = frappe.get_doc("Customer", r.link_name)
             break
-    if not customer:
-        frappe.throw( _("No customer found for contact {0}.").format(person_id) )
     if not contact.address and not frappe.db.exists("Address", person_id):
         frappe.throw( _("No address found for contact {0}.").format(person_id) )
     address = frappe.get_doc("Address", contact.address or person_id)
@@ -74,7 +72,7 @@ def create_update_slims_customer(person_id):
         "cstm_cf_department": "{department}".format(department=contact.department or ""),
         "cstm_cf_houseRoom": "{room}".format(room=contact.room or ""),
         "cstm_cf_groupLeader": "{groupleader}".format(groupleader=contact.group_leader or ""),
-        "cstm_cf_universityCompany": "{customer_name}".format(customer_name=customer.customer_name or ""),
+        "cstm_cf_universityCompany": "{customer_name}".format(customer_name=customer.customer_name or "") if customer else "",
         "cstm_cf_street": "{street}".format(street=address.address_line1 or ""),
         "cstm_cf_zipCode": "{zipcode}".format(zipcode=address.pincode or ""),
         "cstm_cf_town": "{town}".format(town=address.city or ""),
@@ -82,7 +80,8 @@ def create_update_slims_customer(person_id):
         "cstm_cf_email": "{email}".format(email=contact.email_id or ""),
         #"cstm_cf_secondEmail": "mySecondAddress@mail.com",
         #"cstm_cf_phoneCountry": "0041",
-        "cstm_cf_phone": "{phone}".format(phone=contact.phone or "")
+        "cstm_cf_phone": "{phone}".format(phone=contact.phone or ""),
+        "cstm_active": (not customer.disabled) if customer else 0
     }
     # send customer record
     headers = {'content-type': 'application/json'}

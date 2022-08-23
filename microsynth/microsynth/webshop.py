@@ -379,6 +379,8 @@ def place_order(key, content, client="webshop"):
             'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
             'po_no': content['po_no'] if 'po_no' in content else None
         })
+        if 'product_type' in content:
+            so_doc.product_type = content['product_type']
         # quotation reference
         if 'quotation' in content:
             quotation = content['quotation']
