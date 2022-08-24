@@ -172,13 +172,17 @@ def update_customer(customer_data):
             update_customer(c)
     else:
         # if person_id and/or customer_id are missing, skip
-        if not customer_data['person_id'] or not customer_data['customer_id']:
+        if not customer_data['customer_id']:
+            error = "No ID record, skipping ({0})".format(customer_data)
+            print(error)
+            return
+        if not 'addresses' in customer_data and not 'person_id' in customer_data:
             error = "No ID record, skipping ({0})".format(customer_data)
             print(error)
             return
         # check mandatory fields
-        if not customer_data['customer_name'] or not customer_data['address_line1']:
-            error = "Mandatory field customer_name or address_line1 missing, skipping ({0})".format(customer_data)
+        if not frappe.db.exists("Customer", customer_data['customer_id']) and not customer_data['customer_name']: # or not customer_data['address_line1']:
+            error = "Mandatory field customer_name missing, skipping ({0})".format(customer_data)
             print(error)
             return
         # check if the customer exists
@@ -201,7 +205,8 @@ def update_customer(customer_data):
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
         print("Updating customer {0}...".format(customer.name))
-        customer.customer_name = customer_data['customer_name']
+        if 'customer_name' in customer_data:
+            customer.customer_name = customer_data['customer_name']
         if 'adr_type' in customer_data:
             adr_type = customer_data['adr_type']
         else:
@@ -217,6 +222,8 @@ def update_customer(customer_data):
         
         if 'vat_nr' in customer_data:
             customer.tax_id = customer_data['vat_nr']
+        if 'tax_id' in customer_data:
+            customer.tax_id = customer_data['tax_id']
         if 'siret' in customer_data:
             customer.siret = customer_data['siret']
         if 'currency' in customer_data:
@@ -230,60 +237,36 @@ def update_customer(customer_data):
                 customer.invoicing_method = "Email"
         else:
             customer.invoicing_method = "Email"
+        if 'electronic_invoice' in customer_data:
+            if cint(customer_data['electronic_invoice']) == 1: 
+                customer.invoicing_method = "Email"
+            else:
+                customer.invoicing_method = "Post"
         if 'sales_manager' in customer_data:
             users = frappe.db.sql("""SELECT `name` FROM `tabUser` WHERE `username` LIKE "{0}";""".format(customer_data['sales_manager']), as_dict=True)
             if len(users) > 0:
                 customer.account_manager = users[0]['name']
-                
+        if 'invoice_email' in customer_data:
+            customer.invoice_email = customer_data['invoice_email']
+        if 'default_company' in customer_data:
+            companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
+            if len(companies) > 0:
+                customer.default_company = companies[0]['name']
+            
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
         customer.save(ignore_permissions=True)       
         
-        # check if address exists (force insert onto target id)
-        if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
-            print("Creating address {0}...".format(str(int(customer_data['person_id']))))
-            frappe.db.sql("""INSERT INTO `tabAddress` 
-                            (`name`, `address_line1`) 
-                            VALUES ("{0}", "{1}");""".format(
-                            str(int(customer_data['person_id'])), customer_data['address_line1']))
+        # update address
+        address_name = update_address(customer_data, is_deleted=is_deleted)     # base address
+        if 'addresses' in customer_data:
+            # multiple addresses:
+            for adr in customer_data['addresses']:
+                _address_name = update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
+            if not address_name:
+                address_name = _address_name
+                
         # update contact
-        print("Updating address {0}...".format(str(int(customer_data['person_id']))))
-        address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
-        address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
-        address.address_line1 = customer_data['address_line1']
-        address.pincode = customer_data['pincode']
-        address.city = customer_data['city']
-        if frappe.db.exists("Country", customer_data['country']):
-            address.country = customer_data['country']
-        else:
-            # check if this is an ISO code match
-            countries = frappe.get_all("Country", filters={'code': (customer_data['country'] or "NA").lower()}, fields=['name'])
-            if countries and len(countries) > 0:
-                address.country = countries[0]['name']
-            else: 
-                address.country = "Schweiz"
-                print("Country fallback from {0} in {1}".format(customer_data['country'], customer_data['customer_id']))
-        address.links = []
-        if not is_deleted:
-            address.append("links", {
-                'link_doctype': "Customer",
-                'link_name': str(int(customer_data['customer_id']))
-            })
-        # get type of address
-        if adr_type == "INV":
-            address.is_primary_address = 1
-            address.email_id = customer_data['email']        # invoice address: pull email also into address record
-            address.address_type = "Billing"
-        else:
-            address.is_shipping_address = 1
-            address.address_type = "Shipping"
-        # extend address bindings here
-        
-        try:
-            address.save(ignore_permissions=True)
-        except Exception as err:
-            print("Failed to save address: {0}".format(err))
-        
         
         # check mandatory fields for contact
         if not customer_data['first_name']:
@@ -306,20 +289,25 @@ def update_customer(customer_data):
             contact.institute = customer_data['institute']
             contact.department = customer_data['department']
             contact.email_ids = []
-            if customer_data['email']:
+            if 'email' in customer_data and customer_data['email']:
                 contact.append("email_ids", {
                     'email_id': customer_data['email'],
                     'is_primary': 1
                 })
-            if customer_data['email_cc']:
+            if 'email_cc' in customer_data and customer_data['email_cc']:
                 contact.append("email_ids", {
                     'email_id': customer_data['email_cc'],
                     'is_primary': 0
                 })
             contact.phone_nos = []
-            if customer_data['phone_number']:
+            if 'phone_number' in customer_data and customer_data['phone_number']:
+                if 'phone_country' in customer_data:
+                    number = "{0} {1}".format(customer_data['phone_country'] or "", 
+                        customer_data['phone_number'])
+                else:
+                    number = "{0}".format(customer_data['phone_number'])
                 contact.append("phone_nos", {
-                    'phone': "{0} {1}".format(customer_data['phone_country'] or "", customer_data['phone_number']),
+                    'phone': number,
                     'is_primary_phone': 1
                 })
             contact.links = []
@@ -328,9 +316,12 @@ def update_customer(customer_data):
                     'link_doctype': "Customer",
                     'link_name': str(int(customer_data['customer_id']))
                 })
-            contact.institute_key = customer_data['institute_key']
-            contact.group_leader = customer_data['group_leader']
-            contact.address = address.name
+            if 'institute_key' in customer_data:
+                contact.institute_key = customer_data['institute_key']
+            if 'group_leader' in customer_data:
+                contact.group_leader = customer_data['group_leader']
+            if address_name:
+                contact.address = address_name
             if 'salutation' in customer_data and customer_data['salutation']:
                 if not frappe.db.exists("Salutation", customer_data['salutation']):
                     frappe.get_doc({
@@ -338,24 +329,31 @@ def update_customer(customer_data):
                         'salutation': customer_data['salutation']
                     }).insert()
                 contact.salutation = customer_data['salutation']
-            contact.designation = customer_data['title']
-            if customer_data['receive_updates_per_email'] == "Mailing":
+            if 'title' in customer_data:
+                contact.designation = customer_data['title']
+            if 'receive_updates_per_email' in customer_data and customer_data['receive_updates_per_email'] == "Mailing":
                 contact.unsubscribed = 0
             else:
                 contact.unsubscribed = 1
-            contact.room = customer_data['room']
-            contact.punchout_shop = customer_data['punchout_shop_id']
-            contact.punchout_identifier = customer_data['punchout_identifier']
-            if customer_data['newsletter_registration_state'] == "registered":
-                contact.receive_newsletter = "registered"
-            elif customer_data['newsletter_registration_state'] == "unregistered":
-                contact.receive_newsletter = "unregistered"
-            elif customer_data['newsletter_registration_state'] == "pending":
-                contact.receive_newsletter = "pending"
-            elif customer_data['newsletter_registration_state'] == "bounced":
-                contact.receive_newsletter = "bounced"
-            else:
-                contact.receive_newsletter = ""
+            if 'room' in customer_data:
+                contact.room = customer_data['room']
+            if 'punchout_shop_id' in customer_data:
+                contact.punchout_buyer = customer_data['punchout_shop_id']
+            if 'punchout_buyer' in customer_data:
+                contact.punchout_buyer = customer_data['punchout_buyer']
+            if 'punchout_identifier' in customer_data:
+                contact.punchout_identifier = customer_data['punchout_identifier']
+            if 'newsletter_registration_state' in customer_data:
+                if customer_data['newsletter_registration_state'] == "registered":
+                    contact.receive_newsletter = "registered"
+                elif customer_data['newsletter_registration_state'] == "unregistered":
+                    contact.receive_newsletter = "unregistered"
+                elif customer_data['newsletter_registration_state'] == "pending":
+                    contact.receive_newsletter = "pending"
+                elif customer_data['newsletter_registration_state'] == "bounced":
+                    contact.receive_newsletter = "bounced"
+                else:
+                    contact.receive_newsletter = ""
             if 'newsletter_registration_date' in customer_data:
                 try:
                     contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
@@ -374,6 +372,8 @@ def update_customer(customer_data):
                         contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
                     except:
                         print("failed to parse unsubscription date: {0}".format(customer_data['newsletter_unregistration_date']))
+            if 'contact_address' in customer_data and frappe.db.exists("Address", customer_data['contact_address']):
+                contact.address = customer_data['contact_address']
             # extend contact bindings here
             contact.save(ignore_permissions=True)
         
@@ -381,7 +381,86 @@ def update_customer(customer_data):
     
     return error
 
+"""
+Processes data to update an address record
+"""
+def update_address(customer_data, is_deleted=False, customer_id=None):
+    frappe.log_error(customer_data)
+    if not 'person_id' in customer_data:
+        return None
+    if not 'address_line1' in customer_data:
+        return None
+        
+    print("Updating address {0}...".format(str(int(customer_data['person_id']))))
+    # check if address exists (force insert onto target id)
+    if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
+        print("Creating address {0}...".format(str(int(customer_data['person_id']))))
+        frappe.db.sql("""INSERT INTO `tabAddress` 
+                        (`name`, `address_line1`) 
+                        VALUES ("{0}", "{1}");""".format(
+                        str(int(customer_data['person_id'])), 
+                        customer_data['address_line1'] if 'address_lin1' in customer_data else "-"))
+    
+    # update record
+    if 'adr_type' in customer_data:
+        adr_type = customer_data['adr_type']
+    else:
+        adr_type = None
+    address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
+    if 'customer_name' in customer_data and 'address_line1' in customer_data:
+        address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
+    if 'address_line1' in customer_data:
+        address.address_line1 = customer_data['address_line1']
+    if 'address_line2' in customer_data:
+        address.address_line2 = customer_data['address_line2']
+    if 'pincode' in customer_data:
+        address.pincode = customer_data['pincode']
+    if 'city' in customer_data:
+        address.city = customer_data['city']
+    if 'country' in customer_data:
+        address.country = robust_get_country(customer_data['country'])
+    if customer_id or 'customer_id' in customer_data:
+        address.links = []
+        if not is_deleted:
+            address.append("links", {
+                'link_doctype': "Customer",
+                'link_name': str(int(customer_id or customer_data['customer_id']))
+            })
+    # get type of address
+    if adr_type == "INV":
+        address.is_primary_address = 1
+        address.email_id = customer_data['email']        # invoice address: pull email also into address record
+        address.address_type = "Billing"
+    else:
+        address.is_shipping_address = 1
+        address.address_type = "Shipping"
+    if 'customer_address_id' in customer_data:
+        address.customer_address_id = customer_data['customer_address_id']
+        
+    # extend address bindings here
+    frappe.log_error("saving")
+    try:
+        address.save(ignore_permissions=True)
+        return address.name
+    except Exception as err:
+        print("Failed to save address: {0}".format(err))
+        frappe.log_error("Failed to save address: {0}".format(err))
+        return None
 
+"""
+Robust country find function: accepts country name or code
+"""
+def robust_get_country(country_name_or_code):
+    if frappe.db.exists("Country", country_name_or_code):
+        return country_name_or_code
+    else:
+        # check if this is an ISO code match
+        countries = frappe.get_all("Country", filters={'code': (country_name_or_code or "NA").lower()}, fields=['name'])
+        if countries and len(countries) > 0:
+            return countries[0]['name']
+        else:
+            return frappe.defaults.get_global_default('country')
+            
 """
 This function imports/updates the item price data from a CSV file
 
@@ -718,4 +797,40 @@ def move_staggered_item_price(filename):
                 item_price_doc.min_qty = min_qty
                 item_price_doc.save()
         frappe.db.commit()
+    return
+
+""" 
+Sets the "webshop_address_readonly" from the contacts
+This is used that users cannot change a jointly used customer/address
+
+Run from
+ $ bench execute microsynth.microsynth.migration.set_webshop_address_readonly
+"""
+def set_webshop_address_readonly():
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
+    count = 0
+    for c in customers:
+        count += 1
+        # find number of linked contacts
+        linked_contacts = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+                AND `tabDynamic Link`.`link_name` = "{customer_id}"
+        """.format(customer_id=c['name']), as_dict=True)
+        if len(linked_contacts) > 2:
+            readonly = 1
+        else:
+            readonly = 0
+        if readonly != frappe.get_value("Customer", c['name'], "webshop_address_readonly"):
+            customer = frappe.get_doc("Customer", c['name'])
+            customer.webshop_address_readonly = readonly
+            try:
+                customer.save()
+                print("{1}%... Updated {0}".format(c['name'], int(100 * count / len(customers))))
+            except Exception as err:
+                print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+        else:
+            print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
     return

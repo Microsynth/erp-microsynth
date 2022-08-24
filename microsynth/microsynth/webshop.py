@@ -7,9 +7,10 @@
 
 import frappe
 import json
-from microsynth.microsynth.migration import update_customer
+from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
 from microsynth.microsynth.utils import create_oligo
 from datetime import date, timedelta
+from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 
 """
 Ping is a simple interface test function
@@ -35,6 +36,22 @@ def create_update_customer(key, customer_data, client="webshop"):
         return {'success': False, 'message': 'Authentication failed'}
 
 """
+This function will create or update an address
+"""
+@frappe.whitelist(allow_guest=True)
+def create_update_address(key, address, client="webshop"):
+    if check_key(key):
+        if type(address) == str:
+            address = json.loads(address)
+        error = update_address(address)
+        if not error:
+            return {'success': True, 'message': "OK"}
+        else: 
+            return {'success': False, 'message': error}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+        
+"""
 From a user (AspNetUser), get customer data 
 """
 @frappe.whitelist(allow_guest=True)
@@ -58,11 +75,15 @@ def get_user_details(key, person_id, client="webshop"):
                     `tabAddress`.`name`,
                     `tabAddress`.`address_type`,
                     `tabAddress`.`address_line1`,
+                    `tabAddress`.`address_line2`,
                     `tabAddress`.`pincode`,
                     `tabAddress`.`city`,
                     `tabAddress`.`country`,
                     `tabAddress`.`is_shipping_address`,
-                    `tabAddress`.`is_primary_address`
+                    `tabAddress`.`is_primary_address`,
+                    `tabAddress`.`geo_lat`,
+                    `tabAddress`.`geo_long`,
+                    `tabAddress`.`customer_address_id`
                 FROM `tabDynamic Link`
                 LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
                 WHERE `tabDynamic Link`.`parenttype` = "Address"
@@ -86,6 +107,49 @@ def get_user_details(key, person_id, client="webshop"):
         return {'success': False, 'message': 'Authentication failed'}
 
 """
+Get customer data (addresses: only invoice addresses)
+"""
+@frappe.whitelist(allow_guest=True)
+def get_customer_details(key, customer_id, client="webshop"):
+    if check_key(key):
+        # fetch customer
+        customer = frappe.get_doc("Customer", customer_id)
+        # fetch addresses
+        addresses = frappe.db.sql(
+            """ SELECT 
+                    `tabAddress`.`name`,
+                    `tabAddress`.`address_type`,
+                    `tabAddress`.`address_line1`,
+                    `tabAddress`.`address_line2`,
+                    `tabAddress`.`pincode`,
+                    `tabAddress`.`city`,
+                    `tabAddress`.`country`,
+                    `tabAddress`.`is_shipping_address`,
+                    `tabAddress`.`is_primary_address`,
+                    `tabAddress`.`geo_lat`,
+                    `tabAddress`.`geo_long`,
+                    `tabAddress`.`customer_address_id`
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                  AND `tabDynamic Link`.`link_doctype` = "Customer"
+                  AND `tabDynamic Link`.`link_name` = "{customer_id}"
+                  AND `tabAddress`.`is_primary_address` = 1 
+                ;""".format(customer_id=customer_id), as_dict=True)
+            
+        # return structure
+        return {
+            'success': True, 
+            'message': "OK", 
+            'details': {
+                'customer': customer,
+                'addresses': addresses
+            }
+        }
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
 Checks if an address record exists
 """
 @frappe.whitelist(allow_guest=True)
@@ -93,17 +157,27 @@ def address_exists(key, address, client="webshop"):
     if check_key(key):
         if type(address) == str:
             address = json.loads(address)
-        addresses = frappe.get_all("Address", 
-            filters={
-                'address_line1': address['address_line1'] if 'address_line1' in address else None,
-                'pincode': address['pincode'] if 'pincode' in address else None,
-                'city': address['city'] if 'city' in address else None
-            },
-            fields=['name']
-        )
+        sql_query = """SELECT 
+                `tabAddress`.`name` AS `person_id`,
+                `tabDynamic Link`.`link_name` AS `customer_id`
+            FROM `tabAddress`
+            LEFT JOIN `tabDynamic Link` ON 
+                `tabDynamic Link`.`parent` = `tabAddress`.`name`
+                AND `tabDynamic Link`.`parenttype` = "Address"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+            WHERE `address_line1` LIKE "{0}" """.format(
+                address['address_line1'] if 'address_line1' in address else "%")
+        if 'address_line2' in address:
+            sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
+        if 'pincode' in address:
+            sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
+        if 'city' in address:
+            sql_query += """ AND `city` = "{0}" """.format(address['city'])
+        addresses = frappe.db.sql(sql_query, as_dict=True)
         
         if len(addresses) > 0:
-            return {'success': True, 'message': "OK", 'address': addresses[0]['name']}
+
+            return {'success': True, 'message': "OK", 'addresses': addresses}
         else: 
             return {'success': False, 'message': "Address not found"}
     else:
@@ -228,7 +302,13 @@ def get_item_prices(key, content, client="webshop"):
         # make sure items are a json object
         if type(content) == str:
             content = json.loads(content)
+        if not 'customer' in content:
+            return {'success': False, 'message': 'Customer parameter missing', 'quotation': None}
+        if not 'items' in content:
+            return {'success': False, 'message': 'Items missing', 'quotation': None}
         if frappe.db.exists("Customer", content['customer']):
+            if not 'currency' in content:
+                content['currency'] = frappe.get_value("Customer", content['customer'], "default_currency")
             # create virtual sales order to compute prices
             so = frappe.get_doc({
                 'doctype': "Sales Order", 
@@ -251,7 +331,8 @@ def get_item_prices(key, content, client="webshop"):
                 item_prices.append({
                     'item_code': i.item_code,
                     'qty': i.qty,
-                    'rate': i.rate
+                    'rate': i.rate,
+                    'description': i.description
                 })
             # remove temporary record
             so.delete()
@@ -283,7 +364,7 @@ def place_order(key, content, client="webshop"):
         if "company" not in content:
             company = frappe.get_value("Customer", content['customer'], 'default_company')
             if not company:
-                company = frappe.defaults.get_default('company')
+                company = frappe.defaults.get_global_default('company')
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
@@ -298,25 +379,53 @@ def place_order(key, content, client="webshop"):
             'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
             'po_no': content['po_no'] if 'po_no' in content else None
         })
-        # create oligos
+        if 'product_type' in content:
+            so_doc.product_type = content['product_type']
+        # quotation reference
         if 'quotation' in content:
             quotation = content['quotation']
         else:
             quotation = None
-        for o in content['oligos']:
-            # create or update oligo
-            oligo_name = create_oligo(o)
-            # insert positions
-            for i in o['items']:
-                if not frappe.db.exists("Item", i['item_code']):
-                    return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
-                        'reference': None}
-                so_doc.append('items', {
-                    'item_code': i['item_code'],
-                    'qty': i['qty'],
-                    'oligo': oligo_name,
-                    'prevdoc_docname': quotation
+        # create oligos
+        if 'oligos' in content:
+            for o in content['oligos']:
+                if not 'oligo_web_id' in o:
+                    return {'success': False, 'message': "oligo_web_id missing: {0}".format(o), 'reference': None}
+                # create or update oligo
+                oligo_name = create_oligo(o)
+                so_doc.append('oligos', {
+                    'oligo': oligo_name
                 })
+                # insert positions
+                for i in o['items']:
+                    if not frappe.db.exists("Item", i['item_code']):
+                        return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
+                            'reference': None}
+                    so_doc.append('items', {
+                        'item_code': i['item_code'],
+                        'qty': i['qty'],
+                        'oligo': oligo_name,
+                        'prevdoc_docname': quotation
+                    })
+        # create samples
+        if 'samples' in content:
+            for s in content['samples']:
+                # create or update sample
+                sample_name = create_sample(s)
+                # create sample record
+                so_doc.append('samples', {
+                    'sample': sample_name
+                })
+                # insert positions
+                for i in o['items']:
+                    if not frappe.db.exists("Item", i['item_code']):
+                        return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
+                            'reference': None}
+                    so_doc.append('items', {
+                        'item_code': i['item_code'],
+                        'qty': i['qty'],
+                        'prevdoc_docname': quotation
+                    })
         # append items
         for i in content['items']:
             if not frappe.db.exists("Item", i['item_code']):
@@ -338,8 +447,148 @@ def place_order(key, content, client="webshop"):
         return {'success': False, 'message': 'Authentication failed', 'reference': None}
         
 """
+Returns all available countries
+"""
+@frappe.whitelist(allow_guest=True)
+def get_countries(key, client="webshop"):
+    # check access
+    if check_key(key):
+        countries = frappe.db.sql(
+            """SELECT `country_name`, `code`, `export_code`, `default_currency`, `has_night_service`
+               FROM `tabCountry`
+               WHERE `disabled` = 0;""", as_dict=True)
+               
+        return {'success': True, 'message': None, 'countries': countries}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'countries': []}
+
+"""
+Return all available shipping items for a customer or country
+"""
+@frappe.whitelist(allow_guest=True)
+def get_shipping_items(key, customer_id=None, country=None, client="webshop"):
+    # check access
+    if check_key(key):
+        if not customer_id and not country:
+            return {'success': False, 'message': 'Either customer_id or country is required', 'shipping_items': []}
+        if customer_id:
+            # find by customer id
+            shipping_items = frappe.db.sql(
+            """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+               FROM `tabShipping Item`
+               WHERE `parent` = "{0}" 
+                 AND `parenttype` = "Customer";""".format(str(customer_id)), as_dict=True)
+            if len(shipping_items) > 0:
+                return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
+            else:
+                # find country for fallback
+                primary_address = get_primary_customer_address(str(customer_id))
+                if primary_address:
+                    country = frappe.get_value("Address", primary_address.get('name'), "country")
+                else:
+                    return {'success': False, 'message': 'No data found', 'shipping_items': []}
+        
+        # find by country (this is also the fallback from the customer)
+        if not country:
+            country = frappe.defaults.get_global_default('country')
+        else:
+            country = robust_get_country(country)
+        shipping_items = frappe.db.sql(
+        """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+           FROM `tabShipping Item`
+           WHERE `parent` = "{0}" 
+             AND `parenttype` = "Country";""".format(country), as_dict=True)
+               
+        return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'shipping_items': []}
+
+"""
+Update newsletter state
+"""
+@frappe.whitelist(allow_guest=True)
+def update_newsletter_state(key, person_id, newsletter_state, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Contact", person_id):
+            contact = frappe.get_doc("Contact", person_id)
+            contact.receive_newsletter = newsletter_state
+            try:
+                contact.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Update punchout details
+"""
+@frappe.whitelist(allow_guest=True)
+def update_punchout_details(key, person_id, punchout_buyer, punchout_identifier, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Contact", person_id):
+            contact = frappe.get_doc("Contact", person_id)
+            # fetch customer
+            customer_id = None
+            for l in contact.links:
+                if l.link_doctype == "Customer":
+                    customer_id = l.link_name
+            if not customer_id:
+                return {'success': False, 'message': "No customer linked"}
+            customer = frappe.get_doc("Customer", customer_id)
+            customer.punchout_buyer = punchout_buyer
+            customer.punchout_identifier = punchout_identifier
+            try:
+                customer.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+
+"""
+Update address GPS data
+"""
+@frappe.whitelist(allow_guest=True)
+def update_address_gps(key, person_id, gps_lat, gps_long, client="webshop"):
+    # check access
+    if check_key(key):
+        if frappe.db.exists("Address", person_id):
+            address = frappe.get_doc("Address", person_id)
+            address.geo_lat = float(gps_lat)
+            address.geo_long = float(gps_long)
+            try:
+                address.save(ignore_permissions=True)
+                return {'success': True, 'message': None}
+            except Exception as err:
+                return {'success': False, 'message': err}
+        else: 
+            return {'success': False, 'message': "Person ID not found"}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+        
+"""
 Inform webshop about customer master change
 """
 def notify_customer_change(customer):
     ## TODO
     return
+
+"""
+Return all companies
+"""
+@frappe.whitelist(allow_guest=True)
+def get_companies(key, client="webshop"):
+    # check access
+    if check_key(key):
+        companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
+               
+        return {'success': True, 'message': "OK", 'companies': companies}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'shipping_items': []}

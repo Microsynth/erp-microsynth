@@ -1,18 +1,11 @@
 {
- "autoname": "OLIGO.######",
- "creation": "2022-03-29 09:34:27.320019",
+ "autoname": "SAMPLE.######",
+ "creation": "2022-07-12 22:17:51.468512",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "oligo_name",
-  "substance_type",
-  "sequence",
-  "scale",
-  "purification",
-  "phys_cond",
-  "data_sheet",
-  "aliquots",
+  "sample_name",
   "section_customer",
   "customer",
   "column_customer",
@@ -26,52 +19,26 @@
  ],
  "fields": [
   {
-   "fieldname": "oligo_name",
+   "fieldname": "sample_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Oligo name",
+   "label": "Sample name",
    "reqd": 1
   },
   {
-   "fieldname": "sequence",
-   "fieldtype": "Small Text",
-   "label": "Sequence"
-  },
-  {
-   "fieldname": "scale",
-   "fieldtype": "Select",
-   "label": "Scale",
-   "options": "Genomics\n0.04 \u00b5mol\n0.2 \u00b5mol\n1.0 \u00b5mol\n15 \u00b5mol"
-  },
-  {
-   "fieldname": "purification",
-   "fieldtype": "Select",
-   "label": "Purification",
-   "options": "Desalted\nHPLC + Dialysis\nHPLC\nPAGE\nIEX-HPLC"
-  },
-  {
-   "fieldname": "phys_cond",
-   "fieldtype": "Select",
-   "label": "Physical Condition",
-   "options": "Dried\n100 nmol/ml"
-  },
-  {
-   "fieldname": "data_sheet",
-   "fieldtype": "Select",
-   "label": "Data Sheet",
-   "options": "Standard\nType 1\nType 2\nType 3\nType 4\nType 5\nType 6\nType 7"
-  },
-  {
-   "fieldname": "aliquots",
-   "fieldtype": "Select",
-   "label": "Aliquots",
-   "options": "No\n2 nmol\n5 nmol"
+   "fieldname": "section_customer",
+   "fieldtype": "Section Break",
+   "label": "Customer"
   },
   {
    "fieldname": "customer",
    "fieldtype": "Link",
    "label": "Customer",
    "options": "Customer"
+  },
+  {
+   "fieldname": "column_customer",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "customer.customer_name",
@@ -102,23 +69,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_customer",
-   "fieldtype": "Section Break",
-   "label": "Customer"
-  },
-  {
-   "fieldname": "column_customer",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "substance_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Type",
-   "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA",
-   "reqd": 1
-  },
-  {
    "fieldname": "sec_items",
    "fieldtype": "Section Break",
    "label": "Items"
@@ -127,13 +77,14 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Oligo Item"
+   "options": "Sample Item",
+   "reqd": 1
   }
  ],
- "modified": "2022-08-08 21:52:42.508160",
+ "modified": "2022-07-12 22:17:51.468512",
  "modified_by": "Administrator",
  "module": "Microsynth",
- "name": "Oligo",
+ "name": "Sample",
  "owner": "Administrator",
  "permissions": [
   {
@@ -161,9 +112,9 @@
   }
  ],
  "quick_entry": 1,
- "search_fields": "oligo_name,web_id,prod_id",
+ "search_fields": "sample_name,web_id,prod_id",
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "oligo_name",
+ "title_field": "sample_name",
  "track_changes": 1
 }
