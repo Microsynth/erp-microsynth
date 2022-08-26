@@ -59,7 +59,7 @@ def get_data():
                         "type": "report",
                         "name": "Open Label Orders",
                         "label": _("Open Label Orders"),
-                        "doctype": "Sequencing Label",
+                        "doctype": "Sales Order",
                         "is_query_report": True
                     }
             ]

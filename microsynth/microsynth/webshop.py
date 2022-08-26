@@ -9,6 +9,7 @@ import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
 from microsynth.microsynth.utils import create_oligo
+from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 
@@ -365,10 +366,13 @@ def place_order(key, content, client="webshop"):
             company = frappe.get_value("Customer", content['customer'], 'default_company')
             if not company:
                 company = frappe.defaults.get_global_default('company')
+        # select naming series
+        naming_series = get_naming_series("Sales Order", company)
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
             'company': company,
+            'naming_series': naming_series,
             'customer': content['customer'],
             'customer_address': content['invoice_address'],
             'shipping_address': content['delivery_address'],
