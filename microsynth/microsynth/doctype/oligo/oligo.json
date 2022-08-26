@@ -5,7 +5,13 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_ids",
+  "web_id",
+  "status",
+  "column_ids",
+  "prod_id",
   "oligo_name",
+  "sec_specification",
   "substance_type",
   "sequence",
   "scale",
@@ -17,10 +23,6 @@
   "customer",
   "column_customer",
   "customer_name",
-  "section_ids",
-  "web_id",
-  "column_ids",
-  "prod_id",
   "sec_items",
   "items"
  ],
@@ -128,9 +130,22 @@
    "fieldtype": "Table",
    "label": "Items",
    "options": "Oligo Item"
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Open\nCompleted\nCanceled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_specification",
+   "fieldtype": "Section Break",
+   "label": "Specification"
   }
  ],
- "modified": "2022-08-08 21:52:42.508160",
+ "modified": "2022-08-26 11:15:16.603204",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",

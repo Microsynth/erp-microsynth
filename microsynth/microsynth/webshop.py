@@ -392,6 +392,7 @@ def place_order(key, content, client="webshop"):
             quotation = None
         # create oligos
         if 'oligos' in content:
+			consolidated_item_qtys = {}
             for o in content['oligos']:
                 if not 'oligo_web_id' in o:
                     return {'success': False, 'message': "oligo_web_id missing: {0}".format(o), 'reference': None}
@@ -400,17 +401,23 @@ def place_order(key, content, client="webshop"):
                 so_doc.append('oligos', {
                     'oligo': oligo_name
                 })
-                # insert positions
+                # insert positions (add to consolidated)
                 for i in o['items']:
                     if not frappe.db.exists("Item", i['item_code']):
                         return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
                             'reference': None}
-                    so_doc.append('items', {
-                        'item_code': i['item_code'],
-                        'qty': i['qty'],
-                        'oligo': oligo_name,
-                        'prevdoc_docname': quotation
-                    })
+                    if i['item_code'] in consolidated_item_qtys:
+						consolidated_item_qtys[i['item_code']] = consolidated_item_qtys[i['item_code']] + i['qty']
+					else:
+						consolidated_item_qtys[i['item_code']] = i['qty']
+            
+            # apply consolidated items
+            for item, qty in consolidated_item_qtys.items():
+				so_doc.append('items', {
+					'item_code': item,
+					'qty': qty,
+					'prevdoc_docname': quotation
+				})
         # create samples
         if 'samples' in content:
             for s in content['samples']:
