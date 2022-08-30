@@ -26,9 +26,23 @@ function pick_wizard() {
                         'fieldname': 'sales_order', 
                         'fieldtype': 'Link', 
                         'label': 'Sales Order', 
-                        'readonly': 1, 
+                        'read_only': 1, 
                         'options': 'Sales Order', 
                         'default': r.message[i].sales_order
+                    },
+                    {
+                        'fieldname': 'item', 
+                        'fieldtype': 'Data', 
+                        'label': __('Item'), 
+                        'read_only': 1, 
+                        'default': r.message[i].qty + "x " + r.message[i].item_code + ": " + r.message[i].item_name
+                    },
+                    {
+                        'fieldname': 'range', 
+                        'fieldtype': 'Data', 
+                        'label': 'Range', 
+                        'read_only': 1, 
+                        'default': r.message[i].range
                     },
                     {
                         'fieldname': 'from_barcode', 

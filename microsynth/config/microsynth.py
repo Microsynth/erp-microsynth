@@ -185,6 +185,12 @@ def get_data():
                        "name": "SLIMS Settings",
                        "label": _("SLIMS Settings"),
                        "description": _("SLIMS Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Label Range",
+                       "label": _("Label Range"),
+                       "description": _("Label Range")
                    }
 
             ]

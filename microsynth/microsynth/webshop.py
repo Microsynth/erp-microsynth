@@ -362,10 +362,11 @@ def place_order(key, content, client="webshop"):
             return {'success': False, 'message': "Invoice address not found", 'reference': None}
         if not frappe.db.exists("Contact", content['contact']):
             return {'success': False, 'message': "Contact not found", 'reference': None}
-        if "company" not in content:
+        company = None
+        if "company" in content:
             company = frappe.get_value("Customer", content['customer'], 'default_company')
-            if not company:
-                company = frappe.defaults.get_global_default('company')
+        if not company:
+            company = frappe.defaults.get_global_default('company')
         # select naming series
         naming_series = get_naming_series("Sales Order", company)
         # create quotation
