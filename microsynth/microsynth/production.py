@@ -7,6 +7,7 @@
 
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 import frappe
+from microsynth.microsynth.webshop import check_key
 
 """
 Update the status of a sales order item (cancel, complete)
@@ -140,37 +141,74 @@ def check_sales_order_completion(sales_orders):
 """
 Get deliverable units
 
-Export codes: CH, EU, ROW
+Destination: CH, EU, ROW (see Country:Export Code)
 """
 @frappe.whitelist(allow_guest=True)
-def get_deliverable_units(key, export_code="CH", client="bos"):
+def get_orders_for_packaging(key, destination="CH", client="bos"):
     # check access
     if check_key(key):
         deliveries = frappe.db.sql("""
             SELECT 
-                `tabDelivery Note`.`name`, 
-                `tabAddress`.`country`, 
-                `tabCountry`.`export_code`
+                `tabDelivery Note`.`web_order_id` AS `web_order_id`,
+                `tabDelivery Note`.`name` AS `delivery_note`, 
+                `tabAddress`.`country` AS `country`, 
+                `tabCountry`.`export_code` AS `export_code`
             FROM `tabDelivery Note`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
             LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-            WHERE `tabDelivery note`.`docstatus` == 0
-              AND `tabCountry`.`export_code` = "{export_code}";""".format(export_code=export_code), as_dict=True)
+            WHERE `tabDelivery Note`.`docstatus` = 0
+              AND `tabCountry`.`export_code` LIKE "{export_code}"
+              AND `tabDelivery Note`.`product_type` = "Oligos";
+        """.format(export_code=destination), as_dict=True)
             
-        return {'success': True, 'message': 'OK', 'deliveries': deliveries}
+        return {'success': True, 'message': 'OK', 'orders': deliveries}
+    else:
+        return {'success': False, 'message': 'Authentication failed', 'orders': []}
+
+"""
+Get number of deliverable units
+
+Destination: CH, EU, ROW (see Country:Export Code)
+"""
+@frappe.whitelist(allow_guest=True)
+def count_orders_for_packaging(key, destination="CH", client="bos"):
+    # check access
+    if check_key(key):
+        deliveries = get_orders_for_packaging(key, destination, client)['orders']
+            
+        return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
     else:
         return {'success': False, 'message': 'Authentication failed'}
 
 """
+Get next order to deliver
+
+Destination: CH, EU, ROW (see Country:Export Code)
+"""
+@frappe.whitelist(allow_guest=True)
+def get_next_order_for_packaging(key, destination="CH", client="bos"):
+    # check access
+    if check_key(key):
+        deliveries = get_orders_for_packaging(key, destination, client)['orders']
+        
+        if len(deliveries) > 0:
+            return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }
+        else:
+            return {'success': False, 'message': 'Nothing more to deliver'}
+    else:
+        return {'success': False, 'message': 'Authentication failed'}
+        
+"""
 Mark a delivery as packaged
 """
 @frappe.whitelist(allow_guest=True)
-def deliver_unit(key, delivery_note, client="bos"):
+def oligo_order_packaged(key, delivery_note, client="bos"):
     # check access
     if check_key(key):
-        dn = frappe.get_doc("Delivery note", delivery_note)
+        dn = frappe.get_doc("Delivery Note", delivery_note)
         try:
             dn.submit()
+            frappe.db.commit()
             return {'success': True, 'message': 'OK'}
         except Exception as err:
             return {'success': False, 'message': err}
