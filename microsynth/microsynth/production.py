@@ -81,7 +81,7 @@ def check_sales_order_completion(sales_orders):
                 `tabOligo Link.`parent` = "{sales_order}"
                 AND `tabOligo Link`.`parenttype` = "Sales Order"
                 AND `tabOligo`.`status` = "Open";
-        """.format(sales_order=sales_order)
+        """.format(sales_order=sales_order), as_dict=True)
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
             
