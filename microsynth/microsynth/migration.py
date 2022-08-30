@@ -385,7 +385,7 @@ def update_customer(customer_data):
 Processes data to update an address record
 """
 def update_address(customer_data, is_deleted=False, customer_id=None):
-    frappe.log_error(customer_data)
+    #frappe.log_error(customer_data)
     if not 'person_id' in customer_data:
         return None
     if not 'address_line1' in customer_data:
