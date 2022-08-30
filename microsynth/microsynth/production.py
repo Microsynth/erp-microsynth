@@ -17,7 +17,7 @@ def oligo_status_changed(key, content, client="bos"):
     # check access
     if check_key(key):
         # check mandatory
-        if not 'oligos' in content::
+        if not 'oligos' in content:
             return {'success': False, 'message': "Please provide oligos", 'reference': None}
         
         # go through oligos and update status
