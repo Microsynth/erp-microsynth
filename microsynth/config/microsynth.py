@@ -191,8 +191,13 @@ def get_data():
                        "name": "Label Range",
                        "label": _("Label Range"),
                        "description": _("Label Range")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Flushbox Settings",
+                       "label": _("Flushbox Settings"),
+                       "description": _("Flushbox Settings")
                    }
-
             ]
         }
     ]

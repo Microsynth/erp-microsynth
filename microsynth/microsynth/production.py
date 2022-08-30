@@ -6,6 +6,7 @@
 #
 
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+import frappe
 
 """
 Update the status of a sales order item (cancel, complete)
@@ -78,7 +79,7 @@ def check_sales_order_completion(sales_orders):
             FROM `tabOligo Link`
             LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
             WHERE
-                `tabOligo Link.`parent` = "{sales_order}"
+                `tabOligo Link`.`parent` = "{sales_order}"
                 AND `tabOligo Link`.`parenttype` = "Sales Order"
                 AND `tabOligo`.`status` = "Open";
         """.format(sales_order=sales_order), as_dict=True)
@@ -116,10 +117,23 @@ def check_sales_order_completion(sales_orders):
             dn.items = keep_items
             # insert record
             dn.flags.ignore_missing = True
-            dn.insert(ignore_permission=True)
+            dn.insert(ignore_permissions=True)
             frappe.db.commit()
             
-            ## TODO: create PDF for delivery note and address label
+            # create PDF for delivery note
+            pdf = frappe.get_print(
+                doctype="Delivery Note", 
+                name=dn.name,
+                print_format=frappe.get_value("Flushbox Settings", "Flushbox Settings", "dn_print_format"),
+                as_pdf=True
+            )
+            output = open("{0}{1}.pdf".format(
+                frappe.get_value("Flushbox Settings", "Flushbox Settings", "pdf_path"), 
+                dn.name), 'wb')
+            # convert byte array and write to binray file
+            output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
+            
+            # TODO: create PDF address label
             
     return
 
