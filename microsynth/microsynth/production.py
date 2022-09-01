@@ -133,6 +133,7 @@ def check_sales_order_completion(sales_orders):
                 dn.name), 'wb')
             # convert byte array and write to binray file
             output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
+            output.close()
             
             # TODO: create PDF address label
             
