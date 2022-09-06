@@ -163,7 +163,7 @@ Destination: CH, EU, ROW (see Country:Export Code)
 """
 @frappe.whitelist()
 def count_orders_for_packaging(destination="CH"):
-    deliveries = get_orders_for_packaging(key, destination, client)['orders']
+    deliveries = get_orders_for_packaging(destination)['orders']
         
     return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
 
@@ -174,7 +174,7 @@ Destination: CH, EU, ROW (see Country:Export Code)
 """
 @frappe.whitelist()
 def get_next_order_for_packaging(destination="CH"):
-    deliveries = get_orders_for_packaging(key, destination, client)['orders']
+    deliveries = get_orders_for_packaging(destination)['orders']
     
     if len(deliveries) > 0:
         return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }

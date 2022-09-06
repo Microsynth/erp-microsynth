@@ -277,8 +277,8 @@ def update_customer(customer_data):
             if not frappe.db.exists("Contact", str(int(customer_data['person_id']))):
                 print("Creating contact {0}...".format(str(int(customer_data['person_id']))))
                 frappe.db.sql("""INSERT INTO `tabContact` 
-                                (`name`, `first_name`) 
-                                VALUES ("{0}", "{1}");""".format(
+                                (`name`, `first_name`, `status`) 
+                                VALUES ("{0}", "{1}", "Open");""".format(
                                 str(int(customer_data['person_id'])), customer_data['first_name']))
             # update contact
             print("Updating contact {0}...".format(str(int(customer_data['person_id']))))
