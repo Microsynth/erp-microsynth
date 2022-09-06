@@ -209,7 +209,7 @@ def print_delivery_label(delivery_note):
         # render content
         label_content = frappe.render_template("microsynth/templates/labels/oligo_delivery_note_address_label.html", dn.as_dict())
         if settings.label_printer_ip and settings.label_printer_port:
-            raw_print(settings.label_printer_ip, settings.label_printer_port, label_content)
+            print_raw(settings.label_printer_ip, settings.label_printer_port, label_content)
         else:
             print(label_content)
             frappe.log_error( "Please define Flusbox Settings: label printer ip/port; cannot print label", "Production:address_label" )
