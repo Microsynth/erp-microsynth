@@ -43,31 +43,31 @@
    "fieldname": "scale",
    "fieldtype": "Select",
    "label": "Scale",
-   "options": "Genomics\n0.04 \u00b5mol\n0.2 \u00b5mol\n1.0 \u00b5mol\n15 \u00b5mol"
+   "options": "\nGenomics\n0.04 \u00b5mol\n0.2 \u00b5mol\n1.0 \u00b5mol\n15 \u00b5mol"
   },
   {
    "fieldname": "purification",
    "fieldtype": "Select",
    "label": "Purification",
-   "options": "Desalted\nHPLC + Dialysis\nHPLC\nPAGE\nIEX-HPLC"
+   "options": "\nDesalted\nHPLC + Dialysis\nHPLC\nPAGE\nIEX-HPLC"
   },
   {
    "fieldname": "phys_cond",
    "fieldtype": "Select",
    "label": "Physical Condition",
-   "options": "Dried\n100 nmol/ml"
+   "options": "\nDried\n100 nmol/ml"
   },
   {
    "fieldname": "data_sheet",
    "fieldtype": "Select",
    "label": "Data Sheet",
-   "options": "Standard\nType 1\nType 2\nType 3\nType 4\nType 5\nType 6\nType 7"
+   "options": "\nStandard\nType 1\nType 2\nType 3\nType 4\nType 5\nType 6\nType 7"
   },
   {
    "fieldname": "aliquots",
    "fieldtype": "Select",
    "label": "Aliquots",
-   "options": "No\n2 nmol\n5 nmol"
+   "options": "\nNo\n2 nmol\n5 nmol"
   },
   {
    "fieldname": "customer",
@@ -145,7 +145,7 @@
    "label": "Specification"
   }
  ],
- "modified": "2022-08-26 11:15:16.603204",
+ "modified": "2022-09-06 09:49:21.377699",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
