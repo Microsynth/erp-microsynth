@@ -8,6 +8,7 @@
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 import frappe
 from microsynth.microsynth.webshop import check_key
+from microsynth.microsynth.labels import print_raw
 
 """
 Update the status of a sales order item (Canceled, Completed)
@@ -67,6 +68,7 @@ def oligo_status_changed(content):
     }
 
 def check_sales_order_completion(sales_orders):
+    settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
         so_open_items = frappe.db.sql("""
             SELECT 
@@ -119,18 +121,22 @@ def check_sales_order_completion(sales_orders):
             pdf = frappe.get_print(
                 doctype="Delivery Note", 
                 name=dn.name,
-                print_format=frappe.get_value("Flushbox Settings", "Flushbox Settings", "dn_print_format"),
+                print_format=settings.dn_print_format,
                 as_pdf=True
             )
             output = open("{0}{1}.pdf".format(
-                frappe.get_value("Flushbox Settings", "Flushbox Settings", "pdf_path"), 
+                settings.pdf_path, 
                 dn.name), 'wb')
             # convert byte array and write to binray file
             output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
             output.close()
             
-            # TODO: create PDF address label
-            
+            # render content
+            label_content = frappe.render_template("microsynth/templates/labels/oligo_delivery_note_address_label.html", dn.as_dict())
+            if settings.label_printer_ip and settings.label_printer_port:
+                raw_print(settings.label_printer_ip, settings.label_printer_port, label_content)
+            else:
+                print(label_content)
     return
 
 """

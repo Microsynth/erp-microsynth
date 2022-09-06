@@ -6,7 +6,11 @@
  "field_order": [
   "pdf_path",
   "column_main",
-  "dn_print_format"
+  "dn_print_format",
+  "sec_labels",
+  "label_printer_ip",
+  "col_labels",
+  "label_printer_port"
  ],
  "fields": [
   {
@@ -26,10 +30,29 @@
    "label": "Delivery Note Print Format",
    "options": "Print Format",
    "reqd": 1
+  },
+  {
+   "fieldname": "sec_labels",
+   "fieldtype": "Section Break",
+   "label": "Labels"
+  },
+  {
+   "fieldname": "label_printer_ip",
+   "fieldtype": "Data",
+   "label": "Label Printer IP"
+  },
+  {
+   "fieldname": "col_labels",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "label_printer_port",
+   "fieldtype": "Int",
+   "label": "Label Printer Port"
   }
  ],
  "issingle": 1,
- "modified": "2022-08-30 20:54:12.624217",
+ "modified": "2022-09-06 14:44:27.679211",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Flushbox Settings",
