@@ -369,6 +369,8 @@ def place_order(key, content, client="webshop"):
             company = frappe.defaults.get_global_default('company')
         # select naming series
         naming_series = get_naming_series("Sales Order", company)
+        # cache contact values (Frappe bug in binding)
+        contact = frappe.get_doc("Contact", content['contact'])
         # create quotation
         so_doc = frappe.get_doc({
             'doctype': "Sales Order",
@@ -376,8 +378,11 @@ def place_order(key, content, client="webshop"):
             'naming_series': naming_series,
             'customer': content['customer'],
             'customer_address': content['invoice_address'],
-            'shipping_address': content['delivery_address'],
+            'shipping_address_name': content['delivery_address'],
             'contact_person': content['contact'],
+            'contact_display': contact.full_name,
+            'contact_phone': contact.phone,
+            'contact_email': contact.email_id,
             'customer_request': content['customer_request'] if 'customer_request' in content else None,
             'delivery_date': (date.today() + timedelta(days=3)),
             'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
