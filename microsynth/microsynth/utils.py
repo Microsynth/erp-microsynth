@@ -22,7 +22,10 @@ def create_oligo(oligo):
         })
         oligo_doc.insert(ignore_permissions=True)
     # update record
-    oligo_doc.oligo_name = oligo['name']
+    if 'name' in oligo:
+        oligo_doc.oligo_name = oligo['name']
+    if 'sequence' in oligo:
+        oligo_doc.sequence = oligo['sequence']
     # update child table
     if 'items' in oligo:
         oligo_doc.items = []
