@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
-from microsynth.microsynth.utils import create_oligo
+from microsynth.microsynth.utils import create_oligo, find_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -453,6 +453,16 @@ def place_order(key, content, client="webshop"):
                 'qty': i['qty'],
                 'prevdoc_docname': quotation
             })
+        # append taxes
+        category = "Service"
+        if 'oligos' in content:
+            category = "Material" 
+        taxes = find_tax_template(company, content['invoice_address'], category)
+        if taxes:
+            so_doc.taxes_and_charges = taxes
+            taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+            for t in taxes_template.taxes:
+                so_doc.append("taxes", t)
         try:
             so_doc.insert(ignore_permissions=True)
             so_doc.submit()
@@ -462,7 +472,9 @@ def place_order(key, content, client="webshop"):
             return {'success': False, 'message': err, 'reference': None}
     else:
         return {'success': False, 'message': 'Authentication failed', 'reference': None}
-        
+
+
+
 """
 Returns all available countries
 """

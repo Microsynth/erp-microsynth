@@ -68,3 +68,21 @@ def create_sample(sample):
     sample_doc.save(ignore_permissions=True)
 
     return sample_doc.name
+
+"""
+Find the corresponding tax template
+"""
+@frappe.whitelist()
+def find_tax_template(company, customer_address, category="Material"):
+    country = frappe.get_value("Address", customer_address, "country")
+    find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
+        FROM `tabTax Matrix Entry`
+        WHERE `company` = "{company}"
+          AND (`country` = "{country}" OR `country` = "%")
+          AND `category` = "{category}"
+        ORDER BY `country` DESC;""".format(
+        company=company, country=country, category=category), as_dict=True)
+    if len(find_tax_record) > 0:
+        return find_tax_record[0]['sales_taxes_template']
+    else:
+        return None

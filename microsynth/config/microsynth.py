@@ -197,6 +197,12 @@ def get_data():
                        "name": "Flushbox Settings",
                        "label": _("Flushbox Settings"),
                        "description": _("Flushbox Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Tax Matrix",
+                       "label": _("Tax Matrix"),
+                       "description": _("Tax Matrix")
                    }
             ]
         }

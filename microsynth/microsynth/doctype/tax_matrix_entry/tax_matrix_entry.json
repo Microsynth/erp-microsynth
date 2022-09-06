@@ -1,0 +1,58 @@
+{
+ "creation": "2022-09-06 15:53:16.688231",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "country",
+  "category",
+  "sales_taxes_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "description": "Country name or wildcard % for rest",
+   "fieldname": "country",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_taxes_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Taxes Templates",
+   "options": "Sales Taxes and Charges Template",
+   "reqd": 1
+  },
+  {
+   "default": "Material",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "Material\nService",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-09-06 16:13:22.475495",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Tax Matrix Entry",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
