@@ -10,67 +10,61 @@ import frappe
 from microsynth.microsynth.webshop import check_key
 
 """
-Update the status of a sales order item (cancel, complete)
-
-To cancel: set cancel=1, to complete, set complete=1
+Update the status of a sales order item (Canceled, Completed)
 """
-@frappe.whitelist(allow_guest=True)
-def oligo_status_changed(key, content, client="bos"):
-    # check access
-    if check_key(key):
-        # check mandatory
-        if not 'oligos' in content:
-            return {'success': False, 'message': "Please provide oligos", 'reference': None}
-        
-        # go through oligos and update status
-        affected_sales_orders = []
-        updated_oligos = []
-        error_oligos = []
-        for oligo in content['oligos']:
-            if not 'oligo_web_id' in oligo:
-                return {'success': False, 'message': "Oligos need to have a oligo_web_id", 'reference': None}
-            if not 'status' in oligo:
-                return {'success': False, 'message': "Oligos need to have a status (Open, Completed, Canceled)", 'reference': None}
+@frappe.whitelist()
+def oligo_status_changed(content):
+    # check mandatory
+    if not 'oligos' in content:
+        return {'success': False, 'message': "Please provide oligos", 'reference': None}
+    
+    # go through oligos and update status
+    affected_sales_orders = []
+    updated_oligos = []
+    error_oligos = []
+    for oligo in content['oligos']:
+        if not 'oligo_web_id' in oligo:
+            return {'success': False, 'message': "Oligos need to have a oligo_web_id", 'reference': None}
+        if not 'status' in oligo:
+            return {'success': False, 'message': "Oligos need to have a status (Open, Completed, Canceled)", 'reference': None}
 
-            # find oligo
-            oligos = frappe.db.sql("""
-                SELECT 
-                  `tabOligo`.`name`,
-                  `tabOligo Link`.`parent` AS `sales_order`
-                FROM `tabOligo`
-                LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-                WHERE 
-                  `tabOligo`.`web_id` = "{web_id}"
-                  AND `tabOligo Link`.`parenttype` = "Sales Order";
-            """.format(web_id=oligo['oligo_web_id']), as_dict=True)
-            
-            if len(oligos) > 0:
-                # get sales order
-                oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
-                if oligo_doc.status != oligo['status']:
-                    oligo_doc.status = oligo['status']
-                    if 'production_id' in content:
-                        oligo_doc.prod_id = oligo['production_id']
-                    oligo_doc.save(ignore_permissions=True)
-                    updated_oligos.append(oligos[0]['name'])
-                # append sales order (if available and not in list)
-                if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
-                    affected_sales_orders.append(oligos[0]['sales_order'])
-            else:
-                frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['oligo_web_id']), "Production: oligo status update error")
-                error_oligos.append(oligo['oligo_web_id'])
-        frappe.db.commit()
-        # check and process sales order (in case all is complete)
-        if len(affected_sales_orders) > 0:
-            check_sales_order_completion(affected_sales_orders)
-        return {
-            'success': True, 
-            'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
-                len(updated_oligos), len(affected_sales_orders), ", ".join(error_oligos)
-            )
-        }
-    else:
-        return {'success': False, 'message': 'Authentication failed'}
+        # find oligo
+        oligos = frappe.db.sql("""
+            SELECT 
+              `tabOligo`.`name`,
+              `tabOligo Link`.`parent` AS `sales_order`
+            FROM `tabOligo`
+            LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+            WHERE 
+              `tabOligo`.`web_id` = "{web_id}"
+              AND `tabOligo Link`.`parenttype` = "Sales Order";
+        """.format(web_id=oligo['oligo_web_id']), as_dict=True)
+        
+        if len(oligos) > 0:
+            # get sales order
+            oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
+            if oligo_doc.status != oligo['status']:
+                oligo_doc.status = oligo['status']
+                if 'production_id' in content:
+                    oligo_doc.prod_id = oligo['production_id']
+                oligo_doc.save(ignore_permissions=True)
+                updated_oligos.append(oligos[0]['name'])
+            # append sales order (if available and not in list)
+            if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
+                affected_sales_orders.append(oligos[0]['sales_order'])
+        else:
+            frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['oligo_web_id']), "Production: oligo status update error")
+            error_oligos.append(oligo['oligo_web_id'])
+    frappe.db.commit()
+    # check and process sales order (in case all is complete)
+    if len(affected_sales_orders) > 0:
+        check_sales_order_completion(affected_sales_orders)
+    return {
+        'success': True, 
+        'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
+            len(updated_oligos), len(affected_sales_orders), ", ".join(error_oligos)
+        )
+    }
 
 def check_sales_order_completion(sales_orders):
     for sales_order in sales_orders:
@@ -100,10 +94,10 @@ def check_sales_order_completion(sales_orders):
                 else:
                     # append items
                     for item in oligo_doc.items:
-                        if i['item_code'] in cancelled_oligo_item_qtys:
-                            cancelled_oligo_item_qtys[i['item_code']] = cancelled_oligo_item_qtys[i['item_code']] + i['qty']
+                        if item.item_code in cancelled_oligo_item_qtys:
+                            cancelled_oligo_item_qtys[item.item_code] = cancelled_oligo_item_qtys[item.item_code] + item.qty
                         else:
-                            cancelled_oligo_item_qtys[i['item_code']] = i['qty']
+                            cancelled_oligo_item_qtys[item.item_code] = item.qty
                     
             dn.oligos = cleaned_oligos
             # subtract cancelled items from oligo items
@@ -144,74 +138,69 @@ Get deliverable units
 
 Destination: CH, EU, ROW (see Country:Export Code)
 """
-@frappe.whitelist(allow_guest=True)
-def get_orders_for_packaging(key, destination="CH", client="bos"):
-    # check access
-    if check_key(key):
-        deliveries = frappe.db.sql("""
-            SELECT 
-                `tabDelivery Note`.`web_order_id` AS `web_order_id`,
-                `tabDelivery Note`.`name` AS `delivery_note`, 
-                `tabAddress`.`country` AS `country`, 
-                `tabCountry`.`export_code` AS `export_code`
-            FROM `tabDelivery Note`
-            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
-            LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-            WHERE `tabDelivery Note`.`docstatus` = 0
-              AND `tabCountry`.`export_code` LIKE "{export_code}"
-              AND `tabDelivery Note`.`product_type` = "Oligos";
-        """.format(export_code=destination), as_dict=True)
-            
-        return {'success': True, 'message': 'OK', 'orders': deliveries}
-    else:
-        return {'success': False, 'message': 'Authentication failed', 'orders': []}
+@frappe.whitelist()
+def get_orders_for_packaging(destination="CH"):
+    deliveries = frappe.db.sql("""
+        SELECT 
+            `tabDelivery Note`.`web_order_id` AS `web_order_id`,
+            `tabDelivery Note`.`name` AS `delivery_note`, 
+            `tabAddress`.`country` AS `country`, 
+            `tabCountry`.`export_code` AS `export_code`
+        FROM `tabDelivery Note`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
+        LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+        WHERE `tabDelivery Note`.`docstatus` = 0
+          AND `tabCountry`.`export_code` LIKE "{export_code}"
+          AND `tabDelivery Note`.`product_type` = "Oligos";
+    """.format(export_code=destination), as_dict=True)
+        
+    return {'success': True, 'message': 'OK', 'orders': deliveries}
 
 """
 Get number of deliverable units
 
 Destination: CH, EU, ROW (see Country:Export Code)
 """
-@frappe.whitelist(allow_guest=True)
-def count_orders_for_packaging(key, destination="CH", client="bos"):
-    # check access
-    if check_key(key):
-        deliveries = get_orders_for_packaging(key, destination, client)['orders']
-            
-        return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
-    else:
-        return {'success': False, 'message': 'Authentication failed'}
+@frappe.whitelist()
+def count_orders_for_packaging(destination="CH"):
+    deliveries = get_orders_for_packaging(key, destination, client)['orders']
+        
+    return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
 
 """
 Get next order to deliver
 
 Destination: CH, EU, ROW (see Country:Export Code)
 """
-@frappe.whitelist(allow_guest=True)
-def get_next_order_for_packaging(key, destination="CH", client="bos"):
-    # check access
-    if check_key(key):
-        deliveries = get_orders_for_packaging(key, destination, client)['orders']
-        
-        if len(deliveries) > 0:
-            return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }
-        else:
-            return {'success': False, 'message': 'Nothing more to deliver'}
+@frappe.whitelist()
+def get_next_order_for_packaging(destination="CH"):
+    deliveries = get_orders_for_packaging(key, destination, client)['orders']
+    
+    if len(deliveries) > 0:
+        return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }
     else:
-        return {'success': False, 'message': 'Authentication failed'}
+        return {'success': False, 'message': 'Nothing more to deliver'}
         
 """
 Mark a delivery as packaged
 """
+@frappe.whitelist()
+def oligo_order_packaged(delivery_note):
+    dn = frappe.get_doc("Delivery Note", delivery_note)
+    try:
+        dn.submit()
+        frappe.db.commit()
+        return {'success': True, 'message': 'OK'}
+    except Exception as err:
+        return {'success': False, 'message': err}
+
+"""
+Create a user session
+"""
 @frappe.whitelist(allow_guest=True)
-def oligo_order_packaged(key, delivery_note, client="bos"):
-    # check access
-    if check_key(key):
-        dn = frappe.get_doc("Delivery Note", delivery_note)
-        try:
-            dn.submit()
-            frappe.db.commit()
-            return {'success': True, 'message': 'OK'}
-        except Exception as err:
-            return {'success': False, 'message': err}
-    else:
-        return {'success': False, 'message': 'Authentication failed'}
+def login(usr, pwd):
+    from frappe.auth import LoginManager
+    lm = LoginManager()
+    lm.authenticate(usr, pwd)
+    lm.login()
+    return frappe.local.session

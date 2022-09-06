@@ -90,6 +90,7 @@
   {
    "fieldname": "web_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Web ID",
    "read_only": 1
   },
@@ -115,7 +116,6 @@
   {
    "fieldname": "substance_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Type",
    "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA",
    "reqd": 1
@@ -135,6 +135,7 @@
    "default": "Open",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Open\nCompleted\nCanceled",
    "read_only": 1
@@ -145,7 +146,7 @@
    "label": "Specification"
   }
  ],
- "modified": "2022-09-06 09:49:21.377699",
+ "modified": "2022-09-06 10:26:49.993111",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
