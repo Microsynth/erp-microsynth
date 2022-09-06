@@ -11,11 +11,6 @@ def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
     s.send(content.encode())
-
-    # The printer does not respond!
-    response = s.recv(BUFFER_SIZE)
-
     s.close()
-    
     return
     
