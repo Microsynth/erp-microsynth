@@ -51,7 +51,7 @@ def oligo_status_changed(key, content, client="bos"):
                     oligo_doc.status = oligo['status']
                     if 'production_id' in content:
                         oligo_doc.prod_id = oligo['production_id']
-                    oligo_doc.save(ignore_permission=True)
+                    oligo_doc.save(ignore_permissions=True)
                     updated_oligos.append(oligos[0]['name'])
                 # append sales order (if available and not in list)
                 if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
