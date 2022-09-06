@@ -130,13 +130,6 @@ def check_sales_order_completion(sales_orders):
             # convert byte array and write to binray file
             output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
             output.close()
-            
-            # render content
-            label_content = frappe.render_template("microsynth/templates/labels/oligo_delivery_note_address_label.html", dn.as_dict())
-            if settings.label_printer_ip and settings.label_printer_port:
-                raw_print(settings.label_printer_ip, settings.label_printer_port, label_content)
-            else:
-                print(label_content)
     return
 
 """
@@ -192,13 +185,37 @@ Mark a delivery as packaged
 """
 @frappe.whitelist()
 def oligo_order_packaged(delivery_note):
-    dn = frappe.get_doc("Delivery Note", delivery_note)
-    try:
-        dn.submit()
-        frappe.db.commit()
+    if frappe.db.exists("Delivery Note", delivery_note):
+        dn = frappe.get_doc("Delivery Note", delivery_note)
+        if dn.docstatus > 0:
+            return {'success': False, 'message': "Delivery Note already completed"}
+        try:
+            dn.submit()
+            frappe.db.commit()
+            return {'success': True, 'message': 'OK'}
+        except Exception as err:
+            return {'success': False, 'message': err}
+    else:
+        return {'success': False, 'message': "Delivery Note not found"}
+
+"""
+Print delivery note address label
+"""
+@frappe.whitelist()
+def print_delivery_label(delivery_note):
+    if frappe.db.exists("Delivery Note", delivery_note):
+        dn = frappe.get_doc("Delivery Note", delivery_note)
+        settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
+        # render content
+        label_content = frappe.render_template("microsynth/templates/labels/oligo_delivery_note_address_label.html", dn.as_dict())
+        if settings.label_printer_ip and settings.label_printer_port:
+            raw_print(settings.label_printer_ip, settings.label_printer_port, label_content)
+        else:
+            print(label_content)
+            frappe.log_error( "Please define Flusbox Settings: label printer ip/port; cannot print label", "Production:address_label" )
         return {'success': True, 'message': 'OK'}
-    except Exception as err:
-        return {'success': False, 'message': err}
+    else:
+        return {'success': False, 'message': "Delivery Note not found"}
 
 """
 Create a user session
