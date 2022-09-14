@@ -101,6 +101,7 @@
   {
    "fieldname": "prod_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Production ID",
    "read_only": 1
   },
@@ -146,7 +147,7 @@
    "label": "Specification"
   }
  ],
- "modified": "2022-09-06 10:26:49.993111",
+ "modified": "2022-09-14 08:48:07.071272",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
