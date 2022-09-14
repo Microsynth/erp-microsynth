@@ -201,7 +201,18 @@ def update_customer(customer_data):
                 is_deleted = 0
         else:
             is_deleted = 0
-            
+        
+        # country locator
+        country = None
+        if 'country' in customer_data:
+            country = robust_get_country(customer_data['country'])
+        if not country and 'addresses' in customer_data:
+            for a in customer_data['addresses']:
+                if 'country' in a:
+                    country = robust_get_country(a['country'])
+                    if country:
+                        break
+                        
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
         print("Updating customer {0}...".format(customer.name))
@@ -255,13 +266,6 @@ def update_customer(customer_data):
                 customer.default_company = companies[0]['name']
         # fallback in case there is no default copmany
         if not customer.default_company:
-            # find country
-            country = robust_get_country(customer_data['country'])
-            if not country and 'addresses' in customer_data:
-                for a in customer_data['addresses']:
-                    country = robust_get_country(a['country'])
-                    if country:
-                        break
             # fetch default company from country list
             if country:
                 customer.default_company = frappe.get_value("Country", country, "default_company")

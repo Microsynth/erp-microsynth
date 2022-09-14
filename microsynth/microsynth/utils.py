@@ -91,3 +91,14 @@ def find_tax_template(company, customer_address, category="Material"):
         return find_tax_record[0]['sales_taxes_template']
     else:
         return None
+
+"""
+Create a user session
+"""
+@frappe.whitelist(allow_guest=True)
+def login(usr, pwd):
+    from frappe.auth import LoginManager
+    lm = LoginManager()
+    lm.authenticate(usr, pwd)
+    lm.login()
+    return frappe.local.session

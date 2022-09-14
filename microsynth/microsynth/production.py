@@ -217,13 +217,4 @@ def print_delivery_label(delivery_note):
     else:
         return {'success': False, 'message': "Delivery Note not found"}
 
-"""
-Create a user session
-"""
-@frappe.whitelist(allow_guest=True)
-def login(usr, pwd):
-    from frappe.auth import LoginManager
-    lm = LoginManager()
-    lm.authenticate(usr, pwd)
-    lm.login()
-    return frappe.local.session
+
