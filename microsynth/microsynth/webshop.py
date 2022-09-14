@@ -70,6 +70,8 @@ def get_user_details(key, person_id, client="webshop"):
         if not customer_id:
             return {'success': False, 'message': "No customer linked"}
         customer = frappe.get_doc("Customer", customer_id)
+        if customer.disabled == 1:
+            return {'success': False, 'message': 'Customer disabled'}
         # fetch addresses
         addresses = frappe.db.sql(
             """ SELECT 
@@ -115,6 +117,8 @@ def get_customer_details(key, customer_id, client="webshop"):
     if check_key(key):
         # fetch customer
         customer = frappe.get_doc("Customer", customer_id)
+        if customer.disabled == 1:
+            return {'success': False, 'message': 'Customer disabled'}
         # fetch addresses
         addresses = frappe.db.sql(
             """ SELECT 
