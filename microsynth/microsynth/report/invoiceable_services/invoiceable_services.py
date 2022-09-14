@@ -16,8 +16,8 @@ def get_columns():
         {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 120},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Invoice type"), "fieldname": "invoice_type", "fieldtype": "Data", "width": 120},
-        {"label": _("Collective invoice"), "fieldname": "collective_invoice", "fieldtype": "Check", "width": 200},
+        {"label": _("Invoicing method"), "fieldname": "invoicing_method", "fieldtype": "Data", "width": 120},
+        {"label": _("Collective billing"), "fieldname": "collective_billing", "fieldtype": "Check", "width": 200},
         {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 80},
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 80},
         {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80}
@@ -25,23 +25,44 @@ def get_columns():
 
 def get_data(filters=None):
     invoiceable_services = frappe.db.sql("""
-        SELECT 
-            `tabDelivery Note`.`posting_datre` AS `date`,
-            `tabDelivery Note`.`name` AS `delivery_note`,
-            `tabDelivery Note`.`customer` AS `customer`,
-            `tabDelivery Note`.`customer_name` AS `customer_name`,
-            `tabCustomer`.`invoice_type` AS `invoice_type`,
-            `tabCustomer`.`collective_invoice` AS `collective_invoice`,
-            `tabDelivery Note`.`po_no` AS `po_no`,
-            
-        FROM `tabDelivery Note`
-        LEFT JOIN `tabCustomer` ON
-            (`tabDelivery Note`.`customer` = `tabCustomer`.`name`)
-        LEFT JOIN `tabAddress` ON
-            (`tabDelivery Note`.`shipping_address` = `tabAddress`.`name`)
-        WHERE 
-            tabDelivery Note.`docstatus` = 1
-        ORDER BY `tabDelivery Note`.`customer` ASC;
-    """, as_dict=True)
+        SELECT * 
+        FROM (
+            SELECT 
+                `tabDelivery Note`.`posting_date` AS `date`,
+                `tabDelivery Note`.`name` AS `delivery_note`,
+                `tabDelivery Note`.`customer` AS `customer`,
+                `tabDelivery Note`.`customer_name` AS `customer_name`,
+                `tabCustomer`.`invoicing_method` AS `invoicing_method`,
+                `tabCustomer`.`collective_billing` AS `collective_billing`,
+                `tabDelivery Note`.`po_no` AS `po_no`,
+                `tabCountry`.`export_code` AS `region`,
+                `tabDelivery Note`.`shipment_type` AS `shipment_type`,
+                (SELECT COUNT(`tabSales Invoice Item`.`name`) 
+                 FROM `tabSales Invoice Item`
+                 WHERE 
+                    `tabSales Invoice Item`.`docstatus` = 1
+                    AND `tabSales Invoice Item`.`delivery_note` = `tabDelivery Note`.`name`
+                ) AS `has_sales_invoice`,
+                (SELECT IFNULL(MAX(`tabSales Order`.`hold_invoice`), 0)
+                 FROM `tabSales Order`
+                 LEFT JOIN `tabDelivery Note Item` ON
+                    (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
+                 WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                ) AS `hold_invoice` 
+            FROM `tabDelivery Note`
+            LEFT JOIN `tabCustomer` ON
+                (`tabDelivery Note`.`customer` = `tabCustomer`.`name`)
+            LEFT JOIN `tabAddress` ON
+                (`tabDelivery Note`.`shipping_address_name` = `tabAddress`.`name`)
+            LEFT JOIN `tabCountry` ON
+                (`tabCountry`.`name` = `tabAddress`.`country`)
+            WHERE 
+                `tabDelivery Note`.`docstatus` = 1
+                AND `tabDelivery Note`.`company` = "{company}"
+        ) AS `raw`
+        WHERE `raw`.`has_sales_invoice` = 0
+          AND `raw`.`hold_invoice` = 0
+        ORDER BY `raw`.`customer` ASC;
+    """.format(company=filters.get("company")), as_dict=True)
     
     return invoiceable_services
