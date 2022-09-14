@@ -48,11 +48,16 @@ def create_sample(sample):
             # update and return this item
             sample_doc = frappe.get_doc("Sample", sample_matches[0]['name'])
     if not sample_doc:
-        # create oligo
+        # create sample
+        web_id = None
+        if 'sample_web_id' in sample:
+            web_id = sample['sample_web_id']
+        elif 'web_id' in sample:
+            web_id = sample['web_id']
         sample_doc = frappe.get_doc({
             'doctype': 'Sample',
             'sample_name': sample['name'],
-            'web_id': sample['web_id']
+            'web_id': web_id
         })
         sample_doc.insert(ignore_permissions=True)
     # update record

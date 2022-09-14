@@ -77,11 +77,10 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Sample Item",
-   "reqd": 1
+   "options": "Sample Item"
   }
  ],
- "modified": "2022-07-12 22:17:51.468512",
+ "modified": "2022-09-14 14:09:21.665502",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sample",

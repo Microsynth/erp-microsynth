@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
-from microsynth.microsynth.utils import create_oligo, find_tax_template
+from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -434,7 +434,7 @@ def place_order(key, content, client="webshop"):
                     'sample': sample_name
                 })
                 # insert positions
-                for i in o['items']:
+                for i in s['items']:
                     if not frappe.db.exists("Item", i['item_code']):
                         return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
                             'reference': None}
