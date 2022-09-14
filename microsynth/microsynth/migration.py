@@ -253,6 +253,18 @@ def update_customer(customer_data):
             companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
             if len(companies) > 0:
                 customer.default_company = companies[0]['name']
+        # fallback in case there is no default copmany
+        if not customer.default_company:
+            # find country
+            country = robust_get_country(customer_data['country'])
+            if not country and 'addresses' in customer_data:
+                for a in customer_data['addresses']:
+                    country = robust_get_country(a['country'])
+                    if country:
+                        break
+            # fetch default company from country list
+            if country:
+                customer.default_company = frappe.get_value("Country", country, "default_company")
             
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
