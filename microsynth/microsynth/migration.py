@@ -212,7 +212,8 @@ def update_customer(customer_data):
         else:
             adr_type = None
         if adr_type == "INV":
-            customer.invoice_to = str(customer_data['person_id'])
+            if frappe.db.exists("Contact", customer_data['person_id']):     # 2022-09-14. only link valid contacts
+                customer.invoice_to = str(customer_data['person_id'])
             customer.disabled = is_deleted                              # in case is_deleted (can be 1 or 0) is on the INV record
             
         if not customer.customer_group:
