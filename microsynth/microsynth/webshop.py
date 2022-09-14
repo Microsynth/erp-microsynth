@@ -617,7 +617,14 @@ def get_companies(key, client="webshop"):
     # check access
     if check_key(key):
         companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
-               
+        
+        default_company = frappe.get_value("Global Defaults", "Global Defaults", "default_company")
+        for c in companies:
+            if c['name'] == default_company:
+                c['default'] = 1
+            else:
+                c['default'] = 0
+                
         return {'success': True, 'message': "OK", 'companies': companies}
     else:
         return {'success': False, 'message': 'Authentication failed', 'shipping_items': []}
