@@ -1068,7 +1068,7 @@
    "in_list_view": 0,
    "in_standard_filter": 0,
    "insert_after": "customer_approved",
-   "label": "Webshop address readonly",
+   "label": "Webshop billing address readonly",
    "length": 0,
    "modified": "2022-08-16 14:55:31.752792",
    "modified_by": "Administrator",
