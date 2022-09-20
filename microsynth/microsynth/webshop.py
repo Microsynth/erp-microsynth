@@ -461,7 +461,8 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
         """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
            FROM `tabShipping Item`
            WHERE `parent` = "{0}" 
-             AND `parenttype` = "Customer";""".format(str(customer_id)), as_dict=True)
+             AND `parenttype` = "Customer"
+           ORDER BY `idx` ASC;""".format(str(customer_id)), as_dict=True)
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
@@ -481,7 +482,8 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
     """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
        FROM `tabShipping Item`
        WHERE `parent` = "{0}" 
-         AND `parenttype` = "Country";""".format(country), as_dict=True)
+         AND `parenttype` = "Country"
+       ORDER BY `idx` ASC;""".format(country), as_dict=True)
            
     return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
