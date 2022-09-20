@@ -413,11 +413,16 @@ def place_order(content, client="webshop"):
         if not frappe.db.exists("Item", i['item_code']):
             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
                 'reference': None}
-        so_doc.append('items', {
+        item_detail = {
             'item_code': i['item_code'],
             'qty': i['qty'],
             'prevdoc_docname': quotation
-        })
+        }
+        if 'rate' in i and i['rate']:
+            # this item is overriding the normal rate (e.g. shipping item)
+            item_detail['rate'] = i['rate']
+            item_detail['price_list_rate'] = i['rate']
+        so_doc.append('items', item_detail)
     # append taxes
     category = "Service"
     if 'oligos' in content:
