@@ -329,6 +329,11 @@ def place_order(content, client="webshop"):
         return {'success': False, 'message': "Contact not found", 'reference': None}
     company = None
     if "company" in content:
+        if frappe.db.exists("Company", content['company']):
+            company = content['company']
+        else:
+            return {'success': False, 'message': "Invalid company", 'reference': None}
+    else:
         company = frappe.get_value("Customer", content['customer'], 'default_company')
     if not company:
         company = frappe.defaults.get_global_default('company')
