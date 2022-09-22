@@ -111,7 +111,7 @@ def export_customers(filename, from_date):
            OR `tabContact`.`modified` >= "{from_date}"
     """.format(from_date=from_date)
     data = frappe.db.sql(sql_query, as_dict=True)
-    for d in data:
+    for d in data:       
         row = CUSTOMER_HEADER_FIELDS.format(
             person_id=d['person_id'],
             customer_id=d['customer_id'],
@@ -126,7 +126,7 @@ def export_customers(filename, from_date):
             department=d['department'],
             country=d['country'],
             DS_Nr=d['ds_nr'],
-            adr_type=d['adr_type'],
+            adr_type= "INV" if (d["adr_type"]=="Billing") else "DEL",
             vat_nr=d['vat_nr'],
             siret=d['siret'],
             currency=d['currency'],
@@ -238,6 +238,8 @@ def update_customer(customer_data):
             customer.tax_id = customer_data['tax_id']
         if 'siret' in customer_data:
             customer.siret = customer_data['siret']
+        if 'ext_debitor_number' in customer_data:
+            customer.ext_debitor_number = customer_data['ext_debitor_number']
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
         if 'invoicing_method' in customer_data and customer_data['invoicing_method']:
