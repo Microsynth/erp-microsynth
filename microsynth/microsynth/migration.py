@@ -76,6 +76,7 @@ def export_customers(filename, from_date):
            `tabAddress`.`address_type` AS `adr_type`,
            `tabCustomer`.`tax_id` AS `vat_nr`,
            `tabCustomer`.`siret` AS `siret`,
+           `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
@@ -112,6 +113,8 @@ def export_customers(filename, from_date):
     """.format(from_date=from_date)
     data = frappe.db.sql(sql_query, as_dict=True)
     for d in data:       
+        # Do not change the order. Changes will corrupt import into Gecko.
+        # Only append new lines.
         row = CUSTOMER_HEADER_FIELDS.format(
             person_id=d['person_id'],
             customer_id=d['customer_id'],
@@ -149,7 +152,8 @@ def export_customers(filename, from_date):
             newsletter_unregistration_date=d['newsletter_unregistration_date'],
             umr_nr=d['umr_nr'],
             invoicing_method=d['invoicing_method'],
-            sales_manager=d['sales_manager']
+            sales_manager=d['sales_manager'],
+            ext_debitor_number=d['ext_debitor_number']
         )
         f.write(row)
     # close file
