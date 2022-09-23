@@ -40,11 +40,17 @@ This function will create or update an address
 def create_update_address(address, client="webshop"):
     if type(address) == str:
         address = json.loads(address)
-    error = update_address(address)
-    if not error:
+    if not 'person_id' in address:
+        return {'success': False, 'message': "Person ID missing"}
+    if not 'address_line1' in address:
+        return {'success': False, 'message': "Address line 1 missing"}
+    if not 'city' in address:
+        return {'success': False, 'message': "City missing"}
+    address_id = update_address(address)
+    if address_id:
         return {'success': True, 'message': "OK"}
     else: 
-        return {'success': False, 'message': error}
+        return {'success': False, 'message': "An error occured while creating/updating the address record"}
         
 """
 From a user (AspNetUser), get customer data 

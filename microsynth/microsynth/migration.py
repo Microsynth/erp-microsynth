@@ -461,7 +461,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         address.customer_address_id = customer_data['customer_address_id']
         
     # extend address bindings here
-    frappe.log_error("saving")
+
     try:
         address.save(ignore_permissions=True)
         return address.name
