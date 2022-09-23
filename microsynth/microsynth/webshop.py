@@ -37,7 +37,9 @@ def create_update_customer(customer_data, client="webshop"):
 This function will create or update an address
 """
 @frappe.whitelist()
-def create_update_address(address, client="webshop"):
+def create_update_address(address=None, client="webshop"):
+    if not address:
+        return {'success': False, 'message': "Address missing"}
     if type(address) == str:
         address = json.loads(address)
     if not 'person_id' in address:
