@@ -20,8 +20,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\tadr_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\n"""
-CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{adr_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\n"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\n"""
 
 """
 This function imports/updates the customer master data from a CSV file
@@ -73,7 +73,7 @@ def export_customers(filename, from_date):
            `tabContact`.`department` AS `department`,
            `tabCountry`.`code` AS `country`,
            "" AS `ds_nr`,
-           `tabAddress`.`address_type` AS `adr_type`,
+           `tabAddress`.`address_type` AS `address_type`,
            `tabCustomer`.`tax_id` AS `vat_nr`,
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
@@ -129,7 +129,7 @@ def export_customers(filename, from_date):
             department=d['department'],
             country=d['country'],
             DS_Nr=d['ds_nr'],
-            adr_type= "INV" if (d["adr_type"]=="Billing") else "DEL",
+            address_type= "INV" if (d["address_type"]=="Billing") else "DEL",
             vat_nr=d['vat_nr'],
             siret=d['siret'],
             currency=d['currency'],
@@ -222,11 +222,11 @@ def update_customer(customer_data):
         print("Updating customer {0}...".format(customer.name))
         if 'customer_name' in customer_data:
             customer.customer_name = customer_data['customer_name']
-        if 'adr_type' in customer_data:
-            adr_type = customer_data['adr_type']
+        if 'address_type' in customer_data:
+            address_type = customer_data['address_type']
         else:
-            adr_type = None
-        if adr_type == "INV":
+            address_type = None
+        if address_type == "INV":
             if frappe.db.exists("Contact", customer_data['person_id']):     # 2022-09-14. only link valid contacts
                 customer.invoice_to = str(customer_data['person_id'])
             customer.disabled = is_deleted                              # in case is_deleted (can be 1 or 0) is on the INV record
@@ -433,10 +433,10 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
                         customer_data['address_line1'] if 'address_lin1' in customer_data else "-"))
     
     # update record
-    if 'adr_type' in customer_data:
-        adr_type = customer_data['adr_type']
+    if 'address_type' in customer_data:
+        address_type = customer_data['address_type']
     else:
-        adr_type = None
+        address_type = None
     address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
     if 'customer_name' in customer_data and 'address_line1' in customer_data:
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
@@ -458,11 +458,13 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
                 'link_name': str(int(customer_id or customer_data['customer_id']))
             })
     # get type of address
-    if adr_type == "INV":
+    if address_type == "INV":
         address.is_primary_address = 1
+        address.is_shipping_address = 0
         address.email_id = customer_data['email']        # invoice address: pull email also into address record
         address.address_type = "Billing"
     else:
+        address.is_primary_address = 0
         address.is_shipping_address = 1
         address.address_type = "Shipping"
     if 'customer_address_id' in customer_data:
