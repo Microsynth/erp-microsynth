@@ -157,6 +157,7 @@ Checks if an address record exists
 def address_exists(address, client="webshop"):
     if type(address) == str:
         address = json.loads(address)
+    frappe.throw("{0}".format(address['address_line2']))
     sql_query = """SELECT 
             `tabAddress`.`name` AS `person_id`,
             `tabDynamic Link`.`link_name` AS `customer_id`
@@ -170,8 +171,6 @@ def address_exists(address, client="webshop"):
     if 'address_line2' in address:
         if address['address_line2']:
             sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
-        else: 
-            sql_query += """ AND `address_line2` is null """
     if 'pincode' in address:
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
     if 'city' in address:
