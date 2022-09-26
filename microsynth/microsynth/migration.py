@@ -284,10 +284,18 @@ def update_customer(customer_data):
         address_name = update_address(customer_data, is_deleted=is_deleted)     # base address
         if 'addresses' in customer_data:
             # multiple addresses:
+            _contact_address = None
             for adr in customer_data['addresses']:
                 _address_name = update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
+            
+                if _address_name == customer_data['person_id']:     #Link address with same ID than the contact ID
+                    _contact_address = _address_name
+
             if not address_name:
-                address_name = _address_name
+                if _contact_address:
+                    address_name = _contact_address
+                else:
+                    address_name = _address_name
                 
         # update contact
         
