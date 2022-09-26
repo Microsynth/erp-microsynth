@@ -168,7 +168,8 @@ def address_exists(address, client="webshop"):
         WHERE `address_line1` LIKE "{0}" """.format(
             address['address_line1'] if 'address_line1' in address else "%")
     if 'address_line2' in address:
-        sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
+        if address['address_line2']:
+            sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
     if 'pincode' in address:
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
     if 'city' in address:
