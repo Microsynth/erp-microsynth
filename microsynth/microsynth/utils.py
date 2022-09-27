@@ -3,6 +3,23 @@
 # For license information, please see license.txt
 
 import frappe
+import json
+
+@frappe.whitelist()
+def update_address_links_from_contact(address_name, links):
+    
+    if frappe.db.exists("Address", address_name):
+        address = frappe.get_doc("Address", address_name)
+        address.links = []
+        if type(links) == str:
+           links = json.loads(links) 
+        for link in links:
+            address.append("links", { 
+                "link_doctype": link["link_doctype"],
+                "link_name": link["link_name"]
+            } )
+        address.save()
+    return
 
 def create_oligo(oligo):
     oligo_doc = None
