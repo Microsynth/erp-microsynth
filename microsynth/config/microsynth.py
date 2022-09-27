@@ -15,6 +15,12 @@ def get_data():
                     },
                     {
                        "type": "doctype",
+                       "name": "Contact",
+                       "label": _("Contact"),
+                       "description": _("Contact")                   
+                    },
+                    {
+                       "type": "doctype",
                        "name": "Quotation",
                        "label": _("Quotation"),
                        "description": _("Quotation")                   
