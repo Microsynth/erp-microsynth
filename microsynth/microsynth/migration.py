@@ -2,6 +2,7 @@
 # Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
+from email.policy import default
 import frappe
 from frappe import _
 import csv
@@ -189,23 +190,7 @@ def update_customer(customer_data):
             error = "Mandatory field customer_name missing, skipping ({0})".format(customer_data)
             print(error)
             return
-        # check if the customer exists
-        if not frappe.db.exists("Customer", str(int(customer_data['customer_id']))):
-            # create customer (force mode to achieve target name)
-            print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
-            frappe.db.sql("""INSERT INTO `tabCustomer` 
-                            (`name`, `customer_name`) 
-                            VALUES ("{0}", "{1}");""".format(
-                            str(int(customer_data['customer_id'])), str(customer_data['customer_name'])))
-        
-        if 'is_deleted' in customer_data:
-            if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
-                is_deleted = 1
-            else:
-                is_deleted = 0
-        else:
-            is_deleted = 0
-        
+
         # country locator
         country = None
         if 'country' in customer_data:
@@ -215,8 +200,29 @@ def update_customer(customer_data):
                 if 'country' in a:
                     country = robust_get_country(a['country'])
                     if country:
-                        break
-                        
+                        break        
+        
+        
+        # check if the customer exists
+        if not frappe.db.exists("Customer", str(int(customer_data['customer_id']))):
+            # create customer (force mode to achieve target name)
+            print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
+            frappe.db.sql("""INSERT INTO `tabCustomer` 
+                            (`name`, `customer_name`, `default_currency`, `default_price_list`) 
+                            VALUES ("{0}", "{1}", "{2}", "{3}");""".format(
+                            str(int(customer_data['customer_id'])), 
+                            str(customer_data['customer_name']),
+                            frappe.get_value("Country", country, "default_currency"),
+                            frappe.get_value("Country", country, "default_pricelist")))
+        
+        if 'is_deleted' in customer_data:
+            if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
+                is_deleted = 1
+            else:
+                is_deleted = 0
+        else:
+            is_deleted = 0
+
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
         print("Updating customer {0}...".format(customer.name))
