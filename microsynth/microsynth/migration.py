@@ -873,3 +873,33 @@ def set_webshop_address_readonly():
         else:
             print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
     return
+
+
+"""
+Sets the customer field "disabled" for all customers that do not have any contacts.
+
+Run from
+ $ bench execute microsynth.microsynth.migration.customers_without_contacts
+"""
+def disable_customers_without_contacts():
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])    
+    count = 0
+    for c in customers:
+        count += 1
+        # find number of linked contacts
+        linked_contacts = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+                AND `tabDynamic Link`.`link_name` = "{customer_id}"
+        """.format(customer_id=c['name']), as_dict=True)
+        if len(linked_contacts) == 0:
+            customer = frappe.get_doc("Customer", c['name'])
+            customer.disabled = True
+            try:
+                customer.save()
+                print("{1}%... Disabled {0}".format(c['name'], int(100 * count / len(customers))))
+            except Exception as err:
+                print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+    return
