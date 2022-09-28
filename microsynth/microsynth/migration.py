@@ -902,4 +902,6 @@ def disable_customers_without_contacts():
                 print("{1}%... Disabled {0}".format(c['name'], int(100 * count / len(customers))))
             except Exception as err:
                 print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+        else:
+            print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
     return
