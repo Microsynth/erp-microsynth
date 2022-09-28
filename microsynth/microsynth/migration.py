@@ -879,7 +879,7 @@ def set_webshop_address_readonly():
 Sets the customer field "disabled" for all customers that do not have any contacts.
 
 Run from
- $ bench execute microsynth.microsynth.migration.customers_without_contacts
+ $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
 """
 def disable_customers_without_contacts():
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])    
