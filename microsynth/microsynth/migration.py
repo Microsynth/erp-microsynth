@@ -160,7 +160,7 @@ def export_customers(filename, from_date):
     # close file
     f.close()
     return
-    
+
 """
 This function will update a customer master (including contact & address)
 
@@ -197,7 +197,8 @@ def update_customer(customer_data):
             country = robust_get_country(customer_data['country'])
         if not country and 'addresses' in customer_data:
             for a in customer_data['addresses']:
-                if 'country' in a:
+                # only consider primary address (billing address) for country
+                if 'country' in a and a.get('is_primary_address', False):
                     country = robust_get_country(a['country'])
                     if country:
                         break        
