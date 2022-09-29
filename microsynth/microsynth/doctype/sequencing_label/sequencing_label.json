@@ -6,9 +6,12 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "col_main",
   "status",
+  "col_main",
   "registered",
+  "sec_identification",
+  "label_id",
+  "item",
   "sec_references",
   "customer",
   "customer_name",
@@ -70,17 +73,35 @@
    "description": "Label is registered to customer and can only be used by this customer.",
    "fieldname": "registered",
    "fieldtype": "Check",
-   "label": "Registered",
-   "reqd": 1
+   "label": "Registered"
   },
   {
    "fieldname": "contact",
    "fieldtype": "Link",
    "label": "Contact",
    "options": "Contact"
+  },
+  {
+   "fieldname": "sec_identification",
+   "fieldtype": "Section Break",
+   "label": "Identification"
+  },
+  {
+   "fieldname": "label_id",
+   "fieldtype": "Data",
+   "label": "Label ID",
+   "reqd": 1
+  },
+  {
+   "description": "Used to specify the label type",
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1
   }
  ],
- "modified": "2022-09-29 10:57:03.598127",
+ "modified": "2022-09-29 11:15:41.544812",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Label",
@@ -110,7 +131,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
