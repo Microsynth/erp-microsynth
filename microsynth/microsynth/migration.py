@@ -270,6 +270,10 @@ def update_customer(customer_data):
             companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
             if len(companies) > 0:
                 customer.default_company = companies[0]['name']
+        if 'punchout_shop_id' in customer_data:
+            customer.punchout_buyer = customer_data['punchout_shop_id']
+        if 'punchout_buyer' in customer_data:
+            customer.punchout_buyer = customer_data['punchout_buyer']
         # fallback in case there is no default copmany
         if not customer.default_company:
             # fetch default company from country list
@@ -368,10 +372,6 @@ def update_customer(customer_data):
                 contact.unsubscribed = 1
             if 'room' in customer_data:
                 contact.room = customer_data['room']
-            if 'punchout_shop_id' in customer_data:
-                contact.punchout_buyer = customer_data['punchout_shop_id']
-            if 'punchout_buyer' in customer_data:
-                contact.punchout_buyer = customer_data['punchout_buyer']
             if 'punchout_identifier' in customer_data:
                 contact.punchout_identifier = customer_data['punchout_identifier']
             if 'newsletter_registration_state' in customer_data:

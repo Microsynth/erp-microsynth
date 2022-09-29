@@ -539,9 +539,10 @@ def update_punchout_details(person_id, punchout_buyer, punchout_identifier, clie
             return {'success': False, 'message': "No customer linked"}
         customer = frappe.get_doc("Customer", customer_id)
         customer.punchout_buyer = punchout_buyer
-        customer.punchout_identifier = punchout_identifier
+        contact.punchout_identifier = punchout_identifier
         try:
             customer.save(ignore_permissions=True)
+            contact.save(ignore_permissions=True)
             return {'success': True, 'message': None}
         except Exception as err:
             return {'success': False, 'message': err}
