@@ -2,6 +2,7 @@
 # Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
+from email.policy import default
 import frappe
 from frappe import _
 import csv
@@ -159,7 +160,7 @@ def export_customers(filename, from_date):
     # close file
     f.close()
     return
-    
+
 """
 This function will update a customer master (including contact & address)
 
@@ -189,14 +190,31 @@ def update_customer(customer_data):
             error = "Mandatory field customer_name missing, skipping ({0})".format(customer_data)
             print(error)
             return
+
+        # country locator
+        country = None
+        if 'country' in customer_data:
+            country = robust_get_country(customer_data['country'])
+        if not country and 'addresses' in customer_data:
+            for a in customer_data['addresses']:
+                # only consider primary address (billing address) for country
+                if 'country' in a and a.get('is_primary_address', False):
+                    country = robust_get_country(a['country'])
+                    if country:
+                        break        
+        
+        
         # check if the customer exists
         if not frappe.db.exists("Customer", str(int(customer_data['customer_id']))):
             # create customer (force mode to achieve target name)
             print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
             frappe.db.sql("""INSERT INTO `tabCustomer` 
-                            (`name`, `customer_name`) 
-                            VALUES ("{0}", "{1}");""".format(
-                            str(int(customer_data['customer_id'])), str(customer_data['customer_name'])))
+                            (`name`, `customer_name`, `default_currency`, `default_price_list`) 
+                            VALUES ("{0}", "{1}", "{2}", "{3}");""".format(
+                            str(int(customer_data['customer_id'])), 
+                            str(customer_data['customer_name']),
+                            frappe.get_value("Country", country, "default_currency"),
+                            frappe.get_value("Country", country, "default_pricelist")))
         
         if 'is_deleted' in customer_data:
             if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
@@ -205,18 +223,7 @@ def update_customer(customer_data):
                 is_deleted = 0
         else:
             is_deleted = 0
-        
-        # country locator
-        country = None
-        if 'country' in customer_data:
-            country = robust_get_country(customer_data['country'])
-        if not country and 'addresses' in customer_data:
-            for a in customer_data['addresses']:
-                if 'country' in a:
-                    country = robust_get_country(a['country'])
-                    if country:
-                        break
-                        
+
         # update customer
         customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
         print("Updating customer {0}...".format(customer.name))
@@ -862,6 +869,38 @@ def set_webshop_address_readonly():
             try:
                 customer.save()
                 print("{1}%... Updated {0}".format(c['name'], int(100 * count / len(customers))))
+            except Exception as err:
+                print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+        else:
+            print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
+    return
+
+
+"""
+Sets the customer field "disabled" for all customers that do not have any contacts.
+
+Run from
+ $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
+"""
+def disable_customers_without_contacts():
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])    
+    count = 0
+    for c in customers:
+        count += 1
+        # find number of linked contacts
+        linked_contacts = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+                AND `tabDynamic Link`.`link_name` = "{customer_id}"
+        """.format(customer_id=c['name']), as_dict=True)
+        if len(linked_contacts) == 0:
+            customer = frappe.get_doc("Customer", c['name'])
+            customer.disabled = True
+            try:
+                customer.save()
+                print("{1}%... Disabled {0}".format(c['name'], int(100 * count / len(customers))))
             except Exception as err:
                 print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
         else:
