@@ -7,30 +7,26 @@
  "field_order": [
   "naming_series",
   "col_main",
-  "locked",
+  "status",
+  "registered",
   "sec_references",
   "customer",
   "customer_name",
+  "contact",
   "col_references",
   "sales_order"
  ],
  "fields": [
   {
-   "default": "SL.########",
+   "default": "SL.#########",
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Naming Series",
-   "options": "SL.########"
+   "options": "SL.#########"
   },
   {
    "fieldname": "col_main",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "locked",
-   "fieldtype": "Check",
-   "label": "Locked"
   },
   {
    "fieldname": "sec_references",
@@ -62,10 +58,30 @@
    "in_list_view": 1,
    "label": "Sales Order",
    "options": "Sales Order"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "unknown\nunused\nsubmitted\nreceived\nprocessed"
+  },
+  {
+   "default": "0",
+   "description": "Label is registered to customer and can only be used by this customer.",
+   "fieldname": "registered",
+   "fieldtype": "Check",
+   "label": "Registered",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
   }
  ],
- "modified": "2022-08-23 15:37:01.733483",
- "modified_by": "Administrator",
+ "modified": "2022-09-29 10:47:11.346354",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Label",
  "owner": "Administrator",
