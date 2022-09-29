@@ -63,7 +63,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "unknown\nunused\nsubmitted\nreceived\nprocessed"
+   "options": "unknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
   },
   {
    "default": "0",
@@ -80,7 +80,7 @@
    "options": "Contact"
   }
  ],
- "modified": "2022-09-29 10:47:11.346354",
+ "modified": "2022-09-29 10:57:03.598127",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Label",
