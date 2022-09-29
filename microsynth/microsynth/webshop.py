@@ -13,18 +13,18 @@ from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 
-"""
-Ping is a simple interface test function
-"""
 @frappe.whitelist(allow_guest=True)
 def ping():
+    """
+    Ping is a simple interface test function
+    """
     return "pong"
 
-"""
-This function will create or update a customer
-"""
 @frappe.whitelist()
 def create_update_customer(customer_data, client="webshop"):
+    """
+    This function will create or update a customer
+    """
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
     error = update_customer(customer_data)
@@ -33,11 +33,11 @@ def create_update_customer(customer_data, client="webshop"):
     else: 
         return {'success': False, 'message': error}
 
-"""
-This function will create or update an address
-"""
 @frappe.whitelist()
 def create_update_address(address=None, client="webshop"):
+    """
+    This function will create or update an address
+    """
     if not address:
         return {'success': False, 'message': "Address missing"}
     if type(address) == str:
@@ -54,11 +54,11 @@ def create_update_address(address=None, client="webshop"):
     else: 
         return {'success': False, 'message': "An error occured while creating/updating the address record"}
         
-"""
-From a user (AspNetUser), get customer data 
-"""
 @frappe.whitelist()
 def get_user_details(person_id, client="webshop"):
+    """
+    From a user (AspNetUser), get customer data 
+    """
     # get contact
     contact = frappe.get_doc("Contact", person_id)
     if not contact:
@@ -108,11 +108,11 @@ def get_user_details(person_id, client="webshop"):
         }
     }
 
-"""
-Get customer data (addresses: only invoice addresses)
-"""
 @frappe.whitelist()
 def get_customer_details(customer_id, client="webshop"):
+    """
+    Get customer data (addresses: only invoice addresses)
+    """
     # fetch customer
     customer = frappe.get_doc("Customer", customer_id)
     if customer.disabled == 1:
@@ -150,11 +150,11 @@ def get_customer_details(customer_id, client="webshop"):
         }
     }
 
-"""
-Checks if an address record exists
-"""
 @frappe.whitelist()
 def address_exists(address, client="webshop"):
+    """
+    Checks if an address record exists
+    """
     if type(address) == str:
         address = json.loads(address)
     sql_query = """SELECT 
@@ -185,11 +185,11 @@ def address_exists(address, client="webshop"):
         return {'success': False, 'message': "Address not found"}
     
 
-"""
-Request quote will create a new quote (and open the required oligos, if provided)
-"""
 @frappe.whitelist()
 def request_quote(content, client="webshop"):
+    """
+    Request quote will create a new quote (and open the required oligos, if provided)
+    """
     # prepare parameters
     if type(content) == str:
         content = json.loads(content)
@@ -248,11 +248,11 @@ def request_quote(content, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
-"""
-Returns the quotations for a particular customer
-"""
 @frappe.whitelist()
 def get_quotations(customer, client="webshop"):
+    """
+    Returns the quotations for a particular customer
+    """
     if frappe.db.exists("Customer", customer):
         # return valid quotations
         qtns = frappe.get_all("Quotation", 
@@ -263,11 +263,11 @@ def get_quotations(customer, client="webshop"):
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
-"""
-Returns the quotations details
-"""
 @frappe.whitelist()
 def get_quotation_detail(reference, client="webshop"):
+    """
+    Returns the quotations details
+    """
     if frappe.db.exists("Quotation", reference):
         # get quotation
         qtn = frappe.get_doc("Quotation", reference)
@@ -275,11 +275,11 @@ def get_quotation_detail(reference, client="webshop"):
     else:
         return {'success': False, 'message': 'Quotation not found', 'quotation': None}
 
-"""
-Returns the specific prices for a customer/items
-"""
 @frappe.whitelist()
 def get_item_prices(content, client="webshop"):
+    """
+    Returns the specific prices for a customer/items
+    """
     # make sure items are a json object
     if type(content) == str:
         content = json.loads(content)
@@ -321,11 +321,11 @@ def get_item_prices(content, client="webshop"):
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
-"""
-Place an order
-"""
 @frappe.whitelist()
 def place_order(content, client="webshop"):
+    """
+    Place an order
+    """
     # prepare parameters
     if type(content) == str:
         content = json.loads(content)
@@ -457,11 +457,11 @@ def place_order(content, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
-"""
-Returns all available countries
-"""
 @frappe.whitelist()
 def get_countries(client="webshop"):
+    """
+    Returns all available countries
+    """
     countries = frappe.db.sql(
         """SELECT `country_name`, `code`, `export_code`, `default_currency`, `has_night_service`
            FROM `tabCountry`
@@ -469,11 +469,11 @@ def get_countries(client="webshop"):
            
     return {'success': True, 'message': None, 'countries': countries}
 
-"""
-Return all available shipping items for a customer or country
-"""
 @frappe.whitelist()
 def get_shipping_items(customer_id=None, country=None, client="webshop"):
+    """
+    Return all available shipping items for a customer or country
+    """
     if not customer_id and not country:
         return {'success': False, 'message': 'Either customer_id or country is required', 'shipping_items': []}
     if customer_id:
@@ -508,11 +508,11 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
            
     return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
-"""
-Update newsletter state
-"""
 @frappe.whitelist()
 def update_newsletter_state(person_id, newsletter_state, client="webshop"):
+    """
+    Update newsletter state
+    """
     if frappe.db.exists("Contact", person_id):
         contact = frappe.get_doc("Contact", person_id)
         contact.receive_newsletter = newsletter_state
@@ -524,11 +524,11 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
-"""
-Update punchout details
-"""
 @frappe.whitelist()
 def update_punchout_details(person_id, punchout_buyer, punchout_identifier, client="webshop"):
+    """
+    Update punchout details
+    """
     if frappe.db.exists("Contact", person_id):
         contact = frappe.get_doc("Contact", person_id)
         # fetch customer
@@ -550,11 +550,11 @@ def update_punchout_details(person_id, punchout_buyer, punchout_identifier, clie
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
-"""
-Update address GPS data
-"""
 @frappe.whitelist()
 def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
+    """
+    Update address GPS data
+    """
     if frappe.db.exists("Address", person_id):
         address = frappe.get_doc("Address", person_id)
         address.geo_lat = float(gps_lat)
@@ -567,18 +567,18 @@ def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
     else: 
         return {'success': False, 'message': "Person ID not found"}
         
-"""
-Inform webshop about customer master change
-"""
 def notify_customer_change(customer):
+    """
+    Inform webshop about customer master change
+    """
     ## TODO
     return
 
-"""
-Return all companies
-"""
 @frappe.whitelist()
 def get_companies(client="webshop"):
+    """
+    Return all companies
+    """
     companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
     
     default_company = frappe.get_value("Global Defaults", "Global Defaults", "default_company")

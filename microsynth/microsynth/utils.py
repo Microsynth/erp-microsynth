@@ -91,11 +91,11 @@ def create_sample(sample):
 
     return sample_doc.name
 
-"""
-Find the corresponding tax template
-"""
 @frappe.whitelist()
 def find_tax_template(company, customer_address, category="Material"):
+    """
+    Find the corresponding tax template
+    """
     country = frappe.get_value("Address", customer_address, "country")
     find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
         FROM `tabTax Matrix Entry`
@@ -109,11 +109,11 @@ def find_tax_template(company, customer_address, category="Material"):
     else:
         return None
 
-"""
-Create a user session
-"""
 @frappe.whitelist(allow_guest=True)
 def login(usr, pwd):
+    """
+    Create a user session
+    """
     from frappe.auth import LoginManager
     lm = LoginManager()
     lm.authenticate(usr, pwd)

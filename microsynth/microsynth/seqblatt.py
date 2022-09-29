@@ -12,22 +12,22 @@ from frappe.utils import cint
 import json
 from datetime import datetime
 
-"""
-This is the generic core function that will be called by the 
-rest endpoints for the SeqBlatt API. 
-labels must be a list of dictionaries. E.g.
-[
-    {
-        "label_id": "4568798",
-        "item_code": "3110"
-    },
-    {
-        "label_id": "4568799",
-        "item_code": "3110"
-    }
-]
-"""
 def set_status(status, labels):
+    """
+    This is the generic core function that will be called by the 
+    rest endpoints for the SeqBlatt API. 
+    labels must be a list of dictionaries. E.g.
+    [
+        {
+            "label_id": "4568798",
+            "item_code": "3110"
+        },
+        {
+            "label_id": "4568799",
+            "item_code": "3110"
+        }
+    ]
+    """
     try:
         for l in labels:
             label = frappe.get_doc({
@@ -43,42 +43,42 @@ def set_status(status, labels):
     except Exception as err:
         return {'success': False, 'message': err }
 
-"""
-Set label status to 'unused'. Labels must be a list of dictionaries 
-(see `set_status` function).
-"""
 @frappe.whitelist(allow_guest=True)
 def set_unused(labels):
+    """
+    Set label status to 'unused'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    """
     set_status("unused", labels)
 
-"""
-Set label status to 'locked'. Labels must be a list of dictionaries 
-(see `set_status` function).
-"""
 @frappe.whitelist(allow_guest=True)
 def lock_labels(labels):
+    """
+    Set label status to 'locked'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    """
     set_status("locked", labels)
-
-"""
-Set label status to 'received'. Labels must be a list of dictionaries 
-(see `set_status` function).
-"""
 @frappe.whitelist(allow_guest=True)
 def received_labels(labels):
+
+    """
+    Set label status to 'received'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    """
     set_status("received", labels)
 
-"""
-Set label status to 'processed'. Labels must be a list of dictionaries 
-(see `set_status` function).
-"""
 @frappe.whitelist(allow_guest=True)
 def processed_labels(labels):
+    """
+    Set label status to 'processed'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    """
     set_status("processed", labels)
 
-"""
-Set label status to 'locked'. Labels must be a list of dictionaries 
-(see `set_status` function).
-"""
 @frappe.whitelist(allow_guest=True)
 def lock_labels(labels):
+    """
+    Set label status to 'locked'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    """
     set_status("locked", labels)
