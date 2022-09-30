@@ -13,8 +13,10 @@ from microsynth.microsynth.labels import print_raw
 Update the status of a sales order item (Canceled, Completed)
 """
 @frappe.whitelist()
-def oligo_status_changed(content):
+def oligo_status_changed(content=None):
     # check mandatory
+    if not content:
+        return {'success': False, 'message': "Please provide content", 'reference': None}
     if not 'oligos' in content:
         return {'success': False, 'message': "Please provide oligos", 'reference': None}
     
