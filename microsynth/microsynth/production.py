@@ -134,7 +134,7 @@ def check_sales_order_completion(sales_orders):
                 output.close()
             except Exception as err:
                 frappe.log_error( "Error on pdf creation of {0}: {1}".format(dn.name, err),
-                    "PDF creation failed (production API)"
+                    "PDF creation failed (production API)" )
     return
 
 """
