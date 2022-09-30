@@ -28,16 +28,21 @@ def set_status(status, labels):
         }
     ]
     """
-    try:
+    
+    try:        
         for l in labels:
-            label = frappe.get_doc({
-                'doctype': "Sequencing Label",
+            matchingLabels = frappe.get_all("Sequencing Label",filters={
                 'label_id': l["label_id"],
                 'item': l["item_code"]
-            })
-            # ToDo: Check if status transition is allowed
-            label.status = status
-            label.save()
+            }, fields=['name'])
+            
+            if len(matchingLabels) == 1:
+                label = frappe.get_doc("Sequencing Label", matchingLabels[0]["name"])
+                # ToDo: Check if status transition is allowed               
+                label.status = status
+                label.save()
+            else:
+                return {'success': False, 'message': "none or multiple labels." }            
         frappe.db.commit()        
         return {'success': True, 'message': None }
     except Exception as err:
