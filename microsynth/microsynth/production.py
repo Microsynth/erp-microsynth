@@ -45,7 +45,7 @@ def oligo_status_changed(content):
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
                 oligo_doc.status = oligo['status']
-                if 'production_id' in content:
+                if 'production_id' in oligo:
                     oligo_doc.prod_id = oligo['production_id']
                 oligo_doc.save(ignore_permissions=True)
                 updated_oligos.append(oligos[0]['name'])
