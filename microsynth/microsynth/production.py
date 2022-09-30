@@ -119,18 +119,22 @@ def check_sales_order_completion(sales_orders):
             frappe.db.commit()
             
             # create PDF for delivery note
-            pdf = frappe.get_print(
-                doctype="Delivery Note", 
-                name=dn.name,
-                print_format=settings.dn_print_format,
-                as_pdf=True
-            )
-            output = open("{0}{1}.pdf".format(
-                settings.pdf_path, 
-                dn.name), 'wb')
-            # convert byte array and write to binray file
-            output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
-            output.close()
+            try:
+                pdf = frappe.get_print(
+                    doctype="Delivery Note", 
+                    name=dn.name,
+                    print_format=settings.dn_print_format,
+                    as_pdf=True
+                )
+                output = open("{0}{1}.pdf".format(
+                    settings.pdf_path, 
+                    dn.name), 'wb')
+                # convert byte array and write to binray file
+                output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
+                output.close()
+            except Exception as err:
+                frappe.log_error( "Error on pdf creation of {0}: {1}".format(dn.name, err),
+                    "PDF creation failed (production API)"
     return
 
 """
