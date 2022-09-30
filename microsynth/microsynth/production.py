@@ -7,7 +7,6 @@
 
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 import frappe
-from microsynth.microsynth.webshop import check_key
 from microsynth.microsynth.labels import print_raw
 
 """
