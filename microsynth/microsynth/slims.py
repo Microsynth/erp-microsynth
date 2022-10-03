@@ -139,6 +139,8 @@ def sync(debug=False):
         last_sync = config.last_sync or "2020-01-01 00:00:00"
         # get changed records
         changed_records = get_modified_records(last_sync)
+        if debug == True and len(changed_records) == 0:
+            print("no records to sync")
         count = 0
         for record in changed_records:
             if debug:
