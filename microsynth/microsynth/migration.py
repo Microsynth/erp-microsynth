@@ -271,8 +271,11 @@ def update_customer(customer_data):
             users = frappe.db.sql("""SELECT `name` FROM `tabUser` WHERE `username` LIKE "{0}";""".format(customer_data['sales_manager']), as_dict=True)
             if len(users) > 0:
                 customer.account_manager = users[0]['name']
-        if 'invoice_email' in customer_data:
-            customer.invoice_email = customer_data['invoice_email']
+        # set invoice_email
+        if address_type != "DEL":                                           # 2022-10-03 Do not update 'invoice_email' with Gecko mail of shipping address.
+            if 'invoice_email' in customer_data:
+                customer.invoice_email = customer_data['invoice_email']
+        
         if 'default_company' in customer_data:
             companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
             if len(companies) > 0:
