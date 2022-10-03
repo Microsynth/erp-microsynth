@@ -21,8 +21,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\n"""
-CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\n"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\n"""
 
 """
 This function imports/updates the customer master data from a CSV file
@@ -79,6 +79,7 @@ def export_customers(filename, from_date):
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
+           `tabCustomer`.`invoice_email` AS `invoice_email`, 
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
            0 AS `is_electronic_invoice`,
@@ -153,6 +154,7 @@ def export_customers(filename, from_date):
             newsletter_unregistration_date=d['newsletter_unregistration_date'],
             umr_nr=d['umr_nr'],
             invoicing_method=d['invoicing_method'],
+            invoice_email=d['invoice_email'],
             sales_manager=d['sales_manager'],
             ext_debitor_number=d['ext_debitor_number']
         )
