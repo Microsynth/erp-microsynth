@@ -56,66 +56,71 @@ def create_update_slims_customer(person_id):
         if r.link_doctype == "Customer":
             customer = frappe.get_doc("Customer", r.link_name)
             break
-    if not contact.address and not frappe.db.exists("Address", person_id):
-        frappe.throw( _("No address found for contact {0}.").format(person_id) )
-    address = frappe.get_doc("Address", contact.address or person_id)
     
-    customer_data = {
-        "cstm_name": "{lastname}_{person_id}".format(lastname=contact.last_name, person_id=person_id),
-        "cstm_cf_personId": "{person_id}".format(person_id=person_id),
-        #"cstm_cf_userName": "{user}".format(user=contact.webshop_user),    # will not work - variable not implemente
-        "cstm_cf_salutation": "{salutation}".format(salutation=contact.salutation or ""),
-        "cstm_cf_title": "{title}".format(title=contact.designation or ""),
-        "cstm_cf_firstName": "{firstname}".format(firstname=contact.first_name or ""),
-        "cstm_cf_lastName": "{lastname}".format(lastname=contact.last_name or ""),
-        "cstm_cf_institute": "{institute}".format(institute=contact.institute or ""),
-        "cstm_cf_department": "{department}".format(department=contact.department or ""),
-        "cstm_cf_houseRoom": "{room}".format(room=contact.room or ""),
-        "cstm_cf_groupLeader": "{groupleader}".format(groupleader=contact.group_leader or ""),
-        "cstm_cf_universityCompany": "{customer_name}".format(customer_name=customer.customer_name or "") if customer else "",
-        "cstm_cf_street": "{street}".format(street=address.address_line1 or ""),
-        "cstm_cf_zipCode": "{zipcode}".format(zipcode=address.pincode or ""),
-        "cstm_cf_town": "{town}".format(town=address.city or ""),
-        "cstm_cf_country": "{country}".format(country=address.country or ""),
-        "cstm_cf_email": "{email}".format(email=contact.email_id or ""),
-        #"cstm_cf_secondEmail": "mySecondAddress@mail.com",
-        #"cstm_cf_phoneCountry": "0041",
-        "cstm_cf_phone": "{phone}".format(phone=contact.phone or ""),
-        "cstm_active": (not customer.disabled) if customer else 0
-    }
-    # send customer record
-    headers = {'content-type': 'application/json'}
-    if primary_key:
-        # update
-        endpoint = "{host}/slimsrest/rest/Customer/{primary_key}".format(host=config.endpoint, primary_key=primary_key)
-        res = requests.post(
-            endpoint, 
-            data=json.dumps(customer_data),
-            verify=cint(config.verify_ssl), 
-            auth=HTTPBasicAuth(
-                config.username, 
-                get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
-            ),
-            headers=headers
-        )
-        print("updating")
-    else:
-        # create
-        endpoint = "{host}/slimsrest/rest/Customer".format(host=config.endpoint)
-        res = requests.put(
-            endpoint, 
-            data=json.dumps(customer_data),
-            verify=cint(config.verify_ssl), 
-            auth=HTTPBasicAuth(
-                config.username, 
-                get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
-            ),
-            headers=headers
-        )
+    if contact.address and frappe.db.exists("Address", person_id):
+
+        address = frappe.get_doc("Address", contact.address or person_id)
         
-    # parse feedback
-    if res.status_code != 200:
-        frappe.log_error( _("SLIMS error {0} - {1} on create/update customer with person_id {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
+        if address.address_type == "Shipping":
+            customer_data = {
+                "cstm_name": "{lastname}_{person_id}".format(lastname=contact.last_name, person_id=person_id),
+                "cstm_cf_personId": "{person_id}".format(person_id=person_id),
+                #"cstm_cf_userName": "{user}".format(user=contact.webshop_user),    # will not work - variable not implemente
+                "cstm_cf_salutation": "{salutation}".format(salutation=contact.salutation or ""),
+                "cstm_cf_title": "{title}".format(title=contact.designation or ""),
+                "cstm_cf_firstName": "{firstname}".format(firstname=contact.first_name or ""),
+                "cstm_cf_lastName": "{lastname}".format(lastname=contact.last_name or ""),
+                "cstm_cf_institute": "{institute}".format(institute=contact.institute or ""),
+                "cstm_cf_department": "{department}".format(department=contact.department or ""),
+                "cstm_cf_houseRoom": "{room}".format(room=contact.room or ""),
+                "cstm_cf_groupLeader": "{groupleader}".format(groupleader=contact.group_leader or ""),
+                "cstm_cf_universityCompany": "{customer_name}".format(customer_name=customer.customer_name or "") if customer else "",
+                "cstm_cf_street": "{street}".format(street=address.address_line1 or ""),
+                "cstm_cf_zipCode": "{zipcode}".format(zipcode=address.pincode or ""),
+                "cstm_cf_town": "{town}".format(town=address.city or ""),
+                "cstm_cf_country": "{country}".format(country=address.country or ""),
+                "cstm_cf_email": "{email}".format(email=contact.email_id or ""),
+                #"cstm_cf_secondEmail": "mySecondAddress@mail.com",
+                #"cstm_cf_phoneCountry": "0041",
+                "cstm_cf_phone": "{phone}".format(phone=contact.phone or ""),
+                "cstm_active": (not customer.disabled) if customer else 0
+            }
+            # send customer record
+            headers = {'content-type': 'application/json'}
+            if primary_key:
+                # update
+                endpoint = "{host}/slimsrest/rest/Customer/{primary_key}".format(host=config.endpoint, primary_key=primary_key)
+                res = requests.post(
+                    endpoint, 
+                    data=json.dumps(customer_data),
+                    verify=cint(config.verify_ssl), 
+                    auth=HTTPBasicAuth(
+                        config.username, 
+                        get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
+                    ),
+                    headers=headers
+                )
+                print("updating")
+            else:
+                # create
+                endpoint = "{host}/slimsrest/rest/Customer".format(host=config.endpoint)
+                res = requests.put(
+                    endpoint, 
+                    data=json.dumps(customer_data),
+                    verify=cint(config.verify_ssl), 
+                    auth=HTTPBasicAuth(
+                        config.username, 
+                        get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
+                    ),
+                    headers=headers
+                )
+                print("creating")
+                
+            # parse feedback
+            if res.status_code != 200:
+                frappe.log_error( _("SLIMS error {0} - {1} on create/update customer with person_id {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
+        else:
+            print("is billing contact")
     return 
 
 def sync(debug=False):
