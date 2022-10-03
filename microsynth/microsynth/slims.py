@@ -60,7 +60,12 @@ def create_update_slims_customer(person_id):
     if contact.address and frappe.db.exists("Address", person_id):
 
         address = frappe.get_doc("Address", contact.address or person_id)
-        
+              
+        if len(contact.email_ids)>1:        
+            snd_mail = contact.email_ids[1].email_id
+        else:
+            snd_mail = ""
+
         if address.address_type == "Shipping":
             customer_data = {
                 "cstm_name": "{lastname}_{person_id}".format(lastname=contact.last_name, person_id=person_id),
@@ -80,7 +85,7 @@ def create_update_slims_customer(person_id):
                 "cstm_cf_town": "{town}".format(town=address.city or ""),
                 "cstm_cf_country": "{country}".format(country=address.country or ""),
                 "cstm_cf_email": "{email}".format(email=contact.email_id or ""),
-                #"cstm_cf_secondEmail": "mySecondAddress@mail.com",
+                "cstm_cf_secondEmail": "{snd_mail}".format(snd_mail=snd_mail or ""),
                 #"cstm_cf_phoneCountry": "0041",
                 "cstm_cf_phone": "{phone}".format(phone=contact.phone or ""),
                 "cstm_active": (not customer.disabled) if customer else 0
