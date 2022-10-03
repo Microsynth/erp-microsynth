@@ -471,7 +471,8 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
     if address_type == "INV":
         address.is_primary_address = 1
         address.is_shipping_address = 0
-        address.email_id = customer_data['email']        # invoice address: pull email also into address record
+        # address.email_id = customer_data['email']        # invoice address: pull email also into address record. 
+                                                           # Do not write to invoice_mail to address record anymore. 2022-10-03 Rolf Suter
         address.address_type = "Billing"
     else:
         address.is_primary_address = 0
