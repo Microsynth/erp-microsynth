@@ -24,15 +24,15 @@ PRICE_LIST_NAMES = {
 CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\n"""
 CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\n"""
 
-"""
-This function imports/updates the customer master data from a CSV file
-
-Columns should follow the customer_data structure, see https://github.com/Microsynth/erp-microsynth/wiki/customer_data-object
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.import_customers --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/customer_import_sample.csv'}"
-"""
 def import_customers(filename):
+    """
+    This function imports/updates the customer master data from a CSV file
+
+    Columns should follow the customer_data structure, see https://github.com/Microsynth/erp-microsynth/wiki/customer_data-object
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.import_customers --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/customer_import_sample.csv'}"
+    """
     # load csv file
     with open(filename) as csvfile:
         # create reader
@@ -50,11 +50,10 @@ def import_customers(filename):
             update_customer(row)
     return
 
-"""
-This function will create a customer export file from ERP to Gecko
-
-"""
 def export_customers(filename, from_date):
+    """
+    This function will create a customer export file from ERP to Gecko
+    """
     # create file
     f = open(filename, "w")
     # write header
@@ -163,12 +162,12 @@ def export_customers(filename, from_date):
     f.close()
     return
 
-"""
-This function will update a customer master (including contact & address)
-
-The function will either accept one customer_data record or a list of the same
-"""
 def update_customer(customer_data):
+    """
+    This function will update a customer master (including contact & address)
+
+    The function will either accept one customer_data record or a list of the same
+    """
     error = None
     # make sure data is a dict or list
     if type(customer_data) == str:
@@ -424,10 +423,10 @@ def update_customer(customer_data):
     
     return error
 
-"""
-Processes data to update an address record
-"""
 def update_address(customer_data, is_deleted=False, customer_id=None):
+    """
+    Processes data to update an address record
+    """
     #frappe.log_error(customer_data)
     if not 'person_id' in customer_data:
         return None
@@ -493,10 +492,10 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         frappe.log_error("Failed to save address: {0}".format(err))
         return None
 
-"""
-Robust country find function: accepts country name or code
-"""
 def robust_get_country(country_name_or_code):
+    """
+    Robust country find function: accepts country name or code
+    """
     if frappe.db.exists("Country", country_name_or_code):
         return country_name_or_code
     else:
@@ -507,13 +506,13 @@ def robust_get_country(country_name_or_code):
         else:
             return frappe.defaults.get_global_default('country')
             
-"""
-This function imports/updates the item price data from a CSV file
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.import_prices --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/articleExport_with_Header.txt'}"
-"""
 def import_prices(filename):
+    """
+    This function imports/updates the item price data from a CSV file
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.import_prices --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/articleExport_with_Header.txt'}"
+    """
     # load csv file
     with open(filename) as csvfile:
         # create reader
@@ -539,10 +538,10 @@ def import_prices(filename):
                     frappe.throw("Data length mismatch on {0} (header:{1}/row:{2}".format(row, len(headers), len(row)))
     return
 
-"""
-This function will update item prices
-"""
 def update_prices(price_data):
+    """
+    This function will update item prices
+    """
     # check if this item is available
     if frappe.db.exists("Item", price_data['item_code']) and cint(frappe.get_value("Item", price_data['item_code'], "disabled")) == 0:
         update_pricelist(item_code=price_data['item_code'], 
@@ -588,14 +587,14 @@ def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
     frappe.db.commit()
     return
 
-"""
-This function imports/updates the discount conditions from a CSV file
-
-Columns are customer_id\titem_code\tdiscount_percent
-Run from bench like
- $ bench execute microsynth.microsynth.migration.import_discounts --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/discountExport.tab'}"
-"""
 def import_discounts(filename):
+    """
+    This function imports/updates the discount conditions from a CSV file
+
+    Columns are customer_id\titem_code\tdiscount_percent
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.import_discounts --kwargs "{'filename': '/home/libracore/frappe-bench/apps/microsynth/microsynth/docs/discountExport.tab'}"
+    """
     # load csv file
     with open(filename) as csvfile:
         # create reader
@@ -617,10 +616,10 @@ def import_discounts(filename):
                 print("Imported {0}".format(discount_data))
     return
 
-"""
-This function will update pricing rules
-"""
 def update_pricing_rule(price_data):
+    """
+    This function will update pricing rules
+    """
     # check if customer exists
     if frappe.db.exists("Customer", price_data['customer']):
         # check if this pricing rule already exists
@@ -654,15 +653,15 @@ def update_pricing_rule(price_data):
         print("Customer {0} not found.".format(price_data['customer']))
     return
 
-"""
-Import customer price list
-
-Headers (\t): PriceList ["1234"], BasisPriceList ["CHF"], GeneralDiscount ["0"], ArticleCode, Discount
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.import_customer_price_lists --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
-"""
 def import_customer_price_lists(filename):
+    """
+    Import customer price list
+
+    Headers (\t): PriceList ["1234"], BasisPriceList ["CHF"], GeneralDiscount ["0"], ArticleCode, Discount
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.import_customer_price_lists --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
+    """
     # load csv file
     with open(filename) as csvfile:
         # create reader
@@ -759,15 +758,15 @@ def create_update_customer_price_list(pricelist_code, currency,
             print("created customer item price {0}".format(price_doc.name))
     return
 
-"""
-Map customer price lists to customers
-
-Headers (\t): PriceList ["1234"], Customer ["1234"]
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.map_customer_price_list --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
-"""
 def map_customer_price_list(filename):
+    """
+    Map customer price lists to customers
+
+    Headers (\t): PriceList ["1234"], Customer ["1234"]
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.map_customer_price_list --kwargs "{'filename': '/home/libracore/customerPrices.tab'}"
+    """
     # load csv file
     with open(filename) as csvfile:
         # create reader
@@ -792,13 +791,13 @@ def map_customer_price_list(filename):
     frappe.db.commit()
     return
 
-"""
-Go through all price lists and populate missing prices
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.populate_price_lists
-"""
 def populate_price_lists():
+    """
+    Go through all price lists and populate missing prices
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.populate_price_lists
+    """
     price_lists = frappe.db.sql("""
         SELECT `name`
         FROM `tabPrice List`
@@ -813,13 +812,13 @@ def populate_price_lists():
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
 
-"""
-Move item price from staggered item to base item
-
-Run from bench like
- $ bench execute microsynth.microsynth.migration.move_staggered_item_price --kwargs "{'filename': '/home/libracore/staggered_prices.tab'}"
-"""
 def move_staggered_item_price(filename):
+    """
+    Move item price from staggered item to base item
+
+    Run from bench like
+    $ bench execute microsynth.microsynth.migration.move_staggered_item_price --kwargs "{'filename': '/home/libracore/staggered_prices.tab'}"
+    """
     with open(filename) as csvfile:
         # create reader
         reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', encoding='utf-8')
@@ -845,14 +844,14 @@ def move_staggered_item_price(filename):
         frappe.db.commit()
     return
 
-""" 
-Sets the "webshop_address_readonly" from the contacts
-This is used that users cannot change a jointly used customer/address
-
-Run from
- $ bench execute microsynth.microsynth.migration.set_webshop_address_readonly
-"""
 def set_webshop_address_readonly():
+    """ 
+    Sets the "webshop_address_readonly" from the contacts
+    This is used that users cannot change a jointly used customer/address
+
+    Run from
+    $ bench execute microsynth.microsynth.migration.set_webshop_address_readonly
+    """
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
     count = 0
     for c in customers:
@@ -882,13 +881,13 @@ def set_webshop_address_readonly():
     return
 
 
-"""
-Sets the customer field "disabled" for all customers that do not have any contacts.
-
-Run from
- $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
-"""
 def disable_customers_without_contacts():
+    """
+    Sets the customer field "disabled" for all customers that do not have any contacts.
+
+    Run from
+    $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
+    """
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])    
     count = 0
     for c in customers:
