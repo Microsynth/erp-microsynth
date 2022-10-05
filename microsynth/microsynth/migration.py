@@ -99,12 +99,12 @@ def export_customers(filename, from_date):
            NULL AS `umr_nr`,
            `tabCustomer`.`invoicing_method` AS `invoicing_method`,
            `tabUser`.`username` AS `sales_manager`
-        FROM `tabAddress`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Address" 
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Contact" 
                                               AND `tDLA`.`link_doctype` = "Customer"
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
-        LEFT JOIN `tabContact` ON `tabContact`.`address` = `tabAddress`.`name`
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
