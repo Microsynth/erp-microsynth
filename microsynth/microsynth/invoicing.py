@@ -11,6 +11,11 @@ from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data
 from frappe.utils import cint
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
+from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
+from frappe.utils.file_manager import save_file
+from frappe.email.queue import send
+from frappe.desk.form.load import get_attachments
+
 @frappe.whitelist()
 def create_invoices(mode, company):
     kwargs={
@@ -62,6 +67,7 @@ def make_invoice(delivery_note):
     sales_invoice = frappe.get_doc(sales_invoice_content)
     sales_invoice.insert()
     sales_invoice.submit()
+    transmit_sales_invoice(sales_invoice.name)
     frappe.db.commit()
     return
     
@@ -77,5 +83,70 @@ def make_collective_invoice(delivery_notes):
     sales_invoice = frappe.get_doc(sales_invoice_content)
     sales_invoice.insert()
     sales_invoice.submit()
+    transmit_sales_invoice(sales_invoice.name)
     frappe.db.commit()
     return
+
+"""
+This function will check a transfer moe and transmit the invoice
+"""
+def transmit_sales_invoice(sales_invoice_name):
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
+    customer = frappe.get_doc("Customer", sales_invoice.customer)
+    if customer.invoicing_method == "Email":
+        # send by mail
+        target_email = customer.get("invoice_email") or sales_invoice.get("contact_email")
+        if not target_email:
+            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice__name), "Sending invoice email failed")
+            return
+        
+        # TODO: send email with content & attachment
+        
+    elif customer.invoicing_method == "Post":
+        # create and attach pdf
+        execute(
+            'doctype': 'Sales Invoice',
+            'name': sales_invoice_name,
+            'title': sales_invoice.title,
+            'lang': sales_invoice.language,
+            'print_format': "Sales Invoice",             # TODO: from configuration
+            'is_private': 1
+        )
+        attachments = get_attachments("Communication", communication)
+        fid = None
+        for a in attachments:
+            fid = a['name']
+        # send mail to printer relais
+        send(
+            recipients="print@microsynth.local",        # TODO: config 
+            subject=sales_invoice_name, 
+            message=sales_invoice_name, 
+            reference_doctype="Sales Invoice", 
+            reference_name=sales_invoice_name,
+            attachments=[{'fid': fid}]
+        )
+                
+        pass
+    elif customer.invoicing_method == "ARIBA":
+        # create ARIBA cXML
+        data = sales_invoice.as_dict()
+        data['customer_record'] = customer.as_dict()
+        cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", data)
+        # attach to sales invoice
+        folder = create_folder("ariba", "Home")
+        # store EDI File
+        f = save_file(
+            "{0}.txt".format(sales_invoice_name), 
+            cxml, 
+            "Sales Invoice", 
+            sales_invoice_name, 
+            folder=folder, 
+            is_private=True
+        )
+
+        # transmit to target
+        # TODO
+        
+    return
+        
+        
