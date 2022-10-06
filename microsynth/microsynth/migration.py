@@ -288,7 +288,7 @@ def update_customer(customer_data):
             customer.punchout_buyer = customer_data['punchout_shop_id']
         if 'punchout_buyer' in customer_data:
             customer.punchout_buyer = customer_data['punchout_buyer']
-        # fallback in case there is no default copmany
+        # fallback in case there is no default company
         if not customer.default_company:
             # fetch default company from country list
             if country:
@@ -913,4 +913,45 @@ def disable_customers_without_contacts():
                 print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
         else:
             print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
+    return
+
+
+from erpnextswiss.scripts.crm_tools import get_primary_customer_address 
+
+def set_default_company():
+    customers = frappe.get_all("Customer", filters={'default_company': ''}, fields=['name'])    
+    print(len(customers))
+    
+    count = 0
+    i = 0
+    for c in customers:
+        count += 1
+        i += 1
+        # find billing address
+        # addresses = frappe.db.sql("""
+        #     SELECT `parent`
+        #     FROM `tabDynamic Link`
+        #     WHERE `tabDynamic Link`.`parenttype` = "Address"
+        #         AND `tabDynamic Link`.`link_doctype` = "Customer"
+        #         AND `tabDynamic Link`.`link_name` = "{customer_id}"
+        # """.format(customer_id=c['name']), as_dict=True)
+        
+        address = get_primary_customer_address(c["name"])
+
+        if address:
+            default_company = frappe.get_value("Country", address.country, "default_company")
+            customer = frappe.get_doc("Customer", c["name"])
+            if not customer.default_company:
+                customer.default_company = default_company
+                customer.save()
+            
+        
+        if i > 100:
+            frappe.db.commit()
+            i = 0
+
+        print(count)
+        if count > 200:
+            break
+
     return
