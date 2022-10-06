@@ -1,0 +1,7 @@
+<xml>
+    <salesInvoice>{{ name }}</salesInvoice>
+    <customerIBAN>{{ customer_record.iban or "?" }}</customerIBAN>
+    {%- for item in items %}
+    <item>{{ item.item_code }}</item>
+    {%- endfor %}
+</xml>
