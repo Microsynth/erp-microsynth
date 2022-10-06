@@ -943,7 +943,5 @@ def set_default_company():
             i = 0
 
         print(count)
-        if count > 200:
-            break
 
     return
