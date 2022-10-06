@@ -84,5 +84,8 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     dn.insert()
     frappe.db.commit()
     
+    # print address label
+    # TODO: see labels.py, take data from delivery note and pass to printer
+    
     # return print format
     return dn.name
