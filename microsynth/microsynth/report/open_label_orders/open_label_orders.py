@@ -58,7 +58,25 @@ def get_data(filters=None):
 @frappe.whitelist()
 def pick_labels(sales_order, from_barcode, to_barcode):
     # create sequencing labels
-    # TODO
+    item = frappe.db.sql("""SELECT `item_code`
+        FROM `tabSales Order Item`
+        WHERE `parent` = "{sales_order}"
+        ORDER BY `idx` ASC
+        LIMIT 1;""".format(sales_order=sales_order), as_dict=True)[0]['item_code']
+    customer = frappe.get_value("Sales Order", sales_order, "customer")
+    customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
+    for i in range(int(from_barcode), (int(to_barcode) + 1)):
+        # create label
+        new_label = frappe.get_doc({
+            'doctype': 'Sequencing Label',
+            'item': item,
+            'label_id': str(i),
+            'sales_order': sales_order,
+            'customer': customer,
+            'customer_name': customer_name,
+            'status': "unused"
+        }).insert()
+    frappe.db.commit()
     
     # create delivery note
     dn_content = make_delivery_note(sales_order)
