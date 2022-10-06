@@ -104,14 +104,14 @@ def transmit_sales_invoice(sales_invoice_name):
         
     elif customer.invoicing_method == "Post":
         # create and attach pdf
-        execute(
+        execute({
             'doctype': 'Sales Invoice',
             'name': sales_invoice_name,
             'title': sales_invoice.title,
             'lang': sales_invoice.language,
             'print_format': "Sales Invoice",             # TODO: from configuration
             'is_private': 1
-        )
+        })
         attachments = get_attachments("Communication", communication)
         fid = None
         for a in attachments:
