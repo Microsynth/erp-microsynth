@@ -295,8 +295,13 @@ def get_item_prices(content, client="webshop"):
             'doctype': "Sales Order", 
             'customer': content['customer'],
             'currency': content['currency'],
-            'delivery_date': date.today()
+            'delivery_date': date.today(),
+            'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list")
         })
+        meta = { 
+            "price_list": so.selling_price_list,
+            "currency": so.currency
+        } 
         for i in content['items']:
             if frappe.db.exists("Item", i['item_code']):
                 so.append('items', {
@@ -317,7 +322,7 @@ def get_item_prices(content, client="webshop"):
             })
         # remove temporary record
         so.delete()
-        return {'success': True, 'message': "OK", 'item_prices': item_prices}
+        return {'success': True, 'message': "OK", 'item_prices': item_prices, 'meta': meta }
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
