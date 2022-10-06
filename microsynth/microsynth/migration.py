@@ -927,14 +927,6 @@ def set_default_company():
     for c in customers:
         count += 1
         i += 1
-        # find billing address
-        # addresses = frappe.db.sql("""
-        #     SELECT `parent`
-        #     FROM `tabDynamic Link`
-        #     WHERE `tabDynamic Link`.`parenttype` = "Address"
-        #         AND `tabDynamic Link`.`link_doctype` = "Customer"
-        #         AND `tabDynamic Link`.`link_name` = "{customer_id}"
-        # """.format(customer_id=c['name']), as_dict=True)
         
         address = get_primary_customer_address(c["name"])
 
