@@ -212,10 +212,11 @@ def update_customer(customer_data):
             # create customer (force mode to achieve target name)
             print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
             frappe.db.sql("""INSERT INTO `tabCustomer` 
-                            (`name`, `customer_name`, `default_currency`, `default_price_list`) 
-                            VALUES ("{0}", "{1}", "{2}", "{3}");""".format(
+                            (`name`, `customer_name`, `default_company`, `default_currency`, `default_price_list`) 
+                            VALUES ("{0}", "{1}", "{2}", "{3}", "{4}");""".format(
                             str(int(customer_data['customer_id'])), 
                             str(customer_data['customer_name']),
+                            frappe.get_value("Country", country, "default_company"),
                             frappe.get_value("Country", country, "default_currency"),
                             frappe.get_value("Country", country, "default_pricelist")))
         
