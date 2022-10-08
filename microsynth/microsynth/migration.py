@@ -21,8 +21,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_emailis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\n"""
-CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_emailis_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\n"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\n"""
 
 def import_customers(filename):
     """
@@ -82,7 +82,8 @@ def export_customers(filename, from_date):
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
            0 AS `is_electronic_invoice`,
-           0 AS `receive_updates_per_emailis_punchout_user`,
+           0 AS `receive_updates_per_email`,
+           0 AS `is_punchout_user`,
            `tabCustomer`.`punchout_identifier` AS `punchout_identifier`,
            `tabCustomer`.`punchout_shop` AS `punchout_shop_id`,
            `tabContact`.`room` AS `room`,
@@ -138,7 +139,8 @@ def export_customers(filename, from_date):
             is_deleted=d['is_deleted'],
             default_discount=d['default_discount'],
             is_electronic_invoice=d['is_electronic_invoice'],
-            receive_updates_per_emailis_punchout_user=d['receive_updates_per_emailis_punchout_user'],
+            receive_updates_per_email=d['receive_updates_per_email'],
+            is_punchout_user=d['is_punchout_user'],
             punchout_identifier=d['punchout_identifier'],
             punchout_shop_id=d['punchout_shop_id'],
             room=d['room'],
