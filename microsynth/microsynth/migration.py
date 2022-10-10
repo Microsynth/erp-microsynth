@@ -286,7 +286,7 @@ def export_customer(filename, customer_name):
 
 @frappe.whitelist()
 def export_customer_to_gecko(customer_name):    
-    export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko_" + str(customer_name) + ".tab",customer_name)
+    export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko.tab",customer_name)
     return
 
 def update_customer(customer_data):
