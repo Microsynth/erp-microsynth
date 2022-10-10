@@ -166,6 +166,126 @@ def export_customers(filename, from_date):
     f.close()
     return
 
+
+def export_customer_billing(filename, customer_name):
+    """
+    This function will create a customer export file from ERP to Gecko
+    """
+    # create file
+    f = open(filename, "w")
+    # write header
+    f.write(CUSTOMER_HEADER)
+    # get applicable records changed since from_date
+    sql_query = """SELECT 
+           `tabAddress`.`name` AS `person_id`,
+           `tabCustomer`.`name` AS `customer_id`,
+           `tabCustomer`.`customer_name` AS `customer_name`,
+           `tabContact`.`first_name` AS `first_name`,
+           `tabContact`.`last_name` AS `last_name`,
+           `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`address_line1` AS `address_line1`,
+           `tabAddress`.`pincode` AS `pincode`,
+           `tabAddress`.`city` AS `city`,
+           `tabContact`.`institute` AS `institute`,
+           `tabContact`.`department` AS `department`,
+           `tabCountry`.`code` AS `country`,
+           "" AS `ds_nr`,
+           `tabAddress`.`address_type` AS `address_type`,
+           `tabCustomer`.`tax_id` AS `vat_nr`,
+           `tabCustomer`.`siret` AS `siret`,
+           `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
+           `tabCustomer`.`default_currency` AS `currency`,
+           `tabCustomer`.`invoice_email` AS `invoice_email`, 
+           `tabCustomer`.`disabled` AS `is_deleted`,
+           `tabPrice List`.`general_discount` AS `default_discount`,
+           0 AS `is_electronic_invoice`,
+           0 AS `receive_updates_per_email`,
+           0 AS `is_punchout_user`,
+           `tabCustomer`.`punchout_identifier` AS `punchout_identifier`,
+           `tabCustomer`.`punchout_shop` AS `punchout_shop_id`,
+           `tabContact`.`room` AS `room`,
+           `tabContact`.`salutation` AS `salutation`,
+           `tabContact`.`designation` AS `title`,
+           `tabContact`.`group_leader` AS `group_leader`,
+           NULL AS `email_cc`,
+           `tabContact`.`phone` AS `phone_number`,
+           NULL AS `phone_country`,
+           `tabContact`.`institute_key` AS `institute_key`,
+           `tabContact`.`receive_newsletter` AS `newsletter_registration_state`,
+           `tabContact`.`subscribe_date` AS `newsletter_registration_date`,
+           `tabContact`.`unsubscribe_Date` AS `newsletter_unregistration_date`,
+           NULL AS `umr_nr`,
+           `tabCustomer`.`invoicing_method` AS `invoicing_method`,
+           `tabUser`.`username` AS `sales_manager`,
+           `tabContact`.`phone` AS `phone`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Contact" 
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
+        LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
+        LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+        WHERE `tabCustomer`.`name` = "{customer_name}"
+    """.format(customer_name=customer_name)
+    data = frappe.db.sql(sql_query, as_dict=True)
+    for d in data:       
+        # Do not change the order. Changes will corrupt import into Gecko.
+        # Only append new lines.
+        row = CUSTOMER_HEADER_FIELDS.format(
+            person_id=d['person_id'],
+            customer_id=d['customer_id'],
+            customer_name=d['customer_name'],
+            first_name=d['first_name'],
+            last_name=d['last_name'],
+            email=d['email'],
+            address_line1=d['address_line1'],
+            pincode=d['pincode'],
+            city=d['city'],
+            institute=d['institute'],
+            department=d['department'],
+            country=d['country'],
+            DS_Nr=d['ds_nr'],
+            address_type= "INV" if (d["address_type"]=="Billing") else "DEL",
+            vat_nr=d['vat_nr'],
+            siret=d['siret'],
+            currency=d['currency'],
+            is_deleted=d['is_deleted'],
+            default_discount=d['default_discount'],
+            is_electronic_invoice=d['is_electronic_invoice'],
+            receive_updates_per_email=d['receive_updates_per_email'],
+            is_punchout_user=d['is_punchout_user'],
+            punchout_identifier=d['punchout_identifier'],
+            punchout_shop_id=d['punchout_shop_id'],
+            room=d['room'],
+            salutation=d['salutation'],
+            title=d['title'],
+            group_leader=d['group_leader'],
+            email_cc=d['email_cc'],
+            phone_number=d['phone_number'],
+            phone_country=d['phone_country'],
+            institute_key=d['institute_key'],
+            newsletter_registration_state=d['newsletter_registration_state'],
+            newsletter_registration_date=d['newsletter_registration_date'],
+            newsletter_unregistration_date=d['newsletter_unregistration_date'],
+            umr_nr=d['umr_nr'],
+            invoicing_method=d['invoicing_method'],
+            sales_manager=d['sales_manager'],
+            ext_debitor_number=d['ext_debitor_number'],
+            invoice_email=d['invoice_email'],
+            phone=d['phone']
+        )
+        f.write(row)
+    # close file
+    f.close()
+    return
+
+@frappe.whitelist()
+def export_customer_to_gecko(customer_name):    
+    export_customer_billing("/mnt/erp_share/Gecko/Export_Customer_Data/Billing/customer_billing_export_for_gecko.tab",customer_name)
+    return
+
 def update_customer(customer_data):
     """
     This function will update a customer master (including contact & address)
