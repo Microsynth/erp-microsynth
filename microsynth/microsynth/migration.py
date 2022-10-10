@@ -170,7 +170,7 @@ def export_customers(filename, from_date):
     return
 
 
-def export_customer_billing(filename, customer_name):
+def export_customer(filename, customer_name):
     """
     This function will create a customer export file from ERP to Gecko
     """
@@ -221,12 +221,12 @@ def export_customer_billing(filename, customer_name):
            `tabCustomer`.`invoicing_method` AS `invoicing_method`,
            `tabUser`.`username` AS `sales_manager`,
            `tabContact`.`phone` AS `phone`
-        FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+        FROM `tabAddress`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Address" 
                                               AND `tDLA`.`link_doctype` = "Customer"
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
-        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        LEFT JOIN `tabContact` ON `tabContact`.`address` = `tabAddress`.`name`
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
@@ -286,7 +286,7 @@ def export_customer_billing(filename, customer_name):
 
 @frappe.whitelist()
 def export_customer_to_gecko(customer_name):    
-    export_customer_billing("/mnt/erp_share/Gecko/Export_Customer_Data/Billing/customer_billing_export_for_gecko.tab",customer_name)
+    export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko_" + str(customer_name) + ".tab",customer_name)
     return
 
 def update_customer(customer_data):
