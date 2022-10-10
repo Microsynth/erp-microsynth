@@ -110,9 +110,9 @@ def export_customers(filename, from_date):
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-        WHERE `tabCustomer`.`modified` >= "{from_date}"
-           OR `tabAddress`.`modified` >= "{from_date}"
-           OR `tabContact`.`modified` >= "{from_date}"
+        WHERE `tabCustomer`.`creation` >= "{from_date}"
+           OR `tabAddress`.`creation` >= "{from_date}"
+           OR `tabContact`.`creation` >= "{from_date}")
     """.format(from_date=from_date)
     data = frappe.db.sql(sql_query, as_dict=True)
     for d in data:       
