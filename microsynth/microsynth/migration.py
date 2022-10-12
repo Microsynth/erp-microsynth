@@ -285,7 +285,7 @@ def export_customer(filename, customer_name):
     return
 
 @frappe.whitelist()
-def export_customer_to_gecko(customer_name):    
+def export_customer_to_gecko(customer_name):
     export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko.tab",customer_name)
     return
 
@@ -407,6 +407,11 @@ def export_shipping_address(filename, person_id):
         f.write(row)
     # close file
     f.close()
+    return
+
+@frappe.whitelist()
+def export_contact_to_gecko(contact_name):
+    export_shipping_address("/mnt/erp_share/Gecko/Export_Customer_Data/Shipping/shipping_address_export_for_gecko.tab", contact_name)
     return
 
 def update_customer(customer_data):
