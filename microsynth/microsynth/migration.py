@@ -289,8 +289,125 @@ def export_customer_to_gecko(customer_name):
     export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko.tab",customer_name)
     return
 
-SHIPPING_ADDRESS_HEADER = """customer_id;designation;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;email;phonecountry_gecko;phone_gecko;username;password;person_id;;address_type;;email_cc;salutation;group_leader;;;;is_punchout_user;punchout_buyer;punchout_identifier;receive_newsletter;subscribe_date;unsubscribe_date;webshop_address_readonly;"""
-SHIPPING_ADDRESS_FIELDS = """{customer_id};{designation};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{email};;;;;{person_id};;{address_type};;;{salutation};{group_leader};;;;{is_punchout_user};{punchout_buyer};{punchout_identifier};{receive_newsletter};{subscribe_date};{unsubscribe_date};{webshop_address_readonly};"""
+SHIPPING_ADDRESS_HEADER = """customer_id;title;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;email;phonecountry_gecko;phone_gecko;username;password;person_id;;address_type;;email_cc;salutation;group_leader;;;;is_punchout_user;punchout_buyer;punchout_identifier;newsletter_registration_state;newsletter_registration_date;newsletter_unregistration_date;webshop_address_readonly;\n"""
+SHIPPING_ADDRESS_FIELDS = """{customer_id};{title};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{email};;;;;{person_id};;{address_type};;;{salutation};{group_leader};;;;{is_punchout_user};{punchout_buyer};{punchout_identifier};{newsletter_registration_state};{newsletter_registration_date};{newsletter_unregistration_date};{webshop_address_readonly};"""
+
+def export_shipping_address(filename, person_id):
+    """
+    This function will create a shipping address export file from ERP to Gecko
+    """
+    # create file
+    f = open(filename, "w")
+    # write header
+    f.write(SHIPPING_ADDRESS_HEADER)
+    # get applicable records
+    sql_query = """SELECT 
+           `tabAddress`.`name` AS `person_id`,
+           `tabCustomer`.`name` AS `customer_id`,
+           `tabCustomer`.`customer_name` AS `customer_name`,
+           `tabContact`.`first_name` AS `first_name`,
+           `tabContact`.`last_name` AS `last_name`,
+           `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`address_line1` AS `address_line1`,
+           `tabAddress`.`pincode` AS `pincode`,
+           `tabAddress`.`city` AS `city`,
+           `tabContact`.`institute` AS `institute`,
+           `tabContact`.`department` AS `department`,
+           `tabCountry`.`code` AS `country`,
+           "" AS `ds_nr`,
+           `tabAddress`.`address_type` AS `address_type`,
+           `tabCustomer`.`tax_id` AS `vat_nr`,
+           `tabCustomer`.`siret` AS `siret`,
+           `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
+           `tabCustomer`.`default_currency` AS `currency`,
+           `tabCustomer`.`invoice_email` AS `invoice_email`, 
+           `tabCustomer`.`disabled` AS `is_deleted`,
+           `tabPrice List`.`general_discount` AS `default_discount`,
+           0 AS `is_electronic_invoice`,
+           0 AS `receive_updates_per_email`,
+           0 AS `is_punchout_user`,
+           `tabCustomer`.`punchout_identifier` AS `punchout_identifier`,
+           `tabCustomer`.`punchout_shop` AS `punchout_shop_id`,
+           `tabContact`.`room` AS `room`,
+           `tabContact`.`salutation` AS `salutation`,
+           `tabContact`.`designation` AS `title`,
+           `tabContact`.`group_leader` AS `group_leader`,
+           NULL AS `email_cc`,
+           `tabContact`.`phone` AS `phone_number`,
+           NULL AS `phone_country`,
+           `tabContact`.`institute_key` AS `institute_key`,
+           `tabContact`.`receive_newsletter` AS `newsletter_registration_state`,
+           `tabContact`.`subscribe_date` AS `newsletter_registration_date`,
+           `tabContact`.`unsubscribe_Date` AS `newsletter_unregistration_date`,
+           NULL AS `umr_nr`,
+           `tabCustomer`.`invoicing_method` AS `invoicing_method`,
+           `tabUser`.`username` AS `sales_manager`,
+           `tabContact`.`phone` AS `phone`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Contact" 
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
+        LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
+        LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+        WHERE `tabContact`.`name` = {contact_name}
+    """.format(contact_name=person_id)
+    data = frappe.db.sql(sql_query, as_dict=True)
+    for d in data:       
+        # Do not change the order. Changes will corrupt import into Gecko.
+        # Only append new lines.
+        row = SHIPPING_ADDRESS_FIELDS.format(
+            person_id = replaceNone(d['person_id']),
+            customer_id = replaceNone(d['customer_id']),
+            customer_name = replaceNone(d['customer_name']),
+            first_name = replaceNone(d['first_name']),
+            last_name = replaceNone(d['last_name']),
+            email = replaceNone(d['email']),
+            address_line1 = replaceNone(d['address_line1']),
+            pincode = replaceNone(d['pincode']),
+            city = replaceNone(d['city']),
+            institute = replaceNone(d['institute']),
+            department = replaceNone(d['department']),
+            country = replaceNone((d['country'])).upper(),
+            DS_Nr = replaceNone(d['ds_nr']),
+            address_type = replaceNone("INV" if (d["address_type"]=="Billing") else "DEL"),
+            vat_nr = replaceNone(d['vat_nr']),
+            siret = replaceNone(d['siret']),
+            currency = replaceNone(d['currency']),
+            is_deleted = replaceNone(d['is_deleted']),
+            default_discount = replaceNone(d['default_discount']),
+            is_electronic_invoice = replaceNone(d['is_electronic_invoice']),
+            receive_updates_per_email = replaceNone(d['receive_updates_per_email']),
+            is_punchout_user = replaceNone(d['is_punchout_user']),
+            punchout_identifier = replaceNone(d['punchout_identifier']),
+            punchout_shop_id = replaceNone(d['punchout_shop_id']),
+            punchout_buyer = "",
+            room = replaceNone(d['room']),
+            salutation = replaceNone(d['salutation']),
+            title = replaceNone(d['title']),
+            group_leader = replaceNone(d['group_leader']),
+            email_cc = replaceNone(d['email_cc']),
+            phone_number = replaceNone(d['phone_number']),
+            phone_country = replaceNone(d['phone_country']),
+            institute_key = replaceNone(d['institute_key']),
+            receive_newsletter = "",
+            newsletter_registration_state = replaceNone(d['newsletter_registration_state']),
+            newsletter_registration_date = replaceNone(d['newsletter_registration_date']),
+            newsletter_unregistration_date = replaceNone(d['newsletter_unregistration_date']),
+            webshop_address_readonly = "",
+            umr_nr = replaceNone(d['umr_nr']),
+            invoicing_method = replaceNone(d['invoicing_method']),
+            sales_manager = replaceNone(d['sales_manager']),
+            ext_debitor_number = replaceNone(d['ext_debitor_number']),
+            invoice_email = replaceNone(d['invoice_email']),
+            phone = replaceNone(d['phone'])
+        )
+        f.write(row)
+    # close file
+    f.close()
+    return
 
 def update_customer(customer_data):
     """
