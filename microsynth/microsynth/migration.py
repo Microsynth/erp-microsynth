@@ -289,6 +289,9 @@ def export_customer_to_gecko(customer_name):
     export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko.tab",customer_name)
     return
 
+SHIPPING_ADDRESS_HEADER = """customer_id;designation;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;email;phonecountry_gecko;phone_gecko;username;password;person_id;;address_type;;email_cc;salutation;group_leader;;;;is_punchout_user;punchout_buyer;punchout_identifier;receive_newsletter;subscribe_date;unsubscribe_date;webshop_address_readonly;"""
+SHIPPING_ADDRESS_FIELDS = """{customer_id};{designation};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{email};;;;;{person_id};;{address_type};;;{salutation};{group_leader};;;;{is_punchout_user};{punchout_buyer};{punchout_identifier};{receive_newsletter};{subscribe_date};{unsubscribe_date};{webshop_address_readonly};"""
+
 def update_customer(customer_data):
     """
     This function will update a customer master (including contact & address)
