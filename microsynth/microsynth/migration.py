@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 from email.policy import default
+import os
 import frappe
 from frappe import _
 import csv
@@ -411,7 +412,12 @@ def export_shipping_address(filename, person_id):
 
 @frappe.whitelist()
 def export_contact_to_gecko(contact_name):
-    export_shipping_address("/mnt/erp_share/Gecko/Export_Customer_Data/Shipping/shipping_address_export_for_gecko.tab", contact_name)
+    shipping_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Shipping/shipping_address_export_for_gecko.tab"
+    if os.path.exists(shipping_address_file):
+        frappe.throw("<b>Export file already exists:</b><br>" + shipping_address_file)
+    else:    
+        export_shipping_address(shipping_address_file, contact_name)
+        frappe.msgprint("Exported for Gecko")
     return
 
 def update_customer(customer_data):
