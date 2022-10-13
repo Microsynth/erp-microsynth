@@ -951,7 +951,8 @@ def import_customer_price_lists(filename):
                 currency = row['BasisPriceList'], 
                 general_discount = float(row['GeneralDiscount']), 
                 item_code = row['ArticleCode'], 
-                discount = float(row['Discount'])
+                discount = float(row['Discount']),
+                qty = row['Quantity']
             )
     frappe.db.commit()
     return
