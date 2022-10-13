@@ -173,14 +173,14 @@ def export_customers(filename, from_date):
 BILLING_ADDRESS_HEADER = """customer_id;title;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;invoice_email;phonecountry_gecko;phone_gecko;person_id;tax_id;unreliable;default_discount;;address_type;salutation;;;electronic_invoice;is_punchout_user;punchout_buyer;punchout_identifier;static_billing_address_id;webshop_billing_address_readonly;\n"""
 BILLING_ADDRESS_FIELDS = """{customer_id};{title};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{invoice_email};;;{person_id};{tax_id};;{default_discount};;{address_type};{salutation};;;{electronic_invoice};;;;;{webshop_billing_address_readonly};\n"""
 
-def export_customer(filename, customer_name):
+def export_billing_address(filename, customer_name):
     """
     This function will create a customer export file from ERP to Gecko
     """
     # create file
     f = open(filename, "w")
     # write header
-    f.write(CUSTOMER_HEADER)
+    f.write(BILLING_ADDRESS_HEADER)
     # get applicable records changed since from_date
     sql_query = """SELECT 
            `tabAddress`.`name` AS `person_id`,
@@ -197,18 +197,19 @@ def export_customer(filename, customer_name):
            `tabCountry`.`code` AS `country`,
            "" AS `ds_nr`,
            `tabAddress`.`address_type` AS `address_type`,
-           `tabCustomer`.`tax_id` AS `vat_nr`,
+           `tabCustomer`.`tax_id` AS `tax_id`,
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
            `tabCustomer`.`invoice_email` AS `invoice_email`, 
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
-           0 AS `is_electronic_invoice`,
+           0 AS `electronic_invoice`,
            0 AS `receive_updates_per_email`,
            0 AS `is_punchout_user`,
            `tabCustomer`.`punchout_identifier` AS `punchout_identifier`,
            `tabCustomer`.`punchout_shop` AS `punchout_shop_id`,
+           `tabCustomer`.`webshop_address_readonly` as `webshop_billing_address_readonly`,
            `tabContact`.`room` AS `room`,
            `tabContact`.`salutation` AS `salutation`,
            `tabContact`.`designation` AS `title`,
@@ -234,12 +235,13 @@ def export_customer(filename, customer_name):
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
         WHERE `tabCustomer`.`name` = "{customer_name}"
+        AND `tabAddress`.`address_type` = "Billing"
     """.format(customer_name=customer_name)
-    data = frappe.db.sql(sql_query, as_dict=True)
-    for d in data:       
+    data = frappe.db.sql(sql_query, as_dict=True)       
+    for d in data:
         # Do not change the order. Changes will corrupt import into Gecko.
         # Only append new lines.
-        row = CUSTOMER_HEADER_FIELDS.format(
+        row = BILLING_ADDRESS_FIELDS.format(
             person_id = replaceNone(d['person_id']),
             customer_id = replaceNone(d['customer_id']),
             customer_name = replaceNone(d['customer_name']),
@@ -251,15 +253,15 @@ def export_customer(filename, customer_name):
             city = replaceNone(d['city']),
             institute = replaceNone(d['institute']),
             department = replaceNone(d['department']),
-            country = replaceNone(d['country']),
+            country = replaceNone(d['country']).upper(),
             DS_Nr = replaceNone(d['ds_nr']),
             address_type = replaceNone("INV" if (d["address_type"]=="Billing") else "DEL"),
-            vat_nr = replaceNone(d['vat_nr']),
+            tax_id = replaceNone(d['tax_id']),
             siret = replaceNone(d['siret']),
             currency = replaceNone(d['currency']),
             is_deleted = replaceNone(d['is_deleted']),
             default_discount = replaceNone(d['default_discount']),
-            is_electronic_invoice = replaceNone(d['is_electronic_invoice']),
+            electronic_invoice = replaceNone(d['electronic_invoice']),
             receive_updates_per_email = replaceNone(d['receive_updates_per_email']),
             is_punchout_user = replaceNone(d['is_punchout_user']),
             punchout_identifier = replaceNone(d['punchout_identifier']),
@@ -280,7 +282,8 @@ def export_customer(filename, customer_name):
             sales_manager = replaceNone(d['sales_manager']),
             ext_debitor_number = replaceNone(d['ext_debitor_number']),
             invoice_email = replaceNone(d['invoice_email']),
-            phone = replaceNone(d['phone'])
+            phone = replaceNone(d['phone']),
+            webshop_billing_address_readonly = replaceNone(d['webshop_billing_address_readonly'])
         )
         f.write(row)
     # close file
@@ -289,7 +292,12 @@ def export_customer(filename, customer_name):
 
 @frappe.whitelist()
 def export_customer_to_gecko(customer_name):
-    export_customer("/mnt/erp_share/Gecko/Export_Customer_Data/customer_export_for_gecko.tab",customer_name)
+    billing_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Billing/billing_address_export_for_gecko.tab"    
+    if os.path.exists(billing_address_file):
+        frappe.throw("<b>Export file already exists:</b><br>" + billing_address_file)
+    else:    
+        export_billing_address(billing_address_file, customer_name)
+    frappe.msgprint("Exported for Gecko")
     return
 
 SHIPPING_ADDRESS_HEADER = """customer_id;title;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;email;phonecountry_gecko;phone_gecko;username;password;person_id;;address_type;;email_cc;salutation;group_leader;;;;is_punchout_user;punchout_buyer;punchout_identifier;newsletter_registration_state;newsletter_registration_date;newsletter_unregistration_date;webshop_address_readonly;\n"""
