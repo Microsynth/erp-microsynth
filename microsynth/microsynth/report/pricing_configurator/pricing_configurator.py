@@ -103,19 +103,19 @@ def get_data(filters):
 
     sorted_data = sorted(data, key=sort_key, reverse=False)
 
-    # def filter_by_item_group(entry):
-    #     if 'item_group' in filters:
-    #         filters['item_group'] == entry['item_group']
-    #     else:
-    #         True
+    def filter_by_item_group(entry):
+        if 'item_group' in filters:
+            filters['item_group'] == entry['item_group']
+        else:
+            True
         
-    # filtered_data = [ x for x in sorted_data if filter_by_item_group(x) ]
+    filtered_data = [ x for x in sorted_data if filter_by_item_group(x) ]
 
     if 'discounts' in filters:
         general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
-        return [ x for x in sorted_data if x['discount'] is not None and x['discount'] != general_discount ]
+        return [ x for x in filtered_data if x['discount'] is not None and x['discount'] != general_discount ]
     else:
-        return sorted_data
+        return filtered_data
     
 def get_data_legacy(filters):
     # fetch accounts
