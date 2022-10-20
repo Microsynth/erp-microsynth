@@ -105,12 +105,15 @@ def get_data(filters):
 
     def filter_by_item_group(entry):
         if 'item_group' in filters:
-            filters['item_group'] == entry['item_group']
+            if filters['item_group'] == entry['item_group']:
+                return True
+            else:
+                return False
         else:
-            True
+            return True
         
     filtered_data = [ x for x in sorted_data if filter_by_item_group(x) ]
-
+    
     if 'discounts' in filters:
         general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
         return [ x for x in filtered_data if x['discount'] is not None and x['discount'] != general_discount ]
