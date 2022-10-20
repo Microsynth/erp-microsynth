@@ -31,7 +31,93 @@ def get_columns(filters):
         {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
     ]
 
+def get_item_prices(price_list):
+    simple_sql_query = """
+        SELECT
+            `tabItem Price`.`name` as record,
+            `tabItem Price`.`item_code`,
+            `tabItem`.`item_group`,
+            `tabItem`.`stock_uom` AS `uom`,
+            `tabItem Price`.`item_name`,
+            `tabItem Price`.`min_qty`,
+            `tabItem Price`.`price_list_rate` as rate
+        FROM `tabItem Price`        
+        JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
+        WHERE `price_list` = "{price_list}"
+    """.format(price_list=price_list)
+    data = frappe.db.sql(simple_sql_query, as_dict=True)
+    return data
+
 def get_data(filters):
+    
+    if type(filters) == str:
+        filters = json.loads(filters)
+    elif type(filters) == dict:
+        pass
+    else:
+        filters = dict(filters)
+    
+    reference_price_list = get_reference_price_list(filters['price_list'])
+    # currency = frappe.get_value("Price List", filters['price_list'], "currency")
+    
+    raw_customer_prices = get_item_prices(filters['price_list'])
+    raw_reference_prices = get_item_prices(reference_price_list)
+    
+    customer_prices = {}
+    for p in raw_customer_prices:        
+        customer_prices[p.item_code, p.min_qty] = p  
+   
+    reference_prices = {}
+    for p in raw_reference_prices:
+        reference_prices[p.item_code, p.min_qty] = p     
+
+    data = []
+    for key in reference_prices:
+        
+        reference_rate = reference_prices[key].rate        
+        
+        if key in customer_prices:
+            customer_rate = customer_prices[key].rate
+            discount = (reference_rate - customer_rate) / reference_rate * 100
+            record = customer_prices[key].record
+        else:
+            customer_rate = None 
+            discount = None
+            record = None
+            
+        entry = { 
+            "item_code": reference_prices[key].item_code,
+            "item_name": reference_prices[key].item_name,
+            "item_group": reference_prices[key].item_group,
+            "qty": reference_prices[key].min_qty,
+            "uom": reference_prices[key].uom,            
+            "reference_rate": reference_rate,
+            "price_list_rate": customer_rate,
+            "discount": discount,
+            "record": record }
+            
+        data.append(entry)
+
+    def sort_key(d):
+        return d["item_code"]
+
+    sorted_data = sorted(data, key=sort_key, reverse=False)
+
+    # def filter_by_item_group(entry):
+    #     if 'item_group' in filters:
+    #         filters['item_group'] == entry['item_group']
+    #     else:
+    #         True
+        
+    # filtered_data = [ x for x in sorted_data if filter_by_item_group(x) ]
+
+    if 'discounts' in filters:
+        general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
+        return [ x for x in sorted_data if x['discount'] is not None and x['discount'] != general_discount ]
+    else:
+        return sorted_data
+    
+def get_data_legacy(filters):
     # fetch accounts
     conditions = ""
     raw_conditions = ""
@@ -102,7 +188,7 @@ def get_data(filters):
     """.format(reference_price_list=reference_price_list, 
         price_list=filters['price_list'], conditions=conditions, raw_conditions=raw_conditions, currency=currency)
 
-    data = frappe.db.sql(sql_query, as_dict=True)
+    data = frappe.db.sql(sql_query, as_dict=True)   
     return data
 
 def get_reference_price_list(price_list):
@@ -137,7 +223,7 @@ def populate_from_reference(price_list, item_group=None):
     if item_group:
         filters['item_group'] = item_group
     # get base data
-    data = get_data(filters)
+    data = get_data(filters)    
     print("Number of data sets: {0}".format(len(data)))
     reference_price_list = get_reference_price_list(filters['price_list'])
     general_discount = frappe.get_value("Price List", price_list, "general_discount")
