@@ -9,7 +9,7 @@
     {%- if contact_doc.institute -%}{{ contact_doc.institute }}<br>{%- endif -%}
     {%- if contact_doc.salutation -%}{{ contact_doc.salutation }} {% endif %}
     {% if contact_doc.designation %}{{ contact_doc.designation }} {% endif %}
-    {% if contact_doc.first_name %}{{ contact_doc.first_name }} {% endif %}
+    {% if contact_doc.first_name and contact_doc.first_name != "-" %}{{ contact_doc.first_name }} {% endif %}
     {% if contact_doc.last_name %}{{ contact_doc.last_name }}{%- endif -%}<br>
     {%- if contact_doc.department -%}{{ contact_doc.department }}<br>{%- endif -%}
     {%- if contact_doc.room -%}{{ contact_doc.room }}<br>{%- endif -%}
