@@ -78,7 +78,7 @@ def get_data(filters):
         
         if key in customer_prices:
             customer_rate = customer_prices[key].rate
-            discount = (reference_rate - customer_rate) / reference_rate * 100
+            discount = (reference_rate - customer_rate) / reference_rate * 100 if reference_rate else None
             record = customer_prices[key].record
         else:
             customer_rate = None 
