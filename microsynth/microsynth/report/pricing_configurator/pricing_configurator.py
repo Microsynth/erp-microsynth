@@ -100,10 +100,7 @@ def get_data(filters):
 
     def filter_by_item_group(entry):
         if 'item_group' in filters:
-            if filters['item_group'] == entry['item_group']:
-                return True
-            else:
-                return False
+            return filters['item_group'] == entry['item_group']                
         else:
             return True
         
