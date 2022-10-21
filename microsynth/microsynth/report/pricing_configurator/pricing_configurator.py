@@ -116,7 +116,7 @@ def get_data(filters):
     
     if 'discounts' in filters:
         general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
-        return [ x for x in filtered_data if x['discount'] is not None and x['discount'] != general_discount ]
+        return [ x for x in filtered_data if x['discount'] is not None and round(x['discount'],2) != general_discount and x['discount'] != 0 ]
     else:
         return filtered_data
     
