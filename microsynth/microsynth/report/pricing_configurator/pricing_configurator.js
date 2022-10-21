@@ -30,6 +30,9 @@ frappe.query_reports["Pricing Configurator"] = {
         report.page.add_inner_button(__('Populate with factor'), function () {
            populate_with_factor();
         });
+        report.page.add_inner_button(__('Price List'), function () {
+            frappe.set_route("Form", "Price List", frappe.query_report.filters[0].value);
+        });
         report.page.add_inner_button(__('Customers'), function () {
            frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value });
         });
