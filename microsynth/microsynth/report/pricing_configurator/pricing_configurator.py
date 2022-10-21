@@ -72,9 +72,9 @@ def get_data(filters):
         reference_prices[p.item_code, p.min_qty] = p     
 
     data = []
-    for key in reference_prices:
+    for key, reference in sorted(reference_prices.items()):
         
-        reference_rate = reference_prices[key].rate        
+        reference_rate = reference.rate        
         
         if key in customer_prices:
             customer_rate = customer_prices[key].rate
@@ -86,22 +86,17 @@ def get_data(filters):
             record = None
             
         entry = { 
-            "item_code": reference_prices[key].item_code,
-            "item_name": reference_prices[key].item_name,
-            "item_group": reference_prices[key].item_group,
-            "qty": reference_prices[key].min_qty,
-            "uom": reference_prices[key].uom,            
+            "item_code": reference.item_code,
+            "item_name": reference.item_name,
+            "item_group": reference.item_group,
+            "qty": reference.min_qty,
+            "uom": reference.uom,            
             "reference_rate": reference_rate,
             "price_list_rate": customer_rate,
             "discount": discount,
             "record": record }
             
         data.append(entry)
-
-    def sort_key(d):
-        return d["item_code"]
-
-    sorted_data = sorted(data, key=sort_key, reverse=False)
 
     def filter_by_item_group(entry):
         if 'item_group' in filters:
@@ -112,7 +107,7 @@ def get_data(filters):
         else:
             return True
         
-    filtered_data = [ x for x in sorted_data if filter_by_item_group(x) ]
+    filtered_data = [ x for x in data if filter_by_item_group(x) ]
     
     if 'discounts' in filters:
         general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
