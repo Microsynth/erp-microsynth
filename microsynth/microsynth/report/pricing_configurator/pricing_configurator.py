@@ -189,7 +189,7 @@ def get_data_legacy(filters):
 def get_reference_price_list(price_list):
     return frappe.get_value("Price List", price_list, "reference_price_list")
 
-def get_rate(item_code, price_list, qty=1):
+def get_rate(item_code, price_list, qty):
     data = frappe.db.sql("""
         SELECT
             IFNULL(`tP`.`price_list_rate`, 0) AS `rate`
@@ -202,6 +202,7 @@ def get_rate(item_code, price_list, qty=1):
          ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
          LIMIT 1;
         """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)
+    # frappe.throw("item: {item}, quantity: {qty}, rate: {rate}".format(item=item_code, qty=qty, rate=data[0]['rate']))
     if len(data) > 0:
         return data[0]['rate']
     else:
@@ -228,7 +229,9 @@ def populate_from_reference(price_list, item_group=None):
         if d['reference_rate'] and not d['price_list_rate']:
             #frappe.throw("code: {code}, quantity: {qty}".format(code=d['item_code'], qty=d['qty']))
             # create new price
-            rate = get_rate(d['item_code'], reference_price_list)
+            rate = get_rate(d['item_code'], reference_price_list, d['qty'])
+            # frappe.throw("code: {item}, quantity: {qty}, rate: {rate}".format(item = d['item_code'], qty = d['qty'], rate=rate))
+
             # rate based on general discount for item groups 3.1 & 3.2
             group = frappe.get_value("Item", d['item_code'], "item_group")
             if "3.1 " in group or "3.2" in group:
@@ -266,19 +269,20 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
     # set new prices
     for d in data:
         if d['reference_rate']:
-            reference_rate = get_rate(d['item_code'], reference_price_list)
+            reference_rate = get_rate(d['item_code'], reference_price_list, d['qty'])
             new_rate = factor * reference_rate
-            set_rate(d['item_code'], price_list, new_rate)
+            set_rate(d['item_code'], price_list, d['qty'], new_rate)
     return
 
 """
 This function will set the rate for an item
 """
 @frappe.whitelist()
-def set_rate(item_code, price_list, rate):
+def set_rate(item_code, price_list, quantity, rate):
     existing_item_prices = frappe.get_all("Item Price", 
         filters={
             'item_code': item_code,
+            'min_qty': quantity,
             'price_list': price_list
         }, 
         fields=['name']
