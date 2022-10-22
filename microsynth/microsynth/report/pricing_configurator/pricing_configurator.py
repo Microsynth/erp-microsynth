@@ -226,7 +226,7 @@ def populate_from_reference(price_list, item_group=None):
     for d in data:
         #frappe.throw("{0} - {1}".format(d['reference_rate'], d['price_list_rate']))
         if d['reference_rate'] and not d['price_list_rate']:
-            #frappe.throw(d['item_code'])
+            #frappe.throw("code: {code}, quantity: {qty}".format(code=d['item_code'], qty=d['qty']))
             # create new price
             rate = get_rate(d['item_code'], reference_price_list)
             # rate based on general discount for item groups 3.1 & 3.2
@@ -238,11 +238,12 @@ def populate_from_reference(price_list, item_group=None):
                 'item_code': d['item_code'],
                 'price_list': price_list,
                 'price_list_rate': rate,
-                'qty': 1
+                'min_qty': d['qty']
             })
             try:
                 new_rate.insert()
             except Exception as err:
+                # frappe.throw("Cannot insert code {code}, qty {qty}, reference {refrate}, rate {rate} in {price_list}:<br>{error}".format(code=d['item_code'], qty=d['qty'], refrate = d['reference_rate'], rate=rate, price_list = price_list, error = err))
                 print("Cannot insert {0} in {1}: {2}".format(d['item_code'], price_list, err))
     frappe.db.commit()
     return
