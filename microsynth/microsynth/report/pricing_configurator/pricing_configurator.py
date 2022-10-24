@@ -208,11 +208,11 @@ def get_rate(item_code, price_list, qty):
     else:
         return 0
 
-"""
-This will fill up the missing rates from the reference
-"""
 @frappe.whitelist()
 def populate_from_reference(price_list, item_group=None):
+    """
+    This will fill up the missing rates from the reference
+    """
     filters = {
         'price_list': price_list,
     }
@@ -251,11 +251,11 @@ def populate_from_reference(price_list, item_group=None):
     frappe.db.commit()
     return
 
-"""
-This will set all rates from the reference price list with a factor
-"""
 @frappe.whitelist()
 def populate_with_factor(price_list, item_group=None, factor=1.0):
+    """
+    This will set all rates from the reference price list with a factor
+    """
     filters = {
         'price_list': price_list,
     }
@@ -274,11 +274,11 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
             set_rate(d['item_code'], price_list, d['qty'], new_rate)
     return
 
-"""
-This function will set the rate for an item
-"""
 @frappe.whitelist()
 def set_rate(item_code, price_list, quantity, rate):
+    """
+    This function will set the rate for an item
+    """
     existing_item_prices = frappe.get_all("Item Price", 
         filters={
             'item_code': item_code,
@@ -303,9 +303,9 @@ def set_rate(item_code, price_list, quantity, rate):
     frappe.db.commit()
     return
 
-"""
-Pull all items with discounts for external use (~standing quotation)
-"""
 @frappe.whitelist()
 def get_discount_items(price_list):
+    """
+    Pull all items with discounts for external use (~standing quotation)
+    """
     return get_data(filters={'price_list': price_list, 'discounts': 1})
