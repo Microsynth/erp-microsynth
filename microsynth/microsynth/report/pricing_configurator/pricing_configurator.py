@@ -32,6 +32,9 @@ def get_columns(filters):
     ]
 
 def get_item_prices(price_list):
+    """
+    Returns the item prices for a given price list. Fields: 'record', 'item_code', 'item_group', 'uom', 'item_name', 'min_qty', 'rate'
+    """
     simple_sql_query = """
         SELECT
             `tabItem Price`.`name` as record,
@@ -49,7 +52,9 @@ def get_item_prices(price_list):
     return data
 
 def get_data(filters):
-    
+    """
+    Returns a list of dictionaries with the data to be shown in the table of the pricing configurator.
+    """
     if type(filters) == str:
         filters = json.loads(filters)
     elif type(filters) == dict:
@@ -249,6 +254,9 @@ def populate_from_reference(price_list, item_group=None):
                 # frappe.throw("Cannot insert code {code}, qty {qty}, reference {refrate}, rate {rate} in {price_list}:<br>{error}".format(code=d['item_code'], qty=d['qty'], refrate = d['reference_rate'], rate=rate, price_list = price_list, error = err))
                 print("Cannot insert {0} in {1}: {2}".format(d['item_code'], price_list, err))
     frappe.db.commit()
+
+    clean_price_list(price_list=price_list)
+
     return
 
 @frappe.whitelist()
@@ -272,6 +280,9 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
             reference_rate = get_rate(d['item_code'], reference_price_list, d['qty'])
             new_rate = factor * reference_rate
             set_rate(d['item_code'], price_list, d['qty'], new_rate)
+    
+    clean_price_list(price_list=price_list)
+    
     return
 
 @frappe.whitelist()
@@ -309,3 +320,40 @@ def get_discount_items(price_list):
     Pull all items with discounts for external use (~standing quotation)
     """
     return get_data(filters={'price_list': price_list, 'discounts': 1})
+
+@frappe.whitelist()
+def clean_price_list(price_list):
+    """
+    Corrects rates if there is a lower rate for a smaller quantity.
+    """
+    print("process '{0}'".format(price_list))
+    
+    item_prices = get_item_prices(price_list)
+
+
+    prices = {}
+    for p in item_prices:
+        prices[p.item_code, p.min_qty] = p
+
+    sorted_prices = sorted(prices.items())
+
+    # initialize memory from first element
+    (code_memory, quantity_memory), memory = sorted_prices[0]
+    rate_memory = memory.rate
+
+    for key, item_price in sorted_prices:
+
+        if item_price.item_code == memory.item_code: 
+        
+            if item_price.rate > rate_memory and item_price.min_qty > memory.min_qty:
+                set_rate(item_price.item_code, price_list, item_price.min_qty, rate_memory)
+                print("Set rate for item {code}, quantity {qty}: {rate} --> {mem_rate}".format(code=item_price.item_code, qty=str(item_price.min_qty).rjust(6), rate=item_price.rate, mem_rate=rate_memory))
+            else:                
+                rate_memory = item_price.rate
+        
+        else:
+            rate_memory = item_price.rate            
+        
+        memory = item_price
+
+    return
