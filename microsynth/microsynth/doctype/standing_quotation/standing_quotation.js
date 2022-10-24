@@ -40,6 +40,7 @@ frappe.ui.form.on('Standing Quotation', {
                             var child = cur_frm.add_child('items');
                             frappe.model.set_value(child.doctype, child.name, 'item_code', items[i].item_code);
                             frappe.model.set_value(child.doctype, child.name, 'item_name', items[i].item_name);
+                            frappe.model.set_value(child.doctype, child.name, 'qty', items[i].qty);
                         }
                         cur_frm.refresh_field('items');
                     }
