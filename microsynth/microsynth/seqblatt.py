@@ -28,19 +28,20 @@ def set_status(status, labels):
         }
     ]
     """
-    
+    if type(labels) == str:
+        labels = json.loads(labels)
     try:        
         for l in labels:
             matchingLabels = frappe.get_all("Sequencing Label",filters={
-                'label_id': l["label_id"],
-                'item': l["item_code"]
+                'label_id': l.get("label_id"),
+                'item': l.get("item_code")
             }, fields=['name'])
             
             if len(matchingLabels) == 1:
                 label = frappe.get_doc("Sequencing Label", matchingLabels[0]["name"])
                 # ToDo: Check if status transition is allowed               
                 label.status = status
-                label.save()
+                label.save(ignore_permissions=True)
             else:
                 return {'success': False, 'message': "none or multiple labels." }            
         frappe.db.commit()        
@@ -49,41 +50,52 @@ def set_status(status, labels):
         return {'success': False, 'message': err }
 
 @frappe.whitelist(allow_guest=True)
-def set_unused(labels):
+def set_unused(content):
     """
     Set label status to 'unused'. Labels must be a list of dictionaries 
     (see `set_status` function).
     """
-    set_status("unused", labels)
+    if type(content) == str:
+        content = json.loads(content)
+    return set_status("unused", content.get("labels"))
 
 @frappe.whitelist(allow_guest=True)
-def lock_labels(labels):
+def lock_labels(content):
     """
     Set label status to 'locked'. Labels must be a list of dictionaries 
     (see `set_status` function).
     """
-    set_status("locked", labels)
+    if type(content) == str:
+        content = json.loads(content)
+    return set_status("locked", content.get("labels"))
+    
 @frappe.whitelist(allow_guest=True)
-def received_labels(labels):
+def received_labels(content):
 
     """
     Set label status to 'received'. Labels must be a list of dictionaries 
     (see `set_status` function).
     """
-    set_status("received", labels)
+    if type(content) == str:
+        content = json.loads(content)
+    return set_status("received", content.get("labels"))
 
 @frappe.whitelist(allow_guest=True)
-def processed_labels(labels):
+def processed_labels(content):
     """
     Set label status to 'processed'. Labels must be a list of dictionaries 
     (see `set_status` function).
     """
-    set_status("processed", labels)
+    if type(content) == str:
+        content = json.loads(content)
+    return set_status("processed", content.get("labels"))
 
-@frappe.whitelist(allow_guest=True)
-def lock_labels(labels):
-    """
-    Set label status to 'locked'. Labels must be a list of dictionaries 
-    (see `set_status` function).
-    """
-    set_status("locked", labels)
+#@frappe.whitelist(allow_guest=True)
+#def unlock_labels(content):
+#    """
+#    Set label status to 'locked'. Labels must be a list of dictionaries 
+#    (see `set_status` function).
+#    """
+#    if type(content) == str:
+#        content = json.loads(content)
+#    return set_status("unknown", content.get("labels"))
