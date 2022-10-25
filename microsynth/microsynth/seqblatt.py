@@ -31,7 +31,7 @@ def set_status(status, labels):
     if type(labels) == str:
         labels = json.loads(labels)
     try:        
-        for l in labels:
+        for l in labels or []:
             matching_labels = frappe.get_all("Sequencing Label",filters={
                 'label_id': l.get("label_id"),
                 'item': l.get("item_code")
