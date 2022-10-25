@@ -1,0 +1,50 @@
+{%- if contact -%}
+    {%- set contact_doc = frappe.get_doc("Contact", contact) -%}
+{%- endif -%}
+{%- if address -%}
+    {%- set address_doc = frappe.get_doc("Address", address) -%}
+{%- endif -%}
+{%- set lines = [] -%}
+{%- if address_doc.overwrite_company -%}
+    {%- if lines.append(address_doc.overwrite_company)-%}{%- endif -%}
+{%- else -%}
+    {%- if lines.append(customer_name) -%}{%- endif -%}
+{%- endif -%}
+{%- if contact -%}
+    {%- if contact_doc.institute -%}{{ contact_doc.institute }}<br>{%- endif -%}
+    {%- if contact_doc.salutation -%}{{ contact_doc.salutation }} {% endif %}
+    {% if contact_doc.designation %}{{ contact_doc.designation }} {% endif %}
+    {% if contact_doc.first_name and contact_doc.first_name != "-" %}{{ contact_doc.first_name }} {% endif %}
+    {% if contact_doc.last_name %}{{ contact_doc.last_name }}{%- endif -%}<br>
+    {%- if contact_doc.department -%}{{ contact_doc.department }}<br>{%- endif -%}
+    {%- if contact_doc.room -%}{{ contact_doc.room }}<br>{%- endif -%}
+{% endif %}
+{%- if address -%}
+    {%- if address_doc.address_line1 -%}{{ address_doc.address_line1 }}<br>{%- endif -%}
+    {%- if address_doc.address_line2 -%}{{ address_doc.address_line2 }}<br>{%- endif -%}
+    
+    {%- if address.country in ['United Kingdom'] -%}
+        {%- if address_doc.city -%}{{ address_doc.city }} {% endif %}
+        {% if address_doc.pincode %}{{ address_doc.pincode }}<br>{%- endif -%}
+    {%- else -%}
+        {%- if address_doc.pincode -%}{{ address_doc.pincode }} {% endif %}
+        {% if address_doc.city %}{{ address_doc.city }}<br>{%- endif -%}
+    {%- endif -%}
+    {%- if address_doc.country -%}{{ address_doc.country }}<br>{%- endif -%}
+{%- endif -%}
+
+{%- for n in range(9) -%}
+    {%- if lines.append("") -%}{%- endif -%}
+{%- endfor -%}
+m m
+J
+H 100
+S 0,-2.5,10,12,25.0
+O R
+B 1,4,0,DATAMATRIX,0.3;
+T 1,3,0,3,pt 4;
+T 11,3,0,3,pt 4;
+T 7,5,0,3,pt 5;{{lines[0]}}
+T 7,7,0,3,pt 4;
+T 7,9,0,3,pt 4;
+A 1
