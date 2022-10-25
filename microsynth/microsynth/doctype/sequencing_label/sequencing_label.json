@@ -87,9 +87,12 @@
    "label": "Identification"
   },
   {
+   "description": "Printed barcode on label sticker",
    "fieldname": "label_id",
    "fieldtype": "Data",
-   "label": "Label ID",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Label Barcode",
    "reqd": 1
   },
   {
@@ -101,8 +104,8 @@
    "reqd": 1
   }
  ],
- "modified": "2022-09-29 11:15:41.544812",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2022-10-25 14:44:20.931980",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sequencing Label",
  "owner": "Administrator",
@@ -133,5 +136,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "label_id",
  "track_changes": 1
 }
