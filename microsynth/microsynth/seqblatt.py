@@ -32,13 +32,13 @@ def set_status(status, labels):
         labels = json.loads(labels)
     try:        
         for l in labels:
-            matchingLabels = frappe.get_all("Sequencing Label",filters={
+            matching_labels = frappe.get_all("Sequencing Label",filters={
                 'label_id': l.get("label_id"),
                 'item': l.get("item_code")
             }, fields=['name'])
             
-            if len(matchingLabels) == 1:
-                label = frappe.get_doc("Sequencing Label", matchingLabels[0]["name"])
+            if matching_labels and len(matching_labels) == 1:
+                label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
                 # ToDo: Check if status transition is allowed               
                 label.status = status
                 label.save(ignore_permissions=True)
