@@ -53,9 +53,11 @@ frappe.query_reports["Pricing Configurator"] = {
                         price_list = frappe.query_report.filters[i].value;
                     }
                 }
+                // get the quantity from data
+                var qty = frappe.query_report.data[row].qty
                 // get item_code from data
                 var item_code = frappe.query_report.data[row].item_code;
-                edit_cell(item_code, price_list, value);
+                edit_cell(item_code, price_list, qty, value);
             }
         });
     }
@@ -99,11 +101,12 @@ function populate_with_factor() {
     );
 }
 
-function edit_cell(item_code, price_list, value) {
+function edit_cell(item_code, price_list, qty, value) {
     var d = new frappe.ui.Dialog({
         'fields': [
             {'fieldname': 'price_list', 'fieldtype': 'Link', 'options': "Price List", 'label': __('Price List'), 'read_only': 1, 'default': price_list},
             {'fieldname': 'item_code', 'fieldtype': 'Link', 'options': "Item", 'label': __('Item'), 'read_only': 1, 'default': item_code},
+            {'fieldname': 'qty', 'fieldtype': 'Float', 'precision': 2, 'label': __('Quantity'), 'read_only': 1, 'default': qty},
             {'fieldname': 'rate', 'fieldtype': 'Float', 'precision': 2, 'label': __('Rate'), 'reqd': 1, 'default': value}
         ],
         'primary_action': function(){
@@ -114,6 +117,7 @@ function edit_cell(item_code, price_list, value) {
                 'args':{
                     'item_code': values.item_code,
                     'price_list': values.price_list,
+                    'qty': values.qty,
                     'rate': values.rate
                 },
                 'callback': function(r)

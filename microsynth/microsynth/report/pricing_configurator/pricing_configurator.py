@@ -286,14 +286,14 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
     return
 
 @frappe.whitelist()
-def set_rate(item_code, price_list, quantity, rate):
+def set_rate(item_code, price_list, qty, rate):
     """
     This function will set the rate for an item
     """
     existing_item_prices = frappe.get_all("Item Price", 
         filters={
             'item_code': item_code,
-            'min_qty': quantity,
+            'min_qty': qty,
             'price_list': price_list
         }, 
         fields=['name']
