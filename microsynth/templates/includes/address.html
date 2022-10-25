@@ -4,7 +4,7 @@
 {%- if address -%}
     {%- set address_doc = frappe.get_doc("Address", address) -%}
 {%- endif -%}
-{{ customer_name }}<br>
+{% if address_doc.overwrite_company %}{{address_doc.overwrite_company}}{% else %}{{ customer_name }}{% endif %}<br>
 {%- if contact -%}
     {%- if contact_doc.institute -%}{{ contact_doc.institute }}<br>{%- endif -%}
     {%- if contact_doc.salutation -%}{{ contact_doc.salutation }} {% endif %}
