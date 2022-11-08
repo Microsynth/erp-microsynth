@@ -103,18 +103,23 @@ function populate_with_factor() {
         {'fieldname': 'factor', 'fieldtype': 'Float', 'label': __('Factor'), 'default': 1.0, 'reqd': 1}  
     ],
     function(values){
-        frappe.call({
-            'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_with_factor",
-            'args':{
-                'price_list': frappe.query_report.filters[0].value,
-                'item_group': frappe.query_report.filters[1].value,
-                'factor': values.factor
-            },
-            'callback': function(r)
-            {
-                frappe.query_report.refresh();
-            }
-        });
+        frappe.confirm('Are you shure you want to proceed?<br><b>All prices</b> will be <b>overwritten</b> with a rate derived from the reference list multiplied with the given factor.',
+            () => {
+                frappe.call({
+                    'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_with_factor",
+                    'args':{
+                        'price_list': frappe.query_report.filters[0].value,
+                        'item_group': frappe.query_report.filters[1].value,
+                        'factor': values.factor
+                    },
+                    'callback': function(r)
+                    {
+                        frappe.query_report.refresh();
+                    }
+                });
+            }, () => {
+                frappe.show_alert('No prices changed');
+            });        
     },
     __('Populate with factor'),
     __('OK')
