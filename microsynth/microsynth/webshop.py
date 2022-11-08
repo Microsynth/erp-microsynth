@@ -231,9 +231,10 @@ def request_quote(content, client="webshop"):
                 'qty': i['qty'],
                 'oligo': oligo_name
             })
-            qtn_doc.append('oligos', {
-                'oligo': oligo_name
-            })
+        # Append oligo to quotation
+        qtn_doc.append('oligos', {
+            'oligo': oligo_name
+        })
     # append items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
