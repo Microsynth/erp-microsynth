@@ -48,6 +48,9 @@ frappe.ui.form.on('Standing Quotation', {
             });
         }
     },
+    on_submit(frm) {
+        setTimeout(function () {cur_frm.reload_doc();}, 5000);
+    },
     price_list(frm) {
         if (frm.doc.price_list) {
             frappe.call({

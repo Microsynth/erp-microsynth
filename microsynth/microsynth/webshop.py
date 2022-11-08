@@ -231,6 +231,10 @@ def request_quote(content, client="webshop"):
                 'qty': i['qty'],
                 'oligo': oligo_name
             })
+        # Append oligo to quotation
+        qtn_doc.append('oligos', {
+            'oligo': oligo_name
+        })
     # append items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
@@ -441,7 +445,7 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        if 'rate' in i and i['rate']:
+        if 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)
             item_detail['rate'] = i['rate']
             item_detail['price_list_rate'] = i['rate']
