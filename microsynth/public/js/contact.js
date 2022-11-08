@@ -10,7 +10,40 @@ frappe.ui.form.on('Contact', {
 
         // set full name
         cur_frm.set_value("full_name", (first_name + spacer + last_name));
-    }
+
+        // clear routes (to prevent jumping to customer)
+		frappe.route_history = []; 
+    },
+	refresh(frm) {
+        frm.add_custom_button(__("Gecko Export"), function() {
+            frappe.call({
+                "method":"microsynth.microsynth.migration.export_contact_to_gecko",
+                "args": { "contact_name":frm.doc.name }
+            });
+        });
+        // jump to customer button
+		if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
+		    frm.add_custom_button(__("Customer"), function() {
+                frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
+            });
+            
+            frm.add_custom_button(__("Preview Address"), function() {
+                preview_address(frm, frm.doc.links[0].link_name);
+            });
+            
+            frappe.call({
+                "method": "frappe.client.get",
+                "args": {
+                    "doctype": "Customer",
+                    "name": frm.doc.links[0].link_name
+                },
+                "callback": function(response) {
+                    var customer = response.message;
+                    cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, 'blue', true);
+                }
+            });
+		}
+	}
 });
 
 function update_address_links(frm) {
@@ -22,5 +55,28 @@ function update_address_links(frm) {
                 "links": (frm.doc.links || [] )
             }
         })
+    }
+}
+
+function preview_address(frm, customer) {
+    if (!frm.doc.address) {
+        frappe.msgprint(__("No address defined"), __("Address Preview"));
+    } else if (frm.doc.__islocal) {
+        frappe.msgprint(__("Please save first"), __("Address Preview"));
+    } else if (!customer) {
+        frappe.msgprint(__("No customer defined"), __("Address Preview"));
+    } else {
+        frappe.call({
+            "method": "microsynth.microsynth.utils.get_print_address",
+            "args": {
+                "contact": frm.doc.name,
+                "address": frm.doc.address,
+                "customer": customer
+            },
+            "callback": function(response) {
+                var address_layout = response.message; 
+                frappe.msgprint(address_layout, __("Address Preview"));
+            }
+        });
     }
 }

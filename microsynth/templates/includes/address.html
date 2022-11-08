@@ -17,7 +17,7 @@
     {%- if address_doc.address_line1 -%}{{ address_doc.address_line1 }}<br>{%- endif -%}
     {%- if address_doc.address_line2 -%}{{ address_doc.address_line2 }}<br>{%- endif -%}
     
-    {%- if address.country in ['United Kingdom'] -%}
+    {%- if address.country in ["United Kingdom"] -%}
         {%- if address_doc.city -%}{{ address_doc.city }} {% endif %}
         {% if address_doc.pincode %}{{ address_doc.pincode }}<br>{%- endif -%}
     {%- else -%}

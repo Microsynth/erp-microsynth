@@ -119,3 +119,12 @@ def login(usr, pwd):
     lm.authenticate(usr, pwd)
     lm.login()
     return frappe.local.session
+
+@frappe.whitelist()
+def get_print_address(contact, address, customer):
+    return frappe.render_template("microsynth/templates/includes/address.html", 
+        {
+            'contact': contact, 
+            'address': address, 
+            'customer_name':  customer
+        }) 
