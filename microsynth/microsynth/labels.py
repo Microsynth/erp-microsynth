@@ -29,3 +29,10 @@ A 1
 """    
     print_raw('192.0.1.70', 9100, content )
 
+def show_test_address_template():
+    content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", {'contact':'215856','address':'215856', 'customer':'8003'})
+    print(content)
+
+def print_test_address_template():
+    content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", {'contact':'215856','address':'215856', 'customer':'8003'})
+    print_raw('192.0.1.70', 9100, content )
