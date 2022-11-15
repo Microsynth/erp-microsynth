@@ -97,13 +97,18 @@ def find_tax_template(company, customer_address, category="Material"):
     Find the corresponding tax template
     """
     country = frappe.get_value("Address", customer_address, "country")
+    if frappe.get_value("Country", country, "eu"):
+        eu_pattern = """ OR `country` = "EU" """
+    else:
+        eu_pattern = ""
     find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
         FROM `tabTax Matrix Entry`
         WHERE `company` = "{company}"
-          AND (`country` = "{country}" OR `country` = "%")
+          AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
           AND `category` = "{category}"
-        ORDER BY `country` DESC;""".format(
-        company=company, country=country, category=category), as_dict=True)
+        ORDER BY `idx` ASC;""".format(
+        company=company, country=country, category=category, eu_pattern=eu_pattern), 
+        as_dict=True)
     if len(find_tax_record) > 0:
         return find_tax_record[0]['sales_taxes_template']
     else:
