@@ -466,7 +466,7 @@ def place_order(content, client="webshop"):
         so_doc.submit()
         
         # check if this customer is approved
-        if not frappe.get_value("Customer", so_doc.customer, "customer_approved"):
+        """if not frappe.get_value("Customer", so_doc.customer, "customer_approved"):
             # this customer is not approved: create invoice and payment link
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             si_content = make_sales_invoice(so_doc.name)
@@ -478,7 +478,8 @@ def place_order(content, client="webshop"):
             
             # create stripe payment line
             # ToDo
-            
+        """
+        
         return {'success': True, 'message': 'Sales Order created', 
             'reference': so_doc.name}
     except Exception as err:
