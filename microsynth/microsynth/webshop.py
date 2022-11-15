@@ -12,6 +12,7 @@ from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_te
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 @frappe.whitelist(allow_guest=True)
 def ping():
@@ -463,6 +464,21 @@ def place_order(content, client="webshop"):
     try:
         so_doc.insert(ignore_permissions=True)
         so_doc.submit()
+        
+        # check if this customer is approved
+        if not frappe.get_value("Customer", so_doc.customer, "customer_approved"):
+            # this customer is not approved: create invoice and payment link
+            ## create delivery note (leave on draft: submitted by flushbox after processing)
+            si_content = make_sales_invoice(so_doc.name)
+            sinv = frappe.get_doc(si_content)
+            sinv.flags.ignore_missing = True
+            sinv.insert(ignore_permissions=True)
+            sinv.submit()
+            frappe.db.commit()
+            
+            # create stripe payment line
+            # ToDo
+            
         return {'success': True, 'message': 'Sales Order created', 
             'reference': so_doc.name}
     except Exception as err:
