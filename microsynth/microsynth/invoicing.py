@@ -65,6 +65,7 @@ def make_invoice(delivery_note):
     sales_invoice_content = make_sales_invoice(delivery_note)
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
     transmit_sales_invoice(sales_invoice.name)
@@ -81,6 +82,7 @@ def make_collective_invoice(delivery_notes):
     
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
     transmit_sales_invoice(sales_invoice.name)

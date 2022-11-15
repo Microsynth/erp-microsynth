@@ -43,7 +43,9 @@ def get_data(filters=None):
                     `tabSales Invoice Item`.`docstatus` = 1
                     AND `tabSales Invoice Item`.`delivery_note` = `tabDelivery Note`.`name`
                 ) AS `has_sales_invoice`,
-                (SELECT IFNULL(MAX(`tabSales Order`.`hold_invoice`), 0)
+                (SELECT 
+                    IF(`tabSales Order`.`per_billed` = 100, 1,          /* ignore billed sales orders */
+                       IFNULL(MAX(`tabSales Order`.`hold_invoice`), 0)) /* or if hold_invoice is set */
                  FROM `tabSales Order`
                  LEFT JOIN `tabDelivery Note Item` ON
                     (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
