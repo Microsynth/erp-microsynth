@@ -62,7 +62,7 @@ def oligo_status_changed(content=None):
     if len(affected_sales_orders) > 0:
         check_sales_order_completion(affected_sales_orders)
     return {
-        'success': True, 
+        'success': len(error_oligos) == 0, 
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
             len(updated_oligos), len(affected_sales_orders), ", ".join(error_oligos)
         )
