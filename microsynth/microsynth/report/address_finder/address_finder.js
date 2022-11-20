@@ -42,7 +42,7 @@ frappe.query_reports["Address Finder"] = {
 			"options": ""
 		},
 		{
-			"fieldname": "contact_intitute_key",
+			"fieldname": "contact_institute_key",
 			"label": __("Institute Key"),
 			"fieldtype": "Data",
 			"options": ""

@@ -17,7 +17,7 @@ def get_columns(filters):
 		{"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 60},
 		{"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 60},
 		{"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 75},
-		{"label": _("Departement"), "fieldname": "departement", "fieldtype": "Data", "width": 75},
+		{"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 75},
 		{"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 50},
 		{"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 50},
 		{"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 50},
@@ -25,6 +25,43 @@ def get_columns(filters):
 	]
 
 def get_data(filters):
+	
+	if type(filters) == str:
+		filters = json.loads(filters)
+	elif type(filters) == dict:
+		pass
+	else:
+		filters = dict(filters)
+
+	criteria = ""
+	
+	if 'customer' in filters:
+		criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
+
+	if 'contact_full_name' in filters:
+		criteria += """ AND `tabContact`.`full_name` LIKE '%{0}%' """.format(filters['contact_full_name'])
+
+	if 'contact_email' in filters:
+		criteria += """ AND `tabContact`.`email_id` LIKE '%{0}%' """.format(filters['contact_email'])
+
+	if 'contact_institute' in filters:
+		criteria += """ AND `tabContact`.`institute` LIKE '%{0}%' """.format(filters['contact_institute'])
+
+	if 'contact_department' in filters:
+		criteria += """ AND `tabContact`.`department` LIKE '%{0}%' """.format(filters['contact_department'])
+
+	if 'contact_group_leader' in filters:
+		criteria += """ AND `tabContact`.`group_leader` LIKE '%{0}%' """.format(filters['contact_group_leader'])
+
+	if 'contact_institute_key' in filters:
+		criteria += """ AND `tabContact`.`institute_key` LIKE '%{0}%' """.format(filters['contact_institute_key'])
+
+	if 'address_city' in filters:
+		criteria += """ AND `tabAddress`.`city` LIKE '%{0}%' """.format(filters['address_city'])
+
+	if 'address_street' in filters:
+		criteria += """ AND `tabAddress`.`address_line1` LIKE '%{0}%' """.format(filters['address_street'])		
+
 	data = []
 
 	sql_query = """SELECT
@@ -41,14 +78,15 @@ def get_data(filters):
 		`tabAddress`.`address_line1` AS `address_line1`,		
 		`tabAddress`.`city` AS `city`
 		FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
-                                              AND `tDLA`.`link_doctype` = "Customer"
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
-        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
-        
-		WHERE `tabCustomer`.`customer_name` LIKE '%Micros%'	
-	"""
+		LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+											AND `tDLA`.`parenttype`  = "Contact" 
+											AND `tDLA`.`link_doctype` = "Customer"
+		LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+		LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+		
+		WHERE `tabCustomer`.`disabled` <> 1	
+			{criteria}
+	""".format(criteria=criteria)
 
 	fetched_data = frappe.db.sql(sql_query, as_dict = True)
 
