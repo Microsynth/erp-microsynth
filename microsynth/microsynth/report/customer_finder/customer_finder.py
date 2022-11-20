@@ -38,82 +38,94 @@ def get_data(filters):
 
 	criteria = ""
 	
+	hasFilters = False
+
 	if 'customer' in filters:
 		criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
+		hasFilters = True
 
 	if 'contact_full_name' in filters:
 		criteria += """ AND `tabContact`.`full_name` LIKE '%{0}%' """.format(filters['contact_full_name'])
+		hasFilters = True
 
 	if 'contact_email' in filters:
 		criteria += """ AND `tabContact`.`email_id` LIKE '%{0}%' """.format(filters['contact_email'])
+		hasFilters = True
 
 	if 'contact_institute' in filters:
 		criteria += """ AND `tabContact`.`institute` LIKE '%{0}%' """.format(filters['contact_institute'])
+		hasFilters = True
 
 	if 'contact_department' in filters:
 		criteria += """ AND `tabContact`.`department` LIKE '%{0}%' """.format(filters['contact_department'])
+		hasFilters = True
 
 	if 'contact_group_leader' in filters:
 		criteria += """ AND `tabContact`.`group_leader` LIKE '%{0}%' """.format(filters['contact_group_leader'])
+		hasFilters = True
 
 	if 'contact_institute_key' in filters:
 		criteria += """ AND `tabContact`.`institute_key` LIKE '%{0}%' """.format(filters['contact_institute_key'])
+		hasFilters = True
 
 	if 'address_city' in filters:
 		criteria += """ AND `tabAddress`.`city` LIKE '%{0}%' """.format(filters['address_city'])
+		hasFilters = True
 
 	if 'address_street' in filters:
 		criteria += """ AND `tabAddress`.`address_line1` LIKE '%{0}%' """.format(filters['address_street'])		
-
+		hasFilters = True
+	
 	data = []
 
-	sql_query = """SELECT
-		`tabCustomer`.`name` AS `customer_id`,
-		`tabCustomer`.`customer_name` AS `customer`,
-		`tabAddress`.`address_type` AS `address_type`,
-		`tabContact`.`name` AS `contact_id`,
-		`tabContact`.`first_name` AS `first_name`,
-		`tabContact`.`last_name` AS `last_name`,
-		`tabContact`.`email_id` AS `email`,
-		`tabContact`.`institute` AS `institute`,
-		`tabContact`.`department` AS `department`,
-		`tabContact`.`group_leader` AS `group_leader`,
-		`tabContact`.`institute_key` AS `institute_key`,
-		`tabAddress`.`address_line1` AS `address_line1`,		
-		`tabAddress`.`city` AS `city`,
-		`tabCustomer`.`account_manager` AS `account_manager`
+	if hasFilters:
+		sql_query = """SELECT
+			`tabCustomer`.`name` AS `customer_id`,
+			`tabCustomer`.`customer_name` AS `customer`,
+			`tabAddress`.`address_type` AS `address_type`,
+			`tabContact`.`name` AS `contact_id`,
+			`tabContact`.`first_name` AS `first_name`,
+			`tabContact`.`last_name` AS `last_name`,
+			`tabContact`.`email_id` AS `email`,
+			`tabContact`.`institute` AS `institute`,
+			`tabContact`.`department` AS `department`,
+			`tabContact`.`group_leader` AS `group_leader`,
+			`tabContact`.`institute_key` AS `institute_key`,
+			`tabAddress`.`address_line1` AS `address_line1`,		
+			`tabAddress`.`city` AS `city`,
+			`tabCustomer`.`account_manager` AS `account_manager`
 
-		FROM `tabContact`
-		LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-											AND `tDLA`.`parenttype`  = "Contact" 
-											AND `tDLA`.`link_doctype` = "Customer"
-		LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
-		LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
-		
-		WHERE `tabCustomer`.`disabled` <> 1	
-			{criteria}
-	""".format(criteria=criteria)
+			FROM `tabContact`
+			LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+												AND `tDLA`.`parenttype`  = "Contact" 
+												AND `tDLA`.`link_doctype` = "Customer"
+			LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+			LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+			
+			WHERE `tabCustomer`.`disabled` <> 1	
+				{criteria}
+		""".format(criteria=criteria)
 
-	fetched_data = frappe.db.sql(sql_query, as_dict = True)
+		fetched_data = frappe.db.sql(sql_query, as_dict = True)
 
-	for d in fetched_data:
-		entry = {
-			"customer_id": d.customer_id,
-			"customer": d.customer,
-			"address_type": d.address_type,
-			"contact_id": d.contact_id,
-			"first_name": d.first_name,
-			"last_name": d.last_name,
-			"institute": d.institute,
-			"department": d.department,
-			"group_leader": d.group_leader,
-			"institute_key": d.institute_key,
-			"city": d.city,
-			"street": d.address_line1,
-			"account_manager": d.account_manager
-		}
+		for d in fetched_data:
+			entry = {
+				"customer_id": d.customer_id,
+				"customer": d.customer,
+				"address_type": d.address_type,
+				"contact_id": d.contact_id,
+				"first_name": d.first_name,
+				"last_name": d.last_name,
+				"institute": d.institute,
+				"department": d.department,
+				"group_leader": d.group_leader,
+				"institute_key": d.institute_key,
+				"city": d.city,
+				"street": d.address_line1,
+				"account_manager": d.account_manager
+			}
+			data.append(entry)
+
 		data.append(entry)
-
-	data.append(entry)
 
 	return data
