@@ -23,17 +23,15 @@ frappe.query_reports["Address Finder"] = {
 			"fieldtype": "Data",
 			"options": ""
 		},
-		,
 		{
 			"fieldname": "contact_institute",
 			"label": __("Institute"),
 			"fieldtype": "Data",
 			"options": ""
 		},  
-		,
 		{
-			"fieldname": "contact_departement",
-			"label": __("Departement"),
+			"fieldname": "contact_department",
+			"label": __("Department"),
 			"fieldtype": "Data",
 			"options": ""
 		},  
