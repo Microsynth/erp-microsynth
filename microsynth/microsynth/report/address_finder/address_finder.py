@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+import json
 
 def execute(filters=None):
 	columns, data = get_columns(filters), get_data(filters)
@@ -11,17 +12,17 @@ def execute(filters=None):
 
 def get_columns(filters):
 	return [		
-		{"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Data", "width": 75},
-		{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 75},
-		{"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Data", "width": 75},
-		{"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 60},
-		{"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 60},
-		{"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 75},
-		{"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 75},
-		{"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 50},
-		{"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 50},
-		{"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 50},
-		{"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 50},
+		{"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 75},
+		{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 125},
+		{"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 60},
+		{"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 75},
+		{"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 75},
+		{"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 100},
+		{"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 100},
+		{"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 75},
+		{"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
+		{"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
+		{"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
 	]
 
 def get_data(filters):
