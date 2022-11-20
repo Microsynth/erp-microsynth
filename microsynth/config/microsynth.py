@@ -8,6 +8,13 @@ def get_data():
             "icon": "octicon octicon-file-submodule",
             "items": [
                     {
+                        "type": "report",
+                        "name": "Customer Finder",
+                        "label": _("Customer Finder"),
+                        "doctype": "Contact",
+                        "is_query_report": True
+                    },
+                    {
                        "type": "doctype",
                        "name": "Customer",
                        "label": _("Customer"),
