@@ -14,6 +14,7 @@ def get_columns(filters):
 	return [		
 		{"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 75},
 		{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 125},
+		{"label": _("Type"), "fieldname": "address_type", "fieldtype": "Data", "width": 35},
 		{"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 60},
 		{"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 75},
 		{"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 75},
@@ -23,6 +24,7 @@ def get_columns(filters):
 		{"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
 		{"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
 		{"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
+		{"label": _("Account Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 75},
 	]
 
 def get_data(filters):
@@ -68,6 +70,7 @@ def get_data(filters):
 	sql_query = """SELECT
 		`tabCustomer`.`name` AS `customer_id`,
 		`tabCustomer`.`customer_name` AS `customer`,
+		`tabAddress`.`address_type` AS `address_type`,
 		`tabContact`.`name` AS `contact_id`,
 		`tabContact`.`first_name` AS `first_name`,
 		`tabContact`.`last_name` AS `last_name`,
@@ -77,7 +80,9 @@ def get_data(filters):
 		`tabContact`.`group_leader` AS `group_leader`,
 		`tabContact`.`institute_key` AS `institute_key`,
 		`tabAddress`.`address_line1` AS `address_line1`,		
-		`tabAddress`.`city` AS `city`
+		`tabAddress`.`city` AS `city`,
+		`tabCustomer`.`account_manager` AS `account_manager`
+
 		FROM `tabContact`
 		LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
 											AND `tDLA`.`parenttype`  = "Contact" 
@@ -95,6 +100,7 @@ def get_data(filters):
 		entry = {
 			"customer_id": d.customer_id,
 			"customer": d.customer,
+			"address_type": d.address_type,
 			"contact_id": d.contact_id,
 			"first_name": d.first_name,
 			"last_name": d.last_name,
@@ -103,7 +109,8 @@ def get_data(filters):
 			"group_leader": d.group_leader,
 			"institute_key": d.institute_key,
 			"city": d.city,
-			"street": d.address_line1
+			"street": d.address_line1,
+			"account_manager": d.account_manager
 		}
 		data.append(entry)
 
