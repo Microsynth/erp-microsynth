@@ -25,6 +25,7 @@ def get_columns(filters):
 		{"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
 		{"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
 		{"label": _("Account Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 75},
+		{"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 125},
 	]
 
 def get_data(filters):
@@ -75,6 +76,10 @@ def get_data(filters):
 	if 'address_street' in filters:
 		criteria += """ AND `tabAddress`.`address_line1` LIKE '%{0}%' """.format(filters['address_street'])		
 		hasFilters = True
+
+	if 'price_list' in filters:
+		criteria += """ AND `tabCustomer`.`default_price_list` LIKE '%{0}%' """.format(filters['price_list'])		
+		hasFilters = True
 	
 	data = []
 
@@ -93,7 +98,8 @@ def get_data(filters):
 			`tabContact`.`institute_key` AS `institute_key`,
 			`tabAddress`.`address_line1` AS `address_line1`,		
 			`tabAddress`.`city` AS `city`,
-			`tabCustomer`.`account_manager` AS `account_manager`
+			`tabCustomer`.`account_manager` AS `account_manager`,
+			`tabCustomer`.`default_price_list` as `price_list`
 
 			FROM `tabContact`
 			LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
@@ -122,7 +128,8 @@ def get_data(filters):
 				"institute_key": d.institute_key,
 				"city": d.city,
 				"street": d.address_line1,
-				"account_manager": d.account_manager
+				"account_manager": d.account_manager,
+				"price_list": d.price_list
 			}
 			data.append(entry)
 

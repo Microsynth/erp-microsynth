@@ -57,6 +57,12 @@ frappe.query_reports["Customer Finder"] = {
 			"label": __("Street"),
 			"fieldtype": "Data",
 			"options": ""
+		},
+		{
+			"fieldname": "price_list",
+			"label": __("Price List"),
+			"fieldtype": "Data",
+			"options": ""
 		}
 	]
 };
