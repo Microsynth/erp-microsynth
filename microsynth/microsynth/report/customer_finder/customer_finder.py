@@ -133,6 +133,4 @@ def get_data(filters):
 			}
 			data.append(entry)
 
-		data.append(entry)
-
 	return data
