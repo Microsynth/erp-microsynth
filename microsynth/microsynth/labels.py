@@ -90,11 +90,11 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
     if customer_id:  customer_doc = frappe.get_doc("Customer", customer_id)
 
     rec_adr_lines = []
-    if address_doc.overwrite_company: 
+    if address_id and address_doc.overwrite_company: 
         rec_adr_lines.append(address_doc.overwrite_company) 
     else: 
         rec_adr_lines.append(customer_doc.customer_name)
-    if contact_doc: 
+    if contact_id: 
         if contact_doc.institute:   rec_adr_lines.append(contact_doc.institute)
         if contact_doc.designation: rec_adr_lines.append(contact_doc.designation)
         if contact_doc.first_name and contact_doc.first_name != "-": rec_adr_lines.append(contact_doc.first_name)
@@ -102,7 +102,7 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
         if contact_doc.department:  rec_adr_lines.append(contact_doc.department)
         if contact_doc.room:        rec_adr_lines.append(contact_doc.room)
 
-    if address_doc: 
+    if address_id: 
         if address_doc.address_line1: rec_adr_lines.append(address_doc.address_line1)
         if address_doc.address_line2: rec_adr_lines.append(address_doc.address_line2)
     
