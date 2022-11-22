@@ -1,69 +1,56 @@
-{%- if contact -%}
-    {%- set contact_doc = frappe.get_doc("Contact", contact) -%}
-{%- endif -%}
-{%- if address -%}
-    {%- set address_doc = frappe.get_doc("Address", address) -%}
-{%- endif -%}
-{%- if customer -%}
-    {%- set customer_doc = frappe.get_doc("Customer", customer) -%}
-{%- endif -%}
-
-{%- set lines = [] -%}
-{%- if address_doc.overwrite_company -%}
-    {%- if lines.append(address_doc.overwrite_company)-%}{%- endif -%}
-{%- else -%}
-    {%- if lines.append(customer_doc.customer_name) -%}{%- endif -%}
-{%- endif -%}
-{%- if contact -%}
-    {%- if contact_doc.institute -%}{%- if lines.append(contact_doc.institute) -%}{%- endif -%}{%- endif -%}
-    {%- if contact_doc.designation -%}{%- if lines.append(contact_doc.designation) -%}{%- endif -%}{%- endif -%}
-    {%- if contact_doc.first_name and contact_doc.first_name != "-" and contact_doc.last_name -%}
-        {%- if lines.append(contact_doc.first_name + " " + contact_doc.last_name ) -%}{%- endif -%}
-    {%- elif contact_doc.first_name and contact_doc.first_name != "-" and not contact_doc.last_name -%}
-        {%- if lines.append(contact_doc.first_name) -%}{%- endif -%}
-    {%- elif contact_doc.last_name -%}
-        {%- if lines.append(contact_doc.last_name) -%}{%- endif -%}
-    {%- endif -%}
-    {%- if contact_doc.department -%}{%- if lines.append(contact_doc.department ) -%}{%- endif -%}{%- endif -%}
-    {%- if contact_doc.room -%}{%- if lines.append(contact_doc.room) -%}{%- endif -%}{%- endif -%}
-{% endif %}
-{%- if address -%}
-    {%- if address_doc.address_line1 -%}{%- if lines.append(address_doc.address_line1) -%}{%- endif -%}{%- endif -%}
-    {%- if address_doc.address_line2 -%}{%- if lines.append(address_doc.address_line2) -%}{%- endif -%}{%- endif -%}
-    
-    {%- if address.country in ['United Kingdom'] -%}
-        {%- if address_doc.city and address_doc.pincode -%}{%- if lines.append(address_doc.city + " " + address_doc.pincode) -%}{%- endif -%}{% endif %}
-    {%- else -%}
-        {%- if address_doc.pincode and address_doc.city -%}{%- if lines.append(address_doc.pincode + " " + address_doc.city)-%}{%- endif -%} {% endif %}
-    {%- endif -%}
-    {%- if address_doc.country -%}{%- if lines.append(address_doc.country) -%}{%- endif -%}{%- endif -%}
-{%- endif -%}
-
-{#many empty list elements are added to #}
-{%- for n in range(9) -%}
-    {%- if lines.append("") -%}{%- endif -%}
-{%- endfor -%}
-
-{#
+{# load images on printer #}
+;### load Microsynth logo ###
+M l IMG;01_MIC_Logo_Swiss_black
+M l IMG;00_MIC_Logo_black
+{# config the printer #}
 m m
 J 
 H 100
 S 0,-2.5,145,150,105
 O R
-B 1, 1 , 0, DATAMATRIX, 0.3;     ACB123
-B 10, 48, 0, CODE128, 8, 0.15;  grosse Buchstaben - grosse Wirkung
-T 1,  7, 0, 3, pt 10;   {{lines[0]}}
-T 1, 10, 0, 3 ,pt 10;   {{lines[1]}}
-T 1, 13, 0, 3, pt 10;   {{lines[2]}}
-T 1, 16, 0, 3, pt 10;   {{lines[3]}}
-T 1, 19, 0, 3, pt 10;   {{lines[4]}}
-T 1, 21, 0, 3, pt 10;   {{lines[5]}}
-T 1, 24, 0, 3, pt 10;   {{lines[6]}}
-T 1, 27, 0, 3, pt 10;   {{lines[7]}}
-T 1, 30, 0, 3, pt 10;   {{lines[8]}}
-T 1, 33, 0, 3, pt 10;   {{lines[9]}}
-T 1, 36, 0, 3, pt 10;   {{lines[10]}}
-T 1, 39, 0, 3, pt 10;   {{lines[11]}}
-A 1
-#}
+{# add microsynth logo #}
+; ### Microsynth logo, rotated 90 degree ###
+I 100,137,180,2,2;00_MIC_Logo_black
+{# add sender adress #}
+; ### Microsynth address, rotated 180 dregree, address bottom line with company logo
+T 100,125,180,3,pt 10;{{sender_address}}
+{# separate sender address #}
+; ### bar to separate sender ###
+G 5,122,0;L:95,0.5,r,r
+{# receiver address #}
+; ### customer address ###
+{# additional line break #}
+{%- for element in lines -%}
+    {%- set print_start_position = 45+(lines.index(element)*5) -%}
+T {{print_start_position}}, 100, 90, 3, pt 10;{{element}}
+{#comment for linebreak#}
+    {%- endfor -%}
+{# additional line break #}
+{# additional line break #}
 
+{# postal #}
+; ### postal service ###
+{% if postal_list|length == 3 %} {#if PPA#}
+T 26,49,90,3,pt 20;P.P. A
+T 29,49,90,3,pt 10;CH-9436 Balgach
+T 33,49,90,3,pt 10;POST CH AG
+G 20,50,90;R:30,15,0.3,0.3
+
+{% else %}{# if postal_list|length in [1,2] #}
+{%- for postelement in postal_list -%}
+    {%- set print_start_position = 23+(postal_list.index(postelement)*6) -%}
+    {%- set print_size = 10+(postal_list.index(postelement)*10) -%}
+    T {{print_start_position}},49,90,3,pt {{print_size}};{{postelement}}
+{# additional line break #}
+{%- endfor -%}    
+{%- endif -%}
+
+
+
+{%- if postal_string -%}{{postal_string}}{%- endif -%}
+{# additional line break #}
+;### print date and time during development ###
+T 10,5,0,3,pt 10;[DATE]-[TIME]-ERP-Template
+T 70,5,0,3,pt 24;T#1
+A 1
+{# additional line break #}
