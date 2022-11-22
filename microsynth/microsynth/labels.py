@@ -5,6 +5,11 @@
 import frappe
 import socket
 
+SHIPPING_SERVICES = {
+    '1100': "A-POST",
+    '1123': "DHL"
+}
+
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
@@ -79,6 +84,30 @@ def print_test_address_template_novexx():
         )
     print(content)
     print_raw('192.0.1.72', 9100, content )
+
+def get_shipping_item(items):
+    for i in range(len(items), 0, -1):
+        if items[i - 1].item_group == "Shipping":
+            return items[i - 1].item_code
+        
+def print_address_template_brady(sales_order_id):
+    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
+    
+    shipping_item = get_shipping_item(sales_order.items)
+    
+    if not sales_order.shipping_address_name:
+        frappe.throw("address missing")
+    
+    address = frappe.get_doc("Address", sales_order.shipping_address_name)
+
+    content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", 
+        {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
+        'sender_address': return_sender_address("Balgach"),
+        'destination_country': address.country,
+        'shipping_service': SHIPPING_SERVICES[shipping_item]}
+        )
+    print(content)
+    print_raw('192.0.1.70', 9100, content )
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
     '''

@@ -30,24 +30,17 @@ T {{print_start_position}}, 100, 90, 3, pt 10;{{element}}
 
 {# postal #}
 ; ### postal service ###
-{% if postal_list|length == 3 %} {#if PPA#}
+{% if shipping_service == "A-POST" %}
 T 26,49,90,3,pt 20;P.P. A
 T 29,49,90,3,pt 10;CH-9436 Balgach
 T 33,49,90,3,pt 10;POST CH AG
 G 20,50,90;R:30,15,0.3,0.3
 
-{% else %}{# if postal_list|length in [1,2] #}
-{%- for postelement in postal_list -%}
-    {%- set print_start_position = 23+(postal_list.index(postelement)*6) -%}
-    {%- set print_size = 10+(postal_list.index(postelement)*10) -%}
-    T {{print_start_position}},49,90,3,pt {{print_size}};{{postelement}}
-{# additional line break #}
-{%- endfor -%}    
+{% else %}
+T 23,49,90,3,pt 10;{{destination_country}}
+T 29,49,90,3,pt 20;{{shipping_service}}
 {%- endif -%}
 
-
-
-{%- if postal_string -%}{{postal_string}}{%- endif -%}
 {# additional line break #}
 ;### print date and time during development ###
 T 10,5,0,3,pt 10;[DATE]-[TIME]-ERP-Template
