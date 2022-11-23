@@ -68,15 +68,20 @@ def print_test_label_novexx():
     print_raw('192.0.1.72', 9100, content )
 
 def print_test_address_template_brady():
+    """This function might be obsolete by recent developments"""
+
     content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", 
         {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
         'sender_address': return_sender_address("Balgach"),
-        'postal_list': ['FEDEX']}
+        'destination_country': 'Deutschlang',
+        'shipping_service': 'DHL'}
         )
     print(content)
     print_raw('192.0.1.70', 9100, content )
 
 def print_test_address_template_novexx():
+    """This function might be obsolete by recent developments"""
+
     content = frappe.render_template("microsynth/templates/includes/address_label_novexx.html", 
         {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
         'sender_address': return_sender_address("Balgach"),
@@ -97,25 +102,6 @@ def get_shipping_item(items):
         if del_item.item_group == "Shipping":
             return del_item.item_code
 '''
-
-def print_address_template_brady(sales_order_id):
-    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
-    
-    shipping_item = get_shipping_item(sales_order.items)
-    
-    if not sales_order.shipping_address_name:
-        frappe.throw("address missing")
-    
-    address = frappe.get_doc("Address", sales_order.shipping_address_name)
-
-    content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", 
-        {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
-        'sender_address': return_sender_address("Balgach"),
-        'destination_country': address.country,
-        'shipping_service': SHIPPING_SERVICES[shipping_item]}
-        )
-    print(content)
-    print_raw('192.0.1.70', 9100, content )
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
     '''
@@ -152,9 +138,12 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
 
     return rec_adr_lines
 
+# TODO: Ths function might be obsolete as it can be implied by destination_country
 def return_sender_address(company):
     '''
-    returns a string representing the sender address based on logical decission
+    returns a string representing the sender address based on logical decission 
+    is a workaround during development to mock sender address
+    indicator might be the destination_country, logic can be transfered to jinja template
     '''
 
     if company == "Balgach": 
@@ -166,3 +155,40 @@ def return_sender_address(company):
     else: 
         sender_adr = 'Schützenstrasse 15, CH-9436 Balgach'
     return sender_adr
+
+
+def print_address_template(sales_order_id, printer_ip='192.0.1.70'):
+    """Doc string"""
+    
+    if printer_ip in ['192.0.1.70', '192.0.1.71']: 
+        printer_template = "microsynth/templates/includes/address_label_brady.html"
+    elif printer_ip in ['192.0.1.72']: 
+        printer_template = "microsynth/templates/includes/address_label_novexx.html"
+    else: 
+        frappe.throw("no printer set")
+
+    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
+    shipping_item = get_shipping_item(sales_order.items)
+    
+    # TODO: ids are hardcoded
+    cst_id = '8003'
+    #cst_id = sales_order.XXX
+    cntct_id = '215856'
+    #cntct_id = sales_order.YYY
+    adr_id = '215856'
+    #adr_id = sales_order.ZZZ
+
+    if not sales_order.shipping_address_name:
+        frappe.throw("address missing")
+    
+    address = frappe.get_doc("Address", sales_order.shipping_address_name)
+
+    content = frappe.render_template(printer_template, 
+        {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
+        'sender_address': return_sender_address("Balgach"), # TODO: sender is hardcoded
+        'destination_country': address.country,
+        'shipping_service': SHIPPING_SERVICES[shipping_item]}
+        )
+        
+    print(content) # must we trigger a log entry for what is printed?
+    #print_raw(printer_ip, 9100, content )
