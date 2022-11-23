@@ -171,35 +171,32 @@ def return_sender_address(company):
     return sender_adr
 
 
-def print_address_template():
+def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.70'):
     """Doc string"""
-    
-    # TODO: sales_order_id and printer_ip hardcoded
-    sales_order_id='SO-BAL-22000001'
-    printer_ip='192.0.1.72'
-
+        
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
     elif printer_ip in ['192.0.1.72']: 
         printer_template = "microsynth/templates/includes/address_label_novexx.html"
     else: 
         frappe.throw("no printer set")
-
+    
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
-    
-    
-    cst_id = sales_order.customer
-    cntct_id = sales_order.contact_person
-    adr_id = sales_order.shipping_address_name
-    print("cst_id: %s, cntct_id: %s, adr_id: %s" % (cst_id, cntct_id, adr_id))
-    print(printer_template)
 
     if not sales_order.shipping_address_name:
         frappe.throw("address missing")
-    
-    address = frappe.get_doc("Address", sales_order.shipping_address_name)
+    elif not sales_order.customer: 
+        frappe.throw("customer missing")
+    elif not sales_order.contact_person: 
+        frappe.throw("contact missing")
+        
 
+    adr_id = sales_order.shipping_address_name
+    address = frappe.get_doc("Address", adr_id)
+    cst_id = sales_order.customer
+    cntct_id = sales_order.contact_person
+    
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
         'sender_address': return_sender_address("Balgach"), # TODO: sender is hardcoded
