@@ -171,9 +171,13 @@ def return_sender_address(company):
     return sender_adr
 
 
-def print_address_template(sales_order_id, printer_ip='192.0.1.70'):
+def print_address_template():
     """Doc string"""
     
+    # TODO: sales_order_id and printer_ip hardcoded
+    sales_order_id='SO-BAL-22000001'
+    printer_ip='192.0.1.72'
+
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
     elif printer_ip in ['192.0.1.72']: 
@@ -184,13 +188,12 @@ def print_address_template(sales_order_id, printer_ip='192.0.1.70'):
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
     
-    # TODO: ids are hardcoded
-    cst_id = '8003'
-    #cst_id = sales_order.XXX
-    cntct_id = '215856'
-    #cntct_id = sales_order.YYY
-    adr_id = '215856'
-    #adr_id = sales_order.ZZZ
+    
+    cst_id = sales_order.customer
+    cntct_id = sales_order.contact_person
+    adr_id = sales_order.shipping_address_name
+    print("cst_id: %s, cntct_id: %s, adr_id: %s" % (cst_id, cntct_id, adr_id))
+    print(printer_template)
 
     if not sales_order.shipping_address_name:
         frappe.throw("address missing")
