@@ -196,10 +196,17 @@ def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1
     address = frappe.get_doc("Address", adr_id)
     cst_id = sales_order.customer
     cntct_id = sales_order.contact_person
-    
+    country = frappe.get_doc("Country", address.country)   
+
+    # sender_address
+    if country.something == 'EU': 
+        sender_address = "EU"
+    else: 
+        sender_address = address.country
+
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_address': return_sender_address("Balgach"), # TODO: sender is hardcoded
+        'sender_address': sender_address,
         'destination_country': address.country,
         'shipping_service': SHIPPING_SERVICES[shipping_item]}
         )
