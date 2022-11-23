@@ -89,7 +89,15 @@ def get_shipping_item(items):
     for i in range(len(items), 0, -1):
         if items[i - 1].item_group == "Shipping":
             return items[i - 1].item_code
-        
+
+#suggestion joerg - do not need to work with indices, if I want to access the looped item directly + self explanatory iterator
+'''
+def get_shipping_item(items):
+    for del_item in items[::-1]:
+        if del_item.item_group == "Shipping":
+            return del_item.item_code
+'''
+
 def print_address_template_brady(sales_order_id):
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     
