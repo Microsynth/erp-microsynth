@@ -10,13 +10,16 @@ SHIPPING_SERVICES = {
     '1123': "DHL"
 }
 
+
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
     s.send(content.encode())
     s.close()
     return
-    
+
+
+# TODO obsolete: Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development
 def print_test_label_brady():
     content = ''';###load Microsynth logo###
 M l IMG;01_MIC_Logo_Swiss_black
@@ -36,6 +39,8 @@ A 1
 '''
     print_raw('192.0.1.71', 9100, content )
 
+
+# TODO obsolete: Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development
 def print_test_label_novexx():
     content = '''#!A1
 #IMS105/148
@@ -67,6 +72,9 @@ def print_test_label_novexx():
 '''
     print_raw('192.0.1.72', 9100, content )
 
+
+# TODO obsolete: Test functions are hardcoded to specific printer_IPs/customer/address/contact/sender/postal_service
+# They are useful only during initial development - delete after finishing development
 def print_test_address_template_brady():
     """This function might be obsolete by recent developments"""
 
@@ -79,6 +87,9 @@ def print_test_address_template_brady():
     print(content)
     print_raw('192.0.1.70', 9100, content )
 
+
+# TODO obsolete: Test functions are hardcoded to specific printer_IPs/customer/address/contact/sender/postal_service
+# They are useful only during initial development - delete after finishing development
 def print_test_address_template_novexx():
     """This function might be obsolete by recent developments"""
 
@@ -89,6 +100,7 @@ def print_test_address_template_novexx():
         )
     print(content)
     print_raw('192.0.1.72', 9100, content )
+
 
 def get_shipping_item(items):
     for i in range(len(items), 0, -1):
@@ -102,6 +114,7 @@ def get_shipping_item(items):
         if del_item.item_group == "Shipping":
             return del_item.item_code
 '''
+
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
     '''
@@ -137,6 +150,7 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
         if address_doc.country: rec_adr_lines.append(address_doc.country)
 
     return rec_adr_lines
+
 
 # TODO: Ths function might be obsolete as it can be implied by destination_country
 def return_sender_address(company):
@@ -189,6 +203,6 @@ def print_address_template(sales_order_id, printer_ip='192.0.1.70'):
         'destination_country': address.country,
         'shipping_service': SHIPPING_SERVICES[shipping_item]}
         )
-        
+
     print(content) # must we trigger a log entry for what is printed?
     #print_raw(printer_ip, 9100, content )
