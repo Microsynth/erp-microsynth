@@ -171,7 +171,7 @@ def return_sender_address(company):
     return sender_adr
 
 
-def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.72'):
+def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.70'):
     """Doc string"""
         
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
@@ -202,7 +202,7 @@ def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1
 
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_address': sender_address_discriminator,
+        'sender_address_discriminator': sender_address_discriminator,
         'destination_country': address.country,
         'shipping_service': SHIPPING_SERVICES[shipping_item]}
         )
