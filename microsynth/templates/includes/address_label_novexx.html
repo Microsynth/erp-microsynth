@@ -5,8 +5,18 @@
 #ER
 {# add sender adress incl logo #}
 #T4#J135#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
-#T4#J130#YN101/0U/45///{{sender_address}}#G
 #T4#J127#YL0/0/0.5/95
+
+{% if sender_address_discriminator.lower() == "switzerland" %}
+#T4#J130#YN101/0U/45///Schützenstrasse 15, CH-9436 Balgach#G
+{% elif sender_address_discriminator.lower() == "austria"%}
+#T4#J130#YN101/0U/45///Postlagernd, Senderstrasse 10, AT-696 Wolfurt#G
+{% elif sender_address_discriminator.lower() == "eu"%}
+#T4#J130#YN101/0U/45///Postfach 3351, DE-88115 Lindau#G
+{% else %}
+#T4#J130#YN101/0U/45///Schützenstrasse 15, CH-9436 Balgach#G
+{%- endif -%}
+
 
 {# receiver address #}
 {# additional line break #}

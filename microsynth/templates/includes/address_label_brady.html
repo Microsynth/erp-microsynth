@@ -14,11 +14,11 @@ I 100,137,180,2,2;00_MIC_Logo_black
 {# add sender adress #}
 ; ### Microsynth address, rotated 180 dregree, address bottom line with company logo
 
-{% if destination_country == "Switzerland" %}
+{% if sender_address_discriminator.lower() == "switzerland" %}
 T 100,125,180,3,pt 10;'Schützenstrasse 15, CH-9436 Balgach'
-{% elif destination_country == "Austria"%}
+{% elif sender_address_discriminator.lower() == "austria"%}
 T 100,125,180,3,pt 10;'Postlagernd, Senderstrasse 10, AT-696 Wolfurt'
-{% elif destination_country == "EU"%}
+{% elif sender_address_discriminator.lower() == "eu"%}
 T 100,125,180,3,pt 10;'Postfach 3351, DE-88115 Lindau'
 {% else %}
 T 100,125,180,3,pt 10;'Schützenstrasse 15, CH-9436 Balgach'
