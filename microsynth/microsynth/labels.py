@@ -171,7 +171,7 @@ def return_sender_address(company):
     return sender_adr
 
 
-def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.70'):
+def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.72'):
     """Doc string"""
         
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
@@ -191,7 +191,6 @@ def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1
     elif not sales_order.contact_person: 
         frappe.throw("contact missing")
         
-
     adr_id = sales_order.shipping_address_name
     address = frappe.get_doc("Address", adr_id)
     cst_id = sales_order.customer
@@ -199,14 +198,11 @@ def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1
     country = frappe.get_doc("Country", address.country)   
 
     # sender_address
-    if country.something == 'EU': 
-        sender_address = "EU"
-    else: 
-        sender_address = address.country
+    sender_address_discriminator = "eu" if country.eu else address.country
 
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_address': sender_address,
+        'sender_address': sender_address_discriminator,
         'destination_country': address.country,
         'shipping_service': SHIPPING_SERVICES[shipping_item]}
         )
