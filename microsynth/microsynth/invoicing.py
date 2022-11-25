@@ -90,7 +90,7 @@ def make_collective_invoice(delivery_notes):
     return
 
 def create_list_of_item_dicts_for_cxml(sales_invoice):
-
+    """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
     
     list_of_item_dicts = []
     for item in sales_invoice.items: 
@@ -109,8 +109,98 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         item_dict['gross_amount']       = 'val'
         item_dict['net_amount']         = 'val'
         list_of_item_dicts.append(item_dict)
-    
     return list_of_item_dicts
+
+
+def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
+    """ Doc string """
+
+    shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+    customer = frappe.get_doc("Customer", sales_invoice.customer)
+    print(sales_invoice.taxes.total)
+    
+    itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
+    data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
+                        'receiver_network_id':  'AN01003603018-DEV',
+                        'shared_secret':        'secret1',
+                        'order_id':             '1234567', 
+                        'currency':             sales_invoice.currency,
+                        'invoice_id':           'id_123',
+                        'invoice_date':         'invoice_date2022'},
+            'remitTo' : {'name':            sales_invoice.company,
+                        'street':           'sender_street1', 
+                        'zip':              'sender_zip1',
+                        'town':             'sender_town1', 
+                        'iso_country_code': 'CH', 
+                        'supplier_tax_id':  'CHE-107.542.107 MWST'
+                        },
+            'billTo' : {'address_id':       'C028Bau WSJ103', 
+                        'name':             billing_address.name,
+                        'street':           billing_address.address_line1,
+                        'zip':              billing_address.pincode,
+                        'town':             billing_address.city,
+                        'iso_country_code': billing_address.country
+                        },
+            'from' :    {'name':            sales_invoice.company,
+                        'street':           'receiver_street1', 
+                        'zip':              'receiver_zip1',
+                        'town':             'receiver_town1',
+                        'iso_country_code': 'taccatuccaland'
+                        }, 
+            'soldTo' :  {'address_id':      'C028Bau WSJ103', 
+                        'name':             sales_invoice.customer_name,
+                        'street':           'someStreet',
+                        'zip':              'receiver_zip1',
+                        'town':             'receiver_town1',
+                        'iso_country_code': 'taccatuccaland'
+                        }, 
+            'shipFrom' : {'name':           'receiver_name1', 
+                        'street':           'receiver_street1',
+                        'zip':              'receiver_zip1',
+                        'town':             'receiver_town1',
+                        'iso_country_code': 'taccatuccaland'
+                        },
+            'shipTo' : {'address_id':       'C028Bau WSJ103',
+                        'name':             shipping_address.name,
+                        'street':           shipping_address.address_line1,
+                        'zip':              shipping_address.pincode,
+                        'town':             shipping_address.city,
+                        'iso_country_code': shipping_address.country
+                        }, 
+            'receivingBank' : {'swift_id':  'swift_id',
+                        'iban_id':          'iban_id',
+                        'account_name':     'account_name',
+                        'account_id':       'account_id',
+                        'account_type':     'account_type',
+                        'branch_name':      'branch_name'
+                        }, 
+            'extrinsic' : {'buyerVatID':                'CHE-116.268.023 MWST',
+                        'supplierVatID':                sales_invoice.tax_id + 'MWST',
+                        'supplierCommercialIdentifier': sales_invoice.tax_id + 'VAT'
+                        }, 
+            'items' :   itemList, 
+            'tax' :     {'amount' :         '100',
+                        'taxable_amount' :  '200',
+                        'percent' :         '7.7',
+                        'taxPointDate' :    '2022-11-25T10:33:39+01:00',
+                        'description' :     '7.7% Swiss VAT'
+                        },
+            'shippingTax' : {'taxable_amount':  '0.00',
+                        'amount':               '0.00',
+                        'percent':              '0.0',
+                        'taxPointDate':         '2022-11-25T10:33:39+01:00',
+                        'description':          '0.0' + '% shipping tax'
+                        }, 
+            'summary' : {'subtotal_amount' :        'ne ganze menge',
+                        'shipping_amount' :         '1000',
+                        'gross_amount' :            '2000',
+                        'total_amount_without_tax': '4000',
+                        'net_amount' :              sales_invoice.net_total,
+                        'due_amount' :              sales_invoice.total_billing_amount
+                        }
+            }
+    return data2
 
 
 def transmit_sales_invoice():
@@ -124,6 +214,7 @@ def transmit_sales_invoice():
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     
+    # TODO: comment-in after development to handle invoice paths other than ariba
     '''
     if customer.invoicing_method == "Email":
         # send by mail
@@ -165,92 +256,12 @@ def transmit_sales_invoice():
     data = sales_invoice.as_dict()
     data['customer_record'] = customer.as_dict()
 
+    cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
-    itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
-
-    data2 = {'basics' : {'sender_network_id': 'AN01429401165-DEV',
-                        'receiver_network_id' : 'AN01003603018-DEV',
-                        'shared_secret' : 'secret1',
-                        'order_id' : '1234567', 
-                        'currency' : 'CHF',
-                        'invoice_id' : 'id_123',
-                        'invoice_date' : 'invoice_date2022'},
-            'remitTo' : {'name' : 'sender_name1',
-                        'street': 'sender_street1', 
-                        'zip' : 'sender_zip1',
-                        'town' : 'sender_town1', 
-                        'iso_country_code' : 'CH', 
-                        'supplier_tax_id' : 'CHE-107.542.107 MWST'
-                        },
-            'billTo' : {'address_id' : 'C028Bau WSJ103', 
-                        'name' : 'receiver_name1',
-                        'street' : 'receiver_street1',
-                        'zip' : 'receiver_zip1',
-                        'town' : 'receiver_town1',
-                        'iso_country_code' : 'taccatuccaland'
-                        },
-            'from' :    {'name' : 'receiver_name1',
-                        'street' : 'receiver_street1', 
-                        'zip' : 'receiver_zip1',
-                        'town' : 'receiver_town1',
-                        'iso_country_code' : 'taccatuccaland'
-                        }, 
-            'soldTo' :  {'address_id' : 'C028Bau WSJ103', 
-                        'name' : 'receiver_name1',
-                        'street' : 'someStreet',
-                        'zip' : 'receiver_zip1',
-                        'town' : 'receiver_town1',
-                        'iso_country_code' : 'taccatuccaland'
-                        }, 
-            'shipFrom' : {'name' : 'receiver_name1', 
-                        'street' : 'receiver_street1',
-                        'zip' : 'receiver_zip1',
-                        'town' : 'receiver_town1',
-                        'iso_country_code' : 'taccatuccaland'
-                        },
-            'shipTo' : {'address_id' : 'C028Bau WSJ103',
-                        'name' : 'receiver_name1',
-                        'street' : 'receiver_street1',
-                        'zip' : 'receiver_zip1',
-                        'town' : 'receiver_town1',
-                        'iso_country_code' : 'taccatuccaland'
-                        }, 
-            'receivingBank' : {'swift_id' : 'swift_id',
-                        'iban_id ' : 'iban_id',
-                        'account_name' : 'account_name',
-                        'account_id' : 'account_id',
-                        'account_type' : 'account_type',
-                        'branch_name' : 'branch_name'
-                        }, 
-            'extrinsic' : {'buyerVatID' : 'CHE-116.268.023 MWST',
-                        'supplierVatID ' : 'CHE-107.542.107 MWST',
-                        'supplierCommercialIdentifier' : 'CHE-107.542.107 VAT'
-                        }, 
-            'items' :   itemList, 
-            'tax' :     {'amount' : '100',
-                        'taxable_amount' : '200',
-                        'percent' : '7.7',
-                        'taxPointDate' : '2022-11-25T10:33:39+01:00',
-                        'description' : '7.7% Swiss VAT'
-                        },
-            'shippingTax' : {'taxable_amount' : 'val',
-                        'amount' : 'val',
-                        'percent' : 'val',
-                        'taxPointDate' : '2022-11-25T10:33:39+01:00',
-                        'description' : '7.7% shipping tax'
-                        }, 
-            'summary' : {'subtotal_amount' : 'ne ganze menge',
-                        'shipping_amount' : '1000',
-                        'gross_amount' : '2000',
-                        'total_amount_without_tax' : '4000',
-                        'net_amount' : '5000',
-                        'due_amount' : '6000'
-                        }
-            }
-
-    cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", data2)
+    cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
     print(cxml)
 
+    # TODO: comment in after development to save ariba file to filesystem
     '''
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
