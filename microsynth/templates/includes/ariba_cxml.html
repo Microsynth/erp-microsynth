@@ -1,7 +1,297 @@
-<xml>
-    <salesInvoice>{{ name }}</salesInvoice>
-    <customerIBAN>{{ customer_record.iban or "?" }}</customerIBAN>
-    {%- for item in items %}
-    <item>{{ item.item_code }}</item>
-    {%- endfor %}
-</xml>
+{%- set sender_network_id = 'AN01429401165-DEV' -%}
+{%- set receiver_network_id = 'AN01003603018-DEV' -%}
+{%- set shared_secret = 'secret1' -%}
+
+{%- set invoice_id = 'i_id_123' -%}
+{%- set invoice_date = 'invoice_date2022' -%}
+{%- set remitTo_name = 'sender_name1' -%}
+{%- set remitTo_street = 'sender_street1' -%}
+{%- set remitTo_zip = 'sender_zip1' -%}
+{%- set remitTo_town = 'sender_town1' -%}
+{%- set remitTo_iso_country_code = 'CH' -%}
+{%- set remitTo_supplier_tax_id = 'CHE-107.542.107 MWST' -%}
+
+{%- set billTo_address_id = 'C028Bau WSJ103' -%}
+{%- set billTo_name = 'receiver_name1' -%}
+{%- set billTo_street = 'receiver_street1' -%}
+{%- set billTo_zip = 'receiver_zip1' -%}
+{%- set billTo_town = 'receiver_town1' -%}
+{%- set billTo_iso_country_code = 'taccatuccaland' -%}
+
+{%- set from_name = 'receiver_name1' -%}
+{%- set from_street = 'receiver_street1' -%}
+{%- set from_zip = 'receiver_zip1' -%}
+{%- set from_town = 'receiver_town1' -%}
+{%- set from_iso_country_code = 'taccatuccaland' -%}
+
+{%- set soldTo_address_id = 'C028Bau WSJ103' -%}
+{%- set soldTo_name = 'receiver_name1' -%}
+{%- set soldTo_street = '' -%}
+{%- set soldTo_zip = 'receiver_zip1' -%}
+{%- set soldTo_town = 'receiver_town1' -%}
+{%- set soldTo_iso_country_code = 'taccatuccaland' -%}
+
+{%- set shipFrom_name = 'receiver_name1' -%}
+{%- set shipFrom_street = 'receiver_street1' -%}
+{%- set shipFrom_zip = 'receiver_zip1' -%}
+{%- set shipFrom_town = 'receiver_town1' -%}
+{%- set shipFrom_iso_country_code = 'taccatuccaland' -%}
+
+{%- set shipTo_address_id = 'C028Bau WSJ103' -%}
+{%- set shipTo_name = 'receiver_name1' -%}
+{%- set shipTo_street = 'receiver_street1' -%}
+{%- set shipTo_zip = 'receiver_zip1' -%}
+{%- set shipTo_town = 'receiver_town1' -%}
+{%- set shipTo_iso_country_code = 'taccatuccaland' -%}
+
+{%- set receivingBank_swift_id = 'receivingBank_swift_id' -%}
+{%- set receivingBank_iban_id  = 'receivingBank_iban_id' -%}
+{%- set receivingBank_account_name = 'receivingBank_account_name' -%}
+{%- set receivingBank_account_id = 'receivingBank_account_id' -%}
+{%- set receivingBank_account_type = 'receivingBank_account_type' -%}
+{%- set receivingBank_branch_name = 'receivingBank_branch_name' -%}
+
+{%- set extrinsic_buyerVatID = 'CHE-116.268.023 MWST' -%}
+{%- set extrinsic_supplierVatID  = 'CHE-107.542.107 MWST' -%}
+{%- set extrinsic_supplierCommercialIdentifier = 'CHE-107.542.107 VAT' -%}
+
+{%- set item_invoiceLineNumber = 'val' -%}
+{%- set item_quantity = 'val' -%}
+{%- set item_unit_of_measure = 'EA' -%}
+{%- set item_unit_price = 'val' -%}
+{%- set item_supplier_part_id= 'val' -%}
+{%- set item_description = 'val' -%}
+{%- set item_subtotal_amount = 'val' -%}
+{%- set item_tax_amount = 'val' -%}
+{%- set item_tax_rate = 'val' -%}
+{%- set item_tax_taxable_amount = 'val' -%}
+{%- set item_tax_description = 'val' -%}
+{%- set item_gross_amount = 'val' -%}
+{%- set item_net_amount = 'val' -%}
+
+{%- set order_id = '1234567' -%}
+{%- set summary_subtotal_amount = 'ne ganze menge' -%}
+
+{%- set tax_amount = '100' -%}
+{%- set tax_taxable_amount = '200' -%}
+{%- set tax_percent = '7.7' -%}
+{%- set tax_taxPointDate = '2022-11-25T10:33:39+01:00' -%}
+{%- set tax_description = '7.7% Swiss VAT' -%}
+
+{%- set shippingTax_taxable_amount = 'val' -%}
+{%- set shippingTax_tax_amount = 'val' -%}
+{%- set shippingTax_tax_percent = 'val' -%}
+{%- set shippingTax_taxPointDate = '2022-11-25T10:33:39+01:00' -%}
+{%- set shippingTax_description = '7.7% shipping tax' -%}
+
+{%- set currency = 'CHF' -%}
+
+{%- set summary_shipping_amount = '1000' -%}
+{%- set summary_gross_amount = '2000' -%}
+{%- set summary_total_amount_without_tax = '4000' -%}
+{%- set summary_net_amount = '5000' -%}
+{%- set summary_due_amount = '6000' -%}
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
+<cXML payloadID = "2022112416482799-20221124164827995015484@192.0.0.140" timestamp = "2022-11-24T16:48:27+01:00" version = "1.2.028">
+	<Header>
+		<From>
+			<Credential domain = "NetworkID">
+				<Identity>{{sender_network_id}}</Identity>
+			</Credential>
+		</From>
+		<To>
+			<Credential domain = "NetworkID">
+				<Identity>{{receiver_network_id}}</Identity>
+			</Credential>
+		</To>
+		<Sender>
+			<Credential domain = "NetworkID">
+				<Identity>{{sender_network_id}}</Identity>
+				<SharedSecret>{{shared_secret}}</SharedSecret>
+			</Credential>
+			<UserAgent>Supplier</UserAgent>
+		</Sender>
+	</Header>
+	<Request Id = "cXMLData" deploymentMode = "production">
+		<InvoiceDetailRequest>
+			<InvoiceDetailRequestHeader invoiceDate = "{{invoice_date}}T00:00:00+01:00" invoiceID = "{{invoice_id}}" invoiceOrigin = "supplier" operation = "new" purpose = "standard">
+				<InvoiceDetailHeaderIndicator/>
+				<InvoiceDetailLineIndicator isTaxInLine = "yes"/>
+				<InvoicePartner>
+					<Contact addressID="99999" role="remitTo">
+						<Name xml:lang="de-CH">{{remitTo_name}}</Name>
+						<PostalAddress>
+							<Street>{{remitTo_street}}</Street>
+							<City>{{remitTo_town}}</City>
+							<PostalCode>{{remitTo_zip}}</PostalCode>
+							<Country isoCountryCode="{{remitTo_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+					<IdReference domain="supplierTaxID" identifier="{{remitTo_supplier_tax_id}}"/>
+				</InvoicePartner>
+				<InvoicePartner>
+					<Contact addressID="{{billTo_address_id}}" role="billTo">
+ 						<Name xml:lang="de-CH">{{billTo_name}}</Name>
+  						<PostalAddress>
+							<Street></Street>
+							<City>{{billTo_town}}</City>
+							<PostalCode>{{billTo_zip}}</PostalCode>
+							<Country isoCountryCode="{{billTo_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+				</InvoicePartner>
+				<InvoicePartner>
+					<Contact role="from">
+						<Name xml:lang="de-CH">{{from_name}}</Name>
+						<PostalAddress>
+							<Street>{{from_street}}</Street>
+							<City>{{from_town}}</City>
+							<PostalCode>{{from_zip}}</PostalCode>
+							<Country isoCountryCode="{{from_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+				</InvoicePartner>
+				<InvoicePartner>
+					<Contact addressID="{{soldTo_address_id}}" role="soldTo">
+						<Name xml:lang="de-CH">{{soldTo_name}}</Name>
+						<PostalAddress>
+							<Street>{{soldTo_street}}</Street>
+							<City>{{soldTo_town}}</City>
+							<PostalCode>{{soldTo_zip}}</PostalCode>
+							<Country isoCountryCode="{{soldTo_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+				</InvoicePartner>
+				<InvoicePartner>
+					<Contact role="wireReceivingBank">
+						<Name xml:lang="de-CH"></Name>
+					</Contact>
+					<IdReference domain="swiftID" identifier="{{receivingBank_swift_id}}"/>
+					<IdReference domain="ibanID" identifier="{{receivingBank_iban_id}}"/>
+					<IdReference domain="accountName" identifier="{{receivingBank_account_name}}"/>
+					<IdReference domain="accountID" identifier="{{receivingBank_account_id}}"/>
+					<IdReference domain="accountType" identifier="{{receivingBank_account_type}}"/>
+					<IdReference domain="branchName" identifier="{{receivingBank_branch_name}}"/>
+				</InvoicePartner>
+				<InvoiceDetailShipping>
+					<Contact role="shipFrom">
+						<Name xml:lang="de-CH">{{shipFrom_name}}</Name>
+						<PostalAddress>
+							<Street>{{shipFrom_street}}</Street>
+							<City>{{shipFrom_town}}</City>
+							<PostalCode>{{shipFrom_zip}}</PostalCode>
+							<Country isoCountryCode="{{shipFrom_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+					<Contact addressID="{{shipTo_address_id}}" role="shipTo">
+						<Name xml:lang="de-CH">{{shipTo_name}}</Name>
+						<PostalAddress>
+							<DeliverTo></DeliverTo>
+							<Street>{{shipTo_street}}</Street>
+							<City>{{shipTo_town}}</City>
+							<State/>
+							<PostalCode>{{shipTo_zip}}</PostalCode>
+							<Country isoCountryCode="{{shipTo_iso_country_code}}"/>
+						</PostalAddress>
+					</Contact>
+				</InvoiceDetailShipping>
+ 				<PaymentTerm payInNumberOfDays="45"></PaymentTerm>
+				<Comments></Comments>
+				<Extrinsic name="buyerVatID">{{extrinsic_buyerVatID}}</Extrinsic>
+				<Extrinsic name="supplierVatID">{{extrinsic_supplierVatID}}</Extrinsic>
+ 				<Extrinsic name="invoiceSourceDocument">PurchaseOrder</Extrinsic>
+				<Extrinsic name="invoiceSubmissionMethod">cXML</Extrinsic>
+				<Extrinsic name="paymentMethod">wire</Extrinsic>
+				<Extrinsic name="supplierCommercialIdentifier">{{extrinsic_supplierCommercialIdentifier}}</Extrinsic>
+			</InvoiceDetailRequestHeader>
+			<InvoiceDetailOrder>
+				<InvoiceDetailOrderInfo>
+					<OrderReference orderID="{{order_id}}">
+						<DocumentReference payloadID=""/>
+					</OrderReference>
+				</InvoiceDetailOrderInfo>
+{%- for item in items -%}
+				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
+					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
+					<UnitPrice>
+						<Money currency="{{currency}}">{{item_unit_price}}</Money>
+					</UnitPrice>
+					<InvoiceDetailItemReference lineNumber="{{item_invoiceLineNumber}}">
+						<ItemID>
+							<SupplierPartID>{{item_supplier_part_id}}</SupplierPartID>
+						</ItemID>
+						<Description xml:lang="de-CH">{{item_description}}</Description>
+					</InvoiceDetailItemReference>
+					<SubtotalAmount>
+						<Money currency="{{currency}}">{{item_subtotal_amount}}</Money>
+					</SubtotalAmount>
+					<Tax>
+						<Money currency="{{currency}}">{{item_tax_amount}}</Money>
+						<Description xml:lang="de-CH"/>
+						<TaxDetail category="vat" percentageRate="{{item_tax_rate}}" taxPointDate="{{tax_taxPointDate}}" exemptDetail="exempt">
+							<TaxableAmount>
+								<Money currency="{{currency}}">{{item_tax_taxable_amount}}</Money>
+							</TaxableAmount>
+							<TaxAmount>
+								<Money currency="{{currency}}">{{item_tax_amount}}</Money>
+							</TaxAmount>
+							<Description xml:lang="en">{{item_tax_description}}</Description>
+						</TaxDetail>
+					</Tax>
+					<GrossAmount>
+						<Money currency="{{currency}}">{{item_gross_amount}}</Money>
+					</GrossAmount>
+					<NetAmount>
+						<Money currency="{{currency}}">{{item_net_amount}}</Money>
+					</NetAmount>
+				</InvoiceDetailItem>
+{%- endfor -%}
+ 			</InvoiceDetailOrder>
+			<InvoiceDetailSummary>
+				<SubtotalAmount>
+					<Money currency="{{currency}}">{{summary_subtotal_amount}}</Money>
+				</SubtotalAmount>
+				<Tax>
+					<Money currency="{{currency}}">{{tax_amount}}</Money>
+					<Description xml:lang="de-CH"/>
+					<TaxDetail category="vat" percentageRate = "{{tax_percent}}" taxPointDate = "{{tax_taxPointDate}}">
+						<TaxableAmount>
+							<Money currency = "{{currency}}">{{tax_taxable_amount}}</Money>
+						</TaxableAmount>
+						<TaxAmount>
+							<Money currency = "{{currency}}">{{tax_amount}}</Money>
+						</TaxAmount>
+						<Description xml:lang = "en">{{tax_description}}</Description>
+					</TaxDetail>
+					<TaxDetail category="vat" percentageRate="{{shippingTax_tax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
+						<TaxableAmount>
+							<Money currency="{{currency}}">{{shippingTax_taxable_amount}}</Money>
+						</TaxableAmount>
+						<TaxAmount>
+							<Money currency="{{currency}}">{{shippingTax_tax_amount}}</Money>
+						</TaxAmount>
+					<Description xml:lang="en">{{shippingTax_description}}</Description>
+					</TaxDetail>
+				</Tax>
+				<ShippingAmount>
+					<Money currency = "{{currency}}">{{summary_shipping_amount}}</Money>
+				</ShippingAmount>
+				<GrossAmount>
+					<Money currency="{{currency}}">{{summary_gross_amount}}</Money>
+				</GrossAmount>
+				<TotalAmountWithoutTax>
+					<Money currency="{{currency}}">{{summary_total_amount_without_tax}}</Money>
+				</TotalAmountWithoutTax>
+				<NetAmount>
+					<Money currency="{{currency}}">{{summary_net_amount}}</Money>
+				</NetAmount>
+				<DueAmount>
+					<Money currency="{{currency}}">{{summary_due_amount}}</Money>
+				</DueAmount>
+			</InvoiceDetailSummary>
+		</InvoiceDetailRequest>
+	</Request>
+</cXML>
