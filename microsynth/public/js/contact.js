@@ -15,22 +15,27 @@ frappe.ui.form.on('Contact', {
 		frappe.route_history = []; 
     },
 	refresh(frm) {
-        frm.add_custom_button(__("Gecko Export"), function() {
-            frappe.call({
-                "method":"microsynth.microsynth.migration.export_contact_to_gecko",
-                "args": { "contact_name":frm.doc.name }
-            });
-        });
-        // jump to customer button
+        // Show buttons if a customer is linked
 		if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
-		    frm.add_custom_button(__("Customer"), function() {
-                frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
-            });
             
+            // Preview Address button
             frm.add_custom_button(__("Preview Address"), function() {
                 preview_address(frm, frm.doc.links[0].link_name);
             });
             
+            // Gecko export button
+            frm.add_custom_button(__("Gecko Export"), function() {
+                frappe.call({
+                    "method":"microsynth.microsynth.migration.export_contact_to_gecko",
+                    "args": { "contact_name":frm.doc.name }
+                });
+            });
+            
+            // Button to jump to customer
+            frm.add_custom_button(__("Customer"), function() {
+                frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
+            });
+                      
             frappe.call({
                 "method": "frappe.client.get",
                 "args": {
