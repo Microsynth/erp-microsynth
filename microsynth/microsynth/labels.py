@@ -8,7 +8,7 @@ import sys
 
 # TODO: dict is not complete
 SHIPPING_SERVICES = {
-    '1100': "A-POST",
+    '1100': "A-Post",
     '1123': "DHL"
 }
 
@@ -67,20 +67,11 @@ def print_test_label_novexx():
 '''
     print_raw('192.0.1.72', 9100, content )
 
-# Review: based on experience the access to elements by index manipulation (-1) causes more time for familiarisation with the code later on
-# --> JVo recommends alternative way
-def get_shipping_item(items):
-    for i in range(len(items), 0, -1):
-        if items[i - 1].item_group == "Shipping":
-            return items[i - 1].item_code
 
-#suggestion joerg - do not need to work with indices, if I want to access the looped item directly + self explanatory iterator
-'''
 def get_shipping_item(items):
     for del_item in items[::-1]:
         if del_item.item_group == "Shipping":
             return del_item.item_code
-'''
 
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
