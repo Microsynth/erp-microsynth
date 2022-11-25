@@ -1,97 +1,69 @@
-{%- set sender_network_id = 'AN01429401165-DEV' -%}
-{%- set receiver_network_id = 'AN01003603018-DEV' -%}
-{%- set shared_secret = 'secret1' -%}
-
-{%- set invoice_id = 'i_id_123' -%}
-{%- set invoice_date = 'invoice_date2022' -%}
-{%- set remitTo_name = 'sender_name1' -%}
-{%- set remitTo_street = 'sender_street1' -%}
-{%- set remitTo_zip = 'sender_zip1' -%}
-{%- set remitTo_town = 'sender_town1' -%}
-{%- set remitTo_iso_country_code = 'CH' -%}
-{%- set remitTo_supplier_tax_id = 'CHE-107.542.107 MWST' -%}
-
-{%- set billTo_address_id = 'C028Bau WSJ103' -%}
-{%- set billTo_name = 'receiver_name1' -%}
-{%- set billTo_street = 'receiver_street1' -%}
-{%- set billTo_zip = 'receiver_zip1' -%}
-{%- set billTo_town = 'receiver_town1' -%}
-{%- set billTo_iso_country_code = 'taccatuccaland' -%}
-
-{%- set from_name = 'receiver_name1' -%}
-{%- set from_street = 'receiver_street1' -%}
-{%- set from_zip = 'receiver_zip1' -%}
-{%- set from_town = 'receiver_town1' -%}
-{%- set from_iso_country_code = 'taccatuccaland' -%}
-
-{%- set soldTo_address_id = 'C028Bau WSJ103' -%}
-{%- set soldTo_name = 'receiver_name1' -%}
-{%- set soldTo_street = '' -%}
-{%- set soldTo_zip = 'receiver_zip1' -%}
-{%- set soldTo_town = 'receiver_town1' -%}
-{%- set soldTo_iso_country_code = 'taccatuccaland' -%}
-
-{%- set shipFrom_name = 'receiver_name1' -%}
-{%- set shipFrom_street = 'receiver_street1' -%}
-{%- set shipFrom_zip = 'receiver_zip1' -%}
-{%- set shipFrom_town = 'receiver_town1' -%}
-{%- set shipFrom_iso_country_code = 'taccatuccaland' -%}
-
-{%- set shipTo_address_id = 'C028Bau WSJ103' -%}
-{%- set shipTo_name = 'receiver_name1' -%}
-{%- set shipTo_street = 'receiver_street1' -%}
-{%- set shipTo_zip = 'receiver_zip1' -%}
-{%- set shipTo_town = 'receiver_town1' -%}
-{%- set shipTo_iso_country_code = 'taccatuccaland' -%}
-
-{%- set receivingBank_swift_id = 'receivingBank_swift_id' -%}
-{%- set receivingBank_iban_id  = 'receivingBank_iban_id' -%}
-{%- set receivingBank_account_name = 'receivingBank_account_name' -%}
-{%- set receivingBank_account_id = 'receivingBank_account_id' -%}
-{%- set receivingBank_account_type = 'receivingBank_account_type' -%}
-{%- set receivingBank_branch_name = 'receivingBank_branch_name' -%}
-
-{%- set extrinsic_buyerVatID = 'CHE-116.268.023 MWST' -%}
-{%- set extrinsic_supplierVatID  = 'CHE-107.542.107 MWST' -%}
-{%- set extrinsic_supplierCommercialIdentifier = 'CHE-107.542.107 VAT' -%}
-
-{%- set item_invoiceLineNumber = 'val' -%}
-{%- set item_quantity = 'val' -%}
-{%- set item_unit_of_measure = 'EA' -%}
-{%- set item_unit_price = 'val' -%}
-{%- set item_supplier_part_id= 'val' -%}
-{%- set item_description = 'val' -%}
-{%- set item_subtotal_amount = 'val' -%}
-{%- set item_tax_amount = 'val' -%}
-{%- set item_tax_rate = 'val' -%}
-{%- set item_tax_taxable_amount = 'val' -%}
-{%- set item_tax_description = 'val' -%}
-{%- set item_gross_amount = 'val' -%}
-{%- set item_net_amount = 'val' -%}
-
-{%- set order_id = '1234567' -%}
-{%- set summary_subtotal_amount = 'ne ganze menge' -%}
-
-{%- set tax_amount = '100' -%}
-{%- set tax_taxable_amount = '200' -%}
-{%- set tax_percent = '7.7' -%}
-{%- set tax_taxPointDate = '2022-11-25T10:33:39+01:00' -%}
-{%- set tax_description = '7.7% Swiss VAT' -%}
-
-{%- set shippingTax_taxable_amount = 'val' -%}
-{%- set shippingTax_tax_amount = 'val' -%}
-{%- set shippingTax_tax_percent = 'val' -%}
-{%- set shippingTax_taxPointDate = '2022-11-25T10:33:39+01:00' -%}
-{%- set shippingTax_description = '7.7% shipping tax' -%}
-
-{%- set currency = 'CHF' -%}
-
-{%- set summary_shipping_amount = '1000' -%}
-{%- set summary_gross_amount = '2000' -%}
-{%- set summary_total_amount_without_tax = '4000' -%}
-{%- set summary_net_amount = '5000' -%}
-{%- set summary_due_amount = '6000' -%}
-
+{%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
+{%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
+{%- set basics_shared_secret 		= basics['shared_secret'] -%}
+{%- set basics_order_id 			= basics['order_id'] -%}
+{%- set basics_currency 			= basics['currency'] -%}
+{%- set basics_invoice_id 			= basics['invoice_id'] -%}
+{%- set basics_invoice_date 		= basics['invoice_date'] -%}
+{%- set remitTo_name 				= remitTo['name'] -%}
+{%- set remitTo_street 				= remitTo['street'] -%}
+{%- set remitTo_zip 				= remitTo['zip'] -%}
+{%- set remitTo_town 				= remitTo['town'] -%}
+{%- set remitTo_iso_country_code 	= remitTo['iso_country_code'] -%}
+{%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
+{%- set billTo_address_id 			= billTo['address_id'] -%}
+{%- set billTo_name 				= billTo['name'] -%}
+{%- set billTo_street 				= billTo['street'] -%}
+{%- set billTo_zip 					= billTo['zip'] -%}
+{%- set billTo_town 				= billTo['town'] -%}
+{%- set billTo_iso_country_code 	= billTo['iso_country_code'] -%}
+{%- set from_name 					= from['name'] -%}
+{%- set from_street 				= from['street'] -%}
+{%- set from_zip 					= from['zip'] -%}
+{%- set from_town 					= from['town'] -%}
+{%- set from_iso_country_code 		= from['iso_country_code'] -%}
+{%- set soldTo_address_id 			= soldTo['address_id'] -%}
+{%- set soldTo_name 				= soldTo['name'] -%}
+{%- set soldTo_street 				= soldTo['street'] -%}
+{%- set soldTo_zip 					= soldTo['zip'] -%}
+{%- set soldTo_town 				= soldTo['town'] -%}
+{%- set soldTo_iso_country_code 	= soldTo['iso_country_code'] -%}
+{%- set shipFrom_name 				= shipFrom['name'] -%}
+{%- set shipFrom_street 			= shipFrom['street'] -%}
+{%- set shipFrom_zip 				= shipFrom['zip'] -%}
+{%- set shipFrom_town 				= shipFrom['town'] -%}
+{%- set shipFrom_iso_country_code 	= shipFrom['iso_country_code'] -%}
+{%- set shipTo_address_id 			= shipTo['address_id'] -%}
+{%- set shipTo_name 				= shipTo['name'] -%}
+{%- set shipTo_street 				= shipTo['street'] -%}
+{%- set shipTo_zip 					= shipTo['zip'] -%}
+{%- set shipTo_town 				= shipTo['town'] -%}
+{%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
+{%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
+{%- set receivingBank_iban_id  		= receivingBank['iban_id '] -%}
+{%- set receivingBank_account_name 	= receivingBank['account_name'] -%}
+{%- set receivingBank_account_id 	= receivingBank['account_id'] -%}
+{%- set receivingBank_account_type 	= receivingBank['account_type'] -%}
+{%- set receivingBank_branch_name 	= receivingBank['branch_name'] -%}
+{%- set extrinsic_buyerVatID 		= extrinsic['buyerVatID'] -%}
+{%- set extrinsic_supplierVatID  	= extrinsic['supplierVatID '] -%}
+{%- set extrinsic_supplierCommercialIdentifier = extrinsic['supplierCommercialIdentifier'] -%}
+{%- set tax_amount 					= tax['amount'] -%}
+{%- set tax_taxable_amount 			= tax['taxable_amount'] -%}
+{%- set tax_percent 				= tax['percent'] -%}
+{%- set tax_taxPointDate 			= tax['taxPointDate'] -%}
+{%- set tax_description 			= tax['description'] -%}
+{%- set shippingTax_taxable_amount 	= shippingTax['taxable_amount'] -%}
+{%- set shippingTax_tax_amount 		= shippingTax['tax_amount'] -%}
+{%- set shippingTax_tax_percent 	= shippingTax['tax_percent'] -%}
+{%- set shippingTax_taxPointDate 	= shippingTax['taxPointDate'] -%}
+{%- set shippingTax_description 	= shippingTax['description'] -%}
+{%- set summary_subtotal_amount 	= summary['subtotal_amount'] -%}
+{%- set summary_shipping_amount 	= summary['shipping_amount'] -%}
+{%- set summary_gross_amount 		= summary['gross_amount'] -%}
+{%- set summary_total_amount_without_tax = summary['total_amount_without_tax'] -%}
+{%- set summary_net_amount 			= summary['net_amount'] -%}
+{%- set summary_due_amount 			= summary['due_amount'] -%}
 
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
@@ -99,25 +71,25 @@
 	<Header>
 		<From>
 			<Credential domain = "NetworkID">
-				<Identity>{{sender_network_id}}</Identity>
+				<Identity>{{basics_sender_network_id}}</Identity>
 			</Credential>
 		</From>
 		<To>
 			<Credential domain = "NetworkID">
-				<Identity>{{receiver_network_id}}</Identity>
+				<Identity>{{basics_receiver_network_id}}</Identity>
 			</Credential>
 		</To>
 		<Sender>
 			<Credential domain = "NetworkID">
-				<Identity>{{sender_network_id}}</Identity>
-				<SharedSecret>{{shared_secret}}</SharedSecret>
+				<Identity>{{basics_sender_network_id}}</Identity>
+				<SharedSecret>{{basics_shared_secret}}</SharedSecret>
 			</Credential>
 			<UserAgent>Supplier</UserAgent>
 		</Sender>
 	</Header>
 	<Request Id = "cXMLData" deploymentMode = "production">
 		<InvoiceDetailRequest>
-			<InvoiceDetailRequestHeader invoiceDate = "{{invoice_date}}T00:00:00+01:00" invoiceID = "{{invoice_id}}" invoiceOrigin = "supplier" operation = "new" purpose = "standard">
+			<InvoiceDetailRequestHeader invoiceDate = "{{basics_invoice_date}}T00:00:00+01:00" invoiceID = "{{basics_invoice_id}}" invoiceOrigin = "supplier" operation = "new" purpose = "standard">
 				<InvoiceDetailHeaderIndicator/>
 				<InvoiceDetailLineIndicator isTaxInLine = "yes"/>
 				<InvoicePartner>
@@ -209,15 +181,29 @@
 			</InvoiceDetailRequestHeader>
 			<InvoiceDetailOrder>
 				<InvoiceDetailOrderInfo>
-					<OrderReference orderID="{{order_id}}">
+					<OrderReference orderID="{{basics_order_id}}">
 						<DocumentReference payloadID=""/>
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
 {%- for item in items -%}
+{%- set item_invoiceLineNumber 		= item['invoiceLineNumber'] -%}
+{%- set item_quantity 				= item['quantity'] -%}
+{%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
+{%- set item_unit_price 			= item['unit_price'] -%}
+{%- set item_supplier_part_id		= item['supplier_part_id'] -%}
+{%- set item_description 			= item['description'] -%}
+{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
+{%- set item_tax_amount 			= item['tax_amount'] -%}
+{%- set item_tax_rate 				= item['tax_rate'] -%}
+{%- set item_tax_taxable_amount 	= item['tax_taxable_amount'] -%}
+{%- set item_tax_description 		= item['tax_description'] -%}
+{%- set item_gross_amount 			= item['gross_amount'] -%}
+{%- set item_net_amount 			= item['net_amount'] -%}
+
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
-						<Money currency="{{currency}}">{{item_unit_price}}</Money>
+						<Money currency="{{basics_currency}}">{{item_unit_price}}</Money>
 					</UnitPrice>
 					<InvoiceDetailItemReference lineNumber="{{item_invoiceLineNumber}}">
 						<ItemID>
@@ -226,70 +212,70 @@
 						<Description xml:lang="de-CH">{{item_description}}</Description>
 					</InvoiceDetailItemReference>
 					<SubtotalAmount>
-						<Money currency="{{currency}}">{{item_subtotal_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{item_subtotal_amount}}</Money>
 					</SubtotalAmount>
 					<Tax>
-						<Money currency="{{currency}}">{{item_tax_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
 						<Description xml:lang="de-CH"/>
 						<TaxDetail category="vat" percentageRate="{{item_tax_rate}}" taxPointDate="{{tax_taxPointDate}}" exemptDetail="exempt">
 							<TaxableAmount>
-								<Money currency="{{currency}}">{{item_tax_taxable_amount}}</Money>
+								<Money currency="{{basics_currency}}">{{item_tax_taxable_amount}}</Money>
 							</TaxableAmount>
 							<TaxAmount>
-								<Money currency="{{currency}}">{{item_tax_amount}}</Money>
+								<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
 							</TaxAmount>
 							<Description xml:lang="en">{{item_tax_description}}</Description>
 						</TaxDetail>
 					</Tax>
 					<GrossAmount>
-						<Money currency="{{currency}}">{{item_gross_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{item_gross_amount}}</Money>
 					</GrossAmount>
 					<NetAmount>
-						<Money currency="{{currency}}">{{item_net_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{item_net_amount}}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
 {%- endfor -%}
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
 				<SubtotalAmount>
-					<Money currency="{{currency}}">{{summary_subtotal_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{summary_subtotal_amount}}</Money>
 				</SubtotalAmount>
 				<Tax>
-					<Money currency="{{currency}}">{{tax_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{tax_amount}}</Money>
 					<Description xml:lang="de-CH"/>
 					<TaxDetail category="vat" percentageRate = "{{tax_percent}}" taxPointDate = "{{tax_taxPointDate}}">
 						<TaxableAmount>
-							<Money currency = "{{currency}}">{{tax_taxable_amount}}</Money>
+							<Money currency = "{{basics_currency}}">{{tax_taxable_amount}}</Money>
 						</TaxableAmount>
 						<TaxAmount>
-							<Money currency = "{{currency}}">{{tax_amount}}</Money>
+							<Money currency = "{{basics_currency}}">{{tax_amount}}</Money>
 						</TaxAmount>
 						<Description xml:lang = "en">{{tax_description}}</Description>
 					</TaxDetail>
 					<TaxDetail category="vat" percentageRate="{{shippingTax_tax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
 						<TaxableAmount>
-							<Money currency="{{currency}}">{{shippingTax_taxable_amount}}</Money>
+							<Money currency="{{basics_currency}}">{{shippingTax_taxable_amount}}</Money>
 						</TaxableAmount>
 						<TaxAmount>
-							<Money currency="{{currency}}">{{shippingTax_tax_amount}}</Money>
+							<Money currency="{{basics_currency}}">{{shippingTax_tax_amount}}</Money>
 						</TaxAmount>
 					<Description xml:lang="en">{{shippingTax_description}}</Description>
 					</TaxDetail>
 				</Tax>
 				<ShippingAmount>
-					<Money currency = "{{currency}}">{{summary_shipping_amount}}</Money>
+					<Money currency = "{{basics_currency}}">{{summary_shipping_amount}}</Money>
 				</ShippingAmount>
 				<GrossAmount>
-					<Money currency="{{currency}}">{{summary_gross_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{summary_gross_amount}}</Money>
 				</GrossAmount>
 				<TotalAmountWithoutTax>
-					<Money currency="{{currency}}">{{summary_total_amount_without_tax}}</Money>
+					<Money currency="{{basics_currency}}">{{summary_total_amount_without_tax}}</Money>
 				</TotalAmountWithoutTax>
 				<NetAmount>
-					<Money currency="{{currency}}">{{summary_net_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{summary_net_amount}}</Money>
 				</NetAmount>
 				<DueAmount>
-					<Money currency="{{currency}}">{{summary_due_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{summary_due_amount}}</Money>
 				</DueAmount>
 			</InvoiceDetailSummary>
 		</InvoiceDetailRequest>

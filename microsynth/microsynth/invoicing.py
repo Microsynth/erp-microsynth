@@ -89,12 +89,19 @@ def make_collective_invoice(delivery_notes):
     frappe.db.commit()
     return
 
-"""
-This function will check a transfer moe and transmit the invoice
-"""
-def transmit_sales_invoice(sales_invoice_name):
+
+def transmit_sales_invoice():
+#def transmit_sales_invoice(sales_invoice_name):
+    """
+    This function will check a transfer moe and transmit the invoice
+    """
+
+    sales_invoice_name = "SI-BAL-22000001"
+
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
+    
+    '''
     if customer.invoicing_method == "Email":
         # send by mail
         target_email = customer.get("invoice_email") or sales_invoice.get("contact_email")
@@ -130,13 +137,111 @@ def transmit_sales_invoice(sales_invoice_name):
                 
         pass
     elif customer.invoicing_method == "ARIBA":
-        # create ARIBA cXML
-        data = sales_invoice.as_dict()
-        data['customer_record'] = customer.as_dict()
-        cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", data)
+    '''    
+        # create ARIBA cXML input data dict
+    data = sales_invoice.as_dict()
+    data['customer_record'] = customer.as_dict()
+    data2 = {'basics' : {'sender_network_id': 'AN01429401165-DEV',
+                        'receiver_network_id' : 'AN01003603018-DEV',
+                        'shared_secret' : 'secret1',
+                        'order_id' : '1234567', 
+                        'currency' : 'CHF',
+                        'invoice_id' : 'id_123',
+                        'invoice_date' : 'invoice_date2022'},
+            'remitTo' : {'name' : 'sender_name1',
+                        'street': 'sender_street1', 
+                        'zip' : 'sender_zip1',
+                        'town' : 'sender_town1', 
+                        'iso_country_code' : 'CH', 
+                        'supplier_tax_id' : 'CHE-107.542.107 MWST'
+                        },
+            'billTo' : {'address_id' : 'C028Bau WSJ103', 
+                        'name' : 'receiver_name1',
+                        'street' : 'receiver_street1',
+                        'zip' : 'receiver_zip1',
+                        'town' : 'receiver_town1',
+                        'iso_country_code' : 'taccatuccaland'
+                        },
+            'from' :    {'name' : 'receiver_name1',
+                        'street' : 'receiver_street1', 
+                        'zip' : 'receiver_zip1',
+                        'town' : 'receiver_town1',
+                        'iso_country_code' : 'taccatuccaland'
+                        }, 
+            'soldTo' :  {'address_id' : 'C028Bau WSJ103', 
+                        'name' : 'receiver_name1',
+                        'street' : 'someStreet',
+                        'zip' : 'receiver_zip1',
+                        'town' : 'receiver_town1',
+                        'iso_country_code' : 'taccatuccaland'
+                        }, 
+            'shipFrom' : {'name' : 'receiver_name1', 
+                        'street' : 'receiver_street1',
+                        'zip' : 'receiver_zip1',
+                        'town' : 'receiver_town1',
+                        'iso_country_code' : 'taccatuccaland'
+                        },
+            'shipTo' : {'address_id' : 'C028Bau WSJ103',
+                        'name' : 'receiver_name1',
+                        'street' : 'receiver_street1',
+                        'zip' : 'receiver_zip1',
+                        'town' : 'receiver_town1',
+                        'iso_country_code' : 'taccatuccaland'
+                        }, 
+            'receivingBank' : {'swift_id' : 'swift_id',
+                        'iban_id ' : 'iban_id',
+                        'account_name' : 'account_name',
+                        'account_id' : 'account_id',
+                        'account_type' : 'account_type',
+                        'branch_name' : 'branch_name'
+                        }, 
+            'extrinsic' : {'buyerVatID' : 'CHE-116.268.023 MWST',
+                        'supplierVatID ' : 'CHE-107.542.107 MWST',
+                        'supplierCommercialIdentifier' : 'CHE-107.542.107 VAT'
+                        }, 
+            'item' :    {'invoiceLineNumber' : 'val',
+                        'quantity' : 'val',
+                        'unit_of_measure' : 'EA',
+                        'unit_price' : 'val',
+                        'supplier_part_id' : 'val',
+                        'description' : 'val',
+                        'subtotal_amount' : 'val',
+                        'amount' : 'val',
+                        'rate' : 'val',
+                        'taxable_amount' : 'val',
+                        'description' : 'val',
+                        'gross_amount' : 'val',
+                        'net_amount' : 'val'
+                        }, 
+            'tax' :     {'amount' : '100',
+                        'taxable_amount' : '200',
+                        'percent' : '7.7',
+                        'taxPointDate' : '2022-11-25T10:33:39+01:00',
+                        'description' : '7.7% Swiss VAT'
+                        },
+            'shippingTax' : {'taxable_amount' : 'val',
+                        'amount' : 'val',
+                        'percent' : 'val',
+                        'taxPointDate' : '2022-11-25T10:33:39+01:00',
+                        'description' : '7.7% shipping tax'
+                        }, 
+            'summary' : {'subtotal_amount' : 'ne ganze menge',
+                        'shipping_amount' : '1000',
+                        'gross_amount' : '2000',
+                        'total_amount_without_tax' : '4000',
+                        'net_amount' : '5000',
+                        'due_amount' : '6000'
+                        }
+            }
+
+    cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", data2)
+    print(cxml)
+
+    '''
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
         # store EDI File
+        
         f = save_file(
             "{0}.txt".format(sales_invoice_name), 
             cxml, 
@@ -145,6 +250,7 @@ def transmit_sales_invoice(sales_invoice_name):
             folder=folder, 
             is_private=True
         )
+    '''
 
         # transmit to target
         # TODO
