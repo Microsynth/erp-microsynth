@@ -54,8 +54,8 @@
 {%- set tax_taxPointDate 			= tax['taxPointDate'] -%}
 {%- set tax_description 			= tax['description'] -%}
 {%- set shippingTax_taxable_amount 	= shippingTax['taxable_amount'] -%}
-{%- set shippingTax_tax_amount 		= shippingTax['tax_amount'] -%}
-{%- set shippingTax_tax_percent 	= shippingTax['tax_percent'] -%}
+{%- set shippingTax_amount 			= shippingTax['amount'] -%}
+{%- set shippingTax_percent 		= shippingTax['percent'] -%}
 {%- set shippingTax_taxPointDate 	= shippingTax['taxPointDate'] -%}
 {%- set shippingTax_description 	= shippingTax['description'] -%}
 {%- set summary_subtotal_amount 	= summary['subtotal_amount'] -%}
@@ -185,7 +185,7 @@
 						<DocumentReference payloadID=""/>
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
-{%- for item in items -%}
+{% for item in items %}
 {%- set item_invoiceLineNumber 		= item['invoiceLineNumber'] -%}
 {%- set item_quantity 				= item['quantity'] -%}
 {%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
@@ -199,7 +199,7 @@
 {%- set item_tax_description 		= item['tax_description'] -%}
 {%- set item_gross_amount 			= item['gross_amount'] -%}
 {%- set item_net_amount 			= item['net_amount'] -%}
-
+{#additional line break#}
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
@@ -234,7 +234,7 @@
 						<Money currency="{{basics_currency}}">{{item_net_amount}}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
-{%- endfor -%}
+{%- endfor %}
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
 				<SubtotalAmount>
@@ -252,12 +252,12 @@
 						</TaxAmount>
 						<Description xml:lang = "en">{{tax_description}}</Description>
 					</TaxDetail>
-					<TaxDetail category="vat" percentageRate="{{shippingTax_tax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
+					<TaxDetail category="vat" percentageRate="{{shippingTax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
 						<TaxableAmount>
 							<Money currency="{{basics_currency}}">{{shippingTax_taxable_amount}}</Money>
 						</TaxableAmount>
 						<TaxAmount>
-							<Money currency="{{basics_currency}}">{{shippingTax_tax_amount}}</Money>
+							<Money currency="{{basics_currency}}">{{shippingTax_amount}}</Money>
 						</TaxAmount>
 					<Description xml:lang="en">{{shippingTax_description}}</Description>
 					</TaxDetail>

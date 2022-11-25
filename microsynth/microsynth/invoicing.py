@@ -89,6 +89,29 @@ def make_collective_invoice(delivery_notes):
     frappe.db.commit()
     return
 
+def create_list_of_item_dicts_for_cxml(sales_invoice):
+
+    
+    list_of_item_dicts = []
+    for item in sales_invoice.items: 
+        item_dict = {}
+        item_dict['invoiceLineNumber']  = 'val'
+        item_dict['quantity']           = item.qty
+        item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+        item_dict['unit_price']         = item.rate
+        item_dict['supplier_part_id']   = 'val'
+        item_dict['description']        = 'val'
+        item_dict['subtotal_amount']    = item.amount
+        item_dict['tax_amount']         = 'val'
+        item_dict['tax_rate']           = item.item_tax_rate
+        item_dict['tax_taxable_amount'] = 'val'
+        item_dict['tax_description']    = 'val'
+        item_dict['gross_amount']       = 'val'
+        item_dict['net_amount']         = 'val'
+        list_of_item_dicts.append(item_dict)
+    
+    return list_of_item_dicts
+
 
 def transmit_sales_invoice():
 #def transmit_sales_invoice(sales_invoice_name):
@@ -141,6 +164,10 @@ def transmit_sales_invoice():
         # create ARIBA cXML input data dict
     data = sales_invoice.as_dict()
     data['customer_record'] = customer.as_dict()
+
+
+    itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
+
     data2 = {'basics' : {'sender_network_id': 'AN01429401165-DEV',
                         'receiver_network_id' : 'AN01003603018-DEV',
                         'shared_secret' : 'secret1',
@@ -199,20 +226,7 @@ def transmit_sales_invoice():
                         'supplierVatID ' : 'CHE-107.542.107 MWST',
                         'supplierCommercialIdentifier' : 'CHE-107.542.107 VAT'
                         }, 
-            'item' :    {'invoiceLineNumber' : 'val',
-                        'quantity' : 'val',
-                        'unit_of_measure' : 'EA',
-                        'unit_price' : 'val',
-                        'supplier_part_id' : 'val',
-                        'description' : 'val',
-                        'subtotal_amount' : 'val',
-                        'amount' : 'val',
-                        'rate' : 'val',
-                        'taxable_amount' : 'val',
-                        'description' : 'val',
-                        'gross_amount' : 'val',
-                        'net_amount' : 'val'
-                        }, 
+            'items' :   itemList, 
             'tax' :     {'amount' : '100',
                         'taxable_amount' : '200',
                         'percent' : '7.7',
