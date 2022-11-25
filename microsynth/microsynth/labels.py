@@ -4,7 +4,9 @@
 
 import frappe
 import socket
+import sys
 
+# TODO: dict is not complete
 SHIPPING_SERVICES = {
     '1100': "A-POST",
     '1123': "DHL"
@@ -34,7 +36,8 @@ O R
 I 100,137,180,2,2;01_MIC_Logo_Swiss_black
 
 ;###print date and time during development###
-;T 1,140,0,3,pt 10;[DATE]-[TIME]-ERPtest
+
+;T 1,140,0,3,pt 10;[DATE]-[TIME]-function: print_test_label_brady
 A 1
 '''
     print_raw('192.0.1.71', 9100, content )
@@ -52,18 +55,10 @@ def print_test_label_novexx():
 #T4#J130#YN101/0U/45///Schützenstrasse 15, 9436 Balgach#G
 #T4#J127#YL0/0/0.5/95
 
-#T60#J105#YN101/3U/45///first line#G
-#T55#J105#YN101/3U/45///2nd line#G
-#T50#J105#YN101/3U/45///3rd line#G
-#T45#J105#YN101/3U/45///4. line#G
-#T40#J105#YN101/3U/45///5. line#G
-#T35#J105#YN101/3U/45///6. line#G
-#T30#J105#YN101/3U/45///Balgach#G
-#T25#J105#YN101/3U/45///Switzerland#G
+#T60#J105#YN101/3U/45///first address line#G
 
-#T78#J54#YN101/3U/85///P.P. A#G
-#T75#J54#YN101/3U/45///CH-9436 Balgach#G
-#T71#J54#YN101/3U/45///POST CH AG#G
+#T78#J54#YN101/3U/85///some country#G
+#T75#J54#YN101/3U/45///postal service#G
 #T69#J22#YR0/0/0.5/15/33
 
 #T4#J105#YN101/3U/45///hardcoded from print_test_label_novexx#G
@@ -72,36 +67,8 @@ def print_test_label_novexx():
 '''
     print_raw('192.0.1.72', 9100, content )
 
-
-# TODO obsolete: Test functions are hardcoded to specific printer_IPs/customer/address/contact/sender/postal_service
-# They are useful only during initial development - delete after finishing development
-def print_test_address_template_brady():
-    """This function might be obsolete by recent developments"""
-
-    content = frappe.render_template("microsynth/templates/includes/address_label_brady.html", 
-        {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
-        'sender_address': return_sender_address("Balgach"),
-        'destination_country': 'Deutschlang',
-        'shipping_service': 'DHL'}
-        )
-    print(content)
-    print_raw('192.0.1.70', 9100, content )
-
-
-# TODO obsolete: Test functions are hardcoded to specific printer_IPs/customer/address/contact/sender/postal_service
-# They are useful only during initial development - delete after finishing development
-def print_test_address_template_novexx():
-    """This function might be obsolete by recent developments"""
-
-    content = frappe.render_template("microsynth/templates/includes/address_label_novexx.html", 
-        {'lines': create_receiver_address_lines(customer_id='8003', contact_id='215856', address_id='215856'), 
-        'sender_address': return_sender_address("Balgach"),
-        'postal_list': ['P.P. A.', '', '']}
-        )
-    print(content)
-    print_raw('192.0.1.72', 9100, content )
-
-
+# Review: based on experience the access to elements by index manipulation (-1) causes more time for familiarisation with the code later on
+# --> JVo recommends alternative way
 def get_shipping_item(items):
     for i in range(len(items), 0, -1):
         if items[i - 1].item_group == "Shipping":
@@ -172,14 +139,15 @@ def return_sender_address(company):
 
 
 def print_address_template(sales_order_id='SO-BAL-22000001', printer_ip='192.0.1.70'):
-    """Doc string"""
+    """function calls respective template for creating a transport label
+    default printer is IP 192.0.1.70 (Brady Sanger)"""
         
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
     elif printer_ip in ['192.0.1.72']: 
         printer_template = "microsynth/templates/includes/address_label_novexx.html"
     else: 
-        frappe.throw("no printer set")
+        frappe.throw("invalid IP, no printer set")
     
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
