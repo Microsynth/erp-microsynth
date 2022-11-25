@@ -4,21 +4,22 @@
 #N13
 #ER
 {# add sender adress incl logo #}
+; ### sender address and logo ###
 #T4#J135#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
 #T4#J127#YL0/0/0.5/95
-
-{% if sender_address_discriminator.lower() == "switzerland" %}
+{# additional line break #}
+{%- if sender_address_discriminator.lower() == "switzerland" -%}
 #T4#J130#YN101/0U/45///Schützenstrasse 15, CH-9436 Balgach#G
-{% elif sender_address_discriminator.lower() == "austria"%}
+{%- elif sender_address_discriminator.lower() == "austria" -%}
 #T4#J130#YN101/0U/45///Postlagernd, Senderstrasse 10, AT-696 Wolfurt#G
-{% elif sender_address_discriminator.lower() == "eu"%}
+{%- elif sender_address_discriminator.lower() == "eu"-%}
 #T4#J130#YN101/0U/45///Postfach 3351, DE-88115 Lindau#G
 {% else %}
 #T4#J130#YN101/0U/45///Schützenstrasse 15, CH-9436 Balgach#G
 {%- endif -%}
 
-
 {# receiver address #}
+; ### receiver address ###
 {# additional line break #}
 {%- for element in lines -%}
     {%- set print_start_position = 60-(lines.index(element)*5) -%}
@@ -28,12 +29,13 @@
 
 {# postal service#}
 ; ### postal service ###
-{% if shipping_service == "A-POST" %}
+{# additional line break #}
+{%- if shipping_service == "A-POST" -%}
 #T78#J54#YN101/3U/85///P.P. A#G
 #T75#J54#YN101/3U/45///CH-9436 Balgach#G
 #T71#J54#YN101/3U/45///POST CH AG#G
 #T69#J22#YR0/0/0.5/15/33
-{% else %}
+{%- else -%}
 #T81#J53#YN101/3U/45///{{destination_country}}#G
 #T75#J53#YN101/3U/85///{{shipping_service}}#G
 {%- endif -%}
