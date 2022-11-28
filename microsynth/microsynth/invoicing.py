@@ -118,8 +118,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
-    print(sales_invoice.taxes.total)
-    
+    print(customer.as_dict())
+    print ("\n1")
+    for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
+        print ("%s: %s" %(key, value))
+
+
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
@@ -180,9 +184,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'supplierCommercialIdentifier': sales_invoice.tax_id + 'VAT'
                         }, 
             'items' :   itemList, 
-            'tax' :     {'amount' :         '100',
-                        'taxable_amount' :  '200',
-                        'percent' :         '7.7',
+            'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
+                        'taxable_amount' :  sales_invoice.as_dict()["taxes"][0]["total"],
+                        'percent' :         sales_invoice.as_dict()["taxes"][0]["rate"],
                         'taxPointDate' :    '2022-11-25T10:33:39+01:00',
                         'description' :     '7.7% Swiss VAT'
                         },
