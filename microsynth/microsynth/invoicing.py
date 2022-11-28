@@ -145,7 +145,16 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #    print ("%s: %s" %(key, value))
     
     #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-
+    for key, value in (company_details.as_dict().items()): 
+        print ("%s: %s" %(key, value))
+    print("XXXXX")
+    print(company_details.default_bank_account)
+    print(company_details.default_bank_account.split("-"))
+    print(company_details.default_bank_account.split("-")[1])
+    print(company_details.default_bank_account.split("-")[1].strip())
+    print(company_details.default_bank_account.split("-")[1].strip().split(" "))
+    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1])
+    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
 
 
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
@@ -199,14 +208,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         }, 
             'receivingBank' : {'swift_id':  'swift_id',
                         'iban_id':          company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip(),
-                        'account_name':     company_details.name, #'account_name',
+                        'account_name':     company_details.name,
                         'account_id':       'account_id',
                         'account_type':     'account_type',
                         'branch_name':      'branch_name'
                         }, 
             'extrinsic' : {'buyerVatID':                sales_invoice.tax_id + ' MWST',
                         'supplierVatID':                'CHE-107.542.107 MWST',
-                        'supplierCommercialIdentifier': 'CHE-107.542.107  VAT'
+                        'supplierCommercialIdentifier': 'CHE-107.542.107 VAT'
                         }, 
             'items' :   itemList, 
             'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
@@ -290,7 +299,7 @@ def transmit_sales_invoice():
     cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
     cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-    # print(cxml)
+    #print(cxml)
 
     # TODO: comment in after development to save ariba file to filesystem
     '''
