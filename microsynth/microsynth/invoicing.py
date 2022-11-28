@@ -15,6 +15,7 @@ from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
+import datetime
 
 @frappe.whitelist()
 def create_invoices(mode, company):
@@ -118,12 +119,24 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
-    print(customer.as_dict())
-    print ("\n1")
-    for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
+    # print(customer.as_dict())
+    
+    company_details = frappe.get_doc("Company", sales_invoice.company)
+    # print(company_details.as_dict())
+    print ("\n-----0-----")
+    for key, value in (company_details.as_dict().items()): 
         print ("%s: %s" %(key, value))
-
-
+    
+    print ("\n-----0A-----")
+    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
+    
+    # for key, value in (sales_invoice.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
+    
+    print ("\n1")
+    #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
+    #    print ("%s: %s" %(key, value))
+    
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
@@ -173,13 +186,13 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': shipping_address.country
                         }, 
             'receivingBank' : {'swift_id':  'swift_id',
-                        'iban_id':          'iban_id',
-                        'account_name':     'account_name',
+                        'iban_id':          company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip(),
+                        'account_name':     company_details.name, #'account_name',
                         'account_id':       'account_id',
                         'account_type':     'account_type',
                         'branch_name':      'branch_name'
                         }, 
-            'extrinsic' : {'buyerVatID':                'CHE-116.268.023 MWST',
+            'extrinsic' : {'buyerVatID':                'TODO: GET VAT Customer - CHE-116.268.023 MWST',
                         'supplierVatID':                sales_invoice.tax_id + 'MWST',
                         'supplierCommercialIdentifier': sales_invoice.tax_id + 'VAT'
                         }, 
@@ -187,23 +200,24 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
             'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
                         'taxable_amount' :  sales_invoice.as_dict()["taxes"][0]["total"],
                         'percent' :         sales_invoice.as_dict()["taxes"][0]["rate"],
-                        'taxPointDate' :    '2022-11-25T10:33:39+01:00',
-                        'description' :     '7.7% Swiss VAT'
+                        'taxPointDate' :    sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'description' :     str(sales_invoice.as_dict()["taxes"][0]["rate"]) + '% Swiss VAT'
                         },
             'shippingTax' : {'taxable_amount':  '0.00',
                         'amount':               '0.00',
                         'percent':              '0.0',
-                        'taxPointDate':         '2022-11-25T10:33:39+01:00',
+                        'taxPointDate':         sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description':          '0.0' + '% shipping tax'
                         }, 
-            'summary' : {'subtotal_amount' :        'ne ganze menge',
-                        'shipping_amount' :         '1000',
-                        'gross_amount' :            '2000',
-                        'total_amount_without_tax': '4000',
+            'summary' : {'subtotal_amount' :        sales_invoice.base_total,
+                        'shipping_amount' :         '0.00',
+                        'gross_amount' :            sales_invoice.net_total,
+                        'total_amount_without_tax': sales_invoice.net_total,
                         'net_amount' :              sales_invoice.net_total,
                         'due_amount' :              sales_invoice.total_billing_amount
                         }
             }
+    print("DictXY: " + data2["receivingBank"]["account_name"])
     return data2
 
 
@@ -263,7 +277,7 @@ def transmit_sales_invoice():
     cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
     cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-    print(cxml)
+    # print(cxml)
 
     # TODO: comment in after development to save ariba file to filesystem
     '''
