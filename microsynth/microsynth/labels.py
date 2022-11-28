@@ -69,9 +69,9 @@ def print_test_label_novexx():
 
 
 def get_shipping_item(items):
-    for del_item in items[::-1]:
-        if del_item.item_group == "Shipping":
-            return del_item.item_code
+    for i in reversed(items):
+        if i.item_group == "Shipping":
+            return i.item_code
 
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
