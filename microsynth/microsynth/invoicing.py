@@ -176,7 +176,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
                         'city':             company_address.city, 
-                        'iso_country_code': country_codes[company_details.country], 
+                        'iso_country_code': country_codes[company_address.country], 
                         'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
                         },
             'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
@@ -190,7 +190,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
-                        'iso_country_code': country_codes[company_details.country]
+                        'iso_country_code': country_codes[company_address.country]
                         }, 
             'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
                         'name':             sales_invoice.customer_name,
@@ -203,7 +203,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'street':           company_address.address_line1,
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
-                        'iso_country_code': country_codes[company_details.country]
+                        'iso_country_code': country_codes[company_address.country]
                         },
             'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
                         'name':             shipping_address.name,
