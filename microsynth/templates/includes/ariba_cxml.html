@@ -7,37 +7,37 @@
 {%- set basics_invoice_date 		= basics['invoice_date'] -%}
 {%- set remitTo_name 				= remitTo['name'] -%}
 {%- set remitTo_street 				= remitTo['street'] -%}
-{%- set remitTo_zip 				= remitTo['zip'] -%}
-{%- set remitTo_town 				= remitTo['town'] -%}
+{%- set remitTo_pin 				= remitTo['pin'] -%}
+{%- set remitTo_city 				= remitTo['city'] -%}
 {%- set remitTo_iso_country_code 	= remitTo['iso_country_code'] -%}
 {%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
 {%- set billTo_address_id 			= billTo['address_id'] -%}
 {%- set billTo_name 				= billTo['name'] -%}
 {%- set billTo_street 				= billTo['street'] -%}
-{%- set billTo_zip 					= billTo['zip'] -%}
-{%- set billTo_town 				= billTo['town'] -%}
+{%- set billTo_pin 					= billTo['pin'] -%}
+{%- set billTo_city 				= billTo['city'] -%}
 {%- set billTo_iso_country_code 	= billTo['iso_country_code'] -%}
 {%- set from_name 					= from['name'] -%}
 {%- set from_street 				= from['street'] -%}
-{%- set from_zip 					= from['zip'] -%}
-{%- set from_town 					= from['town'] -%}
+{%- set from_pin 					= from['pin'] -%}
+{%- set from_city 					= from['city'] -%}
 {%- set from_iso_country_code 		= from['iso_country_code'] -%}
 {%- set soldTo_address_id 			= soldTo['address_id'] -%}
 {%- set soldTo_name 				= soldTo['name'] -%}
 {%- set soldTo_street 				= soldTo['street'] -%}
-{%- set soldTo_zip 					= soldTo['zip'] -%}
-{%- set soldTo_town 				= soldTo['town'] -%}
+{%- set soldTo_pin 					= soldTo['pin'] -%}
+{%- set soldTo_city 				= soldTo['city'] -%}
 {%- set soldTo_iso_country_code 	= soldTo['iso_country_code'] -%}
 {%- set shipFrom_name 				= shipFrom['name'] -%}
 {%- set shipFrom_street 			= shipFrom['street'] -%}
-{%- set shipFrom_zip 				= shipFrom['zip'] -%}
-{%- set shipFrom_town 				= shipFrom['town'] -%}
+{%- set shipFrom_pin 				= shipFrom['pin'] -%}
+{%- set shipFrom_city 				= shipFrom['city'] -%}
 {%- set shipFrom_iso_country_code 	= shipFrom['iso_country_code'] -%}
 {%- set shipTo_address_id 			= shipTo['address_id'] -%}
 {%- set shipTo_name 				= shipTo['name'] -%}
 {%- set shipTo_street 				= shipTo['street'] -%}
-{%- set shipTo_zip 					= shipTo['zip'] -%}
-{%- set shipTo_town 				= shipTo['town'] -%}
+{%- set shipTo_pin 					= shipTo['pin'] -%}
+{%- set shipTo_city 				= shipTo['city'] -%}
 {%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
 {%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
 {%- set receivingBank_iban_id  		= receivingBank['iban_id'] -%}
@@ -97,8 +97,8 @@
 						<Name xml:lang="de-CH">{{remitTo_name}}</Name>
 						<PostalAddress>
 							<Street>{{remitTo_street}}</Street>
-							<City>{{remitTo_town}}</City>
-							<PostalCode>{{remitTo_zip}}</PostalCode>
+							<City>{{remitTo_city}}</City>
+							<PostalCode>{{remitTo_pin}}</PostalCode>
 							<Country isoCountryCode="{{remitTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -109,8 +109,8 @@
  						<Name xml:lang="de-CH">{{billTo_name}}</Name>
   						<PostalAddress>
 							<Street></Street>
-							<City>{{billTo_town}}</City>
-							<PostalCode>{{billTo_zip}}</PostalCode>
+							<City>{{billTo_city}}</City>
+							<PostalCode>{{billTo_pin}}</PostalCode>
 							<Country isoCountryCode="{{billTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -120,8 +120,8 @@
 						<Name xml:lang="de-CH">{{from_name}}</Name>
 						<PostalAddress>
 							<Street>{{from_street}}</Street>
-							<City>{{from_town}}</City>
-							<PostalCode>{{from_zip}}</PostalCode>
+							<City>{{from_city}}</City>
+							<PostalCode>{{from_pin}}</PostalCode>
 							<Country isoCountryCode="{{from_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -131,8 +131,8 @@
 						<Name xml:lang="de-CH">{{soldTo_name}}</Name>
 						<PostalAddress>
 							<Street>{{soldTo_street}}</Street>
-							<City>{{soldTo_town}}</City>
-							<PostalCode>{{soldTo_zip}}</PostalCode>
+							<City>{{soldTo_city}}</City>
+							<PostalCode>{{soldTo_pin}}</PostalCode>
 							<Country isoCountryCode="{{soldTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -153,8 +153,8 @@
 						<Name xml:lang="de-CH">{{shipFrom_name}}</Name>
 						<PostalAddress>
 							<Street>{{shipFrom_street}}</Street>
-							<City>{{shipFrom_town}}</City>
-							<PostalCode>{{shipFrom_zip}}</PostalCode>
+							<City>{{shipFrom_city}}</City>
+							<PostalCode>{{shipFrom_pin}}</PostalCode>
 							<Country isoCountryCode="{{shipFrom_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -163,9 +163,9 @@
 						<PostalAddress>
 							<DeliverTo></DeliverTo>
 							<Street>{{shipTo_street}}</Street>
-							<City>{{shipTo_town}}</City>
+							<City>{{shipTo_city}}</City>
 							<State/>
-							<PostalCode>{{shipTo_zip}}</PostalCode>
+							<PostalCode>{{shipTo_pin}}</PostalCode>
 							<Country isoCountryCode="{{shipTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
