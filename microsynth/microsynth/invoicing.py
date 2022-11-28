@@ -121,6 +121,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
+    bank_account = frappe.get_doc("Account", sales_invoice.customer)
     #for key, value in (customer.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
     # print(customer.as_dict())
