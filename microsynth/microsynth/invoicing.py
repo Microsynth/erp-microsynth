@@ -118,25 +118,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
 
-    shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
-    customer = frappe.get_doc("Customer", sales_invoice.customer)
-    bank_account = frappe.get_doc("Account", sales_invoice.customer)
-    #for key, value in (customer.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
-    # print(customer.as_dict())
-    
-    company_details = frappe.get_doc("Company", sales_invoice.company)
-    #print(company_details.as_dict())
-    #print ("\n-----0-----")
-    #for key, value in (company_details.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
-    
-    print ("\n-----0A-----")
-    #for key, value in (company_details.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
-    # print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
-    
+
     #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
     #print(sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"))
@@ -144,19 +126,42 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     print ("\n1")
     #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
     #    print ("%s: %s" %(key, value))
-    
-    #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-    for key, value in (company_details.as_dict().items()): 
-        print ("%s: %s" %(key, value))
-    print("XXXXX")
-    print(company_details.default_bank_account)
-    print(company_details.default_bank_account.split("-"))
-    print(company_details.default_bank_account.split("-")[1])
-    print(company_details.default_bank_account.split("-")[1].strip())
-    print(company_details.default_bank_account.split("-")[1].strip().split(" "))
-    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1])
-    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
 
+    shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+    customer = frappe.get_doc("Customer", sales_invoice.customer)
+    #for key, value in (customer.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
+    # print(customer.as_dict())
+
+    print ("\n-----0-----")
+    company_details = frappe.get_doc("Company", sales_invoice.company)
+    #print(company_details.as_dict())
+    for key, value in (company_details.as_dict().items()): 
+       print ("%s: %s" %(key, value))
+    
+    
+    #for key, value in (company_details.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
+    # print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
+
+    print ("\n-----0A-----")
+
+    # TODO
+    #company_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    company_address = []
+
+    print ("\n-----0B-----")
+    bank_account = frappe.get_doc("Account", company_details.default_bank_account)
+    #for key, value in (bank_account.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
+
+    #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+    #for key, value in (company_details.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
+
+    # load all country codes
+    country_codes = {}
 
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
@@ -169,54 +174,54 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           'sender_street1', 
-                        'zip':              'sender_zip1',
-                        'town':             'sender_town1', 
-                        'iso_country_code': 'CH', 
-                        'supplier_tax_id':  'CHE-107.542.107 MWST',
+                        'pin':              'sender_pin',
+                        'city':             'sender_town1', 
+                        'iso_country_code': country_codes[company_details.country], 
+                        'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
                         },
             'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
                         'name':             billing_address.name,
                         'street':           billing_address.address_line1,
-                        'zip':              billing_address.pincode,
-                        'town':             billing_address.city,
-                        'iso_country_code': billing_address.country
+                        'pin':              billing_address.pincode,
+                        'city':             billing_address.city,
+                        'iso_country_code': country_codes[billing_address.country]
                         },
-            'from' :    {'name':            sales_invoice.company,
-                        'street':           'receiver_street1', 
-                        'zip':              'receiver_zip1',
-                        'town':             'receiver_town1',
-                        'iso_country_code': 'taccatuccaland'
+            'from' :    {'name':            company_details.company_name,
+                        'street':           company_address.address_line1, 
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city,
+                        'iso_country_code': country_codes[company_details.country]
                         }, 
             'soldTo' :  {'address_id':      'C028Bau WSJ103', 
                         'name':             sales_invoice.customer_name,
                         'street':           'someStreet',
-                        'zip':              'receiver_zip1',
-                        'town':             'receiver_town1',
-                        'iso_country_code': 'taccatuccaland'
+                        'pin':              'receiver_pin',
+                        'city':             'receiver_town1',
+                        'iso_country_code': country_codes[billing_address.country]
                         }, 
-            'shipFrom' : {'name':           'receiver_name1', 
-                        'street':           'receiver_street1',
-                        'zip':              'receiver_zip1',
-                        'town':             'receiver_town1',
-                        'iso_country_code': 'taccatuccaland'
+            'shipFrom' : {'name':           company_details.name, 
+                        'street':           company_address.address_line1,
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city,
+                        'iso_country_code': country_codes[company_details.country]
                         },
-            'shipTo' : {'address_id':       'C028Bau WSJ103',
+            'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
                         'name':             shipping_address.name,
                         'street':           shipping_address.address_line1,
-                        'zip':              shipping_address.pincode,
-                        'town':             shipping_address.city,
-                        'iso_country_code': shipping_address.country
+                        'pin':              shipping_address.pincode,
+                        'city':             shipping_address.city,
+                        'iso_country_code': country_codes[shipping_address.country]
                         }, 
-            'receivingBank' : {'swift_id':  'swift_id',
-                        'iban_id':          company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip(),
-                        'account_name':     company_details.name,
-                        'account_id':       'account_id',
-                        'account_type':     'account_type',
-                        'branch_name':      'branch_name'
+            'receivingBank' : {'swift_id':  'swift_id',     # TODO
+                        'iban_id':          bank_account.iban,
+                        'account_name':     bank_account.company,
+                        'account_id':       'account_id',   # TODO
+                        'account_type':     'Checking',     # TODO
+                        'branch_name':      'branch_name'   # TODO
                         }, 
             'extrinsic' : {'buyerVatID':                sales_invoice.tax_id + ' MWST',
-                        'supplierVatID':                'CHE-107.542.107 MWST',
-                        'supplierCommercialIdentifier': 'CHE-107.542.107 VAT'
+                        'supplierVatID':                'CHE-107.542.107 MWST', # might be company.tax_id
+                        'supplierCommercialIdentifier': 'CHE-107.542.107 VAT'   # might be company.tax_id
                         }, 
             'items' :   itemList, 
             'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
