@@ -16,6 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
 import datetime
+import json
 
 @frappe.whitelist()
 def create_invoices(mode, company):
@@ -94,21 +95,22 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
     
     list_of_item_dicts = []
-    for item in sales_invoice.items: 
+    
+    for item in sales_invoice.items:
         item_dict = {}
-        item_dict['invoiceLineNumber']  = 'val'
+        item_dict['invoiceLineNumber']  = item.idx
         item_dict['quantity']           = item.qty
         item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
         item_dict['unit_price']         = item.rate
-        item_dict['supplier_part_id']   = 'val'
-        item_dict['description']        = 'val'
+        item_dict['supplier_part_id']   = item.item_code
+        item_dict['description']        = item.description
         item_dict['subtotal_amount']    = item.amount
-        item_dict['tax_amount']         = 'val'
-        item_dict['tax_rate']           = item.item_tax_rate
-        item_dict['tax_taxable_amount'] = 'val'
-        item_dict['tax_description']    = 'val'
-        item_dict['gross_amount']       = 'val'
-        item_dict['net_amount']         = 'val'
+        item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+        item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+        item_dict['tax_taxable_amount'] = item.amount
+        item_dict['tax_description']    = 'TODO!!!!'
+        item_dict['gross_amount']       = item_dict['tax_amount']
+        item_dict['net_amount']         = item_dict['tax_amount']
         list_of_item_dicts.append(item_dict)
     return list_of_item_dicts
 
@@ -119,40 +121,50 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
+    #for key, value in (customer.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
     # print(customer.as_dict())
     
     company_details = frappe.get_doc("Company", sales_invoice.company)
-    # print(company_details.as_dict())
-    print ("\n-----0-----")
-    for key, value in (company_details.as_dict().items()): 
-        print ("%s: %s" %(key, value))
+    #print(company_details.as_dict())
+    #print ("\n-----0-----")
+    #for key, value in (company_details.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
     
     print ("\n-----0A-----")
-    print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
+    #for key, value in (company_details.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
+    # print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
     
-    # for key, value in (sales_invoice.as_dict().items()): 
+    #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
-    
+    #print(sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"))
+
     print ("\n1")
     #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
     #    print ("%s: %s" %(key, value))
     
+    #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+
+
+
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
                         'shared_secret':        'secret1',
-                        'order_id':             '1234567', 
+                        'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
-                        'invoice_id':           'id_123',
-                        'invoice_date':         'invoice_date2022'},
+                        'invoice_id':           sales_invoice.name,
+                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00")
+                        },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           'sender_street1', 
                         'zip':              'sender_zip1',
                         'town':             'sender_town1', 
                         'iso_country_code': 'CH', 
-                        'supplier_tax_id':  'CHE-107.542.107 MWST'
+                        'supplier_tax_id':  'CHE-107.542.107 MWST',
                         },
-            'billTo' : {'address_id':       'C028Bau WSJ103', 
+            'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
                         'name':             billing_address.name,
                         'street':           billing_address.address_line1,
                         'zip':              billing_address.pincode,
@@ -192,9 +204,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_type':     'account_type',
                         'branch_name':      'branch_name'
                         }, 
-            'extrinsic' : {'buyerVatID':                'TODO: GET VAT Customer - CHE-116.268.023 MWST',
-                        'supplierVatID':                sales_invoice.tax_id + 'MWST',
-                        'supplierCommercialIdentifier': sales_invoice.tax_id + 'VAT'
+            'extrinsic' : {'buyerVatID':                sales_invoice.tax_id + ' MWST',
+                        'supplierVatID':                'CHE-107.542.107 MWST',
+                        'supplierCommercialIdentifier': 'CHE-107.542.107  VAT'
                         }, 
             'items' :   itemList, 
             'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
@@ -203,6 +215,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'taxPointDate' :    sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description' :     str(sales_invoice.as_dict()["taxes"][0]["rate"]) + '% Swiss VAT'
                         },
+            # shipping is listed on item level, not header level.
             'shippingTax' : {'taxable_amount':  '0.00',
                         'amount':               '0.00',
                         'percent':              '0.0',
@@ -214,10 +227,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'gross_amount' :            sales_invoice.net_total,
                         'total_amount_without_tax': sales_invoice.net_total,
                         'net_amount' :              sales_invoice.net_total,
-                        'due_amount' :              sales_invoice.total_billing_amount
+                        'due_amount' :              sales_invoice.rounded_total
                         }
             }
-    print("DictXY: " + data2["receivingBank"]["account_name"])
+    #print("DictXY: " + str(data2["items"]))
     return data2
 
 
