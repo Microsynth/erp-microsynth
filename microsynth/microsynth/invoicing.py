@@ -149,7 +149,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     # TODO
     #company_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    company_address = []
+    company_address = {}
 
     print ("\n-----0B-----")
     bank_account = frappe.get_doc("Account", company_details.default_bank_account)
@@ -173,9 +173,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00")
                         },
             'remitTo' : {'name':            sales_invoice.company,
-                        'street':           'sender_street1', 
-                        'pin':              'sender_pin',
-                        'city':             'sender_town1', 
+                        'street':           company_address.address_line1, 
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city, 
                         'iso_country_code': country_codes[company_details.country], 
                         'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
                         },
@@ -192,11 +192,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_details.country]
                         }, 
-            'soldTo' :  {'address_id':      'C028Bau WSJ103', 
+            'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
                         'name':             sales_invoice.customer_name,
-                        'street':           'someStreet',
-                        'pin':              'receiver_pin',
-                        'city':             'receiver_town1',
+                        'street':           billing_address.address_line1,
+                        'pin':              billing_address.pincode,
+                        'city':             billing_address.city,
                         'iso_country_code': country_codes[billing_address.country]
                         }, 
             'shipFrom' : {'name':           company_details.name, 
