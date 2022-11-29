@@ -6,6 +6,8 @@
 {%- set basics_invoice_id 			= basics['invoice_id'] -%}
 {%- set basics_invoice_date 		= basics['invoice_date'] -%}
 {%- set basics_invoice_date_paynet	= basics['invoice_date_paynet'] -%}
+{%- set basics_delivery_note_id		= basics['delivery_note_id'] -%}
+{%- set basics_delivery_note_date_paynet	= basics['delivery_note_date_paynet'] -%}
 {%- set remitTo_name 				= remitTo['name'] -%}
 {%- set remitTo_street 				= remitTo['street'] -%}
 {%- set remitTo_pin 				= remitTo['pin'] -%}
@@ -147,7 +149,7 @@
 				</NAME-ADDRESS>
 				<BANK-INFO>
 					<Acct-No>{{receivingBank_iban_id}}</Acct-No>
-					<BankId Type="IID" Country="CH">30005</BankId>
+					<BankId Type="IID" Country="{{remitTo_iso_country_code}}">30005</BankId>
 				</BANK-INFO>
 			</BILLER>
 			<PAYER>
