@@ -80,7 +80,11 @@ def get_data(filters):
 	if 'price_list' in filters:
 		criteria += """ AND `tabCustomer`.`default_price_list` LIKE '%{0}%' """.format(filters['price_list'])		
 		hasFilters = True
-	
+
+	if 'account_manager' in filters:
+		criteria += """ AND `tabCustomer`.`account_manager` LIKE '%{0}%' """.format(filters['account_manager'])		
+		hasFilters = True
+		
 	data = []
 
 	if hasFilters:
