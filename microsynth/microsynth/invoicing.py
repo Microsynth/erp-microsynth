@@ -94,35 +94,70 @@ def make_collective_invoice(delivery_notes):
 def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
     
-    list_of_item_dicts = []
+
+
+
+
+
+    list_of_invoice_item_dicts = []
     
+    for item in sales_invoice.items:
+            invoice_item_dict = {}
+            invoice_item_dict['item_group']         = item.item_group
+            invoice_item_dict['invoice_line_number'] = item.idx
+            invoice_item_dict['quantity']           = item.qty
+            invoice_item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+            invoice_item_dict['unit_price']         = item.rate
+            invoice_item_dict['supplier_part_id']   = item.item_code
+            invoice_item_dict['description']        = item.description
+            invoice_item_dict['subtotal_amount']    = item.amount
+            invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+            invoice_item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+            invoice_item_dict['tax_taxable_amount'] = item.amount
+            invoice_item_dict['tax_description']    = 'TODO!!!!'
+            invoice_item_dict['gross_amount']       = item['tax_amount']
+            invoice_item_dict['net_amount']         = item['tax_amount']
+            invoice_item_dicts.append(invoice_item_dict)
+    
+    invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
+        invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
         print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
         oligo_dict = {}
-        for item in oligo_object.as_dict()["items"]:
-            print ("\n\tITEM:\n\t----\n" + str(item))
-            # Where do I get the prices?
-
-        '''
-        for item in sales_
-        invoice.items:
-            item_dict = {}
-            item_dict['item_group']         = item.item_group
-            item_dict['invoice_line_number'] = item.idx
-            item_dict['quantity']           = item.qty
-            item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-            item_dict['unit_price']         = item.rate
-            item_dict['supplier_part_id']   = item.item_code
-            item_dict['description']        = item.description
-            item_dict['subtotal_amount']    = item.amount
-            item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-            item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-            item_dict['tax_taxable_amount'] = item.amount
-            item_dict['tax_description']    = 'TODO!!!!'
-            item_dict['gross_amount']       = item_dict['tax_amount']
-            item_dict['net_amount']         = item_dict['tax_amount']
-        '''
+        invoice_item_dicts['item_group']         = item.item_group
+        invoice_item_dicts['invoice_line_number'] = invoice_position
+        invoice_item_dicts['quantity']           = item.qty
+        invoice_item_dicts['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+        invoice_item_dicts['unit_price']         = 0
+        invoice_item_dicts['supplier_part_id']   = item.item_code
+        invoice_item_dicts['description']        = oligo_object.name
+        invoice_item_dicts['subtotal_amount']    = item.amount
+        invoice_item_dicts['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+        invoice_item_dicts['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+        invoice_item_dicts['tax_taxable_amount'] = item.amount
+        invoice_item_dicts['tax_description']    = 'TODO!!!!'
+        invoice_item_dicts['gross_amount']       = item_dict['tax_amount']
+        invoice_item_dicts['net_amount']         = item_dict['tax_amount']
+        
+        for oligo_item in oligo_object.as_dict()["items"]:
+            print ("\n\tITEM:\n\t----\n" + str(oligo_item))
+            invoice_item_dicts = {}
+            invoice_item_dicts['item_group']         = item.item_group
+            invoice_item_dicts['invoice_line_number'] = item.idx
+            invoice_item_dicts['quantity']           = oligo_item.qty
+            invoice_item_dicts['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+            invoice_item_dicts['unit_price']         = item.rate
+            invoice_item_dicts['supplier_part_id']   = item.item_code
+            invoice_item_dicts['description']        = item.description
+            invoice_item_dicts['subtotal_amount']    = item.amount
+            invoice_item_dicts['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+            invoice_item_dicts['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+            invoice_item_dicts['tax_taxable_amount'] = item.amount
+            invoice_item_dicts['tax_description']    = 'TODO!!!!'
+            invoice_item_dicts['gross_amount']       = item_dict['tax_amount']
+            invoice_item_dicts['net_amount']         = item_dict['tax_amount']
+            list_of_invoice_item_dicts.append(item_dict)
             # list_of_item_dicts.append(item_dict)
 
     #for item in sales_invoice.samples:
@@ -181,13 +216,28 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     # print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
 
     print ("\n-----0A-----")
-
-    # TODO
-    #company_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    company_address = {}
+    company_address = frappe.get_doc("Address", sales_invoice.company_address)
 
     print ("\n-----0B-----")
-    bank_account = frappe.get_doc("Account", company_details.default_bank_account)
+    if sales_invoice.currency in ["EUR", "USD"]:
+        bank_accounts = frappe.get_all("Account", 
+                        filters = {
+                            "company" : sales_invoice.company, 
+                            "account_type" : "Bank",
+                            "currency": sales_invoice.currency, 
+                            "disabled": 0
+                            },
+                            fields = ["name"]
+                        )
+        if len(bank_accounts) > 0: 
+            bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
+        else:
+            frappe.throw("No valid bank account")
+    else: 
+        bank_account = frappe.get_doc("Account", company_details.default_bank_account)
+
+    # Wenn curr = eur dann company = sales_invoice.company, account type=bank,  
+
     #for key, value in (bank_account.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
 
@@ -206,7 +256,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'invoice_date_paynet':  sales_invoice.as_dict()["creation"].strftime("%Y%m%d"),
-                        'delivery_note_id':     "", # delivery_note.name,
+                        'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.as_dict()["creation"].strftime("%Y%m%d"),
                         },
             'remitTo' : {'name':            sales_invoice.company,
@@ -249,23 +299,23 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             shipping_address.city,
                         'iso_country_code': country_codes[shipping_address.country]
                         }, 
-            'receivingBank' : {'swift_id':  'swift_id',     # TODO
+            'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
-                        'account_id':       'account_id',   # TODO
-                        'account_type':     'Checking',     # TODO
-                        'branch_name':      'branch_name'   # TODO
+                        'account_id':       bank_account.iban,
+                        'account_type':     'Checking',  
+                        'branch_name':      "" # TODO bank_account.branch
                         }, 
             'extrinsic' : {'buyerVatID':                customer.tax_id + ' MWST',
-                        'supplierVatID':                'CHE-107.542.107 MWST', # might be company.tax_id
-                        'supplierCommercialIdentifier': 'CHE-107.542.107 VAT'   # might be company.tax_id
+                        'supplierVatID':                company_details.tax_id + ' MWST',
+                        'supplierCommercialIdentifier': company_details.tax_id + 'VAT' 
                         }, 
             'items' :   itemList, 
-            'tax' :     {'amount' :         sales_invoice.as_dict()["taxes"][0]["tax_amount"],
-                        'taxable_amount' :  sales_invoice.as_dict()["taxes"][0]["total"],
-                        'percent' :         sales_invoice.as_dict()["taxes"][0]["rate"],
-                        'taxPointDate' :    sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'description' :     str(sales_invoice.as_dict()["taxes"][0]["rate"]) + '% Swiss VAT'
+            'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
+                        'taxable_amount' :  sales_invoice.net_total,
+                        'percent' :         sales_invoice.taxes[0].rate if len(sales_invoice.taxes)>0 else 0, 
+                        'taxPointDate' :    sales_invoice.posting_date.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'description' :     sales_invoice.taxes[0].description if len(sales_invoice.taxes)>0 else 0
                         },
             # shipping is listed on item level, not header level.
             'shippingTax' : {'taxable_amount':  '0.00',
