@@ -216,7 +216,9 @@ def request_quote(content, client="webshop"):
         'customer_address': content['invoice_address'],
         'shipping_address': content['delivery_address'],
         'contact_person': content['contact'],
-        'customer_request': content['customer_request']
+        'customer_request': content['customer_request'],
+        'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
+        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list")
     })
     # create oligos
     for o in content['oligos']:
