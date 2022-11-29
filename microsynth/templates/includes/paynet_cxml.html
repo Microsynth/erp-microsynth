@@ -1,0 +1,277 @@
+{%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
+{%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
+{%- set basics_shared_secret 		= basics['shared_secret'] -%}
+{%- set basics_order_id 			= basics['order_id'] -%}
+{%- set basics_currency 			= basics['currency'] -%}
+{%- set basics_invoice_id 			= basics['invoice_id'] -%}
+{%- set basics_invoice_date 		= basics['invoice_date'] -%}
+{%- set remitTo_name 				= remitTo['name'] -%}
+{%- set remitTo_street 				= remitTo['street'] -%}
+{%- set remitTo_pin 				= remitTo['pin'] -%}
+{%- set remitTo_city 				= remitTo['city'] -%}
+{%- set remitTo_iso_country_code 	= remitTo['iso_country_code'] -%}
+{%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
+{%- set billTo_address_id 			= billTo['address_id'] -%}
+{%- set billTo_name 				= billTo['name'] -%}
+{%- set billTo_street 				= billTo['street'] -%}
+{%- set billTo_pin 					= billTo['pin'] -%}
+{%- set billTo_city 				= billTo['city'] -%}
+{%- set billTo_iso_country_code 	= billTo['iso_country_code'] -%}
+{%- set from_name 					= from['name'] -%}
+{%- set from_street 				= from['street'] -%}
+{%- set from_pin 					= from['pin'] -%}
+{%- set from_city 					= from['city'] -%}
+{%- set from_iso_country_code 		= from['iso_country_code'] -%}
+{%- set soldTo_address_id 			= soldTo['address_id'] -%}
+{%- set soldTo_name 				= soldTo['name'] -%}
+{%- set soldTo_street 				= soldTo['street'] -%}
+{%- set soldTo_pin 					= soldTo['pin'] -%}
+{%- set soldTo_city 				= soldTo['city'] -%}
+{%- set soldTo_iso_country_code 	= soldTo['iso_country_code'] -%}
+{%- set shipFrom_name 				= shipFrom['name'] -%}
+{%- set shipFrom_street 			= shipFrom['street'] -%}
+{%- set shipFrom_pin 				= shipFrom['pin'] -%}
+{%- set shipFrom_city 				= shipFrom['city'] -%}
+{%- set shipFrom_iso_country_code 	= shipFrom['iso_country_code'] -%}
+{%- set shipTo_address_id 			= shipTo['address_id'] -%}
+{%- set shipTo_name 				= shipTo['name'] -%}
+{%- set shipTo_street 				= shipTo['street'] -%}
+{%- set shipTo_pin 					= shipTo['pin'] -%}
+{%- set shipTo_city 				= shipTo['city'] -%}
+{%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
+{%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
+{%- set receivingBank_iban_id  		= receivingBank['iban_id'] -%}
+{%- set receivingBank_account_name 	= receivingBank['account_name'] -%}
+{%- set receivingBank_account_id 	= receivingBank['account_id'] -%}
+{%- set receivingBank_account_type 	= receivingBank['account_type'] -%}
+{%- set receivingBank_branch_name 	= receivingBank['branch_name'] -%}
+{%- set extrinsic_buyerVatID 		= extrinsic['buyerVatID'] -%}
+{%- set extrinsic_supplierVatID  	= extrinsic['supplierVatID '] -%}
+{%- set extrinsic_supplierCommercialIdentifier = extrinsic['supplierCommercialIdentifier'] -%}
+{%- set tax_amount 					= tax['amount'] -%}
+{%- set tax_taxable_amount 			= tax['taxable_amount'] -%}
+{%- set tax_percent 				= tax['percent'] -%}
+{%- set tax_taxPointDate 			= tax['taxPointDate'] -%}
+{%- set tax_description 			= tax['description'] -%}
+{%- set shippingTax_taxable_amount 	= shippingTax['taxable_amount'] -%}
+{%- set shippingTax_amount 			= shippingTax['amount'] -%}
+{%- set shippingTax_percent 		= shippingTax['percent'] -%}
+{%- set shippingTax_taxPointDate 	= shippingTax['taxPointDate'] -%}
+{%- set shippingTax_description 	= shippingTax['description'] -%}
+{%- set summary_subtotal_amount 	= summary['subtotal_amount'] -%}
+{%- set summary_shipping_amount 	= summary['shipping_amount'] -%}
+{%- set summary_gross_amount 		= summary['gross_amount'] -%}
+{%- set summary_total_amount_without_tax = summary['total_amount_without_tax'] -%}
+{%- set summary_net_amount 			= summary['net_amount'] -%}
+{%- set summary_due_amount 			= summary['due_amount'] -%}
+
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE XML-FSCM-INVOICE-2003A SYSTEM "XML-FSCM-INVOICE-2003A.DTD">
+<XML-FSCM-INVOICE-2003A>
+	<INTERCHANGE>
+		<IC-SENDER>
+			<Pid>41010164914873673</Pid>
+		</IC-SENDER>
+		<IC-RECEIVER>
+			<Pid></Pid>
+		</IC-RECEIVER>
+	<IC-Ref>{{basics_invoice_id}}</IC-Ref>
+	</INTERCHANGE>
+	<INVOICE Type="EFD">
+		<HEADER>
+			<FUNCTION-FLAGS>
+				<Confirmation-Flag/>
+			</FUNCTION-FLAGS>
+			<MESSAGE-REFERENCE>
+				<REFERENCE-DATE>
+					<Reference-No>{{basics_invoice_id}}</Reference-No>
+					<Date Format="CCYYMMDD">20221124</Date>
+				</REFERENCE-DATE>
+			</MESSAGE-REFERENCE>
+			<PRINT-DATE>
+				<Date Format="CCYYMMDD">20221124</Date>
+			</PRINT-DATE>
+			<DELIVERY-DATE>
+				<Date Format="CCYYMMDD">20221124</Date>
+			</DELIVERY-DATE>
+			<TITLE>
+				<Line-70>Rechnung</Line-70>
+			</TITLE>
+			<REFERENCE>
+				<INVOICE-REFERENCE>
+					<REFERENCE-DATE>
+						<Reference-No>{{basics_invoice_id}}</Reference-No>
+						<Date Format="CCYYMMDD">20221124</Date>
+					</REFERENCE-DATE>
+				</INVOICE-REFERENCE>
+				<ORDER>
+					<REFERENCE-DATE>
+						<Reference-No>REF-1071-04610</Reference-No>
+					</REFERENCE-DATE>
+				</ORDER>
+				<DELIVERY-NOTE>
+					<REFERENCE-DATE>
+						<Reference-No>805916</Reference-No>
+						<Date Format="CCYYMMDD">20221128</Date>
+					</REFERENCE-DATE>
+				</DELIVERY-NOTE>
+				<OTHER-REFERENCE Type="IT">
+					<REFERENCE-DATE>
+						<Reference-No>23206</Reference-No>
+						</REFERENCE-DATE>
+				</OTHER-REFERENCE>
+				<OTHER-REFERENCE Type="CR">
+					<REFERENCE-DATE>
+						<Reference-No>Dominik Moor</Reference-No>
+						<Date Format="CCYYMMDD">20221124</Date>
+					</REFERENCE-DATE>
+				</OTHER-REFERENCE>
+			</REFERENCE>
+			<BILLER>
+				<Tax-No>{{remitTo_supplier_tax_id}}MWST</Tax-No>
+				<Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
+				<PARTY-ID>
+					<Pid>41010164914873673</Pid>
+				</PARTY-ID>
+				<NAME-ADDRESS Format="COM">
+					<NAME>
+						<Line-35>{{from_name}}</Line-35>
+					</NAME>
+					<STREET>
+						<Line-35>{{from_street}}</Line-35>
+					</STREET>
+					<City>{{from_city}}</City>
+					<Zip>{{from_pin}}</Zip>
+					<Country>{{from_iso_country_code}}</Country>
+				</NAME-ADDRESS>
+				<BANK-INFO>
+					<Acct-No>{{receivingBank_iban_id}}</Acct-No>
+					<BankId Type="IID" Country="CH">30005</BankId>
+				</BANK-INFO>
+			</BILLER>
+			<PAYER>
+				<PARTY-ID>
+					<Pid></Pid>
+				</PARTY-ID>
+				<NAME-ADDRESS Format="COM">
+					<NAME>
+						<Line-35></Line-35>
+					</NAME>
+					<STREET>
+						<Line-35></Line-35>
+					</STREET>
+					<City></City>
+					<Zip></Zip>
+					<Country></Country>
+ 				</NAME-ADDRESS>
+			</PAYER>
+			<DELIVERY-PARTY>
+				<NAME-ADDRESS>
+					<NAME><Line-35></Line-35>					</NAME>
+					<STREET>
+						<Line-35>{{shipTo_street}}</Line-35>
+					</STREET>
+					<City>{{shipTo_city}}</City>
+					<Zip>{{shipTo_pin}}</Zip>
+					<Country>{{shipTo_iso_country_code}}</Country>
+				</NAME-ADDRESS>
+			</DELIVERY-PARTY>
+			<ALLOWANCE-OR-CHARGE Type="C">
+				<Service-Code Type="FC"/>
+				<SERVICE-TEXT>
+					<Line-35>Fracht-Porto</Line-35>
+				</SERVICE-TEXT>
+				<ALC-AMOUNT Print-Status="25">
+					<Amount Currency="CHF">3.50</Amount>
+				</ALC-AMOUNT>
+				<TAX>
+					<Rate Category="S">7.7</Rate>
+					<Amount Currency="CHF">0.27</Amount>
+				</TAX>
+			</ALLOWANCE-OR-CHARGE>
+		</HEADER>
+
+{% for item in items %}
+{%- set item_invoiceLineNumber 		= item['invoiceLineNumber'] -%}
+{%- set item_quantity 				= item['quantity'] -%}
+{%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
+{%- set item_unit_price 			= item['unit_price'] -%}
+{%- set item_supplier_part_id		= item['supplier_part_id'] -%}
+{%- set item_description 			= item['description'] -%}
+{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
+{%- set item_tax_amount 			= item['tax_amount'] -%}
+{%- set item_tax_rate 				= item['tax_rate'] -%}
+{%- set item_tax_taxable_amount 	= item['tax_taxable_amount'] -%}
+{%- set item_tax_description 		= item['tax_description'] -%}
+{%- set item_gross_amount 			= item['gross_amount'] -%}
+{%- set item_net_amount 			= item['net_amount'] -%}
+{# additional line break #}
+
+		<LINE-ITEM Line-Number="{{item_invoiceLineNumber}}">
+			<ITEM-ID>
+				<Item-Id Type="SA">4662602</Item-Id>
+			</ITEM-ID>
+			<ITEM-DESCRIPTION>
+				<Item-Type-Code>{{item_supplier_part_id}}</Item-Type-Code>
+				<Line-35>{{item_quantity}} {{item_description}}</Line-35>
+			</ITEM-DESCRIPTION>
+			<ITEM-REFERENCE Type="ON">
+				<REFERENCE-DATE>
+					<Reference-No>Mengo-R</Reference-No>
+					<Line-No>1</Line-No>
+					<Date Format="CCYYMMDD">20221124</Date>
+				</REFERENCE-DATE>
+			</ITEM-REFERENCE>
+			<Quantity Type="47" Units="PCE">1</Quantity>
+			<Price Type="YYY" Units="PCE" Basequantity="1">14.82</Price>
+			<Price Type="AAA" Units="PCE" Basequantity="1">{{item_net_amount}}</Price>
+			<ITEM-AMOUNT Type="38">
+				<Amount Currency="{{basics_currency}}">14.82</Amount>
+			</ITEM-AMOUNT>
+			<ITEM-AMOUNT Type="66">
+				<Amount Currency="{{basics_currency}}">{{item_net_amount}}</Amount>
+			</ITEM-AMOUNT>
+			<ALLOWANCE-OR-CHARGE Type="A">
+				<Service-Code Type="DI"/>
+				<SERVICE-TEXT>
+					<Line-35>Rabatt</Line-35>
+				</SERVICE-TEXT>
+				<ALC-Percent>19.973</ALC-Percent>
+				<ALC-AMOUNT>
+					<Amount Currency="{{basics_currency}}">2.96</Amount>
+				</ALC-AMOUNT>
+			</ALLOWANCE-OR-CHARGE>
+			<TAX>
+				<Rate Category="S">{{item_tax_rate}}</Rate>
+				<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>
+			</TAX>
+		</LINE-ITEM>
+{%- endfor %}
+		<SUMMARY>
+			<INVOICE-AMOUNT Print-Status="25">
+				<Amount Currency="{{basics_currency}}">{{summary_due_amount}}</Amount>
+			</INVOICE-AMOUNT>
+			<VAT-AMOUNT Print-Status="25">
+				<Amount Currency="{{basics_currency}}">{{tax_amount}}</Amount>
+			</VAT-AMOUNT>
+			<EXTENDED-AMOUNT Type="79">
+				<Amount>{{summary_subtotal_amount}}</Amount>
+			</EXTENDED-AMOUNT>
+			<TAX>
+				<TAX-BASIS>
+					<Amount Currency="{{basics_currency}}">{{tax_taxable_amount}}</Amount>
+				</TAX-BASIS>
+				<Rate Category="S">{{tax_percent}}</Rate>
+				<Amount Currency="{{basics_currency}}">{{tax_amount}}</Amount>
+			</TAX>
+			<PAYMENT-TERMS>
+				<BASIC Payment-Type="QR" Terms-Type="1">
+					<TERMS>
+						<Payment-Period Reference-Day="5" Type="CD" On-Or-After="3">30</Payment-Period>
+					</TERMS>
+				</BASIC>
+			</PAYMENT-TERMS>
+		</SUMMARY>
+	</INVOICE>
+</XML-FSCM-INVOICE-2003A>
+				
