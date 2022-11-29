@@ -98,24 +98,6 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     invoice_item_dicts = {}
     for item in sales_invoice.items:
-        """invoice_item_dict = {}
-        invoice_item_dict['item_group']         = item.item_group
-        invoice_item_dict['invoice_line_number'] = item.idx
-        invoice_item_dict['quantity']           = item.qty
-        invoice_item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-        invoice_item_dict['unit_price']         = item.rate
-        invoice_item_dict['supplier_part_id']   = item.item_code
-        invoice_item_dict['description']        = item.description
-        invoice_item_dict['subtotal_amount']    = item.amount
-        invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][1], 2)
-        #invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][1], 2)
-        invoice_item_dict['tax_rate']           = "" #json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][0]
-        invoice_item_dict['tax_taxable_amount'] = item.amount
-        invoice_item_dict['tax_description']    = 'TODO!!!!'
-        invoice_item_dict['gross_amount']       = ""
-        invoice_item_dict['net_amount']         = ""
-        invoice_item_dicts[item.item_code] = invoice_item_dict
-        """
         invoice_item_dicts[item.item_code] = item
 
     invoiced_oligos = {}
