@@ -128,7 +128,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #    print ("%s: %s" %(key, value))
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    
+    print ("\n1")
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+    for key, value in (billing_address.as_dict().items()): 
+        print ("%s: %s" %(key, value))
+
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     #for key, value in (customer.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -137,9 +142,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     print ("\n-----0-----")
     company_details = frappe.get_doc("Company", sales_invoice.company)
     #print(company_details.as_dict())
-    for key, value in (company_details.as_dict().items()): 
-       print ("%s: %s" %(key, value))
-    
+    #for key, value in (company_details.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
     
     #for key, value in (company_details.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -170,7 +174,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
-                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00")
+                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date_paynet':  sales_invoice.as_dict()["creation"].strftime("%Y%m%d")
                         },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
