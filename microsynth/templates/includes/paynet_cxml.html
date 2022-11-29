@@ -1,10 +1,14 @@
 {%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
 {%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
 {%- set basics_shared_secret 		= basics['shared_secret'] -%}
+{%- set basics_paynet_sender_pid 	= basics['paynet_sender_pid'] -%}
 {%- set basics_order_id 			= basics['order_id'] -%}
 {%- set basics_currency 			= basics['currency'] -%}
 {%- set basics_invoice_id 			= basics['invoice_id'] -%}
 {%- set basics_invoice_date 		= basics['invoice_date'] -%}
+{%- set basics_invoice_date_paynet	= basics['invoice_date_paynet'] -%}
+{%- set basics_delivery_note_id		= basics['delivery_note_id'] -%}
+{%- set basics_delivery_note_date_paynet	= basics['delivery_note_date_paynet'] -%}
 {%- set remitTo_name 				= remitTo['name'] -%}
 {%- set remitTo_street 				= remitTo['street'] -%}
 {%- set remitTo_pin 				= remitTo['pin'] -%}
@@ -70,7 +74,7 @@
 <XML-FSCM-INVOICE-2003A>
 	<INTERCHANGE>
 		<IC-SENDER>
-			<Pid>41010164914873673</Pid>
+			<Pid>{{basics_paynet_sender_pid}}</Pid>
 		</IC-SENDER>
 		<IC-RECEIVER>
 			<Pid></Pid>
@@ -85,14 +89,14 @@
 			<MESSAGE-REFERENCE>
 				<REFERENCE-DATE>
 					<Reference-No>{{basics_invoice_id}}</Reference-No>
-					<Date Format="CCYYMMDD">20221124</Date>
+					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 				</REFERENCE-DATE>
 			</MESSAGE-REFERENCE>
 			<PRINT-DATE>
-				<Date Format="CCYYMMDD">20221124</Date>
+				<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 			</PRINT-DATE>
 			<DELIVERY-DATE>
-				<Date Format="CCYYMMDD">20221124</Date>
+				<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 			</DELIVERY-DATE>
 			<TITLE>
 				<Line-70>Rechnung</Line-70>
@@ -101,18 +105,18 @@
 				<INVOICE-REFERENCE>
 					<REFERENCE-DATE>
 						<Reference-No>{{basics_invoice_id}}</Reference-No>
-						<Date Format="CCYYMMDD">20221124</Date>
+						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</INVOICE-REFERENCE>
 				<ORDER>
 					<REFERENCE-DATE>
-						<Reference-No>REF-1071-04610</Reference-No>
+						<Reference-No>{{basics_order_id}}</Reference-No>
 					</REFERENCE-DATE>
 				</ORDER>
 				<DELIVERY-NOTE>
 					<REFERENCE-DATE>
-						<Reference-No>805916</Reference-No>
-						<Date Format="CCYYMMDD">20221128</Date>
+						<Reference-No>{{basics_delivery_note_id}}</Reference-No>
+						<Date Format="CCYYMMDD">{{basics_delivery_note_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</DELIVERY-NOTE>
 				<OTHER-REFERENCE Type="IT">
@@ -122,8 +126,8 @@
 				</OTHER-REFERENCE>
 				<OTHER-REFERENCE Type="CR">
 					<REFERENCE-DATE>
-						<Reference-No>Dominik Moor</Reference-No>
-						<Date Format="CCYYMMDD">20221124</Date>
+						<Reference-No>{{shipTo_name}}</Reference-No>
+						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</OTHER-REFERENCE>
 			</REFERENCE>
@@ -146,7 +150,7 @@
 				</NAME-ADDRESS>
 				<BANK-INFO>
 					<Acct-No>{{receivingBank_iban_id}}</Acct-No>
-					<BankId Type="IID" Country="CH">30005</BankId>
+					<BankId Type="IID" Country="{{remitTo_iso_country_code}}">30005</BankId>
 				</BANK-INFO>
 			</BILLER>
 			<PAYER>
@@ -167,7 +171,8 @@
 			</PAYER>
 			<DELIVERY-PARTY>
 				<NAME-ADDRESS>
-					<NAME><Line-35></Line-35>					</NAME>
+					<NAME><Line-35></Line-35>
+					</NAME>
 					<STREET>
 						<Line-35>{{shipTo_street}}</Line-35>
 					</STREET>
@@ -176,23 +181,33 @@
 					<Country>{{shipTo_iso_country_code}}</Country>
 				</NAME-ADDRESS>
 			</DELIVERY-PARTY>
+{% for item in items %}
+{%- set item_group 					= item['item_group'] -%}
+{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
+{%- set item_tax_amount 			= item['tax_amount'] -%}
+{%- set item_tax_rate 				= item['tax_rate'] -%}
+{# additional line break #}
+{%- if item_group == "Shipping" -%}
 			<ALLOWANCE-OR-CHARGE Type="C">
 				<Service-Code Type="FC"/>
 				<SERVICE-TEXT>
 					<Line-35>Fracht-Porto</Line-35>
 				</SERVICE-TEXT>
 				<ALC-AMOUNT Print-Status="25">
-					<Amount Currency="CHF">3.50</Amount>
+					<Amount Currency="{{basics_currency}}">{{subtotal_amount}}</Amount>
 				</ALC-AMOUNT>
 				<TAX>
-					<Rate Category="S">7.7</Rate>
-					<Amount Currency="CHF">0.27</Amount>
+					<Rate Category="S">{{item_tax_rate}}</Rate>
+					<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>
 				</TAX>
 			</ALLOWANCE-OR-CHARGE>
+{%- endif -%}
+{%- endfor %}
 		</HEADER>
 
 {% for item in items %}
-{%- set item_invoiceLineNumber 		= item['invoiceLineNumber'] -%}
+{%- set item_group 					= item['item_group'] -%}
+{%- set item_invoice_line_number 	= item['invoice_line_number'] -%}
 {%- set item_quantity 				= item['quantity'] -%}
 {%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
 {%- set item_unit_price 			= item['unit_price'] -%}
@@ -206,8 +221,8 @@
 {%- set item_gross_amount 			= item['gross_amount'] -%}
 {%- set item_net_amount 			= item['net_amount'] -%}
 {# additional line break #}
-
-		<LINE-ITEM Line-Number="{{item_invoiceLineNumber}}">
+{%- if not item_group == "Shipping" -%}
+		<LINE-ITEM Line-Number="{{item_invoice_line_number}}">
 			<ITEM-ID>
 				<Item-Id Type="SA">4662602</Item-Id>
 			</ITEM-ID>
@@ -217,9 +232,9 @@
 			</ITEM-DESCRIPTION>
 			<ITEM-REFERENCE Type="ON">
 				<REFERENCE-DATE>
-					<Reference-No>Mengo-R</Reference-No>
-					<Line-No>1</Line-No>
-					<Date Format="CCYYMMDD">20221124</Date>
+					<Reference-No>!!!TODO!!!</Reference-No>
+					<Line-No>{{item_invoice_line_number}}</Line-No>
+					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 				</REFERENCE-DATE>
 			</ITEM-REFERENCE>
 			<Quantity Type="47" Units="PCE">1</Quantity>
@@ -246,6 +261,7 @@
 				<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>
 			</TAX>
 		</LINE-ITEM>
+{%- endif -%}
 {%- endfor %}
 		<SUMMARY>
 			<INVOICE-AMOUNT Print-Status="25">

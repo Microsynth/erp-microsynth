@@ -96,28 +96,49 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     list_of_item_dicts = []
     
-    for item in sales_invoice.items:
-        item_dict = {}
-        item_dict['invoiceLineNumber']  = item.idx
-        item_dict['quantity']           = item.qty
-        item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-        item_dict['unit_price']         = item.rate
-        item_dict['supplier_part_id']   = item.item_code
-        item_dict['description']        = item.description
-        item_dict['subtotal_amount']    = item.amount
-        item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-        item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-        item_dict['tax_taxable_amount'] = item.amount
-        item_dict['tax_description']    = 'TODO!!!!'
-        item_dict['gross_amount']       = item_dict['tax_amount']
-        item_dict['net_amount']         = item_dict['tax_amount']
-        list_of_item_dicts.append(item_dict)
+    for oligo_link in sales_invoice.oligos: 
+        oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
+        print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
+        oligo_dict = {}
+        for item in oligo_object.as_dict()["items"]:
+            print ("\n\tITEM:\n\t----\n" + str(item))
+            # Where do I get the prices?
+
+        '''
+        for item in sales_
+        invoice.items:
+            item_dict = {}
+            item_dict['item_group']         = item.item_group
+            item_dict['invoice_line_number'] = item.idx
+            item_dict['quantity']           = item.qty
+            item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+            item_dict['unit_price']         = item.rate
+            item_dict['supplier_part_id']   = item.item_code
+            item_dict['description']        = item.description
+            item_dict['subtotal_amount']    = item.amount
+            item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+            item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+            item_dict['tax_taxable_amount'] = item.amount
+            item_dict['tax_description']    = 'TODO!!!!'
+            item_dict['gross_amount']       = item_dict['tax_amount']
+            item_dict['net_amount']         = item_dict['tax_amount']
+        '''
+            # list_of_item_dicts.append(item_dict)
+
+    #for item in sales_invoice.samples:
+            # list_of_item_dicts.append(item_dict)
     return list_of_item_dicts
 
+def get_shipping_item(items):
+    for i in reversed(items):
+        if i.item_group == "Shipping":
+            return i.item_code
 
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
 
+    #for key, value in (sales_invoice.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
     #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
@@ -128,7 +149,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #    print ("%s: %s" %(key, value))
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    
+    print ("\n1")
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+    #for key, value in (billing_address.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
+
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     #for key, value in (customer.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -139,7 +165,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_details.as_dict())
     for key, value in (company_details.as_dict().items()): 
        print ("%s: %s" %(key, value))
-    
     
     #for key, value in (company_details.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -162,21 +187,29 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     # load all country codes
     country_codes = {}
+    country_query = frappe.get_all("Country", fields=['name', 'code'])
+    for dict in country_query:
+        print(dict['name'], dict['code'])
+        country_codes[dict['name']] = dict['code']
 
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
                         'shared_secret':        'secret1',
+                        'paynet_sender_pid':    '41010164914873673', 
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
-                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00")
+                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date_paynet':  sales_invoice.as_dict()["creation"].strftime("%Y%m%d"),
+                        'delivery_note_id':     "", # delivery_note.name,
+                        'delivery_note_date_paynet':  "" # delivery_note.as_dict()["creation"].strftime("%Y%m%d"),
                         },
             'remitTo' : {'name':            sales_invoice.company,
-                        'street':           company_address.address_line1, 
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city, 
-                        'iso_country_code': country_codes[company_address.country], 
+                        'street':           "", # company_address.address_line1, 
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city, 
+                        'iso_country_code': "AA", #country_codes[company_address.country], 
                         'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
                         },
             'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
@@ -187,10 +220,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         },
             'from' :    {'name':            company_details.company_name,
-                        'street':           company_address.address_line1, 
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city,
-                        'iso_country_code': country_codes[company_address.country]
+                        'street':           "", # company_address.address_line1, 
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city,
+                        'iso_country_code': "AA", #country_codes[company_address.country]
                         }, 
             'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
                         'name':             sales_invoice.customer_name,
@@ -200,10 +233,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         }, 
             'shipFrom' : {'name':           company_details.name, 
-                        'street':           company_address.address_line1,
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city,
-                        'iso_country_code': country_codes[company_address.country]
+                        'street':           "", # company_address.address_line1,
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city,
+                        'iso_country_code': "AA", #country_codes[company_address.country]
                         },
             'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
                         'name':             shipping_address.name,
@@ -219,7 +252,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_type':     'Checking',     # TODO
                         'branch_name':      'branch_name'   # TODO
                         }, 
-            'extrinsic' : {'buyerVatID':                sales_invoice.tax_id + ' MWST',
+            'extrinsic' : {'buyerVatID':                customer.tax_id + ' MWST',
                         'supplierVatID':                'CHE-107.542.107 MWST', # might be company.tax_id
                         'supplierCommercialIdentifier': 'CHE-107.542.107 VAT'   # might be company.tax_id
                         }, 
@@ -255,7 +288,7 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000001"
+    sales_invoice_name = "SI-BAL-22000002"
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
@@ -309,6 +342,28 @@ def transmit_sales_invoice():
 
     # TODO: comment in after development to save ariba file to filesystem
     '''
+        # attach to sales invoice
+        folder = create_folder("ariba", "Home")
+        # store EDI File
+        
+        f = save_file(
+            "{0}.txt".format(sales_invoice_name), 
+            cxml, 
+            "Sales Invoice", 
+            sales_invoice_name, 
+            folder=folder, 
+            is_private=True
+        )
+
+    elif customer.invoicing_method == "Paynet":
+       
+        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+
+        cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
+        #print(cxml)
+
+        # TODO: comment in after development to save ariba file to filesystem
+    
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
         # store EDI File
