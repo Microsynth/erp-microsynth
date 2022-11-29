@@ -93,75 +93,49 @@ def make_collective_invoice(delivery_notes):
 
 def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
-    
 
-
-
-
-
-    list_of_invoice_item_dicts = []
+    invoice_item_dicts = {}
     
     for item in sales_invoice.items:
-            invoice_item_dict = {}
-            invoice_item_dict['item_group']         = item.item_group
-            invoice_item_dict['invoice_line_number'] = item.idx
-            invoice_item_dict['quantity']           = item.qty
-            invoice_item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-            invoice_item_dict['unit_price']         = item.rate
-            invoice_item_dict['supplier_part_id']   = item.item_code
-            invoice_item_dict['description']        = item.description
-            invoice_item_dict['subtotal_amount']    = item.amount
-            invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-            invoice_item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-            invoice_item_dict['tax_taxable_amount'] = item.amount
-            invoice_item_dict['tax_description']    = 'TODO!!!!'
-            invoice_item_dict['gross_amount']       = item['tax_amount']
-            invoice_item_dict['net_amount']         = item['tax_amount']
-            invoice_item_dicts.append(invoice_item_dict)
-    
+        invoice_item_dict = {}
+        invoice_item_dict['item_group']         = item.item_group
+        invoice_item_dict['invoice_line_number'] = item.idx
+        invoice_item_dict['quantity']           = item.qty
+        invoice_item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+        invoice_item_dict['unit_price']         = item.rate
+        invoice_item_dict['supplier_part_id']   = item.item_code
+        invoice_item_dict['description']        = item.description
+        invoice_item_dict['subtotal_amount']    = item.amount
+        invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][1], 2)
+        #invoice_item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][1], 2)
+        invoice_item_dict['tax_rate']           = "" #json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[invoice_item_dict['supplier_part_id']][0]
+        invoice_item_dict['tax_taxable_amount'] = item.amount
+        invoice_item_dict['tax_description']    = 'TODO!!!!'
+        invoice_item_dict['gross_amount']       = ""
+        invoice_item_dict['net_amount']         = ""
+        invoice_item_dicts[item.item_code] = invoice_item_dict
+
+    invoiced_oligos = {}
     invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
         print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
-        oligo_dict = {}
-        invoice_item_dicts['item_group']         = item.item_group
-        invoice_item_dicts['invoice_line_number'] = invoice_position
-        invoice_item_dicts['quantity']           = item.qty
-        invoice_item_dicts['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-        invoice_item_dicts['unit_price']         = 0
-        invoice_item_dicts['supplier_part_id']   = item.item_code
-        invoice_item_dicts['description']        = oligo_object.name
-        invoice_item_dicts['subtotal_amount']    = item.amount
-        invoice_item_dicts['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-        invoice_item_dicts['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-        invoice_item_dicts['tax_taxable_amount'] = item.amount
-        invoice_item_dicts['tax_description']    = 'TODO!!!!'
-        invoice_item_dicts['gross_amount']       = item_dict['tax_amount']
-        invoice_item_dicts['net_amount']         = item_dict['tax_amount']
-        
-        for oligo_item in oligo_object.as_dict()["items"]:
-            print ("\n\tITEM:\n\t----\n" + str(oligo_item))
-            invoice_item_dicts = {}
-            invoice_item_dicts['item_group']         = item.item_group
-            invoice_item_dicts['invoice_line_number'] = item.idx
-            invoice_item_dicts['quantity']           = oligo_item.qty
-            invoice_item_dicts['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-            invoice_item_dicts['unit_price']         = item.rate
-            invoice_item_dicts['supplier_part_id']   = item.item_code
-            invoice_item_dicts['description']        = item.description
-            invoice_item_dicts['subtotal_amount']    = item.amount
-            invoice_item_dicts['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-            invoice_item_dicts['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-            invoice_item_dicts['tax_taxable_amount'] = item.amount
-            invoice_item_dicts['tax_description']    = 'TODO!!!!'
-            invoice_item_dicts['gross_amount']       = item_dict['tax_amount']
-            invoice_item_dicts['net_amount']         = item_dict['tax_amount']
-            list_of_invoice_item_dicts.append(item_dict)
-            # list_of_item_dicts.append(item_dict)
-
+        oligo_details = {}
+        oligo_details[oligo_object.name] = oligo_object
+        oligo_details["position"] = invoice_position
+        oligo_details["price"] = 0
+        for oligo_item in oligo_object.items:
+            oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code]["unit_price"]
+            print(oligo_details["price"])
+        invoiced_oligos[oligo_object.name] = oligo_details
+    for key, value in (invoiced_oligos.items()): 
+        print ("%s: %s" %(key, value))
+    
+    # TODO
     #for item in sales_invoice.samples:
             # list_of_item_dicts.append(item_dict)
+
     return list_of_item_dicts
 
 def get_shipping_item(items):
@@ -208,8 +182,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     print ("\n-----0-----")
     company_details = frappe.get_doc("Company", sales_invoice.company)
     #print(company_details.as_dict())
-    for key, value in (company_details.as_dict().items()): 
-       print ("%s: %s" %(key, value))
+    #for key, value in (company_details.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
     
     #for key, value in (company_details.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
