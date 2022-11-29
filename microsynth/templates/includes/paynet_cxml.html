@@ -5,6 +5,7 @@
 {%- set basics_currency 			= basics['currency'] -%}
 {%- set basics_invoice_id 			= basics['invoice_id'] -%}
 {%- set basics_invoice_date 		= basics['invoice_date'] -%}
+{%- set basics_invoice_date_paynet	= basics['invoice_date_paynet'] -%}
 {%- set remitTo_name 				= remitTo['name'] -%}
 {%- set remitTo_street 				= remitTo['street'] -%}
 {%- set remitTo_pin 				= remitTo['pin'] -%}
@@ -85,14 +86,14 @@
 			<MESSAGE-REFERENCE>
 				<REFERENCE-DATE>
 					<Reference-No>{{basics_invoice_id}}</Reference-No>
-					<Date Format="CCYYMMDD">20221124</Date>
+					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 				</REFERENCE-DATE>
 			</MESSAGE-REFERENCE>
 			<PRINT-DATE>
-				<Date Format="CCYYMMDD">20221124</Date>
+				<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 			</PRINT-DATE>
 			<DELIVERY-DATE>
-				<Date Format="CCYYMMDD">20221124</Date>
+				<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 			</DELIVERY-DATE>
 			<TITLE>
 				<Line-70>Rechnung</Line-70>
@@ -101,12 +102,12 @@
 				<INVOICE-REFERENCE>
 					<REFERENCE-DATE>
 						<Reference-No>{{basics_invoice_id}}</Reference-No>
-						<Date Format="CCYYMMDD">20221124</Date>
+						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</INVOICE-REFERENCE>
 				<ORDER>
 					<REFERENCE-DATE>
-						<Reference-No>REF-1071-04610</Reference-No>
+						<Reference-No>{{basics_order_id}}</Reference-No>
 					</REFERENCE-DATE>
 				</ORDER>
 				<DELIVERY-NOTE>
@@ -122,8 +123,8 @@
 				</OTHER-REFERENCE>
 				<OTHER-REFERENCE Type="CR">
 					<REFERENCE-DATE>
-						<Reference-No>Dominik Moor</Reference-No>
-						<Date Format="CCYYMMDD">20221124</Date>
+						<Reference-No>{{shipTo_name}}</Reference-No>
+						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</OTHER-REFERENCE>
 			</REFERENCE>
@@ -167,7 +168,8 @@
 			</PAYER>
 			<DELIVERY-PARTY>
 				<NAME-ADDRESS>
-					<NAME><Line-35></Line-35>					</NAME>
+					<NAME><Line-35></Line-35>
+					</NAME>
 					<STREET>
 						<Line-35>{{shipTo_street}}</Line-35>
 					</STREET>
@@ -219,7 +221,7 @@
 				<REFERENCE-DATE>
 					<Reference-No>Mengo-R</Reference-No>
 					<Line-No>1</Line-No>
-					<Date Format="CCYYMMDD">20221124</Date>
+					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 				</REFERENCE-DATE>
 			</ITEM-REFERENCE>
 			<Quantity Type="47" Units="PCE">1</Quantity>
