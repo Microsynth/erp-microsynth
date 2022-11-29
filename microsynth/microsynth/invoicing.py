@@ -94,10 +94,11 @@ def make_collective_invoice(delivery_notes):
 def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
 
-    invoice_item_dicts = {}
+    list_of_invoiced_items = []
     
+    invoice_item_dicts = {}
     for item in sales_invoice.items:
-        invoice_item_dict = {}
+        """invoice_item_dict = {}
         invoice_item_dict['item_group']         = item.item_group
         invoice_item_dict['invoice_line_number'] = item.idx
         invoice_item_dict['quantity']           = item.qty
@@ -114,29 +115,29 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         invoice_item_dict['gross_amount']       = ""
         invoice_item_dict['net_amount']         = ""
         invoice_item_dicts[item.item_code] = invoice_item_dict
+        """
+        invoice_item_dicts[item.item_code] = item
 
     invoiced_oligos = {}
     invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
-        print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
+        #print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
         oligo_details = {}
         oligo_details[oligo_object.name] = oligo_object
         oligo_details["position"] = invoice_position
         oligo_details["price"] = 0
         for oligo_item in oligo_object.items:
-            oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code]["unit_price"]
-            print(oligo_details["price"])
+            oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code].rate
         invoiced_oligos[oligo_object.name] = oligo_details
-    for key, value in (invoiced_oligos.items()): 
-        print ("%s: %s" %(key, value))
+    list_of_invoiced_items.append(invoiced_oligos)
     
     # TODO
     #for item in sales_invoice.samples:
             # list_of_item_dicts.append(item_dict)
 
-    return list_of_item_dicts
+    return list_of_invoiced_items
 
 def get_shipping_item(items):
     for i in reversed(items):
