@@ -96,26 +96,33 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     list_of_item_dicts = []
     
-    print(sales_invoice.oligos[0])
-    #for item in sales_invoice.oligos:
+    for oligo_link in sales_invoice.oligos: 
+        oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
+        for item in oligo_object.as_dict()["items"]:
+            print (item)
+        
+        '''
+        for item in sales_invoice.items:
+            item_dict = {}
+            item_dict['item_group']         = item.item_group
+            item_dict['invoice_line_number'] = item.idx
+            item_dict['quantity']           = item.qty
+            item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
+            item_dict['unit_price']         = item.rate
+            item_dict['supplier_part_id']   = item.item_code
+            item_dict['description']        = item.description
+            item_dict['subtotal_amount']    = item.amount
+            item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
+            item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
+            item_dict['tax_taxable_amount'] = item.amount
+            item_dict['tax_description']    = 'TODO!!!!'
+            item_dict['gross_amount']       = item_dict['tax_amount']
+            item_dict['net_amount']         = item_dict['tax_amount']
+        '''
+            # list_of_item_dicts.append(item_dict)
+
     #for item in sales_invoice.samples:
-    for item in sales_invoice.items:
-        item_dict = {}
-        item_dict['item_group']         = item.item_group
-        item_dict['invoice_line_number'] = item.idx
-        item_dict['quantity']           = item.qty
-        item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
-        item_dict['unit_price']         = item.rate
-        item_dict['supplier_part_id']   = item.item_code
-        item_dict['description']        = item.description
-        item_dict['subtotal_amount']    = item.amount
-        item_dict['tax_amount']         = round(json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][1], 2)
-        item_dict['tax_rate']           = json.loads(sales_invoice.as_dict()["taxes"][0]["item_wise_tax_detail"])[item_dict['supplier_part_id']][0]
-        item_dict['tax_taxable_amount'] = item.amount
-        item_dict['tax_description']    = 'TODO!!!!'
-        item_dict['gross_amount']       = item_dict['tax_amount']
-        item_dict['net_amount']         = item_dict['tax_amount']
-        list_of_item_dicts.append(item_dict)
+            # list_of_item_dicts.append(item_dict)
     return list_of_item_dicts
 
 def get_shipping_item(items):
@@ -273,7 +280,7 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000001"
+    sales_invoice_name = "SI-BAL-22000002"
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
