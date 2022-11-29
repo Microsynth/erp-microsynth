@@ -1,7 +1,7 @@
 {%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
 {%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
 {%- set basics_shared_secret 		= basics['shared_secret'] -%}
-{%- set basics_paynet_pid 			= basics['paynet_pid'] -%}
+{%- set basics_paynet_sender_pid 	= basics['paynet_sender_pid'] -%}
 {%- set basics_order_id 			= basics['order_id'] -%}
 {%- set basics_currency 			= basics['currency'] -%}
 {%- set basics_invoice_id 			= basics['invoice_id'] -%}
@@ -74,7 +74,7 @@
 <XML-FSCM-INVOICE-2003A>
 	<INTERCHANGE>
 		<IC-SENDER>
-			<Pid>41010164914873673</Pid>
+			<Pid>{{basics_paynet_sender_pid}}</Pid>
 		</IC-SENDER>
 		<IC-RECEIVER>
 			<Pid></Pid>
@@ -115,8 +115,8 @@
 				</ORDER>
 				<DELIVERY-NOTE>
 					<REFERENCE-DATE>
-						<Reference-No>805916</Reference-No>
-						<Date Format="CCYYMMDD">20221128</Date>
+						<Reference-No>{{basics_delivery_note_id}}</Reference-No>
+						<Date Format="CCYYMMDD">{{basics_delivery_note_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</DELIVERY-NOTE>
 				<OTHER-REFERENCE Type="IT">

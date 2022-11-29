@@ -171,7 +171,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
                         'shared_secret':        'secret1',
-                        'paynet_pid':           '41010164914873673', 
+                        'paynet_sender_pid':    '41010164914873673', 
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
