@@ -134,6 +134,16 @@ def get_shipping_item(items):
         if i.item_group == "Shipping":
             return i.item_code
 
+
+def create_country_name_to_code_dict(): 
+    
+    country_codes = {}
+    country_query = frappe.get_all("Country", fields=['name', 'code'])
+    for dict in country_query:
+        country_codes[dict['name']] = dict['code']
+    return country_codes
+
+
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
 
@@ -185,13 +195,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #for key, value in (company_details.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
 
-    # load all country codes
-    country_codes = {}
-    country_query = frappe.get_all("Country", fields=['name', 'code'])
-    for dict in country_query:
-        print(dict['name'], dict['code'])
-        country_codes[dict['name']] = dict['code']
-
+    country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
                         'receiver_network_id':  'AN01003603018-DEV',
