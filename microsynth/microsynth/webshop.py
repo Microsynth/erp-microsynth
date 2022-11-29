@@ -457,7 +457,7 @@ def place_order(content, client="webshop"):
     category = "Service"
     if 'oligos' in content:
         category = "Material" 
-    taxes = find_tax_template(company, content['invoice_address'], category)
+    taxes = find_tax_template(company, content['customer'], content['invoice_address'], category)
     if taxes:
         so_doc.taxes_and_charges = taxes
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)

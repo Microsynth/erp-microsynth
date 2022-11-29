@@ -92,27 +92,39 @@ def create_sample(sample):
     return sample_doc.name
 
 @frappe.whitelist()
-def find_tax_template(company, customer_address, category="Material"):
+def find_tax_template(company, customer, customer_address, category="Material"):
     """
     Find the corresponding tax template
     """
-    country = frappe.get_value("Address", customer_address, "country")
-    if frappe.get_value("Country", country, "eu"):
-        eu_pattern = """ OR `country` = "EU" """
+    
+    # if the customer is "Individual" (B2C), always apply default tax template (with VAT)
+    if frappe.get_value("Customer", customer, "customer_type") == "Individual":
+        default = frappe.get_all("Sales Taxes and Charges Template",
+            filters={'company': company, 'is_default': 1},
+            fields=['name']
+        )
+        if default and len(default) > 0:
+            return default[0]['name']
+        else:
+            return None
     else:
-        eu_pattern = ""
-    find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
-        FROM `tabTax Matrix Entry`
-        WHERE `company` = "{company}"
-          AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
-          AND `category` = "{category}"
-        ORDER BY `idx` ASC;""".format(
-        company=company, country=country, category=category, eu_pattern=eu_pattern), 
-        as_dict=True)
-    if len(find_tax_record) > 0:
-        return find_tax_record[0]['sales_taxes_template']
-    else:
-        return None
+        country = frappe.get_value("Address", customer_address, "country")
+        if frappe.get_value("Country", country, "eu"):
+            eu_pattern = """ OR `country` = "EU" """
+        else:
+            eu_pattern = ""
+        find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
+            FROM `tabTax Matrix Entry`
+            WHERE `company` = "{company}"
+              AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
+              AND `category` = "{category}"
+            ORDER BY `idx` ASC;""".format(
+            company=company, country=country, category=category, eu_pattern=eu_pattern), 
+            as_dict=True)
+        if len(find_tax_record) > 0:
+            return find_tax_record[0]['sales_taxes_template']
+        else:
+            return None
 
 @frappe.whitelist(allow_guest=True)
 def login(usr, pwd):
