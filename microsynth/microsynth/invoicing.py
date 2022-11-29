@@ -98,7 +98,8 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     for item in sales_invoice.items:
         item_dict = {}
-        item_dict['invoiceLineNumber']  = item.idx
+        item_dict['item_group']         = item.item_group
+        item_dict['invoice_line_number'] = item.idx
         item_dict['quantity']           = item.qty
         item_dict['unit_of_measure']    = 'EA' if item.stock_uom == "Nos" else "???"
         item_dict['unit_price']         = item.rate
@@ -114,10 +115,13 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         list_of_item_dicts.append(item_dict)
     return list_of_item_dicts
 
+def get_shipping_item(items):
+    for i in reversed(items):
+        if i.item_group == "Shipping":
+            return i.item_code
 
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
-
 
     #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
