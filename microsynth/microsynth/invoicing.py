@@ -96,6 +96,9 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     list_of_item_dicts = []
     
+    print(sales_invoice.oligos[0])
+    #for item in sales_invoice.oligos:
+    #for item in sales_invoice.samples:
     for item in sales_invoice.items:
         item_dict = {}
         item_dict['item_group']         = item.item_group
@@ -122,6 +125,9 @@ def get_shipping_item(items):
 
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
+
+    #for key, value in (sales_invoice.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
     #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
@@ -321,6 +327,28 @@ def transmit_sales_invoice():
 
     # TODO: comment in after development to save ariba file to filesystem
     '''
+        # attach to sales invoice
+        folder = create_folder("ariba", "Home")
+        # store EDI File
+        
+        f = save_file(
+            "{0}.txt".format(sales_invoice_name), 
+            cxml, 
+            "Sales Invoice", 
+            sales_invoice_name, 
+            folder=folder, 
+            is_private=True
+        )
+
+    elif customer.invoicing_method == "Paynet":
+       
+        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+
+        cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
+        #print(cxml)
+
+        # TODO: comment in after development to save ariba file to filesystem
+    
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
         # store EDI File
