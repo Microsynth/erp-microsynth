@@ -178,9 +178,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'invoice_date_paynet':  sales_invoice.as_dict()["creation"].strftime("%Y%m%d")
                         },
             'remitTo' : {'name':            sales_invoice.company,
-                        'street':           company_address.address_line1, 
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city, 
+                        'street':           "", # company_address.address_line1, 
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city, 
                         'iso_country_code': country_codes[company_address.country], 
                         'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
                         },
@@ -192,9 +192,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         },
             'from' :    {'name':            company_details.company_name,
-                        'street':           company_address.address_line1, 
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city,
+                        'street':           "", # company_address.address_line1, 
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city,
                         'iso_country_code': country_codes[company_address.country]
                         }, 
             'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
@@ -205,9 +205,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         }, 
             'shipFrom' : {'name':           company_details.name, 
-                        'street':           company_address.address_line1,
-                        'pin':              company_address.pincode,
-                        'city':             company_address.city,
+                        'street':           "", # company_address.address_line1,
+                        'pin':              "", # company_address.pincode,
+                        'city':             "", # company_address.city,
                         'iso_country_code': country_codes[company_address.country]
                         },
             'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
