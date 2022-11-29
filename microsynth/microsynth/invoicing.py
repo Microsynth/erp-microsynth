@@ -121,6 +121,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
 
     return list_of_invoiced_items
 
+
 def get_shipping_item(items):
     for i in reversed(items):
         if i.item_group == "Shipping":
@@ -138,13 +139,6 @@ def create_country_name_to_code_dict():
 
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
-
-    #for key, value in (sales_invoice.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    #for key, value in (sales_invoice.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-    #print(sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"))
 
     print ("\n1")
     #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
@@ -174,6 +168,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     print ("\n-----0A-----")
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
+    #print(company_address.as_dict())
 
     print ("\n-----0B-----")
     if sales_invoice.currency in ["EUR", "USD"]:
@@ -217,11 +212,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'delivery_note_date_paynet':  "" # delivery_note.as_dict()["creation"].strftime("%Y%m%d"),
                         },
             'remitTo' : {'name':            sales_invoice.company,
-                        'street':           "", # company_address.address_line1, 
-                        'pin':              "", # company_address.pincode,
-                        'city':             "", # company_address.city, 
-                        'iso_country_code': "AA", #country_codes[company_address.country], 
-                        'supplier_tax_id':  'CHE-107.542.107 MWST' # might be company.tax_id
+                        'street':           company_address.address_line1, 
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city, 
+                        'iso_country_code': country_codes[company_address.country], 
+                        'supplier_tax_id':  company_details.tax_id + ' MWST' 
                         },
             'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
                         'name':             billing_address.name,
@@ -231,10 +226,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         },
             'from' :    {'name':            company_details.company_name,
-                        'street':           "", # company_address.address_line1, 
-                        'pin':              "", # company_address.pincode,
-                        'city':             "", # company_address.city,
-                        'iso_country_code': "AA", #country_codes[company_address.country]
+                        'street':           company_address.address_line1, 
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city,
+                        'iso_country_code': country_codes[company_address.country]
                         }, 
             'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
                         'name':             sales_invoice.customer_name,
@@ -244,10 +239,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[billing_address.country]
                         }, 
             'shipFrom' : {'name':           company_details.name, 
-                        'street':           "", # company_address.address_line1,
-                        'pin':              "", # company_address.pincode,
-                        'city':             "", # company_address.city,
-                        'iso_country_code': "AA", #country_codes[company_address.country]
+                        'street':           company_address.address_line1,
+                        'pin':              company_address.pincode,
+                        'city':             company_address.city,
+                        'iso_country_code': country_codes[company_address.country]
                         },
             'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
                         'name':             shipping_address.name,
@@ -289,7 +284,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'due_amount' :              sales_invoice.rounded_total
                         }
             }
-    #print("DictXY: " + str(data2["items"]))
     return data2
 
 
