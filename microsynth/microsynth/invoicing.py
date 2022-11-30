@@ -96,35 +96,49 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
 
     list_of_invoiced_items = []
     
+    # invoiced items and Shipping 
     invoice_item_dicts = {}
     for item in sales_invoice.items:
         invoice_item_dicts[item.item_code] = item
+        # shipping
+        if item.item_group == "Shipping": 
+            invoiced_shipping = {}
+            invoiced_shipping[item.name] = item
+            invoiced_shipping["price"] = item.net_amount
+            invoiced_shipping["shipping_name"] = item.item_name
+            invoiced_shipping["position"] = len(sales_invoice.oligos) + 1
+            list_of_invoiced_items.append(invoiced_shipping)
 
+    # Oligos
     invoiced_oligos = {}
     invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
-        #print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
+        print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
         oligo_details = {}
         oligo_details[oligo_object.name] = oligo_object
-        oligo_details["position"] = invoice_position
+        oligo_details["invoice_position"] = invoice_position
         oligo_details["price"] = 0
+        oligo_details["price"]
+        oligo_details["customer_name"] = oligo_object.oligo_name
         for oligo_item in oligo_object.items:
             oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code].rate
         invoiced_oligos[oligo_object.name] = oligo_details
     list_of_invoiced_items.append(invoiced_oligos)
-    
+
     # TODO
     #for item in sales_invoice.samples:
             # list_of_item_dicts.append(item_dict)
-
+    
+    print(list_of_invoiced_items)
     return list_of_invoiced_items
 
 
 def get_shipping_item(items):
     for i in reversed(items):
         if i.item_group == "Shipping":
+            print(i)
             return i.item_code
 
 
@@ -172,6 +186,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     print ("\n-----0B-----")
     if sales_invoice.currency in ["EUR", "USD"]:
+        #print("IN IF1")
         bank_accounts = frappe.get_all("Account", 
                         filters = {
                             "company" : sales_invoice.company, 
@@ -182,11 +197,16 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                             fields = ["name"]
                         )
         if len(bank_accounts) > 0: 
+            #print("IN IF2")
             bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
         else:
+            #print("IN ELSE2")
             frappe.throw("No valid bank account")
     else: 
+        #print("IN ELSE1")
         bank_account = frappe.get_doc("Account", company_details.default_bank_account)
+    
+    #print(bank_account.as_dict())
 
     # Wenn curr = eur dann company = sales_invoice.company, account type=bank,  
 
@@ -258,9 +278,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_type':     'Checking',  
                         'branch_name':      "" # TODO bank_account.branch
                         }, 
-            'extrinsic' : {'buyerVatID':                customer.tax_id + ' MWST',
-                        'supplierVatID':                company_details.tax_id + ' MWST',
-                        'supplierCommercialIdentifier': company_details.tax_id + 'VAT' 
+            'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
+                        'supplierVatId':                company_details.tax_id + ' MWST',
+                        'supplierCommercialIdentifier': company_details.tax_id + ' VAT' 
                         }, 
             'items' :   itemList, 
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
@@ -343,7 +363,7 @@ def transmit_sales_invoice():
     cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
     cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-    #print(cxml)
+    print(cxml)
 
     # TODO: comment in after development to save ariba file to filesystem
     '''
