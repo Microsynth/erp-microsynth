@@ -109,13 +109,13 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             invoiced_shipping["position"] = len(sales_invoice.oligos) + 1
             list_of_invoiced_items.append(invoiced_shipping)
 
-    # Oligos
+    # oligos
     invoiced_oligos = {}
     invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
-        print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
+        #print ("\nOLIGO '%s', OLIGO-Info:\n====\n%s"  %(oligo_link.as_dict()["oligo"], oligo_object.as_dict() ))
         oligo_details = {}
         oligo_details[oligo_object.name] = oligo_object
         oligo_details["invoice_position"] = invoice_position
@@ -127,11 +127,12 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         invoiced_oligos[oligo_object.name] = oligo_details
     list_of_invoiced_items.append(invoiced_oligos)
 
-    # TODO
+    # TODO 
+    # labels
     #for item in sales_invoice.samples:
             # list_of_item_dicts.append(item_dict)
     
-    print(list_of_invoiced_items)
+    # print(list_of_invoiced_items)
     return list_of_invoiced_items
 
 
@@ -154,13 +155,15 @@ def create_country_name_to_code_dict():
 def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
     """ Doc string """
 
-    print ("\n1")
+    print ("\n1a")
     #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
     #    print ("%s: %s" %(key, value))
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    
-    print ("\n1")
+    for key, value in (shipping_address.as_dict().items()): 
+        print ("%s: %s" %(key, value))
+
+    print ("\n1b")
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     #for key, value in (billing_address.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
@@ -186,7 +189,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     print ("\n-----0B-----")
     if sales_invoice.currency in ["EUR", "USD"]:
-        #print("IN IF1")
         bank_accounts = frappe.get_all("Account", 
                         filters = {
                             "company" : sales_invoice.company, 
@@ -197,13 +199,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                             fields = ["name"]
                         )
         if len(bank_accounts) > 0: 
-            #print("IN IF2")
             bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
         else:
-            #print("IN ELSE2")
             frappe.throw("No valid bank account")
     else: 
-        #print("IN ELSE1")
         bank_account = frappe.get_doc("Account", company_details.default_bank_account)
     
     #print(bank_account.as_dict())
@@ -238,8 +237,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[company_address.country], 
                         'supplier_tax_id':  company_details.tax_id + ' MWST' 
                         },
-            'billTo' : {'address_id':       'TODO: C028Bau WSJ103', 
-                        'name':             billing_address.name,
+            'billTo' : {'address_id':       billing_address.name, 
+                        'name':             sales_invoice.customer_name,
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
                         'city':             billing_address.city,
@@ -251,7 +250,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country]
                         }, 
-            'soldTo' :  {'address_id':      'TODO: C028Bau WSJ103', 
+            'soldTo' :  {'address_id':      billing_address.name, 
                         'name':             sales_invoice.customer_name,
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
@@ -264,7 +263,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country]
                         },
-            'shipTo' : {'address_id':       '', # TODO: !!! shipping address must be read from order specific shippign address transferred during punchout
+            'shipTo' : {'address_id':       shipping_address.customer_address_id,
                         'name':             shipping_address.name,
                         'street':           shipping_address.address_line1,
                         'pin':              shipping_address.pincode,
@@ -319,7 +318,7 @@ def transmit_sales_invoice():
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     
     # TODO: comment-in after development to handle invoice paths other than ariba
-    '''
+    
     if customer.invoicing_method == "Email":
         # send by mail
         target_email = customer.get("invoice_email") or sales_invoice.get("contact_email")
@@ -354,19 +353,18 @@ def transmit_sales_invoice():
         )
                 
         pass
+
     elif customer.invoicing_method == "ARIBA":
-    '''    
         # create ARIBA cXML input data dict
-    data = sales_invoice.as_dict()
-    data['customer_record'] = customer.as_dict()
+        data = sales_invoice.as_dict()
+        data['customer_record'] = customer.as_dict()
+        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
-    cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+        cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
+        print(cxml)
 
-    cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-    print(cxml)
-
-    # TODO: comment in after development to save ariba file to filesystem
-    '''
+        # TODO: comment in after development to save ariba file to filesystem
+        '''
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
         # store EDI File
@@ -379,15 +377,17 @@ def transmit_sales_invoice():
             folder=folder, 
             is_private=True
         )
+        '''
 
     elif customer.invoicing_method == "Paynet":
-       
+        # create Paynet cXML input data dict
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
-
+        
         cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
         #print(cxml)
 
-        # TODO: comment in after development to save ariba file to filesystem
+        '''
+        # TODO: comment in after development to save paynet file to filesystem
     
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
@@ -401,10 +401,32 @@ def transmit_sales_invoice():
             folder=folder, 
             is_private=True
         )
-    '''
+        '''
+    
+    elif customer.invoicing_method == "GEP":
+        print("IN GEP")
+        # create Gep cXML input data dict
+        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+        cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
+        print(cxml)
 
-        # transmit to target
-        # TODO
+        '''
+        # TODO: comment in after development to save gep file to filesystem
+    
+        # attach to sales invoice
+        folder = create_folder("ariba", "Home")
+        # store EDI File
+        
+        f = save_file(
+            "{0}.txt".format(sales_invoice_name), 
+            cxml, 
+            "Sales Invoice", 
+            sales_invoice_name, 
+            folder=folder, 
+            is_private=True
+        )
+        '''
+
         
     return
         
