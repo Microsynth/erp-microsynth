@@ -69,6 +69,56 @@
 {%- set summary_net_amount 			= summary['net_amount'] -%}
 {%- set summary_due_amount 			= summary['due_amount'] -%}
 
+{% set shipping_header = {
+	'shippingTax_taxable_amount': shippingTax['taxable_amount'],
+	'shippingTax_amount': shippingTax['amount'],
+	'shippingTax_percent': shippingTax['percent'],
+	'shippingTax_taxPointDate': shippingTax['taxPointDate'],
+	'shippingTax_description': 	shippingTax['description']
+}%}
+
+{#- overwrite shipping information on header level in the ariba template if needed -#}
+{%- for article in items -%}
+	{# add line #}
+	AAA richtig
+	{# add line #}
+	{%- if "shipping_name" in article.keys() -%}
+	{%- for key2 in article.keys() -%}
+		{# add line #}BBB
+		{# add line #}
+		{{key2}}
+		{# add line #}
+		{%- if key2 not in ["price", "shipping_name", "position"] -%}
+		{% if shipping_header.update({'shippingTax_taxable_amount': article.price})%}{% endif %}
+		{% if shipping_header.update({'shippingTax_amount': (tax_percent*article.price/100)|round(2)})%}{% endif %}
+		{% if shipping_header.update({'shippingTax_percent': tax_percent}) %}{% endif %}
+		{% if shipping_header.update({'shippingTax_description': tax_description})%}{% endif %}
+		{% if shipping_header.update({'summary_shipping_amount': article.price}) %}{% endif %} 
+		{# add line #}
+		-
+		{{shippingTax_taxable_amount}}
+		{{shippingTax_amount}}
+		{{shippingTax_percent}}
+		{{shippingTax_description}}
+		{{abc}}
+		{%- endif -%}
+		{# add line #}
+		{%- endfor -%}
+	{%- endif -%}
+{%- endfor -%}
+{# a #}
+{# a #}
+{{shippingTax_taxable_amount}}
+{{shippingTax_amount}}
+{{shippingTax_percent}}
+{{shippingTax_description}}
+{{summary_shipping_amount}}
+{# a #}
+{{shipping_header.shippingTax_taxable_amount}}
+{{shipping_header.shippingTax_amount}}
+{{shipping_header.shippingTax_percent}}
+{{shipping_header.shippingTax_description}}
+{{shipping_header.summary_shipping_amount}}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
 <cXML payloadID = "2022112416482799-20221124164827995015484@192.0.0.140" timestamp = "2022-11-24T16:48:27+01:00" version = "1.2.028">
