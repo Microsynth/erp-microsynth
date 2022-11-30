@@ -49,8 +49,8 @@
 {%- set receivingBank_account_id 	= receivingBank['account_id'] -%}
 {%- set receivingBank_account_type 	= receivingBank['account_type'] -%}
 {%- set receivingBank_branch_name 	= receivingBank['branch_name'] -%}
-{%- set extrinsic_buyerVatID 		= extrinsic['buyerVatID'] -%}
-{%- set extrinsic_supplierVatID  	= extrinsic['supplierVatID '] -%}
+{%- set extrinsic_buyerVatId 		= extrinsic['buyerVatId'] -%}
+{%- set extrinsic_supplierVatId  	= extrinsic['supplierVatId'] -%}
 {%- set extrinsic_supplierCommercialIdentifier = extrinsic['supplierCommercialIdentifier'] -%}
 {%- set tax_amount 					= tax['amount'] -%}
 {%- set tax_taxable_amount 			= tax['taxable_amount'] -%}
@@ -176,8 +176,8 @@
 				</InvoiceDetailShipping>
  				<PaymentTerm payInNumberOfDays="45"></PaymentTerm>
 				<Comments></Comments>
-				<Extrinsic name="buyerVatID">{{extrinsic_buyerVatID}}</Extrinsic>
-				<Extrinsic name="supplierVatID">{{extrinsic_supplierVatID}}</Extrinsic>
+				<Extrinsic name="buyerVatID">{{extrinsic_buyerVatId}}</Extrinsic>
+				<Extrinsic name="supplierVatID">{{extrinsic_supplierVatId}}</Extrinsic>
  				<Extrinsic name="invoiceSourceDocument">PurchaseOrder</Extrinsic>
 				<Extrinsic name="invoiceSubmissionMethod">cXML</Extrinsic>
 				<Extrinsic name="paymentMethod">wire</Extrinsic>
@@ -189,20 +189,23 @@
 						<DocumentReference payloadID=""/>
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
-{% for item in items %}
-{%- set item_invoiceLineNumber 		= item['invoiceLineNumber'] -%}
-{%- set item_quantity 				= item['quantity'] -%}
-{%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
-{%- set item_unit_price 			= item['unit_price'] -%}
-{%- set item_supplier_part_id		= item['supplier_part_id'] -%}
-{%- set item_description 			= item['description'] -%}
-{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
-{%- set item_tax_amount 			= item['tax_amount'] -%}
-{%- set item_tax_rate 				= item['tax_rate'] -%}
-{%- set item_tax_taxable_amount 	= item['tax_taxable_amount'] -%}
-{%- set item_tax_description 		= item['tax_description'] -%}
-{%- set item_gross_amount 			= item['gross_amount'] -%}
-{%- set item_net_amount 			= item['net_amount'] -%}
+{# These are the oligo positions #}
+{% for article in items %}
+{% if not "shipping_name" in article.keys() %}
+{% for oligoname, oligo in article.items() %}
+{%- set item_invoiceLineNumber 		= oligo.invoice_position -%}
+{%- set item_quantity 				= "1" -%}
+{%- set item_unit_of_measure 		= "EA" -%}
+{%- set item_unit_price 			= oligo.price -%}
+{%- set item_supplier_part_id		= oligo[oligoname].items[0].item_code  -%}
+{%- set item_description 			= oligo.customer_name -%}
+{%- set item_subtotal_amount 		= oligo.price -%}
+{%- set item_tax_amount 			= (tax_percent*oligo.price/100)|round(2)-%}
+{%- set item_tax_rate 				= tax_percent -%}
+{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
+{%- set item_tax_description 		= tax_description -%}
+{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
+{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
 {#additional line break#}
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
@@ -238,6 +241,69 @@
 						<Money currency="{{basics_currency}}">{{item_net_amount}}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
+{#- end of oligo/label iteration -#}
+{%- endfor -%}
+{%- endif -%}
+{#- end of first article iteration -#}
+{%- endfor -%}
+
+{#- This is the shipping position -#}
+{% for article in items %}
+{% if "shipping_name" in article.keys() %}
+{% for key in article.keys() %}
+{% if key not in ["price", "shipping_name", "position"] %}
+{%- set item_quantity 				= "1" -%}
+{%- set item_invoiceLineNumber 		= article.position -%}
+{%- set item_unit_of_measure 		= "EA" -%}
+{%- set item_unit_price 			= article.price -%}
+{%- set item_supplier_part_id		= article[key].item_code -%}
+{%- set item_description 			= article.shipping_name -%}
+{%- set item_subtotal_amount 		= article.price -%}
+{%- set item_tax_amount 			= (tax_percent*article.price/100)|round(2)-%}
+{%- set item_tax_rate 				= tax_percent -%}
+{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
+{%- set item_tax_description 		= tax_description -%}
+{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
+{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
+				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
+					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
+					<UnitPrice>
+						<Money currency="{{basics_currency}}">{{item_unit_price}}</Money>
+					</UnitPrice>
+					<InvoiceDetailItemReference lineNumber="{{item_invoiceLineNumber}}">
+						<ItemID>
+							<SupplierPartID>{{item_supplier_part_id}}</SupplierPartID>
+						</ItemID>
+						<Description xml:lang="de-CH">{{item_description}}</Description>
+					</InvoiceDetailItemReference>
+					<SubtotalAmount>
+						<Money currency="{{basics_currency}}">{{item_subtotal_amount}}</Money>
+					</SubtotalAmount>
+					<Tax>
+						<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
+						<Description xml:lang="de-CH"/>
+						<TaxDetail category="vat" percentageRate="{{item_tax_rate}}" taxPointDate="{{tax_taxPointDate}}" exemptDetail="exempt">
+							<TaxableAmount>
+								<Money currency="{{basics_currency}}">{{item_tax_taxable_amount}}</Money>
+							</TaxableAmount>
+							<TaxAmount>
+								<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
+							</TaxAmount>
+							<Description xml:lang="en">{{item_tax_description}}</Description>
+						</TaxDetail>
+					</Tax>
+					<GrossAmount>
+						<Money currency="{{basics_currency}}">{{item_gross_amount}}</Money>
+					</GrossAmount>
+					<NetAmount>
+						<Money currency="{{basics_currency}}">{{item_net_amount}}</Money>
+					</NetAmount>
+				</InvoiceDetailItem>
+{%- endif -%}
+{%- endfor %}
+{#- end of shipping item -#}
+{%- endif -%}
+{#- end of second article iteration -#}
 {%- endfor %}
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
