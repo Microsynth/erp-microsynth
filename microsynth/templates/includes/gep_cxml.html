@@ -190,9 +190,9 @@
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
 {# These are the oligo positions #}
-{% for article in items %}
-{% if not "shipping_name" in article.keys() %}
-{% for oligoname, oligo in article.items() %}
+{%- for article in items -%}
+{%- if not "shipping_name" in article.keys() -%}
+{%- for oligoname, oligo in article.items() -%}
 {%- set item_invoiceLineNumber 		= oligo.invoice_position -%}
 {%- set item_quantity 				= "1" -%}
 {%- set item_unit_of_measure 		= "EA" -%}
@@ -206,7 +206,6 @@
 {%- set item_tax_description 		= tax_description -%}
 {%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
 {%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
-{#additional line break#}
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
@@ -246,12 +245,11 @@
 {%- endif -%}
 {#- end of first article iteration -#}
 {%- endfor -%}
-
 {#- This is the shipping position -#}
-{% for article in items %}
-{% if "shipping_name" in article.keys() %}
-{% for key in article.keys() %}
-{% if key not in ["price", "shipping_name", "position"] %}
+{%- for article in items -%}
+{%- if "shipping_name" in article.keys() -%}
+{%- for key in article.keys() -%}
+{%- if key not in ["price", "shipping_name", "position"] -%}
 {%- set item_quantity 				= "1" -%}
 {%- set item_invoiceLineNumber 		= article.position -%}
 {%- set item_unit_of_measure 		= "EA" -%}
