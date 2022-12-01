@@ -64,7 +64,7 @@ def oligo_status_changed(content=None):
     return {
         'success': len(error_oligos) == 0, 
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
-            len(updated_oligos), len(affected_sales_orders), ", ".join(error_oligos)
+            len(updated_oligos), len(affected_sales_orders), ", ".join(map(str, error_oligos))
         )
     }
 
