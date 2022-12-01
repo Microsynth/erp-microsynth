@@ -41,8 +41,8 @@ def get_data(filters):
 	
 	hasFilters = False
 
-	if 'customer' in filters:
-		criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
+	if 'contact_name' in filters:
+		criteria += """ AND `tabContact`.`name` LIKE '%{0}%' """.format(filters['contact_name'])
 		hasFilters = True
 
 	if 'contact_full_name' in filters:
@@ -51,6 +51,10 @@ def get_data(filters):
 
 	if 'contact_email' in filters:
 		criteria += """ AND `tabContact`.`email_id` LIKE '%{0}%' """.format(filters['contact_email'])
+		hasFilters = True
+
+	if 'customer' in filters:
+		criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
 		hasFilters = True
 
 	if 'contact_institute' in filters:

@@ -5,14 +5,14 @@
 frappe.query_reports["Customer Finder"] = {
 	"filters": [
 		{
-			"fieldname": "customer",
-			"label": __("Customer"),
+			"fieldname": "contact_name",
+			"label": __("Person ID"),
 			"fieldtype": "Data",
 			"options": ""
-		}, 
+		},
 		{
 			"fieldname": "contact_full_name",
-			"label": __("Contact name"),
+			"label": __("Contact Name"),
 			"fieldtype": "Data",
 			"options": ""
 		},
@@ -22,6 +22,12 @@ frappe.query_reports["Customer Finder"] = {
 			"fieldtype": "Data",
 			"options": ""
 		},
+		{
+			"fieldname": "customer",
+			"label": __("Customer (Company/Uni)"),
+			"fieldtype": "Data",
+			"options": ""
+		}, 
 		{
 			"fieldname": "contact_institute",
 			"label": __("Institute"),
