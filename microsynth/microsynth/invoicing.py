@@ -234,7 +234,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
                         'city':             company_address.city, 
-                        'iso_country_code': country_codes[company_address.country], 
+                        'iso_country_code': country_codes[company_address.country].upper(), 
                         'supplier_tax_id':  company_details.tax_id + ' MWST' 
                         },
             'billTo' : {'address_id':       billing_address.name, 
@@ -242,40 +242,40 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
                         'city':             billing_address.city,
-                        'iso_country_code': country_codes[billing_address.country]
+                        'iso_country_code': country_codes[billing_address.country].upper()
                         },
             'from' :    {'name':            company_details.company_name,
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
-                        'iso_country_code': country_codes[company_address.country]
+                        'iso_country_code': country_codes[company_address.country].upper()
                         }, 
             'soldTo' :  {'address_id':      billing_address.name, 
                         'name':             sales_invoice.customer_name,
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
                         'city':             billing_address.city,
-                        'iso_country_code': country_codes[billing_address.country]
+                        'iso_country_code': country_codes[billing_address.country].upper()
                         }, 
             'shipFrom' : {'name':           company_details.name, 
                         'street':           company_address.address_line1,
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
-                        'iso_country_code': country_codes[company_address.country]
+                        'iso_country_code': country_codes[company_address.country].upper()
                         },
             'shipTo' : {'address_id':       shipping_address.customer_address_id,
                         'name':             shipping_address.name,
                         'street':           shipping_address.address_line1,
                         'pin':              shipping_address.pincode,
                         'city':             shipping_address.city,
-                        'iso_country_code': country_codes[shipping_address.country]
+                        'iso_country_code': country_codes[shipping_address.country].upper()
                         }, 
             'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
                         'account_id':       bank_account.iban,
                         'account_type':     'Checking',  
-                        'branch_name':      "" # TODO bank_account.branch
+                        'branch_name':      bank_account.bank_branch_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
                         'supplierVatId':                company_details.tax_id + ' MWST',
@@ -312,7 +312,7 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000002"
+    sales_invoice_name = "SI-BAL-22000003"
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
@@ -361,20 +361,23 @@ def transmit_sales_invoice():
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
         cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-        print(cxml)
+        #print(cxml)
 
         # TODO: comment in after development to save ariba file to filesystem
+        with open('/home/libracore/Desktop/'+ sales_invoice_name, 'w') as file:
+            file.write(cxml)
         '''
         # attach to sales invoice
         folder = create_folder("ariba", "Home")
-        # store EDI File
-        
+        # store EDI File  
+    
         f = save_file(
             "{0}.txt".format(sales_invoice_name), 
             cxml, 
             "Sales Invoice", 
             sales_invoice_name, 
-            folder=folder, 
+            folder = '/home/libracore/Desktop',
+            # folder=folder, 
             is_private=True
         )
         '''
