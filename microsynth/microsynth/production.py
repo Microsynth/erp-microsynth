@@ -112,6 +112,10 @@ def check_sales_order_completion(sales_orders):
             for item in dn.items:
                 if item.qty > 0:
                     keep_items.append(item)
+            # if there are no items left, exit with an error trace
+            if len(keep_items) == 0:
+                frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+                return
             dn.items = keep_items
             # insert record
             dn.flags.ignore_missing = True
