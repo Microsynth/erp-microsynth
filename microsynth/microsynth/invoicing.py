@@ -156,12 +156,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     """ Doc string """
 
     print ("\n1a")
-    #for key, value in (sales_invoice.as_dict()["taxes"][0].items()): 
-    #    print ("%s: %s" %(key, value))
+    for key, value in (sales_invoice.as_dict().items()): 
+        print ("%s: %s" %(key, value))
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    for key, value in (shipping_address.as_dict().items()): 
-        print ("%s: %s" %(key, value))
+    #for key, value in (shipping_address.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
     print ("\n1b")
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
@@ -189,20 +189,31 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     print ("\n-----0B-----")
     if sales_invoice.currency in ["EUR", "USD"]:
-        bank_accounts = frappe.get_all("Account", 
+        print("IN IF1")
+        #TODO: the db fetch is not working properly
+        # following 3 lines of IF are just fixing it for one development example
+        if (sales_invoice.company == "Microsynth AG" and sales_invoice.currency == "EUR"):
+            print("boom2")
+            bank_account = frappe.get_doc("Account", "1025 - UBS EUR 882208.62G - BAL")
+        else: 
+            bank_accounts = frappe.get_all("Account", 
                         filters = {
                             "company" : sales_invoice.company, 
                             "account_type" : "Bank",
-                            "currency": sales_invoice.currency, 
+                            "account_currency": sales_invoice.currency, 
                             "disabled": 0
                             },
                             fields = ["name"]
                         )
-        if len(bank_accounts) > 0: 
-            bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
-        else:
-            frappe.throw("No valid bank account")
+            if len(bank_accounts) > 0: 
+                print("IN IF2")
+                print (bank_accounts)
+                bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
+            else:
+                print("IN ELSE1")
+                frappe.throw("No valid bank account")
     else: 
+        print("IN ELSE2")
         bank_account = frappe.get_doc("Account", company_details.default_bank_account)
     
     #print(bank_account.as_dict())
@@ -275,7 +286,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_name':     bank_account.company,
                         'account_id':       bank_account.iban,
                         'account_type':     'Checking',  
-                        'branch_name':      bank_account.bank_branch_name
+                        'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
                         'supplierVatId':                company_details.tax_id + ' MWST',
@@ -292,8 +303,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
             'shippingTax' : {'taxable_amount':  '0.00',
                         'amount':               '0.00',
                         'percent':              '0.0',
-                        'taxPointDate':         sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'description':          '0.0' + '% shipping tax'
+                        'taxPointDate':         sales_invoice.posting_date.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'description' :         '0.0' + '% shipping tax'
                         }, 
             'summary' : {'subtotal_amount' :        sales_invoice.base_total,
                         'shipping_amount' :         '0.00',
@@ -312,7 +323,7 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000003"
+    sales_invoice_name = "SI-BAL-22000002"
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
