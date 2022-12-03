@@ -24,6 +24,9 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
+        report.page.add_inner_button(__('Clean price list'), function () {
+            clean_price_list();
+        });        
         report.page.add_inner_button(__('Populate from reference'), function () {
            populate_from_reference();
         });
@@ -83,6 +86,19 @@ frappe.query_reports["Pricing Configurator"] = {
     }
 };
 
+function clean_price_list(){
+    frappe.call({
+        'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_list",
+        'args':{
+            'price_list': frappe.query_report.filters[0].value
+        },
+        'callback': function(r)
+        {
+            frappe.query_report.refresh();
+        }
+    });
+}
+
 function populate_from_reference() {
     frappe.call({
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_from_reference",
@@ -96,7 +112,6 @@ function populate_from_reference() {
         }
     });
 }
-
 
 function populate_with_factor() {
     frappe.prompt([
