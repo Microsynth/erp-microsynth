@@ -188,40 +188,31 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_address.as_dict())
 
     print ("\n-----0B-----")
-    if sales_invoice.currency in ["EUR", "USD"]:
-        print("IN IF1")
-        #TODO: the db fetch is not working properly
-        # following 3 lines of IF are just fixing it for one development example
-        #if (sales_invoice.company == "Microsynth AG" and sales_invoice.currency == "EUR"):
-        #    print("boom2")
-        #    bank_account = frappe.get_doc("Account", "1025 - UBS EUR 882208.62G - BAL")
-        #else: 
-        bank_accounts = frappe.get_all("Account", 
+
+
+    default_account = frappe.get_doc("Account", company_details.default_bank_account)
+    if sales_invoice.currency == default_account.account_currency:
+        bank_account = default_account
+    else: 
+        preferred_accounts = frappe.get_all("Account", 
                     filters = {
                         "company" : sales_invoice.company, 
                         "account_type" : "Bank",
                         "account_currency": sales_invoice.currency, 
-                        "disabled": 0
+                        "disabled": 0, 
+                        "preferred": 1
                         },
                         fields = ["name"]
                     )
-        if len(bank_accounts) > 0: 
-            print("IN IF2")
-            print (bank_accounts)
-            bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
-        else:
-            print("IN ELSE1")
-            frappe.throw("No valid bank account")
-    else: 
-        print("IN ELSE2")
-        bank_account = frappe.get_doc("Account", company_details.default_bank_account)
-    
-    #print(bank_account.as_dict())
-
-    # Wenn curr = eur dann company = sales_invoice.company, account type=bank,  
-
-    for key, value in (bank_account.as_dict().items()): 
-       print ("%s: %s" %(key, value))
+        if len(preferred_accounts) == 1: 
+            preferred_account = frappe.get_doc("Account", bank_accounts[0]["name"])
+        else: 
+            frappe.throw("No or too many valid bank account")
+        
+        bank_account = preferred_account
+            
+    #for key, value in (bank_account.as_dict().items()): 
+    #   print ("%s: %s" %(key, value))
 
     #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
     #for key, value in (company_details.as_dict().items()): 
