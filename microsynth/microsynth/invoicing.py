@@ -189,7 +189,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_address.as_dict())
 
     print ("\n-----0B-----")
-    payload = 
+    # payload = 
     print("random %s" % random.randint(0, 100))
     sales_invoice.posting_date.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 100)) +"@microsynth.ch"
 
