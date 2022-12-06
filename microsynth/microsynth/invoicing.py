@@ -17,6 +17,7 @@ from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
 import datetime
 import json
+import random
 
 @frappe.whitelist()
 def create_invoices(mode, company):
@@ -188,6 +189,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_address.as_dict())
 
     print ("\n-----0B-----")
+    payload = 
+    print("random %s" % random.randint(0, 100))
+    sales_invoice.posting_date.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 100)) +"@microsynth.ch"
+
+
+    settings = frappe.get_all("Microsynth Settings", 
+                        fields = ["ariba_id", "ariba_secret", "paynet_id"]
+                    )
 
 
     default_account = frappe.get_doc("Account", company_details.default_bank_account)
@@ -218,12 +227,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #for key, value in (company_details.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
 
+    print(customer.invoice_network_id)
+
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
     data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
-                        'receiver_network_id':  'AN01003603018-DEV',
+                        'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        'secret1',
-                        'paynet_sender_pid':    '41010164914873673', 
+                        'paynet_sender_pid':    customer.invoice_network_id, 
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
