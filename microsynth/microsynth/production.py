@@ -141,10 +141,10 @@ def check_sales_order_completion(sales_orders):
                     print_format=settings.dn_print_format,
                     as_pdf=True
                 )
-                output = open("{0}{1}.pdf".format(
+                output = open("{0}/{1}.pdf".format(
                     settings.pdf_path, 
-                    dn.name), 'wb')
-                # convert byte array and write to binray file
+                    dn.web_order_id), 'wb')
+                # convert byte array and write to binray file            
                 output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
                 output.close()
             except Exception as err:
