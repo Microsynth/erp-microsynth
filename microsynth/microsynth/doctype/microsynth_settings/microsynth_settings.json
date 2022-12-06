@@ -1,0 +1,59 @@
+{
+ "creation": "2022-12-06 12:07:36.225010",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "invoicing_section",
+  "ariba_id",
+  "ariba_secret",
+  "paynet_id"
+ ],
+ "fields": [
+  {
+   "description": "Identifier in the Ariba system for Microsynth. Is used as sender ID.",
+   "fieldname": "ariba_id",
+   "fieldtype": "Data",
+   "label": "Ariba ID"
+  },
+  {
+   "description": "Shared secret key to exchange documents with the Ariba platform.",
+   "fieldname": "ariba_secret",
+   "fieldtype": "Data",
+   "label": "Ariba Shared Secret"
+  },
+  {
+   "description": "Identifier in the Paynet system for Microsynth. Is used as sender ID.",
+   "fieldname": "paynet_id",
+   "fieldtype": "Data",
+   "label": "Paynet ID"
+  },
+  {
+   "fieldname": "invoicing_section",
+   "fieldtype": "Section Break",
+   "label": "Invoicing"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2022-12-06 12:17:02.811963",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Microsynth Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
