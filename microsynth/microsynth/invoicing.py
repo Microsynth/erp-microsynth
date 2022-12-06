@@ -156,8 +156,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     """ Doc string """
 
     print ("\n1a")
-    for key, value in (sales_invoice.as_dict().items()): 
-        print ("%s: %s" %(key, value))
+    #for key, value in (sales_invoice.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     #for key, value in (shipping_address.as_dict().items()): 
@@ -192,26 +192,26 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
         print("IN IF1")
         #TODO: the db fetch is not working properly
         # following 3 lines of IF are just fixing it for one development example
-        if (sales_invoice.company == "Microsynth AG" and sales_invoice.currency == "EUR"):
-            print("boom2")
-            bank_account = frappe.get_doc("Account", "1025 - UBS EUR 882208.62G - BAL")
-        else: 
-            bank_accounts = frappe.get_all("Account", 
-                        filters = {
-                            "company" : sales_invoice.company, 
-                            "account_type" : "Bank",
-                            "account_currency": sales_invoice.currency, 
-                            "disabled": 0
-                            },
-                            fields = ["name"]
-                        )
-            if len(bank_accounts) > 0: 
-                print("IN IF2")
-                print (bank_accounts)
-                bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
-            else:
-                print("IN ELSE1")
-                frappe.throw("No valid bank account")
+        #if (sales_invoice.company == "Microsynth AG" and sales_invoice.currency == "EUR"):
+        #    print("boom2")
+        #    bank_account = frappe.get_doc("Account", "1025 - UBS EUR 882208.62G - BAL")
+        #else: 
+        bank_accounts = frappe.get_all("Account", 
+                    filters = {
+                        "company" : sales_invoice.company, 
+                        "account_type" : "Bank",
+                        "account_currency": sales_invoice.currency, 
+                        "disabled": 0
+                        },
+                        fields = ["name"]
+                    )
+        if len(bank_accounts) > 0: 
+            print("IN IF2")
+            print (bank_accounts)
+            bank_account = frappe.get_doc("Account", bank_accounts[0]["name"])
+        else:
+            print("IN ELSE1")
+            frappe.throw("No valid bank account")
     else: 
         print("IN ELSE2")
         bank_account = frappe.get_doc("Account", company_details.default_bank_account)
@@ -220,8 +220,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     # Wenn curr = eur dann company = sales_invoice.company, account type=bank,  
 
-    #for key, value in (bank_account.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
+    for key, value in (bank_account.as_dict().items()): 
+       print ("%s: %s" %(key, value))
 
     #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
     #for key, value in (company_details.as_dict().items()): 
@@ -328,6 +328,11 @@ def transmit_sales_invoice():
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     
+
+    sales_order = frappe.get_doc("Sales Order", "SO-BAL-22008543")
+    #for k,v in sales_order.as_dict().items():
+    #    print ( "%s: %s" %(k,v))
+
     # TODO: comment-in after development to handle invoice paths other than ariba
     
     if customer.invoicing_method == "Email":
