@@ -382,7 +382,7 @@ def transmit_sales_invoice():
         # send by mail
         target_email = customer.get("invoice_email") or sales_invoice.get("contact_email")
         if not target_email:
-            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice__name), "Sending invoice email failed")
+            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice_name), "Sending invoice email failed")
             return
         
         # TODO: send email with content & attachment
