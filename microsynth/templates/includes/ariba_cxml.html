@@ -232,7 +232,7 @@
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
-						<Money currency="{{basics_currency}}">{{item_unit_price}}</Money>
+						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_unit_price) }}</Money> 
 					</UnitPrice>
 					<InvoiceDetailItemReference lineNumber="{{item_invoiceLineNumber}}">
 						<ItemID>
@@ -241,26 +241,26 @@
 						<Description xml:lang="de-CH">{{item_description}}</Description>
 					</InvoiceDetailItemReference>
 					<SubtotalAmount>
-						<Money currency="{{basics_currency}}">{{item_subtotal_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_subtotal_amount) }}</Money> 
 					</SubtotalAmount>
 					<Tax>
-						<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_tax_amount) }}</Money>
 						<Description xml:lang="de-CH"/>
 						<TaxDetail category="vat" percentageRate="{{item_tax_rate}}" taxPointDate="{{tax_taxPointDate}}" exemptDetail="exempt">
 							<TaxableAmount>
-								<Money currency="{{basics_currency}}">{{item_tax_taxable_amount}}</Money>
+								<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_tax_taxable_amount) }}</Money> 
 							</TaxableAmount>
 							<TaxAmount>
-								<Money currency="{{basics_currency}}">{{item_tax_amount}}</Money>
+								<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_tax_amount) }}</Money>
 							</TaxAmount>
 							<Description xml:lang="en">{{item_tax_description}}</Description>
 						</TaxDetail>
 					</Tax>
 					<GrossAmount>
-						<Money currency="{{basics_currency}}">{{item_gross_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_gross_amount) }}</Money>
 					</GrossAmount>
 					<NetAmount>
-						<Money currency="{{basics_currency}}">{{item_net_amount}}</Money>
+						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_net_amount) }}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
 {#- end of oligo/label iteration -#}
