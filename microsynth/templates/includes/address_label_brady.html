@@ -1,6 +1,6 @@
 {#- load images on printer -#}
 ;### load Microsynth logo ###
-M l IMG;01_MIC_Logo_Swiss_black
+;M l IMG;01_MIC_Logo_Swiss_black
 M l IMG;00_MIC_Logo_black
 {# config the printer #}
 m m
@@ -12,13 +12,13 @@ O R
 ; ### add sender address, logo, separation bar ###
 I 100,137,180,2,2;00_MIC_Logo_black
 {% if sender_address_discriminator.lower() == "switzerland" %}
-T 100,125,180,3,pt 10;'Schützenstrasse 15, CH-9436 Balgach'
+T 100,125,180,3,pt 10;Schützenstrasse 15, CH-9436 Balgach
 {%- elif sender_address_discriminator.lower() == "austria" -%}
-T 100,125,180,3,pt 10;'Postlagernd, Senderstrasse 10, AT-696 Wolfurt'
+T 100,125,180,3,pt 10;Postlagernd, Senderstrasse 10, AT-696 Wolfurt
 {%- elif sender_address_discriminator.lower() == "eu" -%}
-T 100,125,180,3,pt 10;'Postfach 3351, DE-88115 Lindau'
+T 100,125,180,3,pt 10;Postfach 3351, DE-88115 Lindau
 {%- else -%}
-T 100,125,180,3,pt 10;'Schützenstrasse 15, CH-9436 Balgach'
+T 100,125,180,3,pt 10;Schützenstrasse 15, CH-9436 Balgach
 {%- endif -%}
 {# separate sender address #}
 G 5,122,0;L:95,0.5,r,r
@@ -43,7 +43,7 @@ T 29,49,90,3,pt 20;{{shipping_service}}
 {% endif %}
 
 ;### print date and time during development ###
-T 10,5,0,3,pt 10;[DATE]-[TIME]-dynamic ERP-Template Brady
-T 70,5,0,3,pt 24;T#1
+;T 10,5,0,3,pt 10;[DATE]-[TIME]-dynamic ERP-Template Brady
+;T 70,5,0,3,pt 24;T#1
 A 1
 {# additional line break #}
