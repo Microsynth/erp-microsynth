@@ -137,23 +137,31 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
 
     list_of_invoiced_items = []
-    
-    # invoiced items and Shipping 
     invoice_item_dicts = {}
+    invoice_position = 0
+    invoice_other_items = {}
+
+    # invoiced items and Shipping 
     for item in sales_invoice.items:
         invoice_item_dicts[item.item_code] = item
-        # shipping
         if item.item_group == "Shipping": 
+            # shipping
             invoiced_shipping = {}
             invoiced_shipping[item.name] = item
             invoiced_shipping["price"] = item.net_amount
             invoiced_shipping["shipping_name"] = item.item_name
             invoiced_shipping["position"] = len(sales_invoice.oligos) + 1
             list_of_invoiced_items.append(invoiced_shipping)
+        elif item.item_group != "3.1 DNA/RNA Synthese": 
+            # other items (labels)
+            invoice_position += 1
+            invoice_other_items["invoice_position"] = invoice_position
+            invoice_other_items["quantity"] = item.qty
+            invoice_other_items["price"] = item.price_list_rate
+            list_of_invoiced_items.append(invoice_other_items)
 
     # oligos
     invoiced_oligos = {}
-    invoice_position = 0
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
         oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
@@ -161,6 +169,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         oligo_details = {}
         oligo_details[oligo_object.name] = oligo_object
         oligo_details["invoice_position"] = invoice_position
+        oligo_details["quantity"] = 1
         oligo_details["price"] = 0
         oligo_details["price"]
         oligo_details["customer_name"] = oligo_object.oligo_name
@@ -168,11 +177,6 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code].rate
         invoiced_oligos[oligo_object.name] = oligo_details
     list_of_invoiced_items.append(invoiced_oligos)
-
-    # TODO 
-    # labels
-    #for item in sales_invoice.samples:
-            # list_of_item_dicts.append(item_dict)
     
     # print(list_of_invoiced_items)
     return list_of_invoiced_items
@@ -366,13 +370,21 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000002"
+    #sales_invoice_name = "SI-BAL-22000003"
+    #sales_order_name = "SO-BAL-22008129"
+
+    #sales_invoice_name = "SI-BAL-22000005"
+    #sales_order_name = "SO-BAL-22008108"
+
+    sales_invoice_name = "SI-BAL-22000006"
+    sales_order_name = "SO-BAL-22008238"
+
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     
 
-    sales_order = frappe.get_doc("Sales Order", "SO-BAL-22008543")
+    sales_order = frappe.get_doc("Sales Order", sales_order_name)
     #for k,v in sales_order.as_dict().items():
     #    print ( "%s: %s" %(k,v))
 

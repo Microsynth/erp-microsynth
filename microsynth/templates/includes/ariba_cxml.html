@@ -2,6 +2,7 @@
 {%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
 {%- set basics_shared_secret 		= basics['shared_secret'] -%}
 {%- set basics_paynet_sender_pid 	= basics['paynet_sender_pid'] -%}
+{%- set basics_payload 				= basics['payload'] -%}
 {%- set basics_order_id 			= basics['order_id'] -%}
 {%- set basics_currency 			= basics['currency'] -%}
 {%- set basics_invoice_id 			= basics['invoice_id'] -%}
@@ -94,7 +95,7 @@
 {%- set summary_shipping_amount 	= shipping_header.shippingTax_taxable_amount -%}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
-<cXML payloadID = "2022112416482799-20221124164827995015484@192.0.0.140" timestamp = "2022-11-24T16:48:27+01:00" version = "1.2.028">
+<cXML payloadID = "{{basics_payload}}" timestamp = "2022-11-24T16:48:27+01:00" version = "1.2.028">
 	<Header>
 		<From>
 			<Credential domain = "NetworkID">
