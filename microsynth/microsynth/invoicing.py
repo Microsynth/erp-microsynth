@@ -100,9 +100,9 @@ def get_sales_order_list_and_delivery_note_list(sales_invoice):
     delivery_note_list = []
 
     for item in sales_invoice.items:
-        if item and item.sales_order and item.sales_order not in sales_order_list: 
+        if item.sales_order and item.sales_order not in sales_order_list: 
             sales_order_list.append(item.sales_order)
-        if item and item.delivery_note and item.delivery_note not in delivery_note_list: 
+        if item.delivery_note and item.delivery_note not in delivery_note_list: 
             delivery_note_list.append(item.sales_order)
 
     return {"sales_orders": sales_order_list, "delivery_notes": delivery_note_list}
