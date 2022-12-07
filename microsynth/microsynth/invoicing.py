@@ -92,6 +92,47 @@ def make_collective_invoice(delivery_notes):
     frappe.db.commit()
     return
 
+
+def get_sales_order_list_and_delivery_note_list(sales_invoice): 
+    """creates a dict with two keys sales_orders/delivery_notes with value of a list of respective ids"""
+
+    sales_order_list = []
+    delivery_note_list = []
+
+    for item in sales_invoice.items:
+        if item and item.sales_order and item.sales_order not in sales_order_list: 
+            sales_order_list.append(item.sales_order)
+        if item and item.delivery_note and item.delivery_note not in delivery_note_list: 
+            delivery_note_list.append(item.sales_order)
+
+    return {"sales_orders": sales_order_list, "delivery_notes": delivery_note_list}
+
+
+def get_sales_order_id_and_delivery_note_id(sales_invoice): 
+    """returns one sales_order_id and one or no delivery_note_id"""
+
+    sos_and_dns = get_sales_order_list_and_delivery_note_list(sales_invoice)
+    sales_orders = sos_and_dns["sales_orders"]
+    delivery_notes = sos_and_dns["delivery_notes"]
+    if len(sales_orders) < 1: 
+        frappe.throw("no sales orders. case not known")
+    elif len(sales_orders) > 1:
+        frappe.throw("too many sales orders. case not implemented.")
+    sales_order_id = sales_orders[0]
+
+    delivery_note_id = ""
+    if len(delivery_notes) < 1: 
+        # may happen, accept this case!
+        #frappe.throw("no delivery note")
+        pass
+    elif len(delivery_notes) > 1:
+        frappe.throw("too many delivery notes. case not implemented.")
+    else: 
+        delivery_note_id = delivery_notes[0]
+
+    return {"sales_order_id":sales_order_id, "delivery_note_id": delivery_note_id}
+
+
 def create_list_of_item_dicts_for_cxml(sales_invoice):
     """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
 
@@ -193,7 +234,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     except: 
         frappe.throw("Cannot access 'Microsynth Settings'. Invoice cannot be created")
-    print("settings: %s" % settings.as_dict())
+    #print("settings: %s" % settings.as_dict())
 
     default_account = frappe.get_doc("Account", company_details.default_bank_account)
     if sales_invoice.currency == default_account.account_currency:
@@ -223,7 +264,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #for key, value in (company_details.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
 
-    print(customer.invoice_network_id)
+    soId_and_dnId = get_sales_order_id_and_delivery_note_id(sales_invoice)
+    sales_order_id = soId_and_dnId["sales_order_id"] # can be called directly in dict "data" creation on-the-fly
+    delivery_note_id = soId_and_dnId["delivery_note_id"] # can be called directly in dict "data" creation on-the-fly
 
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
