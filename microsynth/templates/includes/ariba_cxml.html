@@ -212,7 +212,6 @@
 						<DocumentReference payloadID=""/>
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
-{# These are the oligo positions #}
 {%- for article in items -%}
 {%- if not "shipping_name" in article.keys() -%}
 {%- for oligoname, oligo in article.items() -%}
@@ -229,6 +228,7 @@
 {%- set item_tax_description 		= tax_description -%}
 {%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
 {%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
+{# These are the oligo positions #}
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
@@ -266,8 +266,8 @@
 {#- end of oligo/label iteration -#}
 {%- endfor -%}
 {%- endif -%}
-{#- end of first article iteration -#}
 {%- endfor -%}
+{# end of first article iteration #}
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
 				<SubtotalAmount>
