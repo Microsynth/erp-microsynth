@@ -189,15 +189,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_address.as_dict())
 
     print ("\n-----0B-----")
-    # payload = 
-    print("random %s" % random.randint(0, 100))
-    sales_invoice.posting_date.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 100)) +"@microsynth.ch"
-
-
-    settings = frappe.get_all("Microsynth Settings", 
-                        fields = ["ariba_id", "ariba_secret", "paynet_id"]
-                    )
-
+    try: 
+        settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+    except: 
+        frappe.throw("Cannot access 'Microsynth Settings'. Invoice cannot be created")
+    print("settings: %s" % settings.as_dict())
 
     default_account = frappe.get_doc("Account", company_details.default_bank_account)
     if sales_invoice.currency == default_account.account_currency:
@@ -214,7 +210,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         fields = ["name"]
                     )
         if len(preferred_accounts) == 1: 
-            preferred_account = frappe.get_doc("Account", bank_accounts[0]["name"])
+            preferred_account = frappe.get_doc("Account", preferred_accounts[0]["name"])
         else: 
             frappe.throw("No or too many valid bank account")
         
@@ -231,10 +227,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
-    data2 = {'basics' : {'sender_network_id' :  'AN01429401165-DEV',
+    data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
-                        'shared_secret':        'secret1',
-                        'paynet_sender_pid':    customer.invoice_network_id, 
+                        'shared_secret':        settings.ariba_secret,
+                        'paynet_sender_pid':    settings.paynet_id, 
+                        'payload':              sales_invoice.creation.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch"
+,
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
