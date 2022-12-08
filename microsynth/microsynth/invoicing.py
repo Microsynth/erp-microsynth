@@ -473,6 +473,10 @@ def transmit_sales_invoice():
         cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
         #print(cxml)
 
+        # TODO: comment in after development to save ariba file to filesystem
+        with open('/home/libracore/Desktop/'+ sales_invoice_name, 'w') as file:
+            file.write(cxml)
+
         '''
         # TODO: comment in after development to save paynet file to filesystem
     
