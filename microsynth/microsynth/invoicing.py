@@ -182,7 +182,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             invoiced_shipping["shipping_article"] = item
             invoiced_shipping["invoice_position"] = invoice_position
             invoiced_shipping["quantity"] = 1
-            invoiced_shipping["shipping_name"] = item.item_name
+            invoiced_shipping["description"] = item.item_name
             invoiced_shipping["price"] = item.net_amount
             list_of_invoiced_items.append(invoiced_shipping)
     
@@ -362,9 +362,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         }, 
             'summary' : {'subtotal_amount' :        sales_invoice.base_total,
                         'shipping_amount' :         '0.00',
-                        'gross_amount' :            sales_invoice.net_total,
+                        'gross_amount' :            sales_invoice.rounded_total,
                         'total_amount_without_tax': sales_invoice.net_total,
-                        'net_amount' :              sales_invoice.net_total,
+                        'net_amount' :              sales_invoice.rounded_total,
                         'due_amount' :              sales_invoice.rounded_total
                         }
             }
@@ -377,14 +377,19 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
+    # test data from productive orders -Ariba
     #sales_invoice_name = "SI-BAL-22000003"
     #sales_order_name = "SO-BAL-22008129"
-
     #sales_invoice_name = "SI-BAL-22000005"
     #sales_order_name = "SO-BAL-22008108"
+    #sales_invoice_name = "SI-BAL-22000006"
+    #sales_order_name = "SO-BAL-22008238"
 
-    sales_invoice_name = "SI-BAL-22000006"
-    sales_order_name = "SO-BAL-22008238"
+    # test data from productive orders - Paynet
+    sales_invoice_name = "SI-BAL-22000007"
+    sales_order_name = "SO-BAL-22007117"
+    #sales_invoice_name = "SI-BAL-22000008"
+    #sales_order_name = "SO-BAL-22008510"
 
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
@@ -461,6 +466,7 @@ def transmit_sales_invoice():
         '''
 
     elif customer.invoicing_method == "Paynet":
+        print("IN PAYNET")
         # create Paynet cXML input data dict
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
         
