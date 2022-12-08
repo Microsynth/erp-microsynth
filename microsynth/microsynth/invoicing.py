@@ -141,25 +141,6 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     invoice_position = 0
     invoice_other_items = {}
 
-    # invoiced items and Shipping 
-    for item in sales_invoice.items:
-        invoice_item_dicts[item.item_code] = item
-        if item.item_group == "Shipping": 
-            # shipping
-            invoiced_shipping = {}
-            invoiced_shipping[item.name] = item
-            invoiced_shipping["price"] = item.net_amount
-            invoiced_shipping["shipping_name"] = item.item_name
-            invoiced_shipping["position"] = len(sales_invoice.oligos) + 1
-            list_of_invoiced_items.append(invoiced_shipping)
-        elif item.item_group != "3.1 DNA/RNA Synthese": 
-            # other items (labels)
-            invoice_position += 1
-            invoice_other_items["invoice_position"] = invoice_position
-            invoice_other_items["quantity"] = item.qty
-            invoice_other_items["price"] = item.price_list_rate
-            list_of_invoiced_items.append(invoice_other_items)
-
     # oligos
     invoiced_oligos = {}
     for oligo_link in sales_invoice.oligos: 
@@ -177,6 +158,26 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             oligo_details["price"] += oligo_item.qty * invoice_item_dicts[oligo_item.item_code].rate
         invoiced_oligos[oligo_object.name] = oligo_details
     list_of_invoiced_items.append(invoiced_oligos)
+
+    # invoiced items and Shipping 
+    for item in sales_invoice.items:
+        invoice_item_dicts[item.item_code] = item
+        if item.item_group not in ["3.1 DNA/RNA Synthese", "Shipping"]: 
+            # other items (labels)
+            invoice_position += 1
+            invoice_other_items["invoice_position"] = invoice_position
+            invoice_other_items["quantity"] = item.qty
+            invoice_other_items["price"] = item.price_list_rate
+            list_of_invoiced_items.append(invoice_other_items)
+        elif item.item_group == "Shipping": 
+            # shipping
+            invoice_position += 1
+            invoiced_shipping = {}
+            invoiced_shipping[item.name] = item
+            invoiced_shipping["price"] = item.net_amount
+            invoiced_shipping["shipping_name"] = item.item_name
+            invoiced_shipping["invoice_position"] = invoice_position
+            list_of_invoiced_items.append(invoiced_shipping)
     
     # print(list_of_invoiced_items)
     return list_of_invoiced_items
