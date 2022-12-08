@@ -140,12 +140,11 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     invoice_item_dicts = {}
     invoice_position = 0
 
-    # need a dcict of all item to predict price of an oligo artice
+    # need a dict of all item to predict price of an oligo artice
     all_sole_items = {}
     item_list = sales_invoice.items
     for item in item_list:
         all_sole_items[item.item_code] = item 
-        print ("{}: {}".format(item.item_code, item.as_dict()))
 
     # oligo article
     invoiced_oligos = {}
@@ -156,13 +155,11 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
         oligo_details["oligo_article"] = oligo_object
         oligo_details["invoice_position"] = invoice_position
         oligo_details["quantity"] = 1
-        oligo_details["customer_name"] = oligo_object.oligo_name
+        oligo_details["description"] = oligo_object.oligo_name
         oligo_details["price"] = 0
         for oligo_item in oligo_object.items:
             oligo_details["price"] += oligo_item.qty * all_sole_items[oligo_item.item_code].rate
         list_of_invoiced_items.append(oligo_details)
-        print(all_sole_items[oligo_item.item_code].as_dict())
-
 
     # other articles incl shipping 
     for item in sales_invoice.items:
@@ -174,9 +171,10 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             invoice_other_items["other_article"] = item
             invoice_other_items["invoice_position"] = invoice_position
             invoice_other_items["quantity"] = item.qty
+            invoice_other_items["description"] = item.item_name
             invoice_other_items["price"] = item.price_list_rate
-            invoice_other_items["other_item"] = item.item_name
             list_of_invoiced_items.append(invoice_other_items)
+
         elif item.item_group == "Shipping": 
             # shipping
             invoice_position += 1
@@ -188,7 +186,6 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             invoiced_shipping["price"] = item.net_amount
             list_of_invoiced_items.append(invoiced_shipping)
     
-    #print(list_of_invoiced_items)
     return list_of_invoiced_items
 
 
@@ -380,14 +377,14 @@ def transmit_sales_invoice():
     This function will check a transfer moe and transmit the invoice
     """
 
-    sales_invoice_name = "SI-BAL-22000003"
-    sales_order_name = "SO-BAL-22008129"
+    #sales_invoice_name = "SI-BAL-22000003"
+    #sales_order_name = "SO-BAL-22008129"
 
     #sales_invoice_name = "SI-BAL-22000005"
     #sales_order_name = "SO-BAL-22008108"
 
-    #sales_invoice_name = "SI-BAL-22000006"
-    #sales_order_name = "SO-BAL-22008238"
+    sales_invoice_name = "SI-BAL-22000006"
+    sales_order_name = "SO-BAL-22008238"
 
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)

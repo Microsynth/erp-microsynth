@@ -217,13 +217,13 @@
 	{%- if not "shipping_article" in article.keys() -%}
 		{%- if "other_article" in article.keys() -%}
 			{%- set item_invoiceLineNumber 		= article.invoice_position -%}
-			{%- set item_quantity 				= article.qty -%}
+			{%- set item_quantity 				= article.quantity -%}
 			{%- set item_unit_of_measure 		= "EA" -%}
 			{%- set item_unit_price 			= article.price -%}
 			{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
-			{%- set item_description 			= oligo.customer_name -%}
-			{%- set item_subtotal_amount 		= oligo.price -%}
-			{%- set item_tax_amount 			= (tax_percent*oligo.price/100)|round(2)-%}
+			{%- set item_description 			= article.description -%}
+			{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
+			{%- set item_tax_amount 			= (tax_percent * item_subtotal_amount / 100)|round(2)-%}
 			{%- set item_tax_rate 				= tax_percent -%}
 			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
 			{%- set item_tax_description 		= tax_description -%}
@@ -235,7 +235,7 @@
 			{%- set item_unit_of_measure 		= "EA" -%}
 			{%- set item_unit_price 			= article.price -%}
 			{%- set item_supplier_part_id		= article["oligo_article"].items[0].item_code  -%}
-			{%- set item_description 			= article.customer_name -%}
+			{%- set item_description 			= article.description -%}
 			{%- set item_subtotal_amount 		= article.price -%}
 			{%- set item_tax_amount 			= (tax_percent*article.price/100)|round(2)-%}
 			{%- set item_tax_rate 				= tax_percent -%}
