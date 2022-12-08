@@ -214,22 +214,37 @@
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
 {%- for article in items -%}
-{%- if not "shipping_name" in article.keys() -%}
-{%- for oligoname, oligo in article.items() -%}
-{%- set item_invoiceLineNumber 		= oligo.invoice_position -%}
-{%- set item_quantity 				= "1" -%}
-{%- set item_unit_of_measure 		= "EA" -%}
-{%- set item_unit_price 			= oligo.price -%}
-{%- set item_supplier_part_id		= oligo[oligoname].items[0].item_code  -%}
-{%- set item_description 			= oligo.customer_name -%}
-{%- set item_subtotal_amount 		= oligo.price -%}
-{%- set item_tax_amount 			= (tax_percent*oligo.price/100)|round(2)-%}
-{%- set item_tax_rate 				= tax_percent -%}
-{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
-{%- set item_tax_description 		= tax_description -%}
-{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
-{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
-{# These are the oligo positions #}
+	{%- if not "shipping_article" in article.keys() -%}
+		{%- if "other_article" in article.keys() -%}
+			{%- set item_invoiceLineNumber 		= article.invoice_position -%}
+			{%- set item_quantity 				= article.qty -%}
+			{%- set item_unit_of_measure 		= "EA" -%}
+			{%- set item_unit_price 			= article.price -%}
+			{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
+			{%- set item_description 			= oligo.customer_name -%}
+			{%- set item_subtotal_amount 		= oligo.price -%}
+			{%- set item_tax_amount 			= (tax_percent*oligo.price/100)|round(2)-%}
+			{%- set item_tax_rate 				= tax_percent -%}
+			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
+			{%- set item_tax_description 		= tax_description -%}
+			{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
+			{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
+		{%- else -%} {# Oligo article #}
+			{%- set item_invoiceLineNumber 		= article.invoice_position -%}
+			{%- set item_quantity 				= article.quantity -%}
+			{%- set item_unit_of_measure 		= "EA" -%}
+			{%- set item_unit_price 			= article.price -%}
+			{%- set item_supplier_part_id		= article["oligo_article"].items[0].item_code  -%}
+			{%- set item_description 			= article.customer_name -%}
+			{%- set item_subtotal_amount 		= article.price -%}
+			{%- set item_tax_amount 			= (tax_percent*article.price/100)|round(2)-%}
+			{%- set item_tax_rate 				= tax_percent -%}
+			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
+			{%- set item_tax_description 		= tax_description -%}
+			{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
+			{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
+		{%- endif -%}
+			{# These are the positions #}
 				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
 					<UnitOfMeasure>{{item_unit_of_measure}}</UnitOfMeasure>
 					<UnitPrice>
@@ -264,9 +279,7 @@
 						<Money currency="{{basics_currency}}">{{ "{:,.2f}".format(item_net_amount) }}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
-{#- end of oligo/label iteration -#}
-{%- endfor -%}
-{%- endif -%}
+	{%- endif -%}
 {%- endfor -%}
 {# end of first article iteration #}
  			</InvoiceDetailOrder>
