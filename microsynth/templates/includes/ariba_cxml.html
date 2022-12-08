@@ -75,7 +75,7 @@
 -%}
 {#- overwrite shipping information on header level in the ariba template if needed -#}
 {%- for article in items -%}
-	{%- if "shipping_name" in article.keys() -%}
+	{%- if "shipping_article" in article.keys() -%}
 	{%- for key in article.keys() -%}
 		{%- if key not in ["price", "shipping_name", "position"] -%}
 		{%- if shipping_header.update({'shippingTax_taxable_amount': article.price})-%}{%- endif -%}
@@ -90,8 +90,8 @@
 {%- set shippingTax_taxable_amount 	= shipping_header.shippingTax_taxable_amount -%}
 {%- set shippingTax_amount 			= shipping_header.shippingTax_amount -%}
 {%- set shippingTax_percent 		= shipping_header.shippingTax_percent -%}
-{%- set shippingTax_taxPointDate 	= shipping_header.shippingTax_description -%}
-{%- set shippingTax_description 	= shipping_header.summary_shipping_amount -%}
+{%- set shippingTax_taxPointDate 	= shipping_header.shippingTax_taxPointDate -%}
+{%- set shippingTax_description 	= shipping_header.shippingTax_description -%}
 {%- set summary_shipping_amount 	= shipping_header.shippingTax_taxable_amount -%}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
