@@ -110,24 +110,31 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
     return rec_adr_lines
 
 
-# TODO: Ths function might be obsolete as it can be implied by destination_country
-def return_sender_address(company):
-    '''
-    returns a string representing the sender address based on logical decission 
-    is a workaround during development to mock sender address
-    indicator might be the destination_country, logic can be transfered to jinja template
-    '''
-
-    if company == "Balgach": 
-        sender_adr = 'Schützenstrasse 15, CH-9436 Balgach'
-    elif company == "Lindau": 
-        sender_adr = 'Postfach 3351, DE-88115 Lindau'
-    elif company == "Wolfurt": 
-        sender_adr = 'Postlagernd, Senderstrasse 10, AT-696 Wolfurt'
+def get_sender_header(sales_order, shipping_address_country):
+    # sender_header
+    if shipping_address_country.eu:
+        destination = "EU"
+    elif shipping_address_country.code.upper() == "CH":
+        destination = "CH"
     else: 
-        sender_adr = 'Schützenstrasse 15, CH-9436 Balgach'
-    return sender_adr
+        destination = "ROW"
 
+    if sales_order.company == "Microsynth AG":
+        if destination == "CH":
+            letter_head = frappe.get_doc("Letter Head", "Microsynth AG PP-Post")
+        elif destination == "EU":
+            letter_head = frappe.get_doc("Letter Head", "Microsynth AG Wolfurt")
+        else:
+            letter_head = frappe.get_doc("Letter Head", "Microsynth AG")
+    else:
+        letter_head = frappe.get_doc("Letter Head", sales_order.company)
+
+    if letter_head:
+        sender_header = letter_head.content
+    else:
+        frappe.throw("Letter head {0} not found. Please define the letter head under print settings.".format(sales_order.company))
+    
+    return sender_header 
 
 def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1.71'):
     """function calls respective template for creating a transport label
@@ -151,18 +158,15 @@ def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1
         frappe.throw("contact missing")
         
     adr_id = sales_order.shipping_address_name
-    address = frappe.get_doc("Address", adr_id)
-    cst_id = sales_order.customer
+    shipping_address = frappe.get_doc("Address", adr_id)
+    cstm_id = sales_order.customer
     cntct_id = sales_order.contact_person
-    country = frappe.get_doc("Country", address.country)   
-
-    # sender_address
-    sender_address_discriminator = "eu" if country.eu else address.country
+    shipping_address_country = frappe.get_doc("Country", shipping_address.country)   
 
     content = frappe.render_template(printer_template, 
-        {'lines': create_receiver_address_lines(customer_id=cst_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_address_discriminator': sender_address_discriminator,
-        'destination_country': address.country,
+        {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
+        'sender_header': get_sender_header(sales_order, shipping_address_country),
+        'destination_country': shipping_address.country,
         'shipping_service': SHIPPING_SERVICES[shipping_item]}
         )
 
