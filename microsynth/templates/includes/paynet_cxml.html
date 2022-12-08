@@ -135,7 +135,7 @@
 				<Tax-No>{{remitTo_supplier_tax_id}}MWST</Tax-No>
 				<Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
 				<PARTY-ID>
-					<Pid>41010164914873673</Pid>
+					<Pid>{{basics_paynet_sender_pid}}</Pid>
 				</PARTY-ID>
 				<NAME-ADDRESS Format="COM">
 					<NAME>
@@ -171,7 +171,8 @@
 			</PAYER>
 			<DELIVERY-PARTY>
 				<NAME-ADDRESS>
-					<NAME><Line-35></Line-35>
+					<NAME>
+						<Line-35></Line-35>
 					</NAME>
 					<STREET>
 						<Line-35>{{shipTo_street}}</Line-35>
@@ -181,27 +182,28 @@
 					<Country>{{shipTo_iso_country_code}}</Country>
 				</NAME-ADDRESS>
 			</DELIVERY-PARTY>
-{% for item in items %}
-{%- set item_group 					= item['item_group'] -%}
-{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
-{%- set item_tax_amount 			= item['tax_amount'] -%}
-{%- set item_tax_rate 				= item['tax_rate'] -%}
-{# additional line break #}
-{%- if item_group == "Shipping" -%}
+{%- for article in items -%}
+	{%- if "shipping_article" in article.keys() -%}
+		{%- set item_quantity 				= article.quantity -%}
+		{%- set item_unit_price 			= article.price -%}
+		{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
+		{%- set item_tax_amount 			= (tax_percent * item_subtotal_amount / 100)|round(2)-%}
+		{%- set item_tax_rate 				= tax_percent -%}
+		{# additional line break #}
 			<ALLOWANCE-OR-CHARGE Type="C">
 				<Service-Code Type="FC"/>
 				<SERVICE-TEXT>
 					<Line-35>Fracht-Porto</Line-35>
 				</SERVICE-TEXT>
 				<ALC-AMOUNT Print-Status="25">
-					<Amount Currency="{{basics_currency}}">{{subtotal_amount}}</Amount>
+					<Amount Currency="{{basics_currency}}">{{item_subtotal_amount}}</Amount>
 				</ALC-AMOUNT>
 				<TAX>
 					<Rate Category="S">{{item_tax_rate}}</Rate>
 					<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>
 				</TAX>
 			</ALLOWANCE-OR-CHARGE>
-{%- endif -%}
+	{%- endif -%}
 {%- endfor %}
 		</HEADER>
 
