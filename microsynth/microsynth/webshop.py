@@ -459,9 +459,7 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        # frappe.throw(i['item_code'])
-        if quotation and i['item_code'] in quotation_rate:
-            
+        if quotation and i['item_code'] in quotation_rate:            
             item_detail['rate'] = quotation_rate[i['item_code']]            
         elif 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)
