@@ -44,7 +44,8 @@ doctype_js = {
 # extend Jinja environment
 jenv = {
     "methods": [
-        "get_price_list_rate:microsynth.microsynth.jinja.get_price_list_rate"
+        "get_price_list_rate:microsynth.microsynth.jinja.get_price_list_rate",
+        "get_destination_classification:microsynth.microsynth.jinja.get_destination_classification"
     ]
 }
 
