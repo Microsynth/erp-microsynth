@@ -242,17 +242,15 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print(company_details.as_dict())
     #for key, value in (company_details.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
-    
-    #for key, value in (company_details.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
-    # print(company_details.default_bank_account.split("-")[1].strip().split(" ")[1].strip())
 
     print ("\n-----0A-----")
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
 
-    contact = frappe.get_doc("Contact", sales_invoice.customer_address)
-    #for key, value in (contact.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
+    customer_address = frappe.get_doc("Contact", sales_invoice.customer_address)
+
+    contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+    for key, value in (contact.as_dict().items()): 
+        print ("%s: %s" %(key, value))
 
     # create sets of strings for delivery_note and sales_order
     order_names = []
@@ -373,8 +371,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'iso_country_code': country_codes[shipping_address.country].upper()
                         }, 
             'contact':  {'full_name':       contact.full_name, 
-                        'department':       contact.department,
-                        'room':             contact.room
+                        'department':       customer_address.department,
+                        'room':             customer_address.room
                         },
             'order':    {'names':           ", ".join(order_names)
                         },
