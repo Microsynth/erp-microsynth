@@ -76,14 +76,14 @@
 {#- overwrite shipping information on header level in the ariba template if needed -#}
 {%- for article in items -%}
 	{%- if "shipping_article" in article.keys() -%}
-	{%- for key in article.keys() -%}
-		{%- if key not in ["price", "shipping_name", "position"] -%}
-		{%- if shipping_header.update({'shippingTax_taxable_amount': article.price})-%}{%- endif -%}
-		{%- if shipping_header.update({'shippingTax_amount': (tax_percent*article.price/100)|round(2)}) -%}{%- endif -%}
-		{%- if shipping_header.update({'shippingTax_percent': tax_percent}) -%}{%- endif -%}
-		{%- if shipping_header.update({'shippingTax_description': tax_description}) -%}{%- endif -%}
-		{%- if shipping_header.update({'summary_shipping_amount': article.price}) -%}{%- endif -%} 
-		{%- endif -%}
+		{%- for key in article.keys() -%}
+			{%- if key not in ["price", "shipping_name", "position"] -%}
+				{%- if shipping_header.update({'shippingTax_taxable_amount': article.price})-%}{%- endif -%}
+				{%- if shipping_header.update({'shippingTax_amount': (tax_percent*article.price/100)|round(2)}) -%}{%- endif -%}
+				{%- if shipping_header.update({'shippingTax_percent': tax_percent}) -%}{%- endif -%}
+				{%- if shipping_header.update({'shippingTax_description': tax_description}) -%}{%- endif -%}
+				{%- if shipping_header.update({'summary_shipping_amount': article.price}) -%}{%- endif -%} 
+			{%- endif -%}
 		{%- endfor -%}
 	{%- endif -%}
 {%- endfor -%}
