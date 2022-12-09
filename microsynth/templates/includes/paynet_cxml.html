@@ -79,7 +79,7 @@
 		<IC-RECEIVER>
 			<Pid></Pid>
 		</IC-RECEIVER>
-	<IC-Ref>{{basics_invoice_id}}</IC-Ref>
+	<IC-Ref>{{receiver_network_id}}</IC-Ref>
 	</INTERCHANGE>
 	<INVOICE Type="EFD">
 		<HEADER>
@@ -207,24 +207,28 @@
 {%- endfor %}
 		</HEADER>
 
-{% for item in items %}
-{%- set item_group 					= item['item_group'] -%}
-{%- set item_invoice_line_number 	= item['invoice_line_number'] -%}
-{%- set item_quantity 				= item['quantity'] -%}
-{%- set item_unit_of_measure 		= item['unit_of_measure'] -%}
-{%- set item_unit_price 			= item['unit_price'] -%}
-{%- set item_supplier_part_id		= item['supplier_part_id'] -%}
-{%- set item_description 			= item['description'] -%}
-{%- set item_subtotal_amount 		= item['subtotal_amount'] -%}
-{%- set item_tax_amount 			= item['tax_amount'] -%}
-{%- set item_tax_rate 				= item['tax_rate'] -%}
-{%- set item_tax_taxable_amount 	= item['tax_taxable_amount'] -%}
-{%- set item_tax_description 		= item['tax_description'] -%}
-{%- set item_gross_amount 			= item['gross_amount'] -%}
-{%- set item_net_amount 			= item['net_amount'] -%}
-{# additional line break #}
-{%- if not item_group == "Shipping" -%}
-		<LINE-ITEM Line-Number="{{item_invoice_line_number}}">
+{%- for article in items -%}
+	{%- if "shipping_article" not in article.keys() -%}
+	{%- set item_invoiceLineNumber 		= article.invoice_position -%}
+	{%- set item_quantity 				= article.quantity -%}
+	{%- set item_unit_of_measure 		= "PCE" -%}
+	{%- set item_unit_price 			= article.price -%}
+	{%- set item_base_unit_price 		= article.base_price -%}
+	{%- if "oligo_article" in article.keys() -%}
+		{%- set item_supplier_part_id	= article["oligo_article"].items[0].item_code  -%}
+	{%- else -%}
+		{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
+	{%- endif -%}
+	{%- set item_description 			= article.description -%}
+	{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
+	{%- set item_tax_amount 			= (tax_percent*item_subtotal_amount/100)|round(2)-%}
+	{%- set item_tax_rate 				= tax_percent -%}
+	{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
+	{%- set item_tax_description 		= tax_description -%}
+	{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
+	{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
+	{# additional line break #}
+		<LINE-ITEM Line-Number="{{item_invoiceLineNumber}}">
 			<ITEM-ID>
 				<Item-Id Type="SA">4662602</Item-Id>
 			</ITEM-ID>
@@ -235,13 +239,13 @@
 			<ITEM-REFERENCE Type="ON">
 				<REFERENCE-DATE>
 					<Reference-No>!!!TODO!!!</Reference-No>
-					<Line-No>{{item_invoice_line_number}}</Line-No>
+					<Line-No>{{item_invoiceLineNumber}}</Line-No>
 					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 				</REFERENCE-DATE>
 			</ITEM-REFERENCE>
-			<Quantity Type="47" Units="PCE">1</Quantity>
-			<Price Type="YYY" Units="PCE" Basequantity="1">14.82</Price>
-			<Price Type="AAA" Units="PCE" Basequantity="1">{{item_net_amount}}</Price>
+			<Quantity Type="47" Units="{{item_unit_of_measure}}">{{item_quantity}}</Quantity>
+			<Price Type="YYY" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_base_unit_price}}</Price>
+			<Price Type="AAA" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_unit_price}}</Price>
 			<ITEM-AMOUNT Type="38">
 				<Amount Currency="{{basics_currency}}">14.82</Amount>
 			</ITEM-AMOUNT>
