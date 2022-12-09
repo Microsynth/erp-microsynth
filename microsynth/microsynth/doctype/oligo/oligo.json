@@ -118,7 +118,7 @@
    "fieldname": "substance_type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA",
+   "options": "DNA\nRNA\nsiRNA\nO-Methyl-RNA\nMOE",
    "reqd": 1
   },
   {
@@ -147,7 +147,7 @@
    "label": "Specification"
   }
  ],
- "modified": "2022-09-14 08:48:07.071272",
+ "modified": "2022-12-09 07:27:23.916755",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
