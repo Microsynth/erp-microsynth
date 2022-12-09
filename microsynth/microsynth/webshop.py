@@ -214,7 +214,7 @@ def request_quote(content, client="webshop"):
         'company': company,
         'party_name': content['customer'],
         'customer_address': content['invoice_address'],
-        'shipping_address': content['delivery_address'],
+        'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
         'customer_request': content['customer_request'],
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
@@ -393,7 +393,7 @@ def place_order(content, client="webshop"):
         qtn_doc = frappe.get_doc("Quotation", content['quotation'])
         for item in qtn_doc.items:
             if item.item_code not in quotation_rate:            
-                quotation_rate[item.code] = item.rate
+                quotation_rate[item.item_code] = item.rate
     else:
         quotation = None
     # create oligos
@@ -459,7 +459,7 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        if quotation and i['item_code'] in quotation_rate:
+        if quotation and i['item_code'] in quotation_rate:            
             item_detail['rate'] = quotation_rate[i['item_code']]            
         elif 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)

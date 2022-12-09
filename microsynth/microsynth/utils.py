@@ -41,6 +41,8 @@ def create_oligo(oligo):
     # update record
     if 'name' in oligo:
         oligo_doc.oligo_name = oligo['name']
+    if 'substance_type' in oligo:
+        oligo_doc.substance_type = oligo['substance_type']
     if 'sequence' in oligo:
         oligo_doc.sequence = oligo['sequence']
     # update child table
