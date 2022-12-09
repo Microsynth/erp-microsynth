@@ -173,6 +173,8 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     for item in sales_invoice.items:
         invoice_item_dicts[item.item_code] = item
         if item.item_group not in ["3.1 DNA/RNA Synthese", "Shipping"]: 
+            for k, v in item.as_dict().items(): 
+                print ("{}: {}".format(k, v))
             # other items (labels)
             invoice_other_items = {}
             invoice_position += 1
@@ -180,8 +182,8 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
             invoice_other_items["invoice_position"] = invoice_position
             invoice_other_items["quantity"] = item.qty
             invoice_other_items["description"] = item.item_name
-            invoice_other_items["base_price"] = item.base_rate
             invoice_other_items["price"] = item.rate
+            invoice_other_items["base_price"] = item.base_rate
             list_of_invoiced_items.append(invoice_other_items)
 
         elif item.item_group == "Shipping": 
@@ -235,8 +237,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     #for key, value in (customer.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
-    # print(customer.as_dict())
-
+    
     print ("\n-----0-----")
     company_details = frappe.get_doc("Company", sales_invoice.company)
     #print(company_details.as_dict())
@@ -246,11 +247,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     print ("\n-----0A-----")
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
 
-    customer_address = frappe.get_doc("Contact", sales_invoice.customer_address)
+    print ("\n-----0B-----")
+    customer_contact = frappe.get_doc("Contact", sales_invoice.customer_address)
+    #for key, value in (customer_contact.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
-    contact = frappe.get_doc("Contact", sales_invoice.contact_person)
-    for key, value in (contact.as_dict().items()): 
-        print ("%s: %s" %(key, value))
+    invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+    #for key, value in (invoice_contact.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
 
     # create sets of strings for delivery_note and sales_order
     order_names = []
@@ -273,7 +277,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #print("notes: %s" %", ".join(delivery_note_names))
     #print("dates: %s" %", ".join(delivery_note_dates))
 
-    print ("\n-----0B-----")
+    print ("\n-----0C-----")
     try: 
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     except: 
@@ -315,7 +319,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
 
-
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
@@ -339,6 +342,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         },
             'billTo' : {'address_id':       billing_address.name, 
                         'name':             sales_invoice.customer_name,
+                        'department':       invoice_contact.department,
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
                         'city':             billing_address.city,
@@ -352,6 +356,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         }, 
             'soldTo' :  {'address_id':      billing_address.name, 
                         'name':             sales_invoice.customer_name,
+                        'department':       invoice_contact.department,
                         'street':           billing_address.address_line1,
                         'pin':              billing_address.pincode,
                         'city':             billing_address.city,
@@ -370,9 +375,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             shipping_address.city,
                         'iso_country_code': country_codes[shipping_address.country].upper()
                         }, 
-            'contact':  {'full_name':       contact.full_name, 
-                        'department':       customer_address.department,
-                        'room':             customer_address.room
+            'contact':  {'full_name':       invoice_contact.full_name, 
+                        'department':       customer_contact.department,
+                        'room':             customer_contact.room,
+                        'institute':        customer_contact.institute
                         },
             'order':    {'names':           ", ".join(order_names)
                         },
@@ -412,6 +418,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'due_amount' :              sales_invoice.rounded_total
                         }
             }
+    #for k,v in data2.items(): 
+    #    print ("{}: {}".format(k,v))
     return data2
 
 

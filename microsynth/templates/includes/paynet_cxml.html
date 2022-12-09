@@ -17,6 +17,7 @@
 {%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
 {%- set billTo_address_id 			= billTo['address_id'] -%}
 {%- set billTo_name 				= billTo['name'] -%}
+{%- set billTo_department			= billTo['department'] -%}
 {%- set billTo_street 				= billTo['street'] -%}
 {%- set billTo_pin 					= billTo['pin'] -%}
 {%- set billTo_city 				= billTo['city'] -%}
@@ -28,6 +29,7 @@
 {%- set from_iso_country_code 		= from['iso_country_code'] -%}
 {%- set soldTo_address_id 			= soldTo['address_id'] -%}
 {%- set soldTo_name 				= soldTo['name'] -%}
+{%- set soldTo_department			= soldTo['department'] -%}
 {%- set soldTo_street 				= soldTo['street'] -%}
 {%- set soldTo_pin 					= soldTo['pin'] -%}
 {%- set soldTo_city 				= soldTo['city'] -%}
@@ -48,6 +50,8 @@
 {%- set contact_name 				= contact['full_name'] -%}
 {%- set contact_department			= contact['department'] -%}
 {%- set contact_room				= contact['room'] -%}
+{%- set contact_institute				= contact['institute'] -%}
+
 {%- set order_names 				= order['names'] -%}
 {%- set del_note_names 				= del_note['names'] -%}
 {%- set del_note_dates  			= del_note['dates'] -%}
@@ -163,24 +167,26 @@
 			</BILLER>
 			<PAYER>
 				<PARTY-ID>
-					<Pid></Pid>
+					<Pid>{{basics_receiver_network_id}}</Pid>
 				</PARTY-ID>
 				<NAME-ADDRESS Format="COM">
 					<NAME>
-						<Line-35></Line-35>
+						{% if contact_institute %}<Line-35>{{billTo_name}}</Line-35>{% endif %}
+						{% if contact_institute %}<Line-35>{{contact_institute}}</Line-35>{% endif %}
 					</NAME>
 					<STREET>
-						<Line-35></Line-35>
+						<Line-35>{{billTo_street}}</Line-35>
 					</STREET>
-					<City></City>
-					<Zip></Zip>
-					<Country></Country>
+					<City>{{billTo_city}}</City>
+					<Zip>{{billTo_pin}}</Zip>
+					<Country>{{billTo_iso_country_code}}</Country>
  				</NAME-ADDRESS>
 			</PAYER>
 			<DELIVERY-PARTY>
 				<NAME-ADDRESS>
 					<NAME>
-						<Line-35></Line-35>
+						{% if contact_institute %}<Line-35>{{billTo_name}}</Line-35>{% endif %}
+						{% if billTo_department %}<Line-35>{{billTo_department}}</Line-35>{% endif %}
 					</NAME>
 					<STREET>
 						<Line-35>{{shipTo_street}}</Line-35>
@@ -228,6 +234,7 @@
 		{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
 	{%- endif -%}
 	{%- set item_description 			= article.description -%}
+	{%- set item_base_amount 			= item_base_unit_price * item_quantity -%}
 	{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
 	{%- set item_tax_amount 			= (tax_percent*item_subtotal_amount/100)|round(2)-%}
 	{%- set item_tax_rate 				= tax_percent -%}
@@ -255,19 +262,19 @@
 			<Price Type="YYY" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_base_unit_price}}</Price>
 			<Price Type="AAA" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_unit_price}}</Price>
 			<ITEM-AMOUNT Type="38">
-				<Amount Currency="{{basics_currency}}">14.82</Amount>
+				<Amount Currency="{{basics_currency}}">{{item_base_amount}}</Amount>
 			</ITEM-AMOUNT>
 			<ITEM-AMOUNT Type="66">
-				<Amount Currency="{{basics_currency}}">{{item_net_amount}}</Amount>
+				<Amount Currency="{{basics_currency}}">{{item_subtotal_amount}}</Amount>
 			</ITEM-AMOUNT>
 			<ALLOWANCE-OR-CHARGE Type="A">
 				<Service-Code Type="DI"/>
 				<SERVICE-TEXT>
 					<Line-35>Rabatt</Line-35>
 				</SERVICE-TEXT>
-				<ALC-Percent>19.973</ALC-Percent>
+				<ALC-Percent>{{"{:,.2f}".format((item_base_amount-item_subtotal_amount)/item_base_amount*100)}}</ALC-Percent>
 				<ALC-AMOUNT>
-					<Amount Currency="{{basics_currency}}">2.96</Amount>
+					<Amount Currency="{{basics_currency}}">{{item_base_amount-item_subtotal_amount}}</Amount>
 				</ALC-AMOUNT>
 			</ALLOWANCE-OR-CHARGE>
 			<TAX>
