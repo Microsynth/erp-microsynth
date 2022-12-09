@@ -9,11 +9,11 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 import frappe
 from microsynth.microsynth.labels import print_raw
 
-"""
-Update the status of a sales order item (Canceled, Completed)
-"""
 @frappe.whitelist()
 def oligo_status_changed(content=None):
+    """
+    Update the status of a sales order item (Canceled, Completed)
+    """
     # check mandatory
     if not content:
         return {'success': False, 'message': "Please provide content", 'reference': None}
@@ -152,13 +152,13 @@ def check_sales_order_completion(sales_orders):
                     "PDF creation failed (production API)" )
     return
 
-"""
-Get deliverable units
-
-Destination: CH, EU, ROW (see Country:Export Code)
-"""
 @frappe.whitelist()
 def get_orders_for_packaging(destination="CH"):
+    """
+    Get deliverable units
+
+    Destination: CH, EU, ROW (see Country:Export Code)
+    """
     deliveries = frappe.db.sql("""
         SELECT 
             `tabDelivery Note`.`web_order_id` AS `web_order_id`,
@@ -175,24 +175,24 @@ def get_orders_for_packaging(destination="CH"):
         
     return {'success': True, 'message': 'OK', 'orders': deliveries}
 
-"""
-Get number of deliverable units
-
-Destination: CH, EU, ROW (see Country:Export Code)
-"""
 @frappe.whitelist()
 def count_orders_for_packaging(destination="CH"):
+    """
+    Get number of deliverable units
+
+    Destination: CH, EU, ROW (see Country:Export Code)
+    """
     deliveries = get_orders_for_packaging(destination)['orders']
         
     return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
 
-"""
-Get next order to deliver
-
-Destination: CH, EU, ROW (see Country:Export Code)
-"""
 @frappe.whitelist()
 def get_next_order_for_packaging(destination="CH"):
+    """
+    Get next order to deliver
+
+    Destination: CH, EU, ROW (see Country:Export Code)
+    """
     deliveries = get_orders_for_packaging(destination)['orders']
     
     if len(deliveries) > 0:
@@ -200,11 +200,11 @@ def get_next_order_for_packaging(destination="CH"):
     else:
         return {'success': False, 'message': 'Nothing more to deliver'}
         
-"""
-Mark a delivery as packaged
-"""
 @frappe.whitelist()
 def oligo_order_packaged(delivery_note):
+    """
+    Mark a delivery as packaged
+    """
     if frappe.db.exists("Delivery Note", delivery_note):
         dn = frappe.get_doc("Delivery Note", delivery_note)
         if dn.docstatus > 0:
@@ -218,11 +218,11 @@ def oligo_order_packaged(delivery_note):
     else:
         return {'success': False, 'message': "Delivery Note not found"}
 
-"""
-Print delivery note address label
-"""
 @frappe.whitelist()
 def print_delivery_label(delivery_note):
+    """
+    Print delivery note address label
+    """
     if frappe.db.exists("Delivery Note", delivery_note):
         dn = frappe.get_doc("Delivery Note", delivery_note)
         settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
