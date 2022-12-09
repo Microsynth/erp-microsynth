@@ -43,6 +43,15 @@
 {%- set shipTo_pin 					= shipTo['pin'] -%}
 {%- set shipTo_city 				= shipTo['city'] -%}
 {%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
+
+{# paynet specific #}
+{%- set contact_name 				= contact['full_name'] -%}
+{%- set contact_department			= contact['department'] -%}
+{%- set contact_room				= contact['room'] -%}
+{%- set order_names 				= order['names'] -%}
+{%- set del_note_names 				= del_note['names'] -%}
+{%- set del_note_dates  			= del_note['dates'] -%}
+
 {%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
 {%- set receivingBank_iban_id  		= receivingBank['iban_id'] -%}
 {%- set receivingBank_account_name 	= receivingBank['account_name'] -%}
@@ -68,7 +77,6 @@
 {%- set summary_total_amount_without_tax = summary['total_amount_without_tax'] -%}
 {%- set summary_net_amount 			= summary['net_amount'] -%}
 {%- set summary_due_amount 			= summary['due_amount'] -%}
-
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE XML-FSCM-INVOICE-2003A SYSTEM "XML-FSCM-INVOICE-2003A.DTD">
 <XML-FSCM-INVOICE-2003A>
@@ -77,9 +85,9 @@
 			<Pid>{{basics_paynet_sender_pid}}</Pid>
 		</IC-SENDER>
 		<IC-RECEIVER>
-			<Pid></Pid>
+			<Pid>{{basics_receiver_network_id}}</Pid>
 		</IC-RECEIVER>
-	<IC-Ref>{{receiver_network_id}}</IC-Ref>
+	<IC-Ref>{{basics_invoice_id}}</IC-Ref>
 	</INTERCHANGE>
 	<INVOICE Type="EFD">
 		<HEADER>
@@ -110,13 +118,13 @@
 				</INVOICE-REFERENCE>
 				<ORDER>
 					<REFERENCE-DATE>
-						<Reference-No>{{basics_order_id}}</Reference-No>
+						<Reference-No>{{contact_department}} / {{contact_room}}</Reference-No>
 					</REFERENCE-DATE>
 				</ORDER>
 				<DELIVERY-NOTE>
 					<REFERENCE-DATE>
-						<Reference-No>{{basics_delivery_note_id}}</Reference-No>
-						<Date Format="CCYYMMDD">{{basics_delivery_note_date_paynet}}</Date>
+						<Reference-No>{{del_note_names}}</Reference-No>
+						<Date Format="CCYYMMDD">{{del_note_dates}}</Date>
 					</REFERENCE-DATE>
 				</DELIVERY-NOTE>
 				<OTHER-REFERENCE Type="IT">
@@ -126,7 +134,7 @@
 				</OTHER-REFERENCE>
 				<OTHER-REFERENCE Type="CR">
 					<REFERENCE-DATE>
-						<Reference-No>{{shipTo_name}}</Reference-No>
+						<Reference-No>{{contact_name}}</Reference-No>
 						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
 					</REFERENCE-DATE>
 				</OTHER-REFERENCE>

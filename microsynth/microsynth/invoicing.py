@@ -145,9 +145,9 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     item_list = sales_invoice.items
     for item in item_list:
         all_sole_items[item.item_code] = item 
-        print ("\n")
-        for k, v in item.as_dict().items():
-            print ("{}: {}".format(k, v))
+        #print ("\n")
+        #for k, v in item.as_dict().items():
+        #    print ("{}: {}".format(k, v))
 
     # oligo article
     invoiced_oligos = {}
@@ -222,6 +222,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #for key, value in (sales_invoice.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
 
+    #TODO: !! with punchout-orders, you may take other billing_address, shipping_address
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     #for key, value in (shipping_address.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
@@ -248,7 +249,31 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     print ("\n-----0A-----")
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
-    #print(company_address.as_dict())
+
+    contact = frappe.get_doc("Contact", sales_invoice.customer_address)
+    #for key, value in (contact.as_dict().items()): 
+    #    print ("%s: %s" %(key, value))
+
+    # create sets of strings for delivery_note and sales_order
+    order_names = []
+    delivery_note_names = []
+    for n in sales_invoice.items:
+        if n.delivery_note:
+            if n.delivery_note not in delivery_note_names:
+                delivery_note_names.append(n.delivery_note)
+        if n.sales_order:
+            if n.sales_order not in order_names:
+                order_names.append(n.sales_order)
+    
+    delivery_note_dates = []
+    for del_note in delivery_note_names:
+        dn_date = frappe.db.get_value('Delivery Note', del_note, 'posting_date')
+        dn_date_str = frappe.utils.get_datetime(dn_date).strftime('%Y%m%d')
+        delivery_note_dates.append(dn_date_str)           
+    
+    #print("orders: % s" %", ".join(order_names))
+    #print("notes: %s" %", ".join(delivery_note_names))
+    #print("dates: %s" %", ".join(delivery_note_dates))
 
     print ("\n-----0B-----")
     try: 
@@ -291,6 +316,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
+
+
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
@@ -310,7 +337,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'pin':              company_address.pincode,
                         'city':             company_address.city, 
                         'iso_country_code': country_codes[company_address.country].upper(), 
-                        'supplier_tax_id':  company_details.tax_id + ' MWST' 
+                        'supplier_tax_id':  company_details.tax_id
                         },
             'billTo' : {'address_id':       billing_address.name, 
                         'name':             sales_invoice.customer_name,
@@ -345,6 +372,15 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'city':             shipping_address.city,
                         'iso_country_code': country_codes[shipping_address.country].upper()
                         }, 
+            'contact':  {'full_name':       contact.full_name, 
+                        'department':       contact.department,
+                        'room':             contact.room
+                        },
+            'order':    {'names':           ", ".join(order_names)
+                        },
+            'del_note': {'names':           ", ".join(delivery_note_names),
+                        'dates':            ", ".join(delivery_note_dates)
+                        },
             'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
@@ -414,13 +450,14 @@ def transmit_sales_invoice():
     
     if customer.invoicing_method == "Email":
         # send by mail
-        target_email = customer.get("invoice_email") or sales_invoice.get("contact_email")
+        target_email = sales_invoice.get("contact_email") # or customer.get("invoice_email")
+
         if not target_email:
             frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice_name), "Sending invoice email failed")
             return
         
         # TODO: send email with content & attachment
-        
+
     elif customer.invoicing_method == "Post":
         # create and attach pdf
         execute({
@@ -476,7 +513,6 @@ def transmit_sales_invoice():
         '''
 
     elif customer.invoicing_method == "Paynet":
-        print("IN PAYNET")
         # create Paynet cXML input data dict
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
         
