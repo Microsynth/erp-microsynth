@@ -199,9 +199,10 @@ def get_next_order_for_packaging(destination="CH"):
         return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }
     else:
         return {'success': False, 'message': 'Nothing more to deliver'}
-        
+
+
 @frappe.whitelist()
-def oligo_order_packaged(delivery_note):
+def oligo_delivery_packaged(delivery_note):
     """
     Mark a delivery as packaged
     """
@@ -216,7 +217,29 @@ def oligo_order_packaged(delivery_note):
         except Exception as err:
             return {'success': False, 'message': err}
     else:
-        return {'success': False, 'message': "Delivery Note not found"}
+        return {'success': False, 'message': "Delivery Note not found: {0}".format(delivery_note)}
+
+
+@frappe.whitelist()
+def oligo_order_packaged(web_order_id):
+    """
+    Find Delivery Note and mark it as packaged
+    """
+    delivery_notes = frappe.db.sql("""
+            SELECT 
+                `tabDelivery Note`.`name`
+            FROM `tabDelivery Note`            
+            WHERE
+                `tabDelivery Note`.`web_order_id` = "{web_order_id}"                
+        """.format(web_order_id=web_order_id), as_dict=True)   
+    
+    if len(delivery_notes) == 0:
+        return {'success': False, 'message': "Could not find Delivery Note with web_order_id: {0}".format(web_order_id)}
+    elif len(delivery_notes) > 1: 
+        return {'success': False, 'message': "Multiple Delivery Notes found for web_order_id: {0}".format(web_order_id)}
+    else:
+        return oligo_order_packaged(delivery_notes[0].name)
+
 
 @frappe.whitelist()
 def print_delivery_label(delivery_note):
