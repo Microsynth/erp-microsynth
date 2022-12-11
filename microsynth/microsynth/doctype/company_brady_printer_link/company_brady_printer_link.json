@@ -1,0 +1,39 @@
+{
+ "creation": "2022-12-11 20:59:29.327850",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "brady_printer"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "brady_printer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Brady Printer",
+   "options": "Brady Printer",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2022-12-11 21:02:43.005057",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Company Brady Printer Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
