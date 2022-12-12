@@ -307,6 +307,7 @@ def set_rate(item_code, price_list, qty, rate):
         new_rate = frappe.get_doc({
             'doctype': 'Item Price',
             'item_code': item_code,
+            'min_qty': qty,
             'price_list': price_list,
             'price_list_rate': rate
         })
