@@ -110,36 +110,40 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
     return rec_adr_lines
 
 
-def get_sender_header(sales_order, shipping_address_country):
-    # sender_header
-    if shipping_address_country.eu:
-        destination = "EU"
-    elif shipping_address_country.code.upper() == "CH":
-        destination = "CH"
-    else: 
-        destination = "ROW"
+def get_sender_address_line(sales_order, shipping_address_country):
 
-    if sales_order.company == "Microsynth AG":
-        if destination == "CH":
-            letter_head = frappe.get_doc("Letter Head", "Microsynth AG PP-Post")
-        elif destination == "EU":
-            letter_head = frappe.get_doc("Letter Head", "Microsynth AG Wolfurt")
-        else:
-            letter_head = frappe.get_doc("Letter Head", "Microsynth AG")
+    letter_head_name = ""
+    letter_head = ""
+    if sales_order.company == "Microsynth AG" and shipping_address_country.eu == "EU":
+            letter_head_name = "Microsynth AG Wolfurt"
     else:
-        letter_head = frappe.get_doc("Letter Head", sales_order.company)
+        letter_head_name = sales_order.company
 
-    if letter_head:
-        sender_header = letter_head.content
+    # robustness: use try/except to catch frappe.exceptions.DoesNotExistError
+    try: 
+        letter_head = frappe.get_doc("Letter Head", letter_head_name)
+    except:
+        letter_head = frappe.throw("Letter head {0} not found. Please define the letter head under print settings.".format(letter_head_name))
+
+
+    if letter_head and letter_head.content:
+        # before
+        #sender_header = letter_head.content
+        
+        sender_address_line = letter_head.sender_address_line
+        #sender_address_line = letter_head.footer
     else:
-        frappe.throw("Letter head {0} not found. Please define the letter head under print settings.".format(sales_order.company))
-    
-    return sender_header 
+        frappe.throw("Letter head {0} empty. Please define the letter head under print settings.".format(letter_head_name))
+
+    return sender_address_line 
 
 def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1.72'):
     """function calls respective template for creating a transport label
     default printer is IP 192.0.1.71 (Brady Sanger)"""
-        
+    
+    #TOTEST: SO-BAL-22008543
+    # works: SO-BAL-22008657'
+
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
     elif printer_ip in ['192.0.1.72']: 
@@ -162,12 +166,17 @@ def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1
     cstm_id = sales_order.customer
     cntct_id = sales_order.contact_person
     shipping_address_country = frappe.get_doc("Country", shipping_address.country)   
+    po_no = sales_order.po_no
+    web_id = sales_order.web_order_id
+
 
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_header': get_sender_header(sales_order, shipping_address_country),
+        'sender_header': get_sender_address_line(sales_order, shipping_address_country),
         'destination_country': shipping_address.country,
-        'shipping_service': SHIPPING_SERVICES[shipping_item]}
+        'shipping_service': SHIPPING_SERVICES[shipping_item],
+        'po_no': po_no,
+        'web_id': web_id}
         )
 
     print(content) # must we trigger a log entry for what is printed?

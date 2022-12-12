@@ -3,25 +3,21 @@
 #IMS105/148
 #N13
 #ER
+
 {# add sender adress incl logo #}
-; ### sender address and logo ###
 #T4#J135#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
 #T4#J127#YL0/0/0.5/95
 {# additional line break #}
-#T4#J130#YN101/0U/45///{{sender_header}}#G
+#T4#J130#YN101/0U/35///{{sender_header}}#G
 
-{# receiver address #}
-; ### receiver address ###
-{# additional line break #}
+{# ### receiver address ### #}
 {%- for element in lines -%}
     {%- set print_start_position = 60-(lines.index(element)*5) -%}
-#T{{print_start_position}}#J105#YN101/3U/45///{{element}}#G
+#T{{print_start_position}}#J95#YN101/3U/45///{{element}}#G105
 {# additional line break #}
 {%- endfor -%}
 
 {# postal service#}
-; ### postal service ###
-{# additional line break #}
 {%- if shipping_service == "A-POST" -%}
 #T78#J54#YN101/3U/85///P.P. A#G
 #T75#J54#YN101/3U/45///CH-9436 Balgach#G
@@ -33,7 +29,9 @@
 {%- endif -%}
 
 {# additional line break #}
-#T4#J105#YN101/3U/45///dynamic from jinja template address_label_novexx#G
+#T90#J105 #YB13/3V/4/4///{{po_no}} 
+#T60#J40 #YB13/2V/4/4///{{web_id}} 
+
+{# additional line break #}
 #Q1/
 #!P1
-
