@@ -60,7 +60,7 @@ ASSIGNMENT_HEADER = """Person_ID\tSales_Order\tWeb_Order_ID\tItem\tStart\tEnd\n"
 ASSIGNMENT_FIELDS = """{person_id}\t{sales_order}\t{web_order_id}\t{item}\t{start}\t{end}\n"""
 
 def write_assignment_file(data):
-    assignment_file = "/mnt/erp_share/Sequencing/{web_order_id}.tab".format(web_order_id=data["web_order_id"])
+    assignment_file = "/mnt/erp_share/Sequencing/Label_Order_Assignment/{web_order_id}.tab".format(web_order_id=data["web_order_id"])
     if os.path.exists(assignment_file):
         frappe.throw("<b>Sequencing label assignment file already exists:</b><br>" + assignment_file)
     else:
