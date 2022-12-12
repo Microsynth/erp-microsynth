@@ -29,7 +29,9 @@
 {%- endif -%}
 
 {# additional line break #}
-#T90#J105 #YB13/3V/4/4///{{po_no}} 
+{% if po_no != ""%}
+#T90#J105 #YB13/3V/4/4///{{po_no}}
+{% endif %}
 #T60#J40 #YB13/2V/4/4///{{web_id}} 
 
 {# additional line break #}

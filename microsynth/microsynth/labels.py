@@ -137,12 +137,13 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
     return sender_address_line 
 
-def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1.72'):
+def print_address_template(sales_order_id='SO-BAL-22008657', printer_ip='192.0.1.72'):
     """function calls respective template for creating a transport label
     default printer is IP 192.0.1.71 (Brady Sanger)"""
     
-    #TOTEST: SO-BAL-22008543
-    # works: SO-BAL-22008657'
+    # tested: SO-BAL-22008543
+    # tested: SO-BAL-22008657
+    # SO-GOE-22000704
 
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
@@ -180,4 +181,4 @@ def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1
         )
 
     print(content) # must we trigger a log entry for what is printed?
-    print_raw(printer_ip, 9100, content )
+    #print_raw(printer_ip, 9100, content )
