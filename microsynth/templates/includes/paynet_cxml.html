@@ -204,6 +204,7 @@
 		{%- set item_tax_amount 			= (tax_percent * item_subtotal_amount / 100)|round(2)-%}
 		{%- set item_tax_rate 				= tax_percent -%}
 		{# additional line break #}
+{# Allowance commented out
 			<ALLOWANCE-OR-CHARGE Type="C">
 				<Service-Code Type="FC"/>
 				<SERVICE-TEXT>
@@ -217,6 +218,7 @@
 					<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>
 				</TAX>
 			</ALLOWANCE-OR-CHARGE>
+#}
 	{%- endif -%}
 {%- endfor %}
 		</HEADER>
@@ -267,6 +269,7 @@
 			<ITEM-AMOUNT Type="66">
 				<Amount Currency="{{basics_currency}}">{{item_subtotal_amount}}</Amount>
 			</ITEM-AMOUNT>
+{# Allowance commented out
 			<ALLOWANCE-OR-CHARGE Type="A">
 				<Service-Code Type="DI"/>
 				<SERVICE-TEXT>
@@ -277,6 +280,7 @@
 					<Amount Currency="{{basics_currency}}">{{item_base_amount-item_subtotal_amount}}</Amount>
 				</ALC-AMOUNT>
 			</ALLOWANCE-OR-CHARGE>
+#}
 			<TAX>
 				<Rate Category="S">{{item_tax_rate}}</Rate>
 				<Amount Currency="{{basics_currency}}">{{item_tax_amount}}</Amount>

@@ -6,11 +6,22 @@ import frappe
 import socket
 import sys
 
-# TODO: dict is not complete
-SHIPPING_SERVICES = {
-    '1100': "A-Post",
-    '1123': "DHL"
-}
+
+def get_shipping_service(item_code):
+    
+    # TODO: dict is not complete
+    SHIPPING_SERVICES = {
+        '1100': "A-Post",
+        '1123': "DHL"
+        # 1101: "something"
+    }
+
+    try: 
+        sh_serv = SHIPPING_SERVICES[item_code]
+    except: 
+        sh_serv = ""
+
+    return (sh_serv)
 
 
 def print_raw(ip, port, content):
@@ -137,13 +148,15 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
     return sender_address_line 
 
-def print_address_template(sales_order_id='SO-BAL-22008657', printer_ip='192.0.1.72'):
+def print_address_template(sales_order_id='SO-BAL-22008662', printer_ip='192.0.1.72'):
     """function calls respective template for creating a transport label
     default printer is IP 192.0.1.71 (Brady Sanger)"""
     
     # tested: SO-BAL-22008543
     # tested: SO-BAL-22008657
+    # SO-BAL-22008662
     # SO-GOE-22000704
+    # SO-LYO-22000071
 
     if printer_ip in ['192.0.1.70', '192.0.1.71']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
@@ -175,9 +188,10 @@ def print_address_template(sales_order_id='SO-BAL-22008657', printer_ip='192.0.1
         {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
         'sender_header': get_sender_address_line(sales_order, shipping_address_country),
         'destination_country': shipping_address.country,
-        'shipping_service': SHIPPING_SERVICES[shipping_item],
+        'shipping_service': get_shipping_service(shipping_item),
         'po_no': po_no,
-        'web_id': web_id}
+        'web_id': web_id
+        }
         )
 
     print(content) # must we trigger a log entry for what is printed?
