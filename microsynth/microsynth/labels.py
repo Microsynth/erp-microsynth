@@ -136,7 +136,7 @@ def get_sender_header(sales_order, shipping_address_country):
     
     return sender_header 
 
-def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1.71'):
+def print_address_template(sales_order_id='SO-BAL-22008543', printer_ip='192.0.1.72'):
     """function calls respective template for creating a transport label
     default printer is IP 192.0.1.71 (Brady Sanger)"""
         
