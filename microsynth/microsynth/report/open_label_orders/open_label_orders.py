@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import os
 import frappe
 from frappe import _
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
@@ -54,7 +55,30 @@ def get_data(filters=None):
     """, as_dict=True)
     
     return open_label_orders
-    
+
+ASSIGNMENT_HEADER = """Person_ID\tSales_Order\tWeb_Order_Id\tItem\tStart\tEnd\n"""
+ASSIGNMENT_FIELDS = """{person_id}\t{sales_order}\t{web_order_id}\t{item}\t{start}\t{end}\n"""
+
+def write_assignment_file(data):
+    assignment_file = "/mnt/erp_share/Sequencing/{web_order_id}.tab".format(web_order_id=data["web_id"])
+    if os.path.exists(assignment_file):
+        frappe.throw("<b>Sequencing label assignment file already exists:</b><br>" + assignment_file)
+    else:
+        file = open(assignment_file, "w")
+        file.write(ASSIGNMENT_HEADER)
+        line = ASSIGNMENT_FIELDS.format(
+            person_id = data["person_id"],
+            sales_order = data["sales_order"],
+            web_order_id = data["web_order_id"],
+            item = data["item"],
+            start = data["from_barcode"],
+            end = data["to_barcode"]
+        )
+        file.write(line)
+        file.close()
+    return
+
+
 @frappe.whitelist()
 def pick_labels(sales_order, from_barcode, to_barcode):
     # create sequencing labels
@@ -66,6 +90,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     customer = frappe.get_value("Sales Order", sales_order, "customer")
     customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
     contact = frappe.get_value("Sales Order", sales_order, "contact_person")
+    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
     for i in range(int(from_barcode), (int(to_barcode) + 1)):
         # create label
         new_label = frappe.get_doc({
@@ -86,6 +111,15 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     dn.insert()
     frappe.db.commit()
     
+    assignment_data = {
+            "person_id": contact,
+            "sales_order": sales_order,
+            "web_order_id": web_order_id,
+            "item": item,
+            "from_barcode": from_barcode,
+            "to_barcode": to_barcode
+    }
+    write_assignment_file(assignment_data)
     # print address label
     # TODO: see labels.py, take data from delivery note and pass to printer
     
