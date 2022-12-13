@@ -25,8 +25,8 @@ def oligo_status_changed(content=None):
     updated_oligos = []
     error_oligos = []
     for oligo in content['oligos']:
-        if not 'oligo_web_id' in oligo:
-            return {'success': False, 'message': "Oligos need to have a oligo_web_id", 'reference': None}
+        if not 'web_id' in oligo:
+            return {'success': False, 'message': "Oligos need to have a web_id", 'reference': None}
         if not 'status' in oligo:
             return {'success': False, 'message': "Oligos need to have a status (Open, Completed, Canceled)", 'reference': None}
 
@@ -40,7 +40,7 @@ def oligo_status_changed(content=None):
             WHERE 
               `tabOligo`.`web_id` = "{web_id}"
               AND `tabOligo Link`.`parenttype` = "Sales Order";
-        """.format(web_id=oligo['oligo_web_id']), as_dict=True)
+        """.format(web_id=oligo['web_id']), as_dict=True)
         
         if len(oligos) > 0:
             # get sales order
@@ -55,8 +55,8 @@ def oligo_status_changed(content=None):
             if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
                 affected_sales_orders.append(oligos[0]['sales_order'])
         else:
-            frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['oligo_web_id']), "Production: oligo status update error")
-            error_oligos.append(oligo['oligo_web_id'])
+            frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
+            error_oligos.append(oligo['web_id'])
     frappe.db.commit()
     # check and process sales order (in case all is complete)
     if len(affected_sales_orders) > 0:
