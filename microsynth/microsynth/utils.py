@@ -24,9 +24,9 @@ def update_address_links_from_contact(address_name, links):
 def create_oligo(oligo):
     oligo_doc = None
     # check if this oligo is already in the database
-    if oligo['oligo_web_id']:
+    if oligo['web_id']:
         oligo_matches = frappe.get_all("Oligo", 
-            filters={'web_id': oligo['oligo_web_id']}, fields=['name'])
+            filters={'web_id': oligo['web_id']}, fields=['name'])
         if len(oligo_matches) > 0:
             # update and return this item
             oligo_doc = frappe.get_doc("Oligo", oligo_matches[0]['name'])
@@ -35,7 +35,7 @@ def create_oligo(oligo):
         oligo_doc = frappe.get_doc({
             'doctype': 'Oligo',
             'oligo_name': oligo['name'],
-            'web_id': oligo['oligo_web_id']
+            'web_id': oligo['web_id']
         })
         oligo_doc.insert(ignore_permissions=True)
     # update record
