@@ -238,7 +238,7 @@ def oligo_order_packaged(web_order_id):
     elif len(delivery_notes) > 1: 
         return {'success': False, 'message': "Multiple Delivery Notes found for web_order_id: {0}".format(web_order_id)}
     else:
-        return oligo_order_packaged(delivery_notes[0].name)
+        return oligo_delivery_packaged(delivery_notes[0].name)
 
 
 @frappe.whitelist()
