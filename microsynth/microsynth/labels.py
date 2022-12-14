@@ -148,7 +148,8 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
     return sender_address_line 
 
-def print_address_template(sales_order_id='SO-LYO-22000071', printer_ip='192.0.1.70'):
+@frappe.whitelist()
+def print_address_template(sales_order_id='SO-BAL-22009934', printer_ip='192.0.1.70'):
     """function calls respective template for creating a transport label
     default printer is IP 192.0.1.71 (Brady Sanger)"""
     
