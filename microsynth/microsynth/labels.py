@@ -149,12 +149,11 @@ def get_sender_address_line(sales_order, shipping_address_country):
     return sender_address_line 
 
 
-def decide_printer_ip(company):
+def decide_brady_printer_ip(company):
     """printers have to be set in Sequencing Settings based on company name
     printer ips have to be set in an object of DocType Brady Printer
     """
     
-    #works
     if not company: 
         frappe.throw("Company missing for deciding on printer IP")
 
@@ -165,20 +164,27 @@ def decide_printer_ip(company):
             return printer.ip
 
 @frappe.whitelist()
-def print_address_template(sales_order_id=None):
+def print_address_template(sales_order_id=None, printer_ip=None):
+    #@RSu: without default argument sales_order_id, I cannot test via console
+    #@RSu: printer_ip is useful to overload function, if set --> use case Novexx, else decide on company name
+    #TODO: wrapper or Novexx must be developed or just call this function with SO, IP 192.0.1.72
     """function calls respective template for creating a transport label"""
 
     # test data - during development
-    sales_order_id='SO-BAL-22009934'
-    sales_order_id='SO-BAL-22009917'
-    sales_order_id='SO-GOE-22000704'
-    sales_order_id='SO-LYO-22000071'
+    if not sales_order_id: 
+        sales_order_id = 'SO-BAL-22009917'
+        sales_order_id = 'SO-GOE-22000704'
+        sales_order_id = 'SO-BAL-22009934'
+        sales_order_id = 'SO-LYO-22000071'
+        
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
 
-    printer_ip = decide_printer_ip(sales_order.company)
-    print(printer_ip)
+    # if ip (use case "Novexx")
+    if not printer_ip:
+        printer_ip = decide_brady_printer_ip(sales_order.company)
+        print(printer_ip)    
 
     if not sales_order.shipping_address_name:
         frappe.throw("address missing")
@@ -214,4 +220,4 @@ def print_address_template(sales_order_id=None):
         )
 
     print(content) # must we trigger a log entry for what is printed?
-    #print_raw(printer_ip, 9100, content )
+    print_raw(printer_ip, 9100, content )
