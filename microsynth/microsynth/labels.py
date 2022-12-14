@@ -148,26 +148,37 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
     return sender_address_line 
 
-@frappe.whitelist()
-def print_address_template(sales_order_id='SO-BAL-22009934', printer_ip='192.0.1.70'):
-    """function calls respective template for creating a transport label
-    default printer is IP 192.0.1.71 (Brady Sanger)"""
-    
-    # tested: SO-BAL-22008543
-    # tested: SO-BAL-22008657
-    # SO-BAL-22008662
-    # SO-GOE-22000704
-    # SO-LYO-22000071
 
-    if printer_ip in ['192.0.1.70', '192.0.1.71', '192.168.101.26','172.16.0.7']: 
-        printer_template = "microsynth/templates/includes/address_label_brady.html"
-    elif printer_ip in ['192.0.1.72']: 
-        printer_template = "microsynth/templates/includes/address_label_novexx.html"
-    else: 
-        frappe.throw("invalid IP, no printer set")
+def decide_printer_ip(company):
+    """printers have to be set in Sequencing Settings based on company name
+    printer ips have to be set in an object of DocType Brady Printer
+    """
     
+    #works
+    if not company: 
+        frappe.throw("Company missing for deciding on printer IP")
+
+    settings = frappe.get_doc("Sequencing Settings", "Sequencing Settings")
+    for printer in settings.label_printers:
+        if printer.company == company:
+            printer = frappe.get_doc("Brady Printer", printer.brady_printer)
+            return printer.ip
+
+@frappe.whitelist()
+def print_address_template(sales_order_id=None):
+    """function calls respective template for creating a transport label"""
+
+    # test data - during development
+    sales_order_id='SO-BAL-22009934'
+    sales_order_id='SO-BAL-22009917'
+    sales_order_id='SO-GOE-22000704'
+    sales_order_id='SO-LYO-22000071'
+
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
+
+    printer_ip = decide_printer_ip(sales_order.company)
+    print(printer_ip)
 
     if not sales_order.shipping_address_name:
         frappe.throw("address missing")
@@ -185,6 +196,13 @@ def print_address_template(sales_order_id='SO-BAL-22009934', printer_ip='192.0.1
     web_id = sales_order.web_order_id
 
 
+    if printer_ip in ['192.0.1.70', '192.0.1.71', '192.168.101.26','172.16.0.40']: 
+        printer_template = "microsynth/templates/includes/address_label_brady.html"
+    elif printer_ip in ['192.0.1.72']: 
+        printer_template = "microsynth/templates/includes/address_label_novexx.html"
+    else: 
+        frappe.throw("invalid IP, no printer set")
+
     content = frappe.render_template(printer_template, 
         {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
         'sender_header': get_sender_address_line(sales_order, shipping_address_country),
@@ -196,4 +214,4 @@ def print_address_template(sales_order_id='SO-BAL-22009934', printer_ip='192.0.1
         )
 
     print(content) # must we trigger a log entry for what is printed?
-    print_raw(printer_ip, 9100, content )
+    #print_raw(printer_ip, 9100, content )
