@@ -109,6 +109,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     dn_content = make_delivery_note(sales_order)
     dn = frappe.get_doc(dn_content)
     dn.insert()
+    dn.submit()
     frappe.db.commit()
     
     assignment_data = {
