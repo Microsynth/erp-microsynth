@@ -104,38 +104,41 @@ def processed_labels(content):
 
 
 
-def check_sales_order_completion(sales_orders):
-    for sales_order in sales_orders:
-        customer_name = frappe.get_value("Sales Order", sales_order, 'customer')
-        customer = frappe.get_doc("Customer", customer_name)
+def check_sales_order_completion():
+    # find sales orders that have no delivery note and are not closed
+    open_sequencing_sales_orders = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabSales Order`
+        WHERE `docstatus` = 1
+          AND `status` NOT IN ("Closed", "Completed")
+          AND `product_type` = "Sequencing"
+          AND `per_delivered` < 100;
+    """, as_dict=True)
+    
+    # check completion of each sequencing sales order: sequencing labels of this order on processed
+    for sales_order in open_sequencing_sales_orders:
+        pending_sequencing_labels = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabSequencing Label`
+            WHERE `sales_order` = "{sales_order}"
+              AND `status` NOT IN ("processed");
+        """.format(sales_order=sales_order['name']), as_dict=True)
+        
+        if len(pending_sequencing_labels) == 0:
+            # all processed: create delivery
+            customer = frappe.get_value("Sales Order", sales_order['name'], 'customer')
+            customer_doc = frappe.get_doc("Customer", customer_name)
 
-        if customer.disabled:
-            frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
-            return
+            if customer.disabled:
+                frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
+                return
 
-        # TODO 
-        # * Sample does not have a status field like oligo does
-        # * Sequencing Label does have a status (trigger: status = received or processed?)
-        # * Add status field to sample and handle it like the oligos?
-
-        so_open_items = frappe.db.sql("""
-            SELECT 
-                `tabSample Link`.`parent`
-            FROM `tabSample Link`
-            LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
-            WHERE
-                `tabSample Link`.`parent` = "{sales_order}"
-                AND `tabSample Link`.`parenttype` = "Sales Order"
-                AND `tabSample`.`status` = "Open";
-        """.format(sales_order=sales_order), as_dict=True)
-        if len(so_open_items) == 0:
-            # all items are either complete or cancelled
             
             ## create delivery note (leave on draft: submitted in a batch process later on)
-            dn_content = make_delivery_note(sales_order)
+            dn_content = make_delivery_note(sales_order['name'])
             dn = frappe.get_doc(dn_content)
-            # remove samples that are canceled
-            cleaned_samples = []
+            # remove samples that are canceled REVIEW (=locked)?
+            """cleaned_samples = []
             cancelled_sample_item_qtys = {}
             for sample in dn.samples:
                 sample_doc = frappe.get_doc("Sample", sample.oligo)
@@ -164,6 +167,7 @@ def check_sales_order_completion(sales_orders):
                 frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
                 return
             dn.items = keep_items
+            """
             # insert record
             dn.flags.ignore_missing = True
             dn.insert(ignore_permissions=True)
