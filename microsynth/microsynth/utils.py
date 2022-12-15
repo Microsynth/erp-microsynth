@@ -76,7 +76,8 @@ def create_sample(sample):
         sample_doc = frappe.get_doc({
             'doctype': 'Sample',
             'sample_name': sample['name'],
-            'web_id': web_id
+            'web_id': web_id,
+            'sequencing_label': sample['sequencing_label'] if 'sequencing_label' in sample else None
         })
         sample_doc.insert(ignore_permissions=True)
     # update record
