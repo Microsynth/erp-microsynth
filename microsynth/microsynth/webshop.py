@@ -469,7 +469,7 @@ def place_order(content, client="webshop"):
         so_doc.append('items', item_detail)
     # append taxes
     category = "Service"
-    if 'oligos' in content:
+    if 'oligos' in content and len(content['oligos']) > 0:
         category = "Material" 
     taxes = find_tax_template(company, content['customer'], content['invoice_address'], category)
     if taxes:

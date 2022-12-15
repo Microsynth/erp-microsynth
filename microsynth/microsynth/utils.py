@@ -94,7 +94,7 @@ def create_sample(sample):
     return sample_doc.name
 
 @frappe.whitelist()
-def find_tax_template(company, customer, customer_address, category="Material"):
+def find_tax_template(company, customer, customer_address, category):
     """
     Find the corresponding tax template
     """
