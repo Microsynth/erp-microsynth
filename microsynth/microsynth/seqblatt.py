@@ -7,6 +7,7 @@
 
 import requests
 import frappe
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
 from frappe.utils import cint
 import json
@@ -99,3 +100,73 @@ def processed_labels(content):
 #    if type(content) == str:
 #        content = json.loads(content)
 #    return set_status("unknown", content.get("labels"))
+
+
+
+
+def check_sales_order_completion(sales_orders):
+    for sales_order in sales_orders:
+        customer_name = frappe.get_value("Sales Order", sales_order, 'customer')
+        customer = frappe.get_doc("Customer", customer_name)
+
+        if customer.disabled:
+            frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
+            return
+
+        # TODO 
+        # * Sample does not have a status field like oligo does
+        # * Sequencing Label does have a status (trigger: status = received or processed?)
+        # * Add status field to sample and handle it like the oligos?
+
+        so_open_items = frappe.db.sql("""
+            SELECT 
+                `tabSample Link`.`parent`
+            FROM `tabSample Link`
+            LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+            WHERE
+                `tabSample Link`.`parent` = "{sales_order}"
+                AND `tabSample Link`.`parenttype` = "Sales Order"
+                AND `tabSample`.`status` = "Open";
+        """.format(sales_order=sales_order), as_dict=True)
+        if len(so_open_items) == 0:
+            # all items are either complete or cancelled
+            
+            ## create delivery note (leave on draft: submitted in a batch process later on)
+            dn_content = make_delivery_note(sales_order)
+            dn = frappe.get_doc(dn_content)
+            # remove samples that are canceled
+            cleaned_samples = []
+            cancelled_sample_item_qtys = {}
+            for sample in dn.samples:
+                sample_doc = frappe.get_doc("Sample", sample.oligo)
+                if sample_doc.status != "Canceled":
+                    cleaned_samples.append(sample)
+                else:
+                    # append items
+                    for item in sample_doc.items:
+                        if item.item_code in cancelled_sample_item_qtys:
+                            cancelled_sample_item_qtys[item.item_code] = cancelled_sample_item_qtys[item.item_code] + item.qty
+                        else:
+                            cancelled_sample_item_qtys[item.item_code] = item.qty
+                    
+            dn.samples = cleaned_samples
+            # subtract cancelled items from oligo items
+            for item in dn.items:
+                if item.item_code in cancelled_sample_item_qtys:
+                    item.qty -= cancelled_sample_item_qtys[item.item_code]
+            # remove items with qty == 0
+            keep_items = []
+            for item in dn.items:
+                if item.qty > 0:
+                    keep_items.append(item)
+            # if there are no items left, exit with an error trace
+            if len(keep_items) == 0:
+                frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+                return
+            dn.items = keep_items
+            # insert record
+            dn.flags.ignore_missing = True
+            dn.insert(ignore_permissions=True)
+            frappe.db.commit()
+            
+    return
