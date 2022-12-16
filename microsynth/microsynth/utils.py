@@ -76,10 +76,11 @@ def create_sample(sample):
         if matching_labels and len(matching_labels) == 1:
             label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
         else:
-            frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
-                web_id = sample['sample_web_id'], 
-                barcode = sample.get("sequencing_label"),
-                item =sample.get("label_item_code") ), "utils: create_sample")
+            # TODO: activate error logging, when labels are in the ERP
+            # frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
+            #     web_id = sample['sample_web_id'], 
+            #     barcode = sample.get("sequencing_label"),
+            #     item =sample.get("label_item_code") ), "utils: create_sample")
             label = None
 
         # create sample
