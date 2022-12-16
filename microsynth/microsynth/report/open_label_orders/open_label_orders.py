@@ -15,14 +15,15 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 120},
-        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 120},
-        {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 200},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},
+        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
+        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
+        {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 180},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 200},
-        {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Float", "width": 80},
-        {"label": _("Range"), "fieldname": "range", "fieldtype": "Data", "width": 80}
+        {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Integer", "width": 50},
+        # {"label": _("Range"), "fieldname": "range", "fieldtype": "Data", "width": 80},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
     ]
 
 @frappe.whitelist()
@@ -38,7 +39,8 @@ def get_data(filters=None):
             `tabSales Order Item`.`item_code` AS `item_code`,
             `tabSales Order Item`.`item_name` AS `item_name`,
             `tabSales Order Item`.`qty` AS `qty`,
-            `tabLabel Range`.`range` AS `range`
+            `tabLabel Range`.`range` AS `range`,
+            `tabSales Order`.`comment` AS `comment`
         FROM `tabSales Order`
         LEFT JOIN `tabSequencing Label` ON
             (`tabSequencing Label`.`sales_order` = `tabSales Order`.`name`)
