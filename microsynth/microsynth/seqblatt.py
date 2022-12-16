@@ -117,57 +117,33 @@ def check_sales_order_completion():
     
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
-        pending_sequencing_labels = frappe.db.sql("""
-            SELECT `name`
-            FROM `tabSequencing Label`
-            WHERE `sales_order` = "{sales_order}"
-              AND `status` NOT IN ("processed");
-        """.format(sales_order=sales_order['name']), as_dict=True)
-        
-        if len(pending_sequencing_labels) == 0:
+
+        # check status of labels assigned to each sample
+        pending_samples = frappe.db.sql("""
+            SELECT 
+                `tabSample`.`name`
+            FROM `tabSample Link`
+            LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+            LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
+            WHERE
+                `tabSample Link`.`parent` = "{sales_order}"
+                AND `tabSample Link`.`parenttype` = "Sales Order";
+                AND `tabSequencing Label`.`status` NOT IN ("processed")
+            """.format(sales_order=sales_order), as_dict=True)
+
+        if len(pending_samples) == 0:
             # all processed: create delivery
             customer = frappe.get_value("Sales Order", sales_order['name'], 'customer')
-            customer_doc = frappe.get_doc("Customer", customer_name)
+            customer_doc = frappe.get_doc("Customer", customer.name)
 
             if customer.disabled:
                 frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
                 return
-
             
             ## create delivery note (leave on draft: submitted in a batch process later on)
             dn_content = make_delivery_note(sales_order['name'])
             dn = frappe.get_doc(dn_content)
-            # remove samples that are canceled REVIEW (=locked)?
-            """cleaned_samples = []
-            cancelled_sample_item_qtys = {}
-            for sample in dn.samples:
-                sample_doc = frappe.get_doc("Sample", sample.oligo)
-                if sample_doc.status != "Canceled":
-                    cleaned_samples.append(sample)
-                else:
-                    # append items
-                    for item in sample_doc.items:
-                        if item.item_code in cancelled_sample_item_qtys:
-                            cancelled_sample_item_qtys[item.item_code] = cancelled_sample_item_qtys[item.item_code] + item.qty
-                        else:
-                            cancelled_sample_item_qtys[item.item_code] = item.qty
-                    
-            dn.samples = cleaned_samples
-            # subtract cancelled items from oligo items
-            for item in dn.items:
-                if item.item_code in cancelled_sample_item_qtys:
-                    item.qty -= cancelled_sample_item_qtys[item.item_code]
-            # remove items with qty == 0
-            keep_items = []
-            for item in dn.items:
-                if item.qty > 0:
-                    keep_items.append(item)
-            # if there are no items left, exit with an error trace
-            if len(keep_items) == 0:
-                frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-                return
-            dn.items = keep_items
-            """
+
             # insert record
             dn.flags.ignore_missing = True
             dn.insert(ignore_permissions=True)
