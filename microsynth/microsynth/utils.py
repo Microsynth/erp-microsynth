@@ -67,6 +67,21 @@ def create_sample(sample):
             # update and return this item
             sample_doc = frappe.get_doc("Sample", sample_matches[0]['name'])
     if not sample_doc:
+        # fetch sequencing label
+        matching_labels = frappe.get_all("Sequencing Label",filters={
+            'label_id': sample.get("sequencing_label"),
+            'item': sample.get("label_item_code")
+        }, fields=['name'])
+
+        if matching_labels and len(matching_labels) == 1:
+            label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
+        else:
+            frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
+                web_id = sample['sample_web_id'], 
+                barcode = sample.get("sequencing_label"),
+                item =sample.get("label_item_code") ), "utils: create_sample")
+            label = None
+
         # create sample
         web_id = None
         if 'sample_web_id' in sample:
@@ -77,7 +92,7 @@ def create_sample(sample):
             'doctype': 'Sample',
             'sample_name': sample['name'],
             'web_id': web_id,
-            'sequencing_label': sample['sequencing_label'] if 'sequencing_label' in sample else None
+            'sequencing_label': label.name
         })
         sample_doc.insert(ignore_permissions=True)
     # update record
