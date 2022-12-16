@@ -11,9 +11,10 @@
   "column_customer",
   "customer_name",
   "section_ids",
+  "sequencing_label_id",
   "sequencing_label",
-  "web_id",
   "column_ids",
+  "web_id",
   "prod_id",
   "sec_items",
   "items"
@@ -85,10 +86,17 @@
    "fieldtype": "Link",
    "label": "Barcode Label",
    "options": "Sequencing Label"
+  },
+  {
+   "fetch_from": "sequencing_label.label_id",
+   "fieldname": "sequencing_label_id",
+   "fieldtype": "Data",
+   "label": "Barcode number",
+   "read_only": 1
   }
  ],
- "modified": "2022-12-15 10:57:53.060721",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2022-12-16 10:33:25.452098",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sample",
  "owner": "Administrator",
