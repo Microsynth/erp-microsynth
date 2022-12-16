@@ -92,7 +92,7 @@ def create_sample(sample):
             'doctype': 'Sample',
             'sample_name': sample['name'],
             'web_id': web_id,
-            'sequencing_label': label.name
+            'sequencing_label': label.name if label else None
         })
         sample_doc.insert(ignore_permissions=True)
     # update record
