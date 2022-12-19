@@ -383,7 +383,8 @@ def place_order(content, client="webshop"):
         'po_no': content['po_no'] if 'po_no' in content else None,
         'punchout_shop': content['punchout_shop'] if 'punchout_shop' in content else None,
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
-        'currency': frappe.get_value("Customer", content['customer'], "default_currency")
+        'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
+        'comment': content['comment'] if 'comment' in content else None
         })
     if 'product_type' in content:
         so_doc.product_type = content['product_type']
@@ -469,7 +470,7 @@ def place_order(content, client="webshop"):
         so_doc.append('items', item_detail)
     # append taxes
     category = "Service"
-    if 'oligos' in content:
+    if 'oligos' in content and len(content['oligos']) > 0:
         category = "Material" 
     taxes = find_tax_template(company, content['customer'], content['invoice_address'], category)
     if taxes:

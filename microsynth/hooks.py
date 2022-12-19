@@ -127,7 +127,8 @@ jenv = {
 # }
 scheduler_events = {
     "hourly": [
-        "microsynth.microsynth.slims.sync"
+        "microsynth.microsynth.slims.sync",
+        "microsynth.microsynth.seqblatt.check_sales_order_completion"
     ]
 }
 

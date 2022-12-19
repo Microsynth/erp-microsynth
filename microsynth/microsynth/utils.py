@@ -67,6 +67,22 @@ def create_sample(sample):
             # update and return this item
             sample_doc = frappe.get_doc("Sample", sample_matches[0]['name'])
     if not sample_doc:
+        # fetch sequencing label
+        matching_labels = frappe.get_all("Sequencing Label",filters={
+            'label_id': sample.get("sequencing_label"),
+            'item': sample.get("label_item_code")
+        }, fields=['name'])
+
+        if matching_labels and len(matching_labels) == 1:
+            label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
+        else:
+            # TODO: activate error logging, when labels are in the ERP
+            # frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
+            #     web_id = sample['sample_web_id'], 
+            #     barcode = sample.get("sequencing_label"),
+            #     item =sample.get("label_item_code") ), "utils: create_sample")
+            label = None
+
         # create sample
         web_id = None
         if 'sample_web_id' in sample:
@@ -76,7 +92,8 @@ def create_sample(sample):
         sample_doc = frappe.get_doc({
             'doctype': 'Sample',
             'sample_name': sample['name'],
-            'web_id': web_id
+            'web_id': web_id,
+            'sequencing_label': label.name if label else None
         })
         sample_doc.insert(ignore_permissions=True)
     # update record
@@ -94,7 +111,7 @@ def create_sample(sample):
     return sample_doc.name
 
 @frappe.whitelist()
-def find_tax_template(company, customer, customer_address, category="Material"):
+def find_tax_template(company, customer, customer_address, category):
     """
     Find the corresponding tax template
     """
