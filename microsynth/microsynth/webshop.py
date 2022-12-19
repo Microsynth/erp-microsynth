@@ -248,6 +248,16 @@ def request_quote(content, client="webshop"):
             'item_code': i['item_code'],
             'qty': i['qty']
         })
+    # append taxes
+    category = "Service"
+    if 'oligos' in content and len(content['oligos']) > 0:
+        category = "Material" 
+    taxes = find_tax_template(company, content['customer'], content['invoice_address'], category)
+    if taxes:
+        qtn_doc.taxes_and_charges = taxes
+        taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+        for t in taxes_template.taxes:
+            qtn_doc.append("taxes", t)
     try:
         qtn_doc.insert(ignore_permissions=True)
         # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
