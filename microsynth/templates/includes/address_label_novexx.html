@@ -5,15 +5,15 @@
 #ER
 
 {# add sender adress incl logo #}
-#T4#J135#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
-#T4#J127#YL0/0/0.5/95
+#T4#J138#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
+#T4#J130#YL0/0/0.5/95
 {# additional line break #}
-#T4#J130#YN101/0U/35///{{sender_header}}#G
+#T4#J133#YN101/0U/35///{{sender_header}}#G
 
 {# ### receiver address ### #}
 {%- for element in lines -%}
     {%- set print_start_position = 60-(lines.index(element)*5) -%}
-#T{{print_start_position}}#J95#YN101/3U/45///{{element}}#G105
+#T{{print_start_position}}#J105#YN101/3U/45///{{element}}#G105
 {# additional line break #}
 {%- endfor -%}
 
@@ -25,14 +25,19 @@
 #T69#J22#YR0/0/0.5/15/33
 {%- else -%}
 #T81#J53#YN101/3U/45///{{destination_country}}#G
-    {%- if shipping_service != destination_country -%}
+    {%- if shipping_service != destination_country %}
 #T75#J53#YN101/3U/85///{{shipping_service}}#G
     {%- endif -%}
 {%- endif -%}
 
 {# additional line break #}
-{% if po_no != ""%}
-#T90#J105 #YB13/3V/4/4///{{po_no}}
+{%- if po_no != "" -%}
+    {%- if cstm_id in ["57022", "57023", "23057"] -%} 
+{# IMP, IMBA, Roche Basel #}
+#T90#J128 #YB7/3V/4/4///{{po_no}}
+    {%- else -%} 
+#T90#J120 #YB13/3V/4/4///{{po_no}}
+    {%- endif -%}
 {% endif %}
 #T60#J20 #YB13/2V/4/4///{{web_id}} 
 

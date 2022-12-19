@@ -31,7 +31,7 @@ T 33,49,90,3,pt 10;POST CH AG
 G 20,50,90;R:30,15,0.3,0.3
 {%- else -%}
 T 23,49,90,3,pt 10;{{destination_country}}
-    {%- if shipping_service != destination_country -%}
+    {% if shipping_service != destination_country and shipping_service != "" %}
 T 29,49,90,3,pt 20;{{shipping_service}}
     {%- endif -%}
 {%- endif -%}

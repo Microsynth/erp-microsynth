@@ -56,12 +56,10 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
                                 or "Jögeva" in ship_adr.city
                                 or "Ülenu" in ship_adr.city)
                                 ):
-        h_serv = "Tartu"
+        sh_serv = "Tartu"
     # Empfänger IMP und IMBA benötigen den Vermerk   
-    elif (cstm_ID == "57022"): 
-        h_serv = "IMP"
-    elif (cstm_ID == "57023"): 
-        h_serv = "IMBA"
+    elif (cstm_ID == "57022" or cstm_ID == "57023" or cstm_ID == "57023"): 
+        sh_serv = "IMP"
 
     return (sh_serv)
 
@@ -218,16 +216,19 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         sales_order_id = 'SO-GOE-22000704'
         sales_order_id = 'SO-BAL-22009934'
         sales_order_id = 'SO-LYO-22000071'
+        sales_order_id = "SO-BAL-22009681"
+        sales_order_id = "SO-BAL-22009354"
+        sales_order_id = "SO-BAL-22008255"
     customers = frappe.get_all("Customer", fields=["name", "customer_name"])
-    
-    with open('/home/libracore/Desktop/all_customers.txt', 'w') as file:
-        for c in customers:
-            file.write(c["name"] + "\t" + c["customer_name"] + "\n")
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
 
+    
+    # this is brady
+    # printer_ip = "192.0.1.70"
     # if ip (use case "Novexx")
+    # printer_ip = "192.0.1.72"
     if not printer_ip:
         printer_ip = decide_brady_printer_ip(sales_order.company)
         print(printer_ip)    
@@ -245,6 +246,7 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     cntct_id = sales_order.contact_person
     shipping_address_country = frappe.get_doc("Country", shipping_address.country)   
     po_no = sales_order.po_no
+    print(po_no)
     web_id = sales_order.web_order_id
 
 
@@ -261,9 +263,10 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, cstm_id),
         'po_no': po_no,
-        'web_id': web_id
+        'web_id': web_id,
+        'cstm_id': cstm_id
         }
         )
 
     print(content) # must we trigger a log entry for what is printed?
-    #print_raw(printer_ip, 9100, content )
+    print_raw(printer_ip, 9100, content )
