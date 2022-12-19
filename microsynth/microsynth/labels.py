@@ -7,19 +7,61 @@ import socket
 import sys
 
 
-def get_shipping_service(item_code):
+def get_shipping_service(item_code, ship_adr,cstm_ID):
     
     # TODO: dict is not complete
     SHIPPING_SERVICES = {
         '1100': "P.P.A",
-        '1123': "DHL"
-        # 1101: "something"
+        '1101': "A-plus", 
+        '1102': "Express", 
+        '1103': "Oesterreich", # Empfänger IMP und IMBA benötigen wir einen speziellen Barcode und den Vermerk IMP 
+        '1104': "Einschreiben",
+        '1105': "EMS",    
+        '1106': "Deutschland",
+        '1107': "DryIce",
+        '1108': "DHL",
+        '1110': "Abholung",
+        '1112': "Deutschland",
+        '1113': "DryIce",
+        '1114': "DHL",
+        '1115': "Deutschland",
+        '1117': "DHL",
+        '1120': "DHL CH",  # für nicht EU Europastaaten
+        '1122': "DHL",
+        '1123': "DHL/CH", # für Staaten ausserhalb Europas
+        '1126': "FedEx",
     }
 
     try: 
         sh_serv = SHIPPING_SERVICES[item_code]
     except: 
         sh_serv = ""
+
+    # Ausnahme Adresse Dr. Bohr Gasse 9 und Leberstrasse 20, 
+        # da brauchen wir wegen Sammelversand den Vermerk MFPL
+    if sh_serv in ["Oesterreich", "EMS"] and (("Bohr" in ship_adr.address_line1 
+                                                and "Dr" in ship_adr.address_line1 
+                                                and "Gasse" in ship_adr.address_line1
+                                                and ("7" in ship_adr.address_line1
+                                                    or "9" in ship_adr.address_line1)) 
+                                            or ("Leberstrasse" in ship_adr.address_line1 
+                                                and "20" in ship_adr.address_line1)): 
+        sh_serv = "MFPL"
+    # Ausnahme Tartu, Össu und Jögeva – da benötigen wir den Vermerk Tartu
+    elif (sh_serv != "DHL" and (ship_adr.pincode == "48309" 
+                                or "Tartu" in ship_adr.city
+                                or "Õssu" in ship_adr.city
+                                or "Össu" in ship_adr.city
+                                or "Jõgeva" in ship_adr.city
+                                or "Jögeva" in ship_adr.city
+                                or "Ülenu" in ship_adr.city)
+                                ):
+        h_serv = "Tartu"
+    # Empfänger IMP und IMBA benötigen den Vermerk   
+    elif (cstm_ID == "57022"): 
+        h_serv = "IMP"
+    elif (cstm_ID == "57023"): 
+        h_serv = "IMBA"
 
     return (sh_serv)
 
@@ -217,7 +259,7 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
         'sender_header': get_sender_address_line(sales_order, shipping_address_country),
         'destination_country': shipping_address.country,
-        'shipping_service': get_shipping_service(shipping_item),
+        'shipping_service': get_shipping_service(shipping_item, shipping_address, cstm_id),
         'po_no': po_no,
         'web_id': web_id
         }
