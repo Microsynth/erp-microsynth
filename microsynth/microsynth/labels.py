@@ -11,7 +11,7 @@ def get_shipping_service(item_code):
     
     # TODO: dict is not complete
     SHIPPING_SERVICES = {
-        '1100': "A-Post",
+        '1100': "P.P.A",
         '1123': "DHL"
         # 1101: "something"
     }
@@ -176,7 +176,11 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         sales_order_id = 'SO-GOE-22000704'
         sales_order_id = 'SO-BAL-22009934'
         sales_order_id = 'SO-LYO-22000071'
-        
+    customers = frappe.get_all("Customer", fields=["name", "customer_name"])
+    
+    with open('/home/libracore/Desktop/all_customers.txt', 'w') as file:
+        for c in customers:
+            file.write(c["name"] + "\t" + c["customer_name"] + "\n")
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     shipping_item = get_shipping_item(sales_order.items)
@@ -187,11 +191,11 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         print(printer_ip)    
 
     if not sales_order.shipping_address_name:
-        frappe.throw("address missing")
+        frappe.throw("print delivery note: address missing")
     elif not sales_order.customer: 
-        frappe.throw("customer missing")
+        frappe.throw("print delivery note: customer missing")
     elif not sales_order.contact_person: 
-        frappe.throw("contact missing")
+        frappe.throw("print delivery note: contact missing")
         
     adr_id = sales_order.shipping_address_name
     shipping_address = frappe.get_doc("Address", adr_id)
@@ -220,4 +224,4 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         )
 
     print(content) # must we trigger a log entry for what is printed?
-    print_raw(printer_ip, 9100, content )
+    #print_raw(printer_ip, 9100, content )
