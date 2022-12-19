@@ -79,6 +79,7 @@ def get_user_details(person_id, client="webshop"):
         """ SELECT 
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
+                `tabAddress`.`overwrite_company`,
                 `tabAddress`.`address_line1`,
                 `tabAddress`.`address_line2`,
                 `tabAddress`.`pincode`,
