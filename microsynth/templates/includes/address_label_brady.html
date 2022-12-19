@@ -31,8 +31,10 @@ T 33,49,90,3,pt 10;POST CH AG
 G 20,50,90;R:30,15,0.3,0.3
 {%- else -%}
 T 23,49,90,3,pt 10;{{destination_country}}
+    {%- if shipping_service != destination_country -%}
 T 29,49,90,3,pt 20;{{shipping_service}}
-{% endif %}
+    {%- endif -%}
+{%- endif -%}
 
 ;### print date and time during development ###
 ;T 10,5,0,3,pt 10;[DATE]-[TIME]-dynamic ERP-Template Brady

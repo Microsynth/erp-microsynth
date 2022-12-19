@@ -25,7 +25,9 @@
 #T69#J22#YR0/0/0.5/15/33
 {%- else -%}
 #T81#J53#YN101/3U/45///{{destination_country}}#G
+    {%- if shipping_service != destination_country -%}
 #T75#J53#YN101/3U/85///{{shipping_service}}#G
+    {%- endif -%}
 {%- endif -%}
 
 {# additional line break #}
