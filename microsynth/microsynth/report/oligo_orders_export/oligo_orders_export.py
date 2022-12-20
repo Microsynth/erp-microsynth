@@ -42,8 +42,7 @@ def get_data(filters=None):
             AND `tabSales Order`.`docstatus` = 1
             AND `tabCountry`.`name` <> 'Switzerland'
 			AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
-        ORDER BY `tabSales Order`.`transaction_date` ASC
-		LIMIT 3;
+        ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     
     return open_oligo_orders

@@ -66,6 +66,19 @@ def get_data():
             ]
         },
         {
+            "label": _("Oligo"),
+            "icon": "fa fa-tools",
+            "items": [
+                   {
+                        "type": "report",
+                        "name": "Oligo Orders Export",
+                        "label": _("Oligo Orders Export"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
             "label": _("Sequencing"),
             "icon": "fa fa-tools",
             "items": [

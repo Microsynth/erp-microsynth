@@ -32,7 +32,7 @@ function queue_builder() {
 function process_queue() {
 	if (locals.order_queue.length > 0) {
 		order = locals.order_queue[0];
-		frappe.show_alert(locals.order_queue[0].sales_order);
+		// frappe.show_alert(locals.order_queue[0].sales_order);
 		frappe.call({
 			"method": "microsynth.microsynth.labels.print_address_template",
 			"args": {
