@@ -64,7 +64,7 @@
   {
    "fieldname": "description",
    "fieldtype": "Text Editor",
-   "label": "Description"
+   "label": "Customer Request"
   },
   {
    "fetch_from": "customer.default_price_list",
@@ -146,8 +146,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2022-11-01 15:42:55.262394",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2022-12-20 15:19:01.150473",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",
  "owner": "Administrator",
