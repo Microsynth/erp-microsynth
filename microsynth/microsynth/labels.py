@@ -14,17 +14,17 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
         '1100': "P.P.A",
         '1101': "A-plus", 
         '1102': "Express", 
-        '1103': "Oesterreich", # Empfänger IMP und IMBA benötigen wir einen speziellen Barcode und den Vermerk IMP 
+        '1103': "Austria", # Empfänger IMP und IMBA benötigen wir einen speziellen Barcode und den Vermerk IMP 
         '1104': "Einschreiben",
         '1105': "EMS",    
-        '1106': "Deutschland",
+        '1106': "Germany",
         '1107': "DryIce",
         '1108': "DHL",
         '1110': "Abholung",
-        '1112': "Deutschland",
+        '1112': "Germany",
         '1113': "DryIce",
         '1114': "DHL",
-        '1115': "Deutschland",
+        '1115': "Germany",
         '1117': "DHL",
         '1120': "DHL CH",  # für nicht EU Europastaaten
         '1122': "DHL",
@@ -39,7 +39,7 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
 
     # Ausnahme Adresse Dr. Bohr Gasse 9 und Leberstrasse 20, 
         # da brauchen wir wegen Sammelversand den Vermerk MFPL
-    if sh_serv in ["Oesterreich", "EMS"] and (("Bohr" in ship_adr.address_line1 
+    if sh_serv in ["Austria", "EMS"] and (("Bohr" in ship_adr.address_line1 
                                                 and "Dr" in ship_adr.address_line1 
                                                 and "Gasse" in ship_adr.address_line1
                                                 and ("7" in ship_adr.address_line1
