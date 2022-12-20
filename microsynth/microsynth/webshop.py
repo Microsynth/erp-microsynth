@@ -275,7 +275,7 @@ def get_quotations(customer, client="webshop"):
         # return valid quotations
         qtns = frappe.get_all("Quotation", 
             filters={'party_name': customer, 'docstatus': 1},
-            fields=['name', 'currency', 'net_total', 'transaction_date', 'customer_request']
+            fields=['name', 'quotation_type', 'currency', 'net_total', 'transaction_date', 'customer_request']
         )
         return {'success': True, 'message': "OK", 'quotations': qtns}
     else:
