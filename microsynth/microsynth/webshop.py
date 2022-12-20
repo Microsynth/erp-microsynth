@@ -282,6 +282,21 @@ def get_quotations(customer, client="webshop"):
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
 @frappe.whitelist()
+def get_contact_quotations(contact, client="webshop"):
+    """
+    Returns the quotations for a particular customer
+    """
+    if frappe.db.exists("Contact", contact):
+        # return valid quotations
+        qtns = frappe.get_all("Quotation", 
+            filters={'contact_person': contact, 'docstatus': 1},
+            fields=['name', 'quotation_type', 'currency', 'net_total', 'transaction_date', 'customer_request']
+        )
+        return {'success': True, 'message': "OK", 'quotations': qtns}
+    else:
+        return {'success': False, 'message': 'Customer not found', 'quotation': None}
+
+@frappe.whitelist()
 def get_quotation_detail(reference, client="webshop"):
     """
     Returns the quotations details
