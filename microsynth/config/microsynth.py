@@ -79,7 +79,7 @@ def get_data():
                     {
                         "type": "report",
                         "name": "Oligo Orders Ready To Package",
-                        "label": _("Oligo Orders Ready To Package"),
+                        "label": _("Oligo Orders Ready To Package (CH)"),
                         "doctype": "Delivery Note",
                         "is_query_report": True
                     }
