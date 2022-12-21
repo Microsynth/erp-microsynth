@@ -9,12 +9,11 @@ import sys
 
 def get_shipping_service(item_code, ship_adr,cstm_ID):
     
-    # TODO: dict is not complete
     SHIPPING_SERVICES = {
         '1100': "P.P.A",
         '1101': "A-plus", 
         '1102': "Express", 
-        '1103': "Austria", # Empfänger IMP und IMBA benötigen wir einen speziellen Barcode und den Vermerk IMP 
+        '1103': "Austria",
         '1104': "Einschreiben",
         '1105': "EMS",    
         '1106': "Germany",
@@ -26,9 +25,9 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
         '1114': "DHL",
         '1115': "Germany",
         '1117': "DHL",
-        '1120': "DHL CH",  # für nicht EU Europastaaten
+        '1120': "DHL CH",  # not for EU
         '1122': "DHL",
-        '1123': "DHL/CH", # für Staaten ausserhalb Europas
+        '1123': "DHL/CH", # for countries out of EU
         '1126': "FedEx",
     }
 
@@ -37,8 +36,7 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
     except: 
         sh_serv = ""
 
-    # Ausnahme Adresse Dr. Bohr Gasse 9 und Leberstrasse 20, 
-        # da brauchen wir wegen Sammelversand den Vermerk MFPL
+    # special cases: Dr. Bohr Gasse 9 and Leberstrasse 20, 
     if sh_serv in ["Austria", "EMS"] and (("Bohr" in ship_adr.address_line1 
                                                 and "Dr" in ship_adr.address_line1 
                                                 and "Gasse" in ship_adr.address_line1
@@ -47,7 +45,7 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
                                             or ("Leberstrasse" in ship_adr.address_line1 
                                                 and "20" in ship_adr.address_line1)): 
         sh_serv = "MFPL"
-    # Ausnahme Tartu, Össu und Jögeva – da benötigen wir den Vermerk Tartu
+    # special cases: Tartu, Össu and Jögeva
     elif (sh_serv != "DHL" and (ship_adr.pincode == "48309" 
                                 or "Tartu" in ship_adr.city
                                 or "Õssu" in ship_adr.city
@@ -57,7 +55,7 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
                                 or "Ülenu" in ship_adr.city)
                                 ):
         sh_serv = "Tartu"
-    # Empfänger IMP und IMBA benötigen den Vermerk   
+    # Receivers IMP und IMBA are special cases   
     elif (cstm_ID == "57022" or cstm_ID == "57023" or cstm_ID == "57023"): 
         sh_serv = "IMP"
 
@@ -72,8 +70,9 @@ def print_raw(ip, port, content):
     return
 
 
-# TODO obsolete: Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development
 def print_test_label_brady():
+    """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
+    
     content = ''';###load Microsynth logo###
 M l IMG;01_MIC_Logo_Swiss_black
 
@@ -94,8 +93,9 @@ A 1
     print_raw('192.0.1.71', 9100, content )
 
 
-# TODO obsolete: Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development
 def print_test_label_novexx():
+    """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
+    
     content = '''#!A1
 #IMS105/148
 #N13
@@ -126,9 +126,7 @@ def get_shipping_item(items):
 
 
 def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=None):
-    '''
-    creates a list of strings that represent the sequence of address lines of the receiver
-    '''
+    '''creates a list of strings that represent the sequence of address lines of the receiver'''
 
     if contact_id: contact_doc = frappe.get_doc("Contact", contact_id)
     if address_id: address_doc = frappe.get_doc("Address", address_id)
@@ -177,13 +175,8 @@ def get_sender_address_line(sales_order, shipping_address_country):
     except:
         letter_head = frappe.throw("Letter head {0} not found. Please define the letter head under print settings.".format(letter_head_name))
 
-
-    if letter_head and letter_head.content:
-        # before
-        #sender_header = letter_head.content
-        
+    if letter_head and letter_head.content:        
         sender_address_line = letter_head.sender_address_line
-        #sender_address_line = letter_head.footer
     else:
         frappe.throw("Letter head {0} empty. Please define the letter head under print settings.".format(letter_head_name))
 
@@ -191,7 +184,8 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
 
 def decide_brady_printer_ip(company):
-    """printers have to be set in Sequencing Settings based on company name
+    """
+    printers have to be set in Sequencing Settings based on company name
     printer ips have to be set in an object of DocType Brady Printer
     """
     
@@ -225,13 +219,14 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     shipping_item = get_shipping_item(sales_order.items)
 
     
-    # this is brady
+    # this is Brady
     # printer_ip = "192.0.1.70"
-    # if ip (use case "Novexx")
+    # this is Novexx    
     # printer_ip = "192.0.1.72"
+    
+    # if ip (use case "Novexx")
     if not printer_ip:
         printer_ip = decide_brady_printer_ip(sales_order.company)
-        # print(printer_ip)    
 
     if not sales_order.shipping_address_name:
         frappe.throw("print delivery note: address missing")
@@ -246,7 +241,6 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     cntct_id = sales_order.contact_person
     shipping_address_country = frappe.get_doc("Country", shipping_address.country)   
     po_no = sales_order.po_no
-    print(po_no)
     web_id = sales_order.web_order_id
 
 
