@@ -39,7 +39,17 @@ function process_queue() {
 				"sales_order_id": locals.order_queue[0].sales_order,
 				"printer_ip":"192.0.1.72"
 			}
-		})
+		});
+		frappe.call({
+			"method": "microsynth.microsynth.utils.set_order_label_printed",
+			"args": {
+				"sales_orders": [ locals.order_queue[0].sales_order ]
+			},
+			'callback': function(r)
+			{
+				frappe.query_report.refresh();
+			}
+		});
 	}
 	// kick first order out and resume
 	locals.order_queue.shift();

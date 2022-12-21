@@ -43,7 +43,8 @@ def get_data(filters=None):
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabSales Order`.`docstatus` = 1
             AND `tabCountry`.`name` <> 'Switzerland'
-			AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+			AND `tabSales Order`.`label_printed_on` IS NULL
+            AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
         ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     

@@ -4,6 +4,7 @@
 
 import frappe
 import json
+from datetime import datetime
 
 @frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
@@ -167,3 +168,16 @@ def get_print_address(contact, address, customer=None, customer_name=None):
             'address': address, 
             'customer_name':  customer_name
         }) 
+
+@frappe.whitelist()
+def set_order_label_printed(sales_orders):
+    if type(sales_orders) == str:
+        sales_orders = json.loads(sales_orders)
+    
+    for o in sales_orders:
+        if frappe.db.exists("Sales Order", o):
+            sales_order = frappe.get_doc("Sales Order", o)
+            sales_order.label_printed_on = datetime.now()
+            sales_order.save()
+    frappe.db.commit()
+    return
