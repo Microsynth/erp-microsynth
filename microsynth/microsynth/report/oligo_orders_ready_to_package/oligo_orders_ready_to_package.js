@@ -32,14 +32,14 @@ function queue_builder() {
 function process_queue() {
 	if (locals.order_queue.length > 0) {
 		order = locals.order_queue[0];
-		frappe.show_alert(locals.order_queue[0].delivery_note);
-		// frappe.call({
-		// 	"method": "microsynth.microsynth.labels.print_address_template",
-		// 	"args": {
-		// 		"sales_order_id": locals.order_queue[0].sales_order,
-		// 		"printer_ip":"192.0.1.72"
-		// 	}
-		// })
+		// frappe.show_alert(locals.order_queue[0].sales_order);
+		frappe.call({
+			"method": "microsynth.microsynth.labels.print_address_template",
+			"args": {
+				"sales_order_id": locals.order_queue[0].sales_order,
+				"printer_ip":"192.0.1.72"
+			}
+		})
 	}
 	// kick first order out and resume
 	locals.order_queue.shift();
