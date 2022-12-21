@@ -165,8 +165,9 @@ def get_sender_address_line(sales_order, shipping_address_country):
 
     letter_head_name = ""
     letter_head = ""
-    if sales_order.company == "Microsynth AG" and shipping_address_country.eu == "EU":
-            letter_head_name = "Microsynth AG Wolfurt"
+
+    if sales_order.company == "Microsynth AG" and shipping_address_country.eu:
+        letter_head_name = "Microsynth AG Wolfurt"
     else:
         letter_head_name = sales_order.company
 
@@ -205,9 +206,6 @@ def decide_brady_printer_ip(company):
 
 @frappe.whitelist()
 def print_address_template(sales_order_id=None, printer_ip=None):
-    #@RSu: without default argument sales_order_id, I cannot test via console
-    #@RSu: printer_ip is useful to overload function, if set --> use case Novexx, else decide on company name
-    #TODO: wrapper or Novexx must be developed or just call this function with SO, IP 192.0.1.72
     """function calls respective template for creating a transport label"""
 
     # test data - during development
@@ -219,6 +217,8 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         sales_order_id = "SO-BAL-22009681"
         sales_order_id = "SO-BAL-22009354"
         sales_order_id = "SO-BAL-22008255"
+        sales_order_id = "SO-BAL-22000012"
+        sales_order_id = "SO-BAL-22000004"
     customers = frappe.get_all("Customer", fields=["name", "customer_name"])
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
@@ -231,7 +231,7 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     # printer_ip = "192.0.1.72"
     if not printer_ip:
         printer_ip = decide_brady_printer_ip(sales_order.company)
-        print(printer_ip)    
+        # print(printer_ip)    
 
     if not sales_order.shipping_address_name:
         frappe.throw("print delivery note: address missing")
@@ -268,5 +268,5 @@ def print_address_template(sales_order_id=None, printer_ip=None):
         }
         )
 
-    print(content) # must we trigger a log entry for what is printed?
+    # print(content)
     print_raw(printer_ip, 9100, content )
