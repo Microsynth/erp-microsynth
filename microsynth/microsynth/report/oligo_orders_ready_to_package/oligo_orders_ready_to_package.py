@@ -13,10 +13,10 @@ def execute(filters=None):
 
 def get_columns():
 	return [
-        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120},
-		{"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 80},
-		{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
+		{"label": _("Deliver Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
+        {"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 70},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},        
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 180},
@@ -28,34 +28,24 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
 	data = frappe.db.sql("""
-		SELECT
-			`tabDelivery Note`.`name` as `delivery_note`,
-			`tabDelivery Note`.`web_order_id` as `web_order_id`,
+		SELECT 
+			`tabDelivery Note Item`.`parent` AS `delivery_note`, 
+			`tabDelivery Note Item`.`against_sales_order` AS `sales_order`,
+			`tabSales Order`.`web_order_id` AS `web_order_id`,
+			`tabSales Order`.`customer` AS `customer`,
+			`tabSales Order`.`customer_name` AS `customer_name`,
+			`tabSales Order`.`contact_person` AS `contact`,
+			`tabSales Order`.`contact_display` AS `contact_name`,
+			`tabSales Order`.`transaction_date` AS `date`,
 			`tabCountry`.`export_code` AS `export_code`,
-			`tabDelivery Note`.`posting_date` as `date`,
-			`tabDelivery Note`.`customer` AS `customer`,
-			`tabDelivery Note`.`customer_name` as `customer_name`,
-			`tabDelivery Note`.`contact_person` AS `contact`,
-            `tabDelivery Note`.`contact_display` AS `contact_name`,
-
-			(SELECT
-				`tabSales Order`.`name`
-			FROM `tabSales Order`
-			LEFT JOIN `tabDelivery Note Item` ON
-                (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
-			WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-			LIMIT 1
-			) AS `sales_order`
-		FROM `tabDelivery Note`
-		LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
+			`tabSales Order`.`comment` AS `comment`
+		FROM `tabDelivery Note Item`
+		LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+		LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-		WHERE 
-			`tabDelivery Note`.`product_type` = "Oligos"
-			AND `tabDelivery Note`.`docstatus` = 1
-			AND `tabCountry`.`name` = 'Switzerland'	
-		ORDER BY `tabDelivery Note`.`web_order_id` ASC limit 2;
+		WHERE `tabDelivery Note Item`.`docstatus` = 0
+		GROUP BY sales_order
+		ORDER BY sales_order ASC;
 	""", as_dict=True)
-	
-	
 	
 	return data

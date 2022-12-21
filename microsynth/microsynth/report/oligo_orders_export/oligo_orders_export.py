@@ -13,12 +13,13 @@ def execute(filters=None):
 def get_columns():
 	return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},
+        {"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 70},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},        
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 180},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("Code"), "fieldname": "export_code", "fieldtype": "Data", "width": 60},
+        {"label": _("Region"), "fieldname": "export_code", "fieldtype": "Data", "width": 60},
 		{"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
 	]
 
@@ -27,6 +28,7 @@ def get_data(filters=None):
     open_oligo_orders = frappe.db.sql("""
         SELECT 
             `tabSales Order`.`name` AS `sales_order`,
+            `tabSales Order`.`web_order_id` AS `web_order_id`,
             `tabSales Order`.`customer` AS `customer`,
             `tabSales Order`.`customer_name` AS `customer_name`,
             `tabSales Order`.`contact_person` AS `contact`,
