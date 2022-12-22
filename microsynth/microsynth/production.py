@@ -127,7 +127,7 @@ def check_sales_order_completion(sales_orders):
             # if there are no items left or only the shipping item, close the order and exit with an error trace.
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
                 frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-                close_or_unclose_sales_orders([ sales_order ], "Closed")
+                close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
                 return            
 
             dn.items = keep_items
