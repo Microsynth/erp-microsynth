@@ -68,6 +68,7 @@ def make_invoice(delivery_note):
     sales_invoice_content = make_sales_invoice(delivery_note)
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
     sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
@@ -423,32 +424,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     return data2
 
 
-def transmit_sales_invoice():
-#def transmit_sales_invoice(sales_invoice_name):
+def transmit_sales_invoice(sales_invoice_name):
     """
     This function will check a transfer moe and transmit the invoice
     """
 
-    # test data from productive orders -Ariba
-    #sales_invoice_name = "SI-BAL-22000003"
-    #sales_order_name = "SO-BAL-22008129"
-    #sales_invoice_name = "SI-BAL-22000005"
-    #sales_order_name = "SO-BAL-22008108"
-    #sales_invoice_name = "SI-BAL-22000006"
-    #sales_order_name = "SO-BAL-22008238"
-
-    # test data from productive orders - Paynet
-    #sales_invoice_name = "SI-BAL-22000007"
-    #sales_order_name = "SO-BAL-22007117"
-    sales_invoice_name = "SI-BAL-22000008"
-    sales_order_name = "SO-BAL-22008510"
-
-
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
-    
 
-    sales_order = frappe.get_doc("Sales Order", sales_order_name)
     #for k,v in sales_order.as_dict().items():
     #    print ( "%s: %s" %(k,v))
 
@@ -456,6 +439,9 @@ def transmit_sales_invoice():
     
     if customer.invoicing_method == "Email":
         # send by mail
+
+        # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
+
         target_email = sales_invoice.get("contact_email") # or customer.get("invoice_email")
 
         if not target_email:
@@ -463,6 +449,14 @@ def transmit_sales_invoice():
             return
         
         # TODO: send email with content & attachment
+        # send(
+        #     recipients="print@microsynth.local",        # TODO: config 
+        #     subject=sales_invoice_name, 
+        #     message=sales_invoice_name, 
+        #     reference_doctype="Sales Invoice", 
+        #     reference_name=sales_invoice_name,
+        #     attachments=[{'fid': fid}]
+        # )
 
     elif customer.invoicing_method == "Post":
         # create and attach pdf
