@@ -5,7 +5,7 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 #
 
-from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, close_or_unclose_sales_orders
 import frappe
 from microsynth.microsynth.labels import print_raw
 
@@ -123,10 +123,13 @@ def check_sales_order_completion(sales_orders):
             for item in dn.items:
                 if item.qty > 0:
                     keep_items.append(item)
-            # if there are no items left, exit with an error trace
-            if len(keep_items) == 0:
+            
+            # if there are no items left or only the shipping item, close the order and exit with an error trace.
+            if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
                 frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-                return
+                close_or_unclose_sales_orders([ sales_order ], "Closed")
+                return            
+
             dn.items = keep_items
             # insert record
             dn.flags.ignore_missing = True
