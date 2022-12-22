@@ -53,6 +53,7 @@ def get_data(filters=None):
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
             AND `tabSequencing Label`.`name` IS NULL
+            AND `tabSales Order`.`hold_order` <> 1
         ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     
