@@ -474,7 +474,7 @@ def update_customer(customer_data):
         
         
         # check if the customer exists
-        if not frappe.db.exists("Customer", str(int(customer_data['customer_id']))):
+        if not frappe.db.exists("Customer", customer_data['customer_id']):
             # create customer (force mode to achieve target name)
             print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
             frappe.db.sql("""INSERT INTO `tabCustomer` 
@@ -495,7 +495,7 @@ def update_customer(customer_data):
             is_deleted = 0
 
         # update customer
-        customer = frappe.get_doc("Customer", str(int(customer_data['customer_id'])))
+        customer = frappe.get_doc("Customer", customer_data['customer_id'])
         print("Updating customer {0}...".format(customer.name))
         if 'customer_name' in customer_data:
             customer.customer_name = customer_data['customer_name']
@@ -624,7 +624,7 @@ def update_customer(customer_data):
         if not is_deleted:
             contact.append("links", {
                 'link_doctype': "Customer",
-                'link_name': str(int(customer_data['customer_id']))
+                'link_name': customer_data['customer_id']
             })
         if 'institute_key' in customer_data:
             contact.institute_key = customer_data['institute_key']
@@ -730,7 +730,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         if not is_deleted:
             address.append("links", {
                 'link_doctype': "Customer",
-                'link_name': str(int(customer_id or customer_data['customer_id']))
+                'link_name': customer_id or customer_data['customer_id']
             })
     # get type of address
     if address_type == "INV":
