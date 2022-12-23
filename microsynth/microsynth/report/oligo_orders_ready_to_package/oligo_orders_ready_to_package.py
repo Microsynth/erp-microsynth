@@ -20,7 +20,7 @@ def get_columns():
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 180},
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
+        {"label": _("Order date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Region"), "fieldname": "export_code", "fieldtype": "Data", "width": 60},
 		{"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
 	]
@@ -43,9 +43,13 @@ def get_data(filters=None):
 		LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
 		LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-		WHERE `tabDelivery Note Item`.`docstatus` = 0
-		AND `tabSales Order`.`hold_order` <> 1
-		AND `tabSales Order`.`label_printed_on` IS NULL
+		WHERE 
+			`tabSales Order`.`product_type` = "Oligos"
+			AND `tabDelivery Note Item`.`docstatus` = 0
+			AND `tabCountry`.`name` = 'Switzerland'
+			AND `tabSales Order`.`label_printed_on` IS NULL
+			AND `tabSales Order`.`hold_order` <> 1
+			AND `tabDelivery Note Item`.`creation` > '2022-12-22'
 		GROUP BY sales_order
 		ORDER BY sales_order ASC;
 	""", as_dict=True)
