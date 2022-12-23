@@ -45,7 +45,7 @@ def get_data(filters=None):
             AND `tabCountry`.`name` <> 'Switzerland'
 			AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
-            AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+            AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 4 DAY)
         ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     
