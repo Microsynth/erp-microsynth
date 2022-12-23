@@ -44,6 +44,8 @@ def get_data(filters=None):
 		LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
 		WHERE `tabDelivery Note Item`.`docstatus` = 0
+		AND `tabSales Order`.`hold_order` <> 1
+		AND `tabSales Order`.`label_printed_on` IS NULL
 		GROUP BY sales_order
 		ORDER BY sales_order ASC;
 	""", as_dict=True)
