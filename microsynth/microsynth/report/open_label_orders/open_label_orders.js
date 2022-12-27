@@ -51,7 +51,7 @@ function process_queue() {
                     'callback': function(r) {
                         // open print dialog & print
                         console.log(r.message);
-                        window.open("/printview?doctype=Delivery%20Note&name=" + r.message + "&trigger_print=1&format=Delivery%20Note&no_letterhead=0&_lang=en", '_blank').focus();
+                        window.open("/printview?doctype=Delivery%20Note&name=" + r.message + "&trigger_print=1&format=Delivery%20Note%20Sequencing%20Labels&no_letterhead=0&_lang=en", '_blank').focus();
                     }
                 });
             // kick first order out and resume
