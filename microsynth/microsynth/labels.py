@@ -5,6 +5,7 @@
 import frappe
 import socket
 import sys
+from datetime import datetime
 
 
 def get_shipping_service(item_code, ship_adr,cstm_ID):
@@ -182,7 +183,7 @@ def get_sender_address_line(sales_order, shipping_address_country):
 def decide_brady_printer_ip(company):
     """
     printers have to be set in Sequencing Settings based on company name
-    printer ips have to be set in an object of DocType Brady Printer
+    printer IPs have to be set in an object of DocType Brady Printer
     """
     
     if not company: 
@@ -260,3 +261,33 @@ def print_address_template(sales_order_id=None, printer_ip=None):
 
     # print(content)
     print_raw(printer_ip, 9100, content )
+
+
+@frappe.whitelist()
+def print_oligo_order_labels(sales_orders):    
+    settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
+    printer_template = "microsynth/templates/includes/address_label_novexx.html"
+
+    for o in sales_orders:
+        sales_order = frappe.get_doc("Sales Order", o)
+        shipping_item = get_shipping_item(sales_order.items)
+        shipping_address = frappe.get_doc("Address", sales_order.shipping_address_name)
+        destination_country_doc = frappe.get_doc("Country", shipping_address.country)
+        content = frappe.render_template(printer_template, 
+            {
+                'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = sales_order.contact_person, address_id = sales_order.shipping_address_name), 
+                'sender_header': get_sender_address_line(sales_order, destination_country_doc),
+                'destination_country': shipping_address.country,
+                'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.contact_person),
+                'po_no': sales_order.po_no,
+                'web_id': sales_order.web_order_id,
+                'cstm_id': sales_order.customer
+            })
+        
+        print_raw(settings.label_printer_ip, settings.label_printer_port, content)
+
+        sales_order.label_printed_on = datetime.now()
+        sales_order.save()
+    
+    frappe.db.commit()
+    return
