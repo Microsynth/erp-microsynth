@@ -8,7 +8,12 @@ frappe.query_reports["Oligo Orders Export"] = {
 	],
 	"onload": (report) => {
 		report.page.add_inner_button(__("Print Shipping Labels"), function () {
-			queue_builder();
+			frappe.call({
+				'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.print_labels",
+				'callback': function(response){
+					frappe.show_alert( __("Started"))
+				}
+			});
 		});
 	}
 };

@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from microsynth.microsynth.labels import print_oligo_order_labels
 
 
 def execute(filters=None):
@@ -55,3 +56,16 @@ def get_data(filters=None):
 	""", as_dict=True)
 	
 	return data
+
+@frappe.whitelist()
+def print_labels():    
+    
+    data = get_data(filters=None)
+    orders = []
+
+    for x in data:
+        orders.append(x.sales_order)
+    
+    print_oligo_order_labels(orders)
+    
+    return

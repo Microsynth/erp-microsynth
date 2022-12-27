@@ -4,6 +4,8 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from microsynth.microsynth.labels import print_oligo_order_labels
+
 
 def execute(filters=None):
 	columns = get_columns()
@@ -45,8 +47,21 @@ def get_data(filters=None):
             AND `tabCountry`.`name` <> 'Switzerland'
 			AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
-            AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 4 DAY)
+            AND `tabSales Order`.`transaction_date` >= '2022-12-12'
         ORDER BY `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
     
     return open_oligo_orders
+
+@frappe.whitelist()
+def print_labels():    
+    
+    data = get_data(filters=None)
+    orders = []
+
+    for x in data:
+        orders.append(x.sales_order)
+    
+    print_oligo_order_labels(orders)
+    
+    return
