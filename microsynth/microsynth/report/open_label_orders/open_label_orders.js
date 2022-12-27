@@ -4,7 +4,14 @@
 
 frappe.query_reports["Open Label Orders"] = {
     "filters": [
-
+        {
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company",
+            "reqd": 1,
+            "default": frappe.defaults.get_user_default("company") || frappe.defaults.get_global_default("company")
+        }
     ],
     "onload": (report) => {
         report.page.add_inner_button( __("Pick labels"), function() {

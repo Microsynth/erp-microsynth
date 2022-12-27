@@ -51,11 +51,12 @@ def get_data(filters=None):
         WHERE 
             `tabSales Order`.`product_type` = "Labels"
             AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`company` = "{company}"
             AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
             AND `tabSequencing Label`.`name` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
         ORDER BY `tabSales Order`.`transaction_date` ASC;
-    """, as_dict=True)
+    """.format(company=filters.get("company")), as_dict=True)
     
     return open_label_orders
 
