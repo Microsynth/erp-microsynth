@@ -164,8 +164,10 @@ def get_sender_address_line(sales_order, shipping_address_country):
     letter_head_name = ""
     letter_head = ""
 
-    if sales_order.company == "Microsynth AG" and shipping_address_country.eu:
-        letter_head_name = "Microsynth AG Wolfurt"
+    if sales_order.company == "Microsynth AG" and shipping_address_country.name == "Austria":
+        letter_head_name = "Microsynth AG Wolfurt"    
+    elif sales_order.company == "Microsynth AG" and shipping_address_country.eu:
+        letter_head_name = "Microsynth AG Lindau"        
     else:
         letter_head_name = sales_order.company
 
