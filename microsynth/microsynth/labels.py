@@ -171,18 +171,12 @@ def get_sender_address_line(sales_order, shipping_address_country):
     else:
         letter_head_name = sales_order.company
 
-    # robustness: use try/except to catch frappe.exceptions.DoesNotExistError
-    try: 
-        letter_head = frappe.get_doc("Letter Head", letter_head_name)
-    except:
-        letter_head = frappe.throw("Letter head {0} not found. Please define the letter head under print settings.".format(letter_head_name))
+    letter_head = frappe.get_doc("Letter Head", letter_head_name)
 
-    if letter_head and letter_head.content:        
-        sender_address_line = letter_head.sender_address_line
-    else:
-        frappe.throw("Letter head {0} empty. Please define the letter head under print settings.".format(letter_head_name))
+    if not letter_head.sender_address_line:   
+        frappe.throw("Letter head '{0}' does not have a 'sender_address_line' specified.".format(letter_head_name))
 
-    return sender_address_line 
+    return letter_head.sender_address_line
 
 
 def decide_brady_printer_ip(company):
