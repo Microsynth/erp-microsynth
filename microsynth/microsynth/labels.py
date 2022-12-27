@@ -195,6 +195,34 @@ def decide_brady_printer_ip(company):
             printer = frappe.get_doc("Brady Printer", printer.brady_printer)
             return printer.ip
 
+
+def get_label_data(sales_order):
+    
+    if not sales_order.shipping_address_name:
+        frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))
+    elif not sales_order.customer: 
+        frappe.throw("Sales Order '{0}': Customer missing".format(sales_order.name))
+    elif not sales_order.contact_person: 
+        frappe.throw("Sales Order '{0}': Contact missing".format(sales_order.name))
+
+    shipping_item = get_shipping_item(sales_order.items)
+
+    address_id = sales_order.shipping_address_name
+    shipping_address = frappe.get_doc("Address", address_id)
+    destination_country_doc = frappe.get_doc("Country", shipping_address.country)   
+
+    data = {
+        'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = sales_order.contact_person, address_id = address_id), 
+        'sender_header': get_sender_address_line(sales_order, destination_country_doc),
+        'destination_country': shipping_address.country,
+        'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
+        'po_no': sales_order.po_no,
+        'web_id': sales_order.web_order_id,
+        'cstm_id': sales_order.customer
+    }
+    return data
+
+
 @frappe.whitelist()
 def print_address_template(sales_order_id=None, printer_ip=None):
     """function calls respective template for creating a transport label"""
@@ -213,8 +241,6 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     customers = frappe.get_all("Customer", fields=["name", "customer_name"])
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
-    shipping_item = get_shipping_item(sales_order.items)
-
     
     # this is Brady
     # printer_ip = "192.0.1.70"
@@ -225,22 +251,6 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     if not printer_ip:
         printer_ip = decide_brady_printer_ip(sales_order.company)
 
-    if not sales_order.shipping_address_name:
-        frappe.throw("print delivery note: address missing")
-    elif not sales_order.customer: 
-        frappe.throw("print delivery note: customer missing")
-    elif not sales_order.contact_person: 
-        frappe.throw("print delivery note: contact missing")
-        
-    adr_id = sales_order.shipping_address_name
-    shipping_address = frappe.get_doc("Address", adr_id)
-    cstm_id = sales_order.customer
-    cntct_id = sales_order.contact_person
-    shipping_address_country = frappe.get_doc("Country", shipping_address.country)   
-    po_no = sales_order.po_no
-    web_id = sales_order.web_order_id
-
-
     if printer_ip in ['192.0.1.70', '192.0.1.71', '192.168.101.26','172.16.0.40']: 
         printer_template = "microsynth/templates/includes/address_label_brady.html"
     elif printer_ip in ['192.0.1.72']: 
@@ -248,16 +258,7 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     else: 
         frappe.throw("invalid IP, no printer set")
 
-    content = frappe.render_template(printer_template, 
-        {'lines': create_receiver_address_lines(customer_id=cstm_id, contact_id=cntct_id, address_id=adr_id), 
-        'sender_header': get_sender_address_line(sales_order, shipping_address_country),
-        'destination_country': shipping_address.country,
-        'shipping_service': get_shipping_service(shipping_item, shipping_address, cstm_id),
-        'po_no': po_no,
-        'web_id': web_id,
-        'cstm_id': cstm_id
-        }
-        )
+    content = frappe.render_template(printer_template, get_label_data(sales_order_id))
 
     # print(content)
     print_raw(printer_ip, 9100, content )
@@ -270,22 +271,10 @@ def print_oligo_order_labels(sales_orders):
 
     for o in sales_orders:
         sales_order = frappe.get_doc("Sales Order", o)
-        shipping_item = get_shipping_item(sales_order.items)
-        shipping_address = frappe.get_doc("Address", sales_order.shipping_address_name)
-        destination_country_doc = frappe.get_doc("Country", shipping_address.country)
-        content = frappe.render_template(printer_template, 
-            {
-                'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = sales_order.contact_person, address_id = sales_order.shipping_address_name), 
-                'sender_header': get_sender_address_line(sales_order, destination_country_doc),
-                'destination_country': shipping_address.country,
-                'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.contact_person),
-                'po_no': sales_order.po_no,
-                'web_id': sales_order.web_order_id,
-                'cstm_id': sales_order.customer
-            })
+        label_data = get_label_data(sales_order)
+        content = frappe.render_template(printer_template, label_data)
         
-        print_raw(settings.label_printer_ip, settings.label_printer_port, content)
-
+        print_raw(settings.label_printer_ip, settings.label_printer_port, content)        
         sales_order.label_printed_on = datetime.now()
         sales_order.save()
     
