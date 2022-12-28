@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 import frappe
 from frappe import _
+import json
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 def execute(filters=None):
@@ -28,6 +29,13 @@ def get_columns():
 
 @frappe.whitelist()
 def get_data(filters=None):
+    if type(filters) == str:
+        filters = json.loads(filters)
+    elif type(filters) == dict:
+        pass
+    else:
+        filters = dict(filters)
+
     open_label_orders = frappe.db.sql("""
         SELECT 
             `tabSales Order`.`name` AS `sales_order`,

@@ -14,15 +14,20 @@ frappe.query_reports["Open Label Orders"] = {
         }
     ],
     "onload": (report) => {
-        report.page.add_inner_button( __("Pick labels"), function() {
-            queue_builder();
+        report.page.add_inner_button( __("Pick labels"), function() {            
+            queue_builder(report.get_values());
         });
     }
 };
 
-function queue_builder() {
+function queue_builder(filters) {
     frappe.call({
         'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.get_data",
+        'args': {
+            'filters': {
+                'company': filters.company 
+            }
+        },
         'callback': function(r) {
             // reset queue
             locals.label_queue = r.message;
