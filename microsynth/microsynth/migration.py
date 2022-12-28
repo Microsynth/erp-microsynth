@@ -1230,3 +1230,96 @@ def set_default_company():
         print(count)
 
     return
+
+
+def get_item_from_service(service):
+    if service == 0:
+        return '3040'
+    elif service == 1:
+        return '3000'
+    elif service == 2:
+        return '3110'
+    elif service == 3:
+        return '3100'
+    elif service == 4:
+        return None
+    elif service == 5:
+        return None
+    elif service == 6:
+        return None
+    elif service == 7:
+        return '3200'
+    elif service == 8:
+        return '3240'
+    elif service == 9:
+        return '3236'
+    elif service == 10:
+        return '3251'
+    elif service == 11:
+        return '3050'
+    elif service == 12:
+        return '3120'
+    else:
+        return None
+
+
+def get_label_status_from_status_id(status_id):
+    if status_id == 0:
+        return 'unknown'
+    elif status_id == 1:
+        return 'unused'
+    elif status_id == 2:
+        return 'unused'
+    elif status_id == 3:
+        return 'submitted'
+    elif status_id == 4:
+        return 'received'
+    elif status_id == 5:
+        return 'processed'
+    else:
+        return None
+
+
+def import_sequencing_labels(filename):
+    """
+    Imports the sequencing barcode labels from a webshop export file.
+
+    Run
+    $ bench execute "microsynth.microsynth.migration.import_sequencing_labels" --kwargs "{'filename':'/mnt/erp_share/Sequencing/Label_Import/webshop_barcodes.txt'}"
+    """
+
+    with open(filename) as file:
+        header = file.readline()
+        count = 0
+        for line in file:        
+            elements = line.split("\t")
+            number = int(elements[1])
+            status_element = int(elements[2])
+            service_type = int(elements[4])
+            contact_element = elements[9].strip()
+            
+            if contact_element == "NULL":
+                contact = None
+            elif frappe.db.exists("Contact", int(contact_element)):
+                print("Could not find Contact '{0}'.".format(contact_element))
+                contact = int(contact_element)
+            else:
+                contact = None
+            
+            # ToDo: Check if label exists
+            label = frappe.get_doc({
+                'doctype': 'Sequencing Label',
+                'label_id': number,
+                'item': get_item_from_service(service_type),
+                'contact': contact,
+                'status': get_label_status_from_status_id(status_element)
+            })            
+
+            label.save()
+            
+            count += 1
+            print(count) 
+
+        frappe.db.commit()
+                   
+    return  
