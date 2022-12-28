@@ -42,3 +42,45 @@ window.onload = async function () {
 function sleep(milliseconds) {
    return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
+
+// Set the taxes from the tax template 
+function update_taxes(company, customer, address, category) {   
+    frappe.call({
+        "method": "microsynth.microsynth.utils.find_tax_template",
+        "args": {
+            "company": company,
+            "customer": customer,
+            "customer_address": address,
+            "category": category 
+        },
+        "async": false,
+        "callback": function(response){
+            var taxes = response.message;   
+            
+            cur_frm.set_value("taxes_and_charges", taxes);
+
+            frappe.call({
+                "method":"frappe.client.get",
+                "args": {
+                    "doctype": "Sales Taxes and Charges Template",
+                    "name": taxes
+                },
+                "async": false,
+                "callback": function(response){
+                    var tax_template = response.message;
+                    cur_frm.clear_table("taxes");
+                    for (var t = 0; t < tax_template.taxes.length; t++) {
+                        var child = cur_frm.add_child('taxes')
+                        
+                        frappe.model.set_value(child.doctype, child.name, 'charge_type', tax_template.taxes[t].charge_type);
+                        frappe.model.set_value(child.doctype, child.name, 'account_head', tax_template.taxes[t].account_head);
+                        frappe.model.set_value(child.doctype, child.name, 'description', tax_template.taxes[t].description);
+                        frappe.model.set_value(child.doctype, child.name, 'cost_center', tax_template.taxes[t].cost_center);
+                        frappe.model.set_value(child.doctype, child.name, 'rate', tax_template.taxes[t].rate);
+                    }
+                }
+            });
+        }
+    });
+}
+
