@@ -146,6 +146,26 @@ def find_tax_template(company, customer, customer_address, category):
         else:
             return None
 
+def find_label(label_barcode, item):
+    """
+    Find a Sequencing Label by its barcode and item.
+    """
+
+    sql_query = """SELECT * 
+        FROM `tabSequencing Label`
+        WHERE `tabSequencing Label`.`label_id` = "{label_id}"
+        AND `tabSequencing Label`.`item` = "{item}"
+    """.format(label_id=label_barcode, item=item)
+
+    labels = frappe.db.sql(sql_query, as_dict=True)
+
+    if len(labels) == 1:
+        return labels[0]
+    elif len(labels) == 0:
+        return None
+    else:
+        frappe.throw("Multiple labels found for label_barcode '{0}', item '{1}'".format(str(label_barcode),str(item)))
+
 @frappe.whitelist(allow_guest=True)
 def login(usr, pwd):
     """
