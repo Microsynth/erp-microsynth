@@ -201,3 +201,59 @@ def set_order_label_printed(sales_orders):
             sales_order.save()
     frappe.db.commit()
     return
+
+
+def update_shipping_item_rate(item, rate):
+    
+    header = """"Data Import Template"
+"Table:","Country"
+""
+""
+"Notes:"
+"Please do not change the template headings."
+"First data column must be blank."
+"If you are uploading new records, leave the ""name"" (ID) column blank."
+"If you are uploading new records, ""Naming Series"" becomes mandatory, if present."
+"Only mandatory fields are necessary for new records. You can delete non-mandatory columns if you wish."
+"For updating, you can update only selective columns."
+"You can only upload upto 5000 records in one go. (may be less in some cases)"
+""
+"DocType:","Country","","~","~","Shipping Item","shipping_items","","",""
+"Column Labels:","ID","Country Name","","","ID","Item","Qty","Rate","Threshold"
+"Column Name:","name","country_name","~","~","name","item","qty","rate","threshold"
+"Mandatory:","Yes","Yes","","","Yes","Yes","Yes","Yes","Yes"
+"Type:","Data","Data","","","Data","Link","Float","Float","Float"
+"Info:","","","","","","Valid Item","","",""
+"Start entering data below this line\""""
+    print(header)
+
+    countries = frappe.get_all("Country")
+    # return frappe.get_doc("Country", "Switzerland")
+
+    for country in countries:
+        country_doc = frappe.get_doc("Country", country)        
+        
+        shipping_item_names = []
+        for n in country_doc.shipping_items:
+            shipping_item_names.append(n.item)            
+
+        if item in shipping_item_names:
+
+            for shipping_item in country_doc.shipping_items:
+                if shipping_item.item == item:            
+                    new_qty = 1.0
+                    new_rate = rate
+                    new_threshold = shipping_item.threshold
+                else:
+                    new_qty = shipping_item.qty
+                    new_rate = shipping_item.rate
+                    new_threshold = shipping_item.threshold
+            
+                print("""\"\",\"\"\"{country_id}\"\"\","{country_name}","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold}""".format(
+                    country_id = country.name,
+                    country_name = country.name,
+                    shipping_item_id = shipping_item.name,
+                    item_code = shipping_item.item,
+                    qty = new_qty,
+                    rate = new_rate,
+                    threshold = new_threshold))
