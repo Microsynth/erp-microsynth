@@ -1285,6 +1285,23 @@ def import_sequencing_labels(filename):
     """
     Imports the sequencing barcode labels from a webshop export file.
 
+    Webshop database query:
+
+    SELECT b.[Id]
+      ,[Number]
+      ,[UseState]
+      ,[BarcodeKind]
+      ,[ServiceType]
+      ,[Discriminator]
+      ,[Purchaser_Id]
+      ,[RegisteredTo_Id]
+      ,[RegisteredToGroup_Id]
+	  ,p.IdPerson as purchaser_person_id
+	  ,r.IdPerson as registered_to_person_id
+    FROM [Webshop].[dbo].[Barcodes] b
+    LEFT JOIN AspNetUsers p on p.id = b.Purchaser_Id
+    LEFT JOIN AspNetUsers r on r.id = b.RegisteredTo_Id
+
     Run
     $ bench execute "microsynth.microsynth.migration.import_sequencing_labels" --kwargs "{'filename':'/mnt/erp_share/Sequencing/Label_Import/webshop_barcodes.txt'}"
     """
@@ -1315,6 +1332,17 @@ def import_sequencing_labels(filename):
                 print("Could not find Contact '{0}'.".format(contact_element))
                 contact = None
 
+            # find customer
+            if contact:
+                contact_doc = frappe.get_doc("Contact", contact)
+                # print(contact_doc.links[0].link_name)
+                if len(contact_doc.links) > 0 and contact_doc.links[0].link_doctype == "Customer":                    
+                    customer = contact_doc.links[0].link_name
+                else:
+                    customer = None
+            else:
+                customer = None
+
             # check if registered_to contact exists:
             if registered_to_element == "NULL":
                 registered_to = None
@@ -1339,6 +1367,7 @@ def import_sequencing_labels(filename):
 
             # set values
             label.contact = contact
+            label.customer = customer
             label.registered = registered
             label.registered_to = registered_to
             label.status = get_label_status_from_status_id(status_element)
@@ -1352,7 +1381,7 @@ def import_sequencing_labels(filename):
 
             count += 1
             i += 1
-            print(count)
+            print("{0}: {1}".format(count, number))
 
         frappe.db.commit()
                    
