@@ -13,6 +13,7 @@ import json
 from frappe.utils import cint
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
+from microsynth.microsynth.utils import find_label
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -1291,6 +1292,7 @@ def import_sequencing_labels(filename):
     with open(filename) as file:
         header = file.readline()
         count = 0
+        i = 0
         for line in file:
             elements = line.split("\t")
             number = int(elements[1])
@@ -1298,6 +1300,8 @@ def import_sequencing_labels(filename):
             service_type = int(elements[4])
             contact_element = elements[9].strip()
             registered_to_element = elements[10].strip()
+                        
+            item = get_item_from_service(service_type)
             
             # if the 'UseState' is 2, set the 'registered' flag
             registered = status_element == 2
@@ -1319,21 +1323,35 @@ def import_sequencing_labels(filename):
             else:
                 print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
                 registered_to = None
-               
-            # ToDo: Check if label exists
-            label = frappe.get_doc({
-                'doctype': 'Sequencing Label',
-                'label_id': number,
-                'item': get_item_from_service(service_type),
-                'contact': contact,
-                'registered': registered,
-                'registered_to': registered_to,
-                'status': get_label_status_from_status_id(status_element)
-            })            
+            
+            label_data = find_label(number, item)
 
+            # check if label exists
+            if not label_data:                
+                # create new label
+                label = frappe.get_doc({
+                    'doctype': 'Sequencing Label',
+                    'label_id': number,
+                    'item': item,
+                })            
+            else:
+                label = frappe.get_doc("Sequencing Label", label_data.name)
+
+            # set values
+            label.contact = contact
+            label.registered = registered
+            label.registered_to = registered_to
+            label.status = get_label_status_from_status_id(status_element)
+            
             label.save()
 
+            if i >= 100:
+                print("commit")
+                frappe.db.commit()
+                i = 0
+
             count += 1
+            i += 1
             print(count)
 
         frappe.db.commit()
