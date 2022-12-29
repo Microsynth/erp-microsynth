@@ -205,7 +205,7 @@ def set_order_label_printed(sales_orders):
 
 def update_shipping_item_rate(item, rate):
     
-    header = """"Data Import Template"
+    header = """\"Data Import Template"
 "Table:","Country"
 ""
 ""
@@ -218,12 +218,12 @@ def update_shipping_item_rate(item, rate):
 "For updating, you can update only selective columns."
 "You can only upload upto 5000 records in one go. (may be less in some cases)"
 ""
-"DocType:","Country","","~","~","Shipping Item","shipping_items","","",""
-"Column Labels:","ID","Country Name","","","ID","Item","Qty","Rate","Threshold"
-"Column Name:","name","country_name","~","~","name","item","qty","rate","threshold"
-"Mandatory:","Yes","Yes","","","Yes","Yes","Yes","Yes","Yes"
-"Type:","Data","Data","","","Data","Link","Float","Float","Float"
-"Info:","","","","","","Valid Item","","",""
+"DocType:","Country","","~","Webshop Service Link","webshop_service","~","Shipping Item","shipping_items","","",""
+"Column Labels:","ID","Country Name","","ID","Webshop Service","","ID","Item","Qty","Rate","Threshold"
+"Column Name:","name","country_name","~","name","webshop_service","~","name","item","qty","rate","threshold"
+"Mandatory:","Yes","Yes","","Yes","Yes","","Yes","Yes","Yes","Yes","Yes"
+"Type:","Data","Data","","Data","Link","","Data","Link","Float","Float","Float"
+"Info:","","","","","Valid Webshop Service","","","Valid Item","","",""
 "Start entering data below this line\""""
     print(header)
 
@@ -238,8 +238,14 @@ def update_shipping_item_rate(item, rate):
             shipping_item_names.append(n.item)            
 
         if item in shipping_item_names:
-
+            i = 0
             for shipping_item in country_doc.shipping_items:
+                if i == 0:
+                    country_id = "\"\"{0}\"\"".format(country.name)
+                    country_name = country.name
+                else:
+                    country_id = ""
+                    country_name = ""
                 if shipping_item.item == item:            
                     new_qty = 1.0
                     new_rate = rate
@@ -249,11 +255,13 @@ def update_shipping_item_rate(item, rate):
                     new_rate = shipping_item.rate
                     new_threshold = shipping_item.threshold
             
-                print("""\"\",\"\"\"{country_id}\"\"\","{country_name}","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold}""".format(
-                    country_id = country.name,
-                    country_name = country.name,
+                print("""\"\",\"{country_id}\","{country_name}","","","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold}""".format(
+                    country_id = country_id,
+                    country_name = country_name,
                     shipping_item_id = shipping_item.name,
                     item_code = shipping_item.item,
                     qty = new_qty,
                     rate = new_rate,
                     threshold = new_threshold))
+                
+                i += 1
