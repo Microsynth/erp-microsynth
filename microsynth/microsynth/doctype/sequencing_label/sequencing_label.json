@@ -15,9 +15,10 @@
   "sec_references",
   "customer",
   "customer_name",
-  "contact",
+  "sales_order",
   "col_references",
-  "sales_order"
+  "contact",
+  "registered_to"
  ],
  "fields": [
   {
@@ -79,6 +80,7 @@
   {
    "fieldname": "contact",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Contact",
    "options": "Contact"
   },
@@ -103,10 +105,16 @@
    "label": "Item",
    "options": "Item",
    "reqd": 1
+  },
+  {
+   "fieldname": "registered_to",
+   "fieldtype": "Link",
+   "label": "Registered to",
+   "options": "Contact"
   }
  ],
- "modified": "2022-12-28 09:45:38.473416",
- "modified_by": "Administrator",
+ "modified": "2022-12-29 09:27:29.522758",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Label",
  "owner": "Administrator",
