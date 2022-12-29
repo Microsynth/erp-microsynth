@@ -1291,34 +1291,50 @@ def import_sequencing_labels(filename):
     with open(filename) as file:
         header = file.readline()
         count = 0
-        for line in file:        
+        for line in file:
             elements = line.split("\t")
             number = int(elements[1])
             status_element = int(elements[2])
             service_type = int(elements[4])
             contact_element = elements[9].strip()
+            registered_to_element = elements[10].strip()
             
+            # if the 'UseState' is 2, set the 'registered' flag
+            registered = status_element == 2
+
+            # check if contact exists
             if contact_element == "NULL":
                 contact = None
             elif frappe.db.exists("Contact", int(contact_element)):
-                print("Could not find Contact '{0}'.".format(contact_element))
                 contact = int(contact_element)
             else:
+                print("Could not find Contact '{0}'.".format(contact_element))
                 contact = None
-            
+
+            # check if registered_to contact exists:
+            if registered_to_element == "NULL":
+                registered_to = None
+            elif frappe.db.exists("Contact", int(registered_to_element)):
+                registered_to = int(registered_to_element)
+            else:
+                print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
+                registered_to = None
+               
             # ToDo: Check if label exists
             label = frappe.get_doc({
                 'doctype': 'Sequencing Label',
                 'label_id': number,
                 'item': get_item_from_service(service_type),
                 'contact': contact,
+                'registered': registered,
+                'registered_to': registered_to,
                 'status': get_label_status_from_status_id(status_element)
             })            
 
             label.save()
-            
+
             count += 1
-            print(count) 
+            print(count)
 
         frappe.db.commit()
                    
