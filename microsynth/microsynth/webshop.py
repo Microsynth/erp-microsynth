@@ -394,7 +394,7 @@ def place_order(content, client="webshop"):
     naming_series = get_naming_series("Sales Order", company)
     # cache contact values (Frappe bug in binding)
     contact = frappe.get_doc("Contact", content['contact'])
-    # create quotation
+    # create sales order
     so_doc = frappe.get_doc({
         'doctype': "Sales Order",
         'company': company,
@@ -424,7 +424,7 @@ def place_order(content, client="webshop"):
         quotation_rate = {}
         qtn_doc = frappe.get_doc("Quotation", content['quotation'])
         for item in qtn_doc.items:
-            if item.item_code not in quotation_rate:            
+            if item.item_code not in quotation_rate:
                 quotation_rate[item.item_code] = item.rate
     else:
         quotation = None
@@ -454,7 +454,7 @@ def place_order(content, client="webshop"):
             _item = {
                 'item_code': item,
                 'qty': qty,
-                'prevdoc_docname': quotation                
+                'prevdoc_docname': quotation
             }
             if quotation and item in quotation_rate:
                 _item['rate'] = quotation_rate[item]
@@ -472,7 +472,7 @@ def place_order(content, client="webshop"):
             for i in s['items']:
                 if not frappe.db.exists("Item", i['item_code']):
                     return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
-                        'reference': None}                
+                        'reference': None}
                 _item = {
                     'item_code': i['item_code'],
                     'qty': i['qty'],
@@ -480,7 +480,7 @@ def place_order(content, client="webshop"):
                 }
                 if quotation and item in quotation_rate:
                     _item['rate'] = quotation_rate[item]
-                so_doc.append('items', _item)                
+                so_doc.append('items', _item)
     # append items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
@@ -491,12 +491,12 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        if quotation and i['item_code'] in quotation_rate:            
-            item_detail['rate'] = quotation_rate[i['item_code']]            
+        if quotation and i['item_code'] in quotation_rate:
+            item_detail['rate'] = quotation_rate[i['item_code']]
         elif 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)
             item_detail['rate'] = i['rate']
-            item_detail['price_list_rate'] = i['rate']                
+            item_detail['price_list_rate'] = i['rate']
         so_doc.append('items', item_detail)
     # append taxes
     category = "Service"
@@ -508,8 +508,22 @@ def place_order(content, client="webshop"):
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
         for t in taxes_template.taxes:
             so_doc.append("taxes", t)
+    # save
     try:
         so_doc.insert(ignore_permissions=True)
+
+    except Exception as err:
+        return {'success': False, 'message': err, 'reference': None}
+
+    # set shipping item for oligo orders to express if it exceedes the threshold
+    if so_doc.product_type == "Oligos" and so_doc.total > 10: # TODO set threshold from country?
+        for item in so_doc.items:
+            if item.item_group == "Shipping":
+                item.item_code = 1150            # TODO get express from country
+                item.item_name = "my item name"  # TODO replace by the name of the shipping item
+                item.description = "reduced express" 
+
+    try:        
         so_doc.submit()
         
         # check if this customer is approved
