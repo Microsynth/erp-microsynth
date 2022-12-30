@@ -8,6 +8,8 @@ import sys
 from datetime import datetime
 
 
+NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
+
 def get_shipping_service(item_code, ship_adr,cstm_ID):
     
     SHIPPING_SERVICES = {
@@ -197,6 +199,9 @@ def decide_brady_printer_ip(company):
 
 
 def get_label_data(sales_order):
+    """
+    Returns the data for printing a shipping label from a sales order document.
+    """
     
     if not sales_order.shipping_address_name:
         frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))
@@ -218,10 +223,10 @@ def get_label_data(sales_order):
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
         'po_no': sales_order.po_no,
         'web_id': sales_order.web_order_id,
-        'cstm_id': sales_order.customer
+        'cstm_id': sales_order.customer,
+        'oligo_count': len(sales_order.oligos)
     }
     return data
-
 
 @frappe.whitelist()
 def print_address_template(sales_order_id=None, printer_ip=None):
@@ -265,14 +270,19 @@ def print_address_template(sales_order_id=None, printer_ip=None):
 
 
 @frappe.whitelist()
-def print_oligo_order_labels(sales_orders):    
+def print_oligo_order_labels(sales_orders):
+    """
+    Prints the shipping labels from a list of sales order names.
+
+    Run
+    bench execute "microsynth.microsynth.labels.print_oligo_order_labels" --kwargs "{'sales_orders': ['SO-BAL-22011340']}"
+    """    
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
-    printer_template = "microsynth/templates/includes/address_label_novexx.html"
 
     for o in sales_orders:
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
-        content = frappe.render_template(printer_template, label_data)
+        content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
         
         print_raw(settings.label_printer_ip, settings.label_printer_port, content)        
         sales_order.label_printed_on = datetime.now()

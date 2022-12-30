@@ -4,7 +4,7 @@
 #N13
 #ER
 
-{# add sender adress incl logo #}
+{# add sender address incl logo #}
 #T4#J138#YG/0///C:\Logos\00_MIC_Logo_black.bmp#G
 #T4#J130#YL0/0/0.5/95
 {# additional line break #}
@@ -31,15 +31,17 @@
 {%- endif -%}
 
 {# additional line break #}
-{%- if po_no != "" -%}
-    {%- if cstm_id in ["57022", "57023", "23057"] -%} 
-{# IMP, IMBA, Roche Basel #}
+{%- if po_no is not none and po_no != "" -%}
+    {# IMP, IMBA: Code 39 else Code 128 #}
+    {%- if cstm_id in ["57022", "57023"] -%} 
 #T90#J128 #YB7/3V/4/4///{{po_no}}
     {%- else -%} 
 #T90#J120 #YB13/3V/4/4///{{po_no}}
     {%- endif -%}
 {% endif %}
-#T60#J20 #YB13/2V/4/4///{{web_id}} 
+{# barcode with web order id #}
+#T60#J15 #YB13/2OV/4/4///{{web_id}}
+#T60#J10#YN101/2U/40///{{web_id}} - {{ oligo_count}}#G
 
 {# additional line break #}
 #Q1/
