@@ -1281,7 +1281,7 @@ def get_label_status_from_status_id(status_id):
         return None
 
 
-def import_sequencing_labels(filename):
+def import_sequencing_labels(filename, skip_rows = 0):
     """
     Imports the sequencing barcode labels from a webshop export file.
 
@@ -1308,81 +1308,84 @@ def import_sequencing_labels(filename):
 
     with open(filename) as file:
         header = file.readline()
-        count = 0
+        count = 1
         i = 0
         for line in file:
-            elements = line.split("\t")
-            number = int(elements[1])
-            status_element = int(elements[2])
-            service_type = int(elements[4])
-            contact_element = elements[9].strip()
-            registered_to_element = elements[10].strip()
-                        
-            item = get_item_from_service(service_type)
-            
-            # if the 'UseState' is 2, set the 'registered' flag
-            registered = status_element == 2
+            if count > skip_rows:
 
-            # check if contact exists
-            if contact_element == "NULL":
-                contact = None
-            elif frappe.db.exists("Contact", int(contact_element)):
-                contact = int(contact_element)
-            else:
-                print("Could not find Contact '{0}'.".format(contact_element))
-                contact = None
+                elements = line.split("\t")
+                number = int(elements[1])
+                status_element = int(elements[2])
+                service_type = int(elements[4])
+                contact_element = elements[9].strip()
+                registered_to_element = elements[10].strip()
+                            
+                item = get_item_from_service(service_type)
+                
+                # if the 'UseState' is 2, set the 'registered' flag
+                registered = status_element == 2
 
-            # find customer
-            if contact:
-                contact_doc = frappe.get_doc("Contact", contact)
-                # print(contact_doc.links[0].link_name)
-                if len(contact_doc.links) > 0 and contact_doc.links[0].link_doctype == "Customer":                    
-                    customer = contact_doc.links[0].link_name
+                # check if contact exists
+                if contact_element == "NULL":
+                    contact = None
+                elif frappe.db.exists("Contact", int(contact_element)):
+                    contact = int(contact_element)
+                else:
+                    print("Could not find Contact '{0}'.".format(contact_element))
+                    contact = None
+
+                # find customer
+                if contact:
+                    contact_doc = frappe.get_doc("Contact", contact)
+                    # print(contact_doc.links[0].link_name)
+                    if len(contact_doc.links) > 0 and contact_doc.links[0].link_doctype == "Customer":
+                        customer = contact_doc.links[0].link_name
+                    else:
+                        customer = None
                 else:
                     customer = None
-            else:
-                customer = None
 
-            # check if registered_to contact exists:
-            if registered_to_element == "NULL":
-                registered_to = None
-            elif frappe.db.exists("Contact", int(registered_to_element)):
-                registered_to = int(registered_to_element)
-            else:
-                print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
-                registered_to = None
+                # check if registered_to contact exists:
+                if registered_to_element == "NULL":
+                    registered_to = None
+                elif frappe.db.exists("Contact", int(registered_to_element)):
+                    registered_to = int(registered_to_element)
+                else:
+                    print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
+                    registered_to = None
+                
+                label_data = find_label(number, item)
+
+                # check if label exists
+                if not label_data:
+                    # create new label
+                    label = frappe.get_doc({
+                        'doctype': 'Sequencing Label',
+                        'label_id': number,
+                        'item': item,
+                    })
+                else:
+                    label = frappe.get_doc("Sequencing Label", label_data.name)
+
+                # set values
+                label.contact = contact
+                label.customer = customer
+                label.registered = registered
+                label.registered_to = registered_to
+                label.status = get_label_status_from_status_id(status_element)
+                
+                label.save()
+
+                if i >= 100:
+                    print("commit")
+                    frappe.db.commit()
+                    i = 0
+
+                print("{0}: {1}".format(count, number))
             
-            label_data = find_label(number, item)
-
-            # check if label exists
-            if not label_data:                
-                # create new label
-                label = frappe.get_doc({
-                    'doctype': 'Sequencing Label',
-                    'label_id': number,
-                    'item': item,
-                })            
-            else:
-                label = frappe.get_doc("Sequencing Label", label_data.name)
-
-            # set values
-            label.contact = contact
-            label.customer = customer
-            label.registered = registered
-            label.registered_to = registered_to
-            label.status = get_label_status_from_status_id(status_element)
-            
-            label.save()
-
-            if i >= 100:
-                print("commit")
-                frappe.db.commit()
-                i = 0
-
             count += 1
             i += 1
-            print("{0}: {1}".format(count, number))
 
         frappe.db.commit()
-                   
+
     return  
