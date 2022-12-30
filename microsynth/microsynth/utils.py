@@ -151,7 +151,7 @@ def find_label(label_barcode, item):
     Find a Sequencing Label by its barcode and item.
     """
 
-    sql_query = """SELECT * 
+    sql_query = """SELECT `tabSequencing Label`.`name` 
         FROM `tabSequencing Label`
         WHERE `tabSequencing Label`.`label_id` = "{label_id}"
         AND `tabSequencing Label`.`item` = "{item}"
@@ -160,7 +160,7 @@ def find_label(label_barcode, item):
     labels = frappe.db.sql(sql_query, as_dict=True)
 
     if len(labels) == 1:
-        return labels[0]
+        return labels[0]['name']
     elif len(labels) == 0:
         return None
     else:

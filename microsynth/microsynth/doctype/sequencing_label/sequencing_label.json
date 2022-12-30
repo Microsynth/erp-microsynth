@@ -96,7 +96,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Label Barcode",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "description": "Used to specify the label type",
@@ -104,7 +105,8 @@
    "fieldtype": "Link",
    "label": "Item",
    "options": "Item",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "registered_to",
@@ -113,7 +115,7 @@
    "options": "Contact"
   }
  ],
- "modified": "2022-12-29 09:27:29.522758",
+ "modified": "2022-12-30 11:00:03.440184",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Label",

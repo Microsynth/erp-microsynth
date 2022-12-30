@@ -1232,7 +1232,7 @@ def set_default_company():
 
     return
 
-
+# refactor to a dict
 def get_item_from_service(service):
     if service == 0:
         return '3040'
@@ -1263,7 +1263,20 @@ def get_item_from_service(service):
     else:
         return None
 
+SERVICE_ITEM = {
+    0: '3040',
+    1: '3000',
+    2: '3110',
+    3: '3100',   
+    7: '3200',
+    8: '3240',
+    9: '3236',
+    10: '3251',
+    11: '3050',
+    12: '3120',
+}
 
+# refactor to a dict 
 def get_label_status_from_status_id(status_id):
     if status_id == 0:
         return 'unknown'
@@ -1280,6 +1293,14 @@ def get_label_status_from_status_id(status_id):
     else:
         return None
 
+LABEL_STATUS = {
+    0: 'unknown',
+    1: 'unused',
+    2: 'unused',
+    3: 'submitted',
+    4: 'received',
+    5: 'processed'
+}
 
 def import_sequencing_labels(filename, skip_rows = 0):
     """
@@ -1312,6 +1333,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
         i = 0
         for line in file:
             if count > skip_rows:
+                start = datetime.now()
 
                 elements = line.split("\t")
                 number = int(elements[1])
@@ -1325,39 +1347,42 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 # if the 'UseState' is 2, set the 'registered' flag
                 registered = status_element == 2
 
-                # check if contact exists
-                if contact_element == "NULL":
-                    contact = None
-                elif frappe.db.exists("Contact", int(contact_element)):
-                    contact = int(contact_element)
-                else:
-                    print("Could not find Contact '{0}'.".format(contact_element))
-                    contact = None
+                # # check if contact exists
+                # if contact_element == "NULL":
+                #     contact = None
+                # elif frappe.db.exists("Contact", int(contact_element)):
+                #     contact = int(contact_element)
+                # else:
+                #     print("Could not find Contact '{0}'.".format(contact_element))
+                #     contact = None
 
-                # find customer
-                if contact:
-                    contact_doc = frappe.get_doc("Contact", contact)
-                    # print(contact_doc.links[0].link_name)
-                    if len(contact_doc.links) > 0 and contact_doc.links[0].link_doctype == "Customer":
-                        customer = contact_doc.links[0].link_name
-                    else:
-                        customer = None
-                else:
-                    customer = None
+                # # find customer
+                # if contact:
+                #     contact_doc = frappe.get_doc("Contact", contact)
+                #     # print(contact_doc.links[0].link_name)
+                #     if len(contact_doc.links) > 0 and contact_doc.links[0].link_doctype == "Customer":
+                #         customer = contact_doc.links[0].link_name
+                #     else:
+                #         customer = None
+                # else:
+                #     customer = None
 
-                # check if registered_to contact exists:
-                if registered_to_element == "NULL":
-                    registered_to = None
-                elif frappe.db.exists("Contact", int(registered_to_element)):
-                    registered_to = int(registered_to_element)
-                else:
-                    print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
-                    registered_to = None
+                # # check if registered_to contact exists:
+                # if registered_to_element == "NULL":
+                #     registered_to = None
+                # elif frappe.db.exists("Contact", int(registered_to_element)):
+                #     registered_to = int(registered_to_element)
+                # else:
+                #     print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
+                #     registered_to = None
                 
-                label_data = find_label(number, item)
+                label_name = find_label(number, item)
+
+                # t1 = datetime.now() - start
+                # print(t1)
 
                 # check if label exists
-                if not label_data:
+                if not label_name:
                     # create new label
                     label = frappe.get_doc({
                         'doctype': 'Sequencing Label',
@@ -1365,21 +1390,25 @@ def import_sequencing_labels(filename, skip_rows = 0):
                         'item': item,
                     })
                 else:
-                    label = frappe.get_doc("Sequencing Label", label_data.name)
+                    label = frappe.get_doc("Sequencing Label", label_name)
 
                 # set values
-                label.contact = contact
-                label.customer = customer
+                label.contact = contact_element if contact_element != "NULL" else None
+                # label.customer = customer
                 label.registered = registered
-                label.registered_to = registered_to
+                label.registered_to = registered_to_element if registered_to_element != "NULL" else None
                 label.status = get_label_status_from_status_id(status_element)
-                
+
+                label.flags.ignore_links = True
                 label.save()
 
                 if i >= 100:
                     print("commit")
                     frappe.db.commit()
                     i = 0
+
+                # t2 = datetime.now() - start
+                # print(t2)
 
                 print("{0}: {1}".format(count, number))
             
