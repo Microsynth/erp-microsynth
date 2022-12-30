@@ -204,6 +204,16 @@ def set_order_label_printed(sales_orders):
 
 
 def update_shipping_item_rate(item, rate):
+    """
+    Print out the data for a data import csv-file to update shipping item rate
+
+    Important Note:
+    The template includes columns for Webshop Service. This data is currently not 
+    written to the import data and thus might delete existing Webshop Services!
+
+    Run
+    $ bench execute "microsynth.microsynth.utils.update_shipping_item_rate" --kwargs "{'item':'1114', 'rate':42.00}"
+    """
     
     header = """\"Data Import Template"
 "Table:","Country"
