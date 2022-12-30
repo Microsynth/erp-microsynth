@@ -1303,7 +1303,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
     LEFT JOIN AspNetUsers r on r.id = b.RegisteredTo_Id
 
     Run
-    $ bench execute "microsynth.microsynth.migration.import_sequencing_labels" --kwargs "{'filename':'/mnt/erp_share/Sequencing/Label_Import/webshop_barcodes.txt'}"
+    $ bench execute "microsynth.microsynth.migration.import_sequencing_labels" --kwargs "{'filename':'/mnt/erp_share/Sequencing/Label_Import/webshop_barcodes_unused.txt', 'skip_rows':0}"
     """
 
     with open(filename) as file:
