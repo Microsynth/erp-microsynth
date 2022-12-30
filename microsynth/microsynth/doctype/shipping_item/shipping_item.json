@@ -8,7 +8,8 @@
   "item_name",
   "qty",
   "rate",
-  "threshold"
+  "threshold",
+  "preferred_express"
  ],
  "fields": [
   {
@@ -51,11 +52,17 @@
    "label": "Qty",
    "precision": "1",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "preferred_express",
+   "fieldtype": "Check",
+   "label": "Preferred express"
   }
  ],
  "istable": 1,
- "modified": "2022-08-04 20:56:17.749496",
- "modified_by": "Administrator",
+ "modified": "2022-12-30 12:08:36.484702",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Shipping Item",
  "owner": "Administrator",
