@@ -127,8 +127,8 @@ def check_sales_order_completion():
             LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
             WHERE
                 `tabSample Link`.`parent` = "{sales_order}"
-                AND `tabSample Link`.`parenttype` = "Sales Order";
-                AND `tabSequencing Label`.`status` NOT IN ("processed")
+                AND `tabSample Link`.`parenttype` = "Sales Order"
+                AND `tabSequencing Label`.`status` NOT IN ("processed");
             """.format(sales_order=sales_order), as_dict=True)
 
         if len(pending_samples) == 0:
