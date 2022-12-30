@@ -1232,36 +1232,36 @@ def set_default_company():
 
     return
 
-# refactor to a dict
-def get_item_from_service(service):
-    if service == 0:
-        return '3040'
-    elif service == 1:
-        return '3000'
-    elif service == 2:
-        return '3110'
-    elif service == 3:
-        return '3100'
-    elif service == 4:
-        return None
-    elif service == 5:
-        return None
-    elif service == 6:
-        return None
-    elif service == 7:
-        return '3200'
-    elif service == 8:
-        return '3240'
-    elif service == 9:
-        return '3236'
-    elif service == 10:
-        return '3251'
-    elif service == 11:
-        return '3050'
-    elif service == 12:
-        return '3120'
-    else:
-        return None
+# # refactor to a dict
+# def get_item_from_service(service):
+#     if service == 0:
+#         return '3040'
+#     elif service == 1:
+#         return '3000'
+#     elif service == 2:
+#         return '3110'
+#     elif service == 3:
+#         return '3100'
+#     elif service == 4:
+#         return None
+#     elif service == 5:
+#         return None
+#     elif service == 6:
+#         return None
+#     elif service == 7:
+#         return '3200'
+#     elif service == 8:
+#         return '3240'
+#     elif service == 9:
+#         return '3236'
+#     elif service == 10:
+#         return '3251'
+#     elif service == 11:
+#         return '3050'
+#     elif service == 12:
+#         return '3120'
+#     else:
+#         return None
 
 SERVICE_ITEM = {
     0: '3040',
@@ -1276,22 +1276,22 @@ SERVICE_ITEM = {
     12: '3120',
 }
 
-# refactor to a dict 
-def get_label_status_from_status_id(status_id):
-    if status_id == 0:
-        return 'unknown'
-    elif status_id == 1:
-        return 'unused'
-    elif status_id == 2:
-        return 'unused'
-    elif status_id == 3:
-        return 'submitted'
-    elif status_id == 4:
-        return 'received'
-    elif status_id == 5:
-        return 'processed'
-    else:
-        return None
+# # refactor to a dict 
+# def get_label_status_from_status_id(status_id):
+#     if status_id == 0:
+#         return 'unknown'
+#     elif status_id == 1:
+#         return 'unused'
+#     elif status_id == 2:
+#         return 'unused'
+#     elif status_id == 3:
+#         return 'submitted'
+#     elif status_id == 4:
+#         return 'received'
+#     elif status_id == 5:
+#         return 'processed'
+#     else:
+#         return None
 
 LABEL_STATUS = {
     0: 'unknown',
@@ -1342,7 +1342,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 contact_element = elements[9].strip()
                 registered_to_element = elements[10].strip()
                             
-                item = get_item_from_service(service_type)
+                item = SERVICE_ITEM[service_type]
                 
                 # if the 'UseState' is 2, set the 'registered' flag
                 registered = status_element == 2
@@ -1397,7 +1397,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 # label.customer = customer
                 label.registered = registered
                 label.registered_to = registered_to_element if registered_to_element != "NULL" else None
-                label.status = get_label_status_from_status_id(status_element)
+                label.status = LABEL_STATUS[status_element]
 
                 label.flags.ignore_links = True
                 label.save()
