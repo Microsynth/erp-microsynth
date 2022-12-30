@@ -133,8 +133,8 @@ def check_sales_order_completion():
 
         if len(pending_samples) == 0:
             # all processed: create delivery
-            customer = frappe.get_value("Sales Order", sales_order['name'], 'customer')
-            customer_doc = frappe.get_doc("Customer", customer.name)
+            customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
+            customer = frappe.get_doc("Customer", customer_name)
 
             if customer.disabled:
                 frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
