@@ -688,6 +688,42 @@ def update_customer(customer_data):
     
     return error
 
+def update_contact(contact_data):
+    """
+    Update or create a contact record. If non first_name is provided, set it to "-".
+    """
+
+    if not 'person_id' in contact_data:
+        return None
+
+    if 'first_name' in contact_data and contact_data['first_name'] and contact_data['first_name'] != "":
+        first_name = contact_data['first_name']
+    else:
+        first_name = "-"
+
+    # check if contact exists (force insert onto target id)
+    if not frappe.db.exists("Contact", contact_data['person_id']):
+        print("Creating contact {0}...".format(str(int(contact_data['person_id']))))
+        frappe.db.sql("""INSERT INTO `tabAddress` 
+                        (`name`, `address_line1`) 
+                        VALUES ("{0}", "{1}");""".format(
+                        contact_data['person_id'], 
+                        first_name))
+
+    # Update record
+    contact = frappe.get_doc("Contact", contact_data['person_id'])
+    # TODO Update data
+    # copy code from update_customer
+
+    try:
+        # contact.save(ignore_permissions=True)
+        contact.save(ignore_permissions=True)
+        return contact.name
+    except Exception as err:
+        print("Failed to save contact: {0}".format(err))
+        frappe.log_error("Failed to save contact: {0}".format(err))
+        return None
+
 def update_address(customer_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record
@@ -706,7 +742,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
                         (`name`, `address_line1`) 
                         VALUES ("{0}", "{1}");""".format(
                         str(int(customer_data['person_id'])), 
-                        customer_data['address_line1'] if 'address_lin1' in customer_data else "-"))
+                        customer_data['address_line1'] if 'address_line1' in customer_data else "-"))
     
     # update record
     if 'address_type' in customer_data:
