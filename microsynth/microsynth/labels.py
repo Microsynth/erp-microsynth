@@ -214,11 +214,11 @@ def get_label_data(sales_order):
 
     address_id = sales_order.shipping_address_name
     shipping_address = frappe.get_doc("Address", address_id)
-    destination_country_doc = frappe.get_doc("Country", shipping_address.country)   
+    destination_country = frappe.get_doc("Country", shipping_address.country)
 
     data = {
         'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = sales_order.contact_person, address_id = address_id), 
-        'sender_header': get_sender_address_line(sales_order, destination_country_doc),
+        'sender_header': get_sender_address_line(sales_order, destination_country),
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
         'po_no': sales_order.po_no,
@@ -227,6 +227,7 @@ def get_label_data(sales_order):
         'oligo_count': len(sales_order.oligos)
     }
     return data
+
 
 @frappe.whitelist()
 def print_address_template(sales_order_id=None, printer_ip=None):
