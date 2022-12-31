@@ -24,11 +24,32 @@ def ping():
 @frappe.whitelist()
 def create_update_customer(customer_data, client="webshop"):
     """
-    This function will create or update a customer
+    This function will create or update a customer and also the given contact and address
     """
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
     error = update_customer(customer_data)
+    if not error:
+        return {'success': True, 'message': "OK"}
+    else: 
+        return {'success': False, 'message': error}
+
+@frappe.whitelist()
+def create_update_contact(contact, client="webshop"):
+    """
+    This function will create or update a contact
+    """
+    if not contact:
+        return {'success': False, 'message': "Contact missing"}
+    if type(contact) == str:
+        contact = json.loads(contact)
+    if not 'person_id' in contact:
+        return {'success': False, 'message': "Person ID missing"}
+    if not 'first_name' in contact:
+        return{'success': False, 'message': "First Name missting"}
+
+    #TODO implement update_contact
+    error = update_contact(contact)
     if not error:
         return {'success': True, 'message': "OK"}
     else: 
@@ -153,6 +174,55 @@ def get_customer_details(customer_id, client="webshop"):
     }
 
 @frappe.whitelist()
+def contact_exists(contact, client="webshop"):
+    """
+    Checks if a contact record exists and returns a list with contact IDs .
+    """
+    if type(contact) == str:
+        contact = json.loads(contact)
+    
+    if 'first_name' in contact and contact['first_name'] and contact['first_name'] != "":
+        first_name = contact['first_name']
+    else:
+        first_name = "-"
+    
+    sql_query = """SELECT
+            `tabContact`.`name` AS `contact_id`,
+            `tabDynamic Link`.`link_name` AS `customer_id`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` ON 
+            `tabDynamic Link`.`parent` = `tabContact`.`name`
+            AND `tabDynamic Link`.`parenttype` = "Contact"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+        WHERE `tabContact`.`first_name` = "{0}" """.format(first_name)
+    
+    if 'last_name' in contact and contact['last_name']:
+        sql_query += """ AND `tabContact`.`last_name` = "{}" """.format(contact['last_name'])
+
+    if 'customer_id' in contact and contact['customer_id']:
+        sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(contact['customer_id'])
+
+    # TODO check name of email field for interface
+    if 'email_id' in contact and contact['email_id']:
+        sql_query += """ AND `tabContact`.`email_id` = "{}" """.format(contact['email_id'])
+
+    if 'department' in contact and contact['department']:
+        sql_query += """ AND `tabContact`.`department` = "{}" """.format(contact['department'])
+
+    if 'institute' in contact and contact['institute']:
+        sql_query += """ AND `tabContact`.`institute` = "{}" """.format(contact['institute'])
+
+    if 'room' in contact and contact['room']:
+        sql_query += """ AND `tabContact`.`room` = "{}" """.format(contact['room'])
+
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+
+    if len(contacts) > 0:
+        return {'success': True, 'message': "OK", 'contacts': contacts}
+    else: 
+        return {'success': False, 'message': "Contact not found"}
+
+@frappe.whitelist()
 def address_exists(address, client="webshop"):
     """
     Checks if an address record exists
@@ -169,27 +239,28 @@ def address_exists(address, client="webshop"):
             AND `tabDynamic Link`.`link_doctype` = "Customer"
         WHERE `address_line1` LIKE "{0}" """.format(
             address['address_line1'] if 'address_line1' in address else "%")
+    
     if 'address_line2' in address:
         if address['address_line2']:
             sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
         else: 
             sql_query += """ AND `address_line2` is null """
     if 'customer_id' in address and address['customer_id']:
-        sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(address['customer_id'])    
+        sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(address['customer_id'])
     if 'overwrite_company' in address and address['overwrite_company']:
-        sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])    
+        sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])
     if 'pincode' in address:
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
     if 'city' in address:
         sql_query += """ AND `city` = "{0}" """.format(address['city'])
+
     addresses = frappe.db.sql(sql_query, as_dict=True)
     
     if len(addresses) > 0:
-
         return {'success': True, 'message': "OK", 'addresses': addresses}
     else: 
         return {'success': False, 'message': "Address not found"}
-    
+
 
 @frappe.whitelist()
 def request_quote(content, client="webshop"):
