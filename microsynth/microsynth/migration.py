@@ -716,6 +716,8 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
     address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
     if 'customer_name' in customer_data and 'address_line1' in customer_data:
         address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
+    if 'overwrite_company' in customer_data:
+        address.overwrite_company = customer_data['overwrite_company']
     if 'address_line1' in customer_data:
         address.address_line1 = customer_data['address_line1']
     if 'address_line2' in customer_data:
