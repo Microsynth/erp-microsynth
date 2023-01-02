@@ -203,6 +203,27 @@ def set_order_label_printed(sales_orders):
     return
 
 
+def get_express_shipping_item(country_name):
+    """
+    Return the preferred shipping item for the given country name.
+    """
+
+    country = frappe.get_doc("Country", country_name)
+    express_items = []
+
+    for item in country.shipping_items:
+        if item.preferred_express:
+            express_items.append(item)
+
+    if len(express_items) == 0:
+        frappe.throw("No preferred express item found for country '{0}'".format(country_name))    
+    if len(express_items) > 0:
+        
+        if len(express_items) > 1:
+            frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name))
+        return express_items[0]
+
+
 def update_shipping_item_rate(item, rate):
     """
     Print out the data for a data import csv-file to update shipping item rate
