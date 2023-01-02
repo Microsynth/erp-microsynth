@@ -50,8 +50,6 @@ def get_data(filters=None):
             `tabLabel Range`.`range` AS `range`,
             `tabSales Order`.`comment` AS `comment`
         FROM `tabSales Order`
-        LEFT JOIN `tabSequencing Label` ON
-            (`tabSequencing Label`.`sales_order` = `tabSales Order`.`name`)
         LEFT JOIN `tabSales Order Item` ON
             (`tabSales Order Item`.`parent` = `tabSales Order`.`name` AND `tabSales Order Item`.`idx` = 1)
         LEFT JOIN `tabLabel Range` ON
@@ -60,8 +58,7 @@ def get_data(filters=None):
             `tabSales Order`.`product_type` = "Labels"
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`company` = "{company}"
-            AND `tabSales Order`.`transaction_date` >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
-            AND `tabSequencing Label`.`name` IS NULL
+            AND `tabSales Order`.`transaction_date` > '2022-12-22'
             AND `tabSales Order`.`hold_order` <> 1
         ORDER BY `tabSales Order`.`transaction_date` ASC;
     """.format(company=filters.get("company")), as_dict=True)
