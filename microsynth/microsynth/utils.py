@@ -216,7 +216,8 @@ def get_express_shipping_item(country_name):
             express_items.append(item)
 
     if len(express_items) == 0:
-        frappe.throw("No preferred express item found for country '{0}'".format(country_name))    
+        frappe.log_error("No preferred express item found for country '{0}'".format(country_name))
+        None
     if len(express_items) > 0:
         
         if len(express_items) > 1:

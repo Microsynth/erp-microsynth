@@ -590,7 +590,7 @@ def place_order(content, client="webshop"):
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
     express_shipping = get_express_shipping_item(shipping_address.country)
 
-    if so_doc.product_type == "Oligos" and so_doc.total > express_shipping.threshold:
+    if so_doc.product_type == "Oligos" and express_shipping and so_doc.total > express_shipping.threshold:
         for item in so_doc.items:
             if item.item_group == "Shipping":
                 item.item_code = express_shipping.item
