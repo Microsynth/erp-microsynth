@@ -11,20 +11,20 @@ frappe.ui.form.on('Sales Order', {
                 })
             });
         } else {
-            prepare_naming_series(frm);				// common function
+            prepare_naming_series(frm);             // common function
         }
     
     },
     before_save(frm) {
         var category = "Service";
-        if (frm.doc.oligos.length > 0 ) {
+        if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
         };         
         update_taxes(frm.doc.company, frm.doc.customer, frm.doc.customer_address, category);
     },
     company(frm) {
-		if (frm.doc.__islocal) {
-            set_naming_series(frm);					// common function
+        if (frm.doc.__islocal) {
+            set_naming_series(frm);                 // common function
         }            
     }
 });
