@@ -589,8 +589,10 @@ def place_order(content, client="webshop"):
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
     express_shipping = get_express_shipping_item(shipping_address.country)
-
-    if so_doc.product_type == "Oligos" and express_shipping and so_doc.total > express_shipping.threshold:
+    
+    if (so_doc.product_type == "Oligos" and express_shipping and 
+        (so_doc.total > express_shipping.threshold or 
+        (shipping_address.country == "Switzerland" and so_doc.total > 1000))):
         for item in so_doc.items:
             if item.item_group == "Shipping":
                 item.item_code = express_shipping.item
