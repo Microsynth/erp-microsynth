@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
-from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template
+from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template, get_express_shipping_item
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -588,8 +588,7 @@ def place_order(content, client="webshop"):
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
-    destination_country = frappe.get_doc("Country", shipping_address.country)
-    express_shipping = get_express_shipping_item(destination_country)
+    express_shipping = get_express_shipping_item(shipping_address.country)
 
     if so_doc.product_type == "Oligos" and so_doc.total > express_shipping.threshold:
         for item in so_doc.items:
