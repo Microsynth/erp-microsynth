@@ -264,7 +264,7 @@ def print_address_template(sales_order_id=None, printer_ip=None):
     else: 
         frappe.throw("invalid IP, no printer set")
 
-    content = frappe.render_template(printer_template, get_label_data(sales_order_id))
+    content = frappe.render_template(printer_template, get_label_data(sales_order))
 
     # print(content)
     print_raw(printer_ip, 9100, content )
