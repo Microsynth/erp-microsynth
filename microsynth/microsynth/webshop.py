@@ -515,13 +515,17 @@ def place_order(content, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
-    # set shipping item for oligo orders to express if it exceedes the threshold
-    if so_doc.product_type == "Oligos" and so_doc.total > 10: # TODO set threshold from country?
+    # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
+    shipping_address = frappe.get_doc("Address", content['delivery_address'])
+    destination_country = frappe.get_doc("Country", shipping_address.country)
+    express_shipping = get_express_shipping_item(destination_country)
+
+    if so_doc.product_type == "Oligos" and so_doc.total > express_shipping.threshold:
         for item in so_doc.items:
             if item.item_group == "Shipping":
-                item.item_code = 1150            # TODO get express from country
-                item.item_name = "my item name"  # TODO replace by the name of the shipping item
-                item.description = "reduced express" 
+                item.item_code = express_shipping.item
+                item.item_name = express_shipping.item_name
+                item.description = "express shipping" 
 
     try:        
         so_doc.submit()
