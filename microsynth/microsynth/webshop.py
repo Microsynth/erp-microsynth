@@ -283,6 +283,7 @@ def request_quote(content, client="webshop"):
         company = frappe.get_value("Customer", content['customer'], 'default_company')
         if not company:
             company = frappe.defaults.get_default('company')
+    company = "Microsynth AG"       # TODO send company with webshop request. Currently request_quote is only used for oligo orders.
     # create quotation
     qtn_doc = frappe.get_doc({
         'doctype': "Quotation",
