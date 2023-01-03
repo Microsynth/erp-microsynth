@@ -234,7 +234,9 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
     written to the import data and thus might delete existing Webshop Services!
 
     Run
-    $ bench execute "microsynth.microsynth.utils.update_shipping_item_rate" --kwargs "{'item':'1114', 'rate':42.00}"
+    $ bench execute "microsynth.microsynth.utils.update_shipping_item" --kwargs "{'item':'1114', 'rate':42.00}"
+    $ bench execute "microsynth.microsynth.utils.update_shipping_item" --kwargs "{'item':'1117', 'preferred_express':1}"
+    $ bench execute "microsynth.microsynth.utils.update_shipping_item" --kwargs "{'item':'1117', 'threshold':1000.0}"
     """
     
     header = """\"Data Import Template"
