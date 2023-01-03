@@ -225,7 +225,7 @@ def get_express_shipping_item(country_name):
         return express_items[0]
 
 
-def update_shipping_item_rate(item, rate):
+def update_shipping_item(item, rate = None, qty = None, threshold = None, preferred_express = None):
     """
     Print out the data for a data import csv-file to update shipping item rate
 
@@ -250,12 +250,12 @@ def update_shipping_item_rate(item, rate):
 "For updating, you can update only selective columns."
 "You can only upload upto 5000 records in one go. (may be less in some cases)"
 ""
-"DocType:","Country","","~","Webshop Service Link","webshop_service","~","Shipping Item","shipping_items","","",""
-"Column Labels:","ID","Country Name","","ID","Webshop Service","","ID","Item","Qty","Rate","Threshold"
-"Column Name:","name","country_name","~","name","webshop_service","~","name","item","qty","rate","threshold"
-"Mandatory:","Yes","Yes","","Yes","Yes","","Yes","Yes","Yes","Yes","Yes"
-"Type:","Data","Data","","Data","Link","","Data","Link","Float","Float","Float"
-"Info:","","","","","Valid Webshop Service","","","Valid Item","","",""
+"DocType:","Country","","~","Webshop Service Link","webshop_service","~","Shipping Item","shipping_items","","","","",""
+"Column Labels:","ID","Country Name","","ID","Webshop Service","","ID","Item","Qty","Rate","Threshold","Item name","Preferred express"
+"Column Name:","name","country_name","~","name","webshop_service","~","name","item","qty","rate","threshold","item_name","preferred_express"
+"Mandatory:","Yes","Yes","","Yes","Yes","","Yes","Yes","Yes","Yes","Yes","No","No"
+"Type:","Data","Data","","Data","Link","","Data","Link","Float","Float","Float","Data","Check"
+"Info:","","","","","Valid Webshop Service","","","Valid Item","","","","","0 or 1"
 "Start entering data below this line\""""
     print(header)
 
@@ -278,22 +278,29 @@ def update_shipping_item_rate(item, rate):
                 else:
                     country_id = ""
                     country_name = ""
-                if shipping_item.item == item:            
-                    new_qty = 1.0
-                    new_rate = rate
-                    new_threshold = shipping_item.threshold
+
+                if shipping_item.item == item:
+                    new_qty = qty if qty else 1
+                    new_rate = rate if rate else shipping_item.rate
+                    new_threshold = threshold if threshold else shipping_item.threshold
+                    new_item_name = shipping_item.item_name
+                    new_preferred_express = preferred_express if preferred_express else shipping_item.preferred_express
                 else:
                     new_qty = shipping_item.qty
                     new_rate = shipping_item.rate
                     new_threshold = shipping_item.threshold
+                    new_item_name = shipping_item.item_name
+                    new_preferred_express = shipping_item.preferred_express
             
-                print("""\"\",\"{country_id}\","{country_name}","","","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold}""".format(
+                print("""\"\",\"{country_id}\","{country_name}","","","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold},\"{item_name}\",{preferred_express}""".format(
                     country_id = country_id,
                     country_name = country_name,
                     shipping_item_id = shipping_item.name,
                     item_code = shipping_item.item,
                     qty = new_qty,
                     rate = new_rate,
-                    threshold = new_threshold))
+                    threshold = new_threshold,
+                    item_name = new_item_name,
+                    preferred_express = new_preferred_express))
                 
                 i += 1
