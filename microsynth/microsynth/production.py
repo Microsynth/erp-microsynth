@@ -40,11 +40,10 @@ def oligo_status_changed(content=None):
               `tabOligo Link`.`parent` AS `sales_order`
             FROM `tabOligo`
             LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabOligo Link`.`parent`
             WHERE 
               `tabOligo`.`web_id` = "{web_id}"
               AND `tabOligo Link`.`parenttype` = "Sales Order"
-              AND `tabSales Order`.`docstatus` = 1;
+            ORDER BY `tabOligo Link`.`creation` DESC;
         """.format(web_id=oligo['web_id']), as_dict=True)
         
         if len(oligos) > 0:
