@@ -483,6 +483,7 @@ def place_order(content, client="webshop"):
         'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
         'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
         'po_no': content['po_no'] if 'po_no' in content else None,
+        'po_date': content['po_date'] if 'po_date' in content else None,
         'punchout_shop': content['punchout_shop'] if 'punchout_shop' in content else None,
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
