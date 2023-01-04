@@ -107,6 +107,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
     contact = frappe.get_value("Sales Order", sales_order, "contact_person")
     web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
+    register_labels = frappe.get_value("Sales Order", sales_order, "register_labels")
     for i in range(int(from_barcode), (int(to_barcode) + 1)):
         # create label
         new_label = frappe.get_doc({
@@ -117,7 +118,8 @@ def pick_labels(sales_order, from_barcode, to_barcode):
             'customer': customer,
             'customer_name': customer_name,
             'status': "unused",
-            'contact': contact
+            'contact': contact,
+            'registered_to': contact if register_labels else None
         }).insert()
     frappe.db.commit()
     
