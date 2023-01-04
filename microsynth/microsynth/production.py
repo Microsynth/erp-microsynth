@@ -13,6 +13,9 @@ from microsynth.microsynth.labels import print_raw
 def oligo_status_changed(content=None):
     """
     Update the status of a sales order item (Canceled, Completed)
+
+    Testing from console:
+    bench execute "microsynth.microsynth.production.oligo_status_changed" --kwargs "{'content':{'oligos':[{'web_id': '84554','production_id': '4567763.2','status': 'Completed'}]}}"
     """
     # check mandatory
     if not content:
@@ -37,9 +40,11 @@ def oligo_status_changed(content=None):
               `tabOligo Link`.`parent` AS `sales_order`
             FROM `tabOligo`
             LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabOligo Link`.`parent`
             WHERE 
               `tabOligo`.`web_id` = "{web_id}"
-              AND `tabOligo Link`.`parenttype` = "Sales Order";
+              AND `tabOligo Link`.`parenttype` = "Sales Order"
+              AND `tabSales Order`.`docstatus` = 1;
         """.format(web_id=oligo['web_id']), as_dict=True)
         
         if len(oligos) > 0:
