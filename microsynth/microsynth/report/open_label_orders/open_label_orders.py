@@ -67,7 +67,7 @@ def get_data(filters=None):
             AND NOT EXISTS (SELECT *
                             FROM `tabDelivery Note Item`
                             WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`)
-        ORDER BY `tabSales Order`.`transaction_date` ASC;
+        ORDER BY `tabSales Order Item`.`item_code`, `tabSales Order`.`transaction_date` ASC;
     """.format(company=filters.get("company")), as_dict=True)
     
     return open_label_orders
