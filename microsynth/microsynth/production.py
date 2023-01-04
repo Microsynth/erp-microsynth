@@ -235,10 +235,11 @@ def oligo_order_packaged(web_order_id):
     delivery_notes = frappe.db.sql("""
             SELECT 
                 `tabDelivery Note`.`name`
-            FROM `tabDelivery Note`            
+            FROM `tabDelivery Note`
             WHERE
-                `tabDelivery Note`.`web_order_id` = "{web_order_id}"                
-        """.format(web_order_id=web_order_id), as_dict=True)   
+                `tabDelivery Note`.`web_order_id` = "{web_order_id}"
+            AND `tabDelivery Note`.`docstatus` = 0;
+        """.format(web_order_id=web_order_id), as_dict=True)
     
     if len(delivery_notes) == 0:
         return {'success': False, 'message': "Could not find Delivery Note with web_order_id: {0}".format(web_order_id)}
