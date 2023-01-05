@@ -8,6 +8,7 @@
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, close_or_unclose_sales_orders
 import frappe
 from microsynth.microsynth.labels import print_raw
+from microsynth.microsynth.utils import get_export_category
 
 @frappe.whitelist()
 def oligo_status_changed(content=None):
@@ -109,6 +110,10 @@ def check_sales_order_completion(sales_orders):
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             dn_content = make_delivery_note(sales_order)
             dn = frappe.get_doc(dn_content)
+
+            # set export code
+            dn.export_category = get_export_category(dn.shipping_address_name)
+
             # remove oligos that are canceled
             cleaned_oligos = []
             cancelled_oligo_item_qtys = {}

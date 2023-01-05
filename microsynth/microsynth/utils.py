@@ -224,6 +224,13 @@ def get_express_shipping_item(country_name):
             frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name))
         return express_items[0]
 
+def get_export_category(address_name):
+    country = frappe.get_value('Address', address_name, 'country')
+    if country == "Austria":
+        export_category = "AT"
+    else:
+        export_category = frappe.get_value('Country', country, 'export_code')
+    return export_category
 
 def update_shipping_item(item, rate = None, qty = None, threshold = None, preferred_express = None):
     """
