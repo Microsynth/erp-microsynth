@@ -65,13 +65,13 @@
   },
   {
    "fieldname": "eu_dns",
-   "fieldtype": "Data",
+   "fieldtype": "Table",
    "label": "EU",
    "options": "Customs Declaration Delivery Note"
   }
  ],
  "is_submittable": 1,
- "modified": "2023-01-05 11:36:23.445553",
+ "modified": "2023-01-05 12:07:28.551460",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Customs Declaration",
