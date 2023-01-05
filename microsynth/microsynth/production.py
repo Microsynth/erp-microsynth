@@ -78,6 +78,13 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 def check_sales_order_completion(sales_orders):
+    """
+    Check if all oligos of the provided orders are completed and generate a delivery note.
+    
+    Run
+    bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23000051']}"
+    """
+
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
         customer = get_customer_from_sales_order(sales_order)
