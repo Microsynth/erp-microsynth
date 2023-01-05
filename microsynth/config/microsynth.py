@@ -142,6 +142,18 @@ def get_data():
             ]
         },
         {
+            "label": _("Administration"),
+            "icon": "fa fa-money",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Customs Declaration",
+                       "label": _("Customs Declaration"),
+                       "description": _("Customs Declaration")
+                   }
+            ]
+        },
+        {
             "label": _("Accounting"),
             "icon": "fa fa-money",
             "items": [
