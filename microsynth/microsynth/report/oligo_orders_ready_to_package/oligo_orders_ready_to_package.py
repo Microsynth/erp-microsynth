@@ -17,13 +17,15 @@ def get_columns():
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120},
         {"label": _("Deliver Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
         {"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 70},
-        {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
+        {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},        
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
-        {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 180},
+        {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
         {"label": _("Order date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Region"), "fieldname": "export_code", "fieldtype": "Data", "width": 60},
+        {"label": _("Item"), "fieldname": "shipping_item", "fieldtype": "Data", "width": 45},
+        {"label": _("Description"), "fieldname": "shipping_description", "fieldtype": "Data", "width": 70},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
     ]
 
@@ -41,7 +43,9 @@ def get_data(filters=None):
             `tabSales Order`.`contact_display` AS `contact_name`,
             `tabSales Order`.`transaction_date` AS `date`,
             `tabCountry`.`export_code` AS `export_code`,
-            `tabSales Order`.`comment` AS `comment`
+            `tabSales Order`.`comment` AS `comment`,
+            `tabDelivery Note Item`.`item_code` AS `shipping_item`,
+            `tabDelivery Note Item`.`description` AS `shipping_description`
         FROM `tabDelivery Note Item`
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
@@ -52,9 +56,10 @@ def get_data(filters=None):
             AND `tabCountry`.`name` = 'Switzerland'
             AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
+            AND `tabDelivery Note Item`.`item_group` = 'Shipping'
             AND `tabDelivery Note Item`.`creation` > '2022-12-22'
         GROUP BY sales_order
-        ORDER BY sales_order ASC;
+        ORDER BY shipping_item DESC;
     """, as_dict=True)
 
     return data
