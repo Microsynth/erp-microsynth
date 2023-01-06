@@ -690,9 +690,8 @@ def update_customer(customer_data):
 
 def update_contact(contact_data):
     """
-    Update or create a contact record. If non first_name is provided, set it to "-".
+    Update or create a contact record. If no first_name is provided, set it to "-".
     """
-
     if not 'person_id' in contact_data:
         return None
 
@@ -704,16 +703,105 @@ def update_contact(contact_data):
     # check if contact exists (force insert onto target id)
     if not frappe.db.exists("Contact", contact_data['person_id']):
         print("Creating contact {0}...".format(str(int(contact_data['person_id']))))
-        frappe.db.sql("""INSERT INTO `tabAddress` 
-                        (`name`, `address_line1`) 
-                        VALUES ("{0}", "{1}");""".format(
-                        contact_data['person_id'], 
-                        first_name))
+        frappe.db.sql("""INSERT INTO `tabContact` 
+                        (`name`, `first_name`, `status`) 
+                        VALUES ("{0}", "{1}", "Open");""".format(
+                        contact_data['person_id'], contact_data['first_name']))
 
     # Update record
     contact = frappe.get_doc("Contact", contact_data['person_id'])
     # TODO Update data
     # copy code from update_customer
+    contact.first_name = first_name
+    contact.last_name = contact_data['last_name'] if 'last_name' in contact_data and contact_data['last_name'] else None
+    contact.full_name = "{first_name}{spacer}{last_name}".format(first_name=contact.first_name, spacer = " " if contact.last_name else "", last_name=contact.last_name or "")
+    if 'institute' in contact_data:
+        contact.institute = contact_data['institute'] 
+    if 'department' in contact_data:
+        contact.department = contact_data['department']
+    contact.email_ids = []
+    if 'email' in contact_data and contact_data['email']:
+        contact.append("email_ids", {
+            'email_id': contact_data['email'],
+            'is_primary': 1
+        })
+    if 'email_cc' in contact_data and contact_data['email_cc']:
+        contact.append("email_ids", {
+            'email_id': contact_data['email_cc'],
+            'is_primary': 0
+        })
+    contact.phone_nos = []
+    if 'phone_number' in contact_data and contact_data['phone_number']:
+        if 'phone_country' in contact_data:
+            number = "{0} {1}".format(contact_data['phone_country'] or "", 
+                contact_data['phone_number'])
+        else:
+            number = "{0}".format(contact_data['phone_number'])
+        contact.append("phone_nos", {
+            'phone': number,
+            'is_primary_phone': 1
+        })
+    contact.links = []
+    # if not is_deleted:
+    if 'customer_id' in contact_data:
+        contact.append("links", {
+            'link_doctype': "Customer",
+            'link_name': contact_data['customer_id']
+        })
+    if 'institute_key' in contact_data:
+        contact.institute_key = contact_data['institute_key']
+    if 'group_leader' in contact_data:
+        contact.group_leader = contact_data['group_leader']    
+    if 'address' in contact_data:
+        contact.address = contact_data['address']
+    if 'salutation' in contact_data and contact_data['salutation']:
+        if not frappe.db.exists("Salutation", contact_data['salutation']):
+            frappe.get_doc({
+                'doctype': 'Salutation',
+                'salutation': contact_data['salutation']
+            }).insert()
+        contact.salutation = contact_data['salutation']
+    if 'title' in contact_data:
+        contact.designation = contact_data['title']
+    if 'receive_updates_per_email' in contact_data and contact_data['receive_updates_per_email'] == "Mailing":
+        contact.unsubscribed = 0
+    else:
+        contact.unsubscribed = 1
+    if 'room' in contact_data:
+        contact.room = contact_data['room']
+    if 'punchout_identifier' in contact_data:
+        contact.punchout_identifier = contact_data['punchout_identifier']
+    if 'newsletter_registration_state' in contact_data:
+        if contact_data['newsletter_registration_state'] == "registered":
+            contact.receive_newsletter = "registered"
+        elif contact_data['newsletter_registration_state'] == "unregistered":
+            contact.receive_newsletter = "unregistered"
+        elif contact_data['newsletter_registration_state'] == "pending":
+            contact.receive_newsletter = "pending"
+        elif contact_data['newsletter_registration_state'] == "bounced":
+            contact.receive_newsletter = "bounced"
+        else:
+            contact.receive_newsletter = ""
+    if 'newsletter_registration_date' in contact_data:
+        try:
+            contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
+        except:
+            # fallback date only 
+            try:
+                contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y")
+            except:
+                print("failed to parse subscription date: {0}".format(contact_data['newsletter_registration_date']))
+    if 'newsletter_unregistration_date' in contact_data:
+        try:
+            contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
+        except:
+            # fallback date only 
+            try:
+                contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y")
+            except:
+                print("failed to parse unsubscription date: {0}".format(contact_data['newsletter_unregistration_date']))
+    if 'contact_address' in contact_data and frappe.db.exists("Address", contact_data['contact_address']):
+        contact.address = contact_data['contact_address']
 
     try:
         # contact.save(ignore_permissions=True)

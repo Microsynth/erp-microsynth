@@ -7,7 +7,7 @@
 
 import frappe
 import json
-from microsynth.microsynth.migration import update_customer, update_address, robust_get_country
+from microsynth.microsynth.migration import update_customer, update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template, get_express_shipping_item
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
@@ -46,14 +46,12 @@ def create_update_contact(contact, client="webshop"):
     if not 'person_id' in contact:
         return {'success': False, 'message': "Person ID missing"}
     if not 'first_name' in contact:
-        return{'success': False, 'message': "First Name missting"}
-
-    #TODO implement update_contact
-    error = update_contact(contact)
-    if not error:
+        return{'success': False, 'message': "First Name missing"}    
+    contact_name = update_contact(contact)
+    if contact_name:
         return {'success': True, 'message': "OK"}
     else: 
-        return {'success': False, 'message': error}
+        return {'success': False, 'message': "An error occured while creating/updating the contact record"}
 
 @frappe.whitelist()
 def create_update_address(address=None, client="webshop"):
