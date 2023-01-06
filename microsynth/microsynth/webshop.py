@@ -364,10 +364,25 @@ def get_contact_quotations(contact, client="webshop"):
     """
     if frappe.db.exists("Contact", contact):
         # return valid quotations
-        qtns = frappe.get_all("Quotation", 
-            filters={'contact_person': contact, 'docstatus': 1},
-            fields=['name', 'quotation_type', 'currency', 'net_total', 'transaction_date', 'customer_request']
-        )
+        query = """SELECT 
+                `tabQuotation`.`name`, 
+                `tabQuotation`.`quotation_type`, 
+                `tabQuotation`. `currency`, 
+                `tabQuotation`.`net_total`, 
+                `tabQuotation`.`transaction_date`, 
+                `tabQuotation`.`customer_request`, 
+                `tabQuotation Item`.`item_code`, 
+                `tabQuotation Item`.`description`, 
+                `tabQuotation Item`.`qty`, 
+                `tabQuotation Item`.`rate`
+            FROM `tabQuotation`
+            LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`
+            WHERE `tabQuotation`.`contact_person` = '{0}' 
+            AND `tabQuotation`.`docstatus` = 1 
+            ORDER BY `tabQuotation`.`name` """.format(contact) 
+
+        qtns = frappe.db.sql(query, as_dict=True)
+
         return {'success': True, 'message': "OK", 'quotations': qtns}
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
