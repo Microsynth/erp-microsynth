@@ -784,22 +784,29 @@ def update_contact(contact_data):
             contact.receive_newsletter = ""
     if 'newsletter_registration_date' in contact_data:
         try:
-            contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
+            contact.subscribe_date = datetime.fromisoformat(contact_data['newsletter_registration_date'])
         except:
-            # fallback date only 
             try:
-                contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y")
+                contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                print("failed to parse subscription date: {0}".format(contact_data['newsletter_registration_date']))
+                # fallback date only 
+                try:
+                    contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y")
+                except:
+                    frappe.throw(":-(")
+                    print("failed to parse subscription date: {0}".format(contact_data['newsletter_registration_date']))
     if 'newsletter_unregistration_date' in contact_data:
         try:
-            contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
+            contact.unsubscribe_date = datetime.fromisoformat(contact_data['newsletter_unregistration_date'])
         except:
-            # fallback date only 
             try:
-                contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y")
+                contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                print("failed to parse unsubscription date: {0}".format(contact_data['newsletter_unregistration_date']))
+                # fallback date only 
+                try:
+                    contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y")
+                except:
+                    print("failed to parse unsubscription date: {0}".format(contact_data['newsletter_unregistration_date']))
     if 'contact_address' in contact_data and frappe.db.exists("Address", contact_data['contact_address']):
         contact.address = contact_data['contact_address']
 
