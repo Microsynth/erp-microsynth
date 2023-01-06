@@ -367,7 +367,7 @@ def get_contact_quotations(contact, client="webshop"):
         query = """SELECT 
                 `tabQuotation`.`name`, 
                 `tabQuotation`.`quotation_type`, 
-                `tabQuotation`. `currency`, 
+                `tabQuotation`.`currency`, 
                 `tabQuotation`.`net_total`, 
                 `tabQuotation`.`transaction_date`, 
                 `tabQuotation`.`customer_request`, 
