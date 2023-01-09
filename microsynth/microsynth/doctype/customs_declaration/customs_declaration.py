@@ -18,7 +18,7 @@ def create_customs_declaration():
         'company': frappe.defaults.get_global_default('company'),
         'date': date.today()
         })
-    dns = get_delivery_notes_to_declare();
+    dns = get_delivery_notes_to_declare()
     for dn in dns:
         if dn['export_category'] == "AT":
             cd.append('austria_dns',dn)
@@ -38,7 +38,7 @@ def get_delivery_notes_to_declare():
         `tabCustomer`.`tax_id` as `tax_id`,
         `tabAddress`.`country` as `country`,
         `tabDelivery Note`.`currency`,
-        `tabDelivery Note`.`total`,
+        `tabDelivery Note`.`total` as `net_total`,
         `tabDelivery Note`.`grand_total`
         FROM `tabDelivery Note`
         JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
