@@ -122,19 +122,3 @@ def get_sender_address_line(sales_order, shipping_address_country):
         return ""
 
     return letter_head.sender_address_line
-
-
-def decide_brady_printer_ip(company):
-    """
-    printers have to be set in Sequencing Settings based on company name
-    printer IPs have to be set in an object of DocType Brady Printer
-    """
-    
-    if not company: 
-        frappe.throw("Company missing for deciding on printer IP")
-
-    settings = frappe.get_doc("Sequencing Settings", "Sequencing Settings")
-    for printer in settings.label_printers:
-        if printer.company == company:
-            printer = frappe.get_doc("Brady Printer", printer.brady_printer)
-            return printer.ip
