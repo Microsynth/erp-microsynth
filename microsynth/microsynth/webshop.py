@@ -477,6 +477,11 @@ def place_order(content, client="webshop"):
         company = frappe.defaults.get_global_default('company')
     # select naming series
     naming_series = get_naming_series("Sales Order", company)
+    
+    # TODO check if distributor requires replacement of the customer
+    # check that the webshop does not send prices
+    # shipping item?
+    
     # cache contact values (Frappe bug in binding)
     contact = frappe.get_doc("Contact", content['contact'])
     # create sales order
