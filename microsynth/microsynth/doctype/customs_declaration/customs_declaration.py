@@ -50,7 +50,7 @@ def create_customs_declaration():
             cd.append('austria_dns',dn)
         if dn['export_category'] == "EU":
             cd.append('eu_dns',dn)
-    cd.insert()
+    cd.insert(ignore_permissions = True)
     frappe.db.commit()
     return get_url_to_form("Customs Declaration", cd.name)
 
