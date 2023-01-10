@@ -65,6 +65,7 @@ def get_delivery_notes_to_declare():
         `tabAddress`.`country` as `country`,
         `tabDelivery Note`.`currency`,
         `tabDelivery Note`.`total` as `net_total`,
+        `tabDelivery Note`.`total_taxes_and_charges` as `taxes`,
         `tabDelivery Note`.`grand_total`
         FROM `tabDelivery Note`
         JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
