@@ -9,7 +9,33 @@ from frappe.utils import cint, get_url_to_form
 from datetime import date
 
 class CustomsDeclaration(Document):
-    pass
+    def on_submit(self):
+        for dn in self.austria_dns:
+            doc = frappe.get_doc('Delivery Note', dn.delivery_note)
+            doc.customs_declaration = self.name
+            doc.save()
+               
+        for dn in self.eu_dns:
+            doc = frappe.get_doc('Delivery Note', dn.delivery_note)
+            doc.customs_declaration = self.name
+            doc.save()
+
+        frappe.db.commit()
+        return
+
+    def before_cancel(self):
+        for dn in self.austria_dns:
+            doc = frappe.get_doc('Delivery Note', dn.delivery_note)
+            doc.customs_declaration = None
+            doc.save()
+
+        for dn in self.austria_dns:
+            doc = frappe.get_doc('Delivery Note', dn.delivery_note)
+            doc.customs_declaration = None
+            doc.save()
+        
+        frappe.db.commit()
+        return
 
 @frappe.whitelist()
 def create_customs_declaration():
