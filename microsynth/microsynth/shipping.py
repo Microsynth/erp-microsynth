@@ -118,7 +118,8 @@ def get_sender_address_line(sales_order, shipping_address_country):
     letter_head = frappe.get_doc("Letter Head", letter_head_name)
 
     if not letter_head.sender_address_line:   
-        frappe.throw("Letter head '{0}' does not have a 'sender_address_line' specified.".format(letter_head_name))
+        # frappe.throw("Letter head '{0}' does not have a 'sender_address_line' specified.".format(letter_head_name))
+        return ""
 
     return letter_head.sender_address_line
 
