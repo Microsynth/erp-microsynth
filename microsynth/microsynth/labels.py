@@ -143,7 +143,7 @@ def create_receiver_address_lines(customer_id=None, contact_id=None, address_id=
     if contact_id: 
         if contact_doc.institute:   rec_adr_lines.append(contact_doc.institute)
         if contact_doc.designation: rec_adr_lines.append(contact_doc.designation)
-        if contact_doc.first_name and contact_doc.first_name != "-": rec_adr_lines.append(contact_doc.first_name)
+        if contact_doc.first_name and contact_doc.first_name != "-": rec_adr_lines[-1] += " " + contact_doc.first_name
         if contact_doc.last_name:   rec_adr_lines[-1] += " " + contact_doc.last_name
         if contact_doc.department:  rec_adr_lines.append(contact_doc.department)
         if contact_doc.room:        rec_adr_lines.append(contact_doc.room)
@@ -170,7 +170,7 @@ def get_sender_address_line(sales_order, shipping_address_country):
     if sales_order.company == "Microsynth AG" and shipping_address_country.name == "Austria":
         letter_head_name = "Microsynth AG Wolfurt"    
     elif sales_order.company == "Microsynth AG" and shipping_address_country.eu:
-        letter_head_name = "Microsynth AG Lindau"        
+        letter_head_name = "Microsynth AG Lindau"
     else:
         letter_head_name = sales_order.company
 
@@ -233,27 +233,12 @@ def get_label_data(sales_order):
 def print_address_template(sales_order_id=None, printer_ip=None):
     """function calls respective template for creating a transport label"""
 
-    # test data - during development
-    if not sales_order_id: 
-        sales_order_id = 'SO-BAL-22009917'
-        sales_order_id = 'SO-GOE-22000704'
-        sales_order_id = 'SO-BAL-22009934'
-        sales_order_id = 'SO-LYO-22000071'
-        sales_order_id = "SO-BAL-22009681"
-        sales_order_id = "SO-BAL-22009354"
-        sales_order_id = "SO-BAL-22008255"
-        sales_order_id = "SO-BAL-22000012"
-        sales_order_id = "SO-BAL-22000004"
-    customers = frappe.get_all("Customer", fields=["name", "customer_name"])
-
+    # TODO: delete if outcommenting not a problem
+    #customers = frappe.get_all("Customer", fields=["name", "customer_name"])
+    
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     
-    # this is Brady
-    # printer_ip = "192.0.1.70"
-    # this is Novexx    
-    # printer_ip = "192.0.1.72"
-    
-    # if ip (use case "Novexx")
+    # if ip --> use case "Novexx"
     if not printer_ip:
         printer_ip = decide_brady_printer_ip(sales_order.company)
 
