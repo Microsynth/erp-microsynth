@@ -39,50 +39,54 @@ frappe.query_reports["Pricing Configurator"] = {
         report.page.add_inner_button(__('Customers'), function () {
            frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value });
         });
-        // add event listener for double clicks to move up
-        cur_page.container.addEventListener("dblclick", function(event) {
-            var row = event.delegatedTarget.getAttribute("data-row-index");
-            var column = event.delegatedTarget.getAttribute("data-col-index");
-            if (parseInt(column) === 7) {
-                // fetch value
-                var value = 1;
-                if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {
-                    value = parseFloat(event.delegatedTarget.innerText);
-                }
-                // get price list fom filters
-                var price_list = null;
-                for (var i = 0; i < frappe.query_report.filters.length; i++) {
-                    if (frappe.query_report.filters[i].fieldname == "price_list") {
-                        price_list = frappe.query_report.filters[i].value;
+        if (!locals.double_click_handler) {
+            locals.double_click_handler = true;
+            
+            // add event listener for double clicks to move up
+            cur_page.container.addEventListener("dblclick", function(event) {
+                var row = event.delegatedTarget.getAttribute("data-row-index");
+                var column = event.delegatedTarget.getAttribute("data-col-index");
+                if (parseInt(column) === 7) {
+                    // fetch value
+                    var value = 1;
+                    if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {
+                        value = parseFloat(event.delegatedTarget.innerText);
                     }
-                }
-                // get the quantity from data
-                var qty = frappe.query_report.data[row].qty
-                // get item_code from data
-                var item_code = frappe.query_report.data[row].item_code;
-                edit_cell(item_code, price_list, qty, value);
-            }
-            else if (parseInt(column) === 8 ) {
-                // fetch value
-                var discount = 1;
-                if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {
-                    discount = parseFloat(event.delegatedTarget.innerText);
-                }
-                // get price list fom filters
-                var price_list = null;
-                for (var i = 0; i < frappe.query_report.filters.length; i++) {
-                    if (frappe.query_report.filters[i].fieldname == "price_list") {
-                        price_list = frappe.query_report.filters[i].value;
+                    // get price list fom filters
+                    var price_list = null;
+                    for (var i = 0; i < frappe.query_report.filters.length; i++) {
+                        if (frappe.query_report.filters[i].fieldname == "price_list") {
+                            price_list = frappe.query_report.filters[i].value;
+                        }
                     }
+                    // get the quantity from data
+                    var qty = frappe.query_report.data[row].qty
+                    // get item_code from data
+                    var item_code = frappe.query_report.data[row].item_code;
+                    edit_cell(item_code, price_list, qty, value);
                 }
-                // get the quantity from data
-                var qty = frappe.query_report.data[row].qty
-                // get item_code from data
-                var item_code = frappe.query_report.data[row].item_code;
-                var reference_rate = frappe.query_report.data[row].reference_rate;
-                edit_discount_cell(item_code, price_list, qty, discount, reference_rate);
-            }
-        });
+                else if (parseInt(column) === 8 ) {
+                    // fetch value
+                    var discount = 1;
+                    if ((event.delegatedTarget.innerText) && (event.delegatedTarget.innerText.length > 0)) {
+                        discount = parseFloat(event.delegatedTarget.innerText);
+                    }
+                    // get price list fom filters
+                    var price_list = null;
+                    for (var i = 0; i < frappe.query_report.filters.length; i++) {
+                        if (frappe.query_report.filters[i].fieldname == "price_list") {
+                            price_list = frappe.query_report.filters[i].value;
+                        }
+                    }
+                    // get the quantity from data
+                    var qty = frappe.query_report.data[row].qty
+                    // get item_code from data
+                    var item_code = frappe.query_report.data[row].item_code;
+                    var reference_rate = frappe.query_report.data[row].reference_rate;
+                    edit_discount_cell(item_code, price_list, qty, discount, reference_rate);
+                }
+            });
+        }
     }
 };
 
