@@ -7,6 +7,22 @@ import socket
 import sys
 from datetime import datetime
 
+TRACKING_URLS = {
+    '1010': "https://www.post.at/sv/sendungssuche?snr=",
+    '1103': "https://www.post.at/sv/sendungssuche?snr=",
+    '1105': "https://www.post.at/sv/sendungssuche?snr=",
+    '1108': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1114': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1117': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
+    '1126': "https://www.fedex.com/fedextrack/?trknbr=",
+    '1101': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
+    '1102': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
+    '1104': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
+    '1107': "https://www.post.ch/swisspost-tracking?formattedParcelCodes="
+}
+
 
 def get_shipping_service(item_code, ship_adr,cstm_ID):
     
