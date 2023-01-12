@@ -69,18 +69,13 @@ def print_test_label_novexx():
 def decide_brady_printer_ip(company):
     """
     printers have to be set in Sequencing Settings based on company name
-    printer IPs have to be set in an object of DocType Brady Printer
-    decission is made by the profiles's location field value of the user triggering the print button"""
+    printer IPs have to be set in an object of DocType Brady Printer"""
     
-    if frappe.get_user().doc.location.lower() in ["balgach", "switzerland"]: 
+    # Austria labels will be handled in by Microsynth AG
+    if company == "Microsynth Austria GmbH": 
         company = "Microsynth AG"
-    elif frappe.get_user().doc.location.lower() in ["wien", "austria"]:
-        company = "Microsynth Austria GmbH"
-    elif frappe.get_user().doc.location.lower() in ["göttingen", "goettingen", "germany", "deutschland"]:
-        company = "Microsynth Seqlab GmbH"
-    elif frappe.get_user().doc.location.lower() in ["lyon", "france"]:
-        company = "Microsynth France SAS"
-    else: 
+    
+    if not company: 
         frappe.throw("Company missing for deciding on printer IP")
 
     settings = frappe.get_doc("Sequencing Settings", "Sequencing Settings")
