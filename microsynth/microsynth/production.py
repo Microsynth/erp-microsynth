@@ -90,6 +90,10 @@ def check_sales_order_completion(sales_orders):
     for sales_order in sales_orders:
         customer = get_customer_from_sales_order(sales_order)
 
+        if sales_order.docstatus != 1:
+            frappe.log_error("Order '{1}' is not submitted. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+            return
+
         if customer.disabled:
             frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
             return
