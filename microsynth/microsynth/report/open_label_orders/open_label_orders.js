@@ -14,7 +14,7 @@ frappe.query_reports["Open Label Orders"] = {
         }
     ],
     "onload": (report) => {
-        report.page.add_inner_button( __("Pick labels"), function() {            
+        report.page.add_inner_button( __("Pick labels"), function() {
             queue_builder(report.get_values());
         });
     }
@@ -171,10 +171,15 @@ function second_barcode_dialog() {
                 var validated = false;
                 
                 // TODO
-                validated = true;
+                validated = Number(values.to_barcode) == Number(locals.label_queue[0].from_barcode) + Number(locals.label_queue[0].qty) - 1;
                 
                 if (validated) {
+                    frappe.show_alert("Barcodes OK");
                     locals.label_queue[0].status = 2;
+                }
+                else
+                {
+                    frappe.msgprint("invalid barcode range");
                 }
                 locals.label_queue[0].to_barcode = values.to_barcode;
                 process_queue();
