@@ -101,10 +101,34 @@ def processed_labels(content):
 #        content = json.loads(content)
 #    return set_status("unknown", content.get("labels"))
 
-
-
+def get_customer_from_sales_order(sales_order):
+    customer_name = frappe.get_value("Sales Order", sales_order, 'customer')
+    customer = frappe.get_doc("Customer", customer_name)
+    return customer
 
 def check_sales_order_completion():
+    # validate Sales Order
+    customer = get_customer_from_sales_order(sales_order)
+
+    if customer.disabled:
+        frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
+        return
+
+    sales_order_status = frappe.get_value("Sales Order", sales_order, "docstatus")
+    if sales_order_status != 1:
+        frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+        return
+        
+    delivery_notes = frappe.db.sql("""
+        SELECT `tabDelivery Note Item`.`parent`
+            FROM `tabDelivery Note Item`
+            WHERE `tabDelivery Note Item`.`against_sales_order` = '{sales_order}';
+        """.format(sales_order=sales_order), as_dict=True)
+
+    if len(delivery_notes) > 0:
+        frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+        return
+
     # find sales orders that have no delivery note and are not closed
     open_sequencing_sales_orders = frappe.db.sql("""
         SELECT `name`

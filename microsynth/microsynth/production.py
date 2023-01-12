@@ -88,16 +88,29 @@ def check_sales_order_completion(sales_orders):
 
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
+        # validate Sales Order
         customer = get_customer_from_sales_order(sales_order)
-
-        if sales_order.docstatus != 1:
-            frappe.log_error("Order '{1}' is not submitted. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-            return
 
         if customer.disabled:
             frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
-            return
+            continue
 
+        sales_order_status = frappe.get_value("Sales Order", sales_order, "docstatus")
+        if sales_order_status != 1:
+            frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+            continue
+            
+        delivery_notes = frappe.db.sql("""
+            SELECT `tabDelivery Note Item`.`parent`
+                FROM `tabDelivery Note Item`
+                WHERE `tabDelivery Note Item`.`against_sales_order` = '{sales_order}';
+            """.format(sales_order=sales_order), as_dict=True)
+
+        if len(delivery_notes) > 0:
+            frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+            continue
+        
+        # get open items
         so_open_items = frappe.db.sql("""
             SELECT 
                 `tabOligo Link`.`parent`
@@ -108,6 +121,7 @@ def check_sales_order_completion(sales_orders):
                 AND `tabOligo Link`.`parenttype` = "Sales Order"
                 AND `tabOligo`.`status` = "Open";
         """.format(sales_order=sales_order), as_dict=True)
+
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
             
