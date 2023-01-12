@@ -72,7 +72,8 @@ def get_delivery_notes_to_declare():
         JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
         JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
         WHERE `tabDelivery Note`.`export_category` IN ('AT', 'EU')
-        AND `tabDelivery Note`.`customs_declaration` is NULL;
+        AND `tabDelivery Note`.`customs_declaration` is NULL
+        AND `tabDelivery Note`.`docstatus` <> 2;
         """
     delivery_notes = frappe.db.sql(sql_query, as_dict=True)
     return delivery_notes
