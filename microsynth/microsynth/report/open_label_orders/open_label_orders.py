@@ -66,7 +66,8 @@ def get_data(filters=None):
             AND `tabSales Order`.`hold_order` <> 1
             AND NOT EXISTS (SELECT *
                             FROM `tabDelivery Note Item`
-                            WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`)
+                            WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                            AND `tabDelivery Note Item`.`docstatus` <> 2)
         ORDER BY `tabSales Order Item`.`item_code`, `tabSales Order`.`transaction_date` ASC;
     """.format(company=filters.get("company")), as_dict=True)
     
