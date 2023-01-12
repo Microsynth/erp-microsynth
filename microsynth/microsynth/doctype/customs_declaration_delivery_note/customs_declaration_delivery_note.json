@@ -13,7 +13,8 @@
   "currency",
   "net_total",
   "taxes",
-  "grand_total"
+  "grand_total",
+  "base_total"
  ],
  "fields": [
   {
@@ -87,10 +88,17 @@
    "label": "Taxes",
    "options": "currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "base_total",
+   "fieldtype": "Currency",
+   "label": "Base Total",
+   "options": "Company:company:default_currency",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2023-01-10 20:41:14.955952",
+ "modified": "2023-01-12 10:04:53.749810",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Customs Declaration Delivery Note",
