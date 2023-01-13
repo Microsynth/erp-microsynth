@@ -710,7 +710,7 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
         return {'success': False, 'message': "Person ID not found"}
 
 @frappe.whitelist()
-def update_punchout_details(person_id, punchout_buyer, punchout_identifier, client="webshop"):
+def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_identifier, client="webshop"):
     """
     Update punchout details
     """
@@ -724,6 +724,7 @@ def update_punchout_details(person_id, punchout_buyer, punchout_identifier, clie
         if not customer_id:
             return {'success': False, 'message': "No customer linked"}
         customer = frappe.get_doc("Customer", customer_id)
+        customer.punchout_shop = punchout_shop
         customer.punchout_buyer = punchout_buyer
         contact.punchout_identifier = punchout_identifier
         try:
