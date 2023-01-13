@@ -57,8 +57,8 @@ function process_queue() {
                     'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.pick_labels",
                     'args': {
                         'sales_order': locals.label_queue[0].sales_order,
-                        'from_barcode': locals.label_queue[0].from_barcode.replace(/\s+/g, ''),
-                        'to_barcode': locals.label_queue[0].to_barcode.replace(/\s+/g, '')
+                        'from_barcode': locals.label_queue[0].from_barcode,
+                        'to_barcode': locals.label_queue[0].to_barcode
                     },
                     'callback': function(r) {
                         // open print dialog & print
@@ -110,14 +110,15 @@ function first_barcode_dialog() {
             function (values) {
                 // validation: if it fails, leave status on 0 and continue, on success move to 1
                 var validated = false;
-                
+                var from_barcode = Number(values.from_barcode.replace(/\s+/g, ''));
+
                 // TODO
                 validated = true;
                 
                 if (validated) {
                     locals.label_queue[0].status = 1;
                 }
-                locals.label_queue[0].from_barcode = values.from_barcode;
+                locals.label_queue[0].from_barcode = from_barcode;
                 process_queue();
             },
             __("Pick first label"),
@@ -169,9 +170,10 @@ function second_barcode_dialog() {
             function (values) {
                 // validation: if it fails, leave status on 0 and continue, on success move to 1
                 var validated = false;
+                var to_barcode = Number(values.to_barcode.replace(/\s+/g, ''))
                 
                 // TODO
-                validated = Number(values.to_barcode) == Number(locals.label_queue[0].from_barcode) + Number(locals.label_queue[0].qty) - 1;
+                validated = to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1;
                 
                 if (validated) {
                     frappe.show_alert("Barcodes OK");
@@ -181,7 +183,7 @@ function second_barcode_dialog() {
                 {
                     frappe.msgprint("invalid barcode range");
                 }
-                locals.label_queue[0].to_barcode = values.to_barcode;
+                locals.label_queue[0].to_barcode = to_barcode;
                 process_queue();
             },
             __("Pick last label"),
