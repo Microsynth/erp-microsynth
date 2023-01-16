@@ -35,8 +35,20 @@ T 29,49,90,3,pt 20;{{shipping_service}}
     {%- endif -%}
 {%- endif -%}
 
-;### print date and time during development ###
-;T 10,5,0,3,pt 10;[DATE]-[TIME]-dynamic ERP-Template Brady
-;T 70,5,0,3,pt 24;T#1
+{#- barcodes -#}
+B 45,5,3,CODE128,5,0.2;{{web_id}}
+T 45,4,0,3,pt 10;{{web_id}} - {{oligo_count}}
+
+{# additional line break #}
+{%- if po_no is not none and po_no != "" -%}
+    {# IMP, IMBA: Code 39 else Code 128 #}
+    {%- if cstm_id in ["57022", "57023"] -%} 
+B 10,120,90,CODE39,10,0.3,3;{{po_no}}
+    {%- else -%} 
+B 10,120,90,CODE128,5,0.3;{{po_no}}
+T 9,120,90,3,pt 10;{{po_no}}
+    {%- endif -%}
+{% endif %}
+
 A 1
 {# additional line break #}
