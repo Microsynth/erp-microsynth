@@ -46,6 +46,8 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
         '1122': "DHL",
         '1123': "DHL/CH", # for countries out of EU
         '1126': "FedEx",
+        '1130': "Internal",
+        '1133': "Sequencing"
     }
 
     try: 
