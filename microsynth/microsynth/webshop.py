@@ -503,6 +503,7 @@ def place_order(content, client="webshop"):
         'po_no': content['po_no'] if 'po_no' in content else None,
         'po_date': content['po_date'] if 'po_date' in content else None,
         'punchout_shop': content['punchout_shop'] if 'punchout_shop' in content else None,
+        'register_labels': content['register_labels'] if 'register_labels' in content else None,
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
         'comment': content['comment'] if 'comment' in content else None
