@@ -53,7 +53,6 @@ def get_data(filters=None):
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabDelivery Note Item`.`docstatus` = 0
             AND `tabCountry`.`name` <> 'Switzerland'
-            AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
             AND `tabDelivery Note Item`.`item_group` = 'Shipping'
             AND `tabDelivery Note Item`.`creation` > '2022-12-22'
