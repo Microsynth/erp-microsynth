@@ -491,6 +491,7 @@ def place_order(content, client="webshop"):
         'naming_series': naming_series,
         'customer': content['customer'],
         'customer_address': content['invoice_address'],
+        'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
         'contact_display': contact.full_name,
