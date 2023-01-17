@@ -97,6 +97,11 @@ def get_label_data(sales_order):
     elif not sales_order.contact_person: 
         frappe.throw("Sales Order '{0}': Contact missing".format(sales_order.name))
 
+    if sales_order.shipping_contact:
+        contact_id = sales_order.shipping_contact
+    else:
+        contact_id = sales_order.contact_person
+
     shipping_item = get_shipping_item(sales_order.items)
 
     address_id = sales_order.shipping_address_name
@@ -104,7 +109,7 @@ def get_label_data(sales_order):
     destination_country = frappe.get_doc("Country", shipping_address.country)
 
     data = {
-        'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = sales_order.contact_person, address_id = address_id), 
+        'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = contact_id, address_id = address_id), 
         'sender_header': get_sender_address_line(sales_order, destination_country),
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
