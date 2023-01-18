@@ -516,7 +516,8 @@ def place_order(content, client="webshop"):
         'register_labels': content['register_labels'] if 'register_labels' in content else None,
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
-        'comment': content['comment'] if 'comment' in content else None
+        'comment': content['comment'] if 'comment' in content else None,
+        'hold_order': True if 'comment' in content and content['comment'] != None else None
         })
     if 'product_type' in content:
         so_doc.product_type = content['product_type']
