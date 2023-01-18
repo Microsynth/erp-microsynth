@@ -138,13 +138,13 @@ def get_data():
                        "type": "doctype",
                        "name": "Item",
                        "label": _("Item"),
-                       "description": _("Item")                   
+                       "description": _("Item")
                    },
                    {
                        "type": "doctype",
                        "name": "Oligo",
                        "label": _("Oligo"),
-                       "description": _("Oligo")                   
+                       "description": _("Oligo")
                    },
             ]
         },
@@ -157,6 +157,13 @@ def get_data():
                        "name": "Customs Declaration",
                        "label": _("Customs Declaration"),
                        "description": _("Customs Declaration")
+                   },
+                    {
+                       "type": "report",
+                       "name": "Orders on Hold",
+                       "label": _("Orders on Hold"),
+                       "doctype": "Sales Order",
+                       "is_query_report": True
                    }
             ]
         },
