@@ -323,9 +323,8 @@ def request_quote(content, client="webshop"):
             'qty': i['qty']
         })
     # insert shipping item
-    # TODO: consider shipping items from customer
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
-    express_shipping = get_express_shipping_item(shipping_address.country)
+    express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
     qtn_doc.append('items', {
         'item_code': express_shipping.item,
         'item_name': express_shipping.item_name,
@@ -620,7 +619,7 @@ def place_order(content, client="webshop"):
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
-    express_shipping = get_express_shipping_item(shipping_address.country)
+    express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
     
     if (so_doc.product_type == "Oligos" and express_shipping and 
         (so_doc.total > express_shipping.threshold or 

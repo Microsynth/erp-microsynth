@@ -203,7 +203,7 @@ def set_order_label_printed(sales_orders):
     return
 
 
-def get_express_shipping_item(country_name):
+def get_country_express_shipping_item(country_name):
     """
     Return the preferred shipping item for the given country name.
     """
@@ -223,6 +223,45 @@ def get_express_shipping_item(country_name):
         if len(express_items) > 1:
             frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name))
         return express_items[0]
+
+
+def get_customer_express_shipping_item(customer_name):
+    """
+    Return the preferred express shipping item for the given customer ID.
+    """
+
+    customer = frappe.get_doc("Customer", customer_name)
+    express_items = []
+
+    for item in customer.shipping_items:
+        if item.preferred_express:
+            express_items.append(item)
+
+    if len(express_items) == 0:
+        return None
+    if len(express_items) > 0:
+        if len(express_items) > 1:
+            frappe.log_error("Multiple preferred express shipping items found for customer '{0}'".format(customer_name))
+        return express_items[0]
+
+
+def get_express_shipping_item(customer_name, country_name):
+    """
+    Return the preferred express shipping item for the given customer ID and country name. 
+    
+    The shipping items of the customer override those of the country.
+    
+    If the customer does not have a preferred express item, the preferred express item of the
+    country is returned.
+    """
+
+    customer_express_item = get_customer_express_shipping_item(customer_name)
+    if customer_express_item:
+        return customer_express_item
+    else:
+        country_express_item = get_country_express_shipping_item(country_name)
+        return country_express_item
+
 
 def get_export_category(address_name):
     country = frappe.get_value('Address', address_name, 'country')
