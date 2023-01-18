@@ -322,6 +322,16 @@ def request_quote(content, client="webshop"):
             'item_code': i['item_code'],
             'qty': i['qty']
         })
+    # insert shipping item
+    # TODO: consider shipping items from customer
+    shipping_address = frappe.get_doc("Address", content['delivery_address'])
+    express_shipping = get_express_shipping_item(shipping_address.country)
+    qtn_doc.append('items', {
+        'item_code': express_shipping.item,
+        'item_name': express_shipping.item_name,
+        'qty': 1,
+        'rate': express_shipping.rate
+    })    
     # append taxes
     category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
