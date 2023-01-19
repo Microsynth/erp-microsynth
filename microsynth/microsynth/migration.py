@@ -691,6 +691,10 @@ def update_customer(customer_data):
 def update_contact(contact_data):
     """
     Update or create a contact record. If no first_name is provided, set it to "-".
+
+    Note: 
+    Does not initializes the status "Open", in contrast to the update_customer function.
+    This, to differentiate between contacts originating from punchout orders and conventional registrations
     """
     if not 'person_id' in contact_data:
         return None
@@ -704,8 +708,8 @@ def update_contact(contact_data):
     if not frappe.db.exists("Contact", contact_data['person_id']):
         print("Creating contact {0}...".format(str(int(contact_data['person_id']))))
         frappe.db.sql("""INSERT INTO `tabContact` 
-                        (`name`, `first_name`, `status`) 
-                        VALUES ("{0}", "{1}", "Open");""".format(
+                        (`name`, `first_name`) 
+                        VALUES ("{0}", "{1}");""".format(
                         contact_data['person_id'], contact_data['first_name']))
 
     # Update record
