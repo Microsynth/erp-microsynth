@@ -72,8 +72,8 @@ def make_invoice(delivery_note):
     sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
-    transmit_sales_invoice(sales_invoice.name)
     frappe.db.commit()
+    transmit_sales_invoice(sales_invoice.name)
     return
     
 def make_collective_invoice(delivery_notes):
