@@ -15,6 +15,7 @@ from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
+from microsynth.microsynth.utils import get_physical_path
 import datetime
 import json
 import random
@@ -459,7 +460,7 @@ def transmit_sales_invoice(sales_invoice_name):
         # )
 
     elif customer.invoicing_method == "Post":
-        # create and attach pdf
+        # create and attach pdf to the document
         execute(
             doctype = 'Sales Invoice',
             name =  sales_invoice_name,
@@ -468,20 +469,27 @@ def transmit_sales_invoice(sales_invoice_name):
             print_format = "Sales Invoice",             # TODO: from configuration
             is_private = 1
         )
-        attachments = get_attachments("Communication", communication)
+        attachments = get_attachments("Sales Invoice", sales_invoice_name)
         fid = None
         for a in attachments:
             fid = a['name']
-        # send mail to printer relais
-        send(
-            recipients="print@microsynth.local",        # TODO: config 
-            subject=sales_invoice_name, 
-            message=sales_invoice_name, 
-            reference_doctype="Sales Invoice", 
-            reference_name=sales_invoice_name,
-            attachments=[{'fid': fid}]
-        )
-                
+        frappe.db.commit()
+        
+        # print the pdf with cups        
+        path = get_physical_path(fid)
+        PRINTER = "HP_LaserJet_M554"
+        import subprocess
+        subprocess.run(["lp", path, "-d", PRINTER])
+
+        # # send mail to printer relais
+        # send(
+        #     recipients="print@microsynth.local",        # TODO: config 
+        #     subject=sales_invoice_name, 
+        #     message=sales_invoice_name, 
+        #     reference_doctype="Sales Invoice", 
+        #     reference_name=sales_invoice_name,
+        #     attachments=[{'fid': fid}]
+        # )
         pass
 
     elif customer.invoicing_method == "ARIBA":
