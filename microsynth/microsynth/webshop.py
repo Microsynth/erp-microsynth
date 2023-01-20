@@ -676,7 +676,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
     if customer_id:
         # find by customer id
         shipping_items = frappe.db.sql(
-        """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+        """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
            FROM `tabShipping Item`
            WHERE `parent` = "{0}" 
              AND `parenttype` = "Customer"
@@ -697,7 +697,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
     else:
         country = robust_get_country(country)
     shipping_items = frappe.db.sql(
-    """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`
+    """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
        FROM `tabShipping Item`
        WHERE `parent` = "{0}" 
          AND `parenttype` = "Country"
