@@ -502,7 +502,7 @@
    "modified_by": "Administrator",
    "name": "Customer-invoicing_method",
    "no_copy": 0,
-   "options": "Email\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nCorus\nChorus\nX-Rechnung\nScientist",
+   "options": "Email\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nChorus\nX-Rechnung\nScientist",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
