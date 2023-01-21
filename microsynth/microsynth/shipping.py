@@ -47,7 +47,8 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
         '1123': "DHL/CH", # for countries out of EU
         '1126': "FedEx",
         '1130': "Internal",
-        '1133': "Sequencing"
+        '1133': "Sequencing",
+        '1140': "IMP/IMBA"
     }
 
     try: 
@@ -74,9 +75,6 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
                                 or "Ülenu" in ship_adr.city)
                                 ):
         sh_serv = "Tartu"
-    # Receivers IMP und IMBA are special cases   
-    elif (cstm_ID == "57022" or cstm_ID == "57023" or cstm_ID == "57023"): 
-        sh_serv = "IMP"
 
     return (sh_serv)
 
