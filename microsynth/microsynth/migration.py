@@ -1555,3 +1555,71 @@ def import_sequencing_labels(filename, skip_rows = 0):
         frappe.db.commit()
 
     return  
+
+
+def clean_up_delivery_notes(sales_order_id):
+    """
+    Deletes all delivery notes in draft mode but the latest one.
+    """
+
+    query = """
+        SELECT `tabDelivery Note Item`.`parent` AS `delivery_note`
+        FROM `tabDelivery Note Item`
+        WHERE `tabDelivery Note Item`.`against_sales_order` = "{sales_order}"
+        AND `tabDelivery Note Item`.`docstatus` <> 2
+        GROUP BY `delivery_note`
+    """.format(sales_order = sales_order_id)
+    delivery_notes = frappe.db.sql(query, as_dict = True)
+
+    has_dn = False
+
+    for dn_id in reversed(delivery_notes):
+        dn = frappe.get_doc("Delivery Note", dn_id.delivery_note)
+        
+        if dn.docstatus == 1:
+            if has_dn:
+                frappe.log_error("Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), "Migration.clean_up_delivery_notes")
+            # delivery note is submitted. keep it.
+            has_dn = True
+        
+        elif dn.docstatus == 0 and not has_dn:
+            # keep the delivery note with the highest ID (iterate in reversed order)
+            has_dn = True
+
+        elif dn.docstatus == 0 and has_dn:
+            # delete the delivery note if there is already one to keep
+            dn.delete()
+            print("Deleted {0}".format(dn.name))
+        
+        else:
+            frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "Migration.clean_up_delivery_notes")
+    
+    frappe.db.commit()
+    return
+
+
+def clean_up_all_delivery_notes():
+    """
+    Finds sales orders with multiple delivery notes that are not canceled.
+    Deletes all delivery notes in draft mode but the latest one.
+    """
+    
+    query = """SELECT 
+            `tabSales Order`.`name`
+        FROM `tabSales Order`
+        WHERE
+                (SELECT COUNT(*)
+                FROM `tabDelivery Note Item`
+                WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                    AND `tabDelivery Note Item`.`docstatus` <> 2) > 1
+    """
+    
+    print("query sales orders with multiple delivery notes...")
+    sales_orders = frappe.db.sql(query, as_dict=True)
+
+    print("clean up delivery notes...")
+
+    for so in sales_orders:
+        clean_up_delivery_notes(so.name)
+    
+    return 
