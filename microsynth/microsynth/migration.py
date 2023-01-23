@@ -1588,8 +1588,8 @@ def clean_up_delivery_notes(sales_order_id):
 
         elif dn.docstatus == 0 and has_dn:
             # delete the delivery note if there is already one to keep
+            print("Sales Order '{0}': Delete Delivery Note '{1}'".format(sales_order_id, dn.name))
             dn.delete()
-            print("Deleted {0}".format(dn.name))
         
         else:
             frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "Migration.clean_up_delivery_notes")
