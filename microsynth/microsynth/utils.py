@@ -290,7 +290,7 @@ def clean_up_delivery_notes(sales_order_id):
         FROM `tabDelivery Note Item`
         WHERE `tabDelivery Note Item`.`against_sales_order` = "{sales_order}"
         AND `tabDelivery Note Item`.`docstatus` <> 2
-        GROUP BY `delivery_note`
+        GROUP BY `tabDelivery Note Item`.`parent`
     """.format(sales_order = sales_order_id)
     delivery_notes = frappe.db.sql(query, as_dict = True)
 
