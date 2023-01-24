@@ -25,7 +25,7 @@ def get_columns():
     ]
     return columns
 
-def get_data(filters):
+def get_data(filters, short=False):
     conditions = ""
     if filters.get('customer'):
     
@@ -102,6 +102,14 @@ def get_data(filters):
         for d in data:
             if d['type'] == "Credit":
                 d['outstanding'] = credit_positions[d['sales_invoice']]
+                
+        # shorten output
+        if short:
+            output = []
+            for d in data:
+                if d['type'] == "Credit" and d['outstanding'] > 0:
+                    output.append(d)
+            data = output
     else:
         # overview, group by customer
         sql_query = """

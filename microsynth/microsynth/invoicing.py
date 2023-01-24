@@ -16,6 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.utils import get_physical_path
+from microsynth.microsynth.credits import allocate_credits, book_credit
 import datetime
 import json
 import random
@@ -66,13 +67,22 @@ def async_create_invoices(mode, company):
     return
 
 def make_invoice(delivery_note):
+    """
+    Includes customer credits. Do not use for customer projects.
+    """
     sales_invoice_content = make_sales_invoice(delivery_note)
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
     sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
-    sales_invoice.set_advances()    # get advances (customer credit)
+    #sales_invoice.set_advances()    # get advances (customer credit)
+    sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
+    
     sales_invoice.insert()
     sales_invoice.submit()
+    # if a credit was allocated, book credit account
+    if sales_invoice.total_customer_credit > 0:
+        book_credit(sales_invoice.name, sales_invoice.total_customer_credit)
+        
     frappe.db.commit()
     transmit_sales_invoice(sales_invoice.name)
     return
