@@ -488,21 +488,34 @@ def place_order(content, client="webshop"):
     naming_series = get_naming_series("Sales Order", company)
     
     # TODO check if distributor requires replacement of the customer
-    # check that the webshop does not send prices
-    # shipping item?
     
-    # cache contact values (Frappe bug in binding)
-    contact = frappe.get_doc("Contact", content['contact'])
+    customer = frappe.get_doc("Customer", content['customer'])
+    contact = frappe.get_doc("Contact", content['contact'])     # cache contact values (Frappe bug in binding)
+
+    if 'product_type' in content:
+        for distributor in customer.distributors:
+            if distributor.product_type == content['product_type']:
+                #swap
+                order_customer = customer
+                order_contact = contact
+                customer = frappe.get_doc("Customer", distributor.distributor)
+                contact = frappe.get_doc("Contact", customer.invoice_to) if customer.invoice_to else contact #???
+    
+    # check that the webshop does not send prices / take prices from distributor price list
+    #   consider product type
+
     # create sales order
     so_doc = frappe.get_doc({
         'doctype': "Sales Order",
         'company': company,
         'naming_series': naming_series,
-        'customer': content['customer'],
+        'customer': customer.name,
         'customer_address': content['invoice_address'],
         'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
         'shipping_address_name': content['delivery_address'],
-        'contact_person': content['contact'],
+        'order_customer': order_customer.name if order_customer else None,
+        'order_contact': order_contact.name if order_contact else None, 
+        'contact_person': contact.name,
         'contact_display': contact.full_name,
         'contact_phone': contact.phone,
         'contact_email': contact.email_id,
@@ -514,8 +527,8 @@ def place_order(content, client="webshop"):
         'po_date': content['po_date'] if 'po_date' in content else None,
         'punchout_shop': content['punchout_shop'] if 'punchout_shop' in content else None,
         'register_labels': content['register_labels'] if 'register_labels' in content else None,
-        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
-        'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
+        'selling_price_list': frappe.get_value("Customer", customer.name, "default_price_list"),
+        'currency': frappe.get_value("Customer", customer.name, "default_currency"),
         'comment': content['comment'] if 'comment' in content else None,
         'hold_order': True if 'comment' in content and content['comment'] != None and content['comment'] != "" else None
         })
@@ -620,7 +633,7 @@ def place_order(content, client="webshop"):
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
-    express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
+    express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)   # use original customer for the shipping items also in the distributor workflow
     
     if (so_doc.product_type == "Oligos" and express_shipping and 
         (so_doc.total > express_shipping.threshold or 
