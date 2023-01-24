@@ -80,7 +80,7 @@ def make_invoice(delivery_note):
     sales_invoice.insert()
     sales_invoice.submit()
     # if a credit was allocated, book credit account
-    if sales_invoice.total_customer_credit > 0:
+    if cint(sales_invoice.total_customer_credit) > 0:
         book_credit(sales_invoice.name, sales_invoice.total_customer_credit)
         
     frappe.db.commit()
