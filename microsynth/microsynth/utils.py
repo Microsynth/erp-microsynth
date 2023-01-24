@@ -327,14 +327,16 @@ def clean_up_all_delivery_notes():
     Deletes all delivery notes in draft mode but the latest one.
     """
     
-    query = """SELECT 
-            `tabSales Order`.`name`
-        FROM `tabSales Order`
-        WHERE
-                (SELECT COUNT(*)
-                FROM `tabDelivery Note Item`
-                WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
-                    AND `tabDelivery Note Item`.`docstatus` <> 2) > 1
+    query = """
+        SELECT `against_sales_order`
+        FROM
+          (SELECT `against_sales_order`,
+                  COUNT(`name`) AS `count`
+           FROM `tabDelivery Note Item`
+           WHERE `idx` = 1
+             AND `docstatus` < 2
+           GROUP BY `against_sales_order`) AS `raw`
+        WHERE `raw`.`count` > 1
     """
     
     print("query sales orders with multiple delivery notes...")
