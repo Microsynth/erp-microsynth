@@ -1,0 +1,47 @@
+{
+ "creation": "2023-01-24 16:22:09.678282",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "distributor",
+  "distributor_name",
+  "product_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "distributor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Distributor",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "distributor.customer_name",
+   "fieldname": "distributor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Distributor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "product_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Product Type",
+   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA"
+  }
+ ],
+ "istable": 1,
+ "modified": "2023-01-24 16:29:43.567453",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Customer Distributor",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
