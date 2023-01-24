@@ -344,8 +344,13 @@ def clean_up_all_delivery_notes():
 
     print("clean up delivery notes...")
 
+    total = len(sales_orders)
+    count = 0
+
     for so in sales_orders:
+        print("process '{0}' - {1}% of total ({2})".format(so.name, int(count/total * 100, total)))
         clean_up_delivery_notes(so.name)
+        count += 1
     
     return 
 
