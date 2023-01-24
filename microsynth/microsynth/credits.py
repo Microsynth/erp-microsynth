@@ -44,7 +44,8 @@ def allocate_credits(sales_invoice_doc):
     
 def book_credit(sales_invoice, net_amount):
     sinv = frappe.get_doc("Sales Invoice", sales_invoice)
-    credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    credit_item = frappe.get_doc("Item", 
+        frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
     credit_account = None
     for d in credit_item.item_defaults:
         if d.company == sinv.company:
