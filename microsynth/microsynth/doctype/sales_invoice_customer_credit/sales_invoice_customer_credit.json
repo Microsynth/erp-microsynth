@@ -1,0 +1,53 @@
+{
+ "creation": "2023-01-24 09:23:43.287873",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_invoice",
+  "sales_invoice_detail",
+  "credit_amount",
+  "allocated_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_invoice_detail",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Sales Invoice Detail"
+  },
+  {
+   "fieldname": "credit_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Credit amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "allocated_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Allocated amount",
+   "options": "currency"
+  }
+ ],
+ "istable": 1,
+ "modified": "2023-01-24 09:24:20.261451",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Sales Invoice Customer Credit",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

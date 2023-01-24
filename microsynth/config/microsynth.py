@@ -152,17 +152,24 @@ def get_data():
             "label": _("Administration"),
             "icon": "fa fa-money",
             "items": [
-                   {
+                    {
                        "type": "doctype",
                        "name": "Customs Declaration",
                        "label": _("Customs Declaration"),
                        "description": _("Customs Declaration")
-                   },
+                    },
                     {
                        "type": "report",
                        "name": "Orders on Hold",
                        "label": _("Orders on Hold"),
                        "doctype": "Sales Order",
+                       "is_query_report": True
+                    },
+                    {
+                       "type": "report",
+                       "name": "Customer Credits",
+                       "label": _("Customer Credits"),
+                       "doctype": "Sales Invoice",
                        "is_query_report": True
                    }
             ]
@@ -240,6 +247,12 @@ def get_data():
             "label": _("Settings"),
             "icon": "fa fa-users",
             "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Microsynth Settings",
+                       "label": _("Microsynth Settings"),
+                       "description": _("Microsynth Settings")
+                   },
                    {
                        "type": "doctype",
                        "name": "SLIMS Settings",
