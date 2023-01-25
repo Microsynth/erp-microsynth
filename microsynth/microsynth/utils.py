@@ -325,6 +325,9 @@ def clean_up_all_delivery_notes():
     """
     Finds sales orders with multiple delivery notes that are not canceled.
     Deletes all delivery notes in draft mode but the latest one.
+
+    run
+    bench execute "microsynth.microsynth.utils.clean_up_all_delivery_notes"
     """
     
     query = """
@@ -348,7 +351,7 @@ def clean_up_all_delivery_notes():
     count = 0
 
     for so in sales_orders:
-        print("process '{0}' - {1}% of total ({2})".format(so.name, int(count/total * 100, total)))
+        print("process '{0}' - {1}% of total ({2})".format(so.name, int(count/total * 100), total))
         clean_up_delivery_notes(so.name)
         count += 1
     
@@ -360,7 +363,7 @@ def remove_delivery_notes_from_customs_declaration(customs_declaration, delivery
     Removes Delivery Notes from a Customs Declaration but only if the Delivery Note is in draft.
     
     run
-    bench execute "microsynth.microsynth.utils.remove_delivery_notes_from_customs_declaration" --kwargs "{'customs_declaration_id': 'CD-23002', 'delivery_notes':['DN-BAL-23048017']}"
+    bench execute "microsynth.microsynth.utils.remove_delivery_notes_from_customs_declaration" --kwargs "{'customs_declaration': 'CD-23002', 'delivery_notes':['DN-BAL-23048017']}"
     """
     customs_declaration = frappe.get_doc("Customs Declaration", customs_declaration)
     
