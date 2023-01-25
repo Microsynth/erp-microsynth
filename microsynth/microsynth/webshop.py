@@ -492,6 +492,9 @@ def place_order(content, client="webshop"):
     customer = frappe.get_doc("Customer", content['customer'])
     contact = frappe.get_doc("Contact", content['contact'])     # cache contact values (Frappe bug in binding)
 
+    order_contact = None
+    order_customer = None
+
     if 'product_type' in content:
         for distributor in customer.distributors:
             if distributor.product_type == content['product_type']:
