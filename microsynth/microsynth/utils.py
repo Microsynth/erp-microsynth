@@ -355,6 +355,37 @@ def clean_up_all_delivery_notes():
     return 
 
 
+def remove_delivery_notes_from_customs_declaration(customs_declaration, delivery_notes):
+    """
+    Removes Delivery Notes from a Customs Declaration but only if the Delivery Note is in draft.
+    
+    run
+    bench execute "microsynth.microsynth.utils.remove_delivery_notes_from_customs_declaration" --kwargs "{'customs_declaration_id': 'CD-23002', 'delivery_notes':['DN-BAL-23048017']}"
+    """
+    customs_declaration = frappe.get_doc("Customs Declaration", customs_declaration)
+    
+    for dn in delivery_notes:
+        if frappe.get_value("Delivery Note", dn, "docstatus") == 0:
+            for eu_dn in customs_declaration.eu_dns:
+                if eu_dn.delivery_note == dn:
+                    print("Remove Delivery Note '{0}' (EU)".format(dn))
+                    # eu_dn.delete()  # Validation error: Submitted Record cannot be deleted.
+                    frappe.db.delete("Customs Declaration Delivery Note", {
+                        "name": eu_dn.name
+                    })
+            for at_dn in customs_declaration.austria_dns:
+                if at_dn.delivery_note == dn:
+                    print("Remove Delivery Note '{0}' (AT)".format(dn))
+                    # at_dn.delete()  # Validation error: Submitted Record cannot be deleted.
+                    frappe.db.delete("Customs Declaration Delivery Note", {
+                        "name": at_dn.name
+                    })
+        else:  
+            print("Cannot remove Delivery Note '{0}'. Delivery Note is not in draft status.".format(dn))
+    frappe.db.commit()
+    return
+
+
 def update_shipping_item(item, rate = None, qty = None, threshold = None, preferred_express = None):
     """
     Print out the data for a data import csv-file to update shipping item rate
