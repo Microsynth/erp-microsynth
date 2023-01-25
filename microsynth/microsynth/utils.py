@@ -331,7 +331,7 @@ def clean_up_all_delivery_notes():
     """
     
     query = """
-        SELECT `against_sales_order`
+        SELECT `against_sales_order` AS `name`
         FROM
           (SELECT `against_sales_order`,
                   COUNT(`name`) AS `count`
