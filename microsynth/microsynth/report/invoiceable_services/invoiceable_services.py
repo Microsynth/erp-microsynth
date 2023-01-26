@@ -12,14 +12,15 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 120},
+        {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 120},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Invoicing method"), "fieldname": "invoicing_method", "fieldtype": "Data", "width": 120},
-        {"label": _("Collective billing"), "fieldname": "collective_billing", "fieldtype": "Check", "width": 200},
+        {"label": _("Collective billing"), "fieldname": "collective_billing", "fieldtype": "Check", "width": 110},
+        {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 80},
-        {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 80},
+        {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
         {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80}
     ]
 
@@ -34,6 +35,7 @@ def get_data(filters=None):
                 `tabDelivery Note`.`customer_name` AS `customer_name`,
                 `tabCustomer`.`invoicing_method` AS `invoicing_method`,
                 `tabCustomer`.`collective_billing` AS `collective_billing`,
+                `tabDelivery Note`.`is_punchout` AS `is_punchout`,
                 `tabDelivery Note`.`po_no` AS `po_no`,
                 `tabCountry`.`export_code` AS `region`,
                 `tabDelivery Note`.`shipment_type` AS `shipment_type`,
