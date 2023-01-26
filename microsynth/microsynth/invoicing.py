@@ -40,30 +40,32 @@ def async_create_invoices(mode, company):
     if (mode in ["Post", "Electronic"]):
         # individual invoices
         for dn in all_invoiceable:
-            if cint(dn.get('collective_billing')) == 0:
+            if cint(dn.get('collective_billing')) == 0 or cint(dn.get('is_punchout')) == 1:
                 if mode == "Post":
                     if dn.get('invoicing_method') == "Post":
                         make_invoice(dn.get('delivery_note'))
                 else:
                     if dn.get('invoicing_method') != "Post":
                         make_invoice(dn.get('delivery_note'))
-    else:
+    elif mode == "Collective":
         # colletive invoices
         customers = []
         for dn in all_invoiceable:
-            if cint(dn.get('collective_billing')) == 1 and dn.get('customer') not in customers:
+            if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') not in customers:
                 customers.append(dn.get('customer'))
         
         # for each customer, create one invoice for all dns
         for c in customers:
             dns = []
             for dn in all_invoiceable:
-                if cint(dn.get('collective_billing')) == 1 and dn.get('customer') == c:
+                if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
                     dns.append(dn.get('delivery_note'))
-                    
+
             if len(dns) > 0:
                 make_collective_invoice(dns)
-            
+    else:
+        frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
+
     return
 
 def make_invoice(delivery_note):
