@@ -25,7 +25,7 @@
   },
   {
    "fieldname": "port",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "label": "Port"
   },
   {
@@ -34,8 +34,8 @@
    "label": "Display Name"
   }
  ],
- "modified": "2022-12-11 20:30:01.708677",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2023-01-27 15:18:25.746430",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Brady Printer",
  "owner": "Administrator",
