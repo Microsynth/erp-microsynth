@@ -9,6 +9,7 @@ from datetime import datetime
 from microsynth.microsynth.shipping import get_shipping_service, get_shipping_item, create_receiver_address_lines, get_sender_address_line
 
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
+BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html"
 
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -130,39 +131,22 @@ def get_label_data(sales_order):
 
 
 @frappe.whitelist()
-def print_address_template(sales_order_id=None, printer_ip=None):
-    """function calls respective template for creating a transport label"""
-
-    # test data - during development
-    if not sales_order_id: 
-        sales_order_id = 'SO-BAL-22009917'
-        sales_order_id = 'SO-GOE-22000704'
-        sales_order_id = 'SO-BAL-22009934'
-        sales_order_id = 'SO-LYO-22000071'
-        sales_order_id = "SO-BAL-22009681"
-        sales_order_id = "SO-BAL-22009354"
-        sales_order_id = "SO-BAL-22008255"
-        sales_order_id = "SO-BAL-22000012"
-        sales_order_id = "SO-BAL-22000004"
-    customers = frappe.get_all("Customer", fields=["name", "customer_name"])
+def print_shipping_label(sales_order_id):
+    """
+    function calls respective template for creating a transport label
+    """
 
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
-    
-    # if ip (use case "Novexx")
-    if not printer_ip:
-        printer_ip = decide_brady_printer_ip(sales_order.company)
+    label_data = get_label_data(sales_order)
+    content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)   
 
-    if printer_ip in ['192.0.1.70', '192.0.1.71', '192.168.101.26','172.16.0.40']: 
-        printer_template = "microsynth/templates/includes/address_label_brady.html"
-    elif printer_ip in ['192.0.1.72']: 
-        printer_template = "microsynth/templates/includes/address_label_novexx.html"
-    else: 
-        frappe.throw("invalid IP, no printer set")
-
-    content = frappe.render_template(printer_template, get_label_data(sales_order))
+    printer_ip = decide_brady_printer_ip(sales_order.company)
 
     #print(content)
     print_raw(printer_ip, 9100, content )
+    sales_order.label_printed_on = datetime.now()
+    sales_order.save()
+    frappe.db.commit()
 
 
 @frappe.whitelist()
