@@ -1573,12 +1573,14 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     # select naming series
     naming_series = get_naming_series("Sales Invoice", company)
 
+    # TODO posting_date!!!
     sales_invoice = frappe.get_doc({
         'doctype': 'Sales Invoice',
         'company': company,
         'naming_series': naming_series,
         'customer': customer.name,
-        'currency': currency
+        'currency': currency,
+        'posting_date': "2022-12-31"
     })
     item_detail = {
         'item_code': '6100',
@@ -1588,6 +1590,8 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     sales_invoice.append('items', item_detail)
     sales_invoice.insert()
     sales_invoice.submit()
+
+    # TODO: Journal Entry or Payment Entry
 
     return
 
