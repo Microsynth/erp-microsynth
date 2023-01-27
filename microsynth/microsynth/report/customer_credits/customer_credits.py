@@ -20,8 +20,7 @@ def get_columns():
         {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 150, 'options': 'currency'},
         {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 150, 'options': 'currency'},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 80},
-        {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
+        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 80}
     ]
     return columns
 
