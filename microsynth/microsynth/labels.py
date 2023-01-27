@@ -71,6 +71,14 @@ def decide_brady_printer_ip(company):
     printers have to be set in Sequencing Settings based on company name
     printer IPs have to be set in an object of DocType Brady Printer"""
     
+    # check if there is a user-specific printer
+    user = frappe.get_user()
+    if frappe.db.exists("User Printer", user.name):
+        printer_name = frappe.get_value("User Printer", user.name, "label_printer")
+        printer = frappe.get_doc("Brady Printer", printer_name)
+
+        return printer.ip
+
     # Austria labels will be handled in by Microsynth AG
     if company == "Microsynth Austria GmbH": 
         company = "Microsynth AG"
