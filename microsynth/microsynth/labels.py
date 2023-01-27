@@ -69,8 +69,11 @@ def print_test_label_novexx():
 
 def choose_brady_printer(company):
     """
-    printers have to be set in Sequencing Settings based on company name
-    printer IPs have to be set in an object of DocType Brady Printer
+    Returns the Brady printer specified for the user with the 'User Printer' DocType
+    or alternatively the one defined in 'Sequencing Settings'.
+
+    Printers have to be set in Sequencing Settings based on company name. The IP and port 
+    of the printer are specified on the 'Brady Printer' DocType. 
     """
     
     # check if there is a user-specific printer
