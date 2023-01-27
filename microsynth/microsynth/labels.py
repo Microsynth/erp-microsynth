@@ -67,10 +67,11 @@ def print_test_label_novexx():
 '''
     print_raw('192.0.1.72', 9100, content )
 
-def decide_brady_printer_ip(company):
+def choose_brady_printer(company):
     """
     printers have to be set in Sequencing Settings based on company name
-    printer IPs have to be set in an object of DocType Brady Printer"""
+    printer IPs have to be set in an object of DocType Brady Printer
+    """
     
     # check if there is a user-specific printer
     user = frappe.get_user()
@@ -78,7 +79,7 @@ def decide_brady_printer_ip(company):
         printer_name = frappe.get_value("User Printer", user.name, "label_printer")
         printer = frappe.get_doc("Brady Printer", printer_name)
 
-        return printer.ip
+        return printer
 
     # Austria labels will be handled in by Microsynth AG
     if company == "Microsynth Austria GmbH": 
@@ -91,7 +92,7 @@ def decide_brady_printer_ip(company):
     for printer in settings.label_printers:
         if printer.company == company:
             printer = frappe.get_doc("Brady Printer", printer.brady_printer)
-            return printer.ip
+            return printer
 
 
 def get_label_data(sales_order):
@@ -140,10 +141,10 @@ def print_shipping_label(sales_order_id):
     label_data = get_label_data(sales_order)
     content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)   
 
-    printer_ip = decide_brady_printer_ip(sales_order.company)
+    printer = choose_brady_printer(sales_order.company)
 
     #print(content)
-    print_raw(printer_ip, 9100, content )
+    print_raw(printer.ip, printer.port, content)
     sales_order.label_printed_on = datetime.now()
     sales_order.save()
     frappe.db.commit()
