@@ -168,13 +168,15 @@ def print_oligo_order_labels(sales_orders):
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
 
     for o in sales_orders:
-        sales_order = frappe.get_doc("Sales Order", o)
-        label_data = get_label_data(sales_order)
-        content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
-        
-        print_raw(settings.label_printer_ip, settings.label_printer_port, content)        
-        sales_order.label_printed_on = datetime.now()
-        sales_order.save()
-    
-    frappe.db.commit()
+        try:
+            sales_order = frappe.get_doc("Sales Order", o)
+            label_data = get_label_data(sales_order)
+            content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
+            
+            print_raw(settings.label_printer_ip, settings.label_printer_port, content)
+            sales_order.label_printed_on = datetime.now()
+            sales_order.save()    
+            frappe.db.commit()
+        except Exception as err:
+            frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")
     return
