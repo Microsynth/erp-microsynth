@@ -7,6 +7,44 @@ import frappe
 import json
 from datetime import datetime
 
+
+def get_billing_address(customer_id):
+    """
+    Returns the primary billing address of a customer specified by its id.
+
+    run
+    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    """
+
+    addresses = frappe.db.sql(
+        """ SELECT 
+                `tabAddress`.`name`,
+                `tabAddress`.`address_type`,
+                `tabAddress`.`overwrite_company`,
+                `tabAddress`.`address_line1`,
+                `tabAddress`.`address_line2`,
+                `tabAddress`.`pincode`,
+                `tabAddress`.`city`,
+                `tabAddress`.`country`,
+                `tabAddress`.`is_shipping_address`,
+                `tabAddress`.`is_primary_address`,
+                `tabAddress`.`geo_lat`,
+                `tabAddress`.`geo_long`,
+                `tabAddress`.`customer_address_id`
+            FROM `tabDynamic Link`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+            WHERE `tabDynamic Link`.`parenttype` = "Address"
+              AND `tabDynamic Link`.`link_doctype` = "Customer"
+              AND `tabDynamic Link`.`link_name` = "{customer_id}"
+              AND (`tabAddress`.`is_primary_address` = 1)
+            ;""".format(customer_id=customer_id), as_dict=True)
+
+    if len(addresses) == 1:
+        return addresses[0]
+    else: 
+        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"get_billing_address")
+
+
 @frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
     

@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template, get_express_shipping_item
+from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -486,21 +486,23 @@ def place_order(content, client="webshop"):
         company = frappe.defaults.get_global_default('company')
     # select naming series
     naming_series = get_naming_series("Sales Order", company)
-    
-    # TODO check if distributor requires replacement of the customer
-    
+
     customer = frappe.get_doc("Customer", content['customer'])
     contact = frappe.get_doc("Contact", content['contact'])     # cache contact values (Frappe bug in binding)
+    billing_address = content['invoice_address']
 
     order_customer = None
 
+    # Distributor workflow
     if 'product_type' in content:
         for distributor in customer.distributors:
             if distributor.product_type == content['product_type']:
-                #swap customer
+                #swap customer and replace billing address
                 order_customer = customer
                 customer = frappe.get_doc("Customer", distributor.distributor)
-    
+
+                billing_address = get_billing_address(customer.name).name
+
     # check that the webshop does not send prices / take prices from distributor price list
     #   consider product type
 
@@ -510,7 +512,7 @@ def place_order(content, client="webshop"):
         'company': company,
         'naming_series': naming_series,
         'customer': customer.name,
-        'customer_address': content['invoice_address'],
+        'customer_address': billing_address,
         'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
         'shipping_address_name': content['delivery_address'],
         'order_customer': order_customer.name if order_customer else None,
