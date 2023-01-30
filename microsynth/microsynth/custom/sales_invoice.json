@@ -796,7 +796,7 @@
    "description": null,
    "docstatus": 0,
    "dt": "Sales Invoice",
-   "fetch_from": null,
+   "fetch_from": "customer.invoice_to",
    "fetch_if_empty": 0,
    "fieldname": "invoice_to",
    "fieldtype": "Link",
