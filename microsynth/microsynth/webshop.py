@@ -492,17 +492,14 @@ def place_order(content, client="webshop"):
     customer = frappe.get_doc("Customer", content['customer'])
     contact = frappe.get_doc("Contact", content['contact'])     # cache contact values (Frappe bug in binding)
 
-    order_contact = None
     order_customer = None
 
     if 'product_type' in content:
         for distributor in customer.distributors:
             if distributor.product_type == content['product_type']:
-                #swap
+                #swap customer
                 order_customer = customer
-                order_contact = contact
                 customer = frappe.get_doc("Customer", distributor.distributor)
-                contact = frappe.get_doc("Contact", customer.invoice_to) if customer.invoice_to else contact #???
     
     # check that the webshop does not send prices / take prices from distributor price list
     #   consider product type
@@ -517,7 +514,6 @@ def place_order(content, client="webshop"):
         'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
         'shipping_address_name': content['delivery_address'],
         'order_customer': order_customer.name if order_customer else None,
-        'order_contact': order_contact.name if order_contact else None, 
         'contact_person': contact.name,
         'contact_display': contact.full_name,
         'contact_phone': contact.phone,
