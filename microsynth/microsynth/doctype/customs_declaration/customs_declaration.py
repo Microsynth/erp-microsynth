@@ -57,11 +57,11 @@ def create_customs_declaration():
 def get_delivery_notes_to_declare():
     sql_query = """SELECT
         `tabDelivery Note`.`name` as `delivery_note`,
-        `tabDelivery Note`.`customer`,
-        `tabDelivery Note`.`customer_name`,
+        IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer`, `tabDelivery Note`.`customer`) as `customer`,
+        IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer_display`, `tabDelivery Note`.`customer_name`) as `customer_name`,
         `tabDelivery Note`.`export_category`,
         `tabDelivery Note`.`shipping_address_name` as `shipping_address`,
-        `tabCustomer`.`tax_id` as `tax_id`,
+        IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_tax_id`, `tabCustomer`.`tax_id`) as `tax_id`,
         `tabAddress`.`country` as `country`,
         `tabDelivery Note`.`currency`,
         `tabDelivery Note`.`total` as `net_total`,
