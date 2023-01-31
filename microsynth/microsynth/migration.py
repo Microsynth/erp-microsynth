@@ -1618,3 +1618,23 @@ def import_credit_accounts(filename):
             i += 1
             if i > 2:
                 break
+
+def set_distributor_carlo_erba():
+    """
+    Adds to all customers of the distributor 'Carlo Erba' the distributor settings 
+    for 'Sequencing' and 'Oligos' 
+
+    run 
+    bench execute "microsynth.microsynth.migration.set_distributor_carlo_erba" 
+    """    
+    from microsynth.microsynth.utils import add_distributor
+
+    customers = frappe.db.get_all("Customer",
+        filters = {'account_manager': 'servizioclienticer@dgroup.it' },
+        fields = ['name'])
+
+    for c in customers:
+        add_distributor(c.name, 35914214, "Sequencing" )
+        add_distributor(c.name, 35914214, "Labels" )
+
+    return

@@ -467,11 +467,11 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
     # return frappe.get_doc("Country", "Switzerland")
 
     for country in countries:
-        country_doc = frappe.get_doc("Country", country)        
+        country_doc = frappe.get_doc("Country", country)
         
         shipping_item_names = []
         for n in country_doc.shipping_items:
-            shipping_item_names.append(n.item)            
+            shipping_item_names.append(n.item)
 
         if item in shipping_item_names:
             i = 0
@@ -508,3 +508,29 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
                     preferred_express = new_preferred_express))
                 
                 i += 1
+
+
+def add_distributor(customer, distributor, product_type):
+    """
+    Add the specified distributor for the a product type to the customer.
+    
+    run
+    bench execute "microsynth.microsynth.utils.add_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
+    """       
+    # validate input
+    if not frappe.db.exists("Customer", distributor):
+        frappe.log_error("The provided distributor '{0}' does not exist. Processing customer '{1}'.".format(distributor,customer),"utils.add_distributor")
+        return
+    
+    customer = frappe.get_doc("Customer", customer)
+
+    # TODO: ensure that only 1 distributor is set for a product type
+
+    print("Customer '{0}': Add distributor '{1}' for '{2}'".format(customer.name, distributor, product_type))
+
+    entry = {
+        'distributor': distributor,
+        'product_type': product_type
+    }
+    customer.append("distributors",entry)
+    return
