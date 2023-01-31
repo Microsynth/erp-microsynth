@@ -533,4 +533,6 @@ def add_distributor(customer, distributor, product_type):
         'product_type': product_type
     }
     customer.append("distributors",entry)
+    customer.save()
+    frappe.db.commit()
     return
