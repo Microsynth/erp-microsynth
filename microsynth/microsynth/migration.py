@@ -1558,6 +1558,40 @@ def import_sequencing_labels(filename, skip_rows = 0):
     return
 
 
+COMPANY_CREDIT_ACCOUNTS = {
+    "Microsynth AG": "2010 - Anzahlungen von Kunden - BAL"
+}
+
+def create_credit_import_journal_entry(company, customer, currency, base_amount):
+    """
+    Create a journal entry.
+
+    run
+    bench execute "microsynth.microsynth.migration.create_credit_import_journal_entry" --kwargs "{'company': 'Microsynth AG', 'customer': '1257', 'currency': 'CHF', 'base_amount':42}"
+    """
+
+    account_currency = frappe.get_value("Account", COMPANY_CREDIT_ACCOUNTS[company], "account_currency")
+
+    if account_currency != currency:
+        frappe.log_error("Specified currency '{0}' does not match the account currency '{1}'. Importing credit account for customer '{2}'. ".format(currency, account_currency, customer), "create_credit_import_journal_entry")
+        return
+
+    journal_entry = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'company': company,
+        'posting_date': "2022-12-31",
+        'user_remark': "Import credit for customer '{0}'".format(customer)
+    })
+    account_detail = {
+        'account': COMPANY_CREDIT_ACCOUNTS[company],
+        # 'debit_in_account_currency': base_amount,
+        # 'credit_in_account_currency': base_amount
+    }
+    journal_entry.append('accounts', account_detail)
+    journal_entry.insert()
+    journal_entry.submit()
+
+
 def create_credit_import_sales_invoice(company, customer, currency, total):
     """
     run
@@ -1567,7 +1601,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     customer = frappe.get_doc("Customer", customer)
 
     if customer.default_currency != currency:
-        frappe.log_error("Cannot import credit for customer '{0}' because currency does not match".format(customer.name),"create_credit_import_sales_invoice")
+        frappe.log_error("Cannot import credit for customer '{0}' because currency does not match".format(customer.name), "create_credit_import_sales_invoice")
         return
 
     # select naming series
@@ -1592,6 +1626,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     sales_invoice.submit()
 
     # TODO: Journal Entry or Payment Entry
+    create_credit_import_journal_entry(company, customer, currency, sales_invoice.base_net_total)
 
     return
 
