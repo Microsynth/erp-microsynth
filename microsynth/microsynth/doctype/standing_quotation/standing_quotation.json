@@ -146,8 +146,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2022-12-20 15:19:01.150473",
- "modified_by": "Administrator",
+ "modified": "2023-02-01 10:40:00.501524",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Standing Quotation",
  "owner": "Administrator",
@@ -194,6 +194,15 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "NGS Lab User",
+   "share": 1
   }
  ],
  "sort_field": "modified",
