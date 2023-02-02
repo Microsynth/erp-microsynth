@@ -1,3 +1,11 @@
 DocType: Sales Invoice,Your reference,Ihr Zeichen
+DocType: Sales Invoice,Your Reference,Ihr Zeichen
+DocType: Sales Invoice,Your Contact,Ihr Kontakt
 DocType: Sales Invoice,Sales Invoice,Rechnung
 DocType: Sales Invoice,Delivery Address,Lieferadresse
+DocType: Sales Invoice,Production ID,Produktions-ID
+DocType: Sales Invoice,Payment due,Fälligkeit der Zahlung
+DocType: Sales Invoice,30 days net,30 Tage netto
+DocType: Sales Invoice,45 days net,45 Tage netto
+DocType: Sales Invoice,60 days net,60 Tage netto
+DocType: Sales Invoice,90 days net,90 Tage netto
