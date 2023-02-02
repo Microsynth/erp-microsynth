@@ -71,6 +71,9 @@ def async_create_invoices(mode, company):
 def make_invoice(delivery_note):
     """
     Includes customer credits. Do not use for customer projects.
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_invoice --kwargs "{'delivery_note':'DN-BAL-23106510'}"
     """
     sales_invoice_content = make_sales_invoice(delivery_note)
     # compile document
@@ -439,7 +442,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 
 def transmit_sales_invoice(sales_invoice_name):
     """
-    This function will check a transfer moe and transmit the invoice
+    This function will check the transfer mode and transmit the invoice
     """
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
