@@ -1443,6 +1443,52 @@ LABEL_STATUS = {
     5: 'processed'
 }
 
+
+def set_default_payment_terms():
+    """
+    Populate the customer field 'payment_terms' with the default company value if not set.
+
+    Run from
+    $ bench execute microsynth.microsynth.migration.set_default_payment_terms
+    """
+
+    companies = frappe.get_all("Company", fields=['name', 'payment_terms'])
+    company_terms = {}
+
+    for company in companies:
+        key = company['name']
+        company_terms[key] = company['payment_terms']
+  
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
+    
+    def get_name(customer):
+        return customer.get('name')
+    
+    i = 0
+    count = 0
+    for c in sorted(customers, key=get_name):
+        
+        customer = frappe.get_doc("Customer", c["name"])
+
+        if not customer.default_company :
+            print("Default company is not set for customer '{0}'.".format(c.name))
+            continue
+
+        if customer.payment_terms is None:
+            print("edit customer '{0}' {1}%".format(customer.name, int(100 * count / len(customers))))
+            customer.payment_terms = company_terms[customer.default_company]
+            customer.save()
+        else:
+            print("customer '{0} 'has alread the terms: '{1}' {2}%".format(customer.name, customer.payment_terms, int(100 * count / len(customers))))
+        
+        i += 1
+        count += 1
+        
+        if i >= 10:
+            frappe.db.commit()
+            i = 0
+
+
 def import_sequencing_labels(filename, skip_rows = 0):
     """
     Imports the sequencing barcode labels from a webshop export file.
