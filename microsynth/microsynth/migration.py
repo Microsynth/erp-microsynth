@@ -479,14 +479,17 @@ def update_customer(customer_data):
         if not frappe.db.exists("Customer", customer_data['customer_id']):
             # create customer (force mode to achieve target name)
             print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
+            
+            default_company = frappe.get_value("Country", country, "default_company")
             frappe.db.sql("""INSERT INTO `tabCustomer` 
-                            (`name`, `customer_name`, `default_company`, `default_currency`, `default_price_list`) 
-                            VALUES ("{0}", "{1}", "{2}", "{3}", "{4}");""".format(
+                            (`name`, `customer_name`, `default_company`, `default_currency`, `default_price_list`, `payment_terms`) 
+                            VALUES ("{0}", "{1}", "{2}", "{3}", "{4}", "{5}");""".format(
                             str(int(customer_data['customer_id'])), 
                             str(customer_data['customer_name']),
-                            frappe.get_value("Country", country, "default_company"),
+                            default_company,
                             frappe.get_value("Country", country, "default_currency"),
-                            frappe.get_value("Country", country, "default_pricelist")))
+                            frappe.get_value("Country", country, "default_pricelist"),
+                            frappe.get_value("Company", default_company, "payment_terms")))
         
         if 'is_deleted' in customer_data:
             if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
