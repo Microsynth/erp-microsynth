@@ -1459,7 +1459,7 @@ def set_default_payment_terms():
         key = company['name']
         company_terms[key] = company['payment_terms']
   
-    customers = frappe.get_all("Customer", fields=['name'])
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
     
     def get_name(customer):
         return customer.get('name')
