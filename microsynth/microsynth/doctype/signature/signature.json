@@ -32,8 +32,8 @@
    "label": "Signature"
   }
  ],
- "modified": "2022-11-10 15:10:40.673290",
- "modified_by": "Administrator",
+ "modified": "2023-02-03 15:26:22.686514",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Signature",
  "owner": "rolf.suter@microsynth.ch",
@@ -60,6 +60,16 @@
    "role": "Sales Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Sales User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "NGS Lab User"
   }
  ],
  "quick_entry": 1,
