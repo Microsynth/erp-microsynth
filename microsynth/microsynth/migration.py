@@ -1488,6 +1488,8 @@ def set_default_payment_terms():
             frappe.db.commit()
             i = 0
 
+    frappe.db.commit()
+
 
 def import_sequencing_labels(filename, skip_rows = 0):
     """
