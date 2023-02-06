@@ -1494,7 +1494,7 @@ def set_default_payment_terms():
     frappe.db.commit()
 
 
-def set_default_language():
+def set_default_language_for_customers():
     """
     Populate the customer field 'language' with the default value.
 
