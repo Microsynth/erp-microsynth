@@ -40,13 +40,20 @@ def async_create_invoices(mode, company):
     if (mode in ["Post", "Electronic"]):
         # individual invoices
         for dn in all_invoiceable:
-            if cint(dn.get('collective_billing')) == 0 or cint(dn.get('is_punchout')) == 1:
+            if cint(dn.get('is_punchout') == 1):
+                si = make_punchout_invoice(dn.get('delivery_note'))
+                transmit_sales_invoice(si)
+
+            if cint(dn.get('collective_billing')) == 0:
                 if mode == "Post":
                     if dn.get('invoicing_method') == "Post":
-                        make_invoice(dn.get('delivery_note'))
+                        si = make_invoice(dn.get('delivery_note'))
+                        transmit_sales_invoice(si)
                 else:
+                    # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
                     if dn.get('invoicing_method') != "Post":
-                        make_invoice(dn.get('delivery_note'))
+                        si = make_invoice(dn.get('delivery_note'))
+                        transmit_sales_invoice(si)
     elif mode == "Collective":
         # colletive invoices
         customers = []
@@ -62,7 +69,8 @@ def async_create_invoices(mode, company):
                     dns.append(dn.get('delivery_note'))
 
             if len(dns) > 0:
-                make_collective_invoice(dns)
+                si = make_collective_invoice(dns)
+                transmit_sales_invoice(si)
     else:
         frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
 
@@ -89,9 +97,59 @@ def make_invoice(delivery_note):
         book_credit(sales_invoice.name, sales_invoice.total_customer_credit)
         
     frappe.db.commit()
-    transmit_sales_invoice(sales_invoice.name)
-    return
+
+    return sales_invoice.name
+
+
+def make_punchout_invoice(delivery_note):
+    """
+    Create an invoice for a delivery note of a punchout order. Returns the sales invoice ID.
+
+    run 
+    bench execute microsynth.microsynth.invoicing.make_punchout_invoice --kwargs "{'delivery_note':'DN-BAL-23112515'}"
+    """
+
+    delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+
+    # get Sales Order to fetch punchout data not saved to the delivery note
+    # TODO: remove fetching sales order once all delivery notes have the punchout shop
+    sales_orders = []
+    for x in delivery_note.items:
+        if x.against_sales_order is not None and x.against_sales_order not in sales_orders:
+            sales_orders.append(x.against_sales_order)
     
+    if len(sales_orders) == 1:
+        sales_order = frappe.get_doc("Sales Order", sales_orders[0])
+    else:
+        frappe.log_error("The delivery note '{0}' originates from none or multiple sales orders".format(delivery_note.name), "invoicing.make_punchout_invoice")
+        return None
+    
+    # set the punchout shop
+    if delivery_note.punchout_shop is not None:
+        punchout_shop = frappe.get_doc("Punchout Shop", delivery_note.punchout_shop)
+    else:
+        punchout_shop = frappe.get_doc("Punchout Shop", sales_order.punchout_shop)
+
+    sales_invoice_content = make_sales_invoice(delivery_note.name)
+
+    # compile document
+    sales_invoice = frappe.get_doc(sales_invoice_content)
+    
+    if punchout_shop.billing_contact: 
+        sales_invoice.invoice_to = punchout_shop.billing_contact
+    else:    
+        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
+
+    if punchout_shop.billing_address:
+        sales_invoice.customer_address = punchout_shop.billing_address
+
+    sales_invoice.insert()
+    sales_invoice.submit()
+    frappe.db.commit()
+
+    return sales_invoice.name
+
+
 def make_collective_invoice(delivery_notes):
     # create invoice from first delivery note
     sales_invoice_content = make_sales_invoice(delivery_notes[0])
@@ -105,9 +163,9 @@ def make_collective_invoice(delivery_notes):
     sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
-    transmit_sales_invoice(sales_invoice.name)
     frappe.db.commit()
-    return
+
+    return sales_invoice.name
 
 
 def get_sales_order_list_and_delivery_note_list(sales_invoice): 
@@ -453,6 +511,10 @@ def transmit_sales_invoice(sales_invoice_name):
 
     # TODO: comment-in after development to handle invoice paths other than ariba
     
+    # TODO: handle punchout invoices different!
+    if sales_invoice.is_punchout:
+        return
+
     if customer.invoicing_method == "Email":
         # send by mail
 
