@@ -8,6 +8,28 @@ import json
 from datetime import datetime
 
 
+def get_customer(contact):
+    """
+    Returns the customer for a contact ID. 
+    Logs an error if no customer is linked to the contact.
+
+    run
+    bench execute microsynth.microsynth.utils.get_customer --kwargs "{'contact': 215856 }"
+    """
+    # get contact
+    contact = frappe.get_doc("Contact", contact)
+    # check links
+    customer_id = None
+    for l in contact.links:
+        if l.link_doctype == "Customer":
+            customer_id = l.link_name
+
+    if not customer_id: 
+        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact))
+
+    return customer_id
+
+
 def get_billing_address(customer_id):
     """
     Returns the primary billing address of a customer specified by its id.
@@ -61,6 +83,7 @@ def update_address_links_from_contact(address_name, links):
         address.save()
     return
 
+
 def create_oligo(oligo):
     oligo_doc = None
     # check if this oligo is already in the database
@@ -96,6 +119,7 @@ def create_oligo(oligo):
     oligo_doc.save(ignore_permissions=True)
 
     return oligo_doc.name
+
 
 def create_sample(sample):
     sample_doc = None
@@ -150,6 +174,7 @@ def create_sample(sample):
 
     return sample_doc.name
 
+
 @frappe.whitelist()
 def find_tax_template(company, customer, customer_address, category):
     """
@@ -185,6 +210,7 @@ def find_tax_template(company, customer, customer_address, category):
         else:
             return None
 
+
 def find_label(label_barcode, item):
     """
     Find a Sequencing Label by its barcode and item.
@@ -205,6 +231,7 @@ def find_label(label_barcode, item):
     else:
         frappe.throw("Multiple labels found for label_barcode '{0}', item '{1}'".format(str(label_barcode),str(item)))
 
+
 @frappe.whitelist(allow_guest=True)
 def login(usr, pwd):
     """
@@ -215,6 +242,7 @@ def login(usr, pwd):
     lm.authenticate(usr, pwd)
     lm.login()
     return frappe.local.session
+
 
 @frappe.whitelist()
 def get_print_address(contact, address, customer=None, customer_name=None):
@@ -227,6 +255,7 @@ def get_print_address(contact, address, customer=None, customer_name=None):
             'address': address, 
             'customer_name':  customer_name
         }) 
+
 
 @frappe.whitelist()
 def set_order_label_printed(sales_orders):
