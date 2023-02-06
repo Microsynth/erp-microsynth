@@ -565,3 +565,34 @@ def add_distributor(customer, distributor, product_type):
     customer.save()
     frappe.db.commit()
     return
+
+
+def set_default_language(customer):
+    """
+    Set the default print language for a customer if it is not yet defined.
+
+    run
+    bench execute microsynth.microsynth.utils.set_default_language --kwargs "{'customer':'8003'}"
+    """
+    a = get_billing_address(customer)
+
+    if a.country == "Switzerland":
+        if int(a.pincode) < 3000:
+            l = "fr"
+        else:
+            l = "de"
+    elif a.country in ("Germany", "Austria"):
+        l = "de"
+    elif a.country == "France":
+        l = "fr"
+    else:
+        l = "en"
+
+    customer = frappe.get_doc("Customer", customer)
+    
+    if customer.language is None:
+        customer.language = l
+        customer.save()
+        frappe.db.commit()
+
+    return

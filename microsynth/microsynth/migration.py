@@ -14,7 +14,7 @@ from frappe.utils import cint
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label
+from microsynth.microsynth.utils import find_label, set_default_language
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -689,6 +689,9 @@ def update_customer(customer_data):
         contact.save(ignore_permissions=True)
         
         frappe.db.commit()
+
+        # some more administration
+        set_default_language(customer.name)
     
     return error
 
@@ -1489,6 +1492,30 @@ def set_default_payment_terms():
             i = 0
 
     frappe.db.commit()
+
+
+def set_default_language():
+    """
+    Populate the customer field 'language' with the default value.
+
+    Run from
+    bench execute microsynth.microsynth.migration.set_default_language
+    """
+    from microsynth.microsynth.utils import set_default_language
+
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
+    
+    def get_name(customer):
+        return customer.get('name')
+    
+    i = 0
+    length = len(customers)
+    for c in sorted(customers, key=get_name):
+        print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
+        set_default_language(c.name)
+        i += 1
+
+    return
 
 
 def import_sequencing_labels(filename, skip_rows = 0):
