@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -84,6 +84,7 @@ def get_user_details(person_id, client="webshop"):
     if not contact:
         return {'success': False, 'message': "Person not found"}
     # fetch customer
+    # TODO: replace by utils.get_customer to get the customer_id
     customer_id = None
     for l in contact.links:
         if l.link_doctype == "Customer":
@@ -369,6 +370,9 @@ def get_contact_quotations(contact, client="webshop"):
     """
     Returns the quotations for a particular customer
     """
+    
+    customer_name = get_customer(contact)
+
     if frappe.db.exists("Contact", contact):
         # return valid quotations
         query = """SELECT 
@@ -384,9 +388,10 @@ def get_contact_quotations(contact, client="webshop"):
                 `tabQuotation Item`.`rate`
             FROM `tabQuotation`
             LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`
-            WHERE `tabQuotation`.`contact_person` = '{0}' 
+            WHERE (`tabQuotation`.`contact_person` = '{0}' 
+            OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
             AND `tabQuotation`.`docstatus` = 1 
-            ORDER BY `tabQuotation`.`name` """.format(contact) 
+            ORDER BY `tabQuotation`.`name` """.format(contact, customer_name) 
 
         qtns = frappe.db.sql(query, as_dict=True)
 
