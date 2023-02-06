@@ -577,9 +577,13 @@ def set_default_language(customer):
     a = get_billing_address(customer)
 
     if a.country == "Switzerland":
-        if int(a.pincode) < 3000:
-            l = "fr"
-        else:
+        try:
+            if int(a.pincode) < 3000:
+                l = "fr"
+            else:
+                l = "de"
+        except Exception as err:
+            frappe.log_error("Billing address '{0}' of customer '{1}' has an invalid pincode".format(a.name, customer), "set_default_language")
             l = "de"
     elif a.country in ("Germany", "Austria"):
         l = "de"
