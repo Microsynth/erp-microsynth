@@ -18,50 +18,43 @@ def get_data():
                        "type": "doctype",
                        "name": "Customer",
                        "label": _("Customer"),
-                       "description": _("Customer")                   
+                       "description": _("Customer")
                     },
                     {
                        "type": "doctype",
                        "name": "Contact",
                        "label": _("Contact"),
-                       "description": _("Contact")                   
+                       "description": _("Contact")
                     },
                     {
                        "type": "doctype",
                        "name": "Quotation",
                        "label": _("Quotation"),
-                       "description": _("Quotation")                   
+                       "description": _("Quotation")
                     },
                     {
                        "type": "doctype",
                        "name": "Standing Quotation",
                        "label": _("Standing Quotation"),
-                       "description": _("Standing Quotation")                   
+                       "description": _("Standing Quotation")
                     },
                     {
                        "type": "doctype",
                        "name": "Sales Order",
                        "label": _("Sales Order"),
-                       "description": _("Sales Order")                   
+                       "description": _("Sales Order")
                     },
                     {
                        "type": "doctype",
                        "name": "Delivery Note",
                        "label": _("Delivery Note"),
-                       "description": _("Delivery Note")                   
+                       "description": _("Delivery Note")
                     },
                     {
                        "type": "doctype",
                        "name": "Sales Invoice",
                        "label": _("Sales Invoice"),
-                       "description": _("Sales Invoice")                   
-                    },
-                    {
-                        "type": "report",
-                        "name": "Invoiceable Services",
-                        "label": _("Invoiceable Services"),
-                        "doctype": "Delivery Note",
-                        "is_query_report": True
+                       "description": _("Sales Invoice")
                     }
             ]
         },
@@ -145,7 +138,7 @@ def get_data():
                        "name": "Oligo",
                        "label": _("Oligo"),
                        "description": _("Oligo")
-                   },
+                    },
             ]
         },
         {
@@ -171,7 +164,14 @@ def get_data():
                        "label": _("Customer Credits"),
                        "doctype": "Sales Invoice",
                        "is_query_report": True
-                   }
+                    },
+                    {
+                        "type": "report",
+                        "name": "Invoiceable Services",
+                        "label": _("Invoiceable Services"),
+                        "doctype": "Delivery Note",
+                        "is_query_report": True
+                    }
             ]
         },
         {
