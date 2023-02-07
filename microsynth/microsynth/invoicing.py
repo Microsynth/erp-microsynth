@@ -36,14 +36,25 @@ def create_invoices(mode, company):
     
 def async_create_invoices(mode, company):
     all_invoiceable = get_data(filters={'company': company})
-    
+
+    # Not implemented exceptions to catch cases that are not yet developed
+    if company != "Microsynth AG":
+        frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
+        return
+    if mode != "Post":
+        frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
+        return
+
+    # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
         for dn in all_invoiceable:
+            # process punchout orders separately
             if cint(dn.get('is_punchout') == 1):
                 si = make_punchout_invoice(dn.get('delivery_note'))
                 transmit_sales_invoice(si)
 
+            # only process DN that are invoiced individually, not collective billing
             if cint(dn.get('collective_billing')) == 0:
                 if mode == "Post":
                     if dn.get('invoicing_method') == "Post":
@@ -648,7 +659,10 @@ def transmit_sales_invoice(sales_invoice_name):
             is_private=True
         )
         '''
-
+    
+    sales_invoice.invoice_sent_on = datetime.now()
+    sales_invoice.save()
+    frappe.db.commit()
         
     return
         
