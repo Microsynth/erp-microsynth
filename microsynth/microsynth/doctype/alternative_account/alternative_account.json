@@ -4,16 +4,16 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "base_account",
+  "account",
   "currency",
   "alternative_account"
  ],
  "fields": [
   {
-   "fieldname": "base_account",
+   "fieldname": "account",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Base Account",
+   "label": "Account",
    "options": "Account"
   },
   {
@@ -25,14 +25,14 @@
   },
   {
    "fieldname": "alternative_account",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Alternative Account",
    "options": "Account"
   }
  ],
  "istable": 1,
- "modified": "2023-02-08 15:36:02.274867",
+ "modified": "2023-02-08 15:47:23.950520",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Alternative Account",
