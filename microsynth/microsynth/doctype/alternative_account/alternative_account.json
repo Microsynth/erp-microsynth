@@ -1,0 +1,45 @@
+{
+ "creation": "2023-02-08 15:26:41.193902",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "base_account",
+  "currency",
+  "alternative_account"
+ ],
+ "fields": [
+  {
+   "fieldname": "base_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Base Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "alternative_account",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Alternative Account",
+   "options": "Account"
+  }
+ ],
+ "istable": 1,
+ "modified": "2023-02-08 15:36:02.274867",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Alternative Account",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
