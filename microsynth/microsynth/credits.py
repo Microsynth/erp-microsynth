@@ -13,7 +13,9 @@ def allocate_credits(sales_invoice_doc):
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
-        for credit in reversed(customer_credits):       # customer credits are sorted newes to oldest
+        for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
+            if credit.currency != sales_invoice_doc.currency:
+                frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
                 sales_invoice_doc.append('customer_credits', {
