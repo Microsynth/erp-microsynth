@@ -1762,3 +1762,23 @@ def set_distributor_carlo_erba():
         add_distributor(c.name, 35914214, "Labels" )
 
     return
+
+
+def set_debitor():
+    """
+    Set the debitor account
+
+    run 
+    bench execute "microsynth.microsynth.migration.set_debitor" 
+    """    
+    from microsynth.microsynth.utils import add_distributor
+
+    customers = frappe.db.get_all("Customer",
+        filters = {'account_manager': 'servizioclienticer@dgroup.it' },
+        fields = ['name'])
+
+    for c in customers:
+        add_distributor(c.name, 35914214, "Sequencing" )
+        add_distributor(c.name, 35914214, "Labels" )
+
+    return

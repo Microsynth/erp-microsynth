@@ -556,7 +556,7 @@ def add_distributor(customer, distributor, product_type):
     # TODO: ensure that only 1 distributor is set for a product type
 
     print("Customer '{0}': Add distributor '{1}' for '{2}'".format(customer.name, distributor, product_type))
-
+    # TODO: check if entry is already there!
     entry = {
         'distributor': distributor,
         'product_type': product_type
@@ -564,6 +564,30 @@ def add_distributor(customer, distributor, product_type):
     customer.append("distributors",entry)
     customer.save()
     frappe.db.commit()
+    return
+
+
+def set_debtor_accounts(customer):
+    
+    # get companies
+        # company
+        # Standard currency
+    
+    # Customer.currency -> set to default if None
+
+    # Customer.currency 
+
+    # loop through companies
+    #   Do 
+    #   get_company debtor accounts (accounts of type receivable, filter enabled)
+    
+
+    # TODO: disable invalid accounts
+
+    # TODO: check if entry is already there!
+
+    # TODO: 
+    
     return
 
 
