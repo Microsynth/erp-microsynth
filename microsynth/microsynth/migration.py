@@ -10,7 +10,7 @@ import csv
 import pandas as pd
 import numpy as np
 import json
-from frappe.utils import cint
+from frappe.utils import cint, flt
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
@@ -1676,7 +1676,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     bench execute "microsynth.microsynth.migration.create_credit_import_sales_invoice" --kwargs "{'company': 'Microsynth AG', 'customer': '1257', 'currency': 'CHF', 'total':42}"
     """
 
-    if float(total) <= 0:
+    if flt(total) <= 0:
         # frappe.log_error("Total credit for Customer '{0}' is '{1}'".format(customer, total), "create_credit_import_sales_invoice")
         return
 
@@ -1734,7 +1734,7 @@ def import_credit_accounts(filename):
             customer = elements[2]
             currency = elements[1].upper()
             total = elements[6]
-            print("{0}\t{1}".format(customer, total))
+            print("Import: {0}\t{1}".format(customer, total))
             create_credit_import_sales_invoice(company, customer, currency, total)
             i += 1
             # if i > 20:
