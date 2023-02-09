@@ -55,7 +55,8 @@ def book_credit(sales_invoice, net_amount):
     if not credit_account:
         frappe.throw("Please define an income account for the Microsynth Item {0}".format(credit_item.name))
 
-    revenue_account = frappe.get_value("Company", sinv.company, "default_income_account")
+    revenue_account = sinv.items[0].income_account
+
     if not revenue_account:
         frappe.throw("Please define a default revenue account for {0}".format(sinv.company))
         
@@ -69,7 +70,7 @@ def book_credit(sales_invoice, net_amount):
                 'debit_in_account_currency': net_amount
             },{
                 'account': revenue_account,
-                'credit_in_account_currency': net_amount
+                'credit_in_account_currency': net_amount    # TODO: handle other currencies than base currency
             }
         ],
         'user_remark': "Credit from {0}".format(sales_invoice)
