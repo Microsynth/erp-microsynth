@@ -1676,22 +1676,30 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     bench execute "microsynth.microsynth.migration.create_credit_import_sales_invoice" --kwargs "{'company': 'Microsynth AG', 'customer': '1257', 'currency': 'CHF', 'total':42}"
     """
 
+    if float(total) <= 0:
+        # frappe.log_error("Total credit for Customer '{0}' is '{1}'".format(customer, total), "create_credit_import_sales_invoice")
+        return
+
     customer = frappe.get_doc("Customer", customer)
 
+    if customer.disabled:
+        frappe.log_error("Cannot import credit for customer '{0}' because the customer is disabled".format(customer.name), "create_credit_import_sales_invoice")
+        return
+
     if customer.default_currency != currency:
-        frappe.log_error("Cannot import credit for customer '{0}' because currency does not match".format(customer.name), "create_credit_import_sales_invoice")
+        frappe.log_error("Cannot import credit for customer '{0}' because currency of credit acccount does not match the customer default currency".format(customer.name), "create_credit_import_sales_invoice")
         return
 
     # select naming series
     naming_series = get_naming_series("Sales Invoice", company)
 
-    # TODO posting_date!!!
     sales_invoice = frappe.get_doc({
         'doctype': 'Sales Invoice',
         'company': company,
         'naming_series': naming_series,
         'customer': customer.name,
         'currency': currency,
+        'set_posting_time': True,
         'posting_date': "2022-12-31"
     })
     item_detail = {
@@ -1701,10 +1709,10 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     }
     sales_invoice.append('items', item_detail)
     sales_invoice.insert()
+
     sales_invoice.submit()
 
-    # TODO: Journal Entry or Payment Entry
-    create_credit_import_journal_entry(company, customer, currency, sales_invoice.outstanding_amount)
+    create_credit_import_journal_entry(sales_invoice.name)
 
     return
 
@@ -1724,13 +1732,13 @@ def import_credit_accounts(filename):
             elements = line.split("\t")
             company = elements[0]
             customer = elements[2]
-            currency = elements[1]
+            currency = elements[1].upper()
             total = elements[6]
             print("{0}\t{1}".format(customer, total))
             create_credit_import_sales_invoice(company, customer, currency, total)
             i += 1
-            if i > 2:
-                break
+            # if i > 20:
+            #     break
 
 def set_distributor_carlo_erba():
     """
