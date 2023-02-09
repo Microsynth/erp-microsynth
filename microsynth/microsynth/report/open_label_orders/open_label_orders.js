@@ -112,11 +112,14 @@ function first_barcode_dialog() {
                 var validated = false;
                 var from_barcode = Number(values.from_barcode.replace(/\s+/g, ''));
 
-                // TODO
-                validated = true;
+                validated = is_in_range(locals.label_queue[0].range, from_barcode);
                 
                 if (validated) {
                     locals.label_queue[0].status = 1;
+                }
+                else
+                {
+                    frappe.msgprint("invalid barcode range");
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
                 process_queue();
@@ -172,8 +175,9 @@ function second_barcode_dialog() {
                 var validated = false;
                 var to_barcode = Number(values.to_barcode.replace(/\s+/g, ''))
                 
-                // TODO
-                validated = to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1;
+                validated = 
+                    is_in_range(locals.label_queue[0].range, to_barcode)
+                    && to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1;
                 
                 if (validated) {
                     frappe.show_alert("Barcodes OK");
@@ -192,3 +196,17 @@ function second_barcode_dialog() {
     }
 }
 
+function is_in_range(ranges, value) {
+    var range_list = ranges.split(',');
+
+    for (var i = 0; i < range_list.length; i++) {
+        var e = range_list[i].split('-')
+        var start = e[0].trim()
+        var end = e[1].trim()
+
+        if ( start <= value && value <= end ){
+            return true;
+        }
+    }
+    return false;
+}
