@@ -600,3 +600,24 @@ def set_default_language(customer):
         frappe.db.commit()
 
     return
+
+
+def get_alternative_account(account, currency):
+    """
+    run 
+    bench execute microsynth.microsynth.utils.get_alternative_account --kwargs "{'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'currency': 'EUR'}"
+    """
+    query = """
+        SELECT `alternative_account`
+        FROM `tabAlternative Account`
+        WHERE `account` = '{account}'
+        AND `currency` = '{currency}'
+    """.format(account = account, currency = currency)
+
+    alternative_accounts = frappe.db.sql(query, as_dict=True)
+
+    # TODO: throw an exception if there are multiple entries
+    if len(alternative_accounts) > 0:
+        return alternative_accounts[0].alternative_account
+    else:
+        return account
