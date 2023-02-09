@@ -1675,6 +1675,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     run
     bench execute "microsynth.microsynth.migration.create_credit_import_sales_invoice" --kwargs "{'company': 'Microsynth AG', 'customer': '1257', 'currency': 'CHF', 'total':42}"
     """
+    from microsynth.microsynth.utils import get_alternative_account
 
     if flt(total) <= 0:
         # frappe.log_error("Total credit for Customer '{0}' is '{1}'".format(customer, total), "create_credit_import_sales_invoice")
@@ -1710,6 +1711,8 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     sales_invoice.append('items', item_detail)
     sales_invoice.insert()
 
+    sales_invoice.items[0].income_account = get_alternative_account(sales_invoice.items[0].income_account, currency)
+
     sales_invoice.submit()
 
     create_credit_import_journal_entry(sales_invoice.name)
@@ -1737,7 +1740,7 @@ def import_credit_accounts(filename):
             print("Import: {0}\t{1}".format(customer, total))
             create_credit_import_sales_invoice(company, customer, currency, total)
             i += 1
-            # if i > 20:
+            # if i > 5:
             #     break
 
 def set_distributor_carlo_erba():
