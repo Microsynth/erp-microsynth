@@ -21,7 +21,9 @@ def get_columns():
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 80},
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
-        {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80}
+        {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80},
+        {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Data", "width": 120},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80}
     ]
 
 def get_data(filters=None):
@@ -33,6 +35,8 @@ def get_data(filters=None):
                 `tabDelivery Note`.`name` AS `delivery_note`,
                 `tabDelivery Note`.`customer` AS `customer`,
                 `tabDelivery Note`.`customer_name` AS `customer_name`,
+                `tabDelivery Note`.`base_net_total` AS `base_net_total`,
+                `tabDelivery Note`.`currency` AS `currency`,
                 `tabCustomer`.`invoicing_method` AS `invoicing_method`,
                 `tabCustomer`.`collective_billing` AS `collective_billing`,
                 `tabDelivery Note`.`is_punchout` AS `is_punchout`,
