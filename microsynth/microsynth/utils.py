@@ -567,7 +567,7 @@ def add_distributor(customer, distributor, product_type):
     return
 
 
-def get_debtor_account(company, currency):
+def get_debtor_account_currency(company, currency):
     """
     Return the deptor account for a company and the specified currency,
 
@@ -591,7 +591,48 @@ def get_debtor_account(company, currency):
     if len(accounts) == 1:
         return accounts[0]
     else:
-        frappe.throw("None or multiple debtor accounts for customer '{0}' and curreny '{1}'".format(company, currency), "utils.get_debtor_account")
+        frappe.throw("None or multiple debtor accounts for customer '{0}' and curreny '{1}'".format(company, currency), "utils.get_debtor_account_currency")
+        return None
+
+
+def get_debtor_account(company, currency, country):
+    """
+    Get the debtor account for customer, currency and country combination.
+
+    run
+    bench execute microsynth.microsynth.utils.get_debtor_account --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'country' : 'Switzerland' }"
+    """
+
+    company_country = frappe.get_value("Company", company, "country")
+    
+    accounts = {
+        ("Microsynth AG", "CHF", "Switzerland"): 1100,
+        ("Microsynth AG", "EUR", "foreign"): 1102,
+        ("Microsynth AG", "USD", "foreign"): 1101,
+        ("Microsynth Austria GmbH", "EUR", "Austria"): 2000,
+        ("Microsynth Austria GmbH", "EUR", "foreign"): 2100,
+        ("Microsynth France SAS", "EUR", "France"): 4112000,
+        ("Microsynth France SAS", "EUR", "foreign"): 4119000,
+        ("Microsynth Seqlab GmbH", "EUR", "Germany"): 1400, 
+        ("Microsynth Seqlab GmbH", "EUR", "foreign"): 1400, 
+        ("Ecogenics GmbH", "CHF", "Switzerland"): 1100,
+        ("Ecogenics GmbH", "EUR", "foreign"): 1102,
+        ("Ecogenics GmbH", "USD", "foreign"): 1101,
+    }
+
+    try:
+        account_number = accounts[company, currency, country if country == company_country else "foreign" ]
+    except: 
+        # frappe.throw("No debtor account found for company '{0}', currency '{1}', country '{2}'".format(company, currency, country), "utils.get_debtor_account")
+        return None
+
+    accounts = frappe.get_all("Account", filters = { 'company': company, 'account_number': account_number, 'account_type': 'Receivable' })
+
+    if len(accounts) == 1:
+        # print("{0}: {1}".format(accounts[0].name, accounts[0].currency))
+        return accounts[0].name
+    else:
+        frappe.throw("None or multiple debtor accounts found for company '{0}', account_number '{1}'".format(company, account_number), "utils.get_debtor_account")        
         return None
 
 
@@ -614,8 +655,10 @@ def set_debtor_accounts(customer):
     if not customer.default_currency:
         customer.default_currency = default_currencies[customer.default_company]
 
-    for account in customer.accounts:
-        print("{0}\t{1}".format(account.company, account.account))
+    address = get_billing_address(customer.name)
+
+    # for account in customer.accounts:
+    #     print("{0}\t{1}".format(account.company, account.account))
 
     def account_exists(company):
         for a in customer.accounts:
@@ -625,14 +668,19 @@ def set_debtor_accounts(customer):
 
     for company in companies:
         if not account_exists(company.name):
-            entry = {
-                'company': company.name,
-                'account': get_debtor_account(company.name, customer.default_currency)
-            }
-            print(entry)
-            customer.append("accounts", entry)
+            account =  get_debtor_account(company.name, customer.default_currency, address.country)
+
+            print("{0}, {1}, {2} --> {3}".format(company.name, customer.default_currency, address.country, account))
+
+            if account:
+                entry = {
+                    'company': company.name,
+                    'account': account
+                }
+                # print(entry)
+                customer.append("accounts", entry)
         
-    # customer.save()
+    customer.save()
 
     # for c in companies:
     #     print(c)
