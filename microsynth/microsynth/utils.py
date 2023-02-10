@@ -567,8 +567,78 @@ def add_distributor(customer, distributor, product_type):
     return
 
 
-def set_debtor_accounts(customer):
+def get_debtor_account(company, currency):
+    """
+    Return the deptor account for a company and the specified currency,
+
+    run
+    bench execute microsynth.microsynth.utils.get_debtor_account --kwargs "{'company': 'Microsynth AG', 'currency': 'EUR' }"
+    """
     
+    print("get_debtor_accout for '{0}' and '{1}'".format(company, currency))
+    
+    query = """
+        SELECT `name`
+        FROM `tabAccount`
+        WHERE `company` = '{company}'
+        AND `account_currency` = '{currency}'
+        AND `account_type` = 'Receivable'
+        AND `disabled` = 0
+    """.format(company =company, currency = currency)
+
+    accounts = frappe.db.sql(query, as_dict=True)
+    
+    if len(accounts) == 1:
+        return accounts[0]
+    else:
+        frappe.throw("None or multiple debtor accounts for customer '{0}' and curreny '{1}'".format(company, currency), "utils.get_debtor_account")
+        return None
+
+
+def set_debtor_accounts(customer):
+    """
+    Set the debtor account for customer.
+
+    run
+    bench execute microsynth.microsynth.utils.set_debtor_accounts --kwargs "{'customer': 8003 }"
+    """
+
+    companies = frappe.get_all("Company", fields = ['name', 'default_currency'])
+    
+    default_currencies = {}
+    for company in companies:
+        default_currencies[company.name] = company.default_currency
+
+    customer = frappe.get_doc("Customer", customer)
+
+    if not customer.default_currency:
+        customer.default_currency = default_currencies[customer.default_company]
+
+    for account in customer.accounts:
+        print("{0}\t{1}".format(account.company, account.account))
+
+    def account_exists(company):
+        for a in customer.accounts:
+            if a.company == company:
+                return True
+        return False
+
+    for company in companies:
+        if not account_exists(company.name):
+            entry = {
+                'company': company.name,
+                'account': get_debtor_account(company.name, customer.default_currency)
+            }
+            print(entry)
+            customer.append("accounts", entry)
+        
+    # customer.save()
+
+    # for c in companies:
+    #     print(c)
+
+    # frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
+
     # get companies
         # company
         # Standard currency
@@ -581,6 +651,8 @@ def set_debtor_accounts(customer):
     #   Do 
     #   get_company debtor accounts (accounts of type receivable, filter enabled)
     
+    # Ziel: Jeder Kunde hat genau 1 Konto pro Firma in seiner Währung
+
 
     # TODO: disable invalid accounts
 
