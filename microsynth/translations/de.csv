@@ -3,6 +3,8 @@ DocType: Sales Invoice,Your Reference,Ihr Zeichen
 DocType: Sales Invoice,Your Contact,Ihr Kontakt
 DocType: Sales Invoice,Sales Invoice,Rechnung
 DocType: Sales Invoice,Delivery Address,Lieferadresse
+DocType: Sales Invoice,Customer ID,Kunden-ID
+DocType: Sales Invoice,Our bank account,Unsere Bankverbindung
 DocType: Sales Invoice,Production ID,Produktions-ID
 DocType: Sales Invoice,Payment due,Fälligkeit der Zahlung
 DocType: Sales Invoice,30 days net,30 Tage netto
