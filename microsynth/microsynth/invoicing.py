@@ -54,7 +54,7 @@ def async_create_invoices(mode, company):
         for dn in all_invoiceable:
 
             # TODO: implement for other export categories
-            if dn.export_category != "CH":
+            if dn.region != "CH":
                 continue
 
             # TODO: implement for other product types
