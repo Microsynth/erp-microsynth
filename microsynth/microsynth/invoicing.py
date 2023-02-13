@@ -49,11 +49,24 @@ def async_create_invoices(mode, company):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
+        
+        count = 0
         for dn in all_invoiceable:
+
+            # TODO: implement for other export categories
+            if dn.export_category != "CH":
+                continue
+
+            # TODO: implement for other product types
+            if dn.product_type != "Oligos":
+                continue
+
             # process punchout orders separately
             if cint(dn.get('is_punchout') == 1):
-                si = make_punchout_invoice(dn.get('delivery_note'))
-                transmit_sales_invoice(si)
+                # TODO implement punchout orders
+                # si = make_punchout_invoice(dn.get('delivery_note'))
+                # transmit_sales_invoice(si)
+                continue
 
             # only process DN that are invoiced individually, not collective billing
             if cint(dn.get('collective_billing')) == 0:
@@ -61,6 +74,10 @@ def async_create_invoices(mode, company):
                     if dn.get('invoicing_method') == "Post":
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
+                        
+                        count += 1
+                        if count >= 20:
+                            break
                 else:
                     # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
                     if dn.get('invoicing_method') != "Post":
