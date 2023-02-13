@@ -18,6 +18,7 @@ from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.utils import get_physical_path
 from microsynth.microsynth.credits import allocate_credits, book_credit
 import datetime
+from datetime import datetime
 import json
 import random
 
@@ -512,11 +513,18 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
 def transmit_sales_invoice(sales_invoice_name):
     """
     This function will check the transfer mode and transmit the invoice
+
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_name':'SI-BAL-23000626'}"
     """
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
-
+    
+    if sales_invoice.invoice_to:
+        invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
+    else:
+        invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
     #for k,v in sales_order.as_dict().items():
     #    print ( "%s: %s" %(k,v))
 
@@ -531,22 +539,47 @@ def transmit_sales_invoice(sales_invoice_name):
 
         # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
-        target_email = sales_invoice.get("contact_email") # or customer.get("invoice_email")
+        target_email = invoice_contact.email_id
 
         if not target_email:
             frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice_name), "Sending invoice email failed")
             return
         
         # TODO: send email with content & attachment
-        # send(
-        #     recipients="print@microsynth.local",        # TODO: config 
-        #     subject=sales_invoice_name, 
-        #     message=sales_invoice_name, 
-        #     reference_doctype="Sales Invoice", 
-        #     reference_name=sales_invoice_name,
-        #     attachments=[{'fid': fid}]
-        # )
+        execute(
+            doctype = 'Sales Invoice',
+            name =  sales_invoice_name,
+            title = sales_invoice.title,
+            lang = sales_invoice.language,
+            print_format = "Sales Invoice",             # TODO: from configuration
+            is_private = 1
+        )
 
+        attachments = get_attachments("Sales Invoice", sales_invoice_name)
+        fid = None
+        for a in attachments:
+            fid = a['name']
+        frappe.db.commit()
+
+        if sales_invoice.language == "de":
+            subject = "Rechnung {0}".format(sales_invoice_name)
+            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Microsynth".format(sales_invoice_name)
+        elif sales_invoice.language == "fr":
+            subject = "Facture {0}".format(sales_invoice_name)
+            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Microsynth".format(sales_invoice_name)
+        else:
+            subject = "Invoice {0}".format(sales_invoice_name)
+            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Microsynth".format(sales_invoice_name)
+
+        send(
+            recipients = target_email,        # TODO: config 
+            sender = "info@microsynth.com",
+            subject = subject, 
+            message = message,
+            reference_doctype = "Sales Invoice", 
+            reference_name = sales_invoice_name,
+            attachments = [{'fid': fid}]
+        )
     elif customer.invoicing_method == "Post":
         # create and attach pdf to the document
         execute(
