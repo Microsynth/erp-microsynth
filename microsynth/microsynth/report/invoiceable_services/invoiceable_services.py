@@ -44,7 +44,7 @@ def get_data(filters=None):
                 `tabDelivery Note`.`po_no` AS `po_no`,
                 `tabCountry`.`export_code` AS `region`,
                 `tabDelivery Note`.`shipment_type` AS `shipment_type`,
-                `tabDelivery Note`.`product_type` AS `product_type`,
+                `tabDelivery Note`.`product_type` AS `product_type`,            
                 (SELECT COUNT(`tabSales Invoice Item`.`name`) 
                  FROM `tabSales Invoice Item`
                  WHERE 
@@ -69,10 +69,11 @@ def get_data(filters=None):
             WHERE 
                 `tabDelivery Note`.`docstatus` = 1
                 AND `tabDelivery Note`.`company` = "{company}"
+                AND `tabDelivery Note`.`creation` > '2022-12-31'
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
-        ORDER BY `raw`.`customer` ASC;
+        ORDER BY `raw`.`customer_name` ASC;
     """.format(company=filters.get("company")), as_dict=True)
     
     return invoiceable_services
