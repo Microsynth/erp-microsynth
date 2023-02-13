@@ -1,12 +1,17 @@
 DocType: Sales Invoice,Your reference,Ihr Zeichen
 DocType: Sales Invoice,Your Reference,Ihr Zeichen
 DocType: Sales Invoice,Your Contact,Ihr Kontakt
-DocType: Sales Invoice,Sales Invoice,Rechnung
+DocType: Sales Invoice,Invoice,Rechnung
 DocType: Sales Invoice,Delivery Address,Lieferadresse
 DocType: Sales Invoice,Customer ID,Kunden-ID
+DocType: Sales Invoice,Total,Total
+DocType: Sales Invoice,Total amount,Gesamtbetrag
+DocType: Sales Invoice,Debit from credit account,Abbuchung vom Guthaben
 DocType: Sales Invoice,Our bank account,Unsere Bankverbindung
 DocType: Sales Invoice,Production ID,Produktions-ID
+DocType: Sales Invoice,Amount,Betrag
 DocType: Sales Invoice,Payment due,Fälligkeit der Zahlung
+DocType: Sales Invoice,Your credit balance,Saldo Ihres Guthabenkontos
 DocType: Sales Invoice,30 days net,30 Tage netto
 DocType: Sales Invoice,45 days net,45 Tage netto
 DocType: Sales Invoice,60 days net,60 Tage netto
