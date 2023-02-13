@@ -595,6 +595,17 @@ def get_debtor_account_currency(company, currency):
         return None
 
 
+def get_account_by_number(company, account_number):
+    accounts = frappe.get_all("Account", filters = { 'company': company, 'account_number': account_number, 'account_type': 'Receivable' })
+
+    if len(accounts) == 1:
+        # print("{0}: {1}".format(accounts[0].name, accounts[0].currency))
+        return accounts[0].name
+    else:
+        frappe.throw("None or multiple debtor accounts found for company '{0}', account_number '{1}'".format(company, account_number), "utils.get_debtor_account")        
+        return None
+
+
 def get_debtor_account(company, currency, country):
     """
     Get the debtor account for customer, currency and country combination.
@@ -605,35 +616,38 @@ def get_debtor_account(company, currency, country):
 
     company_country = frappe.get_value("Company", company, "country")
     
-    accounts = {
-        ("Microsynth AG", "CHF", "Switzerland"): 1100,
-        ("Microsynth AG", "EUR", "foreign"): 1102,
-        ("Microsynth AG", "USD", "foreign"): 1101,
-        ("Microsynth Austria GmbH", "EUR", "Austria"): 2000,
-        ("Microsynth Austria GmbH", "EUR", "foreign"): 2100,
-        ("Microsynth France SAS", "EUR", "France"): 4112000,
-        ("Microsynth France SAS", "EUR", "foreign"): 4119000,
-        ("Microsynth Seqlab GmbH", "EUR", "Germany"): 1400, 
-        ("Microsynth Seqlab GmbH", "EUR", "foreign"): 1400, 
-        ("Ecogenics GmbH", "CHF", "Switzerland"): 1100,
-        ("Ecogenics GmbH", "EUR", "foreign"): 1102,
-        ("Ecogenics GmbH", "USD", "foreign"): 1101,
-    }
+    if company == "Microsynth AG":
+        if currency == "EUR":
+            account = 1102
+        elif currency == "USD":
+            account = 1101
+        else:
+            account = 1100
 
-    try:
-        account_number = accounts[company, currency, country if country == company_country else "foreign" ]
-    except: 
-        # frappe.throw("No debtor account found for company '{0}', currency '{1}', country '{2}'".format(company, currency, country), "utils.get_debtor_account")
-        return None
+    elif company == "Microsynth Austria GmbH":
+        if country == company_country:
+            account = 2000
+        else:
+            account = 2100
 
-    accounts = frappe.get_all("Account", filters = { 'company': company, 'account_number': account_number, 'account_type': 'Receivable' })
+    elif company == "Microsynth France SAS":
+        if country == company_country:
+            account = 4112000
+        else:
+            account = 4119000
 
-    if len(accounts) == 1:
-        # print("{0}: {1}".format(accounts[0].name, accounts[0].currency))
-        return accounts[0].name
-    else:
-        frappe.throw("None or multiple debtor accounts found for company '{0}', account_number '{1}'".format(company, account_number), "utils.get_debtor_account")        
-        return None
+    elif company == "Microsynth Seqlab GmbH":
+        account = 1400
+
+    elif company == "Ecogenics GmbH":
+        if currency == "EUR":
+            account = 1102
+        elif currency == "USD":
+            account = 1101
+        else:
+            account = 1100
+
+    return account
 
 
 def set_debtor_accounts(customer):
@@ -668,7 +682,8 @@ def set_debtor_accounts(customer):
 
     for company in companies:
         if not account_exists(company.name):
-            account =  get_debtor_account(company.name, customer.default_currency, address.country)
+            account_number =  get_debtor_account(company.name, customer.default_currency, address.country)            
+            account = get_account_by_number(company.name, account_number)
 
             print("{0}, {1}, {2} --> {3}".format(company.name, customer.default_currency, address.country, account))
 

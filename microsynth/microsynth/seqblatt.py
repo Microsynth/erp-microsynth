@@ -139,9 +139,14 @@ def check_sales_order_completion():
           AND `per_delivered` < 100;
     """, as_dict=True)
     
+    for so in open_sequencing_sales_orders:
+        if so.name == "SO-LYO-23000040":
+            open_sequencing_sales_orders = [so]
+    
+    print(len(open_sequencing_sales_orders))
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
-
+    
         # check status of labels assigned to each sample
         pending_samples = frappe.db.sql("""
             SELECT 
@@ -154,7 +159,7 @@ def check_sales_order_completion():
                 AND `tabSample Link`.`parenttype` = "Sales Order"
                 AND `tabSequencing Label`.`status` NOT IN ("processed");
             """.format(sales_order=sales_order), as_dict=True)
-
+        print("pending samples:\n{0}".format(pending_samples))
         if len(pending_samples) == 0:
             # all processed: create delivery
             customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
