@@ -8,6 +8,7 @@
   "ariba_id",
   "ariba_secret",
   "paynet_id",
+  "invoice_printer",
   "sec_credits",
   "credit_item",
   "alternative_accounts_section",
@@ -58,10 +59,15 @@
    "fieldtype": "Table",
    "label": "Alternative Accounts",
    "options": "Alternative Account"
+  },
+  {
+   "fieldname": "invoice_printer",
+   "fieldtype": "Data",
+   "label": "Invoice Printer"
   }
  ],
  "issingle": 1,
- "modified": "2023-02-08 15:37:23.012597",
+ "modified": "2023-02-13 16:54:01.639021",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",

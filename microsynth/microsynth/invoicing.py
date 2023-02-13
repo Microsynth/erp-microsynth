@@ -49,7 +49,7 @@ def async_create_invoices(mode, company):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
-        
+
         count = 0
         for dn in all_invoiceable:
 
@@ -615,7 +615,7 @@ def transmit_sales_invoice(sales_invoice_name):
         
         # print the pdf with cups        
         path = get_physical_path(fid)
-        PRINTER = "HP_LaserJet_M554"
+        PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
         import subprocess
         subprocess.run(["lp", path, "-d", PRINTER])
 
