@@ -23,7 +23,8 @@ def get_columns():
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
         {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80},
         {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Data", "width": 120},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80}
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
+        {"label": _("Product"), "fieldname": "product_type", "fieldtype": "Data", "width": 80}
     ]
 
 def get_data(filters=None):
@@ -43,6 +44,7 @@ def get_data(filters=None):
                 `tabDelivery Note`.`po_no` AS `po_no`,
                 `tabCountry`.`export_code` AS `region`,
                 `tabDelivery Note`.`shipment_type` AS `shipment_type`,
+                `tabDelivery Note`.`product_type` AS `product_type`,
                 (SELECT COUNT(`tabSales Invoice Item`.`name`) 
                  FROM `tabSales Invoice Item`
                  WHERE 
