@@ -1764,21 +1764,29 @@ def set_distributor_carlo_erba():
     return
 
 
-def set_debitor():
+def set_debtors():
     """
     Set the debitor account
 
     run 
-    bench execute "microsynth.microsynth.migration.set_debitor" 
+    bench execute microsynth.microsynth.migration.set_debtors
     """    
-    from microsynth.microsynth.utils import add_distributor
+    from microsynth.microsynth.utils import set_debtor_accounts
 
     customers = frappe.db.get_all("Customer",
-        filters = {'account_manager': 'servizioclienticer@dgroup.it' },
+        filters = {'disabled': 0 },
         fields = ['name'])
 
-    for c in customers:
-        add_distributor(c.name, 35914214, "Sequencing" )
-        add_distributor(c.name, 35914214, "Labels" )
+    i = 0
+    length = len(customers)
 
+    for c in customers:
+        print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
+        
+        try:
+            set_debtor_accounts(c.name)
+        except Exception as err:
+            frappe.log_error("Could not set debtors for customer '{0}'\n{1}".format(c.name, err), "migration.set_debtors")
+
+        i += 1
     return
