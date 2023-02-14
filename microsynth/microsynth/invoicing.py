@@ -76,7 +76,7 @@ def async_create_invoices(mode, company):
                         transmit_sales_invoice(si)
                         
                         count += 1
-                        if count >= 20:
+                        if count >= 100:
                             break
                 else:
                     # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
