@@ -696,32 +696,8 @@ def set_debtor_accounts(customer):
                 customer.append("accounts", entry)
         
     customer.save()
-
-    # for c in companies:
-    #     print(c)
-
-    # frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
-
-    # get companies
-        # company
-        # Standard currency
-    
-    # Customer.currency -> set to default if None
-
-    # Customer.currency 
-
-    # loop through companies
-    #   Do 
-    #   get_company debtor accounts (accounts of type receivable, filter enabled)
-    
-    # Ziel: Jeder Kunde hat genau 1 Konto pro Firma in seiner Währung
-
-
-    # TODO: disable invalid accounts
-
-    # TODO: check if entry is already there!
-
-    # TODO: 
+    #TODO Do not commit when using this function when initializing a customer
+    frappe.db.commit()
     
     return
 
@@ -756,7 +732,7 @@ def set_default_language(customer):
     if customer.language is None:
         customer.language = l
         customer.save()
-        frappe.db.commit()
+        # frappe.db.commit()
 
     return
 
