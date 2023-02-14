@@ -10,7 +10,8 @@ DocType: Sales Invoice,Debit from credit account,Débit du compte de crédit
 DocType: Sales Invoice,Our bank account,Notre compte bancaire
 DocType: Sales Invoice,Production ID,ID de production
 DocType: Sales Invoice,Amount,Montant
-DocType: Sales Invoice,Payment due,Paiement dû
+DocType: Sales Invoice,Terms of payment,Conditions de paiement
+DocType: Sales Invoice,Payable until,Payable jusqu'au
 DocType: Sales Invoice,Your credit balance,Votre solde de crédit
 DocType: Sales Invoice,30 days net,30 jours net
 DocType: Sales Invoice,45 days net,45 jours net
