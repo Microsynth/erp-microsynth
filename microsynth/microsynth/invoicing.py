@@ -105,6 +105,30 @@ def async_create_invoices(mode, company):
 
     return
 
+
+def get_income_account(company, country, original_account):
+    
+    # TODO: zusätzliches Feld auf alternatives accounts? 
+    #  country flag (type data: "Switzerland", "Austria", "*", wildcart) wie bei TaxMatrix
+
+        # TODO: get income account depending on company and item_group, inland/foreign
+
+    return 42
+
+
+def set_receivable_accounts(sales_invoice):
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    
+    # TODO
+    
+    billing_address_country = "Switzerland"
+
+    for item in sales_invoice.items:
+        item.income_account = get_income_account(sales_invoice.company, billing_address_country , item.income_account)
+
+    sales_invoice.save()
+
+
 def make_invoice(delivery_note):
     """
     Includes customer credits. Do not use for customer projects.
