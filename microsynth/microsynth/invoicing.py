@@ -585,11 +585,12 @@ def transmit_sales_invoice(sales_invoice_name):
         # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
         target_email = invoice_contact.email_id
-
         if not target_email:
             frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice_name), "Sending invoice email failed")
             return
         
+        footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
+
         # TODO: send email with content & attachment
         execute(
             doctype = 'Sales Invoice',
@@ -608,17 +609,18 @@ def transmit_sales_invoice(sales_invoice_name):
 
         if sales_invoice.language == "de":
             subject = "Rechnung {0}".format(sales_invoice_name)
-            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Microsynth".format(sales_invoice_name)
+            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
         elif sales_invoice.language == "fr":
             subject = "Facture {0}".format(sales_invoice_name)
-            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Microsynth".format(sales_invoice_name)
+            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
         else:
             subject = "Invoice {0}".format(sales_invoice_name)
-            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Microsynth".format(sales_invoice_name)
+            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
 
         send(
             recipients = target_email,        # TODO: config 
             sender = "info@microsynth.com",
+            cc = "info@microsynth.com",
             subject = subject, 
             message = message,
             reference_doctype = "Sales Invoice", 
