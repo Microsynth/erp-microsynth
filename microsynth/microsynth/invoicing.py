@@ -551,7 +551,35 @@ def transmit_sales_invoice(sales_invoice_name):
     if sales_invoice.is_punchout:
         return
 
-    if customer.invoicing_method == "Email":
+    # The invoice was already sent. Do not send again.
+    if sales_invoice.invoice_sent_on:
+        print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
+        return
+
+    # Do not send any invoice if the items are free of charge
+    if sales_invoice.total == 0:
+        return
+
+    if customer.invoicing_method == "Post":
+        # Send all invoices with credit account per mail
+        if sales_invoice.net_total == 0:
+            mode = "Email"
+        else:
+            mode = "Post"
+    elif customer.invoicing_method == "Email":
+        mode = "Email"
+    elif customer.invoicing_method == "ARIBA":
+        mode = "ARIBA"
+    elif customer.invoicing_method == "Paynet":
+        mode = "Paynet"
+    elif customer.invoicing_method == "GEP":
+        mode = "GEP"
+    else:
+        mode = None
+
+    print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
+
+    if mode == "Email":
         # send by mail
 
         # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
@@ -597,7 +625,8 @@ def transmit_sales_invoice(sales_invoice_name):
             reference_name = sales_invoice_name,
             attachments = [{'fid': fid}]
         )
-    elif customer.invoicing_method == "Post":
+
+    elif mode == "Post":
         # create and attach pdf to the document
         execute(
             doctype = 'Sales Invoice',
@@ -630,7 +659,7 @@ def transmit_sales_invoice(sales_invoice_name):
         # )
         pass
 
-    elif customer.invoicing_method == "ARIBA":
+    elif mode == "ARIBA":
         # create ARIBA cXML input data dict
         data = sales_invoice.as_dict()
         data['customer_record'] = customer.as_dict()
@@ -658,7 +687,7 @@ def transmit_sales_invoice(sales_invoice_name):
         )
         '''
 
-    elif customer.invoicing_method == "Paynet":
+    elif mode == "Paynet":
         # create Paynet cXML input data dict
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
         
@@ -686,7 +715,7 @@ def transmit_sales_invoice(sales_invoice_name):
         )
         '''
     
-    elif customer.invoicing_method == "GEP":
+    elif mode == "GEP":
         print("IN GEP")
         # create Gep cXML input data dict
         cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
@@ -709,6 +738,9 @@ def transmit_sales_invoice(sales_invoice_name):
             is_private=True
         )
         '''
+
+    else:
+        return
     
     sales_invoice.invoice_sent_on = datetime.now()
     sales_invoice.save()
