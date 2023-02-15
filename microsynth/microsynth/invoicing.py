@@ -120,7 +120,7 @@ def set_receivable_accounts(sales_invoice):
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     
     # TODO
-    
+
     billing_address_country = "Switzerland"
 
     for item in sales_invoice.items:
@@ -551,15 +551,15 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     return data2
 
 
-def transmit_sales_invoice(sales_invoice_name):
+def transmit_sales_invoice(sales_invoice):
     """
     This function will check the transfer mode and transmit the invoice
 
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_name':'SI-BAL-23000626'}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23000626'}"
     """
 
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_name)
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     
     if sales_invoice.invoice_to:
@@ -610,7 +610,7 @@ def transmit_sales_invoice(sales_invoice_name):
 
         target_email = invoice_contact.email_id
         if not target_email:
-            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice_name), "Sending invoice email failed")
+            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
             return
         
         footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
@@ -618,28 +618,28 @@ def transmit_sales_invoice(sales_invoice_name):
         # TODO: send email with content & attachment
         execute(
             doctype = 'Sales Invoice',
-            name =  sales_invoice_name,
+            name =  sales_invoice.name,
             title = sales_invoice.title,
             lang = sales_invoice.language,
             print_format = "Sales Invoice",             # TODO: from configuration
             is_private = 1
         )
 
-        attachments = get_attachments("Sales Invoice", sales_invoice_name)
+        attachments = get_attachments("Sales Invoice", sales_invoice.name)
         fid = None
         for a in attachments:
             fid = a['name']
         frappe.db.commit()
 
         if sales_invoice.language == "de":
-            subject = "Rechnung {0}".format(sales_invoice_name)
-            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
+            subject = "Rechnung {0}".format(sales_invoice.name)
+            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
         elif sales_invoice.language == "fr":
-            subject = "Facture {0}".format(sales_invoice_name)
-            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
+            subject = "Facture {0}".format(sales_invoice.name)
+            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
         else:
-            subject = "Invoice {0}".format(sales_invoice_name)
-            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice_name, footer)
+            subject = "Invoice {0}".format(sales_invoice.name)
+            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
 
         send(
             recipients = target_email,        # TODO: config 
@@ -648,7 +648,7 @@ def transmit_sales_invoice(sales_invoice_name):
             subject = subject, 
             message = message,
             reference_doctype = "Sales Invoice", 
-            reference_name = sales_invoice_name,
+            reference_name = sales_invoice.name,
             attachments = [{'fid': fid}]
         )
 
@@ -656,33 +656,24 @@ def transmit_sales_invoice(sales_invoice_name):
         # create and attach pdf to the document
         execute(
             doctype = 'Sales Invoice',
-            name =  sales_invoice_name,
+            name =  sales_invoice.name,
             title = sales_invoice.title,
             lang = sales_invoice.language,
             print_format = "Sales Invoice",             # TODO: from configuration
             is_private = 1
         )
-        attachments = get_attachments("Sales Invoice", sales_invoice_name)
+        attachments = get_attachments("Sales Invoice", sales_invoice.name)
         fid = None
         for a in attachments:
             fid = a['name']
         frappe.db.commit()
         
-        # print the pdf with cups        
+        # print the pdf with cups
         path = get_physical_path(fid)
         PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
         import subprocess
         subprocess.run(["lp", path, "-d", PRINTER])
 
-        # # send mail to printer relais
-        # send(
-        #     recipients="print@microsynth.local",        # TODO: config 
-        #     subject=sales_invoice_name, 
-        #     message=sales_invoice_name, 
-        #     reference_doctype="Sales Invoice", 
-        #     reference_name=sales_invoice_name,
-        #     attachments=[{'fid': fid}]
-        # )
         pass
 
     elif mode == "ARIBA":
@@ -695,7 +686,7 @@ def transmit_sales_invoice(sales_invoice_name):
         #print(cxml)
 
         # TODO: comment in after development to save ariba file to filesystem
-        with open('/home/libracore/Desktop/'+ sales_invoice_name, 'w') as file:
+        with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
             file.write(cxml)
         '''
         # attach to sales invoice
@@ -703,10 +694,10 @@ def transmit_sales_invoice(sales_invoice_name):
         # store EDI File  
     
         f = save_file(
-            "{0}.txt".format(sales_invoice_name), 
+            "{0}.txt".format(sales_invoice.name), 
             cxml, 
             "Sales Invoice", 
-            sales_invoice_name, 
+            sales_invoice.name, 
             folder = '/home/libracore/Desktop',
             # folder=folder, 
             is_private=True
@@ -721,7 +712,7 @@ def transmit_sales_invoice(sales_invoice_name):
         #print(cxml)
 
         # TODO: comment in after development to save ariba file to filesystem
-        with open('/home/libracore/Desktop/'+ sales_invoice_name, 'w') as file:
+        with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
             file.write(cxml)
 
         '''
@@ -732,10 +723,10 @@ def transmit_sales_invoice(sales_invoice_name):
         # store EDI File
         
         f = save_file(
-            "{0}.txt".format(sales_invoice_name), 
+            "{0}.txt".format(sales_invoice.name), 
             cxml, 
             "Sales Invoice", 
-            sales_invoice_name, 
+            sales_invoice.name, 
             folder=folder, 
             is_private=True
         )
@@ -756,10 +747,10 @@ def transmit_sales_invoice(sales_invoice_name):
         # store EDI File
         
         f = save_file(
-            "{0}.txt".format(sales_invoice_name), 
+            "{0}.txt".format(sales_invoice.name), 
             cxml, 
             "Sales Invoice", 
-            sales_invoice_name, 
+            sales_invoice.name, 
             folder=folder, 
             is_private=True
         )
