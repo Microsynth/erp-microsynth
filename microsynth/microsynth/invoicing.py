@@ -43,7 +43,7 @@ def async_create_invoices(mode, company):
     if company != "Microsynth AG":
         frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
         return
-    if mode != "Post":
+    if mode not in ["Post", "Electronic"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
 
@@ -58,8 +58,8 @@ def async_create_invoices(mode, company):
             if dn.region != "CH":
                 continue
 
-            # TODO: implement for other product types
-            if dn.product_type != "Oligos":
+            # TODO: implement for other product types. Requires setting the income accounts.
+            if dn.product_type not in ["Oligos"]:
                 continue
 
             # process punchout orders separately
@@ -76,14 +76,20 @@ def async_create_invoices(mode, company):
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
                         
-                        count += 1
-                        if count >= 100:
-                            break
                 else:
+                    # TODO process other invoicing methods
+                    if dn.get('invoicing_method') not in  ["Email"]:
+                        continue
+
                     # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
                     if dn.get('invoicing_method') != "Post":
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
+
+                        count += 1
+                        if count >= 20:
+                            break
+
     elif mode == "Collective":
         # colletive invoices
         customers = []
