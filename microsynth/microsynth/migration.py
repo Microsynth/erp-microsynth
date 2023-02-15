@@ -1790,3 +1790,24 @@ def set_debtors():
 
         i += 1
     return
+
+
+def clean_up_item_income_accounts():
+    items = frappe.db.get_all("Item",
+        fields = ['name'])
+
+    for i in items:
+        item = frappe.get_doc("Item", i)
+
+        print("remove income accounts from item '{0}'".format(item.item_code))
+        if item.item_code != "6100":
+            item.item_defaults = []
+        item.save()
+        
+    # get all items
+    # loop through items
+    # for each item
+    ## remove all accounting settings
+    
+    return
+    
