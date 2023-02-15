@@ -17,6 +17,7 @@ from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.utils import get_physical_path
 from microsynth.microsynth.credits import allocate_credits, book_credit
+from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime
 import json
@@ -612,8 +613,16 @@ def transmit_sales_invoice(sales_invoice):
         if not target_email:
             frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
             return
-        
-        footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
+
+        if sales_invoice.company == "Microsynth AG":
+            destination = get_destination_classification(si = sales_invoice.name)
+
+            if destination == "EU":
+                footer =  frappe.get_value("Letter Head", "Microsynth AG Wolfurt", "footer")
+            else:
+                footer =  frappe.get_value("Letter Head", sales_invoice.company, "footer")
+        else: 
+            footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
 
         # TODO: send email with content & attachment
         execute(
