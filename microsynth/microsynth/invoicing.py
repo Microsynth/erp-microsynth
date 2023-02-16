@@ -15,7 +15,7 @@ from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
-from microsynth.microsynth.utils import get_physical_path
+from microsynth.microsynth.utils import get_physical_path, get_billing_address
 from microsynth.microsynth.credits import allocate_credits, book_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -123,15 +123,42 @@ def get_income_account(company, country, original_account):
     return 42
 
 
-def set_receivable_accounts(sales_invoice):
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
-    
-    # TODO
+def get_alternative_income_account(account, country):
+    """
+    Return the first alternative account for a given account and country of a billing address. The company is not used.
 
-    billing_address_country = "Switzerland"
+    run
+    bench execute microsynth.microsynth.invoicing.get_alternative_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'country': 'Switzerland'}"
+    """
+    
+    query = """
+        SELECT `alternative_account`
+        FROM `tabAlternative Account`
+        WHERE `account` = '{account}'
+        AND (`country` = '{country}' OR `country` = '%')
+        ORDER BY `idx` ASC
+    """.format(account = account, country = country)
+
+    records = frappe.db.sql(query, as_dict = True)
+
+    if len(records) > 0:
+        return records[0]['alternative_account']
+    else:
+        return account
+
+
+def set_income_accounts(sales_invoice):
+    """
+    Sets the income account for each item of a sales invoice based on the original income account entry, the company and the billing_address country.
+    
+    run
+    bench execute microsynth.microsynth.invoicing.set_income_accounts --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
+    """
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    billing_address = get_billing_address(sales_invoice.customer)
 
     for item in sales_invoice.items:
-        item.income_account = get_income_account(sales_invoice.company, billing_address_country , item.income_account)
+        item.income_account = get_alternative_income_account(item.income_account, billing_address.country)
 
     sales_invoice.save()
 

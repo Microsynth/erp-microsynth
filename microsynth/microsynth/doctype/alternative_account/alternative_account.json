@@ -6,10 +6,12 @@
  "field_order": [
   "account",
   "currency",
+  "country",
   "alternative_account"
  ],
  "fields": [
   {
+   "columns": 3,
    "fieldname": "account",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -17,6 +19,7 @@
    "options": "Account"
   },
   {
+   "columns": 1,
    "fieldname": "currency",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -24,16 +27,24 @@
    "options": "Currency"
   },
   {
+   "columns": 3,
    "fieldname": "alternative_account",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Alternative Account",
    "options": "Account"
+  },
+  {
+   "columns": 2,
+   "fieldname": "country",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Country"
   }
  ],
  "istable": 1,
- "modified": "2023-02-08 15:47:23.950520",
- "modified_by": "Administrator",
+ "modified": "2023-02-16 08:09:11.347695",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Alternative Account",
  "owner": "Administrator",
