@@ -35,7 +35,7 @@
    "options": "Account"
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "country",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -43,7 +43,7 @@
   }
  ],
  "istable": 1,
- "modified": "2023-02-16 08:09:11.347695",
+ "modified": "2023-02-16 11:21:16.197082",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Alternative Account",

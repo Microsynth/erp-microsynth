@@ -1792,22 +1792,33 @@ def set_debtors():
     return
 
 
-def clean_up_item_income_accounts():
+def remove_item_account_settings():
+    """
+    Set the debitor account
+
+    run 
+    bench execute microsynth.microsynth.migration.remove_item_account_settings
+    """
+
     items = frappe.db.get_all("Item",
         fields = ['name'])
 
-    for i in items:
-        item = frappe.get_doc("Item", i)
+    i = 0
+    length = len(items)
 
-        print("remove income accounts from item '{0}'".format(item.item_code))
-        if item.item_code != "6100":
-            item.item_defaults = []
-        item.save()
+    for item_name in items:
+        item = frappe.get_doc("Item", item_name)
+
+        if item.item_code == "6100":
+            continue
         
-    # get all items
-    # loop through items
-    # for each item
-    ## remove all accounting settings
-    
+        print("{progress}% remove account settings of item '{item}'".format(item = item.item_code, progress = int(100 * i / length)))
+
+        for entry in item.item_defaults:
+            entry.income_account = None
+
+        item.save()
+
+        i += 1
+
     return
-    
