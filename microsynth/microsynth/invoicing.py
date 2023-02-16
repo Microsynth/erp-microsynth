@@ -86,9 +86,9 @@ def async_create_invoices(mode, company):
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
 
-                        count += 1
-                        if count >= 20:
-                            break
+                        # count += 1
+                        # if count >= 20:
+                        #     break
 
     elif mode == "Collective":
         # colletive invoices
