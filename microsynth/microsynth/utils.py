@@ -623,11 +623,9 @@ def get_debtor_account(company, currency, country):
             account = 1102
         elif currency == "USD":
             account = 1101
-        elif currency == "SEK":
-            account = 1104
         # unknown currencies
         else:
-            account = 1105
+            account = 1100
 
     elif company == "Microsynth Austria GmbH":
         if country == company_country:
@@ -642,12 +640,7 @@ def get_debtor_account(company, currency, country):
             account = 4119000
 
     elif company == "Microsynth Seqlab GmbH":
-        if currency == "USD":
-            account = 1401
-        if currency == "SEK":
-            account = 1404
-        else:
-            account = 1400
+        account = 1400
 
     elif company == "Ecogenics GmbH":
         if currency == "EUR":
