@@ -617,16 +617,17 @@ def get_debtor_account(company, currency, country):
     company_country = frappe.get_value("Company", company, "country")
     
     if company == "Microsynth AG":
-        if currency == "EUR":
+        if currency == "CHF":
+            account = 1100
+        elif currency == "EUR":
             account = 1102
         elif currency == "USD":
             account = 1101
         elif currency == "SEK":
             account = 1104
-        elif currency == "CZK":
-            account = 1105
+        # unknown currencies
         else:
-            account = 1100
+            account = 1105
 
     elif company == "Microsynth Austria GmbH":
         if country == company_country:
@@ -641,7 +642,12 @@ def get_debtor_account(company, currency, country):
             account = 4119000
 
     elif company == "Microsynth Seqlab GmbH":
-        account = 1400
+        if currency == "USD":
+            account = 1401
+        if currency == "SEK":
+            account = 1404
+        else:
+            account = 1400
 
     elif company == "Ecogenics GmbH":
         if currency == "EUR":
