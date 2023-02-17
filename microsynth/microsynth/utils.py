@@ -681,30 +681,27 @@ def set_debtor_accounts(customer):
 
     address = get_billing_address(customer.name)
 
-    # for account in customer.accounts:
-    #     print("{0}\t{1}".format(account.company, account.account))
-
-    def account_exists(company):
-        for a in customer.accounts:
-            if a.company == company:
-                return True
-        return False
-
     for company in companies:
-        if not account_exists(company.name):
-            account_number =  get_debtor_account(company.name, customer.default_currency, address.country)            
-            account = get_account_by_number(company.name, account_number)
-
-            print("{0}, {1}, {2} --> {3}".format(company.name, customer.default_currency, address.country, account))
-
+        account_number =  get_debtor_account(company.name, customer.default_currency, address.country)
+        account = get_account_by_number(company.name, account_number)
+        
+        entry_exists = False
+    
+        for a in customer.accounts:
+            if a.company == company.name:
+                # update
+                a.account = account
+                entry_exists = True
+                break
+        if not entry_exists:
+            # create new account entry
             if account:
                 entry = {
                     'company': company.name,
                     'account': account
                 }
-                # print(entry)
                 customer.append("accounts", entry)
-        
+
     customer.save()
     #TODO Do not commit when using this function when initializing a customer
     frappe.db.commit()
