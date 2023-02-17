@@ -130,14 +130,19 @@ def get_alternative_income_account(account, country):
     run
     bench execute microsynth.microsynth.invoicing.get_alternative_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'country': 'Switzerland'}"
     """
-    
+
+    if  frappe.get_value("Country", country, "eu"):
+        eu_pattern = """ OR `country` = 'EU' """
+    else:
+        eu_pattern = ""
+
     query = """
         SELECT `alternative_account`
         FROM `tabAlternative Account`
         WHERE `account` = '{account}'
-        AND (`country` = '{country}' OR `country` = '%')
+        AND (`country` = '{country}' OR `country` = '%' {eu_pattern} )
         ORDER BY `idx` ASC
-    """.format(account = account, country = country)
+    """.format(account = account, country = country, eu_pattern = eu_pattern)
 
     records = frappe.db.sql(query, as_dict = True)
 
