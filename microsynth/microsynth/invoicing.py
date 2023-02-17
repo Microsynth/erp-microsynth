@@ -685,8 +685,8 @@ def transmit_sales_invoice(sales_invoice):
 
         send(
             recipients = target_email,        # TODO: config 
-            sender = "info@microsynth.com",
-            cc = "info@microsynth.com",
+            sender = "info@microsynth.ch",
+            cc = "info@microsynth.ch",
             subject = subject, 
             message = message,
             reference_doctype = "Sales Invoice", 
