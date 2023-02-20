@@ -1652,7 +1652,8 @@ def create_credit_import_journal_entry(sales_invoice):
         'doctype': 'Journal Entry',
         'company': sales_invoice.company,
         'posting_date': sales_invoice.posting_date,
-        'user_remark': "Import credit for customer '{0}'".format(sales_invoice.customer)
+        'user_remark': "Import credit for customer '{0}'".format(sales_invoice.customer),
+        'multi_currency': 1
     })
     journal_entry.append('accounts', {
         'account': sales_invoice.debit_to,
