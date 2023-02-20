@@ -8,6 +8,21 @@ def get_available_credits(customer, company):
     customer_credits = get_data({'customer': customer, 'company': company})
     return customer_credits
 
+def get_total_credit(customer, company):
+    """
+    Return the total credit amount available to a customer for the specified company.
+
+    Run
+    bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
+    """
+    credits = get_available_credits(customer, company)
+    total = 0
+    for credit in credits:
+        if not 'outstanding' in credit: 
+            continue
+        total = total + credit['outstanding']
+    return total
+
 def allocate_credits(sales_invoice_doc):
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company)
     if len(customer_credits) > 0:
