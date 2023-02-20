@@ -76,18 +76,24 @@ def book_credit(sales_invoice, net_amount):
 
     if not revenue_account:
         frappe.throw("Please define a default revenue account for {0}".format(sinv.company))
-        
+
+    # credit_account  --> get alternative account  (currency)
+    # revenue_account --> get alternative account  (country)
+
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
         'posting_date': sinv.posting_date,
         'company': sinv.company,
         'accounts': [
+            # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
-                'account': credit_account,
-                'debit_in_account_currency': net_amount
-            },{
-                'account': revenue_account,
-                'credit_in_account_currency': net_amount    # TODO: handle other currencies than base currency
+                'account': credit_account,      
+                'debit_in_account_currency': sinv.total   
+            },
+            # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
+            {
+                'account': revenue_account,               
+                'credit_in_account_currency': sinv.base_total    # TODO: handle other currencies than base currency
             }
         ],
         'user_remark': "Credit from {0}".format(sales_invoice)
