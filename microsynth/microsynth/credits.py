@@ -13,20 +13,26 @@ def get_available_credits(customer, company):
     customer_credits = get_data({'customer': customer, 'company': company})
     return customer_credits
 
+
 def get_total_credit(customer, company):
     """
-    Return the total credit amount available to a customer for the specified company.
+    Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
 
     Run
     bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
     """
     credits = get_available_credits(customer, company)
+
+    if len(credits) == 0:
+        return None
+    
     total = 0
     for credit in credits:
         if not 'outstanding' in credit: 
             continue
         total = total + credit['outstanding']
     return total
+
 
 def allocate_credits(sales_invoice_doc):
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company)
@@ -65,7 +71,8 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.total_customer_credit = allocated_amount
             
     return sales_invoice_doc
-    
+
+
 def book_credit(sales_invoice):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.

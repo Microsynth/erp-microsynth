@@ -16,7 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.email.queue import send
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_income_account
-from microsynth.microsynth.credits import allocate_credits, book_credit
+from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime
@@ -61,6 +61,12 @@ def async_create_invoices(mode, company):
             # TODO: implement for other product types. Requires setting the income accounts.
             if dn.product_type not in ["Oligos"]:
                 continue
+
+            credit = get_total_credit(dn.customer, dn.company)
+            if credit is not None:
+                if dn.total > get_total_credit(dn.customer, dn.company):
+                    # TODO infomail
+                    continue
 
             # process punchout orders separately
             if cint(dn.get('is_punchout') == 1):
