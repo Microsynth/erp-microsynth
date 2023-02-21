@@ -13,7 +13,7 @@ from frappe.utils import cint
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
 from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
-from frappe.email.queue import send
+from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_income_account
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
@@ -575,7 +575,7 @@ def transmit_sales_invoice(sales_invoice):
     This function will check the transfer mode and transmit the invoice
 
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23000626'}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23001808'}"
     """
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
@@ -668,15 +668,16 @@ def transmit_sales_invoice(sales_invoice):
             subject = "Invoice {0}".format(sales_invoice.name)
             message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
 
-        send(
-            recipients = target_email,        # TODO: config 
+        make(
+            recipients = target_email,
             sender = "info@microsynth.ch",
             cc = "info@microsynth.ch",
             subject = subject, 
-            message = message,
-            reference_doctype = "Sales Invoice", 
-            reference_name = sales_invoice.name,
-            attachments = [{'fid': fid}]
+            content = message,
+            doctype = "Sales Invoice",
+            name = sales_invoice.name,
+            attachments = [{'fid': fid}],
+            send_email = True
         )
 
     elif mode == "Post":
@@ -786,8 +787,10 @@ def transmit_sales_invoice(sales_invoice):
     else:
         return
     
-    sales_invoice.invoice_sent_on = datetime.now()
-    sales_invoice.save()
+    # sales_invoice.invoice_sent_on = datetime.now()
+    # sales_invoice.save()
+    frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
+
     frappe.db.commit()
         
     return
