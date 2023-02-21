@@ -78,8 +78,10 @@ def book_credit(sales_invoice):
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
     
-    # country of billing address
-    country = frappe.get_value("Address", sales_invoice.customer_address, "country")
+    if sales_invoice.shipping_address_name:
+        country = frappe.get_value("Address", sales_invoice.shipping_address_name, "country")
+    else:
+        country = frappe.get_value("Address", sales_invoice.customer_address, "country")
     
     credit_account = None
     for d in credit_item.item_defaults:
