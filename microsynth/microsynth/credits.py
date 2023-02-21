@@ -3,8 +3,13 @@
 
 import frappe
 
+from microsynth.microsynth.utils import (get_alternative_account,
+                                         get_alternative_income_account)
+
+
 def get_available_credits(customer, company):
-    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
+    from microsynth.microsynth.report.customer_credits.customer_credits import \
+        get_data
     customer_credits = get_data({'customer': customer, 'company': company})
     return customer_credits
 
@@ -61,45 +66,58 @@ def allocate_credits(sales_invoice_doc):
             
     return sales_invoice_doc
     
-def book_credit(sales_invoice, net_amount):
-    sinv = frappe.get_doc("Sales Invoice", sales_invoice)
+def book_credit(sales_invoice):
+    """
+    Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
+
+    run
+    bench execute microsynth.microsynth.invoicing.book_credit --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
+    """
+
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
+    
+    # country of billing address
+    country = frappe.get_value("Address", sales_invoice.customer_address, "country")
+    
     credit_account = None
     for d in credit_item.item_defaults:
-        if d.company == sinv.company:
-            credit_account = d.income_account
+        if d.company == sales_invoice.company:
+            credit_account = get_alternative_account(d.income_account, sales_invoice.currency)
     if not credit_account:
-        frappe.throw("Please define an income account for the Microsynth Item {0}".format(credit_item.name))
+        frappe.throw("Please define an income account for the credit item {0}".format(credit_item.name))
 
-    revenue_account = sinv.items[0].income_account
+    income_account = get_alternative_income_account(sales_invoice.items[0].income_account, country)
+    if not income_account:
+        frappe.throw("Please define a default income account for {0}".format(sales_invoice.company))
 
-    if not revenue_account:
-        frappe.throw("Please define a default revenue account for {0}".format(sinv.company))
+    base_credit_total = sales_invoice.total_customer_credit * sales_invoice.conversion_rate
 
-    # credit_account  --> get alternative account  (currency)
-    # revenue_account --> get alternative account  (country)
+    multi_currency = sales_invoice.currency != frappe.get_value("Account", income_account, "account_currency")
 
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
-        'posting_date': sinv.posting_date,
-        'company': sinv.company,
+        'posting_date': sales_invoice.posting_date,
+        'company': sales_invoice.company,
         'accounts': [
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
-                'account': credit_account,      
-                'debit_in_account_currency': sinv.total   
+                'account': credit_account,
+                'debit_in_account_currency': sales_invoice.total_customer_credit,
+                'exchange_rate': sales_invoice.conversion_rate
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
-                'account': revenue_account,               
-                'credit_in_account_currency': sinv.base_total    # TODO: handle other currencies than base currency
+                'account': income_account,
+                'credit_in_account_currency': base_credit_total
             }
         ],
-        'user_remark': "Credit from {0}".format(sales_invoice)
+        'user_remark': "Credit from {0}".format(sales_invoice.name),
+        'multi_currency': 1 if multi_currency else 0
     })
     jv.insert(ignore_permissions=True)
     jv.submit()
-    frappe.db.commit()
+    # frappe.db.commit()
     return jv.name
     
