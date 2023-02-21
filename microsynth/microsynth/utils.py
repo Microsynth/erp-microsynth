@@ -756,3 +756,31 @@ def get_alternative_account(account, currency):
         return alternative_accounts[0].alternative_account
     else:
         return account
+
+def get_alternative_income_account(account, country):
+    """
+    Return the first alternative account for a given account and country of a billing address. The company is not used.
+
+    run
+    bench execute microsynth.microsynth.invoicing.get_alternative_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'country': 'Switzerland'}"
+    """
+
+    if  frappe.get_value("Country", country, "eu"):
+        eu_pattern = """ OR `country` = 'EU' """
+    else:
+        eu_pattern = ""
+
+    query = """
+        SELECT `alternative_account`
+        FROM `tabAlternative Account`
+        WHERE `account` = '{account}'
+        AND (`country` = '{country}' OR `country` = '%' {eu_pattern} )
+        ORDER BY `idx` ASC
+    """.format(account = account, country = country, eu_pattern = eu_pattern)
+
+    records = frappe.db.sql(query, as_dict = True)
+
+    if len(records) > 0:
+        return records[0]['alternative_account']
+    else:
+        return account
