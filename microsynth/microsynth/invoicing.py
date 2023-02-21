@@ -37,6 +37,12 @@ def create_invoices(mode, company):
     return {'result': _('Invoice creation started...')}
     
 def async_create_invoices(mode, company):
+    """
+    run 
+    bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG' }"
+    """
+
+
     all_invoiceable = get_data(filters={'company': company})
 
     # Not implemented exceptions to catch cases that are not yet developed
@@ -62,18 +68,20 @@ def async_create_invoices(mode, company):
             if dn.product_type not in ["Oligos"]:
                 continue
 
-            credit = get_total_credit(dn.customer, dn.company)
-            if credit is not None:
-                if dn.total > get_total_credit(dn.customer, dn.company):
-                    # TODO infomail
-                    continue
-
             # process punchout orders separately
             if cint(dn.get('is_punchout') == 1):
                 # TODO implement punchout orders
                 # si = make_punchout_invoice(dn.get('delivery_note'))
                 # transmit_sales_invoice(si)
                 continue
+
+            credit = get_total_credit(dn.get('customer'), company)
+            if credit is not None:
+                total = frappe.get_value("Delivery Note", dn.get('delivery_note'), "total")
+                if total > credit:
+                    # TODO infomail
+                    print("Do not invoice Delivery Note '{0}' due to insufficient credit account".format(dn.get('delivery_note')))
+                    continue
 
             # only process DN that are invoiced individually, not collective billing
             if cint(dn.get('collective_billing')) == 0:
