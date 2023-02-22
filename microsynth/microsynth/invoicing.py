@@ -65,7 +65,7 @@ def async_create_invoices(mode, company):
                 continue
 
             # TODO: implement for other product types. Requires setting the income accounts.
-            if dn.product_type not in ["Oligos"]:
+            if dn.product_type not in ["Oligos", "Labels"]:
                 continue
 
             # process punchout orders separately
