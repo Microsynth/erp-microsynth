@@ -12,6 +12,8 @@ from frappe import _
 from frappe.utils import cint
 import json
 from datetime import datetime
+from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.utils import validate_sales_order
 
 def set_status(status, labels):
     """
@@ -101,34 +103,8 @@ def processed_labels(content):
 #        content = json.loads(content)
 #    return set_status("unknown", content.get("labels"))
 
-def get_customer_from_sales_order(sales_order):
-    customer_name = frappe.get_value("Sales Order", sales_order, 'customer')
-    customer = frappe.get_doc("Customer", customer_name)
-    return customer
 
-def check_sales_order_completion():
-    # validate Sales Order
-    customer = get_customer_from_sales_order(sales_order)
-
-    if customer.disabled:
-        frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
-        return
-
-    sales_order_status = frappe.get_value("Sales Order", sales_order, "docstatus")
-    if sales_order_status != 1:
-        frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-        return
-        
-    delivery_notes = frappe.db.sql("""
-        SELECT `tabDelivery Note Item`.`parent`
-            FROM `tabDelivery Note Item`
-            WHERE `tabDelivery Note Item`.`against_sales_order` = '{sales_order}';
-        """.format(sales_order=sales_order), as_dict=True)
-
-    if len(delivery_notes) > 0:
-        frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-        return
-
+def check_sales_order_completion():      
     # find sales orders that have no delivery note and are not closed
     open_sequencing_sales_orders = frappe.db.sql("""
         SELECT `name`
@@ -141,6 +117,9 @@ def check_sales_order_completion():
     
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
+
+        if not validate_sales_order(sales_order):
+            continue
 
         # check status of labels assigned to each sample
         pending_samples = frappe.db.sql("""
@@ -165,8 +144,10 @@ def check_sales_order_completion():
                 return
             
             ## create delivery note (leave on draft: submitted in a batch process later on)
-            dn_content = make_delivery_note(sales_order['name'])
+            dn_content = make_delivery_note(sales_order['name'])            
             dn = frappe.get_doc(dn_content)
+            company = frappe.get_value("Sales Order", sales_order, "company")
+            dn.naming_series = get_naming_series("Delivery Note", company)
 
             # insert record
             dn.flags.ignore_missing = True
