@@ -541,7 +541,7 @@ def place_order(content, client="webshop"):
         })
     if 'product_type' in content:
         so_doc.product_type = content['product_type']
-    # quotation reference
+    # quotation reference (NOTE: ignores same item at different qtys (staged pricing) )
     if 'quotation' in content and frappe.db.exists("Quotation", content['quotation']):
         quotation = content['quotation']
         quotation_rate = {}
@@ -579,8 +579,6 @@ def place_order(content, client="webshop"):
                 'qty': qty,
                 'prevdoc_docname': quotation
             }
-            if quotation and item in quotation_rate:
-                _item['rate'] = quotation_rate[item]
             so_doc.append('items', _item)
     # create samples
     if 'samples' in content:
@@ -601,8 +599,6 @@ def place_order(content, client="webshop"):
                     'qty': i['qty'],
                     'prevdoc_docname': quotation
                 }
-                if quotation and item in quotation_rate:
-                    _item['rate'] = quotation_rate[item]
                 so_doc.append('items', _item)
     # append items
     for i in content['items']:
@@ -614,8 +610,6 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        if quotation and i['item_code'] in quotation_rate:
-            item_detail['rate'] = quotation_rate[i['item_code']]
         elif 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)
             item_detail['rate'] = i['rate']
@@ -650,7 +644,13 @@ def place_order(content, client="webshop"):
                 item.item_code = express_shipping.item
                 item.item_name = express_shipping.item_name
                 item.description = "express shipping" 
-
+    # quotation rate override: if an item has a rate in the quotation, always take this 
+    #    (note: has to be post insert, otherwise frappe will override 0 rates)
+    if quotation:
+        for item in so_doc.items:                                   # loop through all items in sales order
+            if item.item_code in quotation_rate:                    # check if this item had a quotation rate
+                item['rate'] = quotation_rate[item.item_code]
+                
     try:        
         so_doc.submit()
         
