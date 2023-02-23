@@ -1695,6 +1695,13 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
     # select naming series
     naming_series = get_naming_series("Sales Invoice", company)
 
+    tax_templates = {
+        "Microsynth AG": "BAL Export (220) - BAL",
+        "Microsynth Austria GmbH": "Austria IG - WIE",
+        "Microsynth France SAS": "France IG - LYO",
+        "Microsynth Seqlab GmbH": "German IG - GOE",
+        "Ecogenics GmbH":"Export (220) - ECO"
+    }
     sales_invoice = frappe.get_doc({
         'doctype': 'Sales Invoice',
         'company': company,
@@ -1702,7 +1709,8 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
         'customer': customer.name,
         'currency': currency,
         'set_posting_time': True,
-        'posting_date': "2022-12-31"
+        'posting_date': "2022-12-31",
+        'taxes_and_charges': tax_templates[company]
     })
     item_detail = {
         'item_code': '6100',
