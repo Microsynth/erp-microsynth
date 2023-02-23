@@ -610,7 +610,7 @@ def place_order(content, client="webshop"):
             'qty': i['qty'],
             'prevdoc_docname': quotation
         }
-        elif 'rate' in i and i['rate'] is not None:
+        if 'rate' in i and i['rate'] is not None:
             # this item is overriding the normal rate (e.g. shipping item)
             item_detail['rate'] = i['rate']
             item_detail['price_list_rate'] = i['rate']
@@ -649,8 +649,10 @@ def place_order(content, client="webshop"):
     if quotation:
         for item in so_doc.items:                                   # loop through all items in sales order
             if item.item_code in quotation_rate:                    # check if this item had a quotation rate
-                item['rate'] = quotation_rate[item.item_code]
-                
+                item.rate = quotation_rate[item.item_code]
+                item.price_list_rate = quotation_rate[item.item_code]
+    so_doc.save()
+
     try:        
         so_doc.submit()
         
