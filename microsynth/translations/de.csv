@@ -17,3 +17,4 @@ DocType: Sales Invoice,30 days net,30 Tage netto
 DocType: Sales Invoice,45 days net,45 Tage netto
 DocType: Sales Invoice,60 days net,60 Tage netto
 DocType: Sales Invoice,90 days net,90 Tage netto
+DocType: Sales Invoice,"The exporter of the products covered by this document declares that, except where otherwise clearly indicated, these products are of preferential origin of Switzerland. Not restricted according to YATA regulation.","Der Ausführer der Waren, auf die sich dieses Handelspapier bezieht, erklärt, dass diese Waren, soweit nicht anders angegeben, präferenzbegünstigte, schweizerische Ursprungswaren sind."
