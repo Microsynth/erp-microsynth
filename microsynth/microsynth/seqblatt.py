@@ -114,11 +114,11 @@ def check_sales_order_completion():
           AND `product_type` = "Sequencing"
           AND `per_delivered` < 100;
     """, as_dict=True)
-    
+
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
 
-        if not validate_sales_order(sales_order):
+        if not validate_sales_order(sales_order['name']):
             continue
 
         # check status of labels assigned to each sample
@@ -132,7 +132,7 @@ def check_sales_order_completion():
                 `tabSample Link`.`parent` = "{sales_order}"
                 AND `tabSample Link`.`parenttype` = "Sales Order"
                 AND `tabSequencing Label`.`status` NOT IN ("processed");
-            """.format(sales_order=sales_order), as_dict=True)
+            """.format(sales_order=sales_order['name']), as_dict=True)
 
         if len(pending_samples) == 0:
             # all processed: create delivery
@@ -144,7 +144,7 @@ def check_sales_order_completion():
                 return
             
             ## create delivery note (leave on draft: submitted in a batch process later on)
-            dn_content = make_delivery_note(sales_order['name'])            
+            dn_content = make_delivery_note(sales_order['name'])
             dn = frappe.get_doc(dn_content)
             company = frappe.get_value("Sales Order", sales_order, "company")
             dn.naming_series = get_naming_series("Delivery Note", company)

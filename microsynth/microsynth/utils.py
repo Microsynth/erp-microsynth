@@ -379,7 +379,7 @@ def validate_sales_order(sales_order):
         """.format(sales_order=sales_order), as_dict=True)
 
     if len(delivery_notes) > 0:
-        frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+        # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
         return False
 
     return True
