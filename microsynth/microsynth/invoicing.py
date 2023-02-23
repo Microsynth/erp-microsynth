@@ -15,6 +15,7 @@ from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
+from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_income_account
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
@@ -166,6 +167,8 @@ def make_invoice(delivery_note):
     sales_invoice_content = make_sales_invoice(delivery_note)
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    company = frappe.get_value("Delivery Note", delivery_note, "company")
+    sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
     sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
     #sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
@@ -214,6 +217,8 @@ def make_punchout_invoice(delivery_note):
 
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    company = frappe.get_value("Delivery Note", delivery_note, "company")
+    sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
     
     if punchout_shop.billing_contact: 
         sales_invoice.invoice_to = punchout_shop.billing_contact
@@ -240,6 +245,10 @@ def make_collective_invoice(delivery_notes):
     
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    
+    company = frappe.get_value("Delivery Note", delivery_notes[0], "company")
+    sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
+        
     sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
