@@ -46,10 +46,10 @@ def async_create_invoices(mode, company):
 
     all_invoiceable = get_data(filters={'company': company})
 
-    # Not implemented exceptions to catch cases that are not yet developed
-    if company != "Microsynth AG":
-        frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
-        return
+    # # Not implemented exceptions to catch cases that are not yet developed
+    # if company != "Microsynth AG":
+    #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
+    #     return
     if mode not in ["Post", "Electronic"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
@@ -61,12 +61,12 @@ def async_create_invoices(mode, company):
         count = 0
         for dn in all_invoiceable:
 
-            # TODO: implement for other export categories
-            if dn.region != "CH":
-                continue
+            # # TODO: implement for other export categories
+            # if dn.region != "CH":
+            #     continue
 
             # TODO: implement for other product types. Requires setting the income accounts.
-            if dn.product_type not in ["Oligos", "Labels"]:
+            if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
                 continue
 
             # process punchout orders separately
@@ -101,9 +101,9 @@ def async_create_invoices(mode, company):
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
 
-                        # count += 1
-                        # if count >= 20:
-                        #     break
+            count += 1
+            if count >= 20:
+                break
 
     elif mode == "Collective":
         # colletive invoices
