@@ -7,6 +7,7 @@ import frappe
 from frappe import _
 import json
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+from microsynth.microsynth.naming_series import get_naming_series
 
 def execute(filters=None):
     columns = get_columns()
@@ -105,6 +106,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
         WHERE `parent` = "{sales_order}"
         ORDER BY `idx` ASC
         LIMIT 1;""".format(sales_order=sales_order), as_dict=True)[0]['item_code']
+    company = frappe.get_value("Sales Order", sales_order, "company")
     customer = frappe.get_value("Sales Order", sales_order, "customer")
     customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
     contact = frappe.get_value("Sales Order", sales_order, "contact_person")
@@ -128,6 +130,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     # create delivery note
     dn_content = make_delivery_note(sales_order)
     dn = frappe.get_doc(dn_content)
+    dn.naming_series = get_naming_series("Delivery Note", company)
     dn.insert()
     dn.submit()
     frappe.db.commit()
