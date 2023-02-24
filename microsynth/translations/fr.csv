@@ -18,5 +18,7 @@ DocType: Sales Invoice,45 days net,45 jours net
 DocType: Sales Invoice,60 days net,60 jours net
 DocType: Sales Invoice,90 days net,90 jours net
 DocType: Sales Invoice,"The exporter of the products covered by this document declares that, except where otherwise clearly indicated, these products are of preferential origin of Switzerland. Not restricted according to YATA regulation.","L'exportateur des marchandises auxquelles se rapporte le présent document commercial déclare que, sauf indication contraire, ces marchandises sont originaires de Suisse et bénéficient d'un régime préférentiel."
+DocType: Sales Invoice,"Customs tarif number","Numéro de tarif douanier"
+DocType: Sales Invoice,"Delivery conditions","Livraison"
 DocType: Sales Invoice,"Tax-exempt intra-Community delivery","Livraison intracommunautaire exonérée TVA"
 DocType: Sales Invoice,"Services pursuant to Art. 14 (1) Transfer of location principle (7) UST exempt, but subject to VAT (reverse charge).","Services conformément à l'art. 14 par. 1 principe du site d'immersion (7) exonérés d'impôt, mais la taxe d'acquisition (reverse charges)."
