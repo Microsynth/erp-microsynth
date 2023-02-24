@@ -90,7 +90,11 @@ def async_create_invoices(mode, company):
                     if dn.get('invoicing_method') == "Post":
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
-                        
+
+                        count += 1
+                        if count >= 20:
+                            break
+
                 else:
                     # TODO process other invoicing methods
                     if dn.get('invoicing_method') not in  ["Email"]:
@@ -101,9 +105,9 @@ def async_create_invoices(mode, company):
                         si = make_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
 
-            count += 1
-            if count >= 20:
-                break
+                        count += 1
+                        if count >= 20:
+                            break
 
     elif mode == "Collective":
         # colletive invoices
