@@ -109,7 +109,7 @@ def async_create_invoices(mode, company):
                         transmit_sales_invoice(si)
 
                         count += 1
-                        if count >= 20:
+                        if count >= 20 and company != "Microsynth AG":
                             break
 
                 else:
@@ -123,7 +123,7 @@ def async_create_invoices(mode, company):
                         transmit_sales_invoice(si)
 
                         count += 1
-                        if count >= 20:
+                        if count >= 20 and company != "Microsynth AG":
                             break
 
     elif mode == "Collective":
