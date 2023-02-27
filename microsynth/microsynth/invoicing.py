@@ -190,7 +190,8 @@ def make_invoice(delivery_note):
     sales_invoice = frappe.get_doc(sales_invoice_content)
     company = frappe.get_value("Delivery Note", delivery_note, "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
-    sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
+    if not sales_invoice.invoice_to:
+        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
     #sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
     
@@ -266,11 +267,13 @@ def make_collective_invoice(delivery_notes):
     
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
-    
+    if not sales_invoice.invoice_to:
+        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
+
     company = frappe.get_value("Delivery Note", delivery_notes[0], "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
         
-    sales_invoice.set_advances()    # get advances (customer credit)
+    # sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice.insert()
     sales_invoice.submit()
     frappe.db.commit()
