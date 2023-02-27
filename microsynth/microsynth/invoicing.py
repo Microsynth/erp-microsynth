@@ -78,10 +78,27 @@ def async_create_invoices(mode, company):
 
             credit = get_total_credit(dn.get('customer'), company)
             if credit is not None:
-                total = frappe.get_value("Delivery Note", dn.get('delivery_note'), "total")
+                delivery_note =  dn.get('delivery_note')
+                total = frappe.get_value("Delivery Note", delivery_note, "total")
                 if total > credit:
-                    # TODO infomail
-                    print("Do not invoice Delivery Note '{0}' due to insufficient credit account".format(dn.get('delivery_note')))
+                    subject = "Delivery Note {0}".format(delivery_note)
+                    message = "Cannot invoice Delivery Note '{delivery_note}' due to insufficient credit balance.<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
+                        delivery_note = delivery_note,
+                        total = total,
+                        credit = credit,
+                        currency = dn.get('currency'))
+
+                    print(message)
+                    make(
+                        recipients = "info@microsynth.ch",
+                        sender = "erp@microsynth.ch",
+                        cc = "rolfsuter@microsynth.ch",
+                        subject = subject, 
+                        content = message,
+                        doctype = "Delivery Note",
+                        name = delivery_note,
+                        send_email = True
+                    )
                     continue
 
             # only process DN that are invoiced individually, not collective billing
