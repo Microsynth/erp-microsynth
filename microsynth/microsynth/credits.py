@@ -102,7 +102,7 @@ def book_credit(sales_invoice):
         frappe.throw("Please define a default income account for {0}".format(sales_invoice.company))
 
     base_credit_total = sales_invoice.total_customer_credit * sales_invoice.conversion_rate
-
+    cost_center = frappe.db.get_value("Company", sales_invoice.company, "cost_center")
     multi_currency = sales_invoice.currency != frappe.get_value("Account", income_account, "account_currency")
 
     jv = frappe.get_doc({
@@ -114,18 +114,21 @@ def book_credit(sales_invoice):
             {
                 'account': credit_account,
                 'debit_in_account_currency': sales_invoice.total_customer_credit,
-                'exchange_rate': sales_invoice.conversion_rate
+                'exchange_rate': sales_invoice.conversion_rate,
+                'cost_center': cost_center
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
                 'account': income_account,
-                'credit_in_account_currency': base_credit_total
+                'credit_in_account_currency': base_credit_total,
+                'cost_center': cost_center
             }
         ],
         'user_remark': "Credit from {0}".format(sales_invoice.name),
         'multi_currency': 1 if multi_currency else 0
     })
     jv.insert(ignore_permissions=True)
+    # frappe.throw(income_account)
     jv.submit()
     # frappe.db.commit()
     return jv.name
