@@ -92,7 +92,7 @@ def async_create_invoices(mode, company):
                     make(
                         recipients = "info@microsynth.ch",
                         sender = "erp@microsynth.ch",
-                        cc = "rolfsuter@microsynth.ch",
+                        cc = "rolf.suter@microsynth.ch",
                         subject = subject, 
                         content = message,
                         doctype = "Delivery Note",
@@ -258,6 +258,12 @@ def make_punchout_invoice(delivery_note):
 
 
 def make_collective_invoice(delivery_notes):
+    """
+    
+    run
+    bench execute microsynth.microsynth.invoicing.make_collective_invoice --kwargs "{'delivery_notes': ['DN-BAL-23106590', 'DN-BAL-23113391', 'DN-BAL-23114506', 'DN-BAL-23115682']}"
+    """
+
     # create invoice from first delivery note
     sales_invoice_content = make_sales_invoice(delivery_notes[0])
     if len(delivery_notes) > 1:
