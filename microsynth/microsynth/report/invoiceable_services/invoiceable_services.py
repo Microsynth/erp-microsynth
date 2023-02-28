@@ -70,6 +70,7 @@ def get_data(filters=None):
                 `tabDelivery Note`.`docstatus` = 1
                 AND `tabDelivery Note`.`company` = "{company}"
                 AND `tabDelivery Note`.`creation` > '2022-12-31'
+                AND `tabDelivery Note`.`status` != "Closed"
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
