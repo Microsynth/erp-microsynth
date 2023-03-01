@@ -66,8 +66,8 @@ def async_create_invoices(mode, company):
             #     continue
 
             # TODO: implement for other product types. Requires setting the income accounts.
-            if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
-                continue
+            # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
+            #     continue
 
             # process punchout orders separately
             if cint(dn.get('is_punchout') == 1):
@@ -109,8 +109,8 @@ def async_create_invoices(mode, company):
                         transmit_sales_invoice(si)
 
                         count += 1
-                        if count >= 20 and company != "Microsynth AG":
-                            break
+                        # if count >= 20 and company != "Microsynth AG":
+                        #     break
 
                 else:
                     # TODO process other invoicing methods
@@ -123,8 +123,8 @@ def async_create_invoices(mode, company):
                         transmit_sales_invoice(si)
 
                         count += 1
-                        if count >= 20 and company != "Microsynth AG":
-                            break
+                        # if count >= 20 and company != "Microsynth AG":
+                        #     break
 
     elif mode == "Collective":
         # colletive invoices
@@ -281,7 +281,7 @@ def make_collective_invoice(delivery_notes):
         
     # sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
-    
+
     sales_invoice.insert()
     sales_invoice.submit()
 
