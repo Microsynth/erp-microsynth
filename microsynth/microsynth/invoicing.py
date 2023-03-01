@@ -280,8 +280,15 @@ def make_collective_invoice(delivery_notes):
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
         
     # sales_invoice.set_advances()    # get advances (customer credit)
+    sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
+    
     sales_invoice.insert()
     sales_invoice.submit()
+
+    # if a credit was allocated, book credit account
+    if cint(sales_invoice.total_customer_credit) > 0:
+        book_credit(sales_invoice.name)
+
     frappe.db.commit()
 
     return sales_invoice.name
