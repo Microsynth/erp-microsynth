@@ -35,3 +35,4 @@ DocType: Sales Invoice,"Separate before paying in","A détacher avant le verseme
 DocType: Sales Invoice,"Payable by","Payable par"
 DocType: Sales Invoice,"Payable by (name/address)","Payable par (nom/adresse)"
 DocType: Sales Invoice,"In favour of","En faveur de"
+DocType: Sales Invoice, "Deliveries and services", "Livraisons et services"
