@@ -89,16 +89,16 @@ def async_create_invoices(mode, company):
                         currency = dn.get('currency'))
 
                     print(message)
-                    make(
-                        recipients = "info@microsynth.ch",
-                        sender = "erp@microsynth.ch",
-                        cc = "rolf.suter@microsynth.ch",
-                        subject = subject, 
-                        content = message,
-                        doctype = "Delivery Note",
-                        name = delivery_note,
-                        send_email = True
-                    )
+                    # make(
+                    #     recipients = "info@microsynth.ch",
+                    #     sender = "erp@microsynth.ch",
+                    #     cc = "rolf.suter@microsynth.ch",
+                    #     subject = subject, 
+                    #     content = message,
+                    #     doctype = "Delivery Note",
+                    #     name = delivery_note,
+                    #     send_email = True
+                    # )
                     continue
 
             # only process DN that are invoiced individually, not collective billing
