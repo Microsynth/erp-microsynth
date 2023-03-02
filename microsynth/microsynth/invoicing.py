@@ -60,71 +60,72 @@ def async_create_invoices(mode, company):
 
         count = 0
         for dn in all_invoiceable:
+            try:
+                # # TODO: implement for other export categories
+                # if dn.region != "CH":
+                #     continue
 
-            # # TODO: implement for other export categories
-            # if dn.region != "CH":
-            #     continue
+                # TODO: implement for other product types. Requires setting the income accounts.
+                # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
+                #     continue
 
-            # TODO: implement for other product types. Requires setting the income accounts.
-            # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
-            #     continue
-
-            # process punchout orders separately
-            if cint(dn.get('is_punchout') == 1):
-                # TODO implement punchout orders
-                # si = make_punchout_invoice(dn.get('delivery_note'))
-                # transmit_sales_invoice(si)
-                continue
-
-            credit = get_total_credit(dn.get('customer'), company)
-            if credit is not None:
-                delivery_note =  dn.get('delivery_note')
-                total = frappe.get_value("Delivery Note", delivery_note, "total")
-                if total > credit:
-                    subject = "Delivery Note {0}: Insufficient credit".format(delivery_note)
-                    message = "Cannot invoice Delivery Note '{delivery_note}' due to insufficient credit balance.<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
-                        delivery_note = delivery_note,
-                        total = total,
-                        credit = credit,
-                        currency = dn.get('currency'))
-
-                    print(message)
-                    # make(
-                    #     recipients = "info@microsynth.ch",
-                    #     sender = "erp@microsynth.ch",
-                    #     cc = "rolf.suter@microsynth.ch",
-                    #     subject = subject, 
-                    #     content = message,
-                    #     doctype = "Delivery Note",
-                    #     name = delivery_note,
-                    #     send_email = True
-                    # )
+                # process punchout orders separately
+                if cint(dn.get('is_punchout') == 1):
+                    # TODO implement punchout orders
+                    # si = make_punchout_invoice(dn.get('delivery_note'))
+                    # transmit_sales_invoice(si)
                     continue
 
-            # only process DN that are invoiced individually, not collective billing
-            if cint(dn.get('collective_billing')) == 0:
-                if mode == "Post":
-                    if dn.get('invoicing_method') == "Post":
-                        si = make_invoice(dn.get('delivery_note'))
-                        transmit_sales_invoice(si)
+                credit = get_total_credit(dn.get('customer'), company)
+                if credit is not None:
+                    delivery_note =  dn.get('delivery_note')
+                    total = frappe.get_value("Delivery Note", delivery_note, "total")
+                    if total > credit:
+                        subject = "Delivery Note {0}: Insufficient credit".format(delivery_note)
+                        message = "Cannot invoice Delivery Note '{delivery_note}' due to insufficient credit balance.<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
+                            delivery_note = delivery_note,
+                            total = total,
+                            credit = credit,
+                            currency = dn.get('currency'))
 
-                        count += 1
-                        # if count >= 20 and company != "Microsynth AG":
-                        #     break
-
-                else:
-                    # TODO process other invoicing methods
-                    if dn.get('invoicing_method') not in  ["Email"]:
+                        print(message)
+                        # make(
+                        #     recipients = "info@microsynth.ch",
+                        #     sender = "erp@microsynth.ch",
+                        #     cc = "rolf.suter@microsynth.ch",
+                        #     subject = subject,
+                        #     content = message,
+                        #     doctype = "Delivery Note",
+                        #     name = delivery_note,
+                        #     send_email = True
+                        # )
                         continue
 
-                    # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
-                    if dn.get('invoicing_method') != "Post":
-                        si = make_invoice(dn.get('delivery_note'))
-                        transmit_sales_invoice(si)
+                # only process DN that are invoiced individually, not collective billing
+                if cint(dn.get('collective_billing')) == 0:
+                    if mode == "Post":
+                        if dn.get('invoicing_method') == "Post":
+                            si = make_invoice(dn.get('delivery_note'))
+                            transmit_sales_invoice(si)
 
-                        count += 1
-                        # if count >= 20 and company != "Microsynth AG":
-                        #     break
+                            count += 1
+                            # if count >= 20 and company != "Microsynth AG":
+                            #     break
+
+                    else:
+                        # TODO process other invoicing methods
+                        if dn.get('invoicing_method') not in  ["Email"]:
+                            continue
+
+                        # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
+                        if dn.get('invoicing_method') != "Post":
+                            si = make_invoice(dn.get('delivery_note'))
+                            transmit_sales_invoice(si)
+                            count += 1
+                            # if count >= 20 and company != "Microsynth AG":
+                            #     break
+            except Exception as err:
+                frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
 
     elif mode == "Collective":
         # colletive invoices
