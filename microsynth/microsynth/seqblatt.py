@@ -104,7 +104,7 @@ def processed_labels(content):
 #    return set_status("unknown", content.get("labels"))
 
 
-def check_sales_order_completion():      
+def check_sales_order_completion():
     # find sales orders that have no delivery note and are not closed
     open_sequencing_sales_orders = frappe.db.sql("""
         SELECT `name`
@@ -131,7 +131,7 @@ def check_sales_order_completion():
             WHERE
                 `tabSample Link`.`parent` = "{sales_order}"
                 AND `tabSample Link`.`parenttype` = "Sales Order"
-                AND `tabSequencing Label`.`status` NOT IN ("processed");
+                AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
             """.format(sales_order=sales_order['name']), as_dict=True)
 
         if len(pending_samples) == 0:
