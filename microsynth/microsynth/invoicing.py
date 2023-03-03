@@ -295,6 +295,42 @@ def make_collective_invoice(delivery_notes):
     return sales_invoice.name
 
 
+def create_pdf_attachment(sales_invoice): 
+    """
+    Creates the PDF file for a given Sales Invoice name and attaches the file to the record in the ERP.
+
+    run
+    bench execute microsynth.microsynth.utils.create_pdf_attachment --kwargs "{'sales_invoice': 'SI-BAL-23002642-1'}"
+    """
+
+    doctype = "Sales Invoice"
+    format = "Sales Invoice"
+    name = sales_invoice
+    doc = None
+    no_letterhead = False
+    
+    frappe.local.lang = frappe.db.get_value("Sales Invoice", sales_invoice, "language")
+
+    from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+
+    title = frappe.db.get_value(doctype, name, "title")
+
+    doctype_folder = create_folder(doctype, "Home")
+    title_folder = create_folder(title, doctype_folder)
+
+    filecontent = frappe.get_print(doctype, name, format, doc=doc, as_pdf = True, no_letterhead=no_letterhead)
+
+    save_and_attach(
+        content = filecontent, 
+        to_doctype = doctype, 
+        to_name = name,  
+        folder = title_folder,
+        hashname = None,
+        is_private = True )
+
+    return
+
+
 def get_sales_order_list_and_delivery_note_list(sales_invoice): 
     """creates a dict with two keys sales_orders/delivery_notes with value of a list of respective ids"""
 
@@ -697,15 +733,7 @@ def transmit_sales_invoice(sales_invoice):
         else: 
             footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
 
-        # TODO: send email with content & attachment
-        execute(
-            doctype = 'Sales Invoice',
-            name =  sales_invoice.name,
-            title = sales_invoice.title,
-            lang = sales_invoice.language,
-            print_format = "Sales Invoice",             # TODO: from configuration
-            is_private = 1
-        )
+        create_pdf_attachment(sales_invoice.name)
 
         attachments = get_attachments("Sales Invoice", sales_invoice.name)
         fid = None
@@ -736,15 +764,8 @@ def transmit_sales_invoice(sales_invoice):
         )
 
     elif mode == "Post":
-        # create and attach pdf to the document
-        execute(
-            doctype = 'Sales Invoice',
-            name =  sales_invoice.name,
-            title = sales_invoice.title,
-            lang = sales_invoice.language,
-            print_format = "Sales Invoice",             # TODO: from configuration
-            is_private = 1
-        )
+        create_pdf_attachment(sales_invoice.name)
+
         attachments = get_attachments("Sales Invoice", sales_invoice.name)
         fid = None
         for a in attachments:
