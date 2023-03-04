@@ -50,7 +50,7 @@ def async_create_invoices(mode, company):
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
     #     return
-    if mode not in ["Post", "Electronic"]:
+    if mode not in ["Post", "Electronic", "Collective"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
 
@@ -129,12 +129,13 @@ def async_create_invoices(mode, company):
 
     elif mode == "Collective":
         # colletive invoices
+        count = 0
         customers = []
         for dn in all_invoiceable:
             if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') not in customers:
                 customers.append(dn.get('customer'))
         
-        # for each customer, create one invoice for all dns
+        # for each customer, create one invoice per tax template for all dns
         for c in customers:
             dns = []
             for dn in all_invoiceable:
@@ -142,8 +143,27 @@ def async_create_invoices(mode, company):
                     dns.append(dn.get('delivery_note'))
 
             if len(dns) > 0:
-                si = make_collective_invoice(dns)
-                transmit_sales_invoice(si)
+                # check if there are multiple tax templates
+                taxes = []
+                for dn in dns:
+                    t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges") 
+                    if t not in taxes:
+                        taxes.append(t)
+                
+                if len(taxes) > 1:
+                    print("multiple taxes for customer '{0}'".format(c), "invocing.async_create_invoices")
+
+                # create one invoice per tax template
+                for tax in taxes:
+                    filtered_dns = [ x for x in dns if frappe.db.get_value("Delivery Note", x, "taxes_and_charges") == tax ]
+                    # TODO: check credit account
+                    si = make_collective_invoice(filtered_dns)
+                    # transmit_sales_invoice(si)
+                
+                count += 1
+                if count >= 5:
+                    break
+
     else:
         frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
 
