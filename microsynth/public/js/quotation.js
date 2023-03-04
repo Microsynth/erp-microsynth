@@ -6,6 +6,11 @@ frappe.ui.form.on('Quotation Item', {
 
 frappe.ui.form.on('Quotation', {
     before_save(frm) {
+        if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
+            var category = "Material";
+        } else {
+            var category = "Service";
+        };
         var category = "Service";
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
