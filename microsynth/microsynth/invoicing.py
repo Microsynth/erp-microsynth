@@ -152,13 +152,29 @@ def async_create_invoices(mode, company):
                 
                 if len(taxes) > 1:
                     print("multiple taxes for customer '{0}'".format(c), "invocing.async_create_invoices")
+                
+                credit = credit = get_total_credit(c, company)
 
                 # create one invoice per tax template
                 for tax in taxes:
-                    filtered_dns = [ x for x in dns if frappe.db.get_value("Delivery Note", x, "taxes_and_charges") == tax ]
-                    # TODO: check credit account
+                    filtered_dns = []
+                    for d in dns:
+                        if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
+                            total = frappe.get_value("Delivery Note", d, "total")
+                            
+                            if credit is not None:
+                                # there is some credit - check if it is sufficient
+                                if total <= credit:
+                                    filtered_dns.append(d)
+                                    credit = credit - total
+                                else:
+                                    frappe.log_error("insufficient credit for customer {0}".format(c))
+                            else:
+                                # there is no credit account
+                                filtered_dns.append(d)
+
                     si = make_collective_invoice(filtered_dns)
-                    # transmit_sales_invoice(si)
+                    transmit_sales_invoice(si)
                 
                 count += 1
                 if count >= 5:
