@@ -577,9 +577,9 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
                 i += 1
 
 
-def add_distributor(customer, distributor, product_type):
+def set_distributor(customer, distributor, product_type):
     """
-    Add the specified distributor for the a product type to the customer.
+    Set the specified distributor for the a product type to the customer. If there is already a distributor set, replace it with the new one.
     
     run
     bench execute "microsynth.microsynth.utils.add_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
@@ -591,15 +591,21 @@ def add_distributor(customer, distributor, product_type):
     
     customer = frappe.get_doc("Customer", customer)
 
-    # TODO: ensure that only 1 distributor is set for a product type
+    updated = False
+    for d in customer.distributors:
+        if d.product_type == product_type:
+            print("Customer '{0}': Update distributor for '{1}': '{2}' -> '{3}'".format(customer.name,product_type, d.distributor,  distributor))
+            d.distributor = distributor
+            updated = True
 
-    print("Customer '{0}': Add distributor '{1}' for '{2}'".format(customer.name, distributor, product_type))
-    # TODO: check if entry is already there!
-    entry = {
-        'distributor': distributor,
-        'product_type': product_type
-    }
-    customer.append("distributors",entry)
+    if not updated:
+        print("Customer '{0}': Add distributor '{1}' for '{2}'".format(customer.name, distributor, product_type))
+        entry = {
+            'distributor': distributor,
+            'product_type': product_type
+        }
+        customer.append("distributors",entry)
+
     customer.save()
     frappe.db.commit()
     return
