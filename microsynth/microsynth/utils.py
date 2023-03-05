@@ -582,7 +582,7 @@ def set_distributor(customer, distributor, product_type):
     Set the specified distributor for the a product type to the customer. If there is already a distributor set, replace it with the new one.
     
     run
-    bench execute "microsynth.microsynth.utils.add_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
+    bench execute "microsynth.microsynth.utils.set_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
     """       
     # validate input
     if not frappe.db.exists("Customer", distributor):
@@ -806,7 +806,7 @@ def get_alternative_income_account(account, country):
     Return the first alternative account for a given account and country of a billing address. The company is not used.
 
     run
-    bench execute microsynth.microsynth.invoicing.get_alternative_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'country': 'Switzerland'}"
+    bench execute microsynth.microsynth.utils.get_alternative_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'country': 'Switzerland'}"
     """
 
     if  frappe.get_value("Country", country, "eu"):
@@ -828,3 +828,25 @@ def get_alternative_income_account(account, country):
         return records[0]['alternative_account']
     else:
         return account
+    
+
+def get_customers_for_country(country):
+    """
+    Look up all addresses (billing and shipping) for the given country and return then linked customer.
+
+    run
+    bench execute microsynth.microsynth.utils.get_customers_for_country --kwargs "{'country': 'Hungary'}"
+    """
+
+    query = """
+        SELECT `tabDynamic Link`.`link_name` as 'name'
+        FROM `tabAddress`
+        LEFT JOIN `tabDynamic Link` ON `tabDynamic Link`.`parent` = `tabAddress`.`name`
+        WHERE `tabAddress`.`country` = '{country}'
+        AND `tabDynamic Link`.`link_doctype` = 'Customer'
+        AND `tabDynamic Link`.`parenttype` = 'Address'
+    """.format(country=country)
+
+    customers = frappe.db.sql(query, as_dict=True)
+    
+    return [ c['name'] for c in customers ]
