@@ -607,7 +607,7 @@ def set_distributor(customer, distributor, product_type):
         customer.append("distributors",entry)
 
     customer.save()
-    frappe.db.commit()
+
     return
 
 

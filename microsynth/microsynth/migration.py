@@ -1773,10 +1773,39 @@ def set_distributor_carlo_erba():
         print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
         set_distributor(c.name, 35914214, "Sequencing" )
         set_distributor(c.name, 35914214, "Labels" )
+        frappe.db.commit()
+
         i += 1
 
     return
 
+
+def set_distributor_amplikon():
+    """
+    run
+    bench execute microsynth.microsynth.migration.set_distributor_amplikon
+    """
+
+    from microsynth.microsynth.utils import get_customers_for_country, set_distributor
+
+    customers = get_customers_for_country("Hungary")
+
+    i = 0
+    length = len(customers)
+    for c in customers:
+        customer = frappe.get_doc("Customer", c)
+        
+        print("{2}% - Update customer '{0}' '{1}'".format(customer.name, customer.customer_name, int(100 * i / length)))
+
+        customer.default_price_list = "hu_Amplikon_standard"
+        customer.save()
+
+        set_distributor(customer.name, 832700, "Oligos")
+        set_distributor(customer.name, 832700, "Sequencing")
+        set_distributor(customer.name, 832700, "Labels")
+        frappe.db.commit()
+
+        i += 1
 
 def set_debtors():
     """
