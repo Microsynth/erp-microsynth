@@ -50,7 +50,7 @@ function update_taxes(company, customer, address, category) {
         "args": {
             "company": company,
             "customer": customer,
-            "customer_address": address,
+            "shipping_address": address,
             "category": category 
         },
         "async": false,

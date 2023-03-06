@@ -176,7 +176,7 @@ def create_sample(sample):
 
 
 @frappe.whitelist()
-def find_tax_template(company, customer, customer_address, category):
+def find_tax_template(company, customer, shipping_address, category):
     """
     Find the corresponding tax template
     """
@@ -192,7 +192,7 @@ def find_tax_template(company, customer, customer_address, category):
         else:
             return None
     else:
-        country = frappe.get_value("Address", customer_address, "country")
+        country = frappe.get_value("Address", shipping_address, "country")
         if frappe.get_value("Country", country, "eu"):
             eu_pattern = """ OR `country` = "EU" """
         else:
