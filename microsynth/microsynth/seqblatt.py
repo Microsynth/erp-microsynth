@@ -159,21 +159,63 @@ def check_sales_order_completion():
 
 def check_submit_delivery_note(delivery_note):
     """
+    Check if the delivery note is eligible for autocompletion and submit it.
+
     run
     bench execute microsynth.microsynth.seqblatt.check_submit_delivery_note --kwargs "{'delivery_note':'DN-BAL-23111770'}"
     """
     try:
         delivery_note = frappe.get_doc("Delivery Note", delivery_note)
 
-        # TODO check items
-        # TODO check sales order
+        if delivery_note.docstatus != 0:
+            msg = "Delivery Note '{0}' is not in Draft. docstatus: {1}".format(delivery_note.docstatus)
+            print(msg)
+            frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+
+        sales_orders = []
+        for i in delivery_note.items:
+            if i.item_code not in [ '0901', '0904', '3235', '3237', '0968', '0969', '0975']:
+                print("Delivery Note '{0}': Item '{1}' is not allowed for autocompletion".format(delivery_note.name, i.item_code))
+                return
+            if i.against_sales_order not in sales_orders:
+                sales_orders.append(i.against_sales_order)
+
+        if len(sales_orders) != 1:
+            msg = "Delivery Note '{0}' is derived from none or multiple sales orders".format(delivery_note.name)
+            print(msg)
+            frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+            return
+
+        sales_order = frappe.get_doc("Sales Order", sales_orders[0])
+
+        from datetime import datetime
+        time_between_insertion = datetime.today() - sales_order.creation
+        if time_between_insertion.days < 7:
+            print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order.transaction_date))
+            return
 
         delivery_note.submit()
+
     except Exception as err:
         frappe.log_error("Cannot invoice Delivery Note '{0}': \n{1}".format(delivery_note.name, err), "invoicing.async_create_invoices")
 
+
 def submit_delivery_notes():
-    sql = """
-        SELECT *
-        FROM `tabDelivery Note`
-        """
+    """
+    Checks all delivery note drafts of product type sequencing and submits them if eligible.
+
+    run
+    bench execute microsynth.microsynth.seqblatt.submit_delivery_notes
+    """
+
+    delivery_notes = frappe.db.get_all("Delivery Note",
+        filters = {'docstatus': 0, 'product_type': 'Sequencing' },
+        fields = ['name'])
+
+    i = 0
+    length = len(delivery_notes)
+    for dn in delivery_notes:
+        print("{1}% - process delivery note '{0}'".format(dn.name, int(100 * i / length)))
+        check_submit_delivery_note(dn.name)
+        frappe.db.commit()
+        i += 1
