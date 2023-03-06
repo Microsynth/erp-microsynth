@@ -155,3 +155,25 @@ def check_sales_order_completion():
             frappe.db.commit()
             
     return
+
+
+def check_submit_delivery_note(delivery_note):
+    """
+    run
+    bench execute microsynth.microsynth.seqblatt.check_submit_delivery_note --kwargs "{'delivery_note':'DN-BAL-23111770'}"
+    """
+    try:
+        delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+
+        # TODO check items
+        # TODO check sales order
+
+        delivery_note.submit()
+    except Exception as err:
+        frappe.log_error("Cannot invoice Delivery Note '{0}': \n{1}".format(delivery_note.name, err), "invoicing.async_create_invoices")
+
+def submit_delivery_notes():
+    sql = """
+        SELECT *
+        FROM `tabDelivery Note`
+        """
