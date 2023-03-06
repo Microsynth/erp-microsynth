@@ -15,6 +15,6 @@ frappe.ui.form.on('Quotation', {
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
         }; 
-        update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address, category);
+        update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category);
     }
 });
