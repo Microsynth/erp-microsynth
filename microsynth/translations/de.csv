@@ -21,7 +21,7 @@ DocType: Sales Invoice,"The exporter of the products covered by this document de
 DocType: Sales Invoice,"Customs tarif number","Zolltarif Nr."
 DocType: Sales Invoice,"Delivery conditions","Lieferkonditionen"
 DocType: Sales Invoice,"Tax-exempt intra-Community delivery","Steuerfreie innergemeinschaftliche Lieferung"
-DocType: Sales Invoice,"Services pursuant to Art. 14 (1) Transfer of location principle (7) UST exempt, but subject to VAT (reverse charge).","Dienstleistungen gemäß Art. 14 Abs. 1 Einbringungsortsprinzip (7) EUST befreit. <br/>Steuerfreie innergemeinschaftliche Lieferung (reverse charge). Dienstleistungen sind vom Leistungsempfänger zu versteuern."
+DocType: Sales Invoice,"Services pursuant to Art. 14 (1) Transfer of location principle (7) UST exempt, but subject to VAT (reverse charge).","Dienstleistungen gemäß Art. 14 Abs. 1 Einbringungsortsprinzip (7) EUST befreit (reverse charge). Dienstleistungen sind vom Leistungsempfänger zu versteuern."
 DocType: Sales Invoice,"Payment part","Zahlteil"
 DocType: Sales Invoice,"Account / Payable to","Konto / Zahlbar an"
 DocType: Sales Invoice,"Reference","Referenz"
