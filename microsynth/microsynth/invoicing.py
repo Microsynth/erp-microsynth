@@ -132,53 +132,63 @@ def async_create_invoices(mode, company):
         count = 0
         customers = []
         for dn in all_invoiceable:
+
+            # TODO process other invoicing methods
+            if dn.get('invoicing_method') not in  ["Email", "Post"]:
+                continue
+
             if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') not in customers:
                 customers.append(dn.get('customer'))
         
         # for each customer, create one invoice per tax template for all dns
         for c in customers:
-            dns = []
-            for dn in all_invoiceable:
-                if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
-                    dns.append(dn.get('delivery_note'))
+            try:
+                dns = []
+                for dn in all_invoiceable:
+                    if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
+                        dns.append(dn.get('delivery_note'))
 
-            if len(dns) > 0:
-                # check if there are multiple tax templates
-                taxes = []
-                for dn in dns:
-                    t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges") 
-                    if t not in taxes:
-                        taxes.append(t)
-                
-                if len(taxes) > 1:
-                    print("multiple taxes for customer '{0}'".format(c), "invocing.async_create_invoices")
-                
-                credit = credit = get_total_credit(c, company)
+                if len(dns) > 0:
+                    # check if there are multiple tax templates
+                    taxes = []
+                    for dn in dns:
+                        t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges")
+                        if t not in taxes:
+                            taxes.append(t)
 
-                # create one invoice per tax template
-                for tax in taxes:
-                    filtered_dns = []
-                    for d in dns:
-                        if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
-                            total = frappe.get_value("Delivery Note", d, "total")
-                            
-                            if credit is not None:
-                                # there is some credit - check if it is sufficient
-                                if total <= credit:
-                                    filtered_dns.append(d)
-                                    credit = credit - total
+                    if len(taxes) > 1:
+                        print("multiple taxes for customer '{0}'".format(c), "invocing.async_create_invoices")
+
+                    credit = credit = get_total_credit(c, company)
+
+                    # create one invoice per tax template
+                    for tax in taxes:
+                        filtered_dns = []
+                        for d in dns:
+                            if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
+                                total = frappe.get_value("Delivery Note", d, "total")
+
+                                if credit is not None:
+                                    # there is some credit - check if it is sufficient
+                                    if total <= credit:
+                                        filtered_dns.append(d)
+                                        credit = credit - total
+                                    else:
+                                        frappe.log_error("insufficient credit for customer {0}".format(c))
                                 else:
-                                    frappe.log_error("insufficient credit for customer {0}".format(c))
-                            else:
-                                # there is no credit account
-                                filtered_dns.append(d)
+                                    # there is no credit account
+                                    filtered_dns.append(d)
 
-                    si = make_collective_invoice(filtered_dns)
-                    transmit_sales_invoice(si)
-                
-                count += 1
-                if count >= 5:
-                    break
+                        if len(filtered_dns) > 1:
+                            si = make_collective_invoice(filtered_dns)
+                            transmit_sales_invoice(si)
+
+                            count += 1
+                            if count >= 10:
+                                break
+
+            except Exception as err:
+                frappe.log_error("Cannot create collective invoice for customer {0}: \n{1}".format(c, err), "invoicing.async_create_invoices")
 
     else:
         frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
@@ -705,206 +715,208 @@ def transmit_sales_invoice(sales_invoice):
     bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23001808'}"
     """
 
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
-    customer = frappe.get_doc("Customer", sales_invoice.customer)
-    
-    if sales_invoice.invoice_to:
-        invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
-    else:
-        invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
-    #for k,v in sales_order.as_dict().items():
-    #    print ( "%s: %s" %(k,v))
-
-    # TODO: comment-in after development to handle invoice paths other than ariba
-    
-    # TODO: handle punchout invoices different!
-    if sales_invoice.is_punchout:
-        return
-
-    # The invoice was already sent. Do not send again.
-    if sales_invoice.invoice_sent_on:
-        print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
-        return
-
-    # Do not send any invoice if the items are free of charge
-    if sales_invoice.total == 0:
-        return
-
-    if customer.invoicing_method == "Post":
-        # Send all invoices with credit account per mail
-        if sales_invoice.net_total == 0:
-            mode = "Email"
+    try:
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+        customer = frappe.get_doc("Customer", sales_invoice.customer)
+        
+        if sales_invoice.invoice_to:
+            invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
         else:
-            mode = "Post"
-    elif customer.invoicing_method == "Email":
-        mode = "Email"
-    elif customer.invoicing_method == "ARIBA":
-        mode = "ARIBA"
-    elif customer.invoicing_method == "Paynet":
-        mode = "Paynet"
-    elif customer.invoicing_method == "GEP":
-        mode = "GEP"
-    else:
-        mode = None
+            invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+        #for k,v in sales_order.as_dict().items():
+        #    print ( "%s: %s" %(k,v))
 
-    print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
-
-    if mode == "Email":
-        # send by mail
-
-        # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
-
-        target_email = invoice_contact.email_id
-        if not target_email:
-            frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
+        # TODO: comment-in after development to handle invoice paths other than ariba
+        
+        # TODO: handle punchout invoices different!
+        if sales_invoice.is_punchout:
             return
 
-        if sales_invoice.company == "Microsynth AG":
-            destination = get_destination_classification(si = sales_invoice.name)
+        # The invoice was already sent. Do not send again.
+        if sales_invoice.invoice_sent_on:
+            print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
+            return
 
-            if destination == "EU":
-                footer =  frappe.get_value("Letter Head", "Microsynth AG Wolfurt", "footer")
+        # Do not send any invoice if the items are free of charge
+        if sales_invoice.total == 0:
+            return
+
+        if customer.invoicing_method == "Post":
+            # Send all invoices with credit account per mail
+            if sales_invoice.net_total == 0:
+                mode = "Email"
             else:
-                footer =  frappe.get_value("Letter Head", sales_invoice.company, "footer")
-        else: 
-            footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
-
-        create_pdf_attachment(sales_invoice.name)
-
-        attachments = get_attachments("Sales Invoice", sales_invoice.name)
-        fid = None
-        for a in attachments:
-            fid = a['name']
-        frappe.db.commit()
-
-        if sales_invoice.language == "de":
-            subject = "Rechnung {0}".format(sales_invoice.name)
-            message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
-        elif sales_invoice.language == "fr":
-            subject = "Facture {0}".format(sales_invoice.name)
-            message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
+                mode = "Post"
+        elif customer.invoicing_method == "Email":
+            mode = "Email"
+        elif customer.invoicing_method == "ARIBA":
+            mode = "ARIBA"
+        elif customer.invoicing_method == "Paynet":
+            mode = "Paynet"
+        elif customer.invoicing_method == "GEP":
+            mode = "GEP"
         else:
-            subject = "Invoice {0}".format(sales_invoice.name)
-            message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
+            mode = None
 
-        make(
-            recipients = target_email,
-            sender = "info@microsynth.ch",
-            cc = "info@microsynth.ch",
-            subject = subject, 
-            content = message,
-            doctype = "Sales Invoice",
-            name = sales_invoice.name,
-            attachments = [{'fid': fid}],
-            send_email = True
-        )
+        print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
 
-    elif mode == "Post":
-        create_pdf_attachment(sales_invoice.name)
+        if mode == "Email":
+            # send by mail
 
-        attachments = get_attachments("Sales Invoice", sales_invoice.name)
-        fid = None
-        for a in attachments:
-            fid = a['name']
+            # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
+
+            target_email = invoice_contact.email_id
+            if not target_email:
+                frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
+                return
+
+            if sales_invoice.company == "Microsynth AG":
+                destination = get_destination_classification(si = sales_invoice.name)
+
+                if destination == "EU":
+                    footer =  frappe.get_value("Letter Head", "Microsynth AG Wolfurt", "footer")
+                else:
+                    footer =  frappe.get_value("Letter Head", sales_invoice.company, "footer")
+            else: 
+                footer = frappe.get_value("Letter Head", sales_invoice.company, "footer")
+
+            create_pdf_attachment(sales_invoice.name)
+
+            attachments = get_attachments("Sales Invoice", sales_invoice.name)
+            fid = None
+            for a in attachments:
+                fid = a['name']
+            frappe.db.commit()
+
+            if sales_invoice.language == "de":
+                subject = "Rechnung {0}".format(sales_invoice.name)
+                message = "Sehr geehrter Kunde<br>Bitte beachten Sie die angehängte Rechnung '{0}'.<br>Beste Grüsse<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
+            elif sales_invoice.language == "fr":
+                subject = "Facture {0}".format(sales_invoice.name)
+                message = "Cher client<br>Veuillez consulter la facture ci-jointe '{0}'.<br>Meilleures salutations<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
+            else:
+                subject = "Invoice {0}".format(sales_invoice.name)
+                message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
+
+            make(
+                recipients = target_email,
+                sender = "info@microsynth.ch",
+                cc = "info@microsynth.ch",
+                subject = subject, 
+                content = message,
+                doctype = "Sales Invoice",
+                name = sales_invoice.name,
+                attachments = [{'fid': fid}],
+                send_email = True
+            )
+
+        elif mode == "Post":
+            create_pdf_attachment(sales_invoice.name)
+
+            attachments = get_attachments("Sales Invoice", sales_invoice.name)
+            fid = None
+            for a in attachments:
+                fid = a['name']
+            frappe.db.commit()
+            
+            # print the pdf with cups
+            path = get_physical_path(fid)
+            PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
+            import subprocess
+            subprocess.run(["lp", path, "-d", PRINTER])
+
+            pass
+
+        elif mode == "ARIBA":
+            # create ARIBA cXML input data dict
+            data = sales_invoice.as_dict()
+            data['customer_record'] = customer.as_dict()
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+
+            cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
+            #print(cxml)
+
+            # TODO: comment in after development to save ariba file to filesystem
+            with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
+                file.write(cxml)
+            '''
+            # attach to sales invoice
+            folder = create_folder("ariba", "Home")
+            # store EDI File  
+        
+            f = save_file(
+                "{0}.txt".format(sales_invoice.name), 
+                cxml, 
+                "Sales Invoice", 
+                sales_invoice.name, 
+                folder = '/home/libracore/Desktop',
+                # folder=folder, 
+                is_private=True
+            )
+            '''
+
+        elif mode == "Paynet":
+            # create Paynet cXML input data dict
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+            
+            cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
+            #print(cxml)
+
+            # TODO: comment in after development to save ariba file to filesystem
+            with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
+                file.write(cxml)
+
+            '''
+            # TODO: comment in after development to save paynet file to filesystem
+        
+            # attach to sales invoice
+            folder = create_folder("ariba", "Home")
+            # store EDI File
+            
+            f = save_file(
+                "{0}.txt".format(sales_invoice.name), 
+                cxml, 
+                "Sales Invoice", 
+                sales_invoice.name, 
+                folder=folder, 
+                is_private=True
+            )
+            '''
+        
+        elif mode == "GEP":
+            print("IN GEP")
+            # create Gep cXML input data dict
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+            cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
+            print(cxml)
+
+            '''
+            # TODO: comment in after development to save gep file to filesystem
+        
+            # attach to sales invoice
+            folder = create_folder("ariba", "Home")
+            # store EDI File
+            
+            f = save_file(
+                "{0}.txt".format(sales_invoice.name), 
+                cxml, 
+                "Sales Invoice", 
+                sales_invoice.name, 
+                folder=folder, 
+                is_private=True
+            )
+            '''
+
+        else:
+            return
+        
+        # sales_invoice.invoice_sent_on = datetime.now()
+        # sales_invoice.save()
+        frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
+
         frappe.db.commit()
-        
-        # print the pdf with cups
-        path = get_physical_path(fid)
-        PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
-        import subprocess
-        subprocess.run(["lp", path, "-d", PRINTER])
 
-        pass
+    except Exception as err:
+        frappe.log_error("Cannot transmit sales invoice {0}: \n{1}".format(sales_invoice.name, err), "invoicing.transmit_sales_invoice")
 
-    elif mode == "ARIBA":
-        # create ARIBA cXML input data dict
-        data = sales_invoice.as_dict()
-        data['customer_record'] = customer.as_dict()
-        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
-
-        cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-        #print(cxml)
-
-        # TODO: comment in after development to save ariba file to filesystem
-        with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
-            file.write(cxml)
-        '''
-        # attach to sales invoice
-        folder = create_folder("ariba", "Home")
-        # store EDI File  
-    
-        f = save_file(
-            "{0}.txt".format(sales_invoice.name), 
-            cxml, 
-            "Sales Invoice", 
-            sales_invoice.name, 
-            folder = '/home/libracore/Desktop',
-            # folder=folder, 
-            is_private=True
-        )
-        '''
-
-    elif mode == "Paynet":
-        # create Paynet cXML input data dict
-        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
-        
-        cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
-        #print(cxml)
-
-        # TODO: comment in after development to save ariba file to filesystem
-        with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
-            file.write(cxml)
-
-        '''
-        # TODO: comment in after development to save paynet file to filesystem
-    
-        # attach to sales invoice
-        folder = create_folder("ariba", "Home")
-        # store EDI File
-        
-        f = save_file(
-            "{0}.txt".format(sales_invoice.name), 
-            cxml, 
-            "Sales Invoice", 
-            sales_invoice.name, 
-            folder=folder, 
-            is_private=True
-        )
-        '''
-    
-    elif mode == "GEP":
-        print("IN GEP")
-        # create Gep cXML input data dict
-        cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
-        cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
-        print(cxml)
-
-        '''
-        # TODO: comment in after development to save gep file to filesystem
-    
-        # attach to sales invoice
-        folder = create_folder("ariba", "Home")
-        # store EDI File
-        
-        f = save_file(
-            "{0}.txt".format(sales_invoice.name), 
-            cxml, 
-            "Sales Invoice", 
-            sales_invoice.name, 
-            folder=folder, 
-            is_private=True
-        )
-        '''
-
-    else:
-        return
-    
-    # sales_invoice.invoice_sent_on = datetime.now()
-    # sales_invoice.save()
-    frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
-
-    frappe.db.commit()
-        
     return
-        
-        
