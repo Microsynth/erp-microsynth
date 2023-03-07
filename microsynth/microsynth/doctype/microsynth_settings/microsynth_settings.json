@@ -8,11 +8,12 @@
   "ariba_id",
   "ariba_secret",
   "paynet_id",
-  "invoice_printer",
   "sec_credits",
   "credit_item",
-  "alternative_accounts_section",
-  "alternative_accounts"
+  "sec_datev",
+  "pdf_export_path",
+  "col_datev",
+  "pdf_print_format"
  ],
  "fields": [
   {
@@ -50,24 +51,29 @@
    "options": "Item"
   },
   {
-   "fieldname": "alternative_accounts_section",
+   "fieldname": "sec_datev",
    "fieldtype": "Section Break",
-   "label": "Alternative Accounts"
+   "label": "DATEV Export"
   },
   {
-   "fieldname": "alternative_accounts",
-   "fieldtype": "Table",
-   "label": "Alternative Accounts",
-   "options": "Alternative Account"
-  },
-  {
-   "fieldname": "invoice_printer",
+   "default": "/home/frappe",
+   "fieldname": "pdf_export_path",
    "fieldtype": "Data",
-   "label": "Invoice Printer"
+   "label": "PDF Export Path"
+  },
+  {
+   "fieldname": "col_datev",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pdf_print_format",
+   "fieldtype": "Link",
+   "label": "Print Format",
+   "options": "Print Format"
   }
  ],
  "issingle": 1,
- "modified": "2023-02-13 16:54:01.639021",
+ "modified": "2023-03-07 22:31:57.940725",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",

@@ -278,5 +278,18 @@ def get_data():
                        "description": _("Tax Matrix")
                    }
             ]
+        },
+        {
+            "label": _("Export"),
+            "icon": "fa fa-users",
+            "items": [
+                   {
+                        "type": "report",
+                        "name": "DATEV Export",
+                        "label": _("DATEV Export"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
+                   }
+            ]
         }
     ]
