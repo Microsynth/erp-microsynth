@@ -43,7 +43,7 @@ def get_data(filters, short=False):
             `tabSales Invoice`.`posting_date` as `date`,
             "AR" AS `book_symbol`,
             "" AS `book_code`,
-            100 * `tabSales Invoice`.`total_taxes_and_charges` / `tabSales Invoice`.`net_total` AS `vat_percent`,
+            ROUND(100 * `tabSales Invoice`.`total_taxes_and_charges` / `tabSales Invoice`.`net_total`, 1) AS `vat_percent`,
             `tabSales Invoice`.`grand_total` AS `gross_amount`,
             (-1) * `tabSales Invoice`.`total_taxes_and_charges`  AS `vat_amount`,
             "Rechnung" AS `description`
@@ -74,7 +74,8 @@ def pdf_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     
-    frappe.log_error("{0}".format(data))
+    # frappe.log_error("{0}".format(data))
+    frappe.log_error("{0}".format(settings.pdf_export_path))
     
     for d in data:
         if d.get("document_type") == "Sales Invoice":
