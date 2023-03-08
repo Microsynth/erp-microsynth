@@ -74,9 +74,6 @@ def pdf_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     
-    # frappe.log_error("{0}".format(data))
-    frappe.log_error("{0}".format(settings.pdf_export_path))
-    
     for d in data:
         if d.get("document_type") == "Sales Invoice":
             content_pdf = frappe.get_print(
