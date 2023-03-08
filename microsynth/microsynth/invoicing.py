@@ -174,7 +174,7 @@ def async_create_invoices(mode, company):
                                         filtered_dns.append(d)
                                         credit = credit - total
                                     else:
-                                        frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {c}".format(d, c), "invocing.async_create_invoices")
+                                        frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, c), "invocing.async_create_invoices")
                                 else:
                                     # there is no credit account
                                     filtered_dns.append(d)
