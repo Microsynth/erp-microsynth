@@ -129,7 +129,6 @@ def async_create_invoices(mode, company):
 
     elif mode == "Collective":
         # colletive invoices
-        count = 0
         customers = []
         for dn in all_invoiceable:
 
@@ -182,14 +181,9 @@ def async_create_invoices(mode, company):
                         if len(filtered_dns) > 1:
                             si = make_collective_invoice(filtered_dns)
                             transmit_sales_invoice(si)
-
-                            count += 1
-                            if count >= 10:
-                                return
-
+                            
             except Exception as err:
                 frappe.log_error("Cannot create collective invoice for customer {0}: \n{1}".format(c, err), "invoicing.async_create_invoices")
-
     else:
         frappe.throw("Unknown mode '{0}' for async_create_invoices".format(mode))
 
