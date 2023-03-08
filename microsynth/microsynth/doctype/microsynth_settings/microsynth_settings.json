@@ -8,12 +8,15 @@
   "ariba_id",
   "ariba_secret",
   "paynet_id",
+  "invoice_printer",
   "sec_credits",
   "credit_item",
   "sec_datev",
   "pdf_export_path",
   "col_datev",
-  "pdf_print_format"
+  "pdf_print_format",
+  "alternative_accounts_section",
+  "alternative_accounts"
  ],
  "fields": [
   {
@@ -51,6 +54,22 @@
    "options": "Item"
   },
   {
+   "fieldname": "invoice_printer",
+   "fieldtype": "Data",
+   "label": "Invoice Printer"
+  },
+  {
+   "fieldname": "alternative_accounts_section",
+   "fieldtype": "Section Break",
+   "label": "Alternative Accounts"
+  },
+  {
+   "fieldname": "alternative_accounts",
+   "fieldtype": "Table",
+   "label": "Alternative Accounts",
+   "options": "Alternative Account"
+  },
+  {
    "fieldname": "sec_datev",
    "fieldtype": "Section Break",
    "label": "DATEV Export"
@@ -73,8 +92,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2023-03-07 22:31:57.940725",
- "modified_by": "Administrator",
+ "modified": "2023-03-08 10:08:03.449153",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
  "owner": "Administrator",
