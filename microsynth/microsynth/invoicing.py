@@ -185,7 +185,7 @@ def async_create_invoices(mode, company):
 
                             count += 1
                             if count >= 10:
-                                break
+                                return
 
             except Exception as err:
                 frappe.log_error("Cannot create collective invoice for customer {0}: \n{1}".format(c, err), "invoicing.async_create_invoices")
