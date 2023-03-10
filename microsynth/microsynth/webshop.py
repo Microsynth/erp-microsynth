@@ -195,23 +195,24 @@ def contact_exists(contact, client="webshop"):
             AND `tabDynamic Link`.`link_doctype` = "Customer"
         WHERE `tabContact`.`first_name` = "{0}" """.format(first_name)
     
-    if 'last_name' in contact and str(contact['last_name']):
+    # Note: These statements need the "is not None" term. Simplification to only "contact['...']" will corrupt the API.
+    if 'last_name' in contact and contact['last_name'] is not None:
         sql_query += """ AND `tabContact`.`last_name` = "{}" """.format(contact['last_name'])
 
-    if 'customer_id' in contact and str(contact['customer_id']):
+    if 'customer_id' in contact and contact['customer_id'] is not None:
         sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(contact['customer_id'])
 
     # TODO check name of email field for interface
-    if 'email_id' in contact and str(contact['email_id']):
+    if 'email_id' in contact and contact['email_id'] is not None:
         sql_query += """ AND `tabContact`.`email_id` = "{}" """.format(contact['email_id'])
 
-    if 'department' in contact and str(contact['department']):
+    if 'department' in contact and contact['department'] is not None:
         sql_query += """ AND `tabContact`.`department` = "{}" """.format(contact['department'])
 
-    if 'institute' in contact and str(contact['institute']):
+    if 'institute' in contact and contact['institute'] is not None:
         sql_query += """ AND `tabContact`.`institute` = "{}" """.format(contact['institute'])
 
-    if 'room' in contact and str(contact['room']):
+    if 'room' in contact and contact['room'] is not None:
         sql_query += """ AND `tabContact`.`room` = "{}" """.format(contact['room'])
 
     contacts = frappe.db.sql(sql_query, as_dict=True)
@@ -238,15 +239,15 @@ def address_exists(address, client="webshop"):
             AND `tabDynamic Link`.`link_doctype` = "Customer"
         WHERE `address_line1` LIKE "{0}" """.format(
             address['address_line1'] if 'address_line1' in address else "%")
-    
+    # Note: These statements need the "is not None" term. Simplification to only "contact['...']" will corrupt the API.
     if 'address_line2' in address:
-        if str(address['address_line2']):
+        if address['address_line2'] is not None:
             sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
         else: 
             sql_query += """ AND `address_line2` is null """
-    if 'customer_id' in address and str(address['customer_id']):
+    if 'customer_id' in address and address['customer_id'] is not None:
         sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(address['customer_id'])
-    if 'overwrite_company' in address and str(address['overwrite_company']):
+    if 'overwrite_company' in address and address['overwrite_company'] is not None:
         sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])
     if 'pincode' in address:
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
