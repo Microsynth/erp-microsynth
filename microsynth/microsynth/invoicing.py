@@ -76,7 +76,7 @@ def async_create_invoices(mode, company):
                     continue
 
                 credit = get_total_credit(dn.get('customer'), company)
-                if credit is not None and frappe.get_value("Customer",c,"has_credit_account"):
+                if credit is not None and frappe.get_value("Customer", dn.get('customer'),"has_credit_account"):
                     delivery_note =  dn.get('delivery_note')
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
