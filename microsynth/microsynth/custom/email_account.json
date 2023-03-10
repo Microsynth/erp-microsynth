@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Email Account",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2023-03-10 09:27:43.249033",
+   "default_value": null,
+   "doc_type": "Email Account",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "enable_outgoing",
+   "idx": 0,
+   "modified": "2023-03-10 09:27:43.249033",
+   "modified_by": "rolf.suter@microsynth.ch",
+   "name": "Email Account-enable_outgoing-in_list_view",
+   "owner": "rolf.suter@microsynth.ch",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "in_list_view",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
+ "sync_on_migrate": 1
+}
