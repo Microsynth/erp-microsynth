@@ -839,7 +839,7 @@ def get_customers_for_country(country):
     """
 
     query = """
-        SELECT `tabDynamic Link`.`link_name` as 'name'
+        SELECT DISTINCT `tabDynamic Link`.`link_name` as 'name'
         FROM `tabAddress`
         LEFT JOIN `tabDynamic Link` ON `tabDynamic Link`.`parent` = `tabAddress`.`name`
         WHERE `tabAddress`.`country` = '{country}'
@@ -850,3 +850,70 @@ def get_customers_for_country(country):
     customers = frappe.db.sql(query, as_dict=True)
     
     return [ c['name'] for c in customers ]
+
+def check_default_company(customer):
+    """
+    run
+    bench execute microsynth.microsynth.utils.check_default_company --kwargs "{'customer': '8003'}"
+    """
+
+    query = """ 
+            SELECT 
+                `tabAddress`.`name`,
+                `tabAddress`.`address_type`,
+                `tabAddress`.`overwrite_company`,
+                `tabAddress`.`address_line1`,
+                `tabAddress`.`address_line2`,
+                `tabAddress`.`pincode`,
+                `tabAddress`.`city`,
+                `tabAddress`.`country`,
+                `tabAddress`.`is_shipping_address`,
+                `tabAddress`.`is_primary_address`,
+                `tabAddress`.`geo_lat`,
+                `tabAddress`.`geo_long`,
+                `tabAddress`.`customer_address_id`
+            FROM `tabDynamic Link`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+            WHERE `tabDynamic Link`.`parenttype` = "Address"
+              AND `tabDynamic Link`.`link_doctype` = "Customer"
+              AND `tabDynamic Link`.`link_name` = "{customer_id}"
+            ;""".format(customer_id=customer)
+        
+    addresses = frappe.db.sql(query, as_dict=True)
+        
+    countries = []
+    for a in addresses:
+        if not a['country'] in countries:
+            countries.append(a['country'])
+
+    if len(countries) != 1:
+        print("Customer '{0}': No or Multiple countries found ({1})".format(customer, len(countries)))
+        return
+
+    current_default_company = frappe.db.get_value("Customer", customer, "default_company")
+    country_default_company = frappe.db.get_value("Country", countries[0], "default_company")
+    if current_default_company != country_default_company:
+        print("Customer '{0}' should have '{1}'".format(customer, country_default_company))
+
+
+def check_default_company_for_country(country):
+    """
+    run
+    bench execute microsynth.microsynth.utils.check_default_company_for_country --kwargs "{'country': 'Austria'}"
+    """
+
+    customers = get_customers_for_country(country)
+    for c in customers:
+        if not frappe.db.get_value("Customer", c, "disabled"):
+            check_default_company(c)
+
+
+def check_default_companies():
+    """
+    run
+    bench execute microsynth.microsynth.utils.check_default_companies
+    """
+    countries = [ "Austria", "Croatia", "Hungary", "Slovakia", "Slovenia", "Kosovo" ]
+    for c in countries:
+        print(c)
+        check_default_company_for_country(c)
