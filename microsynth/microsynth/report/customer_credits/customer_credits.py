@@ -65,7 +65,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
-                ((-1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
+                ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
@@ -141,7 +141,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
-                ((-1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
+                ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
