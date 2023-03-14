@@ -917,3 +917,18 @@ def check_default_companies():
     for c in countries:
         print(c)
         check_default_company_for_country(c)
+
+"""
+Clone a sales invoice including the no-copy fields
+"""
+@frappe.whitelist()
+def exact_copy_sales_invoice(sales_invoice):
+    original = frappe.get_doc("Sales Invoice", sales_invoice)
+    new = frappe.get_doc(original.as_dict())
+    new.name = None
+    new.docstatus = 0
+    new.set_posting_time = 1
+    new.insert()
+    frappe.db.commit()
+    return new.name
+    
