@@ -8,7 +8,7 @@ function prepare_naming_series(frm) {
     frappe.call({
         'method': 'microsynth.microsynth.naming_series.get_naming_series',
         'args': {
-            'doctype': frm.doc.doctype
+            'doctype': (frm.doc.doctype === "Sales Invoice" && frm.doc.is_return === 1) ? "Credit Note" : frm.doc.doctype
         },
         'callback': function (r) {
             locals.naming_series_map = r.message;

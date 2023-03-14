@@ -1865,3 +1865,75 @@ def remove_item_account_settings():
         i += 1
 
     return
+
+
+def check_sales_order_samples(sales_order):
+    """
+
+    run
+    bench execute microsynth.microsynth.migration.check_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-22010736'}"
+    """
+    sales_order = frappe.get_doc("Sales Order", sales_order)
+    
+    query = """
+        SELECT 
+            `tabSample`.`name`,
+            `tabSample`.`sequencing_label`
+        FROM `tabSample Link`
+        LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+        WHERE
+            `tabSample Link`.`parent` = "{sales_order}"
+            AND `tabSample Link`.`parenttype` = "Sales Order"
+    """.format(sales_order = sales_order.name)
+
+    samples = frappe.db.sql(query, as_dict=True)
+
+    missing_labels = False
+    
+    for s in samples:
+        if s.sequencing_label is None:
+            missing_labels = True
+
+    # print("missing labels: {0}".format(missing_labels))
+    might_be_invoiced = True
+
+    if missing_labels: 
+        for item in sales_order.items:
+            if item.item_code not in [ '0901', '0904', '3235', '3237', '0968', '0969', '0975']:
+                # print(item.item_code)
+                might_be_invoiced = False
+
+        if might_be_invoiced:
+            print(sales_order.name)
+
+    return
+
+
+def find_invoices_of_unprocessed_samples():
+    """
+    The seqblatt.check_sales_order_completion function created delivery notes of 
+    sales orders where the samples had not no sequencing label linked. 
+    These deliverye notes were invoiced
+    
+    run
+    bench execute microsynth.microsynth.migration.find_invoices_of_unprocessed_samples
+    """
+
+    sales_orders = frappe.db.get_all("Sales Order",
+        filters={'product_type': 'Sequencing'},
+        fields = ['name'] )
+
+    i = 0
+    length = len(sales_orders)
+    print(length)
+
+    for order in sales_orders:
+        # print("{progress}% check sales order '{so}'".format(so = order.name, progress = int(100 * i / length)))
+        check_sales_order_samples(order.name)
+        
+        # if i > 5:
+        #     return
+        
+        i += 1
+
+    return

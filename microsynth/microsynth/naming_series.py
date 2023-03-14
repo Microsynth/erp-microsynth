@@ -39,6 +39,13 @@ NAMING_SERIES_MAP = {
 		'Microsynth Austria GmbH': 'SI-WIE-.YY.######',
 		'Microsynth France SAS': 'SI-LYO-.YY.######',
 		'Ecogenics GmbH': 'SI-ECO-.YY.######'
+	},
+	'Credit Note': {
+		'Microsynth AG': 'CN-BAL-.YY.######',
+		'Microsynth Seqlab GmbH': 'CN-GOE-.YY.######',
+		'Microsynth Austria GmbH': 'CN-WIE-.YY.######',
+		'Microsynth France SAS': 'CN-LYO-.YY.######',
+		'Ecogenics GmbH': 'CN-ECO-.YY.######'
 	}
 }
 
