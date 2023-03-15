@@ -237,7 +237,15 @@ def make_invoice(delivery_note):
     #sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
     
+    # TODO
+    # utils.get_alternative_account()
+
+    # TODO
+    # loop through items and set alternative income account
+    # utils.get_alternative_income_account
+
     sales_invoice.insert()
+
     sales_invoice.submit()
     # if a credit was allocated, book credit account
     if cint(sales_invoice.total_customer_credit) > 0:
