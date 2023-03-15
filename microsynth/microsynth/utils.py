@@ -931,4 +931,82 @@ def exact_copy_sales_invoice(sales_invoice):
     new.insert()
     frappe.db.commit()
     return new.name
-    
+
+
+def tag_linked_documents(web_order_id, tag):
+    """
+    Add the specified Tag to all linked Sales Orders, Delivery Notes and Sales Invoices with the given Web Order ID.
+
+    run
+    bench execute microsynth.microsynth.utils.tag_linked_documents --kwargs "{ 'web_order_id': 3611777, 'tag': 'my_tag' }"
+    """
+    from frappe.desk.tags import add_tag
+
+    # find documents by web order id
+    sales_order_names = frappe.db.get_all("Sales Order",
+        filters={'web_order_id': web_order_id},
+        fields=['name'])
+
+    delivery_note_names = frappe.db.get_all("Delivery Note",
+        filters={'web_order_id': web_order_id},
+        fields=['name'])
+
+    sales_invoice_names = frappe.db.get_all("Sales Invoice",
+        filters={'web_order_id': web_order_id},
+        fields=['name'])
+
+    sales_orders = []
+    for x in sales_order_names:
+        if x.name not in sales_orders:
+            sales_orders.append(x.name)
+
+    delivery_notes = []
+    for x in delivery_note_names:
+        if x.name not in delivery_notes:
+            delivery_notes.append(x.name)
+
+    sales_invoices = []
+    for x in sales_invoice_names:
+        if x.name not in sales_invoices:
+            sales_invoices.append(x.name)
+
+    # tag sales orders and find linked documents
+    for so in sales_orders:        
+        add_tag(tag = tag, dt = "Sales Order", dn = so )
+
+        # get linked Delivery Notes
+        delivery_note_items = frappe.db.get_all("Delivery Note Item",
+            filters={'against_sales_order': so },
+            fields=['parent'])
+
+        for item in delivery_note_items:
+            if item.parent not in delivery_notes:
+                delivery_notes.append(item.parent)
+
+        # get linked Sales Invoices
+        sales_invoice_items = frappe.db.get_all("Sales Invoice Item",
+            filters={'sales_order': so},
+            fields=['parent'])
+
+        for item in sales_invoice_items:
+            if item.parent not in sales_invoices:
+                sales_invoices.append(item.parent)
+
+    # tag delivery notes and find tagged documents
+    for dn in delivery_notes:
+        add_tag(tag = tag, dt = "Delivery Note", dn = dn )
+
+        # get linked Sales Invoices
+        sales_invoice_items = frappe.db.get_all("Sales Invoice Item",
+            filters={'delivery_note': dn},
+            fields=['parent'])
+
+        for item in sales_invoice_items:
+            if item.parent not in sales_invoices:
+                sales_invoices.append(item.parent)
+
+    # tag sales invoices
+    for si in sales_invoices:
+        add_tag(tag = tag, dt = "Sales Invoice", dn = si)
+
+    return
