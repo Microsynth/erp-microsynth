@@ -851,10 +851,12 @@ def get_customers_for_country(country):
     
     return [ c['name'] for c in customers ]
 
-def check_default_company(customer):
+def set_default_company(customer):
     """
+    Determine the default company 
+
     run
-    bench execute microsynth.microsynth.utils.check_default_company --kwargs "{'customer': '8003'}"
+    bench execute microsynth.microsynth.utils.set_default_company --kwargs "{'customer': '8003'}"
     """
 
     query = """ 
@@ -886,26 +888,37 @@ def check_default_company(customer):
         if not a['country'] in countries:
             countries.append(a['country'])
 
+    customer = frappe.get_doc("Customer", customer) 
+
     if len(countries) != 1:
-        print("Customer '{0}': No or Multiple countries found ({1})".format(customer, len(countries)))
+        msg = "Cannot set default company for Customer '{0}': No or multiple countries found ({1})".format(customer.name, len(countries))
+        frappe.log_error(msg, "utils.set_default_company")
+
+        from frappe.desk.tags import add_tag
+        add_tag(tag = "check default company", dt = "Customer", dn = customer.name )
+
+        print(msg)
         return
 
-    current_default_company = frappe.db.get_value("Customer", customer, "default_company")
     country_default_company = frappe.db.get_value("Country", countries[0], "default_company")
-    if current_default_company != country_default_company:
-        print("Customer '{0}' should have '{1}'".format(customer, country_default_company))
+
+    if customer.default_company != country_default_company:
+        print("Customer '{0}': Set default company '{1}'".format(customer.name, country_default_company))
+
+        customer.default_company = country_default_company
+        customer.save()
 
 
-def check_default_company_for_country(country):
+def set_customer_default_company_for_country(country):
     """
     run
-    bench execute microsynth.microsynth.utils.check_default_company_for_country --kwargs "{'country': 'Austria'}"
+    bench execute microsynth.microsynth.utils.set_customer_default_company_for_country --kwargs "{'country': 'Austria'}"
     """
 
     customers = get_customers_for_country(country)
     for c in customers:
         if not frappe.db.get_value("Customer", c, "disabled"):
-            check_default_company(c)
+            set_default_company(c)
 
 
 def check_default_companies():
@@ -916,7 +929,7 @@ def check_default_companies():
     countries = [ "Austria", "Croatia", "Hungary", "Slovakia", "Slovenia", "Kosovo" ]
     for c in countries:
         print(c)
-        check_default_company_for_country(c)
+        set_customer_default_company_for_country(c)
 
 """
 Clone a sales invoice including the no-copy fields
