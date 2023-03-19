@@ -16,7 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_income_account
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -191,32 +191,24 @@ def async_create_invoices(mode, company):
     return
 
 
-def get_income_account(company, country, original_account):
-    
-    # TODO: zusätzliches Feld auf alternatives accounts? 
-    #  country flag (type data: "Switzerland", "Austria", "*", wildcart) wie bei TaxMatrix
-
-        # TODO: get income account depending on company and item_group, inland/foreign
-
-    return 42
-
-
-
-
-
 def set_income_accounts(sales_invoice):
     """
-    Sets the income account for each item of a sales invoice based on the original income account entry, the company and the billing_address country.
-    
-    run
-    bench execute microsynth.microsynth.invoicing.set_income_accounts --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
+    Sets the income account for each item of a sales invoice based on the original income account entry and the country. 
+    For the credit item, the alternative account is defined by the currency. Requires a sales invoice object as input.
     """
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
-    billing_address = get_billing_address(sales_invoice.customer)
+    if sales_invoice.shipping_address:
+        address = sales_invoice.shipping_address
+    else:
+        address = sales_invoice.customer_address
+    country = frappe.db.get_value("Address", address, "country")
 
     for item in sales_invoice.items:
-        item.income_account = get_alternative_income_account(item.income_account, billing_address.country)
-
+        if item.item_code == "6100":
+            # credit item
+            item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
+        else:
+            # all other items
+            item.income_account = get_alternative_income_account(item.income_account, country)
     sales_invoice.save()
 
 
@@ -237,15 +229,8 @@ def make_invoice(delivery_note):
     #sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
     
-    # TODO
-    # utils.get_alternative_account()
-
-    # TODO
-    # loop through items and set alternative income account
-    # utils.get_alternative_income_account
-
     sales_invoice.insert()
-
+    set_income_accounts(sales_invoice)
     sales_invoice.submit()
     # if a credit was allocated, book credit account
     if cint(sales_invoice.total_customer_credit) > 0:
@@ -301,6 +286,7 @@ def make_punchout_invoice(delivery_note):
         sales_invoice.customer_address = punchout_shop.billing_address
 
     sales_invoice.insert()
+    set_income_accounts(sales_invoice)
     sales_invoice.submit()
     frappe.db.commit()
 
@@ -333,6 +319,7 @@ def make_collective_invoice(delivery_notes):
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
 
     sales_invoice.insert()
+    set_income_accounts(sales_invoice)
     sales_invoice.submit()
 
     # if a credit was allocated, book credit account
