@@ -196,8 +196,8 @@ def set_income_accounts(sales_invoice):
     Sets the income account for each item of a sales invoice based on the original income account entry and the country. 
     For the credit item, the alternative account is defined by the currency. Requires a sales invoice object as input.
     """
-    if sales_invoice.shipping_address:
-        address = sales_invoice.shipping_address
+    if sales_invoice.shipping_address_name:
+        address = sales_invoice.shipping_address_name
     else:
         address = sales_invoice.customer_address
     country = frappe.db.get_value("Address", address, "country")
