@@ -910,3 +910,29 @@ def transmit_sales_invoice(sales_invoice):
         frappe.log_error("Cannot transmit sales invoice {0}: \n{1}".format(sales_invoice.name, err), "invoicing.transmit_sales_invoice")
 
     return
+
+
+def transmit_carlo_erba_invoices(company):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    """
+
+    query = """
+        SELECT `tabSales Invoice`.`name`
+        FROM `tabSales Invoice`
+        LEFT JOIN `tabCustomer` ON `tabSales Invoice`.`customer` = `tabCustomer`.`name`
+        WHERE `tabSales Invoice`.`company` = "{company}"
+        AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
+        AND `tabSales Invoice`.`docstatus` <> 2
+    """.format(company=company)
+    # TODO exclude 
+    # * invoice_sent_on
+    # * invoice paid/closed
+
+    invoices = frappe.db.sql(query, as_dict=True)
+
+    for i in invoices:
+        print(i.name)
+
+    return
