@@ -73,12 +73,26 @@ def allocate_credits(sales_invoice_doc):
     return sales_invoice_doc
 
 
+@frappe.whitelist()
+def allocate_credits_to_invoice(sales_invoice):
+    """
+    Allocate customer credits to a sales invoice.
+
+    run
+    bench execute microsynth.microsynth.credits.allocate_credits_to_invoice --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
+    """
+    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    allocate_credits(sales_invoice)
+    sales_invoice.save()
+
+
+@frappe.whitelist()
 def book_credit(sales_invoice):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
 
     run
-    bench execute microsynth.microsynth.invoicing.book_credit --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
+    bench execute microsynth.microsynth.credits.book_credit --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
     """
 
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
@@ -133,3 +147,27 @@ def book_credit(sales_invoice):
     # frappe.db.commit()
     return jv.name
     
+
+@frappe.whitelist()
+def cancel_credit_journal_entry(sales_invoice):
+    """
+    Cancel the journal entry used for booking credits from the credit account with the book_credit function    
+
+    run
+    bench execute microsynth.microsynth.credits.cancel_credit_journal_entry --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
+    """
+     
+    journal_entries = frappe.get_all("Journal Entry",
+        filters={'user_remark': "Credit from {0}".format(sales_invoice)},
+        fields=['name'])
+
+    if len(journal_entries) != 1:
+        msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice)
+        frappe.log_error(msg, "credits.cancel_credit_journal_entry")
+        print(msg)
+        return None
+    
+    journal_entry = frappe.get_doc("Journal Entry", journal_entries[0].name)
+    journal_entry.cancel()
+
+    return journal_entry.name
