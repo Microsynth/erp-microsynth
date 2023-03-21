@@ -321,6 +321,9 @@ def get_express_shipping_item(customer_name, country_name):
     
     If the customer does not have a preferred express item, the preferred express item of the
     country is returned.
+
+    run
+    bench execute microsynth.microsynth.webshop.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
     """
 
     customer_express_item = get_customer_express_shipping_item(customer_name)
