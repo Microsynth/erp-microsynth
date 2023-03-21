@@ -912,6 +912,18 @@ def transmit_sales_invoice(sales_invoice):
     return
 
 
+def pdf_export(sales_invoices, path):
+    for sales_invoice in sales_invoices:
+        content_pdf = frappe.get_print(
+            "Sales Invoice", 
+            sales_invoice, 
+            print_format="Sales Invoice", 
+            as_pdf=True)
+        file_name = "{0}/{1}.pdf".format(path, sales_invoice)
+        with open(file_name, mode='wb') as file:
+            file.write(content_pdf)
+
+
 def transmit_carlo_erba_invoices(company):
     """
     run
@@ -925,14 +937,18 @@ def transmit_carlo_erba_invoices(company):
         WHERE `tabSales Invoice`.`company` = "{company}"
         AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
         AND `tabSales Invoice`.`docstatus` <> 2
+        AND `tabSales Invoice`.`invoice_sent_on` is NULL
     """.format(company=company)
     # TODO exclude 
     # * invoice_sent_on
     # * invoice paid/closed
 
     invoices = frappe.db.sql(query, as_dict=True)
-
+    invoice_names = []
     for i in invoices:
         print(i.name)
+        invoice_names.append(i.name)
+
+    pdf_export("/mnt/erp_share/test", invoice_names)
 
     return
