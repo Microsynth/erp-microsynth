@@ -940,7 +940,6 @@ def transmit_carlo_erba_invoices(company):
         AND `tabSales Invoice`.`invoice_sent_on` is NULL
     """.format(company=company)
     # TODO exclude 
-    # * invoice_sent_on
     # * invoice paid/closed
 
     invoices = frappe.db.sql(query, as_dict=True)
@@ -951,7 +950,7 @@ def transmit_carlo_erba_invoices(company):
         print(i.name)
         invoice_names.append(i.name)
 
-    # pdf_export(invoice_names, "/mnt/erp_share/Invoices/Carlo_Erba")
+    pdf_export(invoice_names, "/mnt/erp_share/Invoices/Carlo_Erba")
 
     file = open("/mnt/erp_share/Invoices/Carlo_Erba/export.txt", "w")
 
