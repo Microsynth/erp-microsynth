@@ -977,7 +977,7 @@ def transmit_carlo_erba_invoices(company):
         else:
             acquirer_customer = si.customer
 
-        acquirer_contact_name = frappe.db.get_value("Customer", acquirer_customer, "invoice_to")        
+        acquirer_contact_name = frappe.db.get_value("Customer", acquirer_customer, "invoice_to")
         acquirer_contact = frappe.get_doc("Contact", acquirer_contact_name)
         acquirer_address = get_billing_address(acquirer_customer)
 
@@ -986,8 +986,9 @@ def transmit_carlo_erba_invoices(company):
         billing_address = frappe.get_doc("Address", si.customer_address)
         billing_customer = si.customer_name
 
-        header_line = "Header\t{si}\t{total}\t{grand_total}\r\n".format(
+        header_line = "Header\t{si}\t{company}\t{total}\t{grand_total}\r\n".format(
             si = si.name,
+            company = company,
             total = si.total,
             grand_total = si.grand_total)
 
@@ -1017,7 +1018,7 @@ def transmit_carlo_erba_invoices(company):
             type = "Acquiren",
             customer_name = acquirer_customer,
             contact = acquirer_contact,
-            address = acquirer_address)        
+            address = acquirer_address)
 
         billing_line = get_address_line(
             type = "Billing",
