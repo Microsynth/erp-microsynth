@@ -16,7 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name_line
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -946,9 +946,110 @@ def transmit_carlo_erba_invoices(company):
     invoices = frappe.db.sql(query, as_dict=True)
     invoice_names = []
     for i in invoices:
+        if "SI-OP-" in i.name:
+            continue
         print(i.name)
         invoice_names.append(i.name)
 
-    pdf_export("/mnt/erp_share/test", invoice_names)
+    # pdf_export(invoice_names, "/mnt/erp_share/Invoices/Carlo_Erba")
+
+    file = open("/mnt/erp_share/Invoices/Carlo_Erba/export.txt", "w")
+
+    for invoice_name in invoice_names:
+        si = frappe.get_doc("Sales Invoice", invoice_name)
+
+        # shipping address or order customer
+        if si.shipping_contact:
+            shipping_contact = frappe.get_doc("Contact", si.shipping_contact)
+        else:
+            shipping_contact = frappe.get_doc("Contact", si.contact_person)
+
+        shipping_address = frappe.get_doc("Address", si.shipping_address_name)
+
+        if si.order_customer_display:
+            shipping_customer = si.order_customer_display
+        else:
+            shipping_customer = si.customer_name
+
+        shipping_contact_name = get_name_line(shipping_contact)
+
+        # acquirer: billing address of the end customer who ordered the goods/service
+        if si.order_customer:
+            acquirer_customer = si.order_customer
+        else:
+            acquirer_customer = si.customer
+
+        acquirer_contact_name = frappe.db.get_value("Customer", acquirer_customer, "invoice_to")        
+        acquirer_contact = frappe.get_doc("Contact", acquirer_contact_name)
+        acquirer_address = get_billing_address(acquirer_customer)
+
+        acquirer_contact_name = get_name_line(acquirer_contact)
+
+        # billing address: invoice address of Carlo Erba who needs to pay the invoice
+        billing_contact = frappe.get_doc("Contact", si.invoice_to)
+        billing_address = frappe.get_doc("Address", si.customer_address)
+        billing_customer = si.customer_name
+        billing_contact_name = get_name_line(billing_contact)
+
+        header_line = "Header\t{si}\t{total}\t{grand_total}\r\n".format(
+            si = si.name,
+            total = si.total,
+            grand_total = si.grand_total)
+
+        client_line = "Cliente\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
+            si = si.name,
+            company = shipping_address.overwrite_company if shipping_address.overwrite_company else shipping_customer,
+            institute = shipping_contact.institute if shipping_contact.institute else "",
+            name = shipping_contact_name,
+            department = shipping_contact.department if shipping_contact.department else "",
+            room = shipping_contact.room if shipping_contact.room else "",
+            address_line1 = shipping_address.address_line1 if shipping_address.address_line1 else "",
+            address_line2 = shipping_address.address_line2 if shipping_address.address_line2 else "",
+            pincode = shipping_address.pincode if shipping_address.pincode else "",
+            city = shipping_address.city if shipping_address.city else "")
+
+        acquirer_line = "Acquiren\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
+            si = si.name,
+            company = acquirer_address.overwrite_company if acquirer_address.overwrite_company else acquirer_customer,
+            institute = acquirer_contact.institute if acquirer_contact.institute else "",
+            name = acquirer_contact_name,
+            department = acquirer_contact.department if acquirer_contact.department else "",
+            room = acquirer_contact.room if acquirer_contact.room else "",
+            address_line1 = acquirer_address.address_line1 if acquirer_address.address_line1 else "",
+            address_line2 = acquirer_address.address_line2 if acquirer_address.address_line2 else "",
+            pincode = acquirer_address.pincode if acquirer_address.pincode else "",
+            city = acquirer_address.city if acquirer_address.city else "")
+
+        billing_line = "Billing\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
+            si = si.name,
+            company = billing_address.overwrite_company if billing_address.overwrite_company else billing_customer,
+            institute = billing_contact.institute if billing_contact.institute else "",
+            name = billing_contact_name,
+            department = billing_contact.department if billing_contact.department else "",
+            room = billing_contact.room if billing_contact.room else "",
+            address_line1 = billing_address.address_line1 if billing_address.address_line1 else "",
+            address_line2 = billing_address.address_line2 if billing_address.address_line2 else "",
+            pincode = billing_address.pincode if billing_address.pincode else "",
+            city = billing_address.city if billing_address.city else "")
+
+        file.write(header_line)
+        file.write(client_line)
+        file.write(acquirer_line)
+        file.write(billing_line)
+
+        i = 1
+        for item in si.items:
+            line = "Pos\t{si}\t{i}\t{code}\t{qty}\t{rate}\t{amount}\t{description}\r\n".format(
+                si = si.name, 
+                i = i, 
+                code = item.item_code,
+                qty = item.qty,
+                rate = item.rate,
+                amount = item.amount,
+                description = item.description)
+            file.write(line)
+            i += 1
+
+    file.close()
 
     return

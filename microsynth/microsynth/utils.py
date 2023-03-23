@@ -244,6 +244,25 @@ def login(usr, pwd):
     return frappe.local.session
 
 
+def get_name_line(contact):
+    """
+    Assembles the first name, last name and designation of a contact 
+    to a single name line string.
+    """
+
+    name_elements = []
+    if contact.designation:
+        name_elements.append(contact.designation)
+    if contact.first_name != "-":
+        name_elements.append(contact.first_name)
+    if contact.last_name:
+        name_elements.append(contact.last_name)
+
+    name_line = " ".join(name_elements)       
+    
+    return name_line
+
+
 @frappe.whitelist()
 def get_print_address(contact, address, customer=None, customer_name=None):
     if customer and not customer_name:
