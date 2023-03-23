@@ -971,8 +971,6 @@ def transmit_carlo_erba_invoices(company):
         else:
             shipping_customer = si.customer_name
 
-        shipping_contact_name = get_name_line(shipping_contact)
-
         # acquirer: billing address of the end customer who ordered the goods/service
         if si.order_customer:
             acquirer_customer = si.order_customer
@@ -983,54 +981,49 @@ def transmit_carlo_erba_invoices(company):
         acquirer_contact = frappe.get_doc("Contact", acquirer_contact_name)
         acquirer_address = get_billing_address(acquirer_customer)
 
-        acquirer_contact_name = get_name_line(acquirer_contact)
-
         # billing address: invoice address of Carlo Erba who needs to pay the invoice
         billing_contact = frappe.get_doc("Contact", si.invoice_to)
         billing_address = frappe.get_doc("Address", si.customer_address)
         billing_customer = si.customer_name
-        billing_contact_name = get_name_line(billing_contact)
 
         header_line = "Header\t{si}\t{total}\t{grand_total}\r\n".format(
             si = si.name,
             total = si.total,
             grand_total = si.grand_total)
 
-        client_line = "Cliente\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
+        def get_address_line(type, customer_name, contact, address):
+            line = "{type}\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
+            type = type,
             si = si.name,
-            company = shipping_address.overwrite_company if shipping_address.overwrite_company else shipping_customer,
-            institute = shipping_contact.institute if shipping_contact.institute else "",
-            name = shipping_contact_name,
-            department = shipping_contact.department if shipping_contact.department else "",
-            room = shipping_contact.room if shipping_contact.room else "",
-            address_line1 = shipping_address.address_line1 if shipping_address.address_line1 else "",
-            address_line2 = shipping_address.address_line2 if shipping_address.address_line2 else "",
-            pincode = shipping_address.pincode if shipping_address.pincode else "",
-            city = shipping_address.city if shipping_address.city else "")
+            company = address.overwrite_company if address.overwrite_company else customer_name,
+            institute = contact.institute if contact.institute else "",
+            name = get_name_line(contact),
+            department = contact.department if contact.department else "",
+            room = contact.room if contact.room else "",
+            address_line1 = address.address_line1 if address.address_line1 else "",
+            address_line2 = address.address_line2 if address.address_line2 else "",
+            pincode = address.pincode if address.pincode else "",
+            city = address.city if address.city else "")
+            
+            return line
 
-        acquirer_line = "Acquiren\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
-            si = si.name,
-            company = acquirer_address.overwrite_company if acquirer_address.overwrite_company else acquirer_customer,
-            institute = acquirer_contact.institute if acquirer_contact.institute else "",
-            name = acquirer_contact_name,
-            department = acquirer_contact.department if acquirer_contact.department else "",
-            room = acquirer_contact.room if acquirer_contact.room else "",
-            address_line1 = acquirer_address.address_line1 if acquirer_address.address_line1 else "",
-            address_line2 = acquirer_address.address_line2 if acquirer_address.address_line2 else "",
-            pincode = acquirer_address.pincode if acquirer_address.pincode else "",
-            city = acquirer_address.city if acquirer_address.city else "")
+        client_line = get_address_line(
+            type = "Cliente",
+            customer_name = shipping_customer,
+            contact = shipping_contact,
+            address = shipping_address)
 
-        billing_line = "Billing\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
-            si = si.name,
-            company = billing_address.overwrite_company if billing_address.overwrite_company else billing_customer,
-            institute = billing_contact.institute if billing_contact.institute else "",
-            name = billing_contact_name,
-            department = billing_contact.department if billing_contact.department else "",
-            room = billing_contact.room if billing_contact.room else "",
-            address_line1 = billing_address.address_line1 if billing_address.address_line1 else "",
-            address_line2 = billing_address.address_line2 if billing_address.address_line2 else "",
-            pincode = billing_address.pincode if billing_address.pincode else "",
-            city = billing_address.city if billing_address.city else "")
+        acquirer_line = get_address_line(
+            type = "Acquiren",
+            customer_name = acquirer_customer,
+            contact = acquirer_contact,
+            address = acquirer_address)        
+
+        billing_line = get_address_line(
+            type = "Billing",
+            customer_name = billing_customer,
+            contact = billing_contact,
+            address = billing_address)
 
         file.write(header_line)
         file.write(client_line)
