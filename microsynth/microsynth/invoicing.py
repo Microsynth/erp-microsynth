@@ -937,10 +937,10 @@ def transmit_carlo_erba_invoices(company):
         WHERE `tabSales Invoice`.`company` = "{company}"
         AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
         AND `tabSales Invoice`.`docstatus` <> 2
+        AND `tabSales Invoice`.`status` <> "Paid"
+        AND `tabSales Invoice`.`outstanding_amount` > 0
         AND `tabSales Invoice`.`invoice_sent_on` is NULL
     """.format(company=company)
-    # TODO exclude 
-    # * invoice paid/closed
 
     invoices = frappe.db.sql(query, as_dict=True)
     invoice_names = []
