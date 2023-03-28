@@ -1,17 +1,17 @@
 <div style="margin: 5px; margin-top: 0px; border-top: 1px solid white; ">
     <div class="row">
         <div class="form-column col-sm-6">
-            <p class="text-muted">{%= __("Scan Work Order QR-Code") %}</p>
+            <p class="text-muted">{%= __("Scan Sales Order") %}</p>
             <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-codepen"></i></span>
-                <input onfocus="clear_qr();" type="text" id="work_order" name="work_order" class="form-control" placeholder="QR-Code"  >
+                <span class="input-group-addon"><i class="fa fa-folder"></i></span>
+                <input onfocus="clear_qr();" type="text" id="web_order_id" name="web_order_id" class="form-control" placeholder="Web Order ID"  >
             </div>
         </div>
         <div class="form-column col-sm-6">
-            <p class="text-muted">{%= __("Employee") %}</p>
+            <p class="text-muted">{%= __("Tracking Code") %}</p>
             <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-user"></i></span>
-                <input type="text" id="employee" name="employee" class="form-control" placeholder="Employee" readonly>
+                <span class="input-group-addon"><i class="fa fa-codepen"></i></span>
+                <input type="text" id="tracking_code" name="tracking_code" class="form-control" placeholder="Tracking Code" readonly>
             </div>
         </div>
     </div>

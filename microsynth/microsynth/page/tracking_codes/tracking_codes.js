@@ -19,12 +19,12 @@ frappe.tracking_codes = {
     },
     run: function() {       
         // add on enter listener to QR code box
-        document.getElementById("work_order").addEventListener("keyup", function(event) {
+        document.getElementById("web_order_id").addEventListener("keyup", function(event) {
             event.preventDefault();
             if (event.keyCode === 13) {
                 if (this.value.startsWith("MA-")) {
                     // this is an employee key
-                    var employee = document.getElementById("employee");
+                    var employee = document.getElementById("tracking_code");
                     employee.value = this.value;
                     this.value = "";
                     // reload work order if one is open
@@ -42,7 +42,7 @@ frappe.tracking_codes = {
         var url = location.href;
         if (url.indexOf("?work_order=") >= 0) {
             var work_order = url.split('=')[1].split('&')[0];
-            document.getElementById("work_order").value = work_order;
+            document.getElementById("web_order_id").value = work_order;
             frappe.production_control.get_work_order(work_order);
         }
     }
@@ -50,5 +50,5 @@ frappe.tracking_codes = {
 }
 
 function clear_qr() {
-    document.getElementById("work_order").value = "";
+    document.getElementById("web_order_id").value = "";
 }
