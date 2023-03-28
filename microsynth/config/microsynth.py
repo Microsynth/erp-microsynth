@@ -171,6 +171,12 @@ def get_data():
                         "label": _("Invoiceable Services"),
                         "doctype": "Delivery Note",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "page",
+                        "name": "tracking_codes",
+                        "Label": _("Tracking Codes"),
+                        "description": _("Tracking Codes")
                     }
             ]
         },
