@@ -19,12 +19,27 @@ frappe.tracking_codes = {
     },
     run: function() {       
         // add on enter listener to QR code box
-        document.getElementById("web_order_id").addEventListener("keyup", function(event) {
+        document.getElementById("input").addEventListener("keyup", function(event) {
             event.preventDefault();
             if (event.keyCode === 13) {
+                frappe.show_alert(this.value)
+
+                // decide if input is web order id or tracking code
+                // fill respective field
+                // clear input field
+                // if both web order id and tracking code are completed
+                // write to db
+                
+                // timeout 1 s
+                setTimeout(function() { 
+                    clear_input();
+                }, 1000 );
+                // clear web order id and trakcing code
+
+
                 if (this.value.startsWith("MA-")) {
                     // this is an employee key
-                    var employee = document.getElementById("tracking_code");
+                    var employee = document.getElementById("input");
                     employee.value = this.value;
                     this.value = "";
                     // reload work order if one is open
@@ -33,8 +48,9 @@ frappe.tracking_codes = {
                         frappe.production_control.launch(work_order);
                     }
                 } else {
-                    frappe.production_control.launch(this.value);
-                    this.value = "";
+                    // frappe.production_control.launch(this.value);
+                    frappe.show_alert("clear")
+                    // this.value = "";
                 }
             }
         });
@@ -42,13 +58,13 @@ frappe.tracking_codes = {
         var url = location.href;
         if (url.indexOf("?work_order=") >= 0) {
             var work_order = url.split('=')[1].split('&')[0];
-            document.getElementById("web_order_id").value = work_order;
+            document.getElementById("input").value = work_order;
             frappe.production_control.get_work_order(work_order);
         }
     }
     
 }
 
-function clear_qr() {
-    document.getElementById("web_order_id").value = "";
+function clear_input() {
+    document.getElementById("input").value = "";
 }
