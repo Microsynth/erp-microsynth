@@ -175,7 +175,7 @@ def get_data():
                     {
                         "type": "page",
                         "name": "tracking_codes",
-                        "Label": _("Tracking Codes"),
+                        "label": _("Tracking Codes"),
                         "description": _("Tracking Codes")
                     }
             ]
