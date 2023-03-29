@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+import requests
 from frappe.model.document import Document
 from microsynth.microsynth.shipping import get_shipping_item, TRACKING_URLS
 
@@ -40,9 +41,26 @@ def create_tracking_code(web_order_id, tracking_code):
         tracking.insert()
         frappe.db.commit()
 
-        # TODO
-        # Transmit to webshop using the requests module
+        url = "{0}/erp/set_tracking_code".format(frappe.get_value("Microsynth Settings", "Microsynth Settings", "url"))
+        secret = frappe.get_value("Microsynth Settings", "Microsynth Settings", "shared_secret")
 
+        json = """{{
+                "shared_secret": "{secret}",
+                "web_order_id": {web_order_id},
+                "tracking_code": "{tracking_code}",
+                "tracking_url": "{tracking_url}"
+            }}""".format(secret = secret,
+            web_order_id = sales_order.web_order_id,
+            tracking_code = tracking_code,
+            tracking_url = tracking_url
+        )
+
+        response = requests.post(
+            url,
+            data = json)
+
+        if response.status_code != 200:
+            frappe.throw("Could not transmit Tracking Code '{0}' to the webshop.<br>{1}".format(tracking.name, response.text))
     else:
-        frappe.throw("Sales Order with web_order_id '{}' not found or multiple sales orders".format(web_order_id))
+        frappe.throw("Sales Order with web_order_id '{0}' not found or multiple sales orders".format(web_order_id))
     return tracking.name
