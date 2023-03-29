@@ -17,54 +17,63 @@ frappe.tracking_codes = {
         var data = "";
         $(frappe.render_template('tracking_codes', data)).appendTo(me.body);
     },
-    run: function() {       
-        // add on enter listener to QR code box
+    run: function() {
+        // add on enter listener to the input box
         document.getElementById("input").addEventListener("keyup", function(event) {
             event.preventDefault();
             if (event.keyCode === 13) {
-                frappe.show_alert(this.value)
+                var input = this.value;
 
                 // decide if input is web order id or tracking code
-                // fill respective field
-                // clear input field
-                // if both web order id and tracking code are completed
-                // write to db
-                
-                // timeout 1 s
-                setTimeout(function() { 
-                    clear_input();
-                }, 1000 );
-                // clear web order id and trakcing code
-
-
-                if (this.value.startsWith("MA-")) {
-                    // this is an employee key
-                    var employee = document.getElementById("input");
-                    employee.value = this.value;
-                    this.value = "";
-                    // reload work order if one is open
-                    var work_order = document.getElementById("work_order_reference").value;
-                    if (work_order) {
-                        frappe.production_control.launch(work_order);
-                    }
+                if (7 <= input.length && input.length <= 8) {
+                    // input is a web order id
+                    document.getElementById("web_order_id").value = input;
+                } else if (input.length >= 10) {
+                    // input is a tracking code
+                    document.getElementById("tracking_code").value = input;
                 } else {
-                    // frappe.production_control.launch(this.value);
-                    frappe.show_alert("clear")
-                    // this.value = "";
+                    frappe.show_alert("Input is neither a web order ID nor a tracking code")
+                }
+                clear_input();
+
+                var web_order_id = document.getElementById("web_order_id").value;
+                var tracking_code = document.getElementById("tracking_code").value;
+
+                if (web_order_id && tracking_code) {
+                    create_tracking_code(web_order_id, tracking_code)
+
+                    setTimeout(function() { 
+                        clear_fields();
+                        web_order_id = null;
+                        tracking_code = null;
+                    }, 1000 );
+                } else {
+                    // frappe.show_alert("one field missing");
                 }
             }
         });
-        // check for url parameters
-        var url = location.href;
-        if (url.indexOf("?work_order=") >= 0) {
-            var work_order = url.split('=')[1].split('&')[0];
-            document.getElementById("input").value = work_order;
-            frappe.production_control.get_work_order(work_order);
-        }
     }
-    
+}
+
+function create_tracking_code(web_order_id, tracking_code) {
+    frappe.call({
+        'method': 'microsynth.microsynth.doctype.tracking_code.tracking_code.create_tracking_code',
+        'args': {
+            'web_order_id': web_order_id,
+            'tracking_code': tracking_code
+        }, 
+        'callback': function(r) {
+            console.log(r.message)
+        }
+    })
 }
 
 function clear_input() {
     document.getElementById("input").value = "";
+}
+
+function clear_fields() {
+    clear_input();
+    document.getElementById("web_order_id").value = ""
+    document.getElementById("tracking_code").value = ""
 }
