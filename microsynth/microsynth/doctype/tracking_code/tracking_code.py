@@ -12,10 +12,10 @@ class TrackingCode(Document):
 @frappe.whitelist()
 def create_tracking_code(web_order_id, tracking_code):
     sales_orders = frappe.get_all("Sales Order", 
-        filters = { 'web_order_id': web_order_id, 'doc_status': 1 }, 
+        filters = { 'web_order_id': web_order_id, 'docstatus': 1 },
         fields = ['name', 'contact_email', 'contact_display'] )
     
-    if len(sales_orders) > 0:        
+    if len(sales_orders) > 0:
         # TODO tracking url
         tracking_url = "https://srvweb.microsynth.ch"
         tracking = frappe.get_doc({
@@ -31,4 +31,3 @@ def create_tracking_code(web_order_id, tracking_code):
     else:
         frappe.throw("Sales Order with web_order_id '{}' not found or multiple sales orders".format(web_order_id))
     return tracking.name
-
