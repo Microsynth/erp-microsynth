@@ -277,11 +277,9 @@ def make_punchout_invoice(delivery_note):
 
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
-    company = frappe.get_value("Delivery Note", delivery_note, "company")
+    company = frappe.get_value("Delivery Note", delivery_note.name, "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
     
-
-
     if punchout_shop.has_static_billing_address and punchout_shop.billing_contact: 
         sales_invoice.invoice_to = punchout_shop.billing_contact
 
