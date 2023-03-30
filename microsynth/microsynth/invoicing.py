@@ -267,8 +267,11 @@ def make_punchout_invoice(delivery_note):
     # set the punchout shop
     if delivery_note.punchout_shop is not None:
         punchout_shop = frappe.get_doc("Punchout Shop", delivery_note.punchout_shop)
-    else:
+    elif sales_order.punchout_shop is not None:
         punchout_shop = frappe.get_doc("Punchout Shop", sales_order.punchout_shop)
+    else:
+        frappe.log_error("Cannot invoice delivery note '{0}': Punchout Shop is not defined".format(delivery_note.name), "invoicing.make_punchout_invoice")
+        return None
 
     sales_invoice_content = make_sales_invoice(delivery_note.name)
 
@@ -277,12 +280,12 @@ def make_punchout_invoice(delivery_note):
     company = frappe.get_value("Delivery Note", delivery_note, "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
     
-    if punchout_shop.billing_contact: 
-        sales_invoice.invoice_to = punchout_shop.billing_contact
-    else:    
-        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
 
-    if punchout_shop.billing_address:
+
+    if punchout_shop.has_static_billing_address and punchout_shop.billing_contact: 
+        sales_invoice.invoice_to = punchout_shop.billing_contact
+
+    if punchout_shop.has_static_billing_address and punchout_shop.billing_address:
         sales_invoice.customer_address = punchout_shop.billing_address
 
     sales_invoice.insert()
