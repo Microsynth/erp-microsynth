@@ -8,10 +8,11 @@
  "field_order": [
   "shop_name",
   "display_name",
-  "has_static_billing_address",
+  "invoicing_method",
   "col_punchout_shop",
   "billing_address",
-  "billing_contact"
+  "billing_contact",
+  "has_static_billing_address"
  ],
  "fields": [
   {
@@ -46,9 +47,15 @@
    "fieldname": "has_static_billing_address",
    "fieldtype": "Check",
    "label": "Has static billing address"
+  },
+  {
+   "fieldname": "invoicing_method",
+   "fieldtype": "Select",
+   "label": "Invoicing Method",
+   "options": "Email\nARIBA\nPaynet\nGEP"
   }
  ],
- "modified": "2023-03-30 10:52:02.136217",
+ "modified": "2023-03-30 12:02:12.595251",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Punchout Shop",
