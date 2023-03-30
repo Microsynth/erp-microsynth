@@ -8,6 +8,8 @@
  "field_order": [
   "shop_name",
   "display_name",
+  "has_static_billing_address",
+  "col_punchout_shop",
   "billing_address",
   "billing_contact"
  ],
@@ -34,10 +36,20 @@
    "fieldtype": "Link",
    "label": "Billing Contact",
    "options": "Contact"
+  },
+  {
+   "fieldname": "col_punchout_shop",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_static_billing_address",
+   "fieldtype": "Check",
+   "label": "Has static billing address"
   }
  ],
- "modified": "2022-10-25 11:23:23.252317",
- "modified_by": "Administrator",
+ "modified": "2023-03-30 10:52:02.136217",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Punchout Shop",
  "owner": "rolf.suter@microsynth.ch",
