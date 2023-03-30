@@ -719,10 +719,6 @@ def transmit_sales_invoice(sales_invoice):
 
         # TODO: comment-in after development to handle invoice paths other than ariba
         
-        # TODO: handle punchout invoices different!
-        if sales_invoice.is_punchout:
-            return
-
         # The invoice was already sent. Do not send again.
         if sales_invoice.invoice_sent_on:
             print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
@@ -732,22 +728,25 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.total == 0:
             return
 
-        if customer.invoicing_method == "Post":
-            # Send all invoices with credit account per mail
-            if sales_invoice.net_total == 0:
-                mode = "Email"
-            else:
-                mode = "Post"
-        elif customer.invoicing_method == "Email":
-            mode = "Email"
-        elif customer.invoicing_method == "ARIBA":
-            mode = "ARIBA"
-        elif customer.invoicing_method == "Paynet":
-            mode = "Paynet"
-        elif customer.invoicing_method == "GEP":
-            mode = "GEP"
+        if sales_invoice.is_punchout:
+            mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
-            mode = None
+            if customer.invoicing_method == "Post":
+                # Send all invoices with credit account per mail
+                if sales_invoice.net_total == 0:
+                    mode = "Email"
+                else:
+                    mode = "Post"
+            elif customer.invoicing_method == "Email":
+                mode = "Email"
+            elif customer.invoicing_method == "ARIBA":
+                mode = "ARIBA"
+            elif customer.invoicing_method == "Paynet":
+                mode = "Paynet"
+            elif customer.invoicing_method == "GEP":
+                mode = "GEP"
+            else:
+                mode = None
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
 
