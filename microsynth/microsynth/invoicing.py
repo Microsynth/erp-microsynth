@@ -559,27 +559,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
         frappe.throw("Cannot access 'Microsynth Settings'. Invoice cannot be created")
     #print("settings: %s" % settings.as_dict())
 
-    default_account = frappe.get_doc("Account", company_details.default_bank_account)
-    if sales_invoice.currency == default_account.account_currency:
-        bank_account = default_account
-    else: 
-        preferred_accounts = frappe.get_all("Account", 
-                    filters = {
-                        "company" : sales_invoice.company, 
-                        "account_type" : "Bank",
-                        "account_currency": sales_invoice.currency, 
-                        "disabled": 0, 
-                        "preferred": 1
-                        },
-                        fields = ["name"]
-                    )
-        if len(preferred_accounts) == 1: 
-            preferred_account = frappe.get_doc("Account", preferred_accounts[0]["name"])
-        else: 
-            frappe.throw("No or too many valid bank account")
-        
-        bank_account = preferred_account
-            
+    bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
+
     #for key, value in (bank_account.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
 
