@@ -6,6 +6,7 @@
 #
 
 import os
+import traceback
 import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
@@ -379,7 +380,7 @@ def get_sales_order_list_and_delivery_note_list(sales_invoice):
         if item.sales_order and item.sales_order not in sales_order_list: 
             sales_order_list.append(item.sales_order)
         if item.delivery_note and item.delivery_note not in delivery_note_list: 
-            delivery_note_list.append(item.sales_order)
+            delivery_note_list.append(item.delivery_note)
 
     return {"sales_orders": sales_order_list, "delivery_notes": delivery_note_list}
 
@@ -647,7 +648,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_name':     bank_account.company,
                         'account_id':       bank_account.iban,
                         'account_type':     'Checking',  
-                        'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name
+                        # 'branch_name':      (bank_account.bank_name + " " + bank_account.bank_branch_name) if bank_account.bank_branch_name is not None else bank_account.bank_name
+                        'branch_name':      bank_account.bank_branch_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
                         'supplierVatId':                company_details.tax_id + ' MWST',
@@ -860,8 +862,9 @@ def transmit_sales_invoice(sales_invoice):
             # create Gep cXML input data dict
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
             cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
-            print(cxml)
-
+            file = open('/home/libracore/Desktop/'+ sales_invoice.name, 'w')
+            file.write(cxml)
+            file.close()
             '''
             # TODO: comment in after development to save gep file to filesystem
         
@@ -889,7 +892,10 @@ def transmit_sales_invoice(sales_invoice):
         frappe.db.commit()
 
     except Exception as err:
-        frappe.log_error("Cannot transmit sales invoice {0}: \n{1}".format(sales_invoice.name, err), "invoicing.transmit_sales_invoice")
+        frappe.log_error("Cannot transmit sales invoice {0}: \n{1}\n{2}".format(
+            sales_invoice.name, 
+            err,
+            traceback.format_exc()), "invoicing.transmit_sales_invoice")
 
     return
 
