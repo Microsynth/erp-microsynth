@@ -5,6 +5,7 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 #
 
+import os
 import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
@@ -931,9 +932,13 @@ def transmit_carlo_erba_invoices(company):
         print(i.name)
         invoice_names.append(i.name)
 
-    pdf_export(invoice_names, "/mnt/erp_share/Invoices/Carlo_Erba")
+    path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + datetime.now().strftime("/%Y-%m-%d_%H-%M")
+    if not os.path.exists(path):
+        os.mkdir(path)
 
-    file = open("/mnt/erp_share/Invoices/Carlo_Erba/export.txt", "w")
+    pdf_export(invoice_names, path)
+
+    lines = []
 
     for invoice_name in invoice_names:
         si = frappe.get_doc("Sales Invoice", invoice_name)
@@ -979,7 +984,7 @@ def transmit_carlo_erba_invoices(company):
             "", # delivery_number
             "", # trailer_amount
             str(si.total),
-            str(si.grand_total) ]    
+            str(si.grand_total) ]
 
         def get_address_data(type, customer_name, contact, address):
             data = [
@@ -1020,13 +1025,10 @@ def transmit_carlo_erba_invoices(company):
             contact = billing_contact,
             address = billing_address)
 
-        lines = [
-            "\t".join(header),
-            "\t".join(client),
-            "\t".join(acquirer),
-            "\t".join(billing) ]
-
-        file.write("\r\n".join(lines) + "\r\n")
+        lines.append(header)
+        lines.append(client)
+        lines.append(acquirer)
+        lines.append(billing)
 
         i = 1
         for item in si.items:
@@ -1046,9 +1048,13 @@ def transmit_carlo_erba_invoices(company):
                 item.description,   # description1(24)
                 ""                  # description2(24)
             ]
-            file.write("\t".join(position) + "\r\n")
+            lines.append(position)
             i += 1
 
+    text = "\r\n".join( [ "\t".join(line) for line in lines ] )
+
+    file = open(path + "/export.txt", "w")
+    file.write(text)
     file.close()
 
     return

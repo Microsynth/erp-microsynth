@@ -12,7 +12,9 @@
   "ariba_id",
   "ariba_secret",
   "paynet_id",
+  "col_invoicing",
   "invoice_printer",
+  "carlo_erba_export_path",
   "sec_credits",
   "credit_item",
   "sec_datev",
@@ -112,10 +114,19 @@
    "fieldname": "shared_secret",
    "fieldtype": "Data",
    "label": "Shared Secret"
+  },
+  {
+   "fieldname": "col_invoicing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "carlo_erba_export_path",
+   "fieldtype": "Data",
+   "label": "Carlo Erba Export Path"
   }
  ],
  "issingle": 1,
- "modified": "2023-03-29 08:56:24.901620",
+ "modified": "2023-03-31 09:53:24.741922",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
