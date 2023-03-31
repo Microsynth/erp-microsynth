@@ -1030,15 +1030,23 @@ def transmit_carlo_erba_invoices(company):
 
         i = 1
         for item in si.items:
-            line = "Pos\t{si}\t{i}\t{code}\t{qty}\t{rate}\t{amount}\t{description}\r\n".format(
-                si = si.name, 
-                i = i, 
-                code = item.item_code,
-                qty = item.qty,
-                rate = item.rate,
-                amount = item.amount,
-                description = item.description)
-            file.write(line)
+            if item.amount == 0:
+                continue
+            position = [
+                "Pos",              # record_type(8)
+                si.web_order_id,    # sales_order_number(8)
+                si.name,            # invoice_number(8)
+                str(i),             # position_line(3)
+                item.item_code,     # kit_item(18)
+                str(item.qty),           # kit_quantity(17)
+                str(item.rate),          # list_price(17)
+                "0",                # discount_percent(17)
+                str(item.amount),        # kit_price(17)
+                "",                 # serial_number(24)
+                item.description,   # description1(24)
+                ""                  # description2(24)
+            ]
+            file.write("\t".join(position) + "\r\n")
             i += 1
 
     file.close()
