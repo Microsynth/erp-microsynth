@@ -16,7 +16,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name_line
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -966,50 +966,67 @@ def transmit_carlo_erba_invoices(company):
         billing_address = frappe.get_doc("Address", si.customer_address)
         billing_customer = si.customer_name
 
-        header_line = "Header\t{si}\t{company}\t{total}\t{grand_total}\r\n".format(
-            si = si.name,
-            company = company,
-            total = si.total,
-            grand_total = si.grand_total)
+        header = [
+            "Header",
+            si.web_order_id,
+            si.name,
+            si.po_no if si.po_no else "",
+            si.posting_date.strftime("%d.%m.%Y"),
+            "", # shipping_date
+            si.customer,
+            "", # shipping_number
+            "", # bill_to_number
+            "", # delivery_number
+            "", # trailer_amount
+            str(si.total),
+            str(si.grand_total) ]    
 
-        def get_address_line(type, customer_name, contact, address):
-            line = "{type}\t{si}\t{company}\t{institute}\t{name}\t{department}\t{room}\t{address_line1}\t{address_line2}\t{pincode}\t{city}\r\n".format(
-            type = type,
-            si = si.name,
-            company = address.overwrite_company if address.overwrite_company else customer_name,
-            institute = contact.institute if contact.institute else "",
-            name = get_name_line(contact),
-            department = contact.department if contact.department else "",
-            room = contact.room if contact.room else "",
-            address_line1 = address.address_line1 if address.address_line1 else "",
-            address_line2 = address.address_line2 if address.address_line2 else "",
-            pincode = address.pincode if address.pincode else "",
-            city = address.city if address.city else "")
-            
-            return line
+        def get_address_data(type, customer_name, contact, address):
+            data = [
+                type,               # record_type(8)
+                si.web_order_id,    # sales_order_number(8)
+                si.name,            # invoice_number(8)
+                si.customer,        # customer_number(8)
+                contact.designation if contact.designation else "",                         # titel(8)
+                get_name(contact),                                                          # name(60)
+                address.overwrite_company if address.overwrite_company else customer_name,  # adress1(60)
+                contact.department if contact.department else "",                           # adress2(60)
+                address.address_line1 if address.address_line1 else "",                     # adress3(51)
+                (frappe.get_value("Country", address.country, "code")).upper(),             # country_code(2)
+                address.pincode if address.pincode else "",                                 # postal_code(10)
+                address.city if address.city else "",                                       # city(20)
+                get_name(contact),                              # contact_person(24)
+                contact.email_id if contact.email_id else "",   # email(40)
+                contact.phone if contact.phone else "",         # phone_number(20)
+                "",                                             # fax_number(20)
+            ]
+            return data
 
-        client_line = get_address_line(
+        client = get_address_data(
             type = "Cliente",
             customer_name = shipping_customer,
             contact = shipping_contact,
             address = shipping_address)
 
-        acquirer_line = get_address_line(
+        acquirer = get_address_data(
             type = "Acquiren",
             customer_name = acquirer_customer,
             contact = acquirer_contact,
             address = acquirer_address)
 
-        billing_line = get_address_line(
+        billing = get_address_data(
             type = "Billing",
             customer_name = billing_customer,
             contact = billing_contact,
             address = billing_address)
 
-        file.write(header_line)
-        file.write(client_line)
-        file.write(acquirer_line)
-        file.write(billing_line)
+        lines = [
+            "\t".join(header),
+            "\t".join(client),
+            "\t".join(acquirer),
+            "\t".join(billing) ]
+
+        file.write("\r\n".join(lines) + "\r\n")
 
         i = 1
         for item in si.items:
