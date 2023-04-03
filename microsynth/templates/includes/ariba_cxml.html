@@ -1,70 +1,3 @@
-{%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
-{%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
-{%- set basics_shared_secret 		= basics['shared_secret'] -%}
-{%- set basics_paynet_sender_pid 	= basics['paynet_sender_pid'] -%}
-{%- set basics_payload 				= basics['payload'] -%}
-{%- set basics_order_id 			= basics['order_id'] -%}
-{%- set basics_currency 			= basics['currency'] -%}
-{%- set basics_invoice_id 			= basics['invoice_id'] -%}
-{%- set basics_invoice_date 		= basics['invoice_date'] -%}
-{%- set basics_invoice_date_paynet	= basics['invoice_date_paynet'] -%}
-{%- set basics_delivery_note_id		= basics['delivery_note_id'] -%}
-{%- set basics_delivery_note_date_paynet	= basics['delivery_note_date_paynet'] -%}
-{%- set remitTo_name 				= remitTo['name'] -%}
-{%- set remitTo_street 				= remitTo['street'] -%}
-{%- set remitTo_pin 				= remitTo['pin'] -%}
-{%- set remitTo_city 				= remitTo['city'] -%}
-{%- set remitTo_iso_country_code 	= remitTo['iso_country_code'] -%}
-{%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
-{%- set billTo_address_id 			= billTo['address_id'] -%}
-{%- set billTo_name 				= billTo['name'] -%}
-{%- set billTo_street 				= billTo['street'] -%}
-{%- set billTo_pin 					= billTo['pin'] -%}
-{%- set billTo_city 				= billTo['city'] -%}
-{%- set billTo_iso_country_code 	= billTo['iso_country_code'] -%}
-{%- set from_name 					= from['name'] -%}
-{%- set from_street 				= from['street'] -%}
-{%- set from_pin 					= from['pin'] -%}
-{%- set from_city 					= from['city'] -%}
-{%- set from_iso_country_code 		= from['iso_country_code'] -%}
-{%- set soldTo_address_id 			= soldTo['address_id'] -%}
-{%- set soldTo_name 				= soldTo['name'] -%}
-{%- set soldTo_street 				= soldTo['street'] -%}
-{%- set soldTo_pin 					= soldTo['pin'] -%}
-{%- set soldTo_city 				= soldTo['city'] -%}
-{%- set soldTo_iso_country_code 	= soldTo['iso_country_code'] -%}
-{%- set shipFrom_name 				= shipFrom['name'] -%}
-{%- set shipFrom_street 			= shipFrom['street'] -%}
-{%- set shipFrom_pin 				= shipFrom['pin'] -%}
-{%- set shipFrom_city 				= shipFrom['city'] -%}
-{%- set shipFrom_iso_country_code 	= shipFrom['iso_country_code'] -%}
-{%- set shipTo_address_id 			= shipTo['address_id'] -%}
-{%- set shipTo_name 				= shipTo['name'] -%}
-{%- set shipTo_street 				= shipTo['street'] -%}
-{%- set shipTo_pin 					= shipTo['pin'] -%}
-{%- set shipTo_city 				= shipTo['city'] -%}
-{%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
-{%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
-{%- set receivingBank_iban_id  		= receivingBank['iban_id'] -%}
-{%- set receivingBank_account_name 	= receivingBank['account_name'] -%}
-{%- set receivingBank_account_id 	= receivingBank['account_id'] -%}
-{%- set receivingBank_account_type 	= receivingBank['account_type'] -%}
-{%- set receivingBank_branch_name 	= receivingBank['branch_name'] -%}
-{%- set extrinsic_buyerVatId 		= extrinsic['buyerVatId'] -%}
-{%- set extrinsic_supplierVatId  	= extrinsic['supplierVatId'] -%}
-{%- set extrinsic_supplierCommercialIdentifier = extrinsic['supplierCommercialIdentifier'] -%}
-{%- set tax_amount 					= tax['amount'] -%}
-{%- set tax_taxable_amount 			= tax['taxable_amount'] -%}
-{%- set tax_percent 				= tax['percent'] -%}
-{%- set tax_taxPointDate 			= tax['taxPointDate'] -%}
-{%- set tax_description 			= tax['description'] -%}
-{%- set summary_subtotal_amount 	= summary['subtotal_amount'] -%}
-{%- set summary_shipping_amount 	= summary['shipping_amount'] -%}
-{%- set summary_gross_amount 		= summary['gross_amount'] -%}
-{%- set summary_total_amount_without_tax = summary['total_amount_without_tax'] -%}
-{%- set summary_net_amount 			= summary['net_amount'] -%}
-{%- set summary_due_amount 			= summary['due_amount'] -%}
-
 {%- set shipping_header = {
 	'shippingTax_taxable_amount': shippingTax['taxable_amount'],
 	'shippingTax_amount': shippingTax['amount'],
@@ -79,8 +12,8 @@
 		{%- for key in article.keys() -%}
 			{%- if key not in ["price", "shipping_name", "position"] -%}
 				{%- if shipping_header.update({'shippingTax_taxable_amount': article.price})-%}{%- endif -%}
-				{%- if shipping_header.update({'shippingTax_amount': (tax_percent*article.price/100)|round(2)}) -%}{%- endif -%}
-				{%- if shipping_header.update({'shippingTax_percent': tax_percent}) -%}{%- endif -%}
+				{%- if shipping_header.update({'shippingTax_amount': (tax['percent'] * article.price / 100) | round(2) }) -%}{%- endif -%}
+				{%- if shipping_header.update({'shippingTax_percent': tax['percent'] }) -%}{%- endif -%}
 				{%- if shipping_header.update({'shippingTax_description': tax_description}) -%}{%- endif -%}
 				{%- if shipping_header.update({'summary_shipping_amount': article.price}) -%}{%- endif -%} 
 			{%- endif -%}
@@ -99,18 +32,18 @@
 	<Header>
 		<From>
 			<Credential domain = "NetworkID">
-				<Identity>{{basics_sender_network_id}}</Identity>
+				<Identity>{{ basics['sender_network_id'] }}</Identity>
 			</Credential>
 		</From>
 		<To>
 			<Credential domain = "NetworkID">
-				<Identity>{{basics_receiver_network_id}}</Identity>
+				<Identity>{{ basics['receiver_network_id'] }}</Identity>
 			</Credential>
 		</To>
 		<Sender>
 			<Credential domain = "NetworkID">
-				<Identity>{{basics_sender_network_id}}</Identity>
-				<SharedSecret>{{basics_shared_secret}}</SharedSecret>
+				<Identity>{{ basics['sender_network_id'] }}</Identity>
+				<SharedSecret>{{ basics['shared_secret'] }}</SharedSecret>
 			</Credential>
 			<UserAgent>Supplier</UserAgent>
 		</Sender>
@@ -122,11 +55,11 @@
 				<InvoiceDetailLineIndicator isTaxInLine = "yes"/>
 				<InvoicePartner>
 					<Contact addressID="99999" role="remitTo">
-						<Name xml:lang="de-CH">{{remitTo_name}}</Name>
+						<Name xml:lang="de-CH">{{ remitTo['name'] }}</Name>
 						<PostalAddress>
-							<Street>{{remitTo_street}}</Street>
-							<City>{{remitTo_city}}</City>
-							<PostalCode>{{remitTo_pin}}</PostalCode>
+							<Street>{{ remitTo['street'] }}</Street>
+							<City>{{ remitTo['city'] }}</City>
+							<PostalCode>{{ remitTo['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{remitTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -134,33 +67,33 @@
 				</InvoicePartner>
 				<InvoicePartner>
 					<Contact addressID="{{billTo_address_id}}" role="billTo">
- 						<Name xml:lang="de-CH">{{billTo_name}}</Name>
+ 						<Name xml:lang="de-CH">{{ billTo['name'] }}</Name>
   						<PostalAddress>
 							<Street></Street>
-							<City>{{billTo_city}}</City>
-							<PostalCode>{{billTo_pin}}</PostalCode>
+							<City>{{ billTo['city'] }}</City>
+							<PostalCode>{{ billTo['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{billTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>
 					<Contact role="from">
-						<Name xml:lang="de-CH">{{from_name}}</Name>
+						<Name xml:lang="de-CH">{{ from['name'] }}</Name>
 						<PostalAddress>
-							<Street>{{from_street}}</Street>
-							<City>{{from_city}}</City>
-							<PostalCode>{{from_pin}}</PostalCode>
+							<Street>{{ from['street'] }}</Street>
+							<City>{{ from['city'] }}</City>
+							<PostalCode>{{ from['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{from_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>
 					<Contact addressID="{{soldTo_address_id}}" role="soldTo">
-						<Name xml:lang="de-CH">{{soldTo_name}}</Name>
+						<Name xml:lang="de-CH">{{ soldTo['name'] }}</Name>
 						<PostalAddress>
-							<Street>{{soldTo_street}}</Street>
-							<City>{{soldTo_city}}</City>
-							<PostalCode>{{soldTo_pin}}</PostalCode>
+							<Street>{{ soldTo['street'] }}</Street>
+							<City>{{ soldTo['city'] }}</City>
+							<PostalCode>{{ soldTo['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{soldTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
@@ -178,34 +111,34 @@
 				</InvoicePartner>
 				<InvoiceDetailShipping>
 					<Contact role="shipFrom">
-						<Name xml:lang="de-CH">{{shipFrom_name}}</Name>
+						<Name xml:lang="de-CH">{{ shipFrom['name'] }}</Name>
 						<PostalAddress>
-							<Street>{{shipFrom_street}}</Street>
-							<City>{{shipFrom_city}}</City>
-							<PostalCode>{{shipFrom_pin}}</PostalCode>
+							<Street>{{ shipFrom['street'] }}</Street>
+							<City>{{ shipFrom['city'] }}</City>
+							<PostalCode>{{ shipFrom['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{shipFrom_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
 					<Contact addressID="{{shipTo_address_id}}" role="shipTo">
-						<Name xml:lang="de-CH">{{shipTo_name}}</Name>
+						<Name xml:lang="de-CH">{{ shipTo['name'] }}</Name>
 						<PostalAddress>
 							<DeliverTo></DeliverTo>
-							<Street>{{shipTo_street}}</Street>
-							<City>{{shipTo_city}}</City>
+							<Street>{{ shipTo['street'] }}</Street>
+							<City>{{ shipTo['city'] }}</City>
 							<State/>
-							<PostalCode>{{shipTo_pin}}</PostalCode>
+							<PostalCode>{{ shipTo['pin'] }}</PostalCode>
 							<Country isoCountryCode="{{shipTo_iso_country_code}}"/>
 						</PostalAddress>
 					</Contact>
 				</InvoiceDetailShipping>
  				<PaymentTerm payInNumberOfDays="45"></PaymentTerm>
 				<Comments></Comments>
-				<Extrinsic name="buyerVatID">{{extrinsic_buyerVatId}}</Extrinsic>
-				<Extrinsic name="supplierVatID">{{extrinsic_supplierVatId}}</Extrinsic>
+				<Extrinsic name="buyerVatID">{{ extrinsic['buyerVatId'] }}</Extrinsic>
+				<Extrinsic name="supplierVatID">{{ extrinsic['supplierVatId'] }}</Extrinsic>
  				<Extrinsic name="invoiceSourceDocument">PurchaseOrder</Extrinsic>
 				<Extrinsic name="invoiceSubmissionMethod">cXML</Extrinsic>
 				<Extrinsic name="paymentMethod">wire</Extrinsic>
-				<Extrinsic name="supplierCommercialIdentifier">{{extrinsic_supplierCommercialIdentifier}}</Extrinsic>
+				<Extrinsic name="supplierCommercialIdentifier">{{ extrinsic['supplierCommercialIdentifier'] }}</Extrinsic>
 			</InvoiceDetailRequestHeader>
 			<InvoiceDetailOrder>
 				<InvoiceDetailOrderInfo>
@@ -237,8 +170,8 @@
 			{%- set item_supplier_part_id		= article["oligo_article"].items[0].item_code  -%}
 			{%- set item_description 			= article.description -%}
 			{%- set item_subtotal_amount 		= article.price -%}
-			{%- set item_tax_amount 			= (tax_percent*article.price/100)|round(2)-%}
-			{%- set item_tax_rate 				= tax_percent -%}
+			{%- set item_tax_amount 			= ( tax['percent'] * article.price / 100) | round(2)-%}
+			{%- set item_tax_rate 				= tax['percent'] -%}
 			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
 			{%- set item_tax_description 		= tax_description -%}
 			{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
@@ -285,44 +218,44 @@
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
 				<SubtotalAmount>
-					<Money currency="{{basics_currency}}">{{summary_subtotal_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{ summary['subtotal_amount'] }}</Money>
 				</SubtotalAmount>
 				<Tax>
-					<Money currency="{{basics_currency}}">{{tax_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{ tax['amount'] }}</Money>
 					<Description xml:lang="de-CH"/>
 					<TaxDetail category="vat" percentageRate = "{{tax_percent}}" taxPointDate = "{{tax_taxPointDate}}">
 						<TaxableAmount>
-							<Money currency = "{{basics_currency}}">{{tax_taxable_amount}}</Money>
+							<Money currency = "{{basics_currency}}">{{ tax['taxable_amount'] }}</Money>
 						</TaxableAmount>
 						<TaxAmount>
-							<Money currency = "{{basics_currency}}">{{tax_amount}}</Money>
+							<Money currency = "{{basics_currency}}">{{ tax['amount'] }}</Money>
 						</TaxAmount>
-						<Description xml:lang = "en">{{tax_description}}</Description>
+						<Description xml:lang = "en">{{ tax['description'] }}</Description>
 					</TaxDetail>
 					<TaxDetail category="vat" percentageRate="{{shippingTax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
 						<TaxableAmount>
-							<Money currency="{{basics_currency}}">{{shippingTax_taxable_amount}}</Money>
+							<Money currency="{{basics_currency}}">{{ shippingTax['taxable_amount'] }}</Money>
 						</TaxableAmount>
 						<TaxAmount>
-							<Money currency="{{basics_currency}}">{{shippingTax_amount}}</Money>
+							<Money currency="{{basics_currency}}">{{ shippingTax['amount'] }}</Money>
 						</TaxAmount>
-					<Description xml:lang="en">{{shippingTax_description}}</Description>
+					<Description xml:lang="en">{{ shippingTax['description'] }}</Description>
 					</TaxDetail>
 				</Tax>
 				<ShippingAmount>
-					<Money currency = "{{basics_currency}}">{{summary_shipping_amount}}</Money>
+					<Money currency = "{{basics_currency}}">{{ summary['shipping_amount'] }}</Money>
 				</ShippingAmount>
 				<GrossAmount>
-					<Money currency="{{basics_currency}}">{{summary_gross_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{ summary['gross_amount'] }}</Money>
 				</GrossAmount>
 				<TotalAmountWithoutTax>
-					<Money currency="{{basics_currency}}">{{summary_total_amount_without_tax}}</Money>
+					<Money currency="{{basics_currency}}">{{ summary['total_amount_without_tax'] }}</Money>
 				</TotalAmountWithoutTax>
 				<NetAmount>
-					<Money currency="{{basics_currency}}">{{summary_net_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{ summary['net_amount'] }}</Money>
 				</NetAmount>
 				<DueAmount>
-					<Money currency="{{basics_currency}}">{{summary_due_amount}}</Money>
+					<Money currency="{{basics_currency}}">{{ summary['due_amount'] }}</Money>
 				</DueAmount>
 			</InvoiceDetailSummary>
 		</InvoiceDetailRequest>

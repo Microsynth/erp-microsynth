@@ -494,7 +494,7 @@ def create_country_name_to_code_dict():
     return country_codes
 
 
-def create_dict_of_invoice_info_for_cxml(sales_invoice=None): 
+def create_dict_of_invoice_info_for_cxml(sales_invoice): 
     """ Doc string """
 
     print ("\n1a")
@@ -534,21 +534,21 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
     #    print ("%s: %s" %(key, value))
 
     # create sets of strings for delivery_note and sales_order
-    order_names = []
-    delivery_note_names = []
-    for n in sales_invoice.items:
-        if n.delivery_note:
-            if n.delivery_note not in delivery_note_names:
-                delivery_note_names.append(n.delivery_note)
-        if n.sales_order:
-            if n.sales_order not in order_names:
-                order_names.append(n.sales_order)
+    # order_names = []
+    # delivery_note_names = []
+    # for n in sales_invoice.items:
+    #     if n.delivery_note:
+    #         if n.delivery_note not in delivery_note_names:
+    #             delivery_note_names.append(n.delivery_note)
+    #     if n.sales_order:
+    #         if n.sales_order not in order_names:
+    #             order_names.append(n.sales_order)
     
-    delivery_note_dates = []
-    for del_note in delivery_note_names:
-        dn_date = frappe.db.get_value('Delivery Note', del_note, 'posting_date')
-        dn_date_str = frappe.utils.get_datetime(dn_date).strftime('%Y%m%d')
-        delivery_note_dates.append(dn_date_str)           
+    # delivery_note_dates = []
+    # for del_note in delivery_note_names:
+    #     dn_date = frappe.db.get_value('Delivery Note', del_note, 'posting_date')
+    #     dn_date_str = frappe.utils.get_datetime(dn_date).strftime('%Y%m%d')
+    #     delivery_note_dates.append(dn_date_str)           
     
     #print("orders: % s" %", ".join(order_names))
     #print("notes: %s" %", ".join(delivery_note_names))
@@ -638,11 +638,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'room':             customer_contact.room,
                         'institute':        customer_contact.institute
                         },
-            'order':    {'names':           ", ".join(order_names)
-                        },
-            'del_note': {'names':           ", ".join(delivery_note_names),
-                        'dates':            ", ".join(delivery_note_dates)
-                        },
+            # 'order':    {'names':           ", ".join(order_names)
+            #             },
+            # 'del_note': {'names':           ", ".join(delivery_note_names),
+            #             'dates':            ", ".join(delivery_note_dates)
+            #             },
             'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
@@ -706,9 +706,9 @@ def transmit_sales_invoice(sales_invoice):
         # TODO: comment-in after development to handle invoice paths other than ariba
         
         # The invoice was already sent. Do not send again.
-        if sales_invoice.invoice_sent_on:
-            print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
-            return
+        # if sales_invoice.invoice_sent_on:
+        #     print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
+        #     return
 
         # Do not send any invoice if the items are free of charge
         if sales_invoice.total == 0:
@@ -805,8 +805,6 @@ def transmit_sales_invoice(sales_invoice):
 
         elif mode == "ARIBA":
             # create ARIBA cXML input data dict
-            data = sales_invoice.as_dict()
-            data['customer_record'] = customer.as_dict()
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
 
             cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
