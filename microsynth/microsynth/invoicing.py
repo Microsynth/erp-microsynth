@@ -430,7 +430,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     invoiced_oligos = {}
     for oligo_link in sales_invoice.oligos: 
         invoice_position += 1 
-        oligo_object = frappe.get_doc("Oligo", oligo_link.as_dict()["oligo"])
+        oligo_object = frappe.get_doc("Oligo", oligo_link.oligo)
         oligo_details = {}
         oligo_details["oligo_article"] = oligo_object
         oligo_details["invoice_position"] = invoice_position
@@ -566,7 +566,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
     #for key, value in (bank_account.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
 
-    #print(sales_invoice.as_dict()["taxes"][0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+    #print(sales_invoice.taxes[0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
     #for key, value in (company_details.as_dict().items()): 
     #    print ("%s: %s" %(key, value))
 
@@ -586,10 +586,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
-                        'invoice_date':         sales_invoice.as_dict()["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'invoice_date_paynet':  sales_invoice.as_dict()["creation"].strftime("%Y%m%d"),
+                        'invoice_date':         sales_invoice.creation.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date_paynet':  sales_invoice.creation.strftime("%Y%m%d"),
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
-                        'delivery_note_date_paynet':  "" # delivery_note.as_dict()["creation"].strftime("%Y%m%d"),
+                        'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
