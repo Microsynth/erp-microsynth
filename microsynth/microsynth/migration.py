@@ -1206,12 +1206,13 @@ def populate_price_lists():
     Go through all price lists and populate missing prices
 
     Run from bench like
-    $ bench execute microsynth.microsynth.migration.populate_price_lists
+    bench execute microsynth.microsynth.migration.populate_price_lists
     """
     price_lists = frappe.db.sql("""
         SELECT `name`
         FROM `tabPrice List`
-        WHERE `reference_price_list` IS NOT NULL;""", as_dict=True)
+        WHERE `reference_price_list` IS NOT NULL
+        AND `enabled` = 1;""", as_dict=True)
     count = 0
     start_ts = None
     for p in price_lists:
