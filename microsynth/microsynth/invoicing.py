@@ -648,8 +648,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'account_name':     bank_account.company,
                         'account_id':       bank_account.iban,
                         'account_type':     'Checking',  
-                        # 'branch_name':      (bank_account.bank_name + " " + bank_account.bank_branch_name) if bank_account.bank_branch_name is not None else bank_account.bank_name
-                        'branch_name':      bank_account.bank_branch_name
+                        'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name if bank_account.bank_branch_name else bank_account.bank_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
                         'supplierVatId':                company_details.tax_id + ' MWST',
@@ -662,6 +661,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice=None):
                         'taxPointDate' :    sales_invoice.posting_date.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description' :     sales_invoice.taxes[0].description if len(sales_invoice.taxes)>0 else 0
                         },
+            # TODO: Shipping for Novartis (Ariba) is on header level. 
+            # TODO: Shipping for Roche (GEP) is a extra item
+            
             # shipping is listed on item level, not header level.
             'shippingTax' : {'taxable_amount':  '0.00',
                         'amount':               '0.00',
