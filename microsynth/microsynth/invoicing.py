@@ -478,6 +478,79 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     return list_of_invoiced_items
 
 
+def create_position_list(sales_invoice, shipping_as_item):
+    """
+    Create a list of the invoice positions of a sales_invoice as a list of dictionaries.
+    """
+    item_details = {}
+    
+    for item in sales_invoice.items:
+        item_details[item.item_code] = item
+
+    positions = []
+    number = 0
+    used_items = {}
+
+    for o in sales_invoice.oligos:
+        position = {}
+        number += 1
+        rate_total = 0
+        oligo = frappe.get_doc("Oligo", o.oligo)
+
+        for n in oligo.items:
+            if n.item_code in item_details:
+                rate_total += n.qty * item_details[n.item_code].rate
+
+            if n.item_code not in used_items:
+                used_items[n.item_code] = n.qty
+            else:
+                used_items[n.item_code] = used_items[n.item_code] + n.qty
+
+        position["number"] = number
+        position["description"] = oligo.oligo_name
+        position["quantity"] = 1
+        position["rate"] = rate_total
+        position["amount"] = rate_total
+        positions.append(position)
+
+    # TODO Implement for samples
+
+    for n in sales_invoice.items:
+        if n.item_group != "Shipping" or shipping_as_item:
+            if n.item_code not in used_items:
+                position = {}
+
+                if number > 0:
+                    number += number
+                    position["number"] = number
+                else:
+                    position["number"] = n.idx
+
+                position["description"] = n.description
+                position["quantity"] = n.qty
+                position["rate"] = n.rate
+                position["amount"] = n.amount
+                positions.append(position)
+
+            elif n.qty > used_items[n.item_code]:
+                # more items in positions than used in oligos and samples
+                position = {}
+
+                if number > 0:
+                    number += number
+                    position["number"] = number
+                else:
+                    position["number"] = n.idx
+
+                position["description"] = n.description
+                position["quantity"] = n.qty - used_items[n.item_code]
+                position["rate"] = n.rate
+                position["amount"] = n.amount
+                positions.append(position)
+
+    return positions
+
+
 def get_shipping_item(items):
     for i in reversed(items):
         if i.item_group == "Shipping":
@@ -562,6 +635,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
     #print("settings: %s" % settings.as_dict())
 
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
+    
+    # TODO In Paynet, the shipping item is always on the item level
+    shipping_as_item = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "shipping_as_item")
 
     #for key, value in (bank_account.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -654,7 +730,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
                         'supplierVatId':                company_details.tax_id + ' MWST',
                         'supplierCommercialIdentifier': company_details.tax_id + ' VAT' 
                         }, 
-            'items' :   itemList, 
+            'items' :   itemList,
+            'positions': create_position_list(sales_invoice, shipping_as_item),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         sales_invoice.taxes[0].rate if len(sales_invoice.taxes)>0 else 0, 
