@@ -12,7 +12,8 @@
   "col_punchout_shop",
   "billing_address",
   "billing_contact",
-  "has_static_billing_address"
+  "has_static_billing_address",
+  "cxml_shipping_as_item"
  ],
  "fields": [
   {
@@ -53,9 +54,15 @@
    "fieldtype": "Select",
    "label": "Invoicing Method",
    "options": "Email\nARIBA\nPaynet\nGEP"
+  },
+  {
+   "default": "0",
+   "fieldname": "cxml_shipping_as_item",
+   "fieldtype": "Check",
+   "label": "cXML Shipping as Item"
   }
  ],
- "modified": "2023-03-30 12:02:12.595251",
+ "modified": "2023-04-04 09:37:41.100327",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Punchout Shop",
