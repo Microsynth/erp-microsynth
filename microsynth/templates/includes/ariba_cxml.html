@@ -28,7 +28,7 @@
 {%- set summary_shipping_amount 	= shipping_header.shippingTax_taxable_amount -%}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
-<cXML payloadID = "{{basics_payload}}" timestamp = "2022-11-24T16:48:27+01:00" version = "1.2.028">
+<cXML payloadID = "{{ basics['payload_id'] }}" timestamp = "{{ basics['timestamp'] }}" version = "1.2.028">
 	<Header>
 		<From>
 			<Credential domain = "NetworkID">
@@ -146,74 +146,45 @@
 						<DocumentReference payloadID=""/>
 					</OrderReference>
 				</InvoiceDetailOrderInfo>
-{%- for article in items -%}
-	{%- if not "shipping_article" in article.keys() -%}
-		{%- if "other_article" in article.keys() -%}
-			{%- set item_invoiceLineNumber 		= article.invoice_position -%}
-			{%- set item_quantity 				= article.quantity -%}
-			{%- set item_unit_of_measure 		= "EA" -%}
-			{%- set item_unit_price 			= article.price -%}
-			{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
-			{%- set item_description 			= article.description -%}
-			{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
-			{%- set item_tax_amount 			= (tax_percent * item_subtotal_amount / 100)|round(2)-%}
-			{%- set item_tax_rate 				= tax_percent -%}
-			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
-			{%- set item_tax_description 		= tax_description -%}
-			{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
-			{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
-		{%- else -%} {# Oligo article #}
-			{%- set item_invoiceLineNumber 		= article.invoice_position -%}
-			{%- set item_quantity 				= article.quantity -%}
-			{%- set item_unit_of_measure 		= "EA" -%}
-			{%- set item_unit_price 			= article.price -%}
-			{%- set item_supplier_part_id		= article["oligo_article"].items[0].item_code  -%}
-			{%- set item_description 			= article.description -%}
-			{%- set item_subtotal_amount 		= article.price -%}
-			{%- set item_tax_amount 			= ( tax['percent'] * article.price / 100) | round(2)-%}
-			{%- set item_tax_rate 				= tax['percent'] -%}
-			{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
-			{%- set item_tax_description 		= tax_description -%}
-			{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
-			{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
-		{%- endif -%}
-			{# These are the positions #}
-				<InvoiceDetailItem invoiceLineNumber="{{item_invoiceLineNumber}}" quantity = "{{item_quantity}}">
+
+{%- for pos in positions -%}
+				{# Positions - comment for indenting #}
+				<InvoiceDetailItem invoiceLineNumber="{{ pos['number'] }}" quantity = "{{ pos['quantity'] }}">
 					<UnitOfMeasure>EA</UnitOfMeasure>
 					<UnitPrice>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_unit_price) }}</Money> 
+						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['rate']) }}</Money> 
 					</UnitPrice>
-					<InvoiceDetailItemReference lineNumber="{{item_invoiceLineNumber}}">
+					<InvoiceDetailItemReference lineNumber="{{ pos['number'] }}">
 						<ItemID>
-							<SupplierPartID>{{item_supplier_part_id}}</SupplierPartID>
+							<SupplierPartID></SupplierPartID>
 						</ItemID>
-						<Description xml:lang="de-CH">{{item_description}}</Description>
+						<Description xml:lang="de-CH">{{ pos['description'] }}</Description>
 					</InvoiceDetailItemReference>
 					<SubtotalAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_subtotal_amount) }}</Money> 
+						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
 					</SubtotalAmount>
 					<Tax>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_tax_amount) }}</Money>
+						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
 						<Description xml:lang="de-CH"/>
-						<TaxDetail category="vat" percentageRate="{{item_tax_rate}}" taxPointDate="{{tax_taxPointDate}}" exemptDetail="exempt">
+						<TaxDetail category="vat" percentageRate="{{ tax['percent'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
 							<TaxableAmount>
-								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_tax_taxable_amount) }}</Money> 
+								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
 							</TaxableAmount>
 							<TaxAmount>
-								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_tax_amount) }}</Money>
+								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
 							</TaxAmount>
-							<Description xml:lang="en">{{item_tax_description}}</Description>
+							<Description xml:lang="en">{{ tax['description'] }}</Description>
 						</TaxDetail>
 					</Tax>
 					<GrossAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_gross_amount) }}</Money>
+						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
 					</GrossAmount>
 					<NetAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(item_net_amount) }}</Money>
+						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
 					</NetAmount>
 				</InvoiceDetailItem>
-	{%- endif -%}
 {%- endfor -%}
+
 {# end of first article iteration #}
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
@@ -223,7 +194,7 @@
 				<Tax>
 					<Money currency="{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
 					<Description xml:lang="de-CH"/>
-					<TaxDetail category="vat" percentageRate = "{{tax_percent}}" taxPointDate = "{{tax_taxPointDate}}">
+					<TaxDetail category="vat" percentageRate = "{{ tax['percent'] }}" taxPointDate = "{{tax_taxPointDate}}">
 						<TaxableAmount>
 							<Money currency = "{{ basics['currency'] }}">{{ tax['taxable_amount'] }}</Money>
 						</TaxableAmount>
@@ -232,7 +203,7 @@
 						</TaxAmount>
 						<Description xml:lang = "en">{{ tax['description'] }}</Description>
 					</TaxDetail>
-					<TaxDetail category="vat" percentageRate="{{shippingTax_percent}}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
+					<TaxDetail category="vat" percentageRate="{{ shippingTax['percent'] }}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
 						<TaxableAmount>
 							<Money currency="{{ basics['currency'] }}">{{ shippingTax['taxable_amount'] }}</Money>
 						</TaxableAmount>

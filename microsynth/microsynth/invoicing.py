@@ -491,6 +491,8 @@ def create_position_list(sales_invoice, exclude_shipping):
     number = 0
     used_items = {}
 
+    tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes)>0 else 0
+
     for o in sales_invoice.oligos:
         position = {}
         number += 1
@@ -511,6 +513,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["quantity"] = 1
         position["rate"] = rate_total
         position["amount"] = rate_total
+        position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
     # TODO Implement for samples
@@ -532,6 +535,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["quantity"] = n.qty
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 
             elif n.qty > used_items[n.item_code]:
@@ -548,6 +552,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["quantity"] = n.qty - used_items[n.item_code]
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 
     return positions
@@ -663,8 +668,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
                         'paynet_sender_pid':    settings.paynet_id, 
-                        'payload':              sales_invoice.creation.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch"
-,
+                        'payload_id':           sales_invoice.creation.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
+                        'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
