@@ -478,7 +478,7 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     return list_of_invoiced_items
 
 
-def create_position_list(sales_invoice, shipping_as_item):
+def create_position_list(sales_invoice, exclude_shipping):
     """
     Create a list of the invoice positions of a sales_invoice as a list of dictionaries.
     """
@@ -516,7 +516,9 @@ def create_position_list(sales_invoice, shipping_as_item):
     # TODO Implement for samples
 
     for n in sales_invoice.items:
-        if n.item_group != "Shipping" or shipping_as_item:
+        if n.item_group == "Shipping" and exclude_shipping:
+            continue
+        else:
             if n.item_code not in used_items:
                 position = {}
 
@@ -567,7 +569,7 @@ def create_country_name_to_code_dict():
     return country_codes
 
 
-def create_dict_of_invoice_info_for_cxml(sales_invoice): 
+def create_dict_of_invoice_info_for_cxml(sales_invoice, mode): 
     """ Doc string """
 
     print ("\n1a")
@@ -637,7 +639,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     
     # TODO In Paynet, the shipping item is always on the item level
-    shipping_as_item = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "shipping_as_item")
+
+    if mode == "ARIBA" or mode == "GEP":
+        exclude_shipping = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "cxml_shipping_as_item")
+    else: 
+        exclude_shipping = False
 
     #for key, value in (bank_account.as_dict().items()): 
     #   print ("%s: %s" %(key, value))
@@ -731,7 +737,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice):
                         'supplierCommercialIdentifier': company_details.tax_id + ' VAT' 
                         }, 
             'items' :   itemList,
-            'positions': create_position_list(sales_invoice, shipping_as_item),
+            'positions': create_position_list(sales_invoice, exclude_shipping),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         sales_invoice.taxes[0].rate if len(sales_invoice.taxes)>0 else 0, 
@@ -882,7 +888,7 @@ def transmit_sales_invoice(sales_invoice):
 
         elif mode == "ARIBA":
             # create ARIBA cXML input data dict
-            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
 
             cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
             #print(cxml)
@@ -908,7 +914,7 @@ def transmit_sales_invoice(sales_invoice):
 
         elif mode == "Paynet":
             # create Paynet cXML input data dict
-            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             
             cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
             #print(cxml)
@@ -937,7 +943,7 @@ def transmit_sales_invoice(sales_invoice):
         elif mode == "GEP":
             print("IN GEP")
             # create Gep cXML input data dict
-            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice)
+            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
             file = open('/home/libracore/Desktop/'+ sales_invoice.name, 'w')
             file.write(cxml)
