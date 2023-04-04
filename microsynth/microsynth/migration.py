@@ -1786,7 +1786,6 @@ def set_distributor_amplikon():
     run
     bench execute microsynth.microsynth.migration.set_distributor_amplikon
     """
-
     from microsynth.microsynth.utils import get_customers_for_country, set_distributor
 
     customers = get_customers_for_country("Hungary")
@@ -1807,6 +1806,36 @@ def set_distributor_amplikon():
         frappe.db.commit()
 
         i += 1
+
+
+def activate_fullplasmidseq():
+    """
+    run
+    bench execute microsynth.microsynth.migration.activate_fullplasmidseq
+    """
+    from microsynth.microsynth.utils import add_webshop_service
+
+    query = """
+        SELECT
+            `tabCustomer`.`name`
+        FROM `tabCustomer`
+        WHERE
+            `tabCustomer`.`default_company` NOT LIKE "%Microsynth France SAS%"
+    """
+
+    customers = frappe.db.sql(query, as_dict=True)
+    
+    i = 0
+    length = len(customers)
+
+    for c in customers:
+        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
+        add_webshop_service(c.name, "FullPlasmidSeq")
+        frappe.db.commit()
+        i += 1
+
+    return
+
 
 def set_debtors():
     """

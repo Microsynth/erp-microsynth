@@ -650,6 +650,33 @@ def set_distributor(customer, distributor, product_type):
     return
 
 
+def add_webshop_service(customer, service):
+    """
+    Add the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq') to the customer.
+    
+    bench execute microsynth.microsynth.utils.add_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
+    """
+    
+    customer = frappe.get_doc("Customer", customer)
+    has_service = False
+
+    for s in customer.webshop_service:
+        if s.webshop_service == service:
+            has_service = True
+    
+    if not has_service:
+        print("Customer '{0}': Add webshop service '{1}'".format(customer.name, service))
+        entry = {
+            'webshop_service': service
+        }
+        customer.append("webshop_service", entry)
+        customer.save()
+    else:
+        print("Customer '{0}': Has already webshop service '{1}'".format(customer.name, service))
+
+    return
+
+
 def get_debtor_account_currency(company, currency):
     """
     Return the deptor account for a company and the specified currency,
