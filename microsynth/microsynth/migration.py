@@ -1821,6 +1821,7 @@ def activate_fullplasmidseq():
         FROM `tabCustomer`
         WHERE
             `tabCustomer`.`default_company` NOT LIKE "%Microsynth France SAS%"
+        AND `tabCustomer`.`disabled` = 0
     """
 
     customers = frappe.db.sql(query, as_dict=True)
