@@ -100,9 +100,12 @@ def choose_brady_printer(company):
 
 def get_label_data(sales_order):
     """
-    Returns the data for printing a shipping label from a sales order document.
+    Returns the data for printing a shipping label from a sales order.
+    run
+    bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order':'SO-BAL-23015115'}"
     """
-    
+    sales_order = frappe.get_doc("Sales Order", sales_order)
+
     if not sales_order.shipping_address_name:
         frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))
     elif not sales_order.customer: 
@@ -122,7 +125,7 @@ def get_label_data(sales_order):
     destination_country = frappe.get_doc("Country", shipping_address.country)
 
     data = {
-        'lines': create_receiver_address_lines(customer_id = sales_order.customer, contact_id = contact_id, address_id = address_id), 
+        'lines': create_receiver_address_lines(customer_name = sales_order.order_customer_display or sales_order.customer_name, contact = contact_id, address = address_id), 
         'sender_header': get_sender_address_line(sales_order, destination_country),
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
@@ -139,9 +142,7 @@ def print_shipping_label(sales_order_id):
     """
     function calls respective template for creating a transport label
     """
-
-    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
-    label_data = get_label_data(sales_order)
+    label_data = get_label_data(sales_order_id)
     content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)   
 
     printer = choose_brady_printer(sales_order.company)
@@ -165,8 +166,7 @@ def print_oligo_order_labels(sales_orders):
 
     for o in sales_orders:
         try:
-            sales_order = frappe.get_doc("Sales Order", o)
-            label_data = get_label_data(sales_order)
+            label_data = get_label_data(o)
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
             
             print_raw(settings.label_printer_ip, settings.label_printer_port, content)
