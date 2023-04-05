@@ -104,7 +104,6 @@ def get_label_data(sales_order):
     run
     bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order':'SO-BAL-23015115'}"
     """
-    sales_order = frappe.get_doc("Sales Order", sales_order)
 
     if not sales_order.shipping_address_name:
         frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))
@@ -142,7 +141,8 @@ def print_shipping_label(sales_order_id):
     """
     function calls respective template for creating a transport label
     """
-    label_data = get_label_data(sales_order_id)
+    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
+    label_data = get_label_data(sales_order)
     content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)   
 
     printer = choose_brady_printer(sales_order.company)
@@ -166,7 +166,8 @@ def print_oligo_order_labels(sales_orders):
 
     for o in sales_orders:
         try:
-            label_data = get_label_data(o)
+            sales_order = frappe.get_doc("Sales Order", o)
+            label_data = get_label_data(sales_order)
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
             
             print_raw(settings.label_printer_ip, settings.label_printer_port, content)
