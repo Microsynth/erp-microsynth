@@ -1808,20 +1808,25 @@ def set_distributor_amplikon():
         i += 1
 
 
-def activate_fullplasmidseq():
+def activate_fullplasmidseq_dach():
     """
     run
-    bench execute microsynth.microsynth.migration.activate_fullplasmidseq
+    bench execute microsynth.microsynth.migration.activate_fullplasmidseq_dach
     """
     from microsynth.microsynth.utils import add_webshop_service
 
     query = """
-        SELECT
-            `tabCustomer`.`name`
-        FROM `tabCustomer`
-        WHERE
-            `tabCustomer`.`default_company` NOT LIKE "%Microsynth France SAS%"
-        AND `tabCustomer`.`disabled` = 0
+        SELECT DISTINCT
+            `tDLA`.`link_name` AS `name`
+        FROM `tabAddress`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                             AND `tDLA`.`parenttype` = "Address"
+                                             AND `tDLA`.`link_doctype` = "Customer"
+        WHERE `tabAddress`.`country` in (
+            "Switzerland", 
+            "Germany", 
+            "Austria" )
+        AND `tDLA`.`link_name` IS NOT NULL
     """
 
     customers = frappe.db.sql(query, as_dict=True)
