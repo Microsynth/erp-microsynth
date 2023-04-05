@@ -509,6 +509,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 used_items[n.item_code] = used_items[n.item_code] + n.qty
 
         position["number"] = number
+        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, oligo.web_id)
         position["description"] = oligo.oligo_name
         position["quantity"] = 1
         position["rate"] = rate_total
@@ -531,6 +532,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 else:
                     position["number"] = n.idx
 
+                position["item"] = n.item_code
                 position["description"] = n.description
                 position["quantity"] = n.qty
                 position["rate"] = n.rate
@@ -548,6 +550,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 else:
                     position["number"] = n.idx
 
+                position["item"] = n.item_code
                 position["description"] = n.description
                 position["quantity"] = n.qty - used_items[n.item_code]
                 position["rate"] = n.rate
@@ -577,89 +580,29 @@ def create_country_name_to_code_dict():
 def create_dict_of_invoice_info_for_cxml(sales_invoice, mode): 
     """ Doc string """
 
-    print ("\n1a")
-    #for key, value in (sales_invoice.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    #TODO: !! with punchout-orders, you may take other billing_address, shipping_address
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    #for key, value in (shipping_address.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    print ("\n1b")
-    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
-    #for key, value in (billing_address.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    customer = frappe.get_doc("Customer", sales_invoice.customer)
-    #for key, value in (customer.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
     
-    print ("\n-----0-----")
+    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+    
+    customer = frappe.get_doc("Customer", sales_invoice.customer)
+    
     company_details = frappe.get_doc("Company", sales_invoice.company)
-    #print(company_details.as_dict())
-    #for key, value in (company_details.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
 
-    print ("\n-----0A-----")
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
 
-    print ("\n-----0B-----")
-    customer_contact = frappe.get_doc("Contact", sales_invoice.customer_address)
-    #for key, value in (customer_contact.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
-    #for key, value in (invoice_contact.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    # create sets of strings for delivery_note and sales_order
-    # order_names = []
-    # delivery_note_names = []
-    # for n in sales_invoice.items:
-    #     if n.delivery_note:
-    #         if n.delivery_note not in delivery_note_names:
-    #             delivery_note_names.append(n.delivery_note)
-    #     if n.sales_order:
-    #         if n.sales_order not in order_names:
-    #             order_names.append(n.sales_order)
+    customer_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
     
-    # delivery_note_dates = []
-    # for del_note in delivery_note_names:
-    #     dn_date = frappe.db.get_value('Delivery Note', del_note, 'posting_date')
-    #     dn_date_str = frappe.utils.get_datetime(dn_date).strftime('%Y%m%d')
-    #     delivery_note_dates.append(dn_date_str)           
+    invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
     
-    #print("orders: % s" %", ".join(order_names))
-    #print("notes: %s" %", ".join(delivery_note_names))
-    #print("dates: %s" %", ".join(delivery_note_dates))
+    settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-    print ("\n-----0C-----")
-    try: 
-        settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
-    except: 
-        frappe.throw("Cannot access 'Microsynth Settings'. Invoice cannot be created")
-    #print("settings: %s" % settings.as_dict())
 
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     
-    # TODO In Paynet, the shipping item is always on the item level
-
     if mode == "ARIBA" or mode == "GEP":
         exclude_shipping = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "cxml_shipping_as_item")
     else: 
         exclude_shipping = False
-
-    #for key, value in (bank_account.as_dict().items()): 
-    #   print ("%s: %s" %(key, value))
-
-    #print(sales_invoice.taxes[0]["creation"].strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-    #for key, value in (company_details.as_dict().items()): 
-    #    print ("%s: %s" %(key, value))
-
-    soId_and_dnId = get_sales_order_id_and_delivery_note_id(sales_invoice)
-    sales_order_id = soId_and_dnId["sales_order_id"] # can be called directly in dict "data" creation on-the-fly
-    delivery_note_id = soId_and_dnId["delivery_note_id"] # can be called directly in dict "data" creation on-the-fly
 
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
@@ -725,11 +668,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'room':             customer_contact.room,
                         'institute':        customer_contact.institute
                         },
-            # 'order':    {'names':           ", ".join(order_names)
-            #             },
-            # 'del_note': {'names':           ", ".join(delivery_note_names),
-            #             'dates':            ", ".join(delivery_note_dates)
-            #             },
             'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
@@ -737,9 +675,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'account_type':     'Checking',  
                         'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name if bank_account.bank_branch_name else bank_account.bank_name
                         }, 
-            'extrinsic' : {'buyerVatId':                customer.tax_id + ' MWST',
-                        'supplierVatId':                company_details.tax_id + ' MWST',
-                        'supplierCommercialIdentifier': company_details.tax_id + ' VAT' 
+            'extrinsic' : {'buyerVatId':                customer.tax_id,
+                        'supplierVatId':                company_details.tax_id,
+                        'supplierCommercialIdentifier': company_details.tax_id
                         }, 
             'items' :   itemList,
             'positions': create_position_list(sales_invoice, exclude_shipping),
@@ -767,8 +705,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'due_amount' :              sales_invoice.rounded_total
                         }
             }
-    #for k,v in data2.items(): 
-    #    print ("{}: {}".format(k,v))
     return data2
 
 
