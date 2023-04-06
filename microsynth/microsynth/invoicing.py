@@ -1023,7 +1023,7 @@ def transmit_carlo_erba_invoices(company):
                 type,                                                                       # record_type(8)
                 si.web_order_id,                                                            # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
-                si.customer,                                                                # customer_number(8)
+                contact.name,                                                               # customer_number(8)
                 contact.designation if contact.designation else "",                         # titel(8)
                 get_name(contact),                                                          # name(60)
                 address.overwrite_company if address.overwrite_company else customer_name,  # adress1(60)
@@ -1047,7 +1047,7 @@ def transmit_carlo_erba_invoices(company):
             address = order_address)
 
         # Ship-to-party
-        acquirer = get_address_data(
+        shipping = get_address_data(
             type = "Acquiren",
             customer_name = shipping_customer,
             contact = shipping_contact,
@@ -1061,7 +1061,7 @@ def transmit_carlo_erba_invoices(company):
             address = billing_address)
 
         lines.append(client)
-        lines.append(acquirer)
+        lines.append(shipping)
         lines.append(billing)
 
         # Comments
