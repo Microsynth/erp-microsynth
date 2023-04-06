@@ -18,7 +18,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -615,17 +615,19 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
 
+    posting_timepoint = get_posting_datetime(sales_invoice)
+
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
                         'paynet_sender_pid':    settings.paynet_id, 
-                        'payload_id':           sales_invoice.creation.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
+                        'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
-                        'invoice_date':         sales_invoice.creation.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'invoice_date_paynet':  sales_invoice.creation.strftime("%Y%m%d"),
+                        'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
@@ -692,7 +694,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         tax_rate, 
-                        'taxPointDate' :    sales_invoice.posting_date.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'taxPointDate' :    posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description' :     sales_invoice.taxes[0].description if len(sales_invoice.taxes)>0 else 0
                         },
             
@@ -700,7 +702,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             'shippingTax' : {'taxable_amount':  shipping_costs,
                         'amount':               shipping_costs * tax_rate / 100,
                         'percent':              tax_rate,
-                        'taxPointDate':         sales_invoice.posting_date.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'taxPointDate':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description' :         "{0}% shipping tax".format(tax_rate)
                         }, 
             'summary' : {'subtotal_amount' :        sales_invoice.base_total,

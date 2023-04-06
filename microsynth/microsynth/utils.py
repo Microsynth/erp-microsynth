@@ -292,7 +292,16 @@ def get_print_address(contact, address, customer=None, customer_name=None):
             'contact': contact, 
             'address': address, 
             'customer_name':  customer_name
-        }) 
+        })
+
+
+def get_posting_datetime(document):
+    """
+    Return the posting timepoint as a datetime object from the given document e.g. Sales Invoice.
+    The document must have the fields 'posting_date' and 'posting_time'
+    """
+    posting = datetime.combine(document.posting_date, (datetime.min + document.posting_time).time())
+    return posting
 
 
 @frappe.whitelist()
