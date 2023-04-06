@@ -1007,27 +1007,31 @@ def transmit_carlo_erba_invoices(company):
         billing_address = frappe.get_doc("Address", si.customer_address)
         billing_customer = si.customer_name
 
+        # Header
         header = [
-            "Header",
-            si.web_order_id,
-            si.name,
-            si.po_no if si.po_no else "",
-            si.posting_date.strftime("%d.%m.%Y"),
-            "", # shipping_date
-            si.customer,
-            "", # shipping_number
-            "", # bill_to_number
-            "", # delivery_number
-            "", # trailer_amount
-            str(si.total),
-            str(si.grand_total) ]
+            "Header",                                                                       # record_type(8)
+            si.web_order_id,                                                                # sales_order_number(8)
+            si.name,                                                                        # invoice_number(8)
+            si.po_no if si.po_no else "",                                                   # customer_po_number(22)
+            si.posting_date.strftime("%d.%m.%Y"),                                           # invoice_date(8)
+            "",                                                                             # shipping_date(8)
+            si.customer,                                                                    # customer_number(8)
+            "",                                                                             # shipping_number(8)
+            "",                                                                             # bill_to_number(8)
+            "",                                                                             # delivery_number(30)
+            "",                                                                             # trailer_amount(8)
+            str(si.total),                                                                  # netto_amount(15)
+        str(si.grand_total) ]                                                               # total_amount(15)
 
+        lines.append(header)
+
+        # Addresses
         def get_address_data(type, customer_name, contact, address):
             data = [
-                type,               # record_type(8)
-                si.web_order_id,    # sales_order_number(8)
-                si.name,            # invoice_number(8)
-                si.customer,        # customer_number(8)
+                type,                                                                       # record_type(8)
+                si.web_order_id,                                                            # sales_order_number(8)
+                si.name,                                                                    # invoice_number(8)
+                si.customer,                                                                # customer_number(8)
                 contact.designation if contact.designation else "",                         # titel(8)
                 get_name(contact),                                                          # name(60)
                 address.overwrite_company if address.overwrite_company else customer_name,  # adress1(60)
@@ -1036,56 +1040,77 @@ def transmit_carlo_erba_invoices(company):
                 (frappe.get_value("Country", address.country, "code")).upper(),             # country_code(2)
                 address.pincode if address.pincode else "",                                 # postal_code(10)
                 address.city if address.city else "",                                       # city(20)
-                get_name(contact),                              # contact_person(24)
-                contact.email_id if contact.email_id else "",   # email(40)
-                contact.phone if contact.phone else "",         # phone_number(20)
-                "",                                             # fax_number(20)
+                get_name(contact),                                                          # contact_person(24)
+                contact.email_id if contact.email_id else "",                               # email(40)
+                contact.phone if contact.phone else "",                                     # phone_number(20)
+                "",                                                                         # fax_number(20)
             ]
             return data
 
+        # Sold-to-party
         client = get_address_data(
             type = "Cliente",
             customer_name = shipping_customer,
             contact = shipping_contact,
             address = shipping_address)
 
+        # Ship-to-party
         acquirer = get_address_data(
             type = "Acquiren",
             customer_name = acquirer_customer,
             contact = acquirer_contact,
             address = acquirer_address)
 
+        # bill-to-party
         billing = get_address_data(
             type = "Billing",
             customer_name = billing_customer,
             contact = billing_contact,
             address = billing_address)
 
-        lines.append(header)
         lines.append(client)
         lines.append(acquirer)
         lines.append(billing)
 
+        # Comments
+                                                                                            # record_type(8)
+                                                                                            # sales_order_number(8)
+                                                                                            # invoice_number(8)
+                                                                                            # comments(76)
+
+        # Position
         i = 1
         for item in si.items:
             if item.amount == 0:
                 continue
             position = [
-                "Pos",              # record_type(8)
-                si.web_order_id,    # sales_order_number(8)
-                si.name,            # invoice_number(8)
-                str(i),             # position_line(3)
-                item.item_code,     # kit_item(18)
-                str(item.qty),           # kit_quantity(17)
-                str(item.rate),          # list_price(17)
-                "0",                # discount_percent(17)
-                str(item.amount),        # kit_price(17)
-                "",                 # serial_number(24)
-                item.description,   # description1(24)
-                ""                  # description2(24)
+                "Pos",                                                                      # record_type(8)
+                si.web_order_id,                                                            # sales_order_number(8)
+                si.name,                                                                    # invoice_number(8)
+                str(i),                                                                     # position_line(3)
+                item.item_code,                                                             # kit_item(18)
+                str(item.qty),                                                              # kit_quantity(17)
+                str(item.rate),                                                             # list_price(17)
+                "0",                                                                        # discount_percent(17)
+                str(item.amount),                                                           # kit_price(17)
+                "",                                                                         # serial_number(24)
+                item.description,                                                           # description1(24)
+                ""                                                                          # description2(24)
             ]
             lines.append(position)
             i += 1
+
+        # Components
+                                                                                            # record_type(8)
+                                                                                            # sales_order_number(8)
+                                                                                            # invoice_number(8)
+                                                                                            # position_line(3)
+                                                                                            # component_number(18)
+                                                                                            # component_quantity(17)
+                                                                                            # component_price(17)
+                                                                                            # component_feature(12)
+                                                                                            # description1(24)
+                                                                                            # description2(24)
 
     text = "\r\n".join( [ "\t".join(line) for line in lines ] )
 
