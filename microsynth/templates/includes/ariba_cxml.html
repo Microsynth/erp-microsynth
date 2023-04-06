@@ -156,7 +156,7 @@
 					</UnitPrice>
 					<InvoiceDetailItemReference lineNumber="{{ pos['number'] }}">
 						<ItemID>
-							<SupplierPartID></SupplierPartID>
+							<SupplierPartID>{{ pos['item'] }}</SupplierPartID>
 						</ItemID>
 						<Description xml:lang="de-CH">{{ pos['description'] }}</Description>
 					</InvoiceDetailItemReference>

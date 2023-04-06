@@ -527,7 +527,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position = {}
 
                 if number > 0:
-                    number += number
+                    number += 1
                     position["number"] = number
                 else:
                     position["number"] = n.idx
@@ -545,7 +545,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position = {}
 
                 if number > 0:
-                    number += number
+                    number += 1
                     position["number"] = number
                 else:
                     position["number"] = n.idx
@@ -600,9 +600,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     
     if mode == "ARIBA" or mode == "GEP":
-        exclude_shipping = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "cxml_shipping_as_item")
+        shipping_as_item = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "cxml_shipping_as_item")
     else: 
-        exclude_shipping = False
+        shipping_as_item = True
 
     country_codes = create_country_name_to_code_dict()
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
@@ -680,7 +680,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
             'items' :   itemList,
-            'positions': create_position_list(sales_invoice, exclude_shipping),
+            'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not shipping_as_item),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         sales_invoice.taxes[0].rate if len(sales_invoice.taxes)>0 else 0, 
@@ -688,7 +688,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'description' :     sales_invoice.taxes[0].description if len(sales_invoice.taxes)>0 else 0
                         },
             # TODO: Shipping for Novartis (Ariba) is on header level. 
-            # TODO: Shipping for Roche (GEP) is a extra item
+            # TODO: Shipping for Roche (GEP) is an extra item
             
             # shipping is listed on item level, not header level.
             'shippingTax' : {'taxable_amount':  '0.00',
