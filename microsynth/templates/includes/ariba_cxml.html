@@ -2,7 +2,6 @@
 	'shippingTax_taxable_amount': shippingTax['taxable_amount'],
 	'shippingTax_amount': shippingTax['amount'],
 	'shippingTax_percent': shippingTax['percent'],
-	'shippingTax_taxPointDate': shippingTax['taxPointDate'],
 	'shippingTax_description': 	shippingTax['description']
 	} 
 -%}
@@ -23,7 +22,6 @@
 {%- set shippingTax_taxable_amount 	= shipping_header.shippingTax_taxable_amount -%}
 {%- set shippingTax_amount 			= shipping_header.shippingTax_amount -%}
 {%- set shippingTax_percent 		= shipping_header.shippingTax_percent -%}
-{%- set shippingTax_taxPointDate 	= shipping_header.shippingTax_taxPointDate -%}
 {%- set shippingTax_description 	= shipping_header.shippingTax_description -%}
 {%- set summary_shipping_amount 	= shipping_header.shippingTax_taxable_amount -%}
 <?xml version="1.0" encoding="UTF-8"?>
@@ -189,12 +187,12 @@
  			</InvoiceDetailOrder>
 			<InvoiceDetailSummary>
 				<SubtotalAmount>
-					<Money currency="{{ basics['currency'] }}">{{ summary['subtotal_amount'] }}</Money>
+					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['subtotal_amount']) }}</Money>
 				</SubtotalAmount>
 				<Tax>
 					<Money currency="{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
 					<Description xml:lang="de-CH"/>
-					<TaxDetail category="vat" percentageRate = "{{ tax['percent'] }}" taxPointDate = "{{tax_taxPointDate}}">
+					<TaxDetail category="vat" percentageRate = "{{ tax['percent'] }}" taxPointDate = "{{ tax['taxPointDate'] }}">
 						<TaxableAmount>
 							<Money currency = "{{ basics['currency'] }}">{{ tax['taxable_amount'] }}</Money>
 						</TaxableAmount>
@@ -203,7 +201,7 @@
 						</TaxAmount>
 						<Description xml:lang = "en">{{ tax['description'] }}</Description>
 					</TaxDetail>
-					<TaxDetail category="vat" percentageRate="{{ shippingTax['percent'] }}" taxPointDate = "{{shippingTax_taxPointDate}}" exemptDetail="exempt"  purpose="shippingTax">
+					<TaxDetail category="vat" percentageRate="{{ shippingTax['percent'] }}" taxPointDate = "{{ shippingTax['taxPointDate'] }}" exemptDetail="exempt"  purpose="shippingTax">
 						<TaxableAmount>
 							<Money currency="{{ basics['currency'] }}">{{ shippingTax['taxable_amount'] }}</Money>
 						</TaxableAmount>
@@ -214,19 +212,19 @@
 					</TaxDetail>
 				</Tax>
 				<ShippingAmount>
-					<Money currency = "{{ basics['currency'] }}">{{ summary['shipping_amount'] }}</Money>
+					<Money currency = "{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['shipping_amount']) }}</Money>
 				</ShippingAmount>
 				<GrossAmount>
-					<Money currency="{{ basics['currency'] }}">{{ summary['gross_amount'] }}</Money>
+					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['gross_amount']) }}</Money>
 				</GrossAmount>
 				<TotalAmountWithoutTax>
-					<Money currency="{{ basics['currency'] }}">{{ summary['total_amount_without_tax'] }}</Money>
+					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['total_amount_without_tax']) }}</Money>
 				</TotalAmountWithoutTax>
 				<NetAmount>
-					<Money currency="{{ basics['currency'] }}">{{ summary['net_amount'] }}</Money>
+					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['net_amount']) }}</Money>
 				</NetAmount>
 				<DueAmount>
-					<Money currency="{{ basics['currency'] }}">{{ summary['due_amount'] }}</Money>
+					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['due_amount']) }}</Money>
 				</DueAmount>
 			</InvoiceDetailSummary>
 		</InvoiceDetailRequest>
