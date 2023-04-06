@@ -29,7 +29,9 @@ def get_customer(contact):
 
     return customer_id
 
-
+# TODO
+# Rename get_billing_address to find_billing_address
+# New function get_billing_address that pulls from the invoice_to contact of a customer. fall back on find_billing_address below
 def get_billing_address(customer_id):
     """
     Returns the primary billing address of a customer specified by its id.

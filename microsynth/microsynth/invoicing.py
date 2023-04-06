@@ -979,33 +979,25 @@ def transmit_carlo_erba_invoices(company):
     for invoice_name in invoice_names:
         si = frappe.get_doc("Sales Invoice", invoice_name)
 
-        # shipping address or order customer
-        if si.shipping_contact:
-            shipping_contact = frappe.get_doc("Contact", si.shipping_contact)
-        else:
-            shipping_contact = frappe.get_doc("Contact", si.contact_person)
+        # Cliente (sold-to-party)
+        # Billing address of the order customer
+        order_customer_id = si.order_customer if si.order_customer else si.customer
+        order_contact_id = frappe.db.get_value("Customer", order_customer_id, "invoice_to")
 
+        order_customer = si.order_customer_display if si.order_customer_display else si.customer_name
+        order_contact = frappe.get_doc("Contact", order_contact_id)
+        order_address = get_billing_address(order_customer_id)
+
+        # Acquiren (ship-to-party)
+        shipping_customer = si.order_customer_display if si.order_customer_display else si.customer_name
+        shipping_contact = frappe.get_doc("Contact", si.shipping_contact if si.shipping_contact else si.contact_person)
         shipping_address = frappe.get_doc("Address", si.shipping_address_name)
 
-        if si.order_customer_display:
-            shipping_customer = si.order_customer_display
-        else:
-            shipping_customer = si.customer_name
-
-        # acquirer: billing address of the end customer who ordered the goods/service
-        if si.order_customer:
-            acquirer_customer = si.order_customer
-        else:
-            acquirer_customer = si.customer
-
-        acquirer_contact_name = frappe.db.get_value("Customer", acquirer_customer, "invoice_to")
-        acquirer_contact = frappe.get_doc("Contact", acquirer_contact_name)
-        acquirer_address = get_billing_address(acquirer_customer)
-
-        # billing address: invoice address of Carlo Erba who needs to pay the invoice
+        # Billing (bill-to-party)
+        # Billing address of Carlo Erba who needs to pay the invoice
+        billing_customer = si.customer_name
         billing_contact = frappe.get_doc("Contact", si.invoice_to)
         billing_address = frappe.get_doc("Address", si.customer_address)
-        billing_customer = si.customer_name
 
         # Header
         header = [
@@ -1050,16 +1042,16 @@ def transmit_carlo_erba_invoices(company):
         # Sold-to-party
         client = get_address_data(
             type = "Cliente",
-            customer_name = shipping_customer,
-            contact = shipping_contact,
-            address = shipping_address)
+            customer_name = order_customer,
+            contact = order_contact,
+            address = order_address)
 
         # Ship-to-party
         acquirer = get_address_data(
             type = "Acquiren",
-            customer_name = acquirer_customer,
-            contact = acquirer_contact,
-            address = acquirer_address)
+            customer_name = shipping_customer,
+            contact = shipping_contact,
+            address = shipping_address)
 
         # bill-to-party
         billing = get_address_data(
