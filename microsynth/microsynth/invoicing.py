@@ -593,17 +593,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     """ Doc string """
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
-    
     customer = frappe.get_doc("Customer", sales_invoice.customer)
-    
     company_details = frappe.get_doc("Company", sales_invoice.company)
-
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
-
     customer_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
-    
     invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
     
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
@@ -1013,6 +1007,12 @@ def transmit_carlo_erba_invoices(company):
         billing_contact = frappe.get_doc("Contact", si.invoice_to)
         billing_address = frappe.get_doc("Address", si.customer_address)
 
+        # First delivery note
+        delivery_note = si.items[0].delivery_note
+        delivery_date = datetime.combine(
+            frappe.get_value("Delivery Note", delivery_note, "posting_date"), 
+            (datetime.min + frappe.get_value("Delivery Note", delivery_note, "posting_time")).time())
+
         # Header
         header = [
             "Header",                                                                       # record_type(8)
@@ -1020,14 +1020,14 @@ def transmit_carlo_erba_invoices(company):
             si.name,                                                                        # invoice_number(8)
             si.po_no if si.po_no else "",                                                   # customer_po_number(22)
             si.posting_date.strftime("%d.%m.%Y"),                                           # invoice_date(8)
-            "",                                                                             # shipping_date(8)
+            delivery_date.strftime("%d.%m.%Y"),                                             # shipping_date(8)    // use first Delivery Note
             si.customer,                                                                    # customer_number(8)
-            "",                                                                             # shipping_number(8)
-            "",                                                                             # bill_to_number(8)
-            "",                                                                             # delivery_number(30)
-            "",                                                                             # trailer_amount(8)
+            shipping_contact.name,                                                          # shipping_number(8)
+            billing_contact.name,                                                           # bill_to_number(8)
+            delivery_note,                                                                  # delivery_number(30) // use first Delivery Note
+            str(len(si.items)),                                                             # trailer_amount(8)   // number of positions?
             str(si.total),                                                                  # netto_amount(15)
-        str(si.grand_total) ]                                                               # total_amount(15)
+            str(si.grand_total) ]                                                           # total_amount(15)
 
         lines.append(header)
 
