@@ -231,6 +231,10 @@ def make_invoice(delivery_note):
     #sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
     
+    # force-set tax_id (intrastat!)
+    if not sales_invoice.tax_id:
+        sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+    
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
     sales_invoice.submit()
@@ -288,6 +292,10 @@ def make_punchout_invoice(delivery_note):
     if punchout_shop.has_static_billing_address and punchout_shop.billing_address:
         sales_invoice.customer_address = punchout_shop.billing_address
 
+    # force-set tax_id (intrastat!)
+    if not sales_invoice.tax_id:
+        sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
     sales_invoice.submit()
@@ -320,6 +328,10 @@ def make_collective_invoice(delivery_notes):
         
     # sales_invoice.set_advances()    # get advances (customer credit)
     sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
+
+    # force-set tax_id (intrastat!)
+    if not sales_invoice.tax_id:
+        sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
 
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
