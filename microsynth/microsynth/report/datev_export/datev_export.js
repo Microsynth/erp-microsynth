@@ -36,11 +36,26 @@ frappe.query_reports["DATEV Export"] = {
         }
     ],
     "onload": (report) => {
+        report.page.add_inner_button( __("XML Export"), function() {
+            xml_export(report.get_values());
+        });
         report.page.add_inner_button( __("PDF Export"), function() {
             pdf_export(report.get_values());
         });
     }
 };
+
+function xml_export(filters) {
+    frappe.call({
+        'method': "microsynth.microsynth.report.datev_export.datev_export.async_xml_export",
+        'args': {
+            'filters': filters
+        },
+        'callback': function(r) {
+            frappe.show_alert( __("Running...") );
+        }
+    });
+}
 
 function pdf_export(filters) {
     frappe.call({

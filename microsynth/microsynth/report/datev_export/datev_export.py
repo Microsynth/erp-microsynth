@@ -24,6 +24,8 @@ def get_columns(filters):
             {"label": _("betrag"), "fieldname": "gross_amount", "fieldtype": "Float", "width": 100, "precision": 2},
             {"label": _("steuer"), "fieldname": "vat_amount", "fieldtype": "float", "width": 100, "precision": 2},
             {"label": _("text"), "fieldname": "description", "fieldtype": "Data", "width": 120},
+            {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 120},
+            {"label": _("External debtor number"), "fieldname": "ext_debitor_number", "fieldtype": "Data", "width": 120}
         ]
     return columns
 
@@ -45,9 +47,12 @@ def get_data(filters, short=False):
             "" AS `book_code`,
             ROUND(100 * `tabSales Invoice`.`total_taxes_and_charges` / `tabSales Invoice`.`net_total`, 1) AS `vat_percent`,
             `tabSales Invoice`.`grand_total` AS `gross_amount`,
-            (-1) * `tabSales Invoice`.`total_taxes_and_charges`  AS `vat_amount`,
-            "Rechnung" AS `description`
+            (-1) * `tabSales Invoice`.`total_taxes_and_charges` AS `vat_amount`,
+            "Rechnung" AS `description`,
+            `tabSales Invoice`.`customer` AS `customer`,
+            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`
         FROM `tabSales Invoice`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
         WHERE 
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`company` = "{company}"
@@ -84,5 +89,44 @@ def pdf_export(filters):
             content_file_name = "{0}/{1}.pdf".format(settings.pdf_export_path, d.get("document"))
             with open(content_file_name, mode='wb') as file:
                 file.write(content_pdf)
+
+    return
+
+@frappe.whitelist()
+def async_xml_export(filters):
+    if type(filters) == str:
+        filters = json.loads(filters)
+        
+    frappe.enqueue(method=xml_export, queue='long', timeout=90, is_async=True, filters=filters)
+    return
+
+def xml_export(filters):
+    """
+    run
+    bench execute microsynth.microsynth.report.datev_export.datev_export.xml_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
+    """
+
+    from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
+
+    data = get_data(filters)
+    settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+
+    i = 0
+
+    for d in data:
+        if d.get("document_type") == "Sales Invoice":
+            xml = create_zugferd_xml(sales_invoice = d.get("document"), verify = True )
+            
+            customer_node = "<ram:ID>{0}</ram:ID>".format(d.get("customer"))
+            debtor_node = "<ram:ID>{0}</ram:ID>".format(d.get("ext_debitor_number") if d.get("ext_debitor_number") else 99999)
+
+            content_xml = xml.replace(customer_node, debtor_node)
+            content_file_name = "{0}/{1}.xml".format(settings.pdf_export_path, d.get("document"))
+            with open(content_file_name, mode='w') as file:
+                file.write(content_xml)
+
+        # i += 1
+        # if i > 50:
+        #     break
 
     return
