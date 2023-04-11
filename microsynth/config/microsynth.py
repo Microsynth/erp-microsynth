@@ -289,13 +289,28 @@ def get_data():
             "label": _("Export"),
             "icon": "fa fa-users",
             "items": [
-                   {
+                    {
                         "type": "report",
                         "name": "DATEV Export",
                         "label": _("DATEV Export"),
                         "doctype": "Sales Invoice",
                         "is_query_report": True
-                   }
+                    },
+                    {
+                        "type": "report",
+                        "name": "Customer Payments",
+                        "label": _("Customer Payments"),
+                        "doctype": "GL Entry",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "doctype": "GL Entry",
+                        "name": "Intrastat",
+                        "label": _("Intrastat"),
+                        "description": _("Intrastat"),
+                        "is_query_report": True
+                    }
             ]
         }
     ]
