@@ -489,6 +489,34 @@ def create_list_of_item_dicts_for_cxml(sales_invoice):
     
     return list_of_invoiced_items
 
+def get_address_dict(customer, contact, address, country_codes):
+    
+    postal_address = {}
+    deliver_to = []
+
+    name = get_name(contact)
+
+    if name != "":
+        deliver_to.append(get_name(contact))
+
+    if contact.department:
+        deliver_to.append(contact.department)
+
+    if contact.institute:
+        deliver_to.append(contact.institute)
+
+    if contact.room:
+        deliver_to.append(contact.room)
+    
+    postal_address["deliver_to"] = deliver_to
+    postal_address["street1"] = address.address_line1
+    postal_address["street2"] = address.address_line2
+    postal_address["pin"] = address.pincode
+    postal_address["city"] = address.city
+    postal_address["country"] = country_codes[address.country].upper()
+    
+    return postal_address
+
 
 def create_position_list(sales_invoice, exclude_shipping):
     """
@@ -622,6 +650,15 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
 
     posting_timepoint = get_posting_datetime(sales_invoice)
+
+    print("--------")
+    test = get_address_dict(
+                customer = None,
+                contact = customer_contact,
+                address = shipping_address,
+                country_codes = country_codes)
+
+    print(test)
 
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
