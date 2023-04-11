@@ -976,7 +976,7 @@ def transmit_carlo_erba_invoices(company):
         print(i.name)
         invoice_names.append(i.name)
 
-    path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + datetime.now().strftime("/%Y-%m-%d_%H-%M")
+    path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
     if not os.path.exists(path):
         os.mkdir(path)
 

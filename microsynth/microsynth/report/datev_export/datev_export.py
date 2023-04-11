@@ -2,9 +2,12 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import os
+from datetime import datetime
 import frappe
 from frappe import _
 import json
+from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -106,12 +109,11 @@ def xml_export(filters):
     bench execute microsynth.microsynth.report.datev_export.datev_export.xml_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
     """
 
-    from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
-
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
-
-    i = 0
+    path = settings.pdf_export_path + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
+    if not os.path.exists(path):
+        os.mkdir(path)
 
     for d in data:
         if d.get("document_type") == "Sales Invoice":
@@ -121,12 +123,8 @@ def xml_export(filters):
             debtor_node = "<ram:ID>{0}</ram:ID>".format(d.get("ext_debitor_number") if d.get("ext_debitor_number") else 99999)
 
             content_xml = xml.replace(customer_node, debtor_node)
-            content_file_name = "{0}/{1}.xml".format(settings.pdf_export_path, d.get("document"))
-            with open(content_file_name, mode='w') as file:
+            file_path = "{0}/{1}.xml".format(path, d.get("document"))
+            with open(file_path, mode='w') as file:
                 file.write(content_xml)
-
-        # i += 1
-        # if i > 50:
-        #     break
 
     return
