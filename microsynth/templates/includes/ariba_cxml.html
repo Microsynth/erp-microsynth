@@ -117,16 +117,9 @@
 							<Country isoCountryCode="{{ shipFrom['iso_country_code'] }}"/>
 						</PostalAddress>
 					</Contact>
-					<Contact addressID="{{ shipTo['address_id'] }}" role="shipTo">
-						<Name xml:lang="de-CH">{{ shipTo['name'] }}</Name>
-						<PostalAddress>
-							<DeliverTo></DeliverTo>
-							<Street>{{ shipTo['street'] }}</Street>
-							<City>{{ shipTo['city'] }}</City>
-							<State/>
-							<PostalCode>{{ shipTo['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ shipTo['iso_country_code'] }}"/>
-						</PostalAddress>
+					<Contact addressID="{{ shipTo['address']['id'] }}" role="shipTo">
+						<Name xml:lang="de-CH">{{ shipTo['address']['name'] }}</Name>
+{{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': shipTo['address'] }) }}
 					</Contact>
 				</InvoiceDetailShipping>
  				<PaymentTerm payInNumberOfDays="45"></PaymentTerm>

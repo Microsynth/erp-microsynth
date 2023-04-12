@@ -508,12 +508,14 @@ def get_address_dict(customer, contact, address, country_codes):
     if contact.room:
         deliver_to.append(contact.room)
     
+    postal_address["id"] = address.customer_address_id
+    postal_address["name"] = address.overwrite_company or customer
     postal_address["deliver_to"] = deliver_to
     postal_address["street1"] = address.address_line1
     postal_address["street2"] = address.address_line2
     postal_address["pin"] = address.pincode
     postal_address["city"] = address.city
-    postal_address["country"] = country_codes[address.country].upper()
+    postal_address["country_code"] = country_codes[address.country].upper()
     
     return postal_address
 
@@ -621,6 +623,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     """ Doc string """
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
+    shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact)
     billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     company_details = frappe.get_doc("Company", sales_invoice.company)
@@ -652,13 +655,13 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     posting_timepoint = get_posting_datetime(sales_invoice)
 
     print("--------")
-    test = get_address_dict(
-                customer = None,
-                contact = customer_contact,
+    ship_to_address = get_address_dict(
+                customer = sales_invoice.customer_name,
+                contact = shipping_contact,
                 address = shipping_address,
                 country_codes = country_codes)
 
-    print(test)
+    print(ship_to_address)
 
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
@@ -709,12 +712,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper()
                         },
-            'shipTo' : {'address_id':       shipping_address.customer_address_id,
-                        'name':             shipping_address.name,
-                        'street':           shipping_address.address_line1,
-                        'pin':              shipping_address.pincode,
-                        'city':             shipping_address.city,
-                        'iso_country_code': country_codes[shipping_address.country].upper()
+            'shipTo' : {'address':          ship_to_address
                         }, 
             'contact':  {'full_name':       invoice_contact.full_name, 
                         'department':       customer_contact.department,
