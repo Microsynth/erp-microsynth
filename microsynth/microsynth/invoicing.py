@@ -647,8 +647,13 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     # define shipping costs on header/item level
     shipping_costs = 0
     if mode == "ARIBA" or mode == "GEP":
-        # TODO handle non-punchout invoices for Ariba/GEP
-        shipping_as_item = punchout_shop.cxml_shipping_as_item
+        # shipping for Ariba (standard) is listed on header level, shipping for GEP is listed on item level
+        if sales_invoice.is_punchout:
+            shipping_as_item = punchout_shop.cxml_shipping_as_item
+        elif mode == "GEP":
+            shipping_as_item = True
+        else:
+            shipping_as_item = False 
 
         for n in sales_invoice.items:
             if n.item_group == "Shipping" and not shipping_as_item:
