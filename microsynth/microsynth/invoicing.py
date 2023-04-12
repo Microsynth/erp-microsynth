@@ -706,7 +706,8 @@ def transmit_sales_invoice(sales_invoice):
     try:
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
         customer = frappe.get_doc("Customer", sales_invoice.customer)
-        
+        settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+
         if sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
         else:
@@ -815,15 +816,13 @@ def transmit_sales_invoice(sales_invoice):
             pass
 
         elif mode == "ARIBA":
-            # create ARIBA cXML input data dict
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-
             cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
-            #print(cxml)
 
-            # TODO: comment in after development to save ariba file to filesystem
-            with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
+            file_path = "{0}/{1}.xml".format(settings.ariba_cxml_export_path, sales_invoice.name)
+            with open(file_path, mode='w') as file:
                 file.write(cxml)
+
             '''
             # attach to sales invoice
             folder = create_folder("ariba", "Home")
@@ -869,13 +868,12 @@ def transmit_sales_invoice(sales_invoice):
             '''
         
         elif mode == "GEP":
-            print("IN GEP")
-            # create Gep cXML input data dict
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
-            file = open('/home/libracore/Desktop/'+ sales_invoice.name, 'w')
-            file.write(cxml)
-            file.close()
+
+            file_path = "{0}/{1}.xml".format(settings.gep_cxml_export_path, sales_invoice.name)
+            with open(file_path, mode='w') as file:
+                file.write(cxml)
             '''
             # TODO: comment in after development to save gep file to filesystem
         
