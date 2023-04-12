@@ -1,29 +1,3 @@
-{%- set shipping_header = {
-	'shippingTax_taxable_amount': shippingTax['taxable_amount'],
-	'shippingTax_amount': shippingTax['amount'],
-	'shippingTax_percent': shippingTax['percent'],
-	'shippingTax_description': 	shippingTax['description']
-	} 
--%}
-{#- overwrite shipping information on header level in the ariba template if needed -#}
-{%- for article in items -%}
-	{%- if "shipping_article" in article.keys() -%}
-		{%- for key in article.keys() -%}
-			{%- if key not in ["price", "shipping_name", "position"] -%}
-				{%- if shipping_header.update({'shippingTax_taxable_amount': article.price})-%}{%- endif -%}
-				{%- if shipping_header.update({'shippingTax_amount': (tax['percent'] * article.price / 100) | round(2) }) -%}{%- endif -%}
-				{%- if shipping_header.update({'shippingTax_percent': tax['percent'] }) -%}{%- endif -%}
-				{%- if shipping_header.update({'shippingTax_description': tax_description}) -%}{%- endif -%}
-				{%- if shipping_header.update({'summary_shipping_amount': article.price}) -%}{%- endif -%} 
-			{%- endif -%}
-		{%- endfor -%}
-	{%- endif -%}
-{%- endfor -%}
-{%- set shippingTax_taxable_amount 	= shipping_header.shippingTax_taxable_amount -%}
-{%- set shippingTax_amount 			= shipping_header.shippingTax_amount -%}
-{%- set shippingTax_percent 		= shipping_header.shippingTax_percent -%}
-{%- set shippingTax_description 	= shipping_header.shippingTax_description -%}
-{%- set summary_shipping_amount 	= shipping_header.shippingTax_taxable_amount -%}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
 <cXML payloadID = "{{ basics['payload_id'] }}" timestamp = "{{ basics['timestamp'] }}" version = "1.2.028">
@@ -66,7 +40,8 @@
 				<InvoicePartner>
 					<Contact addressID="{{ billTo['address']['id'] }}" role="billTo">
  						<Name xml:lang="de-CH">{{ billTo['address']['name'] }}</Name>
-{{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': billTo['address'] }) }}					</Contact>
+{{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': billTo['address'] }) }}
+					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>
 					<Contact role="from">
