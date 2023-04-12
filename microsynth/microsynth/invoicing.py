@@ -624,22 +624,31 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
     shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact)
-    billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     company_details = frappe.get_doc("Company", sales_invoice.company)
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
-    customer_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
-    invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
+    # customer_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+
     
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
+    if sales_invoice.is_punchout:
+        punchout_shop = frappe.get_doc("Punchout Shop", sales_invoice.punchout_shop)
 
-    bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
-
+    # define billing address
+    if sales_invoice.is_punchout and punchout_shop.has_static_billing_address:
+        billing_address = frappe.get_doc("Address", punchout_shop.billing_address)
+        billing_contact = frappe.get_doc("Contact", punchout_shop.billing_contact)
+    else:
+        billing_address = frappe.get_doc("Address", sales_invoice.customer_address)
+        billing_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
+    
     # define shipping costs on header/item level
     shipping_costs = 0
     if mode == "ARIBA" or mode == "GEP":
-        shipping_as_item = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "cxml_shipping_as_item")
+        # TODO handle non-punchout invoices for Ariba/GEP
+        shipping_as_item = punchout_shop.cxml_shipping_as_item
 
         for n in sales_invoice.items:
             if n.item_group == "Shipping" and not shipping_as_item:
@@ -647,6 +656,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     else: 
         shipping_as_item = True
 
+    # other data
+    bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
 
     country_codes = create_country_name_to_code_dict()
@@ -654,21 +665,17 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     posting_timepoint = get_posting_datetime(sales_invoice)
 
-    print("--------")
     ship_to_address = get_address_dict(
         customer = sales_invoice.customer_name,
         contact = shipping_contact,
         address = shipping_address,
         country_codes = country_codes)
     
-    # TODO check punchout shop settings
     bill_to_address = get_address_dict(
         customer = sales_invoice.customer_name,
-        contact = invoice_contact,
+        contact = billing_contact,
         address = billing_address,
         country_codes = country_codes)
-
-    print(ship_to_address)
 
     data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
@@ -699,7 +706,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper()
                         }, 
-            'soldTo' :  {'address':          bill_to_address
+            'soldTo' :  {'address':         bill_to_address
                         }, 
             'shipFrom' : {'name':           company_details.name, 
                         'street':           company_address.address_line1,
@@ -709,11 +716,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         },
             'shipTo' : {'address':          ship_to_address
                         }, 
-            'contact':  {'full_name':       invoice_contact.full_name, 
-                        'department':       customer_contact.department,
-                        'room':             customer_contact.room,
-                        'institute':        customer_contact.institute
-                        },
+            # 'contact':  {'full_name':       invoice_contact.full_name, 
+            #             'department':       customer_contact.department,
+            #             'room':             customer_contact.room,
+            #             'institute':        customer_contact.institute
+            #             },
             'receivingBank' : {'swift_id':  bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
@@ -726,7 +733,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
             'items' :   itemList,
-            'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not shipping_as_item),
+            'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not punchout_shop.cxml_shipping_as_item),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         tax_rate, 
