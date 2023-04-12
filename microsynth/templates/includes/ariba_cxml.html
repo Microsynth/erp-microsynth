@@ -64,15 +64,9 @@
 					<IdReference domain="supplierTaxID" identifier="{{remitTo['supplier_tax_id']}}"/>
 				</InvoicePartner>
 				<InvoicePartner>
-					<Contact addressID="{{ billTo['address_id'] }}" role="billTo">
- 						<Name xml:lang="de-CH">{{ billTo['name'] }}</Name>
-  						<PostalAddress>
-							<Street></Street>
-							<City>{{ billTo['city'] }}</City>
-							<PostalCode>{{ billTo['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ billTo['iso_country_code'] }}"/>
-						</PostalAddress>
-					</Contact>
+					<Contact addressID="{{ billTo['address']['id'] }}" role="billTo">
+ 						<Name xml:lang="de-CH">{{ billTo['address']['name'] }}</Name>
+{{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': billTo['address'] }) }}					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>
 					<Contact role="from">
@@ -86,14 +80,9 @@
 					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>
-					<Contact addressID="{{ soldTo['address_id'] }}" role="soldTo">
-						<Name xml:lang="de-CH">{{ soldTo['name'] }}</Name>
-						<PostalAddress>
-							<Street>{{ soldTo['street'] }}</Street>
-							<City>{{ soldTo['city'] }}</City>
-							<PostalCode>{{ soldTo['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ soldTo['iso_country_code'] }}"/>
-						</PostalAddress>
+					<Contact addressID="{{ soldTo['address']['id'] }}" role="soldTo">
+						<Name xml:lang="de-CH">{{ soldTo['address']['name'] }}</Name>
+{{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': soldTo['address'] }) }}
 					</Contact>
 				</InvoicePartner>
 				<InvoicePartner>

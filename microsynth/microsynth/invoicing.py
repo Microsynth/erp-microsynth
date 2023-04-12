@@ -656,10 +656,17 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     print("--------")
     ship_to_address = get_address_dict(
-                customer = sales_invoice.customer_name,
-                contact = shipping_contact,
-                address = shipping_address,
-                country_codes = country_codes)
+        customer = sales_invoice.customer_name,
+        contact = shipping_contact,
+        address = shipping_address,
+        country_codes = country_codes)
+    
+    # TODO check punchout shop settings
+    bill_to_address = get_address_dict(
+        customer = sales_invoice.customer_name,
+        contact = invoice_contact,
+        address = billing_address,
+        country_codes = country_codes)
 
     print(ship_to_address)
 
@@ -684,13 +691,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'iso_country_code': country_codes[company_address.country].upper(), 
                         'supplier_tax_id':  company_details.tax_id
                         },
-            'billTo' : {'address_id':       billing_address.name, 
-                        'name':             sales_invoice.customer_name,
-                        'department':       invoice_contact.department,
-                        'street':           billing_address.address_line1,
-                        'pin':              billing_address.pincode,
-                        'city':             billing_address.city,
-                        'iso_country_code': country_codes[billing_address.country].upper()
+            'billTo' : {'address':          bill_to_address
                         },
             'from' :    {'name':            company_details.company_name,
                         'street':           company_address.address_line1, 
@@ -698,13 +699,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper()
                         }, 
-            'soldTo' :  {'address_id':      billing_address.name, 
-                        'name':             sales_invoice.customer_name,
-                        'department':       invoice_contact.department,
-                        'street':           billing_address.address_line1,
-                        'pin':              billing_address.pincode,
-                        'city':             billing_address.city,
-                        'iso_country_code': country_codes[billing_address.country].upper()
+            'soldTo' :  {'address':          bill_to_address
                         }, 
             'shipFrom' : {'name':           company_details.name, 
                         'street':           company_address.address_line1,
