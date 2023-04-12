@@ -422,73 +422,6 @@ def get_sales_order_id_and_delivery_note_id(sales_invoice):
     return {"sales_order_id":sales_order_id, "delivery_note_id": delivery_note_id}
 
 
-def create_list_of_item_dicts_for_cxml(sales_invoice):
-    """creates a list of dictionaries of all items of a sales_invoice (including shipping item)"""
-
-    list_of_invoiced_items = []
-    invoice_item_dicts = {}
-    invoice_position = 0
-
-    # need a dict of all item to predict price of an oligo artice
-    all_sole_items = {}
-    item_list = sales_invoice.items
-    for item in item_list:
-        all_sole_items[item.item_code] = item 
-        #print ("\n")
-        #for k, v in item.as_dict().items():
-        #    print ("{}: {}".format(k, v))
-
-    # oligo article
-    invoiced_oligos = {}
-    for oligo_link in sales_invoice.oligos: 
-        invoice_position += 1 
-        oligo_object = frappe.get_doc("Oligo", oligo_link.oligo)
-        oligo_details = {}
-        oligo_details["oligo_article"] = oligo_object
-        oligo_details["invoice_position"] = invoice_position
-        oligo_details["quantity"] = 1
-        oligo_details["description"] = oligo_object.oligo_name
-        oligo_details["price"] = 0
-        oligo_details["base_price"] = 0
-        for oligo_item in oligo_object.items:
-            oligo_details["price"] += oligo_item.qty * all_sole_items[oligo_item.item_code].rate
-            oligo_details["base_price"] = oligo_item.qty * all_sole_items[oligo_item.item_code].base_rate
-        list_of_invoiced_items.append(oligo_details)
-        #print ("\n")
-        #for k, v in oligo_object.as_dict().items():
-        #    print ("{}: {}".format(k, v))
-
-    # other articles incl shipping 
-    for item in sales_invoice.items:
-        invoice_item_dicts[item.item_code] = item
-        if item.item_group not in ["3.1 DNA/RNA Synthese", "Shipping"]: 
-            for k, v in item.as_dict().items(): 
-                print ("{}: {}".format(k, v))
-            # other items (labels)
-            invoice_other_items = {}
-            invoice_position += 1
-            invoice_other_items["other_article"] = item
-            invoice_other_items["invoice_position"] = invoice_position
-            invoice_other_items["quantity"] = item.qty
-            invoice_other_items["description"] = item.item_name
-            invoice_other_items["price"] = item.rate
-            invoice_other_items["base_price"] = item.base_rate
-            list_of_invoiced_items.append(invoice_other_items)
-
-        elif item.item_group == "Shipping": 
-            # shipping
-            invoice_position += 1
-            invoiced_shipping = {}
-            invoiced_shipping["shipping_article"] = item
-            invoiced_shipping["invoice_position"] = invoice_position
-            invoiced_shipping["quantity"] = 1
-            invoiced_shipping["description"] = item.item_name
-            invoiced_shipping["price"] = item.amount
-            invoiced_shipping["base_price"] = item.base_amount
-            list_of_invoiced_items.append(invoiced_shipping)
-    
-    return list_of_invoiced_items
-
 def get_address_dict(customer, contact, address, country_codes):
     
     postal_address = {}
@@ -666,7 +599,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
 
     country_codes = create_country_name_to_code_dict()
-    itemList = create_list_of_item_dicts_for_cxml(sales_invoice)
 
     posting_timepoint = get_posting_datetime(sales_invoice)
 
@@ -682,7 +614,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         address = billing_address,
         country_codes = country_codes)
 
-    data2 = {'basics' : {'sender_network_id' :  settings.ariba_id,
+    data = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
                         'paynet_sender_pid':    settings.paynet_id, 
@@ -737,7 +669,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'supplierVatId':                company_details.tax_id,
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
-            'items' :   itemList,
             'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not punchout_shop.cxml_shipping_as_item),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
@@ -761,7 +692,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'due_amount' :              sales_invoice.rounded_total
                         }
             }
-    return data2
+    return data
 
 
 def transmit_sales_invoice(sales_invoice):
