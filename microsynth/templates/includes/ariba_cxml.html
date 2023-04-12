@@ -1,189 +1,189 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.028/InvoiceDetail.dtd">
 <cXML payloadID = "{{ basics['payload_id'] }}" timestamp = "{{ basics['timestamp'] }}" version = "1.2.028">
-	<Header>
-		<From>
-			<Credential domain = "NetworkID">
-				<Identity>{{ basics['sender_network_id'] }}</Identity>
-			</Credential>
-		</From>
-		<To>
-			<Credential domain = "NetworkID">
-				<Identity>{{ basics['receiver_network_id'] }}</Identity>
-			</Credential>
-		</To>
-		<Sender>
-			<Credential domain = "NetworkID">
-				<Identity>{{ basics['sender_network_id'] }}</Identity>
-				<SharedSecret>{{ basics['shared_secret'] }}</SharedSecret>
-			</Credential>
-			<UserAgent>Supplier</UserAgent>
-		</Sender>
-	</Header>
-	<Request Id = "cXMLData" deploymentMode = "production">
-		<InvoiceDetailRequest>
-			<InvoiceDetailRequestHeader invoiceDate = "{{ basics['invoice_date'] }}" invoiceID = "{{ basics['invoice_id'] }}" invoiceOrigin = "supplier" operation = "new" purpose = "standard">
-				<InvoiceDetailHeaderIndicator/>
-				<InvoiceDetailLineIndicator isTaxInLine = "yes"/>
-				<InvoicePartner>
-					<Contact addressID="99999" role="remitTo">
-						<Name xml:lang="de-CH">{{ remitTo['name'] }}</Name>
-						<PostalAddress>
-							<Street>{{ remitTo['street'] }}</Street>
-							<City>{{ remitTo['city'] }}</City>
-							<PostalCode>{{ remitTo['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ remitTo['iso_country_code'] }}"/>
-						</PostalAddress>
-					</Contact>
-					<IdReference domain="supplierTaxID" identifier="{{remitTo['supplier_tax_id']}}"/>
-				</InvoicePartner>
-				<InvoicePartner>
-					<Contact addressID="{{ billTo['address']['id'] }}" role="billTo">
- 						<Name xml:lang="de-CH">{{ billTo['address']['name'] }}</Name>
+    <Header>
+        <From>
+            <Credential domain = "NetworkID">
+                <Identity>{{ basics['sender_network_id'] }}</Identity>
+            </Credential>
+        </From>
+        <To>
+            <Credential domain = "NetworkID">
+                <Identity>{{ basics['receiver_network_id'] }}</Identity>
+            </Credential>
+        </To>
+        <Sender>
+            <Credential domain = "NetworkID">
+                <Identity>{{ basics['sender_network_id'] }}</Identity>
+                <SharedSecret>{{ basics['shared_secret'] }}</SharedSecret>
+            </Credential>
+            <UserAgent>Supplier</UserAgent>
+        </Sender>
+    </Header>
+    <Request Id = "cXMLData" deploymentMode = "production">
+        <InvoiceDetailRequest>
+            <InvoiceDetailRequestHeader invoiceDate = "{{ basics['invoice_date'] }}" invoiceID = "{{ basics['invoice_id'] }}" invoiceOrigin = "supplier" operation = "new" purpose = "standard">
+                <InvoiceDetailHeaderIndicator/>
+                <InvoiceDetailLineIndicator isTaxInLine = "yes"/>
+                <InvoicePartner>
+                    <Contact addressID="99999" role="remitTo">
+                        <Name xml:lang="de-CH">{{ remitTo['name'] }}</Name>
+                        <PostalAddress>
+                            <Street>{{ remitTo['street'] }}</Street>
+                            <City>{{ remitTo['city'] }}</City>
+                            <PostalCode>{{ remitTo['pin'] }}</PostalCode>
+                            <Country isoCountryCode="{{ remitTo['iso_country_code'] }}"/>
+                        </PostalAddress>
+                    </Contact>
+                    <IdReference domain="supplierTaxID" identifier="{{remitTo['supplier_tax_id']}}"/>
+                </InvoicePartner>
+                <InvoicePartner>
+                    <Contact addressID="{{ billTo['address']['id'] }}" role="billTo">
+                        <Name xml:lang="de-CH">{{ billTo['address']['name'] }}</Name>
 {{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': billTo['address'] }) }}
-					</Contact>
-				</InvoicePartner>
-				<InvoicePartner>
-					<Contact role="from">
-						<Name xml:lang="de-CH">{{ from['name'] }}</Name>
-						<PostalAddress>
-							<Street>{{ from['street'] }}</Street>
-							<City>{{ from['city'] }}</City>
-							<PostalCode>{{ from['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ from['iso_country_code'] }}"/>
-						</PostalAddress>
-					</Contact>
-				</InvoicePartner>
-				<InvoicePartner>
-					<Contact addressID="{{ soldTo['address']['id'] }}" role="soldTo">
-						<Name xml:lang="de-CH">{{ soldTo['address']['name'] }}</Name>
+                    </Contact>
+                </InvoicePartner>
+                <InvoicePartner>
+                    <Contact role="from">
+                        <Name xml:lang="de-CH">{{ from['name'] }}</Name>
+                        <PostalAddress>
+                            <Street>{{ from['street'] }}</Street>
+                            <City>{{ from['city'] }}</City>
+                            <PostalCode>{{ from['pin'] }}</PostalCode>
+                            <Country isoCountryCode="{{ from['iso_country_code'] }}"/>
+                        </PostalAddress>
+                    </Contact>
+                </InvoicePartner>
+                <InvoicePartner>
+                    <Contact addressID="{{ soldTo['address']['id'] }}" role="soldTo">
+                        <Name xml:lang="de-CH">{{ soldTo['address']['name'] }}</Name>
 {{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': soldTo['address'] }) }}
-					</Contact>
-				</InvoicePartner>
-				<InvoicePartner>
-					<Contact role="wireReceivingBank">
-						<Name xml:lang="de-CH"></Name>
-					</Contact>
-					<IdReference domain="swiftID" identifier="{{ receivingBank['swift_id'] }}"/>
-					<IdReference domain="ibanID" identifier="{{ receivingBank['iban_id'] }}"/>
-					<IdReference domain="accountName" identifier="{{ receivingBank['account_name'] }}"/>
-					<IdReference domain="accountID" identifier="{{ receivingBank['account_id'] }}"/>
-					<IdReference domain="accountType" identifier="{{ receivingBank['account_type'] }}"/>
-					<IdReference domain="branchName" identifier="{{ receivingBank['branch_name'] }}"/>
-				</InvoicePartner>
-				<InvoiceDetailShipping>
-					<Contact role="shipFrom">
-						<Name xml:lang="de-CH">{{ shipFrom['name'] }}</Name>
-						<PostalAddress>
-							<Street>{{ shipFrom['street'] }}</Street>
-							<City>{{ shipFrom['city'] }}</City>
-							<PostalCode>{{ shipFrom['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ shipFrom['iso_country_code'] }}"/>
-						</PostalAddress>
-					</Contact>
-					<Contact addressID="{{ shipTo['address']['id'] }}" role="shipTo">
-						<Name xml:lang="de-CH">{{ shipTo['address']['name'] }}</Name>
+                    </Contact>
+                </InvoicePartner>
+                <InvoicePartner>
+                    <Contact role="wireReceivingBank">
+                        <Name xml:lang="de-CH"></Name>
+                    </Contact>
+                    <IdReference domain="swiftID" identifier="{{ receivingBank['swift_id'] }}"/>
+                    <IdReference domain="ibanID" identifier="{{ receivingBank['iban_id'] }}"/>
+                    <IdReference domain="accountName" identifier="{{ receivingBank['account_name'] }}"/>
+                    <IdReference domain="accountID" identifier="{{ receivingBank['account_id'] }}"/>
+                    <IdReference domain="accountType" identifier="{{ receivingBank['account_type'] }}"/>
+                    <IdReference domain="branchName" identifier="{{ receivingBank['branch_name'] }}"/>
+                </InvoicePartner>
+                <InvoiceDetailShipping>
+                    <Contact role="shipFrom">
+                        <Name xml:lang="de-CH">{{ shipFrom['name'] }}</Name>
+                        <PostalAddress>
+                            <Street>{{ shipFrom['street'] }}</Street>
+                            <City>{{ shipFrom['city'] }}</City>
+                            <PostalCode>{{ shipFrom['pin'] }}</PostalCode>
+                            <Country isoCountryCode="{{ shipFrom['iso_country_code'] }}"/>
+                        </PostalAddress>
+                    </Contact>
+                    <Contact addressID="{{ shipTo['address']['id'] }}" role="shipTo">
+                        <Name xml:lang="de-CH">{{ shipTo['address']['name'] }}</Name>
 {{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': shipTo['address'] }) }}
-					</Contact>
-				</InvoiceDetailShipping>
- 				<PaymentTerm payInNumberOfDays="45"></PaymentTerm>
-				<Comments></Comments>
-				<Extrinsic name="buyerVatID">{{ extrinsic['buyerVatId'] }}</Extrinsic>
-				<Extrinsic name="supplierVatID">{{ extrinsic['supplierVatId'] }}</Extrinsic>
- 				<Extrinsic name="invoiceSourceDocument">PurchaseOrder</Extrinsic>
-				<Extrinsic name="invoiceSubmissionMethod">cXML</Extrinsic>
-				<Extrinsic name="paymentMethod">wire</Extrinsic>
-				<Extrinsic name="supplierCommercialIdentifier">{{ extrinsic['supplierCommercialIdentifier'] }}</Extrinsic>
-			</InvoiceDetailRequestHeader>
-			<InvoiceDetailOrder>
-				<InvoiceDetailOrderInfo>
-					<OrderReference orderID="{{ basics['order_id'] }}">
-						<DocumentReference payloadID=""/>
-					</OrderReference>
-				</InvoiceDetailOrderInfo>
+                    </Contact>
+                </InvoiceDetailShipping>
+                <PaymentTerm payInNumberOfDays="45"></PaymentTerm>
+                <Comments></Comments>
+                <Extrinsic name="buyerVatID">{{ extrinsic['buyerVatId'] }}</Extrinsic>
+                <Extrinsic name="supplierVatID">{{ extrinsic['supplierVatId'] }}</Extrinsic>
+                <Extrinsic name="invoiceSourceDocument">PurchaseOrder</Extrinsic>
+                <Extrinsic name="invoiceSubmissionMethod">cXML</Extrinsic>
+                <Extrinsic name="paymentMethod">wire</Extrinsic>
+                <Extrinsic name="supplierCommercialIdentifier">{{ extrinsic['supplierCommercialIdentifier'] }}</Extrinsic>
+            </InvoiceDetailRequestHeader>
+            <InvoiceDetailOrder>
+                <InvoiceDetailOrderInfo>
+                    <OrderReference orderID="{{ basics['order_id'] }}">
+                        <DocumentReference payloadID=""/>
+                    </OrderReference>
+                </InvoiceDetailOrderInfo>
 
 {%- for pos in positions -%}
-				{# Positions - comment for indenting #}
-				<InvoiceDetailItem invoiceLineNumber="{{ pos['number'] }}" quantity = "{{ pos['quantity'] }}">
-					<UnitOfMeasure>EA</UnitOfMeasure>
-					<UnitPrice>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['rate']) }}</Money> 
-					</UnitPrice>
-					<InvoiceDetailItemReference lineNumber="{{ pos['number'] }}">
-						<ItemID>
-							<SupplierPartID>{{ pos['item'] }}</SupplierPartID>
-						</ItemID>
-						<Description xml:lang="de-CH">{{ pos['description'] }}</Description>
-					</InvoiceDetailItemReference>
-					<SubtotalAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
-					</SubtotalAmount>
-					<Tax>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
-						<Description xml:lang="de-CH"/>
-						<TaxDetail category="vat" percentageRate="{{ tax['percent'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
-							<TaxableAmount>
-								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
-							</TaxableAmount>
-							<TaxAmount>
-								<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
-							</TaxAmount>
-							<Description xml:lang="en">{{ tax['description'] }}</Description>
-						</TaxDetail>
-					</Tax>
-					<GrossAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
-					</GrossAmount>
-					<NetAmount>
-						<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
-					</NetAmount>
-				</InvoiceDetailItem>
+                {# Positions - comment for indenting #}
+                <InvoiceDetailItem invoiceLineNumber="{{ pos['number'] }}" quantity = "{{ pos['quantity'] }}">
+                    <UnitOfMeasure>EA</UnitOfMeasure>
+                    <UnitPrice>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['rate']) }}</Money> 
+                    </UnitPrice>
+                    <InvoiceDetailItemReference lineNumber="{{ pos['number'] }}">
+                        <ItemID>
+                            <SupplierPartID>{{ pos['item'] }}</SupplierPartID>
+                        </ItemID>
+                        <Description xml:lang="de-CH">{{ pos['description'] }}</Description>
+                    </InvoiceDetailItemReference>
+                    <SubtotalAmount>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
+                    </SubtotalAmount>
+                    <Tax>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
+                        <Description xml:lang="de-CH"/>
+                        <TaxDetail category="vat" percentageRate="{{ tax['percent'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
+                            <TaxableAmount>
+                                <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount']) }}</Money> 
+                            </TaxableAmount>
+                            <TaxAmount>
+                                <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['tax_amount']) }}</Money>
+                            </TaxAmount>
+                            <Description xml:lang="en">{{ tax['description'] }}</Description>
+                        </TaxDetail>
+                    </Tax>
+                    <GrossAmount>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
+                    </GrossAmount>
+                    <NetAmount>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(pos['amount'] + pos['tax_amount']) }}</Money>
+                    </NetAmount>
+                </InvoiceDetailItem>
 {%- endfor -%}
 
-{# end of first article iteration #}
- 			</InvoiceDetailOrder>
-			<InvoiceDetailSummary>
-				<SubtotalAmount>
-					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['subtotal_amount']) }}</Money>
-				</SubtotalAmount>
-				<Tax>
-					<Money currency="{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
-					<Description xml:lang="de-CH"/>
-					<TaxDetail category="vat" percentageRate = "{{ tax['percent'] }}" taxPointDate = "{{ tax['taxPointDate'] }}">
-						<TaxableAmount>
-							<Money currency = "{{ basics['currency'] }}">{{ tax['taxable_amount'] }}</Money>
-						</TaxableAmount>
-						<TaxAmount>
-							<Money currency = "{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
-						</TaxAmount>
-						<Description xml:lang = "en">{{ tax['description'] }}</Description>
-					</TaxDetail>
-					<TaxDetail category="vat" percentageRate="{{ shippingTax['percent'] }}" taxPointDate = "{{ shippingTax['taxPointDate'] }}" exemptDetail="exempt"  purpose="shippingTax">
-						<TaxableAmount>
-							<Money currency="{{ basics['currency'] }}">{{ shippingTax['taxable_amount'] }}</Money>
-						</TaxableAmount>
-						<TaxAmount>
-							<Money currency="{{ basics['currency'] }}">{{ shippingTax['amount'] }}</Money>
-						</TaxAmount>
-					<Description xml:lang="en">{{ shippingTax['description'] }}</Description>
-					</TaxDetail>
-				</Tax>
-				<ShippingAmount>
-					<Money currency = "{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['shipping_amount']) }}</Money>
-				</ShippingAmount>
-				<GrossAmount>
-					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['gross_amount']) }}</Money>
-				</GrossAmount>
-				<TotalAmountWithoutTax>
-					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['total_amount_without_tax']) }}</Money>
-				</TotalAmountWithoutTax>
-				<NetAmount>
-					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['net_amount']) }}</Money>
-				</NetAmount>
-				<DueAmount>
-					<Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['due_amount']) }}</Money>
-				</DueAmount>
-			</InvoiceDetailSummary>
-		</InvoiceDetailRequest>
-	</Request>
+{# end of position iteration #}
+             </InvoiceDetailOrder>
+            <InvoiceDetailSummary>
+                <SubtotalAmount>
+                    <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['subtotal_amount']) }}</Money>
+                </SubtotalAmount>
+                <Tax>
+                    <Money currency="{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
+                    <Description xml:lang="de-CH"/>
+                    <TaxDetail category="vat" percentageRate = "{{ tax['percent'] }}" taxPointDate = "{{ tax['taxPointDate'] }}">
+                        <TaxableAmount>
+                            <Money currency = "{{ basics['currency'] }}">{{ tax['taxable_amount'] }}</Money>
+                        </TaxableAmount>
+                        <TaxAmount>
+                            <Money currency = "{{ basics['currency'] }}">{{ tax['amount'] }}</Money>
+                        </TaxAmount>
+                        <Description xml:lang = "en">{{ tax['description'] }}</Description>
+                    </TaxDetail>
+                    <TaxDetail category="vat" percentageRate="{{ shippingTax['percent'] }}" taxPointDate = "{{ shippingTax['taxPointDate'] }}" exemptDetail="exempt"  purpose="shippingTax">
+                        <TaxableAmount>
+                            <Money currency="{{ basics['currency'] }}">{{ shippingTax['taxable_amount'] }}</Money>
+                        </TaxableAmount>
+                        <TaxAmount>
+                            <Money currency="{{ basics['currency'] }}">{{ shippingTax['amount'] }}</Money>
+                        </TaxAmount>
+                    <Description xml:lang="en">{{ shippingTax['description'] }}</Description>
+                    </TaxDetail>
+                </Tax>
+                <ShippingAmount>
+                    <Money currency = "{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['shipping_amount']) }}</Money>
+                </ShippingAmount>
+                <GrossAmount>
+                    <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['gross_amount']) }}</Money>
+                </GrossAmount>
+                <TotalAmountWithoutTax>
+                    <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['total_amount_without_tax']) }}</Money>
+                </TotalAmountWithoutTax>
+                <NetAmount>
+                    <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['net_amount']) }}</Money>
+                </NetAmount>
+                <DueAmount>
+                    <Money currency="{{ basics['currency'] }}">{{ "{:,.2f}".format(summary['due_amount']) }}</Money>
+                </DueAmount>
+            </InvoiceDetailSummary>
+        </InvoiceDetailRequest>
+    </Request>
 </cXML>

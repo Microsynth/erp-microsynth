@@ -1,16 +1,16 @@
-						<PostalAddress>
-							{%- for d in address['deliver_to']-%}
-							{# comment for indenting #}
-							<DeliverTo>{{ d }}</DeliverTo>
-							{%- endfor -%}
-							{# comment for indenting #}
-							<Street>{{ address['street1'] }}</Street>
-							{%- if address['street2'] -%}
-							{# comment for indenting #}
-							<Street>{{ address['street2'] }}</Street>
-							{%- endif -%}
-							{# comment for indenting #}
-							<City>{{ address['city'] }}</City>
-							<PostalCode>{{ address['pin'] }}</PostalCode>
-							<Country isoCountryCode="{{ address['country_code'] }}"/>
-						</PostalAddress>
+                        <PostalAddress>
+                            {%- for d in address['deliver_to']-%}
+                            {# comment for indenting #}
+                            <DeliverTo>{{ d }}</DeliverTo>
+                            {%- endfor -%}
+                            {# comment for indenting #}
+                            <Street>{{ address['street1'] }}</Street>
+                            {%- if address['street2'] -%}
+                            {# comment for indenting #}
+                            <Street>{{ address['street2'] }}</Street>
+                            {%- endif -%}
+                            {# comment for indenting #}
+                            <City>{{ address['city'] }}</City>
+                            <PostalCode>{{ address['pin'] }}</PostalCode>
+                            <Country isoCountryCode="{{ address['country_code'] }}"/>
+                        </PostalAddress>
