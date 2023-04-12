@@ -594,6 +594,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     else: 
         shipping_as_item = True
 
+    # TODO Ariba IDs if not punchout
+    # TODO Fiscal representation
+    # TODO Payment terms (days)
+    # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
@@ -625,6 +629,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
+                        'pay_in_days': 42, #
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
@@ -641,7 +646,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
-                        'iso_country_code': country_codes[company_address.country].upper()
+                        'iso_country_code': country_codes[company_address.country].upper(),
+                        'supplier_tax_id':  company_details.tax_id
                         }, 
             'soldTo' :  {'address':         bill_to_address
                         }, 
@@ -789,6 +795,7 @@ def transmit_sales_invoice(sales_invoice):
             make(
                 recipients = target_email,
                 sender = "info@microsynth.ch",
+                sender_full_name = "Microsynth",
                 cc = "info@microsynth.ch",
                 subject = subject, 
                 content = message,

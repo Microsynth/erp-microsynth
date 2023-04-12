@@ -53,6 +53,7 @@
                             <Country isoCountryCode="{{ from['iso_country_code'] }}"/>
                         </PostalAddress>
                     </Contact>
+                    <IdReference domain="vatID" identifier="{{from['supplier_tax_id']}}"/>
                 </InvoicePartner>
                 <InvoicePartner>
                     <Contact addressID="{{ soldTo['address']['id'] }}" role="soldTo">
@@ -86,7 +87,7 @@
 {{ frappe.render_template("microsynth/templates/includes/cxml_address.html", {'address': shipTo['address'] }) }}
                     </Contact>
                 </InvoiceDetailShipping>
-                <PaymentTerm payInNumberOfDays="45"></PaymentTerm>
+                <PaymentTerm payInNumberOfDays="{{ basics['pay_in_days'] }}"></PaymentTerm>
                 <Comments></Comments>
                 <Extrinsic name="buyerVatID">{{ extrinsic['buyerVatId'] }}</Extrinsic>
                 <Extrinsic name="supplierVatID">{{ extrinsic['supplierVatId'] }}</Extrinsic>
