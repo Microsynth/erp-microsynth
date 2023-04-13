@@ -18,7 +18,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -441,7 +441,7 @@ def get_address_dict(customer, contact, address, country_codes):
     if contact.room:
         deliver_to.append(contact.room)
     
-    postal_address["id"] = address.customer_address_id
+    postal_address["id"] = replace_none(address.customer_address_id)
     postal_address["name"] = address.overwrite_company or customer
     postal_address["deliver_to"] = deliver_to
     postal_address["street1"] = address.address_line1
@@ -619,7 +619,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
 
-    data = {'basics' : {'sender_network_id' :  settings.ariba_id,
+    data = {'basics' : {'sender_network_id' :   settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
                         'paynet_sender_pid':    settings.paynet_id, 
