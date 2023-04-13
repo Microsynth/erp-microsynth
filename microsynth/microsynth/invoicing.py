@@ -991,6 +991,13 @@ def transmit_carlo_erba_invoices(company):
             frappe.get_value("Delivery Note", delivery_note, "posting_date"), 
             (datetime.min + frappe.get_value("Delivery Note", delivery_note, "posting_time")).time())
 
+        positions_count = 0
+        for item in si.items:
+            if item.amount == 0:
+                continue
+            else:
+                positions_count += 1
+
         # Header
         header = [
             "Header",                                                                       # record_type(8)
@@ -1003,7 +1010,7 @@ def transmit_carlo_erba_invoices(company):
             shipping_contact.name,                                                          # shipping_number(8)
             billing_contact.name,                                                           # bill_to_number(8)
             delivery_note,                                                                  # delivery_number(30) // use first Delivery Note
-            str(len(si.items)),                                                             # trailer_amount(8)   // number of positions?
+            str(positions_count),                                                           # trailer_amount(8)   // number of positions?
             str(si.total),                                                                  # netto_amount(15)
             str(si.grand_total) ]                                                           # total_amount(15)
 
