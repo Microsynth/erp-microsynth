@@ -595,9 +595,18 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         shipping_as_item = True
 
     # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
+    # TODO GEP/Ariba sender ID
     # TODO Fiscal representation
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
+    
+    if mode == "ARIBA":
+        sender_network_id = settings.ariba_id
+    elif sales_invoice.is_punchout and mode == "GEP":
+        sender_network_id = punchout_shop.supplier_network_id
+    elif mode == "GEP":
+        sender_network_id = "MICROSYNTH"
+
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
 
@@ -619,9 +628,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
 
-    data = {'basics' : {'sender_network_id' :   settings.ariba_id,
+    data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
-                        'shared_secret':        settings.ariba_secret,
+                        'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
