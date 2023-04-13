@@ -597,6 +597,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
     # TODO GEP/Ariba sender ID
     # TODO Fiscal representation
+    # TODO handle shipping items without costs --> do not list on invoice
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
     
