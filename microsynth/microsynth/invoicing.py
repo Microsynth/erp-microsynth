@@ -607,6 +607,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     elif mode == "GEP":
         sender_network_id = "MICROSYNTH"
 
+    
+    if "CHE" in company_details.tax_id and "MWST" not in company_details.tax_id.upper():
+        supplier_tax_id = company_details.tax_id + " MWST"
+    else:
+        supplier_tax_id = company_details.tax_id
+
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
 
@@ -648,7 +654,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'pin':              company_address.pincode,
                         'city':             company_address.city, 
                         'iso_country_code': country_codes[company_address.country].upper(), 
-                        'supplier_tax_id':  company_details.tax_id
+                        'supplier_tax_id':  supplier_tax_id
                         },
             'billTo' : {'address':          bill_to_address
                         },
@@ -657,7 +663,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper(),
-                        'supplier_tax_id':  company_details.tax_id
+                        'supplier_tax_id':  supplier_tax_id
                         }, 
             'soldTo' :  {'address':         bill_to_address
                         }, 
@@ -682,7 +688,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name if bank_account.bank_branch_name else bank_account.bank_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id,
-                        'supplierVatId':                company_details.tax_id,
+                        'supplierVatId':                supplier_tax_id,
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
             'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not punchout_shop.cxml_shipping_as_item),
