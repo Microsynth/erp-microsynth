@@ -556,7 +556,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     """ Doc string """
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact)
+    shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact or sales_invoice.contact_person)
 
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     company_details = frappe.get_doc("Company", sales_invoice.company)
