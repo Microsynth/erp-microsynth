@@ -594,9 +594,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     else: 
         shipping_as_item = True
 
-    # TODO Ariba IDs if not punchout
+    # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
     # TODO Fiscal representation
-    # TODO Payment terms (days)
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
@@ -618,6 +617,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         address = billing_address,
         country_codes = country_codes)
 
+    terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
+
     data = {'basics' : {'sender_network_id' :  settings.ariba_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret,
@@ -629,7 +630,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
-                        'pay_in_days': 42, #
+                        'pay_in_days':          terms_template.terms[0].credit_days, 
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
