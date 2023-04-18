@@ -16,7 +16,7 @@ T 100,125,180,3,pt 8;{{sender_header}}
 G 5,122,0;L:95,0.5,r,r
 {# receiver address #}
 ; ### customer address ###
-{# additional line break #}
+{# additional line break  #}
 {%- for element in lines -%}
     {%- set print_start_position = 45+(lines.index(element)*5) -%}
 T {{print_start_position}}, 100, 90, 3, pt 10;{{element}}
