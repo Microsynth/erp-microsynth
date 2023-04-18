@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV invoices" version="5.0" xml_data="DATEV Export" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v050 Belegverwaltung_online_invoice_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v050" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<invoice_info invoice_date="{{ doc.posting_date }}" invoice_type="Rechnung" delivery_date="{{ doc.posting_date }}" invoice_id="{{ doc.name }}" />
+<accounting_info booking_text="Erlöse" />
+<invoice_party>
+    {%- set customer_address = frappe.get_doc("Address", doc.customer_address) %}
+    {%- set customer = frappe.get_doc("Customer", doc.customer) %}
+    <address street="{{ customer_address.address_line1 }}" name="{{ doc.customer_name }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
+    <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or customer.name }}"/>
+</invoice_party>
+{%- set company = frappe.get_doc("Company", doc.company) %}
+<supplier_party vat_id="{{ (company.tax_id or '').replace(' ', '') }}">
+    {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
+    <address street="{{ company_address.address_line1 }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+    {%- set account = frappe.get_doc("Account", doc.debit_to) %}
+    <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+</supplier_party>
+<payment_conditions currency="{{ doc.currency }}" due_date="{{ doc.due_date }}" payment_conditions_text="{{ doc.payment_terms_template or '-' }}"></payment_conditions>
+{%- if doc.taxes and doc.taxes|len > 0 %}
+    {%- set tax_rate = doc.taxes[0].rate -%}
+{%- else %}
+    {%- set tax_rate = 0 -%}
+{%- endif %}
+{%- for item in doc.get('items') %}
+<invoice_item_list description_short="{{ item.item_name }}" quantity="{{ item.qty }}">
+    <price_line_amount tax="{{ "{:.2f}".format(tax_rate) }}" tax_amount="{{ "{:.2f}".format(item.amount * (tax_rate/100)) }}" gross_price_line_amount="{{ "{:.2f}".format(item.amount * ((100 + tax_rate)/100)) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
+    {%- set account_info = item.income_account.split(" - ") %}
+    <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
+</invoice_item_list>
+{%- endfor %}
+
+<total_amount total_gross_amount_excluding_third-party_collection="{{ "{:.2f}".format(doc.grand_total) }}" net_total_amount="{{ "{:.2f}".format(doc.net_total) }}" currency="{{ doc.currency }}">
+{%- for t in doc.taxes %}
+    <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" tax_amount="{{ "{:.2f}".format(doc.total_taxes_and_charges) }}" currency="{{ doc.currency }}" />
+{%- endfor %}
+</total_amount>
+</invoice>

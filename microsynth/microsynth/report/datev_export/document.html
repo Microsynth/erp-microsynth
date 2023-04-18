@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<archive version="5.0" generatingSystem="libracore business software" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xml.datev.de/bedi/tps/document/v05.0 document_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/document/v05.0">
+    <header>
+        <date>{{ frappe.utils.get_datetime(date).strftime("%Y-%m-%dT%H:%M:%S") }}</date>
+        <description>{{ title }}</description>
+    </header>
+    <content>
+        {% for document in documents %}
+        <document>
+            <extension xsi:type="Invoice" datafile="{{ document.get('xml_filename') }}">
+                <property key="InvoiceType" value="Outgoing"/>
+            </extension>
+            <extension xsi:type="File" name="{{ document.get('pdf_filename') }}"/>
+        </document>
+        {% endfor %}
+    </content>
+</archive>

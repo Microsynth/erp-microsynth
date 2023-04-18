@@ -84,14 +84,11 @@ def pdf_export(filters):
     
     for d in data:
         if d.get("document_type") == "Sales Invoice":
-            content_pdf = frappe.get_print(
-                d.get("document_type"), 
-                d.get("document"), 
-                print_format=settings.pdf_print_format, 
-                as_pdf=True)
-            content_file_name = "{0}/{1}.pdf".format(settings.pdf_export_path, d.get("document"))
-            with open(content_file_name, mode='wb') as file:
-                file.write(content_pdf)
+            create_pdf(path=settings.pdf_export_path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document"), 
+                print_format=settings.pdf_print_format
+            )
 
     return
 
@@ -106,7 +103,7 @@ def async_xml_export(filters):
 def xml_export(filters):
     """
     run
-    bench execute microsynth.microsynth.report.datev_export.datev_export.xml_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
+    $ bench execute microsynth.microsynth.report.datev_export.datev_export.xml_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
     """
 
     data = get_data(filters)
@@ -126,5 +123,86 @@ def xml_export(filters):
             file_path = "{0}/{1}.xml".format(path, d.get("document"))
             with open(file_path, mode='w') as file:
                 file.write(content_xml)
+
+    return
+
+@frappe.whitelist()
+def async_package_export(filters):
+    if type(filters) == str:
+        filters = json.loads(filters)
+        
+    frappe.enqueue(method=package_export, queue='long', timeout=120, is_async=True, filters=filters)
+    return
+    
+def create_pdf(path, dt, dn, print_format):
+    content_pdf = frappe.get_print(
+        dt, 
+        dn, 
+        print_format=print_format, 
+        as_pdf=True)
+    file_name = "{0}.pdf".format(dn)
+    content_file_name = "{0}/{1}".format(path, file_name)
+    with open(content_file_name, mode='wb') as file:
+        file.write(content_pdf)
+    return file_name
+    
+def create_datev_xml(path, dt, dn):
+    datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
+        'doc': frappe.get_doc(dt, dn).as_dict()
+    })
+    file_name = "{0}.xml".format(dn)
+    content_file_name = "{0}/{1}".format(path, file_name)
+    with open(content_file_name, mode='w') as file:
+        file.write(datev_xml)
+    return file_name
+
+def create_datev_summary_xml(path, document):
+    datev_summary_xml = frappe.render_template("microsynth/microsynth/report/datev_export/document.html", document)
+    file_name = "document.xml"
+    content_file_name = "{0}/{1}".format(path, file_name)
+    with open(content_file_name, mode='w') as file:
+        file.write(datev_summary_xml)
+    return file_name
+    
+"""
+Export the complete sales invoice package with pdf, xml and document overview
+"""
+def package_export(filters):
+    """
+    run
+    $ bench execute microsynth.microsynth.report.datev_export.datev_export.package_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
+    """
+
+    data = get_data(filters)
+    settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+    date = datetime.now()
+    path = "{0}/{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    document = {
+        'date': date,
+        'title': 'DATEV Export',
+        'documents': []
+    }
+    for d in data:
+        if d.get("document_type") == "Sales Invoice":
+            # create pdf
+            pdf_file = create_pdf(path=path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document"), 
+                print_format=settings.pdf_print_format
+            )
+            xml_file = create_datev_xml(path=path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document")
+            )
+            
+            document['documents'].append({
+                'xml_filename': xml_file,
+                'pdf_filename': pdf_file
+            })
+            
+    create_datev_summary_xml(path, document)
 
     return
