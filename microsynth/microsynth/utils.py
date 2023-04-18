@@ -246,6 +246,13 @@ def login(usr, pwd):
     return frappe.local.session
 
 
+def replace_none(input):
+    """
+    Return an empty string if the input is None, else return the input.
+    """
+    return input if (input != None) else ""
+
+
 def get_name(contact):
     """
     Assembles the first name and last name of a contact 

@@ -18,7 +18,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -441,7 +441,7 @@ def get_address_dict(customer, contact, address, country_codes):
     if contact.room:
         deliver_to.append(contact.room)
     
-    postal_address["id"] = address.customer_address_id
+    postal_address["id"] = replace_none(address.customer_address_id)
     postal_address["name"] = address.overwrite_company or customer
     postal_address["deliver_to"] = deliver_to
     postal_address["street1"] = address.address_line1
@@ -556,7 +556,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     """ Doc string """
 
     shipping_address = frappe.get_doc("Address", sales_invoice.shipping_address_name)
-    shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact)
+    shipping_contact = frappe.get_doc("Contact", sales_invoice.shipping_contact or sales_invoice.contact_person)
 
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     company_details = frappe.get_doc("Company", sales_invoice.company)
@@ -594,11 +594,26 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     else: 
         shipping_as_item = True
 
-    # TODO Ariba IDs if not punchout
+    # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
+    # TODO GEP/Ariba sender ID
     # TODO Fiscal representation
-    # TODO Payment terms (days)
+    # TODO handle shipping items without costs --> do not list on invoice
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
+    
+    if mode == "ARIBA":
+        sender_network_id = settings.ariba_id
+    elif sales_invoice.is_punchout and mode == "GEP":
+        sender_network_id = punchout_shop.supplier_network_id
+    elif mode == "GEP":
+        sender_network_id = "MICROSYNTH"
+
+    
+    if "CHE" in company_details.tax_id and "MWST" not in company_details.tax_id.upper():
+        supplier_tax_id = company_details.tax_id + " MWST"
+    else:
+        supplier_tax_id = company_details.tax_id
+
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
 
@@ -618,9 +633,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         address = billing_address,
         country_codes = country_codes)
 
-    data = {'basics' : {'sender_network_id' :  settings.ariba_id,
+    terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
+
+    data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
-                        'shared_secret':        settings.ariba_secret,
+                        'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
@@ -629,7 +646,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
-                        'pay_in_days': 42, #
+                        'pay_in_days':          terms_template.terms[0].credit_days, 
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
@@ -638,7 +655,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'pin':              company_address.pincode,
                         'city':             company_address.city, 
                         'iso_country_code': country_codes[company_address.country].upper(), 
-                        'supplier_tax_id':  company_details.tax_id
+                        'supplier_tax_id':  supplier_tax_id
                         },
             'billTo' : {'address':          bill_to_address
                         },
@@ -647,7 +664,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper(),
-                        'supplier_tax_id':  company_details.tax_id
+                        'supplier_tax_id':  supplier_tax_id
                         }, 
             'soldTo' :  {'address':         bill_to_address
                         }, 
@@ -672,7 +689,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'branch_name':      bank_account.bank_name + " " + bank_account.bank_branch_name if bank_account.bank_branch_name else bank_account.bank_name
                         }, 
             'extrinsic' : {'buyerVatId':                customer.tax_id,
-                        'supplierVatId':                company_details.tax_id,
+                        'supplierVatId':                supplier_tax_id,
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
             'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not punchout_shop.cxml_shipping_as_item),
@@ -876,7 +893,7 @@ def transmit_sales_invoice(sales_invoice):
         
         elif mode == "GEP":
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-            cxml = frappe.render_template("microsynth/templates/includes/gep_cxml.html", cxml_data)
+            cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
 
             file_path = "{0}/{1}.xml".format(settings.gep_cxml_export_path, sales_invoice.name)
             with open(file_path, mode='w') as file:

@@ -9,6 +9,7 @@
   "shop_name",
   "display_name",
   "invoicing_method",
+  "supplier_network_id",
   "col_punchout_shop",
   "billing_address",
   "billing_contact",
@@ -60,9 +61,15 @@
    "fieldname": "cxml_shipping_as_item",
    "fieldtype": "Check",
    "label": "cXML Shipping as Item"
+  },
+  {
+   "description": "Supplier ID in the Ariba, GEP or Paynet system (Microsynth)",
+   "fieldname": "supplier_network_id",
+   "fieldtype": "Data",
+   "label": "Supplier Network ID"
   }
  ],
- "modified": "2023-04-04 09:37:41.100327",
+ "modified": "2023-04-13 15:01:36.387337",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Punchout Shop",
