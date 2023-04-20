@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV invoices" version="5.0" xml_data="DATEV Export" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v050 Belegverwaltung_online_invoice_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v050" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV Import invoices" version="5.0" xml_data="Kopie nur zur Verbuchung berechtigt nicht zum Vorsteuerabzug" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v050 Belegverwaltung_online_invoice_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v050" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <invoice_info invoice_date="{{ doc.posting_date }}" invoice_type="Rechnung" delivery_date="{{ doc.posting_date }}" invoice_id="{{ doc.name }}" />
 <accounting_info booking_text="Erlöse" />
 <invoice_party>
@@ -22,7 +22,7 @@
     {%- set tax_rate = 0 -%}
 {%- endif %}
 {%- for item in doc.get('items') %}
-<invoice_item_list description_short="{{ item.item_name }}" quantity="{{ item.qty }}">
+<invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
     <price_line_amount tax="{{ "{:.2f}".format(tax_rate) }}" tax_amount="{{ "{:.2f}".format(item.amount * (tax_rate/100)) }}" gross_price_line_amount="{{ "{:.2f}".format(item.amount * ((100 + tax_rate)/100)) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
     {%- set account_info = item.income_account.split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
