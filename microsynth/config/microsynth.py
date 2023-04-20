@@ -298,6 +298,13 @@ def get_data():
                     },
                     {
                         "type": "report",
+                        "name": "Fiscal Representation Export",
+                        "label": _("Fiscal Representation Export"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
                         "name": "Customer Payments",
                         "label": _("Customer Payments"),
                         "doctype": "GL Entry",

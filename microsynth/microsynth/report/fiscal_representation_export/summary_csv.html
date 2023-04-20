@@ -1,0 +1,4 @@
+rg_adresse_zeile1;vat_nr;_rg_nr_anznach_vat_nr;_rg_betrag_brutto_gerundet_UID_nach_vat_nr;
+{%- for k, v in data.items() %}
+{{ v.get('address') }};{{ k }};{{ v.get('count') }};{{ v.get('gross_amount') }};
+{%- endfor %}
