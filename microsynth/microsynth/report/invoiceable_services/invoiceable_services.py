@@ -75,6 +75,7 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`company` = "{company}"
                 AND `tabDelivery Note`.`creation` > '2022-12-31'
                 AND `tabDelivery Note`.`status` != "Closed"
+                AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0

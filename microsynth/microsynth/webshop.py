@@ -656,6 +656,11 @@ def place_order(content, client="webshop"):
             if item.item_code in quotation_rate:                    # check if this item had a quotation rate
                 item.rate = quotation_rate[item.item_code]
                 item.price_list_rate = quotation_rate[item.item_code]
+    
+    # prepayment: hold order
+    if "Prepayment" in (customer.invoicing_method or ""):
+        so_doc.hold_order = 1
+    
     so_doc.save()
 
     try:        
@@ -672,12 +677,17 @@ def place_order(content, client="webshop"):
             sinv.submit()
             frappe.db.commit()
             
-            # create stripe payment line
-            # ToDo
         """
         
-        return {'success': True, 'message': 'Sales Order created', 
-            'reference': so_doc.name}
+        return {
+            'success': True, 
+            'message': 'Sales Order created', 
+            'reference': so_doc.name,
+            'currency': so_doc.currency,
+            'net_amount': so_doc.net_total,
+            'tax_amount': so_doc.total_taxes_and_charges,
+            'gross_amount': so_doc.grand_total
+        }
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
@@ -800,17 +810,48 @@ def notify_customer_change(customer):
     return
 
 @frappe.whitelist()
-def get_companies(client="webshop"):
+def create_payment(sales_order, stripe_reference, client="webshop"):
     """
-    Return all companies
+    Create sales invoice and payment record
     """
-    companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
     
-    default_company = frappe.get_value("Global Defaults", "Global Defaults", "default_company")
-    for c in companies:
-        if c['name'] == default_company:
-            c['default'] = 1
-        else:
-            c['default'] = 0
-            
-    return {'success': True, 'message': "OK", 'companies': companies}
+    # check configuration
+    if not frappe.db.exists("Mode of Payment", "stripe"):
+        return {'success': False, 'message': "Mode of Payment stripe missing. Please correct ERP configuration."}
+        
+    # fetch sales order
+    if not frappe.db.exists("Sales Order", sales_order):
+        return {'success': False, 'message': "Sales Order not found"}
+    so_doc = frappe.get_doc("Sales Order", sales_order)
+    
+    # assure this sales order is against default company (no longer required with mode of payment)
+    #if so_doc.company != frappe.defaults.get_global_default("company"):
+    #    return {'success': False, 'message': "Only company {0} is allowed to process stripe".format(frappe.defaults.get_global_default("company"))}
+    
+    # create sales invoice
+    si_content = make_sales_invoice(so_doc.name)
+    sinv = frappe.get_doc(si_content)
+    sinv.flags.ignore_missing = True
+    sinv.is_pos = 1                     # enable included payment
+    sinv.append("payments", {
+        'default': 1,
+        'mode_of_payment': "stripe",
+        'amount': sinv.rounded_total or sinv.grand_total
+    })
+    try:
+        sinv.insert(ignore_permissions=True)
+        sinv.submit()
+    except Exception as err:
+        return {'success': False, 'message': "Failed to create invoice: {0}".format(err)}
+    frappe.db.commit()
+    
+    # remove hold flag
+    so_doc = frappe.get_doc("Sales Order", sales_order)
+    so_doc.hold_order = 0
+    try:
+        so_doc.save()
+    except Exception as err:
+        return {'success': False, 'message': "Failed to update sales order {0}: {1}".format(sales_order, err)}
+    frappe.db.commit()
+    
+    return {'success': True, 'message': "OK", 'reference': sinv.name}
