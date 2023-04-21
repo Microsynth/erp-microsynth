@@ -96,7 +96,7 @@ def package_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
-    path = "{0}/FR_{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
+    path = "{0}/FiscRep_{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
     if not os.path.exists(path):
         os.mkdir(path)
 
@@ -190,7 +190,9 @@ def merge_pdfs(path, code, files, from_date, to_date):
     
     for pdf in files:
         merger.append("{0}/{1}".format(path, pdf))
-    
+        # clean up single invoice pdf
+        os.remove("{0}/{1}".format(path, pdf))
+        
     file_name = "UID_{code}_{from_date}_{to_date}.pdf".format(code=code, from_date=from_date, to_date=to_date)
     content_file_name = "{0}/{1}".format(path, file_name)
     merger.write(content_file_name)
