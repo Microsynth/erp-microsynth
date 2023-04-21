@@ -143,8 +143,8 @@ def package_export(filters):
                 }
     
     # bind all pdfs
-    #merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
-    #merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
+    merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
+    merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
     
     # create summary pdf
     create_summary_pdf(path, "AUS", data_at, filters.get('from_date'), filters.get('to_date'))
@@ -157,15 +157,15 @@ def package_export(filters):
     return
 
 def create_pdf(path, dt, dn, print_format):
-    #content_pdf = frappe.get_print(
-    #    dt, 
-    #    dn, 
-    #    print_format=print_format, 
-    #    as_pdf=True)
+    content_pdf = frappe.get_print(
+        dt, 
+        dn, 
+        print_format=print_format, 
+        as_pdf=True)
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
-    #with open(content_file_name, mode='wb') as file:
-    #    file.write(content_pdf)
+    with open(content_file_name, mode='wb') as file:
+        file.write(content_pdf)
     return file_name
 
 def create_summary_csv(path, code, summary_data, from_date, to_date):
