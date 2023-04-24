@@ -603,7 +603,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         shipping_as_item = True
 
     # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
-    # TODO Fiscal representation
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
     
@@ -614,11 +613,23 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     elif mode == "GEP":
         sender_network_id = "MICROSYNTH"
 
-    
+    # Supplier tax ID
     if "CHE" in company_details.tax_id and "MWST" not in company_details.tax_id.upper():
         supplier_tax_id = company_details.tax_id + " MWST"
     else:
         supplier_tax_id = company_details.tax_id
+
+    # Fiscal representation
+    if (sales_invoice.company == "Microsynth AG" and 
+            (sales_invoice.product_type == "Oligos" or 
+             sales_invoice.product_type == "Material")):
+        from microsynth.microsynth.jinja import get_destination_classification
+        destination = get_destination_classification(si=sales_invoice.name)
+
+        if destination == "EU" :
+            # overwrite company address and tax ID
+            company_address = frappe.get_doc("Address", "Microsynth AG - Fiscal Representation")
+            supplier_tax_id = "ATU57564157"
 
     bank_account = frappe.get_doc("Account", sales_invoice.debit_to)
     tax_rate = sales_invoice.taxes[0].rate if len(sales_invoice.taxes) > 0 else 0
