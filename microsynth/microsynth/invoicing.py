@@ -497,6 +497,10 @@ def create_position_list(sales_invoice, exclude_shipping):
     for n in sales_invoice.items:
         if n.item_group == "Shipping" and exclude_shipping:
             continue
+        elif n.amount == 0:
+            # exclude items without cost
+            # TODO: This might conflict with PunchoutBuyerShops.ItemZeroPriceHandling or other webshop settings
+            continue
         else:
             if n.item_code not in used_items:
                 position = {}
