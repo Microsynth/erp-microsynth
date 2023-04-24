@@ -72,10 +72,14 @@ def async_create_invoices(mode, company):
 
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
-                    # TODO implement punchout orders
-                    # si = make_punchout_invoice(dn.get('delivery_note'))
-                    # transmit_sales_invoice(si)
-                    continue
+                    punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'))
+                    if punchout_shop in ["ROC-BASGEP"]:
+                        si = make_punchout_invoice(dn.get('delivery_note'))
+                        transmit_sales_invoice(si)
+                        continue
+                    else:
+                        # TODO implement punchout orders
+                        continue
 
                 credit = get_total_credit(dn.get('customer'), company)
                 if credit is not None and frappe.get_value("Customer", dn.get('customer'),"has_credit_account"):
@@ -599,9 +603,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         shipping_as_item = True
 
     # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
-    # TODO GEP/Ariba sender ID
     # TODO Fiscal representation
-    # TODO handle shipping items without costs --> do not list on invoice
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
     # other data
     
