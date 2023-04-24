@@ -809,6 +809,24 @@ def notify_customer_change(customer):
     ## TODO
     return
 
+
+@frappe.whitelist()
+def get_companies(client="webshop"):
+    """
+    Return all companies
+    """
+    companies = frappe.get_all("Company", fields=['name', 'abbr', 'country'])
+    
+    default_company = frappe.get_value("Global Defaults", "Global Defaults", "default_company")
+    for c in companies:
+        if c['name'] == default_company:
+            c['default'] = 1
+        else:
+            c['default'] = 0
+            
+    return {'success': True, 'message': "OK", 'companies': companies}
+
+
 @frappe.whitelist()
 def create_payment(sales_order, stripe_reference, client="webshop"):
     """
