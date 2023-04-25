@@ -149,8 +149,8 @@ def package_export(filters):
                 }
     
     # bind all pdfs
-    merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
-    merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
+    # merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
+    # merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
     
     # create summary pdf
     create_summary_pdf(path, "AUS", data_at, filters.get('from_date'), filters.get('to_date'))
