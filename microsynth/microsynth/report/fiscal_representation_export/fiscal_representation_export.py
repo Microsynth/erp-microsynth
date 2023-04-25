@@ -112,17 +112,12 @@ def package_export(filters):
     sum_ig = {}             # summary data IG
     data_at = []
     data_ig = []
-    
+
     for d in data:
-        # create pdf
-        pdf_file = create_pdf(path=path, 
-            dt="Sales Invoice", 
-            dn=d.get("sales_invoice"), 
-            print_format=settings.pdf_print_format
-        )
         key = (d.get("tax_id") or "-")
         if "AT022" in d.get("tax_code"):            # AT
-            pdf_at.append(pdf_file)
+            # pdf_at.append(pdf_file)
+            subdirectory = "{0}/{1}".format(path, "AT")
             data_at.append(d)
             if key in sum_at:
                 sum_at[key]['count'] += 1
@@ -135,7 +130,8 @@ def package_export(filters):
                     'uid': d.get('tax_id')
                 }
         else:                                       # IG
-            pdf_ig.append(pdf_file)
+            # pdf_ig.append(pdf_file)
+            subdirectory = "{0}/{1}".format(path, "EU")
             data_ig.append(d)
             if key in sum_ig:
                 sum_ig[key]['count'] += 1
@@ -147,6 +143,15 @@ def package_export(filters):
                     'address': d.get('customer_name'),
                     'uid': d.get('tax_id')
                 }
+        # create pdf
+        if not os.path.exists(subdirectory):
+            os.mkdir(subdirectory)
+
+        pdf_file = create_pdf(path=subdirectory, 
+            dt="Sales Invoice", 
+            dn=d.get("sales_invoice"), 
+            print_format=settings.pdf_print_format
+        )
     
     # bind all pdfs
     # merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
