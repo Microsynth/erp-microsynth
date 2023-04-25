@@ -73,7 +73,6 @@ def async_create_invoices(mode, company):
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
                     punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
-                    company = frappe.get_value("Delivery Note", dn.get('delivery_note'), "company")
                     if (punchout_shop in ["ROC-BASGEP"] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" )):
                         si = make_punchout_invoice(dn.get('delivery_note'))
