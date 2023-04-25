@@ -52,11 +52,17 @@ def get_data(filters, short=False):
             AND `tabSales Invoice`.`posting_date` >= "{from_date}"
             AND `tabSales Invoice`.`posting_date` <= "{to_date}"
             AND `tabSales Invoice`.`taxes_and_charges` LIKE "%(AT0__)%"
+            AND NOT EXISTS (
+                SELECT `tabSales Invoice Item`.`name`
+                FROM `tabSales Invoice Item`
+                WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                AND `tabSales Invoice Item`.`item_code` = "{credit_item}" )
         ORDER BY `tabCustomer`.`tax_id` ASC, `tabSales Invoice`.`name` ASC
         """.format(
-            company=filters.get("company"), 
-            from_date=filters.get("from_date"), 
-            to_date=filters.get("to_date"))
+            company = filters.get("company"), 
+            from_date = filters.get("from_date"), 
+            to_date = filters.get("to_date"),
+            credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
     data = frappe.db.sql(sql_query, as_dict=True)
     
