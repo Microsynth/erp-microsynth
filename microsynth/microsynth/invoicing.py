@@ -497,7 +497,29 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
-    # TODO Implement for samples
+    for s in sales_invoice.samples:
+        position = {}
+        number += 1
+        rate_total = 0
+        sample = frappe.get_doc("Sample", s.sample)
+
+        for n in sample.items:
+            if n.item_code in item_details:
+                rate_total += n.qty * item_details[n.item_code].rate
+
+            if n.item_code not in used_items:
+                used_items[n.item_code] = n.qty
+            else:
+                used_items[n.item_code] = used_items[n.item_code] + n.qty
+
+        position["number"] = number
+        position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, sample.web_id)
+        position["description"] = sample.sample_name
+        position["quantity"] = 1
+        position["rate"] = rate_total
+        position["amount"] = rate_total
+        position["tax_amount"] = tax_rate * rate_total / 100
+        positions.append(position)
 
     for n in sales_invoice.items:
         if n.item_group == "Shipping" and exclude_shipping:
