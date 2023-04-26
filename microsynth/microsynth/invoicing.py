@@ -635,6 +635,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         sender_network_id = punchout_shop.supplier_network_id
     elif mode == "GEP":
         sender_network_id = "MICROSYNTH"
+    elif mode == "Paynet":
+        sender_network_id = settings.paynet_id
 
     # Supplier tax ID
     if "CHE" in company_details.tax_id and "MWST" not in company_details.tax_id.upper():
@@ -906,12 +908,13 @@ def transmit_sales_invoice(sales_invoice):
         elif mode == "Paynet":
             # create Paynet cXML input data dict
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-            
             cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
-            #print(cxml)
 
-            # TODO: comment in after development to save ariba file to filesystem
+
+            file_path = "{0}/{1}.xml".format(settings.paynet_export_path, sales_invoice.name)
+            
             with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
+            # with open(file_path, 'w') as file:
                 file.write(cxml)
 
             '''

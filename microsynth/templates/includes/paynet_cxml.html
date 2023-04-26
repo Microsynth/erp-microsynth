@@ -1,86 +1,4 @@
-{%- set basics_sender_network_id 	= basics['sender_network_id'] -%}
-{%- set basics_receiver_network_id 	= basics['receiver_network_id'] -%}
-{%- set basics_shared_secret 		= basics['shared_secret'] -%}
-{%- set basics_paynet_sender_pid 	= basics['paynet_sender_pid'] -%}
-{%- set basics_order_id 			= basics['order_id'] -%}
-{%- set basics_currency 			= basics['currency'] -%}
-{%- set basics_invoice_id 			= basics['invoice_id'] -%}
-{%- set basics_invoice_date 		= basics['invoice_date'] -%}
-{%- set basics_invoice_date_paynet	= basics['invoice_date_paynet'] -%}
-{%- set basics_delivery_note_id		= basics['delivery_note_id'] -%}
-{%- set basics_delivery_note_date_paynet	= basics['delivery_note_date_paynet'] -%}
-{%- set remitTo_name 				= remitTo['name'] -%}
-{%- set remitTo_street 				= remitTo['street'] -%}
-{%- set remitTo_pin 				= remitTo['pin'] -%}
-{%- set remitTo_city 				= remitTo['city'] -%}
-{%- set remitTo_iso_country_code 	= remitTo['iso_country_code'] -%}
-{%- set remitTo_supplier_tax_id 	= remitTo['supplier_tax_id'] -%}
-{%- set billTo_address_id 			= billTo['address_id'] -%}
-{%- set billTo_name 				= billTo['name'] -%}
-{%- set billTo_department			= billTo['department'] -%}
-{%- set billTo_street 				= billTo['street'] -%}
-{%- set billTo_pin 					= billTo['pin'] -%}
-{%- set billTo_city 				= billTo['city'] -%}
-{%- set billTo_iso_country_code 	= billTo['iso_country_code'] -%}
-{%- set from_name 					= from['name'] -%}
-{%- set from_street 				= from['street'] -%}
-{%- set from_pin 					= from['pin'] -%}
-{%- set from_city 					= from['city'] -%}
-{%- set from_iso_country_code 		= from['iso_country_code'] -%}
-{%- set soldTo_address_id 			= soldTo['address_id'] -%}
-{%- set soldTo_name 				= soldTo['name'] -%}
-{%- set soldTo_department			= soldTo['department'] -%}
-{%- set soldTo_street 				= soldTo['street'] -%}
-{%- set soldTo_pin 					= soldTo['pin'] -%}
-{%- set soldTo_city 				= soldTo['city'] -%}
-{%- set soldTo_iso_country_code 	= soldTo['iso_country_code'] -%}
-{%- set shipFrom_name 				= shipFrom['name'] -%}
-{%- set shipFrom_street 			= shipFrom['street'] -%}
-{%- set shipFrom_pin 				= shipFrom['pin'] -%}
-{%- set shipFrom_city 				= shipFrom['city'] -%}
-{%- set shipFrom_iso_country_code 	= shipFrom['iso_country_code'] -%}
-{%- set shipTo_address_id 			= shipTo['address_id'] -%}
-{%- set shipTo_name 				= shipTo['name'] -%}
-{%- set shipTo_street 				= shipTo['street'] -%}
-{%- set shipTo_pin 					= shipTo['pin'] -%}
-{%- set shipTo_city 				= shipTo['city'] -%}
-{%- set shipTo_iso_country_code 	= shipTo['iso_country_code'] -%}
 
-{# paynet specific #}
-{%- set contact_name 				= contact['full_name'] -%}
-{%- set contact_department			= contact['department'] -%}
-{%- set contact_room				= contact['room'] -%}
-{%- set contact_institute				= contact['institute'] -%}
-
-{%- set order_names 				= order['names'] -%}
-{%- set del_note_names 				= del_note['names'] -%}
-{%- set del_note_dates  			= del_note['dates'] -%}
-
-{%- set receivingBank_swift_id 		= receivingBank['swift_id'] -%}
-{%- set receivingBank_iban_id  		= receivingBank['iban_id'] -%}
-{%- set receivingBank_account_name 	= receivingBank['account_name'] -%}
-{%- set receivingBank_account_id 	= receivingBank['account_id'] -%}
-{%- set receivingBank_account_type 	= receivingBank['account_type'] -%}
-{%- set receivingBank_branch_name 	= receivingBank['branch_name'] -%}
-{%- set extrinsic_buyerVatID 		= extrinsic['buyerVatID'] -%}
-{%- set extrinsic_supplierVatID  	= extrinsic['supplierVatID '] -%}
-{%- set extrinsic_supplierCommercialIdentifier = extrinsic['supplierCommercialIdentifier'] -%}
-{%- set tax_amount 					= tax['amount'] -%}
-{%- set tax_taxable_amount 			= tax['taxable_amount'] -%}
-{%- set tax_percent 				= tax['percent'] -%}
-{%- set tax_taxPointDate 			= tax['taxPointDate'] -%}
-{%- set tax_description 			= tax['description'] -%}
-{%- set shippingTax_taxable_amount 	= shippingTax['taxable_amount'] -%}
-{%- set shippingTax_amount 			= shippingTax['amount'] -%}
-{%- set shippingTax_percent 		= shippingTax['percent'] -%}
-{%- set shippingTax_taxPointDate 	= shippingTax['taxPointDate'] -%}
-{%- set shippingTax_description 	= shippingTax['description'] -%}
-{%- set summary_subtotal_amount 	= summary['subtotal_amount'] -%}
-{%- set summary_shipping_amount 	= summary['shipping_amount'] -%}
-{%- set summary_gross_amount 		= summary['gross_amount'] -%}
-{%- set summary_total_amount_without_tax = summary['total_amount_without_tax'] -%}
-{%- set summary_net_amount 			= summary['net_amount'] -%}
-{%- set summary_due_amount 			= summary['due_amount'] -%}
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE XML-FSCM-INVOICE-2003A SYSTEM "XML-FSCM-INVOICE-2003A.DTD">
 <XML-FSCM-INVOICE-2003A>
@@ -105,7 +23,7 @@
 				</REFERENCE-DATE>
 			</MESSAGE-REFERENCE>
 			<PRINT-DATE>
-				<Date Format="CCYYMMDD">{{ basics_invoice_date_paynet'] }}</Date>
+				<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
 			</PRINT-DATE>
 			<DELIVERY-DATE>
 				<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
@@ -122,7 +40,7 @@
 				</INVOICE-REFERENCE>
 				<ORDER>
 					<REFERENCE-DATE>
-						<Reference-No>{{ contact['department'] }} / {{ contact['room'] }}</Reference-No>
+						<Reference-No>{# contact['department'] #} / {# contact['room'] #}</Reference-No>
 					</REFERENCE-DATE>
 				</ORDER>
 				<DELIVERY-NOTE>
@@ -147,7 +65,7 @@
 				<Tax-No>{{ remitTo['supplier_tax_id'] }}</Tax-No>
 				<Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
 				<PARTY-ID>
-					<Pid>{{ basics['paynet_sender_pid}}</Pid>
+					<Pid>{{ basics['paynet_sender_pid'] }}</Pid>
 				</PARTY-ID>
 				<NAME-ADDRESS Format="COM">
 					<NAME>
@@ -196,55 +114,23 @@
 					<Country>{{shipTo_iso_country_code}}</Country>
 				</NAME-ADDRESS>
 			</DELIVERY-PARTY>
-{%- for article in items -%}
-	{%- if "shipping_article" in article.keys() -%}
-		{%- set item_quantity 				= article.quantity -%}
-		{%- set item_unit_price 			= article.price -%}
-		{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
-		{%- set item_tax_amount 			= (tax_percent * item_subtotal_amount / 100)|round(2)-%}
-		{%- set item_tax_rate 				= tax_percent -%}
-		{# additional line break #}
-{# Allowance commented out
 			<ALLOWANCE-OR-CHARGE Type="C">
 				<Service-Code Type="FC"/>
 				<SERVICE-TEXT>
 					<Line-35>Fracht-Porto</Line-35>
 				</SERVICE-TEXT>
 				<ALC-AMOUNT Print-Status="25">
-					<Amount Currency="{{ basics['currency'] }}">{{item_subtotal_amount}}</Amount>
+					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['shipping_amount']) }}</Amount>
 				</ALC-AMOUNT>
 				<TAX>
-					<Rate Category="S">{{item_tax_rate}}</Rate>
-					<Amount Currency="{{ basics['currency'] }}">{{item_tax_amount}}</Amount>
+					<Rate Category="S">{{ shippingTax['percent'] }}</Rate>
+					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(shippingTax['amount']) }}</Amount>
 				</TAX>
 			</ALLOWANCE-OR-CHARGE>
-#}
-	{%- endif -%}
-{%- endfor %}
 		</HEADER>
 
 {%- for pos in positions -%}
-	{%- if "shipping_article" not in article.keys() -%}
-	{%- set item_invoiceLineNumber 		= article.invoice_position -%}
-	{%- set item_quantity 				= article.quantity -%}
-	{%- set item_unit_of_measure 		= "PCE" -%}
-	{%- set item_unit_price 			= article.price -%}
-	{%- set item_base_unit_price 		= article.base_price -%}
-	{%- if "oligo_article" in article.keys() -%}
-		{%- set item_supplier_part_id	= article["oligo_article"].items[0].item_code  -%}
-	{%- else -%}
-		{%- set item_supplier_part_id		= article["other_article"].item_code  -%}
-	{%- endif -%}
-	{%- set item_description 			= article.description -%}
-	{%- set item_base_amount 			= item_base_unit_price * item_quantity -%}
-	{%- set item_subtotal_amount 		= item_unit_price * item_quantity -%}
-	{%- set item_tax_amount 			= (tax_percent*item_subtotal_amount/100)|round(2)-%}
-	{%- set item_tax_rate 				= tax_percent -%}
-	{%- set item_tax_taxable_amount 	= item_subtotal_amount -%}
-	{%- set item_tax_description 		= tax_description -%}
-	{%- set item_gross_amount 			= item_subtotal_amount + item_tax_amount -%}
-	{%- set item_net_amount 			= item_subtotal_amount + item_tax_amount -%}
-	{# additional line break #}
+		{# Positions - comment for indenting #}
 		<LINE-ITEM Line-Number="{{ pos['number'] }}">
 			<ITEM-ID>
 				<Item-Id Type="SA">4662602</Item-Id>
@@ -256,54 +142,51 @@
 			<ITEM-REFERENCE Type="ON">
 				<REFERENCE-DATE>
 					<Reference-No>!!!TODO!!!</Reference-No>
-					<Line-No>{{item_invoiceLineNumber}}</Line-No>
-					<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
+					<Line-No>{{ pos['number'] }}</Line-No>
+					<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
 				</REFERENCE-DATE>
 			</ITEM-REFERENCE>
-			<Quantity Type="47" Units="{{item_unit_of_measure}}">{{ pos['quantity'] }}</Quantity>
-			<Price Type="YYY" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_base_unit_price}}</Price>
-			<Price Type="AAA" Units="{{item_unit_of_measure}}" Basequantity="1">{{item_unit_price}}</Price>
+			<Quantity Type="47" Units="PCE">{{ pos['quantity'] }}</Quantity>
+			<Price Type="YYY" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
+			<Price Type="AAA" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
 			<ITEM-AMOUNT Type="38">
-				<Amount Currency="{{ basics['currency'] }}">{{item_base_amount}}</Amount>
+				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
 			</ITEM-AMOUNT>
 			<ITEM-AMOUNT Type="66">
-				<Amount Currency="{{ basics['currency'] }}">{{item_subtotal_amount}}</Amount>
+				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
 			</ITEM-AMOUNT>
-{# Allowance commented out
 			<ALLOWANCE-OR-CHARGE Type="A">
 				<Service-Code Type="DI"/>
 				<SERVICE-TEXT>
 					<Line-35>Rabatt</Line-35>
 				</SERVICE-TEXT>
-				<ALC-Percent>{{"{:,.2f}".format((item_base_amount-item_subtotal_amount)/item_base_amount*100)}}</ALC-Percent>
+				<ALC-Percent>0</ALC-Percent>
 				<ALC-AMOUNT>
-					<Amount Currency="{{ basics['currency'] }}">{{item_base_amount-item_subtotal_amount}}</Amount>
+					<Amount Currency="{{ basics['currency'] }}">0.00</Amount>
 				</ALC-AMOUNT>
 			</ALLOWANCE-OR-CHARGE>
-#}
 			<TAX>
 				<Rate Category="S">{{ tax['percent'] }}</Rate>
-				<Amount Currency="{{ basics['currency'] }}">{{ pos['tax_amount'] }}</Amount>
+				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Amount>
 			</TAX>
 		</LINE-ITEM>
-{%- endif -%}
 {%- endfor %}
 		<SUMMARY>
 			<INVOICE-AMOUNT Print-Status="25">
 				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['due_amount']) }}</Amount>
 			</INVOICE-AMOUNT>
 			<VAT-AMOUNT Print-Status="25">
-				<Amount Currency="{{ basics['currency'] }}">{{tax_amount}}</Amount>
+				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
 			</VAT-AMOUNT>
 			<EXTENDED-AMOUNT Type="79">
-				<Amount>{{summary_subtotal_amount}}</Amount>
+				<Amount>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</Amount>
 			</EXTENDED-AMOUNT>
 			<TAX>
 				<TAX-BASIS>
-					<Amount Currency="{{ basics['currency'] }}">{{tax_taxable_amount}}</Amount>
+					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['taxable_amount']) }}</Amount>
 				</TAX-BASIS>
-				<Rate Category="S">{{tax_percent}}</Rate>
-				<Amount Currency="{{ basics['currency'] }}">{{tax_amount}}</Amount>
+				<Rate Category="S">{{ tax['percent'] }}</Rate>
+				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
 			</TAX>
 			<PAYMENT-TERMS>
 				<BASIC Payment-Type="QR" Terms-Type="1">
