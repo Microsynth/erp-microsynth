@@ -908,7 +908,7 @@ def transmit_sales_invoice(sales_invoice):
         elif mode == "Paynet":
             # create Paynet cXML input data dict
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-            cxml = frappe.render_template("microsynth/templates/includes/paynet_cxml.html", cxml_data)
+            cxml = frappe.render_template("microsynth/templates/includes/paynet_xml.html", cxml_data)
 
 
             file_path = "{0}/{1}.xml".format(settings.paynet_export_path, sales_invoice.name)
