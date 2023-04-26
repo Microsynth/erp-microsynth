@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE XML-FSCM-INVOICE-2003A SYSTEM "XML-FSCM-INVOICE-2003A.DTD">
 <XML-FSCM-INVOICE-2003A>
@@ -7,7 +6,7 @@
 			<Pid>{{ basics['paynet_sender_pid'] }}</Pid>
 		</IC-SENDER>
 		<IC-RECEIVER>
-			<Pid>{{ basics['receiver_network_id'] }}</Pid>
+			<Pid>41010106799303734</Pid>
 		</IC-RECEIVER>
 	<IC-Ref>{{ basics['invoice_id'] }}</IC-Ref>
 	</INTERCHANGE>
@@ -79,40 +78,18 @@
 					<Country>{{from_iso_country_code}}</Country>
 				</NAME-ADDRESS>
 				<BANK-INFO>
-					<Acct-No>{{receivingBank_iban_id}}</Acct-No>
-					<BankId Type="IID" Country="{{remitTo_iso_country_code}}">30005</BankId>
+					<Acct-No>{{ receivingBank['iban_id'] }}</Acct-No>
+					<BankId Type="IID" Country="{{ remitTo['iso_country_code'] }}">30005</BankId>
 				</BANK-INFO>
 			</BILLER>
 			<PAYER>
 				<PARTY-ID>
-					<Pid>{{basics_receiver_network_id}}</Pid>
+					<Pid>{{ basics['receiver_network_id'] }}</Pid>
 				</PARTY-ID>
-				<NAME-ADDRESS Format="COM">
-					<NAME>
-						{% if contact_institute %}<Line-35>{{billTo_name}}</Line-35>{% endif %}
-						{% if contact_institute %}<Line-35>{{contact_institute}}</Line-35>{% endif %}
-					</NAME>
-					<STREET>
-						<Line-35>{{billTo_street}}</Line-35>
-					</STREET>
-					<City>{{billTo_city}}</City>
-					<Zip>{{billTo_pin}}</Zip>
-					<Country>{{billTo_iso_country_code}}</Country>
- 				</NAME-ADDRESS>
+{{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': billTo['address'] }) }}
 			</PAYER>
 			<DELIVERY-PARTY>
-				<NAME-ADDRESS>
-					<NAME>
-						{% if contact_institute %}<Line-35>{{billTo_name}}</Line-35>{% endif %}
-						{% if billTo_department %}<Line-35>{{billTo_department}}</Line-35>{% endif %}
-					</NAME>
-					<STREET>
-						<Line-35>{{shipTo_street}}</Line-35>
-					</STREET>
-					<City>{{shipTo_city}}</City>
-					<Zip>{{shipTo_pin}}</Zip>
-					<Country>{{shipTo_iso_country_code}}</Country>
-				</NAME-ADDRESS>
+{{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': shipTo['address'] }) }}
 			</DELIVERY-PARTY>
 			<ALLOWANCE-OR-CHARGE Type="C">
 				<Service-Code Type="FC"/>

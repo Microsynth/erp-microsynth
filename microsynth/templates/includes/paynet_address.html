@@ -1,0 +1,21 @@
+                <NAME-ADDRESS Format="COM">
+                    <NAME>
+                        <Line-35>{{ address['name'] }}</Line-35>
+                        {%- if address['deliver_to'] | length > 0 -%}
+                        {# comment for indenting #}
+                        <Line-35>{{ address['deliver_to'][0] }}</Line-35>
+                        {%- endif -%}
+                        {# comment for indenting #}
+                    </NAME>
+                    <STREET>
+                        <Line-35>{{ address['street1'] }}</Line-35>
+                        {%- if address['street2'] -%}
+                        {# comment for indenting #}
+                        <Line-35>{{ address['street2'] }}</Line-35>
+                        {%- endif -%}
+                        {# comment for indenting #}
+                    </STREET>
+                    <City>{{ address['city'] }}</City>
+                    <Zip>{{ address['pin'] }}</Zip>
+                    <Country>{{ address['country_code'] }}</Country>
+                </NAME-ADDRESS>
