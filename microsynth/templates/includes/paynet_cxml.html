@@ -1,178 +1,177 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE XML-FSCM-INVOICE-2003A SYSTEM "XML-FSCM-INVOICE-2003A.DTD">
 <XML-FSCM-INVOICE-2003A>
-	<INTERCHANGE>
-		<IC-SENDER>
-			<Pid>{{ basics['paynet_sender_pid'] }}</Pid>
-		</IC-SENDER>
-		<IC-RECEIVER>
-			<Pid>41010106799303734</Pid>
-		</IC-RECEIVER>
-	<IC-Ref>{{ basics['invoice_id'] }}</IC-Ref>
-	</INTERCHANGE>
-	<INVOICE Type="EFD">
-		<HEADER>
-			<FUNCTION-FLAGS>
-				<Confirmation-Flag/>
-			</FUNCTION-FLAGS>
-			<MESSAGE-REFERENCE>
-				<REFERENCE-DATE>
-					<Reference-No>{{ basics['invoice_id'] }}</Reference-No>
-					<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
-				</REFERENCE-DATE>
-			</MESSAGE-REFERENCE>
-			<PRINT-DATE>
-				<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
-			</PRINT-DATE>
-			<DELIVERY-DATE>
-				<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
-			</DELIVERY-DATE>
-			<TITLE>
-				<Line-70>Rechnung</Line-70>
-			</TITLE>
-			<REFERENCE>
-				<INVOICE-REFERENCE>
-					<REFERENCE-DATE>
-						<Reference-No>{{ basics['invoice_id'] }}</Reference-No>
-						<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
-					</REFERENCE-DATE>
-				</INVOICE-REFERENCE>
-				<ORDER>
-					<REFERENCE-DATE>
-						<Reference-No>{# contact['department'] #} / {# contact['room'] #}</Reference-No>
-					</REFERENCE-DATE>
-				</ORDER>
-				<DELIVERY-NOTE>
-					<REFERENCE-DATE>
-						<Reference-No>{{del_note_names}}</Reference-No>
-						<Date Format="CCYYMMDD">{{del_note_dates}}</Date>
-					</REFERENCE-DATE>
-				</DELIVERY-NOTE>
-				<OTHER-REFERENCE Type="IT">
-					<REFERENCE-DATE>
-						<Reference-No>23206</Reference-No>
-						</REFERENCE-DATE>
-				</OTHER-REFERENCE>
-				<OTHER-REFERENCE Type="CR">
-					<REFERENCE-DATE>
-						<Reference-No>{{contact_name}}</Reference-No>
-						<Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
-					</REFERENCE-DATE>
-				</OTHER-REFERENCE>
-			</REFERENCE>
-			<BILLER>
-				<Tax-No>{{ remitTo['supplier_tax_id'] }}</Tax-No>
-				<Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
-				<PARTY-ID>
-					<Pid>{{ basics['paynet_sender_pid'] }}</Pid>
-				</PARTY-ID>
-				<NAME-ADDRESS Format="COM">
-					<NAME>
-						<Line-35>{{from_name}}</Line-35>
-					</NAME>
-					<STREET>
-						<Line-35>{{from_street}}</Line-35>
-					</STREET>
-					<City>{{from_city}}</City>
-					<Zip>{{from_pin}}</Zip>
-					<Country>{{from_iso_country_code}}</Country>
-				</NAME-ADDRESS>
-				<BANK-INFO>
-					<Acct-No>{{ receivingBank['iban_id'] }}</Acct-No>
-					<BankId Type="IID" Country="{{ remitTo['iso_country_code'] }}">30005</BankId>
-				</BANK-INFO>
-			</BILLER>
-			<PAYER>
-				<PARTY-ID>
-					<Pid>{{ basics['receiver_network_id'] }}</Pid>
-				</PARTY-ID>
+    <INTERCHANGE>
+        <IC-SENDER>
+            <Pid>{{ basics['paynet_sender_pid'] }}</Pid>
+        </IC-SENDER>
+        <IC-RECEIVER>
+            <Pid>41010106799303734</Pid>
+        </IC-RECEIVER>
+    <IC-Ref>{{ basics['invoice_id'] }}</IC-Ref>
+    </INTERCHANGE>
+    <INVOICE Type="EFD">
+        <HEADER>
+            <FUNCTION-FLAGS>
+                <Confirmation-Flag/>
+            </FUNCTION-FLAGS>
+            <MESSAGE-REFERENCE>
+                <REFERENCE-DATE>
+                    <Reference-No>{{ basics['invoice_id'] }}</Reference-No>
+                    <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
+                </REFERENCE-DATE>
+            </MESSAGE-REFERENCE>
+            <PRINT-DATE>
+                <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
+            </PRINT-DATE>
+            <DELIVERY-DATE>
+                <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
+            </DELIVERY-DATE>
+            <TITLE>
+                <Line-70>Rechnung</Line-70>
+            </TITLE>
+            <REFERENCE>
+                <INVOICE-REFERENCE>
+                    <REFERENCE-DATE>
+                        <Reference-No>{{ basics['invoice_id'] }}</Reference-No>
+                        <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
+                    </REFERENCE-DATE>
+                </INVOICE-REFERENCE>
+                <ORDER>
+                    <REFERENCE-DATE>
+                        <Reference-No>{# contact['department'] #} / {# contact['room'] #}</Reference-No>
+                    </REFERENCE-DATE>
+                </ORDER>
+                <DELIVERY-NOTE>
+                    <REFERENCE-DATE>
+                        <Reference-No>{{del_note_names}}</Reference-No>
+                        <Date Format="CCYYMMDD">{{del_note_dates}}</Date>
+                    </REFERENCE-DATE>
+                </DELIVERY-NOTE>
+                <OTHER-REFERENCE Type="IT">
+                    <REFERENCE-DATE>
+                        <Reference-No>23206</Reference-No>
+                        </REFERENCE-DATE>
+                </OTHER-REFERENCE>
+                <OTHER-REFERENCE Type="CR">
+                    <REFERENCE-DATE>
+                        <Reference-No>{{contact_name}}</Reference-No>
+                        <Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
+                    </REFERENCE-DATE>
+                </OTHER-REFERENCE>
+            </REFERENCE>
+            <BILLER>
+                <Tax-No>{{ remitTo['supplier_tax_id'] }}</Tax-No>
+                <Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
+                <PARTY-ID>
+                    <Pid>{{ basics['paynet_sender_pid'] }}</Pid>
+                </PARTY-ID>
+                <NAME-ADDRESS Format="COM">
+                    <NAME>
+                        <Line-35>{{from_name}}</Line-35>
+                    </NAME>
+                    <STREET>
+                        <Line-35>{{from_street}}</Line-35>
+                    </STREET>
+                    <City>{{from_city}}</City>
+                    <Zip>{{from_pin}}</Zip>
+                    <Country>{{from_iso_country_code}}</Country>
+                </NAME-ADDRESS>
+                <BANK-INFO>
+                    <Acct-No>{{ receivingBank['iban_id'] }}</Acct-No>
+                    <BankId Type="IID" Country="{{ remitTo['iso_country_code'] }}">30005</BankId>
+                </BANK-INFO>
+            </BILLER>
+            <PAYER>
+                <PARTY-ID>
+                    <Pid>{{ basics['receiver_network_id'] }}</Pid>
+                </PARTY-ID>
 {{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': billTo['address'] }) }}
-			</PAYER>
-			<DELIVERY-PARTY>
+            </PAYER>
+            <DELIVERY-PARTY>
 {{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': shipTo['address'] }) }}
-			</DELIVERY-PARTY>
-			<ALLOWANCE-OR-CHARGE Type="C">
-				<Service-Code Type="FC"/>
-				<SERVICE-TEXT>
-					<Line-35>Fracht-Porto</Line-35>
-				</SERVICE-TEXT>
-				<ALC-AMOUNT Print-Status="25">
-					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['shipping_amount']) }}</Amount>
-				</ALC-AMOUNT>
-				<TAX>
-					<Rate Category="S">{{ shippingTax['percent'] }}</Rate>
-					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(shippingTax['amount']) }}</Amount>
-				</TAX>
-			</ALLOWANCE-OR-CHARGE>
-		</HEADER>
+            </DELIVERY-PARTY>
+            <ALLOWANCE-OR-CHARGE Type="C">
+                <Service-Code Type="FC"/>
+                <SERVICE-TEXT>
+                    <Line-35>Fracht-Porto</Line-35>
+                </SERVICE-TEXT>
+                <ALC-AMOUNT Print-Status="25">
+                    <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['shipping_amount']) }}</Amount>
+                </ALC-AMOUNT>
+                <TAX>
+                    <Rate Category="S">{{ shippingTax['percent'] }}</Rate>
+                    <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(shippingTax['amount']) }}</Amount>
+                </TAX>
+            </ALLOWANCE-OR-CHARGE>
+        </HEADER>
 
 {%- for pos in positions -%}
-		{# Positions - comment for indenting #}
-		<LINE-ITEM Line-Number="{{ pos['number'] }}">
-			<ITEM-ID>
-				<Item-Id Type="SA">4662602</Item-Id>
-			</ITEM-ID>
-			<ITEM-DESCRIPTION>
-				<Item-Type-Code>{{ pos['item'] }}</Item-Type-Code>
-				<Line-35>{{ pos['quantity'] }} {{ pos['description'] }}</Line-35>
-			</ITEM-DESCRIPTION>
-			<ITEM-REFERENCE Type="ON">
-				<REFERENCE-DATE>
-					<Reference-No>!!!TODO!!!</Reference-No>
-					<Line-No>{{ pos['number'] }}</Line-No>
-					<Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
-				</REFERENCE-DATE>
-			</ITEM-REFERENCE>
-			<Quantity Type="47" Units="PCE">{{ pos['quantity'] }}</Quantity>
-			<Price Type="YYY" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
-			<Price Type="AAA" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
-			<ITEM-AMOUNT Type="38">
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
-			</ITEM-AMOUNT>
-			<ITEM-AMOUNT Type="66">
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
-			</ITEM-AMOUNT>
-			<ALLOWANCE-OR-CHARGE Type="A">
-				<Service-Code Type="DI"/>
-				<SERVICE-TEXT>
-					<Line-35>Rabatt</Line-35>
-				</SERVICE-TEXT>
-				<ALC-Percent>0</ALC-Percent>
-				<ALC-AMOUNT>
-					<Amount Currency="{{ basics['currency'] }}">0.00</Amount>
-				</ALC-AMOUNT>
-			</ALLOWANCE-OR-CHARGE>
-			<TAX>
-				<Rate Category="S">{{ tax['percent'] }}</Rate>
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Amount>
-			</TAX>
-		</LINE-ITEM>
+        {# Positions - comment for indenting #}
+        <LINE-ITEM Line-Number="{{ pos['number'] }}">
+            <ITEM-ID>
+                <Item-Id Type="SA">4662602</Item-Id>
+            </ITEM-ID>
+            <ITEM-DESCRIPTION>
+                <Item-Type-Code>{{ pos['item'] }}</Item-Type-Code>
+                <Line-35>{{ pos['quantity'] }} {{ pos['description'] }}</Line-35>
+            </ITEM-DESCRIPTION>
+            <ITEM-REFERENCE Type="ON">
+                <REFERENCE-DATE>
+                    <Reference-No>!!!TODO!!!</Reference-No>
+                    <Line-No>{{ pos['number'] }}</Line-No>
+                    <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
+                </REFERENCE-DATE>
+            </ITEM-REFERENCE>
+            <Quantity Type="47" Units="PCE">{{ pos['quantity'] }}</Quantity>
+            <Price Type="YYY" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
+            <Price Type="AAA" Units="PCE" Basequantity="1">{{ "{:.2f}".format(pos['rate']) }}</Price>
+            <ITEM-AMOUNT Type="38">
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
+            </ITEM-AMOUNT>
+            <ITEM-AMOUNT Type="66">
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Amount>
+            </ITEM-AMOUNT>
+            <ALLOWANCE-OR-CHARGE Type="A">
+                <Service-Code Type="DI"/>
+                <SERVICE-TEXT>
+                    <Line-35>Rabatt</Line-35>
+                </SERVICE-TEXT>
+                <ALC-Percent>0</ALC-Percent>
+                <ALC-AMOUNT>
+                    <Amount Currency="{{ basics['currency'] }}">0.00</Amount>
+                </ALC-AMOUNT>
+            </ALLOWANCE-OR-CHARGE>
+            <TAX>
+                <Rate Category="S">{{ tax['percent'] }}</Rate>
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Amount>
+            </TAX>
+        </LINE-ITEM>
 {%- endfor %}
-		<SUMMARY>
-			<INVOICE-AMOUNT Print-Status="25">
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['due_amount']) }}</Amount>
-			</INVOICE-AMOUNT>
-			<VAT-AMOUNT Print-Status="25">
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
-			</VAT-AMOUNT>
-			<EXTENDED-AMOUNT Type="79">
-				<Amount>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</Amount>
-			</EXTENDED-AMOUNT>
-			<TAX>
-				<TAX-BASIS>
-					<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['taxable_amount']) }}</Amount>
-				</TAX-BASIS>
-				<Rate Category="S">{{ tax['percent'] }}</Rate>
-				<Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
-			</TAX>
-			<PAYMENT-TERMS>
-				<BASIC Payment-Type="QR" Terms-Type="1">
-					<TERMS>
-						<Payment-Period Reference-Day="5" Type="CD" On-Or-After="3">30</Payment-Period>
-					</TERMS>
-				</BASIC>
-			</PAYMENT-TERMS>
-		</SUMMARY>
-	</INVOICE>
+        <SUMMARY>
+            <INVOICE-AMOUNT Print-Status="25">
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(summary['due_amount']) }}</Amount>
+            </INVOICE-AMOUNT>
+            <VAT-AMOUNT Print-Status="25">
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
+            </VAT-AMOUNT>
+            <EXTENDED-AMOUNT Type="79">
+                <Amount>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</Amount>
+            </EXTENDED-AMOUNT>
+            <TAX>
+                <TAX-BASIS>
+                    <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['taxable_amount']) }}</Amount>
+                </TAX-BASIS>
+                <Rate Category="S">{{ tax['percent'] }}</Rate>
+                <Amount Currency="{{ basics['currency'] }}">{{ "{:.2f}".format(tax['amount']) }}</Amount>
+            </TAX>
+            <PAYMENT-TERMS>
+                <BASIC Payment-Type="QR" Terms-Type="1">
+                    <TERMS>
+                        <Payment-Period Reference-Day="5" Type="CD" On-Or-After="3">30</Payment-Period>
+                    </TERMS>
+                </BASIC>
+            </PAYMENT-TERMS>
+        </SUMMARY>
+    </INVOICE>
 </XML-FSCM-INVOICE-2003A>
-				
