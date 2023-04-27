@@ -44,8 +44,8 @@
                 </ORDER>
                 <DELIVERY-NOTE>
                     <REFERENCE-DATE>
-                        <Reference-No>{{del_note_names}}</Reference-No>
-                        <Date Format="CCYYMMDD">{{del_note_dates}}</Date>
+                        <Reference-No>{{ delivery_note['names'] }}</Reference-No>
+                        <Date Format="CCYYMMDD">{{ delivery_note['dates'] }}</Date>
                     </REFERENCE-DATE>
                 </DELIVERY-NOTE>
                 <OTHER-REFERENCE Type="IT">
@@ -56,7 +56,7 @@
                 <OTHER-REFERENCE Type="CR">
                     <REFERENCE-DATE>
                         <Reference-No>{{contact_name}}</Reference-No>
-                        <Date Format="CCYYMMDD">{{basics_invoice_date_paynet}}</Date>
+                        <Date Format="CCYYMMDD">{{ basics['invoice_date_paynet'] }}</Date>
                     </REFERENCE-DATE>
                 </OTHER-REFERENCE>
             </REFERENCE>

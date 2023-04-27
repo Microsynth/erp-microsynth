@@ -743,7 +743,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             #             },
             'order':    {'names':           ", ".join(order_names)
                         },
-            'del_note': {'names':           ", ".join(delivery_note_names),
+            'delivery_note': {'names':           ", ".join(delivery_note_names),
                         'dates':            ", ".join(delivery_note_dates)
                         },
             'receivingBank' : {'swift_id':  bank_account.bic,
