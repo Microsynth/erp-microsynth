@@ -1869,6 +1869,35 @@ def set_debtors():
     return
 
 
+def set_territory_for_customers():
+    """
+    Set the territory
+
+    run 
+    bench execute microsynth.microsynth.migration.set_territory_for_customers
+    """    
+    from microsynth.microsynth.utils import set_territory
+    
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name'])
+
+    i = 0
+    length = len(customers)
+
+    for c in customers:
+        print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
+        
+        try:
+            set_territory(c.name)
+            frappe.db.commit()
+        except Exception as err:
+            frappe.log_error("Could not set territory for customer '{0}'\n{1}".format(c.name, err), "migration.set_debtors")
+
+        i += 1
+    return
+
+
 def remove_item_account_settings():
     """
     Set the debitor account

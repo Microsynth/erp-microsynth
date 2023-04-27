@@ -1004,6 +1004,34 @@ def set_customer_default_company_for_country(country):
         if not frappe.db.get_value("Customer", c, "disabled"):
             set_default_company(c)
 
+TERRITORIES = {
+    'lukas.hartl@microsynth.at':                    'Austria',
+    'emeraude.hadjattou@microsynth.ch':             'France (North)',
+    'agnes.nguyen@microsynth.fr':                   'France (South)',
+    'roderick.lambertz@microsynth.seqlab.de':       'Germany (Northeast)',
+    'georg.brenzel@microsynth.ch':                  'Germany (Northwest)',
+    'atila.durmus@microsynth.seqlab.de':            'Germany (South)',
+    'helena.schwellenbach@microsynth.seqlab.de':    'Göttingen',
+    'rupert.hagg@microsynth.ch':                    'Rest of Europe',
+    'elges.lardi@microsynth.ch':                    'Rest of the World',
+    'mathias.beysard@microsynth.ch':                'Switzerland (French-speaking)',
+    'andrea.sinatra@microsynth.ch':                 'Switzerland (German- and Italian-speaking)',
+}
+
+def set_territory(customer):
+    """
+    Set the territory according to the account manager if the current territory is 'All Territories'
+    otherwise do not change the territory.
+
+    run
+    bench execute microsynth.microsynth.utils.set_territory --kwargs "{'customer': '8003'}"
+    """
+
+    customer = frappe.get_doc("Customer", customer)
+    if customer.territory == "All Territories":
+        customer.territory = TERRITORIES[customer.account_manager]
+        customer.save()
+
 
 def check_default_companies():
     """
