@@ -609,7 +609,6 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         billing_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
     
     # define shipping costs on header/item level
-    shipping_costs = 0
     if mode == "ARIBA" or mode == "GEP":
         # shipping for Ariba (standard) is listed on header level, shipping for GEP is listed on item level
         if sales_invoice.is_punchout:
@@ -618,12 +617,17 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             shipping_as_item = True
         else:
             shipping_as_item = False 
-
-        for n in sales_invoice.items:
-            if n.item_group == "Shipping" and not shipping_as_item:
-                shipping_costs += n.amount
+    elif mode == "Paynet":
+        shipping_as_item = False
     else: 
         shipping_as_item = True
+
+    # calculate shipping costs on header level
+    shipping_costs = 0
+    if not shipping_as_item:
+        for n in sales_invoice.items:
+            if n.item_group == "Shipping":
+                shipping_costs += n.amount
 
     # TODO Ariba IDs if not punchout --> customer.invoice_network_id, log an error if not set
     # TODO tax detail description: <Description xml:lang = "en">0.0% tax exempt</Description>
@@ -777,7 +781,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'supplierVatId':                supplier_tax_id,
                         'supplierCommercialIdentifier': company_details.tax_id
                         }, 
-            'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not punchout_shop.cxml_shipping_as_item),
+            'positions': create_position_list(sales_invoice = sales_invoice, exclude_shipping = not shipping_as_item),
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         tax_rate, 
