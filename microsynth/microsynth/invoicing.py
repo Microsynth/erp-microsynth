@@ -700,6 +700,17 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         dn_date_str = frappe.utils.get_datetime(dn_date).strftime('%Y%m%d')
         delivery_note_dates.append(dn_date_str)
 
+    # order reference / 
+    if sales_invoice.is_punchout:
+        order_reference = sales_invoice.po_no
+    elif billing_contact.room.upper().strip().startswith("KST"):
+        # Special order reference for UZH
+        order_reference = "{mail} / {cost_center} / {po}".format(
+            mail = billing_contact.department,
+            cost_center = billing_contact.room.replace("KST", "").strip(),
+            po = sales_invoice.po_no)
+    else:
+        order_reference = sales_invoice.po_no
 
     data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
@@ -708,7 +719,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'customer_id':          customer.name,
-                        'order_id':             sales_invoice.po_no, 
+                        'order_id':             order_reference, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
