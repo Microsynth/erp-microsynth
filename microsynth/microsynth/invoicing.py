@@ -754,6 +754,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'dates':            ", ".join(delivery_note_dates)
                         },
             'receivingBank' : {'swift_id':  bank_account.bic,
+                        'bic':              bank_account.bic,
                         'iban_id':          bank_account.iban,
                         'account_name':     bank_account.company,
                         'account_id':       bank_account.iban,

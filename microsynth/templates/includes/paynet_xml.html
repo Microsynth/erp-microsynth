@@ -69,7 +69,7 @@
 {{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': from['address'] }) }}
                 <BANK-INFO>
                     <Acct-No>{{ receivingBank['iban_id'] }}</Acct-No>
-                    <BankId Type="IID" Country="{{ remitTo['iso_country_code'] }}">30005</BankId>
+                    <BankId Type="Bic" Country="{{ remitTo['iso_country_code'] }}">{{ receivingBank['bic'] }}</BankId>
                 </BANK-INFO>
             </BILLER>
             <PAYER>
