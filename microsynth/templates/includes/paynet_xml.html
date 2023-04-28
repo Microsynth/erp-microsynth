@@ -62,7 +62,7 @@
             </REFERENCE>
             <BILLER>
                 <Tax-No>{{ remitTo['supplier_tax_id'] }}</Tax-No>
-                <Doc-Reference Type="QRR">211965222254871002320600061</Doc-Reference>
+                <Doc-Reference Type="QRR">{{ basics['invoice_id'] }}</Doc-Reference>
                 <PARTY-ID>
                     <Pid>{{ basics['paynet_sender_pid'] }}</Pid>
                 </PARTY-ID>
