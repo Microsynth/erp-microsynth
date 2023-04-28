@@ -707,6 +707,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'customer_id':          customer.name,
                         'order_id':             sales_invoice.po_no, 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
