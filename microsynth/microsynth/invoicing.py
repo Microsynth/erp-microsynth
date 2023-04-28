@@ -592,9 +592,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     customer = frappe.get_doc("Customer", sales_invoice.customer)
     company_details = frappe.get_doc("Company", sales_invoice.company)
     company_address = frappe.get_doc("Address", sales_invoice.company_address)
-    # customer_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+    contact_person = frappe.get_doc("Contact", sales_invoice.contact_person)
 
-    
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
     if sales_invoice.is_punchout:
@@ -759,11 +758,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         },
             'shipTo' : {'address':          ship_to_address
                         }, 
-            # 'contact':  {'full_name':       invoice_contact.full_name, 
-            #             'department':       customer_contact.department,
-            #             'room':             customer_contact.room,
-            #             'institute':        customer_contact.institute
-            #             },
+            'contact':  {'full_name':       contact_person.full_name},
             'order':    {'names':           ", ".join(order_names)
                         },
             'delivery_note': {'names':      ", ".join(delivery_note_names),
