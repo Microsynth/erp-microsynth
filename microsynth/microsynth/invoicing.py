@@ -428,24 +428,24 @@ def get_sales_order_id_and_delivery_note_id(sales_invoice):
 
 
 def get_address_dict(customer, contact, address, country_codes):
-    
     postal_address = {}
     deliver_to = []
-
-    name = get_name(contact)
-
-    if name != "":
-        deliver_to.append(get_name(contact))
-
-    if contact.department:
-        deliver_to.append(contact.department)
-
-    if contact.institute:
-        deliver_to.append(contact.institute)
-
-    if contact.room:
-        deliver_to.append(contact.room)
     
+    if contact:
+        name = get_name(contact)
+
+        if name != "":
+            deliver_to.append(get_name(contact))
+
+        if contact.department:
+            deliver_to.append(contact.department)
+
+        if contact.institute:
+            deliver_to.append(contact.institute)
+
+        if contact.room:
+            deliver_to.append(contact.room)
+
     postal_address["id"] = replace_none(address.customer_address_id)
     postal_address["name"] = address.overwrite_company or customer
     postal_address["deliver_to"] = deliver_to
@@ -667,13 +667,19 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         customer = sales_invoice.customer_name,
         contact = shipping_contact,
         address = shipping_address,
-        country_codes = country_codes)
+        country_codes = country_codes )
     
     bill_to_address = get_address_dict(
         customer = sales_invoice.customer_name,
         contact = billing_contact,
         address = billing_address,
-        country_codes = country_codes)
+        country_codes = country_codes )
+
+    sender_address = get_address_dict(
+        customer = company_details.company_name,
+        contact = None,
+        address = company_address,
+        country_codes = country_codes )
 
     terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
 
@@ -724,11 +730,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
                         'iso_country_code': country_codes[company_address.country].upper(),
+                        'address':          sender_address,
                         'supplier_tax_id':  supplier_tax_id
                         }, 
             'soldTo' :  {'address':         bill_to_address
                         }, 
-            'shipFrom' : {'name':           company_details.name, 
+            'shipFrom' : {'name':           company_details.company_name, 
                         'street':           company_address.address_line1,
                         'pin':              company_address.pincode,
                         'city':             company_address.city,
@@ -743,7 +750,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             #             },
             'order':    {'names':           ", ".join(order_names)
                         },
-            'delivery_note': {'names':           ", ".join(delivery_note_names),
+            'delivery_note': {'names':      ", ".join(delivery_note_names),
                         'dates':            ", ".join(delivery_note_dates)
                         },
             'receivingBank' : {'swift_id':  bank_account.bic,

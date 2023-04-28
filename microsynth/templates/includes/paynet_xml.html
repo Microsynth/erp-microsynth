@@ -66,17 +66,7 @@
                 <PARTY-ID>
                     <Pid>{{ basics['paynet_sender_pid'] }}</Pid>
                 </PARTY-ID>
-                <NAME-ADDRESS Format="COM">
-                    <NAME>
-                        <Line-35>{{from_name}}</Line-35>
-                    </NAME>
-                    <STREET>
-                        <Line-35>{{from_street}}</Line-35>
-                    </STREET>
-                    <City>{{from_city}}</City>
-                    <Zip>{{from_pin}}</Zip>
-                    <Country>{{from_iso_country_code}}</Country>
-                </NAME-ADDRESS>
+{{ frappe.render_template("microsynth/templates/includes/paynet_address.html", {'address': from['address'] }) }}
                 <BANK-INFO>
                     <Acct-No>{{ receivingBank['iban_id'] }}</Acct-No>
                     <BankId Type="IID" Country="{{ remitTo['iso_country_code'] }}">30005</BankId>
