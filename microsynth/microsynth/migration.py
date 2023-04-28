@@ -1886,13 +1886,13 @@ def set_territory_for_customers():
     length = len(customers)
 
     for c in customers:
-        print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
+        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
         
         try:
             set_territory(c.name)
             frappe.db.commit()
         except Exception as err:
-            frappe.log_error("Could not set territory for customer '{0}'\n{1}".format(c.name, err), "migration.set_debtors")
+            frappe.log_error("Could not set territory for customer '{0}'\n{1}".format(c.name, err), "migration.set_territory_for_customers")
 
         i += 1
     return
