@@ -720,6 +720,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
+                        'transaction_id':       datetime.now().strftime("%Y%m%d%H%M%S%f"),
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'customer_id':          customer.name,
                         'order_id':             order_reference, 
@@ -949,15 +950,16 @@ def transmit_sales_invoice(sales_invoice):
 
         elif mode == "Paynet":
             # create Paynet cXML input data dict
-            cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-            cxml = frappe.render_template("microsynth/templates/includes/paynet_xml.html", cxml_data)
+            xml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
+            xml = frappe.render_template("microsynth/templates/includes/paynet_xml.html", xml_data)
 
+            file_path = "{directory}/{biller_id}_{transaction_id}.xml".format(
+                directory = settings.paynet_export_path,
+                biller_id = xml_data['basics']['paynet_sender_pid'],
+                transaction_id = xml_data['basics']['transaction_id'])
 
-            file_path = "{0}/{1}.xml".format(settings.paynet_export_path, sales_invoice.name)
-            
-            with open('/home/libracore/Desktop/'+ sales_invoice.name, 'w') as file:
-            # with open(file_path, 'w') as file:
-                file.write(cxml)
+            with open(file_path, 'w') as file:
+                file.write(xml)
 
             '''
             # TODO: comment in after development to save paynet file to filesystem
