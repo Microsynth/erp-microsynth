@@ -94,6 +94,12 @@ def get_user_details(person_id, client="webshop"):
     customer = frappe.get_doc("Customer", customer_id)
     if customer.disabled == 1:
         return {'success': False, 'message': 'Customer disabled'}
+    
+    if customer.invoice_to:
+        invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
+    else:
+        invoice_contact = None
+    
     # fetch addresses
     addresses = frappe.db.sql(
         """ SELECT 
@@ -126,7 +132,8 @@ def get_user_details(person_id, client="webshop"):
         'details': {
             'contact': contact,
             'customer': customer,
-            'addresses': addresses
+            'addresses': addresses,
+            'invoice_contact': invoice_contact
         }
     }
 
