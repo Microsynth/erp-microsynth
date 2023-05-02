@@ -27,10 +27,11 @@ import json
 import random
 
 @frappe.whitelist()
-def create_invoices(mode, company):
+def create_invoices(mode, company, customer):
     kwargs={
         'mode': mode,
-        'company': company
+        'company': company,
+        'customer': customer
     }
     
     enqueue("microsynth.microsynth.invoicing.async_create_invoices",
@@ -39,13 +40,13 @@ def create_invoices(mode, company):
         **kwargs)
     return {'result': _('Invoice creation started...')}
     
-def async_create_invoices(mode, company):
+def async_create_invoices(mode, company, customer):
     """
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG' }"
     """
 
-    all_invoiceable = get_data(filters={'company': company})
+    all_invoiceable = get_data(filters={'company': company, 'customer': customer})
 
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":

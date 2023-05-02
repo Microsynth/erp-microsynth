@@ -30,6 +30,12 @@ def get_columns():
     ]
 
 def get_data(filters=None):
+    company = filters.get("company")
+    if filters.get("customer"):
+        customer_condition = "AND `tabCustomer`.`name` = {0}".format(filters.get("customer"))
+    else: 
+        customer_condition = ""
+
     invoiceable_services = frappe.db.sql("""
         SELECT * 
         FROM (
@@ -76,10 +82,11 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`creation` > '2022-12-31'
                 AND `tabDelivery Note`.`status` != "Closed"
                 AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
+                {customer_condition}
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
         ORDER BY `raw`.`customer` ASC;
-    """.format(company=filters.get("company")), as_dict=True)
+    """.format(company=company, customer_condition=customer_condition), as_dict=True)
     
     return invoiceable_services

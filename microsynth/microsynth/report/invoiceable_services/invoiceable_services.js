@@ -5,6 +5,12 @@
 frappe.query_reports["Invoiceable Services"] = {
     "filters": [
         {
+            "fieldname":"customer",
+            "label": __("Customer"),
+            "fieldtype": "Link",
+            "options": "Customer"
+        },
+        {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
@@ -19,7 +25,8 @@ frappe.query_reports["Invoiceable Services"] = {
                 'method': "microsynth.microsynth.invoicing.create_invoices",
                 'args': {
                     'mode': "Post",
-                    'company': get_company()
+                    'company': get_company(),
+                    'customer': get_customer()
                 },
                 'callback': function(response) {
                     frappe.show_alert( __("Started") );
@@ -31,7 +38,8 @@ frappe.query_reports["Invoiceable Services"] = {
                 'method': "microsynth.microsynth.invoicing.create_invoices",
                 'args': {
                     'mode': "Electronic",
-                    'company': get_company()
+                    'company': get_company(),
+                    'customer': get_customer()
                 },
                 'callback': function(response) {
                     frappe.show_alert( __("Started") );
@@ -43,7 +51,8 @@ frappe.query_reports["Invoiceable Services"] = {
                 'method': "microsynth.microsynth.invoicing.create_invoices",
                 'args': {
                     'mode': "Collective",
-                    'company': get_company()
+                    'company': get_company(),
+                    'customer': get_customer()
                 },
                 'callback': function(response) {
                     frappe.show_alert( __("Started") );
@@ -52,6 +61,17 @@ frappe.query_reports["Invoiceable Services"] = {
         });
     }
 };
+
+function get_customer() {
+    var customer = null;
+    for (var i = 0; i < frappe.query_report.filters.length; i++) {
+        if (frappe.query_report.filters[i].fieldname == 'customer') {
+            customer = frappe.query_report.filters[i].value;
+            break;
+        }
+    }
+    return customer;
+}
 
 function get_company() {
     var company = null;
