@@ -64,7 +64,7 @@ def export_customers(filename, from_date):
     f.write(CUSTOMER_HEADER)
     # get applicable records changed since from_date
     sql_query = """SELECT 
-           `tabAddress`.`name` AS `person_id`,
+           `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
            `tabContact`.`first_name` AS `first_name`,
@@ -183,7 +183,7 @@ def export_billing_address(filename, customer_name):
     f.write(BILLING_ADDRESS_HEADER)
     # get applicable records changed since from_date
     sql_query = """SELECT 
-           `tabAddress`.`name` AS `person_id`,
+           `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
            `tabContact`.`first_name` AS `first_name`,
@@ -313,7 +313,7 @@ def export_shipping_address(filename, person_id):
     f.write(SHIPPING_ADDRESS_HEADER)
     # get applicable records
     sql_query = """SELECT 
-           `tabAddress`.`name` AS `person_id`,
+           `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
            `tabContact`.`first_name` AS `first_name`,
