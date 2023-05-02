@@ -803,6 +803,13 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     return data
 
 
+def escape_chars_for_xml(text):
+    """
+    Escape characters for ariba cXML 
+    """
+    return text.replace("&", "&amp;")
+
+
 def transmit_sales_invoice(sales_invoice):
     """
     This function will check the transfer mode and transmit the invoice
@@ -930,7 +937,7 @@ def transmit_sales_invoice(sales_invoice):
 
             file_path = "{0}/{1}.xml".format(settings.ariba_cxml_export_path, sales_invoice.name)
             with open(file_path, mode='w') as file:
-                file.write(cxml)
+                file.write(escape_chars_for_xml(cxml))
 
             '''
             # attach to sales invoice
