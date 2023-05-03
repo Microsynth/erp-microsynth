@@ -127,7 +127,8 @@ def export_customers(filename, from_date):
         if (not d['person_id'].isnumeric() 
             or "-" in d['person_id']
             or not d['customer_id']
-            or "-" in d['customer_id']):
+            or "-" in d['customer_id']
+            or not d['country']):               # country is required for FileMaker Gecko (exclude Contacts without linked address)
             continue
 
         # Do not change the order of the fields. Changes will corrupt import into Gecko.
