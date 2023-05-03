@@ -57,6 +57,9 @@ def import_customers(filename):
 def export_customers(filename, from_date):
     """
     This function will create a customer export file from ERP to Gecko
+
+    run
+    bench execute microsynth.microsynth.migration.export_customers --kwargs "{'filename': '/home/libracore/Desktop/customer_data.txt', 'from_date': '2023-04-24'}"
     """
     # create file
     f = open(filename, "w")
@@ -114,13 +117,20 @@ def export_customers(filename, from_date):
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-        WHERE `tabCustomer`.`creation` >= "{from_date}"
-           OR `tabAddress`.`creation` >= "{from_date}"
-           OR `tabContact`.`creation` >= "{from_date}"
+        WHERE `tabCustomer`.`modified` >= "{from_date}"
+           OR `tabAddress`.`modified` >= "{from_date}"
+           OR `tabContact`.`modified` >= "{from_date}"
     """.format(from_date=from_date)
     data = frappe.db.sql(sql_query, as_dict=True)
     for d in data:       
-        # Do not change the order. Changes will corrupt import into Gecko.
+        # Skip entries that are not a positive number
+        if (not d['person_id'].isnumeric() 
+            or "-" in d['person_id']
+            or not d['customer_id']
+            or "-" in d['customer_id']):
+            continue
+
+        # Do not change the order of the fields. Changes will corrupt import into Gecko.
         # Only append new lines.
         row = CUSTOMER_HEADER_FIELDS.format(
             person_id = replace_none(d['person_id']),
