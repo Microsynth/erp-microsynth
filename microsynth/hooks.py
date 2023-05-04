@@ -151,3 +151,8 @@ scheduler_events = {
 # 	"Task": "microsynth.task.get_dashboard_data"
 # }
 
+# hook for migrate cleanup tasks
+after_migrate = [
+    'microsynth.microsynth.updater.cleanup_languages',
+    'microsynth.microsynth.updater.disable_hot_config_in_dev'
+]
