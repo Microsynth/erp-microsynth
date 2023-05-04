@@ -15,7 +15,7 @@ def cleanup_languages():
 
 def disable_hot_config_in_dev():
     # check if this is a test or develop instance
-    if "erp.microsynth.local" not in frappe.conf.host_name:
+    if "erp.microsynth.local" not in (frappe.conf.host_name or ""):
         print("This is a test/develop system: disabling productive values")
         
         print("Disabling email accounts...")
