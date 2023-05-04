@@ -317,6 +317,13 @@ def get_data():
                         "label": _("Intrastat"),
                         "description": _("Intrastat"),
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Accounts Receivable Microsynth",
+                        "label": _("Accounts Receivable Microsynth"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         }
