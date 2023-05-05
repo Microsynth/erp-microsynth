@@ -412,12 +412,25 @@ def make_monthly_collective_invoice(company, customer, month):
             and cint(dn.get('collective_billing')) == 1 
             and cint(dn.get('is_punchout')) != 1 
             and dn.get('customer') == str(customer) ):
-            print("{0}\t{1}".format(dn.get('delivery_note'), dn.get('date')))
-            dns.append(dn.get('delivery_note'))
+                dns.append(dn.get('delivery_note'))
 
     invoices = make_collective_invoices(dns)
 
     return invoices
+
+
+def make_monthly_collective_invoices(company, customers, months):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.make_monthly_collective_invoices --kwargs "{ 'company': 'Microsynth AG', 'customers':['35581487', '35581488', '35581490'], 'months': [ 1, 2, 3 ] }"
+    """
+
+    sales_invoices = []
+    for customer in customers:
+        for month in months:
+            invoices = make_monthly_collective_invoice(company, customer, month)
+            sales_invoices.append(invoices)
+    return sales_invoices
 
 
 def create_pdf_attachment(sales_invoice): 
@@ -425,7 +438,7 @@ def create_pdf_attachment(sales_invoice):
     Creates the PDF file for a given Sales Invoice name and attaches the file to the record in the ERP.
 
     run
-    bench execute microsynth.microsynth.utils.create_pdf_attachment --kwargs "{'sales_invoice': 'SI-BAL-23002642-1'}"
+    bench execute microsynth.microsynth.invoicing.create_pdf_attachment --kwargs "{'sales_invoice': 'SI-BAL-23002642-1'}"
     """
 
     doctype = "Sales Invoice"
