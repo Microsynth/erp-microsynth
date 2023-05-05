@@ -39,14 +39,84 @@ def create_invoices(mode, company, customer):
         timeout=15000,
         **kwargs)
     return {'result': _('Invoice creation started...')}
-    
+
+
+def get_tax_templates(delivery_notes):
+    taxes = []
+    for dn in delivery_notes:
+        t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges")
+        if t not in taxes:
+            taxes.append(t)
+    return taxes
+
+
+def make_collective_invoices(delivery_notes):
+    """
+    Make collective invoices from the given Deliver Notes. All documents must 
+    be for a single customer and from the same company. 
+    Considers customer credits if available.
+
+    bench execute microsynth.microsynth.invoicing.make_collective_invoices --kwargs "{'delivery_notes': ['DN-BAL-23034973', 'DN-BAL-23114748'] }"
+    """
+    invoices = []
+
+    if len(delivery_notes) > 0:
+
+        customers = []
+        companies = []
+        for d in delivery_notes:
+            cust = frappe.db.get_value("Delivery Note", d, "customer")
+            if cust not in customers:
+                customers.append(cust)
+            comp = frappe.db.get_value("Delivery Note", d, "company")
+            if comp not in companies:
+                companies.append(comp)
+
+        # validation: 
+        if len(set(customers)) != 1:
+            frappe.log_error("The provided Delivery Notes do not have a single customer.\nDelivery Notes: {0}\nCustomers: {1}".format(delivery_notes, customers), "invocing.make_collective_invoices")
+            return invoices
+        if len(set(companies)) != 1:
+            frappe.log_error("The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: l{1}".format(delivery_notes, companies), "invocing.make_collective_invoices")
+            return invoices
+
+        customer = customers[0]
+        company = companies[0]
+
+        # check if there are multiple tax templates
+        taxes = get_tax_templates(delivery_notes)
+        credit = get_total_credit(customer, company)
+
+        # create one invoice per tax template
+        for tax in taxes:
+            filtered_dns = []
+            for d in delivery_notes:
+                if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
+                    total = frappe.get_value("Delivery Note", d, "total")
+
+                    if credit is not None and frappe.get_value("Customer",customer,"has_credit_account"):
+                        # there is some credit - check if it is sufficient
+                        if total <= credit:
+                            filtered_dns.append(d)
+                            credit = credit - total
+                        else:
+                            frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), "invocing.async_create_invoices")
+                    else:
+                        # there is no credit account
+                        filtered_dns.append(d)
+
+            if len(filtered_dns) > 1:
+                si = make_collective_invoice(filtered_dns)
+                invoices.append(si)
+
+    return invoices
+
+
 def async_create_invoices(mode, company, customer):
     """
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG' }"
     """
-
-    all_invoiceable = get_data(filters={'company': company, 'customer': customer})
 
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":
@@ -59,6 +129,8 @@ def async_create_invoices(mode, company, customer):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
+
+        all_invoiceable = get_data(filters={'company': company, 'customer': customer})
 
         count = 0
         for dn in all_invoiceable:
@@ -138,6 +210,9 @@ def async_create_invoices(mode, company, customer):
 
     elif mode == "Collective":
         # colletive invoices
+
+        all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+
         customers = []
         for dn in all_invoiceable:
 
@@ -156,41 +231,10 @@ def async_create_invoices(mode, company, customer):
                     if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
                         dns.append(dn.get('delivery_note'))
 
-                if len(dns) > 0:
-                    # check if there are multiple tax templates
-                    taxes = []
-                    for dn in dns:
-                        t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges")
-                        if t not in taxes:
-                            taxes.append(t)
+                invoices = make_collective_invoices(dns)
+                for invoice in invoices:
+                    transmit_sales_invoice(invoice)
 
-                    if len(taxes) > 1:
-                        print("multiple taxes for customer '{0}'".format(c), "invocing.async_create_invoices")
-
-                    credit = get_total_credit(c, company)
-
-                    # create one invoice per tax template
-                    for tax in taxes:
-                        filtered_dns = []
-                        for d in dns:
-                            if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
-                                total = frappe.get_value("Delivery Note", d, "total")
-
-                                if credit is not None and frappe.get_value("Customer",c,"has_credit_account"):
-                                    # there is some credit - check if it is sufficient
-                                    if total <= credit:
-                                        filtered_dns.append(d)
-                                        credit = credit - total
-                                    else:
-                                        frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, c), "invocing.async_create_invoices")
-                                else:
-                                    # there is no credit account
-                                    filtered_dns.append(d)
-
-                        if len(filtered_dns) > 1:
-                            si = make_collective_invoice(filtered_dns)
-                            transmit_sales_invoice(si)
-                            
             except Exception as err:
                 frappe.log_error("Cannot create collective invoice for customer {0}: \n{1}".format(c, err), "invoicing.async_create_invoices")
     else:
@@ -350,6 +394,30 @@ def make_collective_invoice(delivery_notes):
     frappe.db.commit()
 
     return sales_invoice.name
+
+
+def make_monthly_collective_invoice(company, customer, month):
+    """
+    Make monthly collective invoices. Considers customer credits if available.
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_monthly_collective_invoice --kwargs "{'company': 'Microsynth AG', 'customer': 35581487, 'month': 4}"
+    """
+
+    all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+    
+    dns = []
+    for dn in all_invoiceable:
+        if (dn.get('date').month == month
+            and cint(dn.get('collective_billing')) == 1 
+            and cint(dn.get('is_punchout')) != 1 
+            and dn.get('customer') == str(customer) ):
+            print("{0}\t{1}".format(dn.get('delivery_note'), dn.get('date')))
+            dns.append(dn.get('delivery_note'))
+
+    invoices = make_collective_invoices(dns)
+
+    return invoices
 
 
 def create_pdf_attachment(sales_invoice): 
