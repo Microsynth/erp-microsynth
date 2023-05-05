@@ -707,7 +707,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     # order reference / 
     if sales_invoice.is_punchout:
         order_reference = sales_invoice.po_no
-    elif billing_contact.room.upper().strip().startswith("KST"):
+    elif billing_contact.room and billing_contact.room.upper().strip().startswith("KST"):
         # Special order reference for UZH
         order_reference = "{mail} / {cost_center} / {po}".format(
             mail = billing_contact.department,
