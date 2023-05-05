@@ -14,6 +14,14 @@ def cleanup_languages():
     return
 
 def disable_hot_config_in_dev():
+    """
+    run
+    bench execute "microsynth.microsynth.updater.disable_hot_config_in_dev"
+
+    or 
+    bench migrate
+    """
+
     # check if this is a test or develop instance
     if "erp.microsynth.local" not in (frappe.conf.host_name or ""):
         print("This is a test/develop system: disabling productive values")
@@ -28,10 +36,27 @@ def disable_hot_config_in_dev():
             doc.enable_outgoing = 0
             doc.save()
         frappe.db.commit()
-        
+
         print("Deactivating hot export path...")
         config = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
-        config.pdf_export_path = (config.pdf_export_path or "").replace("erp_share", "erp_share_test")
+        config.pdf_export_path = (config.pdf_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        config.ariba_cxml_export_path = (config.ariba_cxml_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        config.gep_cxml_export_path = (config.gep_cxml_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        config.paynet_export_path = (config.paynet_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        config.carlo_erba_export_path = (config.carlo_erba_export_path or "").replace("/erp_share/", "/erp_share_test/")
         config.save()
-        
+
+        seq_config = frappe.get_doc("Sequencing Settings", "Sequencing Settings")
+        seq_config.label_export_path = (seq_config.label_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        seq_config.save()
+
+        print("Set test webshop...")
+        config.url = (config.url or "").replace("srvweb.", "srvweb-test.")
+        config.save()
+
+        print("Set Slims test server...")
+        slims_config = frappe.get_doc("SLIMS Settings", "SLIMS Settings")
+        slims_config.endpoint = (slims_config.endpoint or "").replace(".63",".64")
+        slims_config.save()
+
     return
