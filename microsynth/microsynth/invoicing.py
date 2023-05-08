@@ -105,7 +105,7 @@ def make_collective_invoices(delivery_notes):
                         # there is no credit account
                         filtered_dns.append(d)
 
-            if len(filtered_dns) > 1:
+            if len(filtered_dns) > 0:
                 si = make_collective_invoice(filtered_dns)
                 invoices.append(si)
 
