@@ -23,14 +23,14 @@
 {%- endif %}
 {%- for item in doc.get('items') %}
 <invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
-    <price_line_amount {% if tax_rate != 0 %}tax="{{ "{:.2f}".format(tax_rate) }}" tax_amount="{{ "{:.2f}".format(item.amount * (tax_rate/100)) }}"{% endif %} gross_price_line_amount="{{ "{:.2f}".format(item.amount * ((100 + tax_rate)/100)) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
+    <price_line_amount {% if tax_rate != 0 and item.amount != 0 %}tax="{{ "{:.2f}".format(tax_rate) }}" tax_amount="{{ "{:.2f}".format(item.amount * (tax_rate/100)) }}"{% endif %} gross_price_line_amount="{{ "{:.2f}".format(item.amount * ((100 + tax_rate)/100)) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
     {%- set account_info = item.income_account.split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
 </invoice_item_list>
 {%- endfor %}
 <total_amount total_gross_amount_excluding_third-party_collection="{{ "{:.2f}".format(doc.grand_total) }}" net_total_amount="{{ "{:.2f}".format(doc.net_total) }}" currency="{{ doc.currency }}">
 {%- for t in doc.taxes %}
-    <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" tax_amount="{{ "{:.2f}".format(doc.total_taxes_and_charges) }}" currency="{{ doc.currency }}" />
+    <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" {% if t.rate != 0 and doc.net_total != 0 %} tax_amount="{{ "{:.2f}".format(doc.total_taxes_and_charges) }}"{% endif %} currency="{{ doc.currency }}" />
 {%- endfor %}
 </total_amount>
 </invoice>
