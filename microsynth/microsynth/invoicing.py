@@ -809,6 +809,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date_only':    posting_timepoint.strftime("%Y-%m-%d"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
                         'pay_in_days':          terms_template.terms[0].credit_days, 
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
