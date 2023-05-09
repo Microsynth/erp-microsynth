@@ -574,6 +574,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, oligo.web_id)
         position["description"] = oligo.oligo_name
         position["quantity"] = 1
+        position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
         position["tax_amount"] = tax_rate * rate_total / 100
@@ -598,6 +599,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["item"] = "{0}-{1}".format(sales_invoice.web_order_id, sample.web_id)
         position["description"] = sample.sample_name
         position["quantity"] = 1
+        position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
         position["tax_amount"] = tax_rate * rate_total / 100
@@ -623,6 +625,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["item"] = n.item_code
                 position["description"] = n.description
                 position["quantity"] = n.qty
+                position["uom"] = n.stock_uom
                 position["rate"] = n.rate
                 position["amount"] = n.amount
                 position["tax_amount"] = tax_rate * n.amount / 100
@@ -811,7 +814,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'invoice_date_only':    posting_timepoint.strftime("%Y-%m-%d"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
+                        'due_date':             sales_invoice.due_date.strftime("%Y-%m-%d"),
                         'pay_in_days':          terms_template.terms[0].credit_days, 
+                        'sales_order_id':       sales_invoice.items[0].sales_order,
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },

@@ -1,0 +1,14 @@
+                        <Address>
+                            <CompanyName>{{ address['name'] }}</CompanyName>
+                            <Address1>{{ address['street1'] }}</Address1>                            
+                            {%- if address['street2'] -%}
+                            {# comment for indenting #}
+                            <Address2>{{ address['street2'] }}</Address2>
+                            {%- endif -%}
+                            {# comment for indenting #}
+                            <ZIP>{{ address['pin'] }}</ZIP>
+                            <City>{{ address['city'] }}</City>
+                            <Country>{{ address['country_code'] }}</Country>
+                            <Contact1></Contact1>
+                            <Contact2></Contact2>
+                        </Address>

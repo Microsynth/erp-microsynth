@@ -1,125 +1,95 @@
-<?xml version="1.0" encoding="utf-8"?>
+l<?xml version="1.0" encoding="utf-8"?>
 <Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" type="string" xsi:noNamespaceSchemaLocation="file://Hpcf08/billing$/04%20Dokumentationen/10%20Technische%20Schemas/06%20yellowbill%20Invoice%202.0.4/01%20Biller%20Input/01%20XSD-Scheme/ybInvoice_V2.0.4.xsd">
     <Header>
-        <From>Test Biller PFv</From>
+        <From>Microsynth AG</From>
         <To>IPECeBILLServer</To>
         <UseCase>CreateybInvoice</UseCase>
         <SessionID>1</SessionID>
         <Version>2.0</Version>
         <Status>0</Status>
-        <SoftwareName>Test</SoftwareName>
+        <SoftwareName>ERPNext / libracore business software</SoftwareName>
         <SoftwareVersion>1.0</SoftwareVersion>
     </Header>
     <Body>
         <DeliveryInfo>
-            <BillerID>41101000000115520</BillerID>
-            <eBillAccountID>41100000158262333</eBillAccountID>
+            <BillerID>{{ basics['paynet_sender_pid'] }}</BillerID>
+            <eBillAccountID>{{ basics['receiver_network_id'] }}</eBillAccountID>
             <DeliveryID/>
-            <DeliveryDate>2020-07-01</DeliveryDate>
+            <DeliveryDate>{{ basics['invoice_date_only'] }}</DeliveryDate>
             <TransactionID>IBAN</TransactionID>
-            <BillDetailsType>PDFAppendix</BillDetailsType>
+            <BillDetailsType>PDFSystem</BillDetailsType>
             <URLBillDetails/>
         </DeliveryInfo>
         <Bill>
             <Header>
                 <DocumentType>BILL</DocumentType>
                 <DocumentSubType>final</DocumentSubType>
-                <DocumentID>0090000692</DocumentID>
-                <DocumentDate>2022-06-30</DocumentDate>
+                <DocumentID>{{ basics['invoice_id'] }}</DocumentID>
+                <DocumentDate>{{ basics['invoice_date_only'] }}</DocumentDate>
                 <SenderParty>
                     <Network>
                         <NetworkName>PostFinance</NetworkName>
-                        <NetworkID>41010774227995933</NetworkID>
+                        <NetworkID>{{ basics['paynet_sender_pid'] }}</NetworkID>
                     </Network>
                     <TaxLiability>VAT</TaxLiability>
                     <PartyType>
-                        <CustomerID>0003001179</CustomerID>
-                        <Address>
-                            <CompanyName>Sintetica SA</CompanyName>
-                            <Address1>Via Penate 5</Address1>
-                            <ZIP>6850</ZIP>
-                            <City>Mendrisio</City>
-                            <Country>CH</Country>
-                            <Contact1>91 640 42 50-41</Contact1>
-                            <Contact2>IGALLI</Contact2>
-                        </Address>
-                        <TaxID>CHE105272121</TaxID>
+                        <CustomerID></CustomerID>
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': from['address'] }) }}
+                        <TaxID>{{ from['supplier_tax_id'] }}</TaxID>
                     </PartyType>
                 </SenderParty>
                 <ReceiverParty>
                     <Network>
-                        <NetworkName>SIXPaynet</NetworkName>
-                        <NetworkID>41010146856955391</NetworkID>
+                        <NetworkName>PostFinance</NetworkName>
+                        <NetworkID>{{ basics['receiver_network_id'] }}</NetworkID>
                     </Network>
                     <PartyType>
-                        <CustomerID>0003001179</CustomerID>
-                        <Address>
-                            <CompanyName>GALEXIS AG Postfach</CompanyName>
-                            <Address1>Industriestrasse 2</Address1>
-                            <ZIP>4704</ZIP>
-                            <City>Niederbipp</City>
-                            <Country>CH</Country>
-                            <Contact1>021 694 51 11</Contact1>
-                        </Address>
-                        <AdditionalReference>
-                            <ReferencePosition>0</ReferencePosition>
-                            <ReferenceType>GLN</ReferenceType>
-                            <ReferenceValue>7601001000131</ReferenceValue>
-                        </AdditionalReference>
+                        <CustomerID>{{ basics['customer_id'] }}}</CustomerID>
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': billTo['address'] }) }}
                     </PartyType>
                 </ReceiverParty>
+                <DeliveryPlace>
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': shipTo['address'] }) }}
+                </DeliveryPlace>
                 <InvoiceReceivingParty>
-                    <CustomerID>0003001179</CustomerID>
-                    <Address>
-                        <CompanyName>GALEXIS AG Postfach</CompanyName>
-                        <Address1>Industriestrasse 2</Address1>
-                        <ZIP>4704</ZIP>
-                        <City>Niederbipp</City>
-                        <Country>CH</Country>
-                        <Contact1>021 694 51 11</Contact1>
-                    </Address>
-                    <AdditionalReference>
-                        <ReferencePosition>0</ReferencePosition>
-                        <ReferenceType>GLN</ReferenceType>
-                        <ReferenceValue>7601001000131</ReferenceValue>
-                    </AdditionalReference>
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': billTo['address'] }) }}
                 </InvoiceReceivingParty>
                 <AchievementDate>
-                    <StartDateAchievement>2022-07-05</StartDateAchievement>
-                    <EndDateAchievement>2022-07-05</EndDateAchievement>
+                    <StartDateAchievement>{{ basics['invoice_date_only'] }}</StartDateAchievement>
+                    <EndDateAchievement>{{ basics['invoice_date_only'] }}</EndDateAchievement>
                 </AchievementDate>
-                <Currency>CHF</Currency>
+                <Currency>{{ basics['currency'] }}</Currency>
                 <AccountAssignment>
                     <OrderReference>
                         <ReferencePosition>0</ReferencePosition>
                         <ReferenceType>OrderReference</ReferenceType>
-                        <ReferenceValue>4927876</ReferenceValue>
+                        <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
                     </OrderReference>
                     <OrderPosition>0</OrderPosition>
                 </AccountAssignment>
                 <FixedReference>
                     <ReferencePosition>0</ReferencePosition>
                     <ReferenceType>OrderNumberByBuyer</ReferenceType>
-                    <ReferenceValue>4927876</ReferenceValue>
+                    <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
                 </FixedReference>
                 <FixedReference>
                     <ReferencePosition>0</ReferencePosition>
                     <ReferenceType>OrderNumberBySupplier</ReferenceType>
-                    <ReferenceValue>0000000759</ReferenceValue>
+                    <ReferenceValue>{{ basics['sales_order_id']}}</ReferenceValue>
                 </FixedReference>
                 <FixedReference>
                     <ReferencePosition>0</ReferencePosition>
                     <ReferenceType>DeliveryNoteNumber</ReferenceType>
-                    <ReferenceValue>0080001396</ReferenceValue>
+                    <ReferenceValue>{{ basics['delivery_note_id'] }}</ReferenceValue>
                 </FixedReference>
-                <Language>fr</Language>
+                <Language>de</Language>
                 <PaymentInformation>
-                    <PaymentDueDate>2022-07-29</PaymentDueDate>
+                    <PaymentDueDate>{{ basics['due_date'] }}</PaymentDueDate>
                     <PaymentType>IBAN</PaymentType>
                     <fixAmount>Yes</fixAmount>
                     <IBAN>
-                        <IBAN>CH8930808006482384555</IBAN>
-                        <CreditorReference>000000000300117994000006727</CreditorReference>
+                        <IBAN>{{ receivingBank['iban_id'] }}</IBAN>
+                        <CreditorReference>{{ basics['invoice_id'] }}</CreditorReference>
                     </IBAN>
                 </PaymentInformation>
             </Header>
@@ -137,7 +107,7 @@
                     <ProductDescription>{{ pos['description'] }}</ProductDescription>
                     <ProductID>{{ pos['item'] }}</ProductID>
                     <Quantity>{{ pos['quantity'] }}</Quantity>
-                    <QuantityDescription>PK</QuantityDescription>
+                    <QuantityDescription>{{ pos['uom'] }}</QuantityDescription>
                     <PriceUnit>1</PriceUnit>
                     <PriceExclusiveTax>{{ "{:.2f}".format(pos['rate']) }}</PriceExclusiveTax>
                     <Tax>
@@ -156,19 +126,15 @@
             <Summary>
                 <Tax>
                     <TaxDetail>
-                        <Rate>2.500</Rate>
-                        <Amount>7.70</Amount>
-                        <BaseAmountExclusiveTax>308.10</BaseAmountExclusiveTax>
+                        <Rate>{{ tax['percent'] }}</Rate>
+                        <Amount>{{ "{:.2f}".format(tax['amount']) }}</Amount>
+                        <BaseAmountExclusiveTax>{{ "{:.2f}".format(tax['taxable_amount']) }}</BaseAmountExclusiveTax>
                     </TaxDetail>
-                    <TotalTax>7.70</TotalTax>
-                </Tax>
-                <Discount>
-                    <Days>30</Days>
-                    <Rate>0</Rate>
-                </Discount>
-                <TotalAmountExclusiveTax>308.10</TotalAmountExclusiveTax>
-                <TotalAmountInclusiveTax>315.80</TotalAmountInclusiveTax>
-                <TotalAmountDue>315.80</TotalAmountDue>
+                    <TotalTax>{{ "{:.2f}".format(tax['amount']) }}</TotalTax>
+                </Tax>l
+                <TotalAmountExclusiveTax>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</TotalAmountExclusiveTax>
+                <TotalAmountInclusiveTax>{{ "{:.2f}".format(summary['net_amount']) }}</TotalAmountInclusiveTax>
+                <TotalAmountDue>{{ "{:.2f}".format(summary['due_amount']) }}</TotalAmountDue>
             </Summary>
         </Bill>
     </Body>
