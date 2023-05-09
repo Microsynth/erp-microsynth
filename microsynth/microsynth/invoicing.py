@@ -1054,7 +1054,7 @@ def transmit_sales_invoice(sales_invoice):
         elif mode == "Paynet":
             # create Paynet cXML input data dict
             xml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
-            xml = frappe.render_template("microsynth/templates/includes/paynet_xml.html", xml_data)
+            xml = frappe.render_template("microsynth/templates/includes/yellowbill_xml.html", xml_data)
 
             file_path = "{directory}/{biller_id}_{transaction_id}.xml".format(
                 directory = settings.paynet_export_path,

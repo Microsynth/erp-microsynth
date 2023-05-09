@@ -34,7 +34,7 @@ l<?xml version="1.0" encoding="utf-8"?>
                     <TaxLiability>VAT</TaxLiability>
                     <PartyType>
                         <CustomerID></CustomerID>
-{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': from['address'] }) }}
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': from['address'] }) }}
                         <TaxID>{{ from['supplier_tax_id'] }}</TaxID>
                     </PartyType>
                 </SenderParty>
@@ -45,14 +45,14 @@ l<?xml version="1.0" encoding="utf-8"?>
                     </Network>
                     <PartyType>
                         <CustomerID>{{ basics['customer_id'] }}}</CustomerID>
-{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': billTo['address'] }) }}
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': billTo['address'] }) }}
                     </PartyType>
                 </ReceiverParty>
                 <DeliveryPlace>
-{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': shipTo['address'] }) }}
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': shipTo['address'] }) }}
                 </DeliveryPlace>
                 <InvoiceReceivingParty>
-{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.xml", {'address': billTo['address'] }) }}
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': billTo['address'] }) }}
                 </InvoiceReceivingParty>
                 <AchievementDate>
                     <StartDateAchievement>{{ basics['invoice_date_only'] }}</StartDateAchievement>
