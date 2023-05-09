@@ -23,7 +23,7 @@
 {%- endif %}
 {%- for item in doc.get('items') %}
 <invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
-    <price_line_amount {% if tax_rate != 0 and item.amount != 0 %}tax="{{ "{:.2f}".format(tax_rate) }}" tax_amount="{{ "{:.2f}".format(item.amount * (tax_rate/100)) }}"{% endif %} gross_price_line_amount="{{ "{:.2f}".format(item.amount * ((100 + tax_rate)/100)) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
+    <price_line_amount {% if tax_rate != 0 %}tax="{{ "{:.2f}".format(tax_rate) }}"{% endif %} net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
     {%- set account_info = item.income_account.split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
 </invoice_item_list>
