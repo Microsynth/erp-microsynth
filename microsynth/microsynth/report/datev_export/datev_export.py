@@ -186,7 +186,7 @@ def package_export(filters):
         'documents': []
     }
     for d in data:
-        if d.get("document_type") == "Sales Invoice":
+        if d.get("document_type") == "Sales Invoice" and d.get("gross_amount") != 0:
             # create pdf
             pdf_file = create_pdf(path=path, 
                 dt=d.get("document_type"), 
