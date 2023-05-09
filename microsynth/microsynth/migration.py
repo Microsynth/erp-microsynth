@@ -24,8 +24,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = """person_id\tcustomer_id\tcustomer_name\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\n"""
-CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{customer_name}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\n"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcompany\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{company}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\n"""
 
 def import_customers(filename):
     """
@@ -73,6 +73,7 @@ def export_customers(filename, from_date):
            `tabContact`.`first_name` AS `first_name`,
            `tabContact`.`last_name` AS `last_name`,
            `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`overwrite_company` AS `overwrite_company`,
            `tabAddress`.`address_line1` AS `address_line1`,
            `tabAddress`.`pincode` AS `pincode`,
            `tabAddress`.`city` AS `city`,
@@ -136,7 +137,7 @@ def export_customers(filename, from_date):
         row = CUSTOMER_HEADER_FIELDS.format(
             person_id = replace_none(d['person_id']),
             customer_id = replace_none(d['customer_id']),
-            customer_name = replace_none(d['customer_name']),
+            company = d['overwrite_company'] if d['overwrite_company'] else replace_none(d['customer_name']),
             first_name = replace_none(d['first_name']),
             last_name = replace_none(d['last_name']),
             email = replace_none(d['email']),
@@ -200,6 +201,7 @@ def export_billing_address(filename, customer_name):
            `tabContact`.`first_name` AS `first_name`,
            `tabContact`.`last_name` AS `last_name`,
            `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`overwrite_company` AS `overwrite_company`,
            `tabAddress`.`address_line1` AS `address_line1`,
            `tabAddress`.`pincode` AS `pincode`,
            `tabAddress`.`city` AS `city`,
@@ -255,7 +257,7 @@ def export_billing_address(filename, customer_name):
         row = BILLING_ADDRESS_FIELDS.format(
             person_id = replace_none(d['person_id']),
             customer_id = replace_none(d['customer_id']),
-            customer_name = replace_none(d['customer_name']),
+            customer_name = d['overwrite_company'] if d['overwrite_company'] else replace_none(d['customer_name']),
             first_name = replace_none(d['first_name']),
             last_name = replace_none(d['last_name']),
             email = replace_none(d['email']),
@@ -330,6 +332,7 @@ def export_shipping_address(filename, person_id):
            `tabContact`.`first_name` AS `first_name`,
            `tabContact`.`last_name` AS `last_name`,
            `tabContact`.`email_id` AS `email`,
+           `tabAddress`.`overwrite_company` AS `overwrite_company`,
            `tabAddress`.`address_line1` AS `address_line1`,
            `tabAddress`.`pincode` AS `pincode`,
            `tabAddress`.`city` AS `city`,
@@ -383,7 +386,7 @@ def export_shipping_address(filename, person_id):
         row = SHIPPING_ADDRESS_FIELDS.format(
             person_id = replace_none(d['person_id']),
             customer_id = replace_none(d['customer_id']),
-            customer_name = replace_none(d['customer_name']),
+            customer_name = d['overwrite_company'] if d['overwrite_company'] else replace_none(d['customer_name']),
             first_name = replace_none(d['first_name']),
             last_name = replace_none(d['last_name']),
             email = replace_none(d['email']),
