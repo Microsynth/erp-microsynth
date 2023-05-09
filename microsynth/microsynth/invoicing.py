@@ -22,7 +22,7 @@ from microsynth.microsynth.utils import get_physical_path, get_billing_address, 
 from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import random
 
@@ -287,6 +287,8 @@ def make_invoice(delivery_note):
     
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
+    # for payment reminders: set 10 days goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
     sales_invoice.submit()
     # if a credit was allocated, book credit account
     if cint(sales_invoice.total_customer_credit) > 0:
@@ -348,6 +350,9 @@ def make_punchout_invoice(delivery_note):
 
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
+    # for payment reminders: set 10 days goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
+
     sales_invoice.submit()
     frappe.db.commit()
 
@@ -385,6 +390,9 @@ def make_collective_invoice(delivery_notes):
 
     sales_invoice.insert()
     set_income_accounts(sales_invoice)
+    # for payment reminders: set 10 days goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
+
     sales_invoice.submit()
 
     # if a credit was allocated, book credit account
