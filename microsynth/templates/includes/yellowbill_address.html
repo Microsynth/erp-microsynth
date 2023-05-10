@@ -1,6 +1,21 @@
                         <Address>
                             <CompanyName>{{ address['name'] }}</CompanyName>
-                            <Address1>{{ address['street1'] }}</Address1>                            
+                            {%- if address['company_division'] -%}
+                            {# comment for indenting #}
+                            <CompanyDivision>{{ address['company_division'] }}</CompanyDivision>
+                            {%- endif -%}
+                            {# comment for indenting #}
+                            {%- if address['last_name'] -%}
+                            {# comment for indenting #}
+                            <FamilyName>{{ address['last_name'] }}</FamilyName>
+                            {%- endif -%}
+                            {# comment for indenting #}
+                            {%- if address['first_name'] -%}
+                            {# comment for indenting #}
+                            <GivenName>{{ address['first_name'] }}</GivenName>
+                            {%- endif -%}
+                            {# comment for indenting #}
+                            <Address1>{{ address['street1'] }}</Address1>
                             {%- if address['street2'] -%}
                             {# comment for indenting #}
                             <Address2>{{ address['street2'] }}</Address2>

@@ -538,6 +538,9 @@ def get_address_dict(customer, contact, address, country_codes):
 
     postal_address["id"] = replace_none(address.customer_address_id)
     postal_address["name"] = address.overwrite_company or customer
+    postal_address["company_division"] = contact.institute if contact else None
+    postal_address["first_name"] = contact.first_name if contact and contact.first_name != "-" else None
+    postal_address["last_name"] = contact.last_name if contact else None
     postal_address["deliver_to"] = deliver_to
     postal_address["street1"] = address.address_line1
     postal_address["street2"] = address.address_line2
