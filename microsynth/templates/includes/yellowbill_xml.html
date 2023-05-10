@@ -16,7 +16,7 @@ l<?xml version="1.0" encoding="utf-8"?>
             <eBillAccountID>{{ basics['receiver_network_id'] }}</eBillAccountID>
             <DeliveryID/>
             <DeliveryDate>{{ basics['invoice_date_only'] }}</DeliveryDate>
-            <TransactionID>IBAN</TransactionID>
+            <TransactionID>{{ basics['transaction_id'] }}</TransactionID>
             <BillDetailsType>PDFSystem</BillDetailsType>
             <URLBillDetails/>
         </DeliveryInfo>
@@ -44,16 +44,16 @@ l<?xml version="1.0" encoding="utf-8"?>
                         <NetworkID>{{ basics['receiver_network_id'] }}</NetworkID>
                     </Network>
                     <PartyType>
-                        <CustomerID>{{ basics['customer_id'] }}}</CustomerID>
+                        <CustomerID>{{ basics['customer_id'] }}</CustomerID>
 {{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': billTo['address'] }) }}
                     </PartyType>
                 </ReceiverParty>
-                <DeliveryPlace>
-{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': shipTo['address'] }) }}
-                </DeliveryPlace>
                 <InvoiceReceivingParty>
 {{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': billTo['address'] }) }}
                 </InvoiceReceivingParty>
+                <DeliveryPlace>
+{{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': shipTo['address'] }) }}
+                </DeliveryPlace>
                 <AchievementDate>
                     <StartDateAchievement>{{ basics['invoice_date_only'] }}</StartDateAchievement>
                     <EndDateAchievement>{{ basics['invoice_date_only'] }}</EndDateAchievement>
@@ -131,7 +131,7 @@ l<?xml version="1.0" encoding="utf-8"?>
                         <BaseAmountExclusiveTax>{{ "{:.2f}".format(tax['taxable_amount']) }}</BaseAmountExclusiveTax>
                     </TaxDetail>
                     <TotalTax>{{ "{:.2f}".format(tax['amount']) }}</TotalTax>
-                </Tax>l
+                </Tax>
                 <TotalAmountExclusiveTax>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</TotalAmountExclusiveTax>
                 <TotalAmountInclusiveTax>{{ "{:.2f}".format(summary['net_amount']) }}</TotalAmountInclusiveTax>
                 <TotalAmountDue>{{ "{:.2f}".format(summary['due_amount']) }}</TotalAmountDue>
