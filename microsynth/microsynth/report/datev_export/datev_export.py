@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 import json
 from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
+import re
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -147,8 +148,12 @@ def create_pdf(path, dt, dn, print_format):
     return file_name
     
 def create_datev_xml(path, dt, dn):
+    # pre-process document to prevent datev errors
+    doc = frappe.get_doc(dt, dn).as_dict()
+    for item in doc['items']:
+        item['item_name'] = re.sub(r"&([a-z0-9]+|#[0-9]{1,6}|x[0-9a-fA-F]{1,6});", "", item['item_name'])     # drop html entitites from item name, if cropped, they become invalid
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
-        'doc': frappe.get_doc(dt, dn).as_dict()
+        'doc': doc
     })
     file_name = "{0}.xml".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
