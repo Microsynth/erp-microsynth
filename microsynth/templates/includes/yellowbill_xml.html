@@ -33,7 +33,7 @@
                     </Network>
                     <TaxLiability>VAT</TaxLiability>
                     <PartyType>
-                        <CustomerID></CustomerID>
+                        <CustomerID>{{ basics['supplier_id'] }}</CustomerID>
 {{ frappe.render_template("microsynth/templates/includes/yellowbill_address.html", {'address': from['address'] }) }}
                         <TaxID>{{ from['supplier_tax_id'] }}</TaxID>
                     </PartyType>
