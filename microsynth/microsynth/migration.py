@@ -24,8 +24,8 @@ PRICE_LIST_NAMES = {
     'CZK': "Sales Prices CZK"
 }
 
-CUSTOMER_HEADER = """person_id\tcustomer_id\tcompany\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\n"""
-CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{company}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\n"""
+CUSTOMER_HEADER = """person_id\tcustomer_id\tcompany\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\tdefault_company\n"""
+CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{company}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\t{default_company}\n"""
 
 def import_customers(filename):
     """
@@ -108,7 +108,8 @@ def export_customers(filename, from_date):
            NULL AS `umr_nr`,
            `tabCustomer`.`invoicing_method` AS `invoicing_method`,
            `tabUser`.`username` AS `sales_manager`,
-           `tabContact`.`phone` AS `phone`
+           `tabContact`.`phone` AS `phone`,
+           `tabCompany`.`abbr` AS `default_company`
         FROM `tabContact`
         LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
                                               AND `tDLA`.`parenttype`  = "Contact" 
@@ -118,6 +119,7 @@ def export_customers(filename, from_date):
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
+        LEFT JOIN `tabCompany` ON `tabCompany`.`name` = `tabCustomer`.`default_company`
         WHERE `tabCustomer`.`modified` >= "{from_date}"
            OR `tabAddress`.`modified` >= "{from_date}"
            OR `tabContact`.`modified` >= "{from_date}"
@@ -175,7 +177,8 @@ def export_customers(filename, from_date):
             sales_manager = replace_none(d['sales_manager']),
             ext_debitor_number = replace_none(d['ext_debitor_number']),
             invoice_email = replace_none(d['invoice_email']),
-            phone = replace_none(d['phone'])
+            phone = replace_none(d['phone']),
+            default_company = replace_none(d['default_company'])
         )
         f.write(row)
     # close file
