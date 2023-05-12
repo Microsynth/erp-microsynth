@@ -86,7 +86,7 @@ def get_data(filters=None):
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
-        ORDER BY `raw`.`customer` ASC;
+        ORDER BY `raw`.`region`, `raw`.`customer` ASC;
     """.format(company=company, customer_condition=customer_condition), as_dict=True)
     
     return invoiceable_services
