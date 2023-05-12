@@ -9,6 +9,7 @@ from frappe import _
 import json
 from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
 import re
+import html
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -151,7 +152,9 @@ def create_datev_xml(path, dt, dn):
     # pre-process document to prevent datev errors
     doc = frappe.get_doc(dt, dn).as_dict()
     for item in doc['items']:
-        item['item_name'] = re.sub(r"&([a-z0-9]+|#[0-9]{1,6}|x[0-9a-fA-F]{1,6});", "", item['item_name'])     # drop html entitites from item name, if cropped, they become invalid
+        item['item_name'] = escape_strip_cut(item['item_name'], length=20)     # drop html entitites from item name, if cropped, they become invalid
+    doc['customer_name'] = escape_strip_cut(doc['customer_name'], length=50)
+    
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
         'doc': doc
     })
@@ -211,3 +214,11 @@ def package_export(filters):
     create_datev_summary_xml(path, document)
 
     return
+
+def escape_strip_cut(s, length=None):
+    xml = html.escape(html.unescape(s))
+    pure = re.sub(r"&([a-z0-9]+|#[0-9]{1,6}|x[0-9a-fA-F]{1,6});", "", xml)     # drop html entitites from item name, if cropped, they become invalid
+    if length:
+        return pure[:length]
+    else:
+        return pure

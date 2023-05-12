@@ -5,7 +5,7 @@
 <invoice_party>
     {%- set customer_address = frappe.get_doc("Address", doc.customer_address) %}
     {%- set customer = frappe.get_doc("Customer", doc.customer) %}
-    <address street="{{ customer_address.address_line1 }}" name="{{ doc.customer_name[:50] }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
+    <address street="{{ customer_address.address_line1[:40] }}" name="{{ doc.customer_name }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
     <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or customer.name }}"/>
 </invoice_party>
 {%- set company = frappe.get_doc("Company", doc.company) %}
@@ -23,7 +23,7 @@
 {%- endif %}
 {%- for item in doc.get('items') %}
 {%- if item.amount != 0 %}
-<invoice_item_list description_short="{{ item.item_name[:20] }}" quantity="{{ "{:.2f}".format(item.qty) }}">
+<invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
     <price_line_amount {% if tax_rate != 0 %}tax="{{ "{:.2f}".format(tax_rate) }}"{% endif %} net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
     {%- set account_info = item.income_account.split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
