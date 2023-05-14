@@ -45,7 +45,7 @@ def execute(filters=None):
     output = []
     customer_keys = {}
     for d in data:
-        customer = (d['party'] or "-")
+        customer = (d['ext_customer'] or "-")
         if customer not in customer_keys:
             # this customer was not seen, add to output
             customer_keys[customer] = len(output)       # store index to row
