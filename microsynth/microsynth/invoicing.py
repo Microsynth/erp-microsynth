@@ -1183,7 +1183,7 @@ def transmit_carlo_erba_invoices(company):
         order_contact_id = frappe.db.get_value("Customer", order_customer_id, "invoice_to")
 
         order_customer = si.order_customer_display if si.order_customer_display else si.customer_name
-        order_contact = frappe.get_doc("Contact", order_contact_id)
+        order_contact = frappe.get_doc("Contact", order_contact_id if order_contact_id else si.contact_person)
         order_address = get_billing_address(order_customer_id)
 
         # Acquiren (ship-to-party)
