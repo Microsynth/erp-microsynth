@@ -131,6 +131,7 @@ def async_create_invoices(mode, company, customer):
         # individual invoices
 
         all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        has_carlo_erba_invoices = False
 
         count = 0
         for dn in all_invoiceable:
@@ -195,6 +196,11 @@ def async_create_invoices(mode, company, customer):
 
                     else:
                         # TODO process other invoicing methods
+
+                        if dn.get('invoicing_method').upper() == "CARLO ERBA":
+                            si = make_invoice(dn.get('delivery_note'))
+                            has_carlo_erba_invoices = True
+
                         if dn.get('invoicing_method') not in  ["Email"]:
                             continue
 
@@ -207,6 +213,9 @@ def async_create_invoices(mode, company, customer):
                             #     break
             except Exception as err:
                 frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+        
+        if has_carlo_erba_invoices:
+            transmit_carlo_erba_invoices(company)
 
     elif mode == "Collective":
         # colletive invoices
