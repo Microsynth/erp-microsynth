@@ -25,6 +25,15 @@
                 <DocumentType>BILL</DocumentType>
                 <DocumentSubType>final</DocumentSubType>
                 <DocumentID>{{ basics['invoice_id'] }}</DocumentID>
+                {%- if basics['is_punchout'] == false -%}
+                {# comment for indenting #}
+                <DocumentReference>
+                    <ReferencePosition>0</ReferencePosition>
+                    <ReferenceType>ORDNUM</ReferenceType>{# ORDNUM is specific for UZH #}
+                    <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
+                </DocumentReference>
+                {%- endif -%}
+                {# comment for indenting #}
                 <DocumentDate>{{ basics['invoice_date_only'] }}</DocumentDate>
                 <SenderParty>
                     <Network>
@@ -60,12 +69,16 @@
                 </AchievementDate>
                 <Currency>{{ basics['currency'] }}</Currency>
                 <AccountAssignment>
+                    {%- if basics['is_punchout'] == true-%}
+                    {# comment for indenting #}
                     <OrderReference>
                         <ReferencePosition>0</ReferencePosition>
                         <ReferenceType>OrderReference</ReferenceType>
                         <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
                     </OrderReference>
                     <OrderPosition>0</OrderPosition>
+                    {%- endif -%}
+                    {# comment for indenting #}
                 </AccountAssignment>
                 <FixedReference>
                     <ReferencePosition>0</ReferencePosition>
