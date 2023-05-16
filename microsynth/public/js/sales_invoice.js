@@ -30,6 +30,10 @@ frappe.ui.form.on('Sales Invoice', {
     before_save(frm) {
         // set goodwill period to 10 days
         cur_frm.set_value("exclude_from_payment_reminder_until", frappe.datetime.add_days(frm.doc.due_date, 10));
+    },
+    is_return(frm) {
+        prepare_naming_series(frm);
+        setTimeout(() => { set_naming_series(frm); }, 1000);
     }
 });
 
