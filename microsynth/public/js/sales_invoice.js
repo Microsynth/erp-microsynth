@@ -13,6 +13,11 @@ frappe.ui.form.on('Sales Invoice', {
                 clone(frm);
             });
         };
+        if ((frm.doc.docstatus = 1) && (frm.doc.outstanding_amount > 0)) {
+            frm.add_custom_button(__("Against Expense Account"), function() {
+                close_against_expense(frm);
+            }, __("Close"));
+        }
     },
     company(frm) {
         set_naming_series(frm);					// common function
@@ -94,4 +99,41 @@ function cancel_credit_journal_entry(sales_invoice) {
             frappe.show_alert( __("cancelled " + r.message));
         }
     });
+}
+
+function close_against_expense(frm) {
+    frappe.prompt([
+            {
+                'fieldname': 'account', 
+                'fieldtype': 'Link', 
+                'label': __('Account'), 
+                'options': 'Account',
+                'reqd': 1,
+                'get_query': function() { 
+                    return { 
+                        filters: {
+                            'account_type': 'Expense Account',
+                            'company': frm.doc.company
+                        }
+                    }
+                },
+                'description': __("Create a Journal Entry and close this receivable position against an expense account")
+            }  
+        ],
+        function(values){
+            frappe.call({
+                'method': "microsynth.microsynth.credits.close_invoice_against_expense",
+                'args': { 
+                    'sales_invoice': frm.doc.name,
+                    'account': values.account
+                },
+                'callback': function(r)
+                {
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        __('Close Invoice Against Expense Account'),
+        __('OK')
+    )
 }
