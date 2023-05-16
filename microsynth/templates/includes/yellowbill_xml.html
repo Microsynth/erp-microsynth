@@ -133,6 +133,18 @@
                     </Tax>
                     <AmountInclusiveTax>{{ "{:.2f}".format(pos['amount'] + pos['tax_amount']) }}</AmountInclusiveTax>
                     <AmountExclusiveTax>{{ "{:.2f}".format(pos['amount']) }}</AmountExclusiveTax>
+                    <AccountAssignment>
+                        {%- if basics['is_punchout'] == true-%}
+                        {# comment for indenting #}
+                        <OrderReference>
+                            <ReferencePosition>0</ReferencePosition>
+                            <ReferenceType>OrderReference</ReferenceType>
+                            <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
+                        </OrderReference>
+                        <OrderPosition>0</OrderPosition>
+                        {%- endif -%}
+                        {# comment for indenting #}
+                    </AccountAssignment>
                 </LineItem>
 {%- endfor %}
             </LineItems>
