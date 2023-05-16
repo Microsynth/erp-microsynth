@@ -6,7 +6,7 @@
     {%- set customer_address = frappe.get_doc("Address", doc.customer_address) %}
     {%- set customer = frappe.get_doc("Customer", doc.customer) %}
     <address street="{{ customer_address.address_line1[:40] }}" name="{{ doc.customer_name }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
-    <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or customer.name }}"/>
+    <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or "99999" }}"/>
 </invoice_party>
 {%- set company = frappe.get_doc("Company", doc.company) %}
 <supplier_party vat_id="{{ (company.tax_id or '').replace(' ', '') }}">
