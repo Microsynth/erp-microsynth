@@ -205,7 +205,6 @@ def close_invoice_against_expense(sales_invoice, account):
         'user_remark': "Close against expense account {0}".format(sales_invoice),
         'multi_currency': 0 if credit_currency == debit_currency else 1
     })
-    #frappe.throw("{0}".format(jv.as_dict()))
     jv.insert(ignore_permissions=True)
     jv.submit()
     frappe.db.commit()
