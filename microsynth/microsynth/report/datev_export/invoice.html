@@ -24,7 +24,7 @@
 {%- for item in doc.get('items') %}
 {%- if item.amount != 0 %}
 <invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
-    <price_line_amount tax="{{ "{:.2f}".format(tax_rate) }}" net_price_line_amount="{{ "{:.2f}".format(item.amount) }}" currency="{{ doc.currency }}" />
+    <price_line_amount tax="{{ "{:.2f}".format(tax_rate) }}" net_price_line_amount="{{ "{:.2f}".format(item.net_amount) }}" currency="{{ doc.currency }}" />
     {%- set account_info = item.income_account.split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
 </invoice_item_list>
