@@ -1330,4 +1330,7 @@ def transmit_carlo_erba_invoices(company):
     file.write(text)
     file.close()
 
+    for invoice_name in invoice_names:
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
+
     return
