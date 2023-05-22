@@ -16,6 +16,11 @@ def execute(filters=None):
     }
     columns, data, unused, chart = ReceivablePayableReport(filters).run(args)
     
+    currency = data[0]['currency']
+    for d in data:
+        if d['currency'] != currency:
+            frappe.throw("Currency differs for {0}: ".format(d['voucher_no']))
+
     # extend columns
     new_columns = []
     for c in columns:
@@ -77,7 +82,7 @@ def execute(filters=None):
             'invoiced': 0,
             'paid': 0,
             'credit_note': 0,
-            'outstanding': 0 
+            'outstanding': 0
         }
 
         for d in data:
@@ -100,7 +105,8 @@ def execute(filters=None):
             'invoiced': customer_totals['invoiced'],
             'paid': customer_totals['paid'],
             'credit_note': customer_totals['credit_note'],
-            'outstanding': customer_totals['outstanding']
+            'outstanding': customer_totals['outstanding'],
+            'currency': currency
         })
 
     # group by customer if there is no external debtor number
@@ -130,7 +136,8 @@ def execute(filters=None):
             'invoiced': customer_totals['invoiced'],
             'paid': customer_totals['paid'],
             'credit_note': customer_totals['credit_note'],
-            'outstanding': customer_totals['outstanding']
+            'outstanding': customer_totals['outstanding'],
+            'currency': currency
         })
 
     # overall total
@@ -139,7 +146,8 @@ def execute(filters=None):
         'invoiced': overall_totals['invoiced'],
         'paid': overall_totals['paid'],
         'credit_note': overall_totals['credit_note'],
-        'outstanding': overall_totals['outstanding']
+        'outstanding': overall_totals['outstanding'],
+        'currency': currency
     })
 
     return new_columns, output #sorted(data, key= lambda x: x['ext_customer'] or "" )
