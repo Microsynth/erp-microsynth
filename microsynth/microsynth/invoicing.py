@@ -1239,10 +1239,22 @@ def transmit_carlo_erba_invoices(company):
             else:
                 positions_count += 1
 
+        # Find Sales Order
+        orders = []
+        for item in si.items:
+            if item.sales_order not in orders:
+                orders.append(item.sales_order)
+
+        if len(orders) == 1:
+            order_name = orders[0]
+        else:
+            frappe.log_error("Cannot transmit invoice {0}: \nNone or multiple orders: {1}".format(invoice_name, orders), "invoicing.transmit_carlo_erba_invoices")
+            continue
+
         # Header
         header = [
             "Header",                                                                       # record_type(8)
-            si.web_order_id,                                                                # sales_order_number(8)
+            si.web_order_id or order_name,                                                  # sales_order_number(8)
             si.name,                                                                        # invoice_number(8)
             si.po_no if si.po_no else "",                                                   # customer_po_number(22)
             si.posting_date.strftime("%d.%m.%Y"),                                           # invoice_date(8)
@@ -1261,7 +1273,7 @@ def transmit_carlo_erba_invoices(company):
         def get_address_data(type, customer_name, contact, address):
             data = [
                 type,                                                                       # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 contact.name,                                                               # customer_number(8)
                 contact.designation if contact.designation else "",                         # titel(8)
@@ -1317,7 +1329,7 @@ def transmit_carlo_erba_invoices(company):
                 continue
             position = [
                 "Pos",                                                                      # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 str(i),                                                                     # position_line(3)
                 item.item_code,                                                             # kit_item(18)
@@ -1344,8 +1356,6 @@ def transmit_carlo_erba_invoices(company):
                                                                                             # description1(24)
                                                                                             # description2(24)
 
-    print("---------------------")
-    print(lines)
     text = "\r\n".join( [ "\t".join(line) for line in lines ] )
 
     file = open(path + "/export.txt", "w")
