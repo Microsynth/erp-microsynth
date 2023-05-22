@@ -112,6 +112,26 @@ def make_collective_invoices(delivery_notes):
     return invoices
 
 
+def make_carlo_erba_invoices(company):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.make_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    """
+    all_invoiceable = get_data(filters={'company': company, 'customer': None})
+    has_carlo_erba_invoices = False
+    for dn in all_invoiceable:
+        if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
+            and cint(dn.get('collective_billing')) == 0):           # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
+
+            si = make_invoice(dn.get('delivery_note'))
+            has_carlo_erba_invoices = True
+        else:
+            continue
+    
+    if has_carlo_erba_invoices:
+        transmit_carlo_erba_invoices(company)
+
+
 def async_create_invoices(mode, company, customer):
     """
     run 
@@ -122,7 +142,7 @@ def async_create_invoices(mode, company, customer):
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
     #     return
-    if mode not in ["Post", "Electronic", "Collective"]:
+    if mode not in ["Post", "Electronic", "Collective", "CarloErba"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
 
@@ -131,7 +151,6 @@ def async_create_invoices(mode, company, customer):
         # individual invoices
 
         all_invoiceable = get_data(filters={'company': company, 'customer': customer})
-        has_carlo_erba_invoices = False
 
         count = 0
         for dn in all_invoiceable:
@@ -198,8 +217,8 @@ def async_create_invoices(mode, company, customer):
                         # TODO process other invoicing methods
 
                         if dn.get('invoicing_method').upper() == "CARLO ERBA":
-                            si = make_invoice(dn.get('delivery_note'))
-                            has_carlo_erba_invoices = True
+                            # do not process Carlo Erba invoices with electronic and Post invoices
+                            continue
 
                         if dn.get('invoicing_method') not in  ["Email"]:
                             continue
@@ -213,9 +232,10 @@ def async_create_invoices(mode, company, customer):
                             #     break
             except Exception as err:
                 frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
-        
-        if has_carlo_erba_invoices:
-            transmit_carlo_erba_invoices(company)
+
+    elif mode == "CarloErba":
+        make_carlo_erba_invoices(company = company, customer = customer)
+        transmit_carlo_erba_invoices(company)
 
     elif mode == "Collective":
         # colletive invoices
@@ -1324,6 +1344,8 @@ def transmit_carlo_erba_invoices(company):
                                                                                             # description1(24)
                                                                                             # description2(24)
 
+    print("---------------------")
+    print(lines)
     text = "\r\n".join( [ "\t".join(line) for line in lines ] )
 
     file = open(path + "/export.txt", "w")
