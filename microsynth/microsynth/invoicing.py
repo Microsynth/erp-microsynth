@@ -118,18 +118,17 @@ def make_carlo_erba_invoices(company):
     bench execute microsynth.microsynth.invoicing.make_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
     """
     all_invoiceable = get_data(filters={'company': company, 'customer': None})
-    has_carlo_erba_invoices = False
+    invoices = []
     for dn in all_invoiceable:
         if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
             and cint(dn.get('collective_billing')) == 0):           # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
 
             si = make_invoice(dn.get('delivery_note'))
-            has_carlo_erba_invoices = True
+            invoices.append(si)
         else:
             continue
-    
-    if has_carlo_erba_invoices:
-        transmit_carlo_erba_invoices(company)
+
+    return invoices
 
 
 def async_create_invoices(mode, company, customer):
@@ -234,8 +233,8 @@ def async_create_invoices(mode, company, customer):
                 frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
 
     elif mode == "CarloErba":
-        make_carlo_erba_invoices(company = company, customer = customer)
-        transmit_carlo_erba_invoices(company)
+        invoices = make_carlo_erba_invoices(company = company)
+        transmit_carlo_erba_invoices(invoices)
 
     elif mode == "Collective":
         # colletive invoices
@@ -1169,41 +1168,21 @@ def pdf_export(sales_invoices, path):
             file.write(content_pdf)
 
 
-def transmit_carlo_erba_invoices(company):
+def transmit_carlo_erba_invoices(sales_invoices):
     """
     run
-    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'sales_invoices': ['SI-GOE-23002450']}"
     """
-
-    query = """
-        SELECT `tabSales Invoice`.`name`
-        FROM `tabSales Invoice`
-        LEFT JOIN `tabCustomer` ON `tabSales Invoice`.`customer` = `tabCustomer`.`name`
-        WHERE `tabSales Invoice`.`company` = "{company}"
-        AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
-        AND `tabSales Invoice`.`docstatus` <> 2
-        AND `tabSales Invoice`.`status` <> "Paid"
-        AND `tabSales Invoice`.`outstanding_amount` > 0
-        AND `tabSales Invoice`.`invoice_sent_on` is NULL
-    """.format(company=company)
-
-    invoices = frappe.db.sql(query, as_dict=True)
-    invoice_names = []
-    for i in invoices:
-        if "SI-OP-" in i.name:
-            continue
-        print(i.name)
-        invoice_names.append(i.name)
 
     path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
     if not os.path.exists(path):
         os.mkdir(path)
 
-    pdf_export(invoice_names, path)
+    pdf_export(sales_invoices, path)
 
     lines = []
 
-    for invoice_name in invoice_names:
+    for invoice_name in sales_invoices:
         si = frappe.get_doc("Sales Invoice", invoice_name)
 
         # Cliente (sold-to-party)
@@ -1362,7 +1341,7 @@ def transmit_carlo_erba_invoices(company):
     file.write(text)
     file.close()
 
-    for invoice_name in invoice_names:
+    for invoice_name in sales_invoices:
         frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
 
     return
