@@ -303,7 +303,8 @@ def request_quote(content, client="webshop"):
         'contact_display': frappe.get_value("Contact", content['contact'], "full_name"),
         'customer_request': content['customer_request'],
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
-        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list")
+        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
+        'valid_till': date.today() + timedelta(days=90)
     })
     # create oligos
     for o in content['oligos']:
