@@ -537,6 +537,7 @@ def place_order(content, client="webshop"):
         'contact_display': contact.full_name,
         'contact_phone': contact.phone,
         'contact_email': contact.email_id,
+        'territory': order_customer.territory if order_customer else customer.territory,
         'customer_request': content['customer_request'] if 'customer_request' in content else None,
         'delivery_date': (date.today() + timedelta(days=3)),
         'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
