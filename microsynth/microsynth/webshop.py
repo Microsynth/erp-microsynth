@@ -629,12 +629,12 @@ def place_order(content, client="webshop"):
             item_detail['price_list_rate'] = i['rate']
         so_doc.append('items', item_detail)
     # append taxes
-    if so_doc.product_type == "Oligos" or "Material":
+    if so_doc.product_type == "Oligos" or so_doc.product_type == "Material":
         category = "Material"
     else:
         category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
-        category = "Material" 
+        category = "Material"
     taxes = find_tax_template(company, content['customer'], content['delivery_address'], category)
     if taxes:
         so_doc.taxes_and_charges = taxes
