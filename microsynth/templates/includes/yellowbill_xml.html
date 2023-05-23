@@ -137,11 +137,11 @@
                         {%- if basics['is_punchout'] == true-%}
                         {# comment for indenting #}
                         <OrderReference>
-                            <ReferencePosition>0</ReferencePosition>
+                            <ReferencePosition>{{ pos['number'] }}</ReferencePosition>
                             <ReferenceType>OrderReference</ReferenceType>
                             <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
                         </OrderReference>
-                        <OrderPosition>0</OrderPosition>
+                        <OrderPosition>{{ pos['number'] }}</OrderPosition>
                         {%- endif -%}
                         {# comment for indenting #}
                     </AccountAssignment>
