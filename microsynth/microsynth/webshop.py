@@ -301,6 +301,7 @@ def request_quote(content, client="webshop"):
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
         'contact_display': frappe.get_value("Contact", content['contact'], "full_name"),
+        'territory': frappe.get_value("Customer", content['customer'], "territory"),
         'customer_request': content['customer_request'],
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
