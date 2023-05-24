@@ -839,6 +839,12 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     else:
         order_reference = sales_invoice.po_no
 
+    # Customer id
+    if sales_invoice.is_punchout and sales_invoice.punchout_shop == "EPFL":
+        customer_id = 11309
+    else:
+        customer_id = customer.name
+
     data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
@@ -847,7 +853,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'transaction_id':       datetime.now().strftime("%Y%m%d%H%M%S%f"),
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'supplier_id':          customer.ext_supplier_id,
-                        'customer_id':          customer.name,
+                        'customer_id':          customer_id,
                         'is_punchout':          sales_invoice.is_punchout,
                         'order_id':             order_reference, 
                         'currency':             sales_invoice.currency,
