@@ -852,7 +852,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'transaction_id':       datetime.now().strftime("%Y%m%d%H%M%S%f"),
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'supplier_id':          customer.ext_supplier_id,
+                        'supplier_id':          replace_none(customer.ext_supplier_id),
                         'customer_id':          customer_id,
                         'is_punchout':          sales_invoice.is_punchout,
                         'order_id':             order_reference, 
