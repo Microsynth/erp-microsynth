@@ -990,7 +990,7 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
         else:
-            invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+            invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
         #for k,v in sales_order.as_dict().items():
         #    print ( "%s: %s" %(k,v))
 
