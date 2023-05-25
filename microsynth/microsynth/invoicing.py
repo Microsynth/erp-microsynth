@@ -407,7 +407,7 @@ def make_punchout_invoices(delivery_notes):
     Create an invoice for each delivery note of a punchout order. Returns the sales invoice IDs.
 
     run
-    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': ['DN-BAL-23106510'] }"
+    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': [ 'DN-BAL-23132369', 'DN-BAL-23129612', 'DN-BAL-23120966', 'DN-BAL-23120307', 'DN-BAL-23116583', 'DN-BAL-23034689' ] }"
     """
     sales_invoices = []
     for dn in delivery_notes:
