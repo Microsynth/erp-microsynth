@@ -850,7 +850,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
-                        'transaction_id':       datetime.now().strftime("%Y%m%d%H%M%S%f"),
+                        'transaction_id':       sales_invoice.name + "--" + datetime.now().strftime("%Y%m%d%H%M%S"),              # Transaction ID for yellowbill. Max 50 chars, no underscore '_'
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'supplier_id':          replace_none(customer.ext_supplier_id),
                         'customer_id':          customer_id,
