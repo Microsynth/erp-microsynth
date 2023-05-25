@@ -1858,6 +1858,29 @@ def activate_fullplasmidseq_dach():
     return
 
 
+def activate_fullplasmidseq_all_customers():
+    """
+    run
+    bench execute microsynth.microsynth.migration.activate_fullplasmidseq_all_customers
+    """
+    from microsynth.microsynth.utils import add_webshop_service
+
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name'])
+    
+    i = 0
+    length = len(customers)
+
+    for c in customers:
+        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
+        add_webshop_service(c.name, "FullPlasmidSeq")
+        frappe.db.commit()
+        i += 1
+
+    return
+
+
 def set_debtors():
     """
     Set the debitor account
