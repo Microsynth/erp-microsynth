@@ -855,7 +855,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'supplier_id':          replace_none(customer.ext_supplier_id),
                         'customer_id':          customer_id,
                         'is_punchout':          sales_invoice.is_punchout,
-                        'order_id':             order_reference, 
+                        'order_id':             replace_none(order_reference), 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
