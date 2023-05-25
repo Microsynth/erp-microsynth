@@ -327,6 +327,21 @@ def make_invoice(delivery_note):
     return sales_invoice.name
 
 
+def make_invoices(delivery_notes):
+    """
+    Includes customer credits. Do not use for customer projects.
+    Create an invoice for a delivery note. Returns the sales invoice IDs
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_invoices --kwargs "{'delivery_notes': ['DN-BAL-23106510'] }"
+    """
+    sales_invoices = []
+    for dn in delivery_notes:
+        si = make_invoice(dn)
+        sales_invoices.append(si)
+    return sales_invoices
+
+
 def make_punchout_invoice(delivery_note):
     """
     Create an invoice for a delivery note of a punchout order. Returns the sales invoice ID.
@@ -385,6 +400,20 @@ def make_punchout_invoice(delivery_note):
     frappe.db.commit()
 
     return sales_invoice.name
+
+
+def make_punchout_invoices(delivery_notes):
+    """
+    Create an invoice for each delivery note of a punchout order. Returns the sales invoice IDs.
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': ['DN-BAL-23106510'] }"
+    """
+    sales_invoices = []
+    for dn in delivery_notes:
+        si = make_invoice(dn)
+        sales_invoices.append(si)
+    return sales_invoices
 
 
 def make_collective_invoice(delivery_notes):
@@ -1172,6 +1201,16 @@ def pdf_export(sales_invoices, path):
         file_name = "{0}/{1}.pdf".format(path, sales_invoice)
         with open(file_name, mode='wb') as file:
             file.write(content_pdf)
+
+
+def transmit_sales_invoices(sales_invoices):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'sales_invoices': ['SI-GOE-23002450']}"
+    """
+    for si in sales_invoices:
+        transmit_sales_invoice(si)
+    return
 
 
 def transmit_carlo_erba_invoices(sales_invoices):
