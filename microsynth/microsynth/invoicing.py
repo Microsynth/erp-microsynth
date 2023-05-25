@@ -1206,7 +1206,7 @@ def pdf_export(sales_invoices, path):
 def transmit_sales_invoices(sales_invoices):
     """
     run
-    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'sales_invoices': ['SI-GOE-23002450']}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019', 'SI-BAL-23014020', 'SI-BAL-23014021', 'SI-BAL-23014015', 'SI-BAL-23014016', 'SI-BAL-23014017' ]}"
     """
     for si in sales_invoices:
         transmit_sales_invoice(si)
