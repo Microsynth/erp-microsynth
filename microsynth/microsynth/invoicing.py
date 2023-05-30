@@ -165,7 +165,7 @@ def async_create_invoices(mode, company, customer):
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
                     punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
-                    if (punchout_shop in [ "ROC-BASGEP", "NOV-BAS", "UNI-MAR", "UNI-GIE" ] or
+                    if (punchout_shop in [ "ROC-BASGEP", "NOV-BAS", "EAWAG", "UNI-MAR", "UNI-GIE" ] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
@@ -219,7 +219,7 @@ def async_create_invoices(mode, company, customer):
                             # do not process Carlo Erba invoices with electronic and Post invoices
                             continue
 
-                        if dn.get('invoicing_method') not in  ["Email"]:
+                        if dn.get('invoicing_method') not in ["Email", "Paynet"]:
                             continue
 
                         # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
