@@ -1003,10 +1003,16 @@ def transmit_sales_invoice(sales_invoice):
         customer = frappe.get_doc("Customer", sales_invoice.customer)
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-        if sales_invoice.invoice_to:
+        if sales_invoice.is_punchout:
+            punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
+
+        if sales_invoice.is_punchout and punchout_billing_contact_id:
+            invoice_contact = frappe.get_doc("Contact", punchout_billing_contact_id)
+        elif sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
         else:
             invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
+
         #for k,v in sales_order.as_dict().items():
         #    print ( "%s: %s" %(k,v))
 
@@ -1021,6 +1027,7 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.total == 0:
             return
 
+        # Determine transmission mode
         if sales_invoice.is_punchout:
             mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
@@ -1042,6 +1049,7 @@ def transmit_sales_invoice(sales_invoice):
                 mode = None
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
+
         if mode == "Email":
             # send by mail
 
