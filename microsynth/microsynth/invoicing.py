@@ -1214,6 +1214,16 @@ def transmit_sales_invoice(sales_invoice):
     return
 
 
+def transmit_sales_invoices(sales_invoices):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019', 'SI-BAL-23014020', 'SI-BAL-23014021', 'SI-BAL-23014015', 'SI-BAL-23014016', 'SI-BAL-23014017' ]}"
+    """
+    for si in sales_invoices:
+        transmit_sales_invoice(si)
+    return
+
+
 def pdf_export(sales_invoices, path):
     for sales_invoice in sales_invoices:
         content_pdf = frappe.get_print(
@@ -1224,16 +1234,6 @@ def pdf_export(sales_invoices, path):
         file_name = "{0}/{1}.pdf".format(path, sales_invoice)
         with open(file_name, mode='wb') as file:
             file.write(content_pdf)
-
-
-def transmit_sales_invoices(sales_invoices):
-    """
-    run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019', 'SI-BAL-23014020', 'SI-BAL-23014021', 'SI-BAL-23014015', 'SI-BAL-23014016', 'SI-BAL-23014017' ]}"
-    """
-    for si in sales_invoices:
-        transmit_sales_invoice(si)
-    return
 
 
 def transmit_carlo_erba_invoices(sales_invoices):
