@@ -864,8 +864,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     if sales_invoice.is_punchout:
         order_reference = sales_invoice.po_no    
     elif billing_contact.room and billing_contact.room.upper().strip().startswith("KST"):
-        if (sales_invoice.po_no.startswith("4700") or
-            sales_invoice.po_no.startswith("4500")):
+        if (sales_invoice.po_no and 
+                (sales_invoice.po_no.startswith("4700") or
+                 sales_invoice.po_no.startswith("4500"))):
             # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
             order_reference = sales_invoice.po_no
         else:
@@ -909,8 +910,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             'yellowbill': {
                         'has_referenced_positions': 
                                             (sales_invoice.is_punchout or 
-                                             sales_invoice.po_no.startswith("4700") or 
-                                             sales_invoice.po_no.startswith("4500"))
+                                            (sales_invoice.po_no and 
+                                                (sales_invoice.po_no.startswith("4700") or      # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
+                                                 sales_invoice.po_no.startswith("4500"))))
             },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
