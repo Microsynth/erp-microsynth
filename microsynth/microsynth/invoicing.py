@@ -1224,6 +1224,25 @@ def transmit_sales_invoices(sales_invoices):
     return
 
 
+def get_delivery_notes(sales_invoice):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.get_delivery_notes --kwargs "{'sales_invoice': 'SI-GOE-23002450' }"
+    """
+        
+    delivery_notes = []
+
+    items = frappe.db.get_all("Sales Invoice Item",
+        filters={'parent': sales_invoice },
+        fields=['delivery_note'])
+
+    for item in items:
+        if item.delivery_note not in delivery_notes:
+            delivery_notes.append(item.delivery_note)
+
+    return delivery_notes
+
+
 def pdf_export(sales_invoices, path):
     for sales_invoice in sales_invoices:
         content_pdf = frappe.get_print(
@@ -1232,6 +1251,18 @@ def pdf_export(sales_invoices, path):
             print_format="Sales Invoice", 
             as_pdf=True)
         file_name = "{0}/{1}.pdf".format(path, sales_invoice)
+        with open(file_name, mode='wb') as file:
+            file.write(content_pdf)
+
+
+def pdf_export_delivery_notes(delivery_notes, path):
+    for delivery_note in delivery_notes:
+        content_pdf = frappe.get_print(
+            "Delivery Note", 
+            delivery_note, 
+            print_format="Delivery Note", 
+            as_pdf=True)
+        file_name = "{0}/{1}.pdf".format(path, delivery_note)
         with open(file_name, mode='wb') as file:
             file.write(content_pdf)
 
@@ -1247,6 +1278,10 @@ def transmit_carlo_erba_invoices(sales_invoices):
         os.mkdir(path)
 
     pdf_export(sales_invoices, path)
+
+    for so in sales_invoices:
+        delivery_notes = get_delivery_notes(so)
+        pdf_export_delivery_notes(delivery_notes, path)
 
     lines = []
 
