@@ -645,6 +645,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
+        position["tax_rate"] = tax_rate if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
@@ -670,6 +671,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
+        position["tax_rate"] = tax_rate  if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
@@ -696,6 +698,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["uom"] = n.stock_uom
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_rate"] = tax_rate if rate_total > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 
@@ -714,6 +717,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["quantity"] = n.qty - used_items[n.item_code]
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_rate"] = tax_rate if rate_total > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 

@@ -122,7 +122,7 @@
                     <Tax>
                         <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Money>
                         <Description xml:lang="de-CH"/>
-                        <TaxDetail category="vat" percentageRate="{{ tax['percent'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
+                        <TaxDetail category="vat" percentageRate="{{ pos['tax_rate'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
                             <TaxableAmount>
                                 <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money> 
                             </TaxableAmount>
