@@ -862,13 +862,18 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     # order reference / 
     if sales_invoice.is_punchout:
-        order_reference = sales_invoice.po_no
+        order_reference = sales_invoice.po_no    
     elif billing_contact.room and billing_contact.room.upper().strip().startswith("KST"):
-        # Special order reference for UZH
-        order_reference = "{mail} / {cost_center} / {po}".format(
-            mail = billing_contact.department,
-            cost_center = billing_contact.room.replace("KST", "").strip(),
-            po = sales_invoice.po_no)
+        if (sales_invoice.po_no.startswith("4700") or
+            sales_invoice.po_no.startswith("4500")):
+            # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
+            order_reference = sales_invoice.po_no
+        else:
+            # Special order reference for UZH
+            order_reference = "{mail} / {cost_center} / {po}".format(
+                mail = billing_contact.department,
+                cost_center = billing_contact.room.replace("KST", "").strip(),
+                po = sales_invoice.po_no)
     else:
         order_reference = sales_invoice.po_no
 
@@ -900,6 +905,13 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
+            'cxml' : {},
+            'yellowbill': {
+                        'has_referenced_positions': 
+                                            (sales_invoice.is_punchout or 
+                                             sales_invoice.po_no.startswith("4700") or 
+                                             sales_invoice.po_no.startswith("4500"))
+            },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
@@ -1030,7 +1042,6 @@ def transmit_sales_invoice(sales_invoice):
                 mode = None
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
-
         if mode == "Email":
             # send by mail
 
