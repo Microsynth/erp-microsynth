@@ -407,7 +407,7 @@ def make_punchout_invoices(delivery_notes):
     Create an invoice for each delivery note of a punchout order. Returns the sales invoice IDs.
 
     run
-    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': [ 'DN-BAL-23132369', 'DN-BAL-23129612', 'DN-BAL-23120966', 'DN-BAL-23120307', 'DN-BAL-23116583', 'DN-BAL-23034689' ] }"
+    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': [ 'DN-BAL-23132369', 'DN-BAL-23129612' ] }"
     """
     sales_invoices = []
     for dn in delivery_notes:
@@ -1008,6 +1008,7 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.is_punchout:
             punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
 
+        # TODO: Use punchout shop contact only, if the flag "has_static_billing_address" is activated
         if sales_invoice.is_punchout and punchout_billing_contact_id:
             invoice_contact = frappe.get_doc("Contact", punchout_billing_contact_id)
         elif sales_invoice.invoice_to:
@@ -1219,7 +1220,7 @@ def transmit_sales_invoice(sales_invoice):
 def transmit_sales_invoices(sales_invoices):
     """
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019', 'SI-BAL-23014020', 'SI-BAL-23014021', 'SI-BAL-23014015', 'SI-BAL-23014016', 'SI-BAL-23014017' ]}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019' ]}"
     """
     for si in sales_invoices:
         transmit_sales_invoice(si)
