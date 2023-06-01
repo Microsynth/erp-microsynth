@@ -165,6 +165,9 @@ def async_create_invoices(mode, company, customer):
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
                     punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
+                    if punchout_shop == "IMP-WIE":
+                        # Do not create single invoices because a collective invoice should be sent
+                        continue
                     if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR"] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
@@ -248,7 +251,9 @@ def async_create_invoices(mode, company, customer):
             if dn.get('invoicing_method') not in  ["Email", "Post"]:
                 continue
 
-            if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') not in customers:
+            if (cint(dn.get('collective_billing')) == 1 and 
+                (cint(dn.get('is_punchout')) != 1 or dn.get('customer') in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
+                dn.get('customer') not in customers):
                 customers.append(dn.get('customer'))
 
         # for each customer, create one invoice per tax template for all dns
@@ -256,7 +261,9 @@ def async_create_invoices(mode, company, customer):
             try:
                 dns = []
                 for dn in all_invoiceable:
-                    if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
+                    if (cint(dn.get('collective_billing')) == 1 and 
+                        (cint(dn.get('is_punchout')) != 1 or c in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
+                        dn.get('customer') == c):
                         dns.append(dn.get('delivery_note'))
 
                 invoices = make_collective_invoices(dns)
