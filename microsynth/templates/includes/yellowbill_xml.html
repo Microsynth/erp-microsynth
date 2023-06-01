@@ -159,6 +159,7 @@
                 </Tax>
                 <TotalAmountExclusiveTax>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</TotalAmountExclusiveTax>
                 <TotalAmountInclusiveTax>{{ "{:.2f}".format(summary['net_amount']) }}</TotalAmountInclusiveTax>
+                {# Do not complete the <TotalAmountPaid> with prepayments from customer credits (Sales Invoice.discount_amount) because yellowbill expects the TotalAmountPaid to include taxes which is not the case #}
                 <TotalAmountDue>{{ "{:.2f}".format(summary['due_amount']) }}</TotalAmountDue>
             </Summary>
         </Bill>
