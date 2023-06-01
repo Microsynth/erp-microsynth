@@ -1153,6 +1153,11 @@ def transmit_sales_invoice(sales_invoice):
             '''
 
         elif mode == "Paynet":
+            # Do not send any invoice if there is nothing to pay
+            if sales_invoice.grand_total == 0:
+                print("{0}: do not transmit because of 0 costs".format(sales_invoice.name))
+                return
+
             # create Paynet cXML input data dict
             xml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             xml = frappe.render_template("microsynth/templates/includes/yellowbill_xml.html", xml_data)
