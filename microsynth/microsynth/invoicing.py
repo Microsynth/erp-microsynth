@@ -781,7 +781,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         else:
             shipping_as_item = False 
     elif mode == "Paynet":
-        shipping_as_item = False
+        shipping_as_item = True
     else: 
         shipping_as_item = True
 
@@ -919,7 +919,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                                             (sales_invoice.is_punchout or 
                                             (sales_invoice.po_no and 
                                                 (sales_invoice.po_no.startswith("4700") or      # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
-                                                 sales_invoice.po_no.startswith("4500"))))
+                                                 sales_invoice.po_no.startswith("4500")))
+                                            or False)
             },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
