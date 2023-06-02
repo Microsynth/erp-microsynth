@@ -1,4 +1,13 @@
 /* Custom script extension for Contact */
+
+// extend/create dashboard
+cur_frm.dashboard.add_transactions([
+    {
+        'label': __("Pre-Sales"),
+        'items': ["Quotation"]
+    }
+]);
+
 frappe.ui.form.on('Contact', {
     before_save(frm) {
         update_address_links(frm);
@@ -12,11 +21,11 @@ frappe.ui.form.on('Contact', {
         cur_frm.set_value("full_name", (first_name + spacer + last_name));
 
         // clear routes (to prevent jumping to customer)
-		frappe.route_history = []; 
+        frappe.route_history = []; 
     },
-	refresh(frm) {
+    refresh(frm) {
         // Show buttons if a customer is linked
-		if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
+        if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
             
             // Preview Address button
             frm.add_custom_button(__("Preview Address"), function() {
@@ -47,8 +56,8 @@ frappe.ui.form.on('Contact', {
                     cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, 'blue', true);
                 }
             });
-		}
-	}
+        }
+    }
 });
 
 function update_address_links(frm) {

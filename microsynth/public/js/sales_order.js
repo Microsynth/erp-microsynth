@@ -1,6 +1,6 @@
 /* Custom script extension for Sales Order */
 frappe.ui.form.on('Sales Order', {
-    refresh(frm) {		
+    refresh(frm) {
         if (!frm.doc.__islocal) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({
@@ -13,7 +13,8 @@ frappe.ui.form.on('Sales Order', {
         } else {
             prepare_naming_series(frm);             // common function
         }
-    
+        
+
     },
     before_save(frm) {
         if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
