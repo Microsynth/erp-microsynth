@@ -25,6 +25,15 @@
                 <DocumentType>BILL</DocumentType>
                 <DocumentSubType>final</DocumentSubType>
                 <DocumentID>{{ basics['invoice_id'] }}</DocumentID>
+                {%- if yellowbill['has_referenced_positions'] == false -%}
+                {# comment for indenting #}
+                <DocumentReference>
+                    <ReferencePosition>0</ReferencePosition>
+                    <ReferenceType>ORDNUM</ReferenceType>{# ORDNUM is specific for UZH #}
+                    <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
+                </DocumentReference>
+                {%- endif -%}
+                {# comment for indenting #}
                 <DocumentDate>{{ basics['invoice_date_only'] }}</DocumentDate>
                 <SenderParty>
                     <Network>
@@ -60,12 +69,16 @@
                 </AchievementDate>
                 <Currency>{{ basics['currency'] }}</Currency>
                 <AccountAssignment>
+                    {%- if yellowbill['has_referenced_positions'] == true-%}
+                    {# comment for indenting #}
                     <OrderReference>
                         <ReferencePosition>0</ReferencePosition>
                         <ReferenceType>OrderReference</ReferenceType>
                         <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
                     </OrderReference>
                     <OrderPosition>0</OrderPosition>
+                    {%- endif -%}
+                    {# comment for indenting #}
                 </AccountAssignment>
                 <FixedReference>
                     <ReferencePosition>0</ReferencePosition>
@@ -120,6 +133,18 @@
                     </Tax>
                     <AmountInclusiveTax>{{ "{:.2f}".format(pos['amount'] + pos['tax_amount']) }}</AmountInclusiveTax>
                     <AmountExclusiveTax>{{ "{:.2f}".format(pos['amount']) }}</AmountExclusiveTax>
+                    <AccountAssignment>
+                        {%- if yellowbill['has_referenced_positions'] == true-%}
+                        {# comment for indenting #}
+                        <OrderReference>
+                            <ReferencePosition>{{ pos['number'] }}</ReferencePosition>
+                            <ReferenceType>OrderReference</ReferenceType>
+                            <ReferenceValue>{{ basics['order_id'] }}</ReferenceValue>
+                        </OrderReference>
+                        <OrderPosition>{{ pos['number'] }}</OrderPosition>
+                        {%- endif -%}
+                        {# comment for indenting #}
+                    </AccountAssignment>
                 </LineItem>
 {%- endfor %}
             </LineItems>
@@ -134,6 +159,7 @@
                 </Tax>
                 <TotalAmountExclusiveTax>{{ "{:.2f}".format(summary['total_amount_without_tax']) }}</TotalAmountExclusiveTax>
                 <TotalAmountInclusiveTax>{{ "{:.2f}".format(summary['net_amount']) }}</TotalAmountInclusiveTax>
+                {#- Do not complete the <TotalAmountPaid> with prepayments from customer credits (Sales Invoice.discount_amount) because yellowbill expects the TotalAmountPaid to include taxes which is not the case -#}
                 <TotalAmountDue>{{ "{:.2f}".format(summary['due_amount']) }}</TotalAmountDue>
             </Summary>
         </Bill>

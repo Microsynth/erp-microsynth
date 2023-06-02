@@ -201,6 +201,13 @@ def get_data():
                        "name": "Payment Reminder",
                        "label": _("Payment Reminder"),
                        "description": _("Payment Reminder")
+                   },
+                   {
+                       "type": "report",
+                       "name": "Accounts Receivable Microsynth",
+                       "label": _("Accounts Receivable Microsynth"),
+                       "doctype": "Sales Invoice",
+                       "is_query_report": True
                    }
             ]
         },
@@ -316,13 +323,6 @@ def get_data():
                         "name": "Intrastat",
                         "label": _("Intrastat"),
                         "description": _("Intrastat"),
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Accounts Receivable Microsynth",
-                        "label": _("Accounts Receivable Microsynth"),
-                        "doctype": "Sales Invoice",
                         "is_query_report": True
                     }
             ]

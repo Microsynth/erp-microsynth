@@ -301,9 +301,11 @@ def request_quote(content, client="webshop"):
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
         'contact_display': frappe.get_value("Contact", content['contact'], "full_name"),
+        'territory': frappe.get_value("Customer", content['customer'], "territory"),
         'customer_request': content['customer_request'],
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
-        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list")
+        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
+        'valid_till': date.today() + timedelta(days=90)
     })
     # create oligos
     for o in content['oligos']:
@@ -377,7 +379,7 @@ def get_quotations(customer, client="webshop"):
 @frappe.whitelist()
 def get_contact_quotations(contact, client="webshop"):
     """
-    Returns the quotations for a particular customer
+    Returns the quotation items for a particular contact. 
     """
     
     customer_name = get_customer(contact)
@@ -400,6 +402,7 @@ def get_contact_quotations(contact, client="webshop"):
             WHERE (`tabQuotation`.`contact_person` = '{0}' 
             OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
             AND `tabQuotation`.`docstatus` = 1 
+            AND (`tabQuotation`.`valid_till` >= CURDATE() OR `tabQuotation`.`valid_till` IS NULL)
             ORDER BY `tabQuotation`.`name` """.format(contact, customer_name) 
 
         qtns = frappe.db.sql(query, as_dict=True)
@@ -535,6 +538,7 @@ def place_order(content, client="webshop"):
         'contact_display': contact.full_name,
         'contact_phone': contact.phone,
         'contact_email': contact.email_id,
+        'territory': order_customer.territory if order_customer else customer.territory,
         'customer_request': content['customer_request'] if 'customer_request' in content else None,
         'delivery_date': (date.today() + timedelta(days=3)),
         'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
@@ -625,12 +629,12 @@ def place_order(content, client="webshop"):
             item_detail['price_list_rate'] = i['rate']
         so_doc.append('items', item_detail)
     # append taxes
-    if so_doc.product_type == "Oligos" or "Material":
+    if so_doc.product_type == "Oligos" or so_doc.product_type == "Material":
         category = "Material"
     else:
         category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
-        category = "Material" 
+        category = "Material"
     taxes = find_tax_template(company, content['customer'], content['delivery_address'], category)
     if taxes:
         so_doc.taxes_and_charges = taxes

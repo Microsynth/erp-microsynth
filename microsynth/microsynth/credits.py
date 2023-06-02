@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe
+from datetime import datetime
 
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
@@ -171,3 +172,40 @@ def cancel_credit_journal_entry(sales_invoice):
     journal_entry.cancel()
 
     return journal_entry.name
+    
+@frappe.whitelist()
+def close_invoice_against_expense(sales_invoice, account):
+    sinv = frappe.get_doc("Sales Invoice", sales_invoice)
+    debit_currency = frappe.get_cached_value("Account", account, "account_currency")
+    credit_currency = frappe.get_cached_value("Account", sinv.debit_to, "account_currency")
+    
+    jv = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'company': sinv.company,
+        'posting_date': datetime.now(),
+        'accounts': [
+            {
+                'account': account,
+                'debit_in_account_currency': (sinv.conversion_rate or 1) * sinv.outstanding_amount,
+                'account_currency': debit_currency,
+                'cost_center': sinv.items[0].cost_center
+            },
+            {
+                'account': sinv.debit_to,
+                'credit_in_account_currency': sinv.outstanding_amount,
+                'exchange_rate': sinv.conversion_rate,
+                'account_currency': credit_currency,
+                'cost_center': sinv.items[0].cost_center,
+                'party_type': "Customer",
+                'party': sinv.customer,
+                'reference_type': "Sales Invoice",
+                'reference_name': sales_invoice
+            }
+        ],
+        'user_remark': "Close against expense account {0}".format(sales_invoice),
+        'multi_currency': 0 if credit_currency == debit_currency else 1
+    })
+    jv.insert(ignore_permissions=True)
+    jv.submit()
+    frappe.db.commit()
+    return jv.name

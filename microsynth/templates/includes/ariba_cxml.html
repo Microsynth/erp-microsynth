@@ -120,14 +120,14 @@
                         <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money> 
                     </SubtotalAmount>
                     <Tax>
-                        <Money currency="{{ basics['currency'] }}">{{ "{:.4f}".format(pos['tax_amount']) }}</Money>
+                        <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Money>
                         <Description xml:lang="de-CH"/>
-                        <TaxDetail category="vat" percentageRate="{{ tax['percent'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
+                        <TaxDetail category="vat" percentageRate="{{ pos['tax_rate'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
                             <TaxableAmount>
                                 <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money> 
                             </TaxableAmount>
                             <TaxAmount>
-                                <Money currency="{{ basics['currency'] }}">{{ "{:.4f}".format(pos['tax_amount']) }}</Money>
+                                <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Money>
                             </TaxAmount>
                             <Description xml:lang="en">{{ tax['description'] }}</Description>
                         </TaxDetail>

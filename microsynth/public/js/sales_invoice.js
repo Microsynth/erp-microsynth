@@ -1,7 +1,7 @@
 /* Custom script extension for Sales Invoice */
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
-        prepare_naming_series(frm);				// common function
+        prepare_naming_series(frm);             // common function
         
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0) {
             frm.add_custom_button(__("Allocate credit"), function() {
@@ -13,9 +13,14 @@ frappe.ui.form.on('Sales Invoice', {
                 clone(frm);
             });
         };
+        if ((frm.doc.docstatus == 1) && (frm.doc.outstanding_amount > 0)) {
+            frm.add_custom_button(__("Against Expense Account"), function() {
+                close_against_expense(frm);
+            }, __("Close"));
+        };
     },
     company(frm) {
-        set_naming_series(frm);					// common function
+        set_naming_series(frm);                 // common function
     },
     on_submit(frm) {
         if (frm.doc.total_customer_credit > 0) {
@@ -30,6 +35,10 @@ frappe.ui.form.on('Sales Invoice', {
     before_save(frm) {
         // set goodwill period to 10 days
         cur_frm.set_value("exclude_from_payment_reminder_until", frappe.datetime.add_days(frm.doc.due_date, 10));
+    },
+    is_return(frm) {
+        prepare_naming_series(frm);
+        setTimeout(() => { set_naming_series(frm); }, 1000);
     }
 });
 
@@ -90,4 +99,41 @@ function cancel_credit_journal_entry(sales_invoice) {
             frappe.show_alert( __("cancelled " + r.message));
         }
     });
+}
+
+function close_against_expense(frm) {
+    frappe.prompt([
+            {
+                'fieldname': 'account', 
+                'fieldtype': 'Link', 
+                'label': __('Account'), 
+                'options': 'Account',
+                'reqd': 1,
+                'get_query': function() { 
+                    return { 
+                        filters: {
+                            'account_type': 'Expense Account',
+                            'company': frm.doc.company
+                        }
+                    }
+                },
+                'description': __("Create a Journal Entry and close this receivable position against an expense account")
+            }  
+        ],
+        function(values){
+            frappe.call({
+                'method': "microsynth.microsynth.credits.close_invoice_against_expense",
+                'args': { 
+                    'sales_invoice': frm.doc.name,
+                    'account': values.account
+                },
+                'callback': function(r)
+                {
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        __('Close Invoice Against Expense Account'),
+        __('OK')
+    )
 }

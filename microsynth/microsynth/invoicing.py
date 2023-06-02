@@ -112,6 +112,25 @@ def make_collective_invoices(delivery_notes):
     return invoices
 
 
+def make_carlo_erba_invoices(company):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.make_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    """
+    all_invoiceable = get_data(filters={'company': company, 'customer': None})
+    invoices = []
+    for dn in all_invoiceable:
+        if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
+            and cint(dn.get('collective_billing')) == 0):           # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
+
+            si = make_invoice(dn.get('delivery_note'))
+            invoices.append(si)
+        else:
+            continue
+
+    return invoices
+
+
 def async_create_invoices(mode, company, customer):
     """
     run 
@@ -122,7 +141,7 @@ def async_create_invoices(mode, company, customer):
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
     #     return
-    if mode not in ["Post", "Electronic", "Collective"]:
+    if mode not in ["Post", "Electronic", "Collective", "CarloErba"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
 
@@ -146,7 +165,10 @@ def async_create_invoices(mode, company, customer):
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
                     punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
-                    if (punchout_shop in ["ROC-BASGEP", "NOV-BAS"] or
+                    if punchout_shop == "IMP-WIE":
+                        # Do not create single invoices because a collective invoice should be sent
+                        continue
+                    if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR"] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
@@ -195,7 +217,12 @@ def async_create_invoices(mode, company, customer):
 
                     else:
                         # TODO process other invoicing methods
-                        if dn.get('invoicing_method') not in  ["Email"]:
+
+                        if dn.get('invoicing_method').upper() == "CARLO ERBA":
+                            # do not process Carlo Erba invoices with electronic and Post invoices
+                            continue
+
+                        if dn.get('invoicing_method') not in ["Email", "Paynet"]:
                             continue
 
                         # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
@@ -207,6 +234,10 @@ def async_create_invoices(mode, company, customer):
                             #     break
             except Exception as err:
                 frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+
+    elif mode == "CarloErba":
+        invoices = make_carlo_erba_invoices(company = company)
+        transmit_carlo_erba_invoices(invoices)
 
     elif mode == "Collective":
         # colletive invoices
@@ -220,7 +251,9 @@ def async_create_invoices(mode, company, customer):
             if dn.get('invoicing_method') not in  ["Email", "Post"]:
                 continue
 
-            if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') not in customers:
+            if (cint(dn.get('collective_billing')) == 1 and 
+                (cint(dn.get('is_punchout')) != 1 or dn.get('customer') in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
+                dn.get('customer') not in customers):
                 customers.append(dn.get('customer'))
 
         # for each customer, create one invoice per tax template for all dns
@@ -228,7 +261,9 @@ def async_create_invoices(mode, company, customer):
             try:
                 dns = []
                 for dn in all_invoiceable:
-                    if cint(dn.get('collective_billing')) == 1 and cint(dn.get('is_punchout')) != 1 and dn.get('customer') == c:
+                    if (cint(dn.get('collective_billing')) == 1 and 
+                        (cint(dn.get('is_punchout')) != 1 or c in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
+                        dn.get('customer') == c):
                         dns.append(dn.get('delivery_note'))
 
                 invoices = make_collective_invoices(dns)
@@ -299,6 +334,21 @@ def make_invoice(delivery_note):
     return sales_invoice.name
 
 
+def make_invoices(delivery_notes):
+    """
+    Includes customer credits. Do not use for customer projects.
+    Create an invoice for a delivery note. Returns the sales invoice IDs
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_invoices --kwargs "{'delivery_notes': ['DN-BAL-23106510'] }"
+    """
+    sales_invoices = []
+    for dn in delivery_notes:
+        si = make_invoice(dn)
+        sales_invoices.append(si)
+    return sales_invoices
+
+
 def make_punchout_invoice(delivery_note):
     """
     Create an invoice for a delivery note of a punchout order. Returns the sales invoice ID.
@@ -357,6 +407,20 @@ def make_punchout_invoice(delivery_note):
     frappe.db.commit()
 
     return sales_invoice.name
+
+
+def make_punchout_invoices(delivery_notes):
+    """
+    Create an invoice for each delivery note of a punchout order. Returns the sales invoice IDs.
+
+    run
+    bench execute microsynth.microsynth.invoicing.make_punchout_invoices --kwargs "{'delivery_notes': [ 'DN-BAL-23132369', 'DN-BAL-23129612' ] }"
+    """
+    sales_invoices = []
+    for dn in delivery_notes:
+        si = make_invoice(dn)
+        sales_invoices.append(si)
+    return sales_invoices
 
 
 def make_collective_invoice(delivery_notes):
@@ -588,6 +652,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
+        position["tax_rate"] = tax_rate if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
@@ -613,6 +678,7 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["uom"] = "Pcs"
         position["rate"] = rate_total
         position["amount"] = rate_total
+        position["tax_rate"] = tax_rate  if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
         positions.append(position)
 
@@ -639,6 +705,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["uom"] = n.stock_uom
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_rate"] = tax_rate if n.amount > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 
@@ -657,6 +724,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["quantity"] = n.qty - used_items[n.item_code]
                 position["rate"] = n.rate
                 position["amount"] = n.amount
+                position["tax_rate"] = tax_rate if n.amount > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
                 positions.append(position)
 
@@ -801,26 +869,39 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     # order reference / 
     if sales_invoice.is_punchout:
-        order_reference = sales_invoice.po_no
+        order_reference = sales_invoice.po_no    
     elif billing_contact.room and billing_contact.room.upper().strip().startswith("KST"):
-        # Special order reference for UZH
-        order_reference = "{mail} / {cost_center} / {po}".format(
-            mail = billing_contact.department,
-            cost_center = billing_contact.room.replace("KST", "").strip(),
-            po = sales_invoice.po_no)
+        if (sales_invoice.po_no and 
+                (sales_invoice.po_no.startswith("4700") or
+                 sales_invoice.po_no.startswith("4500"))):
+            # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
+            order_reference = sales_invoice.po_no
+        else:
+            # Special order reference for UZH
+            order_reference = "{mail} / {cost_center} / {po}".format(
+                mail = billing_contact.department,
+                cost_center = billing_contact.room.replace("KST", "").strip(),
+                po = sales_invoice.po_no)
     else:
         order_reference = sales_invoice.po_no
+
+    # Customer id
+    if sales_invoice.is_punchout and sales_invoice.punchout_shop == "EPFL":
+        customer_id = 11309
+    else:
+        customer_id = customer.name
 
     data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
                         'shared_secret':        settings.ariba_secret if mode == "ARIBA" else "",
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
-                        'transaction_id':       datetime.now().strftime("%Y%m%d%H%M%S%f"),
+                        'transaction_id':       sales_invoice.name + "--" + datetime.now().strftime("%Y%m%d%H%M%S"),              # Transaction ID for yellowbill. Max 50 chars, no underscore '_'
                         'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
-                        'supplier_id':          customer.ext_supplier_id,
-                        'customer_id':          customer.name,
-                        'order_id':             order_reference, 
+                        'supplier_id':          replace_none(customer.ext_supplier_id),
+                        'customer_id':          customer_id,
+                        'is_punchout':          sales_invoice.is_punchout,
+                        'order_id':             replace_none(order_reference), 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
                         'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
@@ -832,6 +913,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'delivery_note_id':     sales_invoice.items[0].delivery_note, 
                         'delivery_note_date_paynet':  "" # delivery_note.creation.strftime("%Y%m%d"),
                         },
+            'cxml' : {},
+            'yellowbill': {
+                        'has_referenced_positions': 
+                                            (sales_invoice.is_punchout or 
+                                            (sales_invoice.po_no and 
+                                                (sales_invoice.po_no.startswith("4700") or      # Consider orders with purchase order number starting with 4700 or 4500 as orders with reference for UZH
+                                                 sales_invoice.po_no.startswith("4500"))))
+            },
             'remitTo' : {'name':            sales_invoice.company,
                         'street':           company_address.address_line1, 
                         'pin':              company_address.pincode,
@@ -923,10 +1012,17 @@ def transmit_sales_invoice(sales_invoice):
         customer = frappe.get_doc("Customer", sales_invoice.customer)
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
-        if sales_invoice.invoice_to:
+        if sales_invoice.is_punchout:
+            punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
+
+        # TODO: Use punchout shop contact only, if the flag "has_static_billing_address" is activated
+        if sales_invoice.is_punchout and punchout_billing_contact_id:
+            invoice_contact = frappe.get_doc("Contact", punchout_billing_contact_id)
+        elif sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
         else:
-            invoice_contact = frappe.get_doc("Contact", sales_invoice.contact_person)
+            invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
+
         #for k,v in sales_order.as_dict().items():
         #    print ( "%s: %s" %(k,v))
 
@@ -941,6 +1037,7 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.total == 0:
             return
 
+        # Determine transmission mode
         if sales_invoice.is_punchout:
             mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
@@ -1056,6 +1153,11 @@ def transmit_sales_invoice(sales_invoice):
             '''
 
         elif mode == "Paynet":
+            # Do not send any invoice if there is nothing to pay
+            if sales_invoice.grand_total == 0:
+                print("{0}: do not transmit because of 0 costs".format(sales_invoice.name))
+                return
+
             # create Paynet cXML input data dict
             xml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             xml = frappe.render_template("microsynth/templates/includes/yellowbill_xml.html", xml_data)
@@ -1127,6 +1229,35 @@ def transmit_sales_invoice(sales_invoice):
     return
 
 
+def transmit_sales_invoices(sales_invoices):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019' ]}"
+    """
+    for si in sales_invoices:
+        transmit_sales_invoice(si)
+    return
+
+
+def get_delivery_notes(sales_invoice):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.get_delivery_notes --kwargs "{'sales_invoice': 'SI-GOE-23002450' }"
+    """
+        
+    delivery_notes = []
+
+    items = frappe.db.get_all("Sales Invoice Item",
+        filters={'parent': sales_invoice },
+        fields=['delivery_note'])
+
+    for item in items:
+        if item.delivery_note not in delivery_notes:
+            delivery_notes.append(item.delivery_note)
+
+    return delivery_notes
+
+
 def pdf_export(sales_invoices, path):
     for sales_invoice in sales_invoices:
         content_pdf = frappe.get_print(
@@ -1139,41 +1270,37 @@ def pdf_export(sales_invoices, path):
             file.write(content_pdf)
 
 
-def transmit_carlo_erba_invoices(company):
+def pdf_export_delivery_notes(delivery_notes, path):
+    for delivery_note in delivery_notes:
+        content_pdf = frappe.get_print(
+            "Delivery Note", 
+            delivery_note, 
+            print_format="Delivery Note", 
+            as_pdf=True)
+        file_name = "{0}/{1}.pdf".format(path, delivery_note)
+        with open(file_name, mode='wb') as file:
+            file.write(content_pdf)
+
+
+def transmit_carlo_erba_invoices(sales_invoices):
     """
     run
-    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'sales_invoices': ['SI-GOE-23002450']}"
     """
-
-    query = """
-        SELECT `tabSales Invoice`.`name`
-        FROM `tabSales Invoice`
-        LEFT JOIN `tabCustomer` ON `tabSales Invoice`.`customer` = `tabCustomer`.`name`
-        WHERE `tabSales Invoice`.`company` = "{company}"
-        AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
-        AND `tabSales Invoice`.`docstatus` <> 2
-        AND `tabSales Invoice`.`status` <> "Paid"
-        AND `tabSales Invoice`.`outstanding_amount` > 0
-        AND `tabSales Invoice`.`invoice_sent_on` is NULL
-    """.format(company=company)
-
-    invoices = frappe.db.sql(query, as_dict=True)
-    invoice_names = []
-    for i in invoices:
-        if "SI-OP-" in i.name:
-            continue
-        print(i.name)
-        invoice_names.append(i.name)
 
     path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
     if not os.path.exists(path):
         os.mkdir(path)
 
-    pdf_export(invoice_names, path)
+    pdf_export(sales_invoices, path)
+
+    for so in sales_invoices:
+        delivery_notes = get_delivery_notes(so)
+        pdf_export_delivery_notes(delivery_notes, path)
 
     lines = []
 
-    for invoice_name in invoice_names:
+    for invoice_name in sales_invoices:
         si = frappe.get_doc("Sales Invoice", invoice_name)
 
         # Cliente (sold-to-party)
@@ -1182,7 +1309,7 @@ def transmit_carlo_erba_invoices(company):
         order_contact_id = frappe.db.get_value("Customer", order_customer_id, "invoice_to")
 
         order_customer = si.order_customer_display if si.order_customer_display else si.customer_name
-        order_contact = frappe.get_doc("Contact", order_contact_id)
+        order_contact = frappe.get_doc("Contact", order_contact_id if order_contact_id else si.contact_person)
         order_address = get_billing_address(order_customer_id)
 
         # Acquiren (ship-to-party)
@@ -1209,10 +1336,22 @@ def transmit_carlo_erba_invoices(company):
             else:
                 positions_count += 1
 
+        # Find Sales Order
+        orders = []
+        for item in si.items:
+            if item.sales_order not in orders:
+                orders.append(item.sales_order)
+
+        if len(orders) == 1:
+            order_name = orders[0]
+        else:
+            frappe.log_error("Cannot transmit invoice {0}: \nNone or multiple orders: {1}".format(invoice_name, orders), "invoicing.transmit_carlo_erba_invoices")
+            continue
+
         # Header
         header = [
             "Header",                                                                       # record_type(8)
-            si.web_order_id,                                                                # sales_order_number(8)
+            si.web_order_id or order_name,                                                  # sales_order_number(8)
             si.name,                                                                        # invoice_number(8)
             si.po_no if si.po_no else "",                                                   # customer_po_number(22)
             si.posting_date.strftime("%d.%m.%Y"),                                           # invoice_date(8)
@@ -1231,7 +1370,7 @@ def transmit_carlo_erba_invoices(company):
         def get_address_data(type, customer_name, contact, address):
             data = [
                 type,                                                                       # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 contact.name,                                                               # customer_number(8)
                 contact.designation if contact.designation else "",                         # titel(8)
@@ -1287,7 +1426,7 @@ def transmit_carlo_erba_invoices(company):
                 continue
             position = [
                 "Pos",                                                                      # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 str(i),                                                                     # position_line(3)
                 item.item_code,                                                             # kit_item(18)
@@ -1319,5 +1458,8 @@ def transmit_carlo_erba_invoices(company):
     file = open(path + "/export.txt", "w")
     file.write(text)
     file.close()
+
+    for invoice_name in sales_invoices:
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
 
     return
