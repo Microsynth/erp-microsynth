@@ -2068,3 +2068,24 @@ def tag_duplicate_invoices(file):
         i += 1
 
     return
+
+
+def check_sales_invoices(file):
+    """
+    run
+    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt'}"
+    """
+    print(file)
+    invoices = []
+    with open(file) as file:
+        for line in file:
+            invoices.append(line.strip())
+
+    for invoice in invoices:
+        si = frappe.get_doc("Sales Invoice", invoice)
+        print("{0}\t{1}\t{2}\t{3}\t{4}".format(
+            si.name,
+            si.is_punchout,
+            si.punchout_shop,
+            si.customer,
+            si.product_type))
