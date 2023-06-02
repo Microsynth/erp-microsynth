@@ -104,6 +104,11 @@ jenv = {
 # 		"on_trash": "method"
 #	}
 # }
+doc_events = {
+    "Payment Reminder": {
+        "after_insert": "microsynth.microsynth.payment_reminder.extend_values"
+    }
+}
 
 # Scheduled Tasks
 # ---------------
