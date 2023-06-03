@@ -1249,6 +1249,24 @@ def transmit_sales_invoices(sales_invoices):
     return
 
 
+def transmit_sales_invoices_from_file(file):
+    """
+    Read a file with a list of Sales Invoice IDs and transmit the Sales Invoices.
+
+    run
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoices_from_file --kwargs "{'file':'/mnt/erp_share/Invoices/invoices.txt'}"
+    """
+    print(file)
+    invoices = []
+    with open(file) as file:
+        for line in file:
+            invoices.append(line.strip())
+
+    for si in invoices:
+        transmit_sales_invoice(si)
+    return
+
+
 def get_delivery_notes(sales_invoice):
     """
     run
