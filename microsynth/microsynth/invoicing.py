@@ -162,11 +162,19 @@ def async_create_invoices(mode, company, customer):
                 # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
                 #     continue
 
+                if cint(dn.get('is_punchout') == 1) and mode != "Electronic":
+                    # All punchout invoices must be send electronically
+                    continue
+
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
                     punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
                     if punchout_shop == "IMP-WIE":
                         # Do not create single invoices because a collective invoice should be sent
+                        continue
+                    if (punchout_shop == "EPFL" or punchout_shop == "UNI-ZUR") and dn.product_type == "Sequencing":
+                        # Do not create punchout invoices of Sequencing orders because of positions with 0.00 cost that cause errors at EPFL
+                        # TODO: Fix issue with EPFL and UNI-ZUR and remove this condition
                         continue
                     if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR"] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) ):
@@ -177,6 +185,7 @@ def async_create_invoices(mode, company, customer):
                         # TODO implement punchout orders
                         continue
 
+                # check credit
                 credit = get_total_credit(dn.get('customer'), company)
                 if credit is not None and frappe.get_value("Customer", dn.get('customer'),"has_credit_account"):
                     delivery_note =  dn.get('delivery_note')
