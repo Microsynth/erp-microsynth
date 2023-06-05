@@ -2070,22 +2070,32 @@ def tag_duplicate_invoices(file):
     return
 
 
-def check_sales_invoices(file):
+def check_sales_invoices(import_file, export_file):
     """
     run
-    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt'}"
+    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'import_file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt', 'export_file' = '/mnt/erp_share/Invoices/invoices.txt'}"
     """
-    print(file)
+
     invoices = []
-    with open(file) as file:
+    with open(import_file) as file:
         for line in file:
             invoices.append(line.strip())
 
-    for invoice in invoices:
-        si = frappe.get_doc("Sales Invoice", invoice)
-        print("{0}\t{1}\t{2}\t{3}\t{4}".format(
-            si.name,
-            si.is_punchout,
-            si.punchout_shop,
-            si.customer,
-            si.product_type))
+    file.close()
+
+    with open(export_file, "w") as export_file:
+
+        for invoice in invoices:
+            si = frappe.get_doc("Sales Invoice", invoice)
+
+            if si.is_punchout and si.product_type != "Sequencing":
+                export_file.write("{0}\r\n".format(si.name))
+
+                print("{0}\t{1}\t{2}\t{3}\t{4}".format(
+                    si.name,
+                    si.is_punchout,
+                    si.punchout_shop,
+                    si.customer,
+                    si.product_type))
+
+    export_file.close()
