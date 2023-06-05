@@ -663,7 +663,8 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["amount"] = rate_total
         position["tax_rate"] = tax_rate if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
-        positions.append(position)
+        if position["amount"] > 0:
+            positions.append(position)
 
     for s in sales_invoice.samples:
         position = {}
@@ -689,7 +690,8 @@ def create_position_list(sales_invoice, exclude_shipping):
         position["amount"] = rate_total
         position["tax_rate"] = tax_rate  if rate_total > 0 else 0
         position["tax_amount"] = tax_rate * rate_total / 100
-        positions.append(position)
+        if position["amount"] > 0:
+            positions.append(position)
 
     for n in sales_invoice.items:
         if n.item_group == "Shipping" and exclude_shipping:
@@ -716,7 +718,8 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["amount"] = n.amount
                 position["tax_rate"] = tax_rate if n.amount > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
-                positions.append(position)
+                if position["amount"] > 0:
+                    positions.append(position)
 
             elif n.qty > used_items[n.item_code]:
                 # more items in positions than used in oligos and samples
@@ -735,7 +738,8 @@ def create_position_list(sales_invoice, exclude_shipping):
                 position["amount"] = n.amount
                 position["tax_rate"] = tax_rate if n.amount > 0 else 0
                 position["tax_amount"] = tax_rate * n.amount / 100
-                positions.append(position)
+                if position["amount"] > 0:
+                    positions.append(position)
 
     return positions
 

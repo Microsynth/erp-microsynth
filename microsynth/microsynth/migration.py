@@ -2073,7 +2073,7 @@ def tag_duplicate_invoices(file):
 def check_sales_invoices(import_file, export_file):
     """
     run
-    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'import_file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt', 'export_file' = '/mnt/erp_share/Invoices/invoices.txt'}"
+    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'import_file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt', 'export_file': '/mnt/erp_share/Invoices/invoices.txt'}"
     """
 
     invoices = []
