@@ -814,6 +814,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     elif mode == "Paynet":
         sender_network_id = settings.paynet_id
 
+    # validate receiver ID
+    if not(customer.invoice_network_id):
+        frappe.throw("Customer '{0}' has no 'invoice_network_id'".format(customer.name))
+
+    # validate external supplier id for listed receivers
+    if customer.invoice_network_id in [ "41100000239079338" ] and not(customer.ext_supplier_id):
+        frappe.throw("Customer '{0}' has no 'ext_supplier_id'".format(customer.name))
+
     # Supplier tax ID
     if "CHE" in company_details.tax_id and "MWST" not in company_details.tax_id.upper():
         supplier_tax_id = company_details.tax_id + " MWST"
