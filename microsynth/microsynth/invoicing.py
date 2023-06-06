@@ -112,6 +112,25 @@ def make_collective_invoices(delivery_notes):
     return invoices
 
 
+def make_carlo_erba_invoices(company):
+    """
+    run
+    bench execute microsynth.microsynth.invoicing.make_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    """
+    all_invoiceable = get_data(filters={'company': company, 'customer': None})
+    invoices = []
+    for dn in all_invoiceable:
+        if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
+            and cint(dn.get('collective_billing')) == 0):           # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
+
+            si = make_invoice(dn.get('delivery_note'))
+            invoices.append(si)
+        else:
+            continue
+
+    return invoices
+
+
 def async_create_invoices(mode, company, customer):
     """
     run 
@@ -122,7 +141,7 @@ def async_create_invoices(mode, company, customer):
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
     #     return
-    if mode not in ["Post", "Electronic", "Collective"]:
+    if mode not in ["Post", "Electronic", "Collective", "CarloErba"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
         return
 
@@ -131,7 +150,6 @@ def async_create_invoices(mode, company, customer):
         # individual invoices
 
         all_invoiceable = get_data(filters={'company': company, 'customer': customer})
-        has_carlo_erba_invoices = False
 
         count = 0
         for dn in all_invoiceable:
@@ -198,8 +216,8 @@ def async_create_invoices(mode, company, customer):
                         # TODO process other invoicing methods
 
                         if dn.get('invoicing_method').upper() == "CARLO ERBA":
-                            si = make_invoice(dn.get('delivery_note'))
-                            has_carlo_erba_invoices = True
+                            # do not process Carlo Erba invoices with electronic and Post invoices
+                            continue
 
                         if dn.get('invoicing_method') not in  ["Email"]:
                             continue
@@ -213,9 +231,10 @@ def async_create_invoices(mode, company, customer):
                             #     break
             except Exception as err:
                 frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
-        
-        if has_carlo_erba_invoices:
-            transmit_carlo_erba_invoices(company)
+
+    elif mode == "CarloErba":
+        invoices = make_carlo_erba_invoices(company = company)
+        transmit_carlo_erba_invoices(invoices)
 
     elif mode == "Collective":
         # colletive invoices
@@ -1149,41 +1168,21 @@ def pdf_export(sales_invoices, path):
             file.write(content_pdf)
 
 
-def transmit_carlo_erba_invoices(company):
+def transmit_carlo_erba_invoices(sales_invoices):
     """
     run
-    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
+    bench execute microsynth.microsynth.invoicing.transmit_carlo_erba_invoices --kwargs "{'sales_invoices': ['SI-GOE-23002450']}"
     """
-
-    query = """
-        SELECT `tabSales Invoice`.`name`
-        FROM `tabSales Invoice`
-        LEFT JOIN `tabCustomer` ON `tabSales Invoice`.`customer` = `tabCustomer`.`name`
-        WHERE `tabSales Invoice`.`company` = "{company}"
-        AND `tabCustomer`.`invoicing_method` = "Carlo ERBA"
-        AND `tabSales Invoice`.`docstatus` <> 2
-        AND `tabSales Invoice`.`status` <> "Paid"
-        AND `tabSales Invoice`.`outstanding_amount` > 0
-        AND `tabSales Invoice`.`invoice_sent_on` is NULL
-    """.format(company=company)
-
-    invoices = frappe.db.sql(query, as_dict=True)
-    invoice_names = []
-    for i in invoices:
-        if "SI-OP-" in i.name:
-            continue
-        print(i.name)
-        invoice_names.append(i.name)
 
     path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "carlo_erba_export_path") + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
     if not os.path.exists(path):
         os.mkdir(path)
 
-    pdf_export(invoice_names, path)
+    pdf_export(sales_invoices, path)
 
     lines = []
 
-    for invoice_name in invoice_names:
+    for invoice_name in sales_invoices:
         si = frappe.get_doc("Sales Invoice", invoice_name)
 
         # Cliente (sold-to-party)
@@ -1219,10 +1218,22 @@ def transmit_carlo_erba_invoices(company):
             else:
                 positions_count += 1
 
+        # Find Sales Order
+        orders = []
+        for item in si.items:
+            if item.sales_order not in orders:
+                orders.append(item.sales_order)
+
+        if len(orders) == 1:
+            order_name = orders[0]
+        else:
+            frappe.log_error("Cannot transmit invoice {0}: \nNone or multiple orders: {1}".format(invoice_name, orders), "invoicing.transmit_carlo_erba_invoices")
+            continue
+
         # Header
         header = [
             "Header",                                                                       # record_type(8)
-            si.web_order_id,                                                                # sales_order_number(8)
+            si.web_order_id or order_name,                                                  # sales_order_number(8)
             si.name,                                                                        # invoice_number(8)
             si.po_no if si.po_no else "",                                                   # customer_po_number(22)
             si.posting_date.strftime("%d.%m.%Y"),                                           # invoice_date(8)
@@ -1241,7 +1252,7 @@ def transmit_carlo_erba_invoices(company):
         def get_address_data(type, customer_name, contact, address):
             data = [
                 type,                                                                       # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 contact.name,                                                               # customer_number(8)
                 contact.designation if contact.designation else "",                         # titel(8)
@@ -1297,7 +1308,7 @@ def transmit_carlo_erba_invoices(company):
                 continue
             position = [
                 "Pos",                                                                      # record_type(8)
-                si.web_order_id,                                                            # sales_order_number(8)
+                si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 str(i),                                                                     # position_line(3)
                 item.item_code,                                                             # kit_item(18)
@@ -1329,5 +1340,8 @@ def transmit_carlo_erba_invoices(company):
     file = open(path + "/export.txt", "w")
     file.write(text)
     file.close()
+
+    for invoice_name in sales_invoices:
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
 
     return

@@ -20,7 +20,7 @@ frappe.query_reports["Invoiceable Services"] = {
         }
     ],
     "onload": (report) => {
-        report.page.add_inner_button(__('Create Post Invoices'), function () {           
+        report.page.add_inner_button(__('Create Post Invoices'), function () {
             frappe.call({
                 'method': "microsynth.microsynth.invoicing.create_invoices",
                 'args': {
@@ -38,6 +38,19 @@ frappe.query_reports["Invoiceable Services"] = {
                 'method': "microsynth.microsynth.invoicing.create_invoices",
                 'args': {
                     'mode': "Electronic",
+                    'company': get_company(),
+                    'customer': get_customer()
+                },
+                'callback': function(response) {
+                    frappe.show_alert( __("Started") );
+                }
+            });
+        });
+        report.page.add_inner_button(__('Create Carlo Erba Invoices'), function () {
+           frappe.call({
+                'method': "microsynth.microsynth.invoicing.create_invoices",
+                'args': {
+                    'mode': "CarloErba",
                     'company': get_company(),
                     'customer': get_customer()
                 },

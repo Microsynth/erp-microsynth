@@ -377,7 +377,7 @@ def get_quotations(customer, client="webshop"):
 @frappe.whitelist()
 def get_contact_quotations(contact, client="webshop"):
     """
-    Returns the quotations for a particular customer
+    Returns the quotation items for a particular contact. 
     """
     
     customer_name = get_customer(contact)
@@ -400,6 +400,7 @@ def get_contact_quotations(contact, client="webshop"):
             WHERE (`tabQuotation`.`contact_person` = '{0}' 
             OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
             AND `tabQuotation`.`docstatus` = 1 
+            AND (`tabQuotation`.`valid_till` >= CURDATE() OR `tabQuotation`.`valid_till` IS NULL)
             ORDER BY `tabQuotation`.`name` """.format(contact, customer_name) 
 
         qtns = frappe.db.sql(query, as_dict=True)
