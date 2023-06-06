@@ -16,7 +16,7 @@ def get_sales_volume(contact):
         end = get_last_day(start)
         last_month_date = end
         sql_query = """
-                        SELECT SUM(`total`) AS `total`
+                        SELECT SUM(`base_net_total`) AS `total`
                         FROM `tabSales Order`
                         WHERE `contact_person` = '{contact}'
                         AND `docstatus` = 1
