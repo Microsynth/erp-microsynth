@@ -19,6 +19,8 @@ def execute(filters=None):
 def get_columns(filters):
     if filters.get("version") == "AT":
         columns = [
+            {"label": _("satzart"), "fieldname": "entry_type", "fieldtype": "Data", "width": 20},
+            {"label": _("External debtor number"), "fieldname": "ext_debitor_number", "fieldtype": "Data", "width": 120},
             {"label": _("gkonto"), "fieldname": "account", "fieldtype": "Data", "width": 80},
             {"label": _("belegnr"), "fieldname": "document", "fieldtype": "Dynamic Link", "options": "document_type", "width": 120},
             {"label": _("belegdatum"), "fieldname": "date", "fieldtype": "Date", "width": 80},
@@ -29,8 +31,7 @@ def get_columns(filters):
             {"label": _("betrag"), "fieldname": "gross_amount", "fieldtype": "Float", "width": 100, "precision": 2},
             {"label": _("steuer"), "fieldname": "vat_amount", "fieldtype": "float", "width": 100, "precision": 2},
             {"label": _("text"), "fieldname": "description", "fieldtype": "Data", "width": 120},
-            {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 120},
-            {"label": _("External debtor number"), "fieldname": "ext_debitor_number", "fieldtype": "Data", "width": 120}
+            {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 120}
         ]
     return columns
 
@@ -39,6 +40,7 @@ def get_data(filters, short=False):
     if filters.get("version") == "AT":
         sql_query = """
         SELECT
+            0 AS `entry_type`,
             (SELECT
                 SUBSTRING(`tabSales Invoice Item`.`income_account`, 1, 4)
              FROM `tabSales Invoice Item`
