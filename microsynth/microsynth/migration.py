@@ -1858,6 +1858,29 @@ def activate_fullplasmidseq_dach():
     return
 
 
+def activate_fullplasmidseq_all_customers():
+    """
+    run
+    bench execute microsynth.microsynth.migration.activate_fullplasmidseq_all_customers
+    """
+    from microsynth.microsynth.utils import add_webshop_service
+
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name'])
+    
+    i = 0
+    length = len(customers)
+
+    for c in customers:
+        print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
+        add_webshop_service(c.name, "FullPlasmidSeq")
+        frappe.db.commit()
+        i += 1
+
+    return
+
+
 def set_debtors():
     """
     Set the debitor account
@@ -2045,3 +2068,34 @@ def tag_duplicate_invoices(file):
         i += 1
 
     return
+
+
+def check_sales_invoices(import_file, export_file):
+    """
+    run
+    bench execute microsynth.microsynth.migration.check_sales_invoices --kwargs "{'import_file':'/mnt/erp_share/Invoices/Paynet/2023-06-02_PostFinance_invoices_not_sent_2.txt', 'export_file': '/mnt/erp_share/Invoices/invoices.txt'}"
+    """
+
+    invoices = []
+    with open(import_file) as file:
+        for line in file:
+            invoices.append(line.strip())
+
+    file.close()
+
+    with open(export_file, "w") as export_file:
+
+        for invoice in invoices:
+            si = frappe.get_doc("Sales Invoice", invoice)
+
+            if si.is_punchout and si.product_type != "Sequencing":
+                export_file.write("{0}\r\n".format(si.name))
+
+                print("{0}\t{1}\t{2}\t{3}\t{4}".format(
+                    si.name,
+                    si.is_punchout,
+                    si.punchout_shop,
+                    si.customer,
+                    si.product_type))
+
+    export_file.close()

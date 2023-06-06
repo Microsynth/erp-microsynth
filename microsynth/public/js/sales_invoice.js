@@ -1,7 +1,7 @@
 /* Custom script extension for Sales Invoice */
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
-        prepare_naming_series(frm);				// common function
+        prepare_naming_series(frm);             // common function
         
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0) {
             frm.add_custom_button(__("Allocate credit"), function() {
@@ -13,14 +13,14 @@ frappe.ui.form.on('Sales Invoice', {
                 clone(frm);
             });
         };
-        if ((frm.doc.docstatus = 1) && (frm.doc.outstanding_amount > 0)) {
+        if ((frm.doc.docstatus == 1) && (frm.doc.outstanding_amount > 0)) {
             frm.add_custom_button(__("Against Expense Account"), function() {
                 close_against_expense(frm);
             }, __("Close"));
-        }
+        };
     },
     company(frm) {
-        set_naming_series(frm);					// common function
+        set_naming_series(frm);                 // common function
     },
     on_submit(frm) {
         if (frm.doc.total_customer_credit > 0) {
