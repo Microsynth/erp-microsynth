@@ -1220,3 +1220,21 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     jv.submit()
     
     return jv.name
+
+
+def comment_invoice(sales_invoice, comment):
+    """
+    run
+    bench execute microsynth.microsynth.utils.comment_invoice --kwargs "{ 'sales_invoice': 'SI-BAL-23016302', 'comment': 'my_comment' }"
+    """
+    new_comment = frappe.get_doc({
+        'doctype': 'Communication',
+        'comment_type': "Comment",
+        'subject': sales_invoice,
+        'content': comment,
+        'reference_doctype': "Sales Invoice",
+        'status': "Linked",
+        'reference_name': sales_invoice
+    })
+    new_comment.insert()
+    return
