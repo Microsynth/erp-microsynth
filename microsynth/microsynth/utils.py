@@ -1064,6 +1064,7 @@ def exact_copy_sales_invoice(sales_invoice):
     new.creation = datetime.now()
     new.owner = user.name
     new.insert()
+    comment_invoice(new.name, "Cloned from {0}<br>by {1}".format(original.name, user.name))
     frappe.db.commit()
     return new.name
 
