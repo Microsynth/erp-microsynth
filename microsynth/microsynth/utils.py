@@ -1043,16 +1043,26 @@ def check_default_companies():
         print(c)
         set_customer_default_company_for_country(c)
 
-"""
-Clone a sales invoice including the no-copy fields
-"""
+
 @frappe.whitelist()
 def exact_copy_sales_invoice(sales_invoice):
+    """
+    Clone a sales invoice including the no-copy fields. Set the new document to 
+    Draft status. Change the owner to the current user ('created this').
+    Set the creation time to now.
+
+    run
+    bench execute microsynth.microsynth.utils.exact_copy_sales_invoice --kwargs "{'sales_invoice': 'SI-BAL-23001936'}"
+    """
     original = frappe.get_doc("Sales Invoice", sales_invoice)
+    user = frappe.get_user()
+
     new = frappe.get_doc(original.as_dict())
     new.name = None
     new.docstatus = 0
     new.set_posting_time = 1
+    new.creation = datetime.now()
+    new.owner = user.name
     new.insert()
     frappe.db.commit()
     return new.name
