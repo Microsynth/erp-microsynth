@@ -76,6 +76,45 @@ def get_sales_qty(contact):
     })
     # ~ print(data)
     return data
+    
+def get_product_type(contact):
+    if not contact:
+        frappe.throw("Bitte einen Kontakt angeben")
+    
+    data = []
+    query_date = today()
+    first_day = get_first_day(query_date, d_years = -1)
+    last_day_help = add_months(query_date, -1)
+    last_day = get_last_day(last_day_help)
+    yearly_volume = 0
+    sql_query = """
+                    SELECT SUM(`base_net_total`) AS `total`,`product_type`, COUNT(`name`) AS `qty`
+                    FROM `tabSales Order`
+                    WHERE `contact_person` = '{contact}'
+                    AND `docstatus` = 1
+                    AND `transaction_date` BETWEEN '{start}' AND '{end}'
+                    GROUP BY `tabSales Order`.`product_type`
+                """.format(contact=contact, start=first_day, end=last_day)
+                    
+    volumes = frappe.db.sql(sql_query, as_dict=True)
+    total_volume = 0
+    total_qty = 0
+    for volume in volumes:
+        total_volume += volume.total
+        total_qty += volume.qty
+        data.append({
+            'volume': volume.total,
+            'type': volume.product_type,
+            'qty': volume.qty
+        })
+    percent_volume = (100 / total_volume) if total_volume > 0 else 1
+    percent_qty = (100 / total_qty) if total_qty > 0 else 1
+    for d in data:
+        d['percent_volume'] = round((d['volume'] * percent_volume), 2)
+        d['percent_qty'] = round((d['qty'] * percent_qty), 2)
+        
+    # ~ print(data)
+    return data
 
 
 # ~ import frappe

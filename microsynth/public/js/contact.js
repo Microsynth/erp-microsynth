@@ -5,8 +5,13 @@ cur_frm.dashboard.add_transactions([
     {
         'label': __("Pre-Sales"),
         'items': ["Quotation"]
+    },
+    {
+        'label': __("Visits"),
+        'items': ["Customer Visit"]
     }
 ]);
+
 
 frappe.ui.form.on('Contact', {
     before_save(frm) {
