@@ -41,7 +41,7 @@
    "label": "Recipient Name"
   }
  ],
- "modified": "2023-01-10 11:00:59.362738",
+ "modified": "2023-06-08 11:12:48.269614",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Tracking Code",
@@ -67,6 +67,17 @@
    "read": 1,
    "report": 1,
    "role": "Sales User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Oligo Lab User",
    "share": 1,
    "write": 1
   }

@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2022-12-20 09:03:29.778686",
+ "modified": "2023-06-08 11:07:58.394185",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo Orders Export",
@@ -31,6 +31,9 @@
   },
   {
    "role": "Stock User"
+  },
+  {
+   "role": "Oligo Lab User"
   }
  ]
 }

@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2022-12-20 11:40:36.666421",
+ "modified": "2023-06-08 10:59:52.590147",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo Orders Ready To Package",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Accounts User"
+  },
+  {
+   "role": "Oligo Lab User"
   }
  ]
 }
