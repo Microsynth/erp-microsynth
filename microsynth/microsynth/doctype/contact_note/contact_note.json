@@ -11,6 +11,7 @@
   "column_break_2",
   "date",
   "naming_series",
+  "contact_note_type",
   "notes_section",
   "notes"
  ],
@@ -69,9 +70,16 @@
    "fieldname": "notes",
    "fieldtype": "Text Editor",
    "label": "Notes"
+  },
+  {
+   "fieldname": "contact_note_type",
+   "fieldtype": "Select",
+   "label": "Contact Note Type",
+   "options": "Email\nVisit\nPhone\nVideo Call\nConference\nOther",
+   "reqd": 1
   }
  ],
- "modified": "2023-06-13 10:37:23.275892",
+ "modified": "2023-06-13 11:34:47.190593",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Contact Note",
