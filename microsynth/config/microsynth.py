@@ -344,6 +344,13 @@ def get_data():
                         "label": _("Sales Pivot"),
                         "doctype": "Sales Invoice",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Sales Overview",
+                        "label": _("Sales Overview"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         }
