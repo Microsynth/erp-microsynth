@@ -811,7 +811,9 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
     
     if mode == "ARIBA":
         sender_network_id = settings.ariba_id
-    elif sales_invoice.is_punchout and mode == "GEP":
+    elif mode == "GEP" and sales_invoice.company == "Microsynth Seqlab GmbH":
+        sender_network_id = "SEQLAB"
+    elif mode == "GEP" and sales_invoice.is_punchout:
         sender_network_id = punchout_shop.supplier_network_id
     elif mode == "GEP":
         sender_network_id = "MICROSYNTH"
