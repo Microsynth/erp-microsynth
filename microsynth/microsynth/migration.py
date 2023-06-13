@@ -2107,10 +2107,11 @@ def set_reminder_to(contact, customer, email):
     bench execute microsynth.microsynth.migration.set_reminder_to --kwargs "{'contact': '71921', 'customer': '8003', 'email': 'reminder@mail.ch'}"
     """
 
+    if not frappe.db.exists("Contact", contact):
+        return
+
     contact = frappe.get_doc("Contact", contact)
     customer = frappe.get_doc("Customer", customer)
-
-    print("process {0}, {1}, {2}".format(contact.name, customer.name, email))
 
     # Validation
     if contact.name != customer.invoice_to:
@@ -2126,6 +2127,7 @@ def set_reminder_to(contact, customer, email):
         new = contact.as_dict()
         new['person_id'] = contact.name + "-R"
         new['email'] = email
+        new['customer_id'] = customer.name
         update_contact(new)
 
         customer.reminder_to = new['person_id']
@@ -2134,3 +2136,36 @@ def set_reminder_to(contact, customer, email):
     customer.save()
 
     return
+
+
+def import_reminder_emails(file):
+    """
+    run
+    bench execute microsynth.microsynth.migration.import_reminder_emails --kwargs "{'file': '/mnt/erp_share/Gecko/Import_Customer_Data/Reminder_to/reminder_202-06-13.tab'}"
+    """
+
+    tasks = []
+
+    with open(file) as file:
+        for line in file:
+            if line.strip() != "":
+                elements = line.split("\t")
+         
+                task = {}
+                task['contact'] = elements[0].strip()
+                task['customer'] = elements[1].strip()
+                task['email'] = elements[2].strip()
+                tasks.append(task)
+
+    length = len(tasks)
+    i = 0
+    for task in tasks:
+        print("{progress} process {contact}, {customer}, {email}".format(
+            contact = task['contact'],
+            customer = task['customer'], 
+            email = task['email'],
+            progress = int(100 * i / length)))
+
+        set_reminder_to(task['contact'], task['customer'], task['email'])
+        frappe.db.commit()
+        i += 1
