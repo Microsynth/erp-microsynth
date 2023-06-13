@@ -7,8 +7,8 @@ cur_frm.dashboard.add_transactions([
         'items': ["Quotation"]
     },
     {
-        'label': __("Visits"),
-        'items': ["Customer Visit"]
+        'label': __("Notes"),
+        'items': ["Contact Note"]
     }
 ]);
 
