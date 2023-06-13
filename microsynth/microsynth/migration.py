@@ -728,7 +728,7 @@ def update_contact(contact_data):
 
     # check if contact exists (force insert onto target id)
     if not frappe.db.exists("Contact", contact_data['person_id']):
-        print("Creating contact {0}...".format(str(int(contact_data['person_id']))))
+        print("Creating contact {0}...".format(contact_data['person_id'] ))
         frappe.db.sql("""INSERT INTO `tabContact` 
                         (`name`, `first_name`) 
                         VALUES ("{0}", "{1}");""".format(
@@ -2099,3 +2099,38 @@ def check_sales_invoices(import_file, export_file):
                     si.product_type))
 
     export_file.close()
+
+
+def set_reminder_to(contact, customer, email):
+    """
+    run
+    bench execute microsynth.microsynth.migration.set_reminder_to --kwargs "{'contact': '71921', 'customer': '8003', 'email': 'reminder@mail.ch'}"
+    """
+
+    contact = frappe.get_doc("Contact", contact)
+    customer = frappe.get_doc("Customer", customer)
+
+    print("process {0}, {1}, {2}".format(contact.name, customer.name, email))
+
+    # Validation
+    if contact.name != customer.invoice_to:
+        print("Contact '{0}' is not invoice_to contact of customer {1}".format(contact.name, customer.name))
+        return
+
+    for link in contact.links:
+        if link.link_name != customer.name:
+            print("Contact '{0}' does not belong to customer {1}".format(contact.name, customer.name))
+            return
+
+    if email != contact.email_id:
+        new = contact.as_dict()
+        new['person_id'] = contact.name + "-R"
+        new['email'] = email
+        update_contact(new)
+
+        customer.reminder_to = new['person_id']
+    else:
+        customer.reminder_to = contact.name
+    customer.save()
+
+    return
