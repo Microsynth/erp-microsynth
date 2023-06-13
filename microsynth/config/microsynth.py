@@ -326,5 +326,25 @@ def get_data():
                         "is_query_report": True
                     }
             ]
+        },
+        {
+            "label": _("Reporting"),
+            "icon": "fa fa-users",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Sales Analytics",
+                        "label": _("Sales Analytics"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Sales Pivot",
+                        "label": _("Sales Pivot"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
+                    }
+            ]
         }
     ]
