@@ -55,7 +55,7 @@
    "fieldtype": "Select",
    "label": "Series",
    "no_copy": 1,
-   "options": "CUS-VIS-.YYYY.-",
+   "options": "CN-.YY.#####",
    "print_hide": 1,
    "read_only": 1,
    "reqd": 1,
@@ -75,11 +75,11 @@
    "fieldname": "contact_note_type",
    "fieldtype": "Select",
    "label": "Contact Note Type",
-   "options": "Email\nVisit\nPhone\nVideo Call\nConference\nOther",
+   "options": "\nEmail\nVisit\nPhone\nVideo Call\nConference\nOther",
    "reqd": 1
   }
  ],
- "modified": "2023-06-13 11:34:47.190593",
+ "modified": "2023-06-14 09:01:55.573080",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Contact Note",
