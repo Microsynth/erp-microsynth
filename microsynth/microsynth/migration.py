@@ -845,6 +845,7 @@ def update_contact(contact_data):
         frappe.log_error("Failed to save contact: {0}".format(err))
         return None
 
+
 def update_address(customer_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record
@@ -854,7 +855,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         return None
     if not 'address_line1' in customer_data:
         return None
-        
+
     print("Updating address {0}...".format(str(int(customer_data['person_id']))))
     # check if address exists (force insert onto target id)
     if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
@@ -864,7 +865,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
                         VALUES ("{0}", "{1}");""".format(
                         str(int(customer_data['person_id'])), 
                         customer_data['address_line1'] if 'address_line1' in customer_data else "-"))
-    
+
     # update record
     if 'address_type' in customer_data:
         address_type = customer_data['address_type']
@@ -893,7 +894,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
                 'link_name': customer_id or customer_data['customer_id']
             })
     # get type of address
-    if address_type == "INV":
+    if address_type == "INV" or address_type == "Billing":
         address.is_primary_address = 1
         address.is_shipping_address = 0
         # address.email_id = customer_data['email']        # invoice address: pull email also into address record. 
@@ -905,7 +906,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         address.address_type = "Shipping"
     if 'customer_address_id' in customer_data:
         address.customer_address_id = customer_data['customer_address_id']
-        
+
     # extend address bindings here
 
     try:
@@ -915,6 +916,7 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         print("Failed to save address: {0}".format(err))
         frappe.log_error("Failed to save address: {0}".format(err))
         return None
+
 
 def robust_get_country(country_name_or_code):
     """

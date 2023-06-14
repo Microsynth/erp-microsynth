@@ -21,6 +21,110 @@ def ping():
     """
     return "pong"
 
+
+@frappe.whitelist()
+def register_user(user_data, client="webshop"):
+    """
+    Register a new webshop user. Do not use for updating user data. 
+    This function is derived from migration.update_customer
+    """
+
+    # make sure data is a dict or list
+    if type(user_data) == str:
+        user_data = json.loads(user_data)
+
+    # country locator
+    country = None
+    for a in user_data['addresses']:
+        # set contry according to the first shipping address
+        if 'country' in a and a.get('is_shipping_address', False):
+            country = robust_get_country(a['country'])
+            if country:
+                break
+
+    default_company = frappe.get_value("Country", country, "default_company")
+
+    # Initialize customer
+    customer_query = """INSERT INTO `tabCustomer` 
+                    (`name`, 
+                     `customer_name`, 
+                     `default_company`, 
+                     `default_currency`, 
+                     `default_price_list`, 
+                     `payment_terms`) 
+                    VALUES ("{0}", "{1}", "{2}", "{3}", "{4}", "{5}");
+                    """.format(
+                        user_data['customer']['name'],
+                        user_data['customer']['customer_name'],
+                        default_company,
+                        frappe.get_value("Country", country, "default_currency"),
+                        frappe.get_value("Country", country, "default_pricelist"),
+                        frappe.get_value("Company", default_company, "payment_terms"))
+
+    frappe.db.sql(customer_query)
+    
+    customer = frappe.get_doc("Customer", user_data['customer']['name'])
+
+    # Create addresses
+    for address in user_data['addresses']:
+        address['person_id'] = address['name']
+        address['customer_id'] = customer.name
+        address_id = update_address(address)
+
+    # Create contact
+    user_data['contact']['person_id'] = user_data['contact']['name']
+    user_data['contact']['customer_id'] = customer.name
+    contact_name = update_contact(user_data['contact'])
+    
+    # Create invoice contact
+    user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']
+    user_data['invoice_contact']['customer_id'] = customer.name
+    invoice_contact_name = update_contact(user_data['invoice_contact'])
+
+    # Update customer data
+
+    if not customer.customer_group:
+        customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")
+    if not customer.territory:
+        customer.territory = frappe.get_value("Selling Settings", "Selling Settings", "territory")
+
+
+    if 'tax_id' in user_data['customer']:
+        customer.tax_id = user_data['customer']['tax_id']
+
+    if 'siret' in user_data['customer']:
+        customer.siret = user_data['customer']['siret']
+
+    if 'invoicing_method' in user_data['customer'] and user_data['customer']['invoicing_method'] == "Post":
+            customer.invoicing_method = "Post"
+    else:
+        customer.invoicing_method = "Email"
+
+    # The invoice contact must be created before
+    if 'invoice_to' in user_data['customer']:
+        customer.invoice_to = invoice_contact_name
+
+    if 'punchout_shop_id' in user_data['customer']:
+        customer.punchout_shop_id = user_data['customer']['punchout_shop_id']
+
+    if 'punchout_shop' in user_data['customer']:
+        customer.punchout_shop = user_data['customer']['punchout_shop']
+
+    customer.save()
+
+
+    # frappe.db.commit()
+    return contact_name#user_data['contact']#customer_query
+    
+    #error = register_user(user_data)
+
+
+    # if not error:
+    #     return {'success': True, 'message': "OK"}
+    # else: 
+    #     return {'success': False, 'message': error}
+
+
 @frappe.whitelist()
 def create_update_customer(customer_data, client="webshop"):
     """
@@ -34,6 +138,7 @@ def create_update_customer(customer_data, client="webshop"):
     else: 
         return {'success': False, 'message': error}
 
+
 @frappe.whitelist()
 def create_update_contact(contact, client="webshop"):
     """
@@ -46,12 +151,13 @@ def create_update_contact(contact, client="webshop"):
     if not 'person_id' in contact:
         return {'success': False, 'message': "Person ID missing"}
     if not 'first_name' in contact:
-        return{'success': False, 'message': "First Name missing"}    
+        return{'success': False, 'message': "First Name missing"}
     contact_name = update_contact(contact)
     if contact_name:
         return {'success': True, 'message': "OK"}
     else: 
         return {'success': False, 'message': "An error occured while creating/updating the contact record"}
+
 
 @frappe.whitelist()
 def create_update_address(address=None, client="webshop"):
@@ -73,7 +179,8 @@ def create_update_address(address=None, client="webshop"):
         return {'success': True, 'message': "OK"}
     else: 
         return {'success': False, 'message': "An error occured while creating/updating the address record"}
-        
+
+
 @frappe.whitelist()
 def get_user_details(person_id, client="webshop"):
     """
@@ -137,6 +244,7 @@ def get_user_details(person_id, client="webshop"):
         }
     }
 
+
 @frappe.whitelist()
 def get_customer_details(customer_id, client="webshop"):
     """
@@ -181,6 +289,7 @@ def get_customer_details(customer_id, client="webshop"):
             'addresses': addresses
         }
     }
+
 
 @frappe.whitelist()
 def contact_exists(contact, client="webshop"):
@@ -231,6 +340,7 @@ def contact_exists(contact, client="webshop"):
         return {'success': True, 'message': "OK", 'contacts': contacts}
     else: 
         return {'success': False, 'message': "Contact not found"}
+
 
 @frappe.whitelist()
 def address_exists(address, client="webshop"):
@@ -364,6 +474,7 @@ def request_quote(content, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
+
 @frappe.whitelist()
 def get_quotations(customer, client="webshop"):
     """
@@ -378,6 +489,7 @@ def get_quotations(customer, client="webshop"):
         return {'success': True, 'message': "OK", 'quotations': qtns}
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
+
 
 @frappe.whitelist()
 def get_contact_quotations(contact, client="webshop"):
@@ -414,6 +526,7 @@ def get_contact_quotations(contact, client="webshop"):
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
+
 @frappe.whitelist()
 def get_quotation_detail(reference, client="webshop"):
     """
@@ -425,6 +538,7 @@ def get_quotation_detail(reference, client="webshop"):
         return {'success': True, 'message': "OK", 'quotation': qtn.as_dict()}
     else:
         return {'success': False, 'message': 'Quotation not found', 'quotation': None}
+
 
 @frappe.whitelist()
 def get_item_prices(content, client="webshop"):
@@ -476,6 +590,7 @@ def get_item_prices(content, client="webshop"):
         return {'success': True, 'message': "OK", 'item_prices': item_prices, 'meta': meta }
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
+
 
 @frappe.whitelist()
 def place_order(content, client="webshop"):
@@ -705,6 +820,7 @@ def place_order(content, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
 
+
 @frappe.whitelist()
 def get_countries(client="webshop"):
     """
@@ -716,6 +832,7 @@ def get_countries(client="webshop"):
            WHERE `disabled` = 0;""", as_dict=True)
            
     return {'success': True, 'message': None, 'countries': countries}
+
 
 @frappe.whitelist()
 def get_shipping_items(customer_id=None, country=None, client="webshop"):
@@ -756,6 +873,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
            
     return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
+
 @frappe.whitelist()
 def update_newsletter_state(person_id, newsletter_state, client="webshop"):
     """
@@ -771,6 +889,7 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
             return {'success': False, 'message': err}
     else: 
         return {'success': False, 'message': "Person ID not found"}
+
 
 @frappe.whitelist()
 def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_identifier, client="webshop"):
@@ -799,6 +918,7 @@ def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_i
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
+
 @frappe.whitelist()
 def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
     """
@@ -815,7 +935,8 @@ def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
             return {'success': False, 'message': err}
     else: 
         return {'success': False, 'message': "Person ID not found"}
-        
+
+
 def notify_customer_change(customer):
     """
     Inform webshop about customer master change
