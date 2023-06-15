@@ -2143,7 +2143,7 @@ def set_reminder_to(contact, customer, email):
 def import_reminder_emails(file):
     """
     run
-    bench execute microsynth.microsynth.migration.import_reminder_emails --kwargs "{'file': '/mnt/erp_share/Gecko/Import_Customer_Data/Reminder_to/reminder_202-06-13.tab'}"
+    bench execute microsynth.microsynth.migration.import_reminder_emails --kwargs "{'file': '/mnt/erp_share/Gecko/Import_Customer_Data/Reminder_to/reminder_2023-06-13_filtered.tab'}"
     """
 
     tasks = []
