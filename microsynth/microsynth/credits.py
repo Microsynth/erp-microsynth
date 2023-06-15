@@ -67,8 +67,10 @@ def allocate_credits(sales_invoice_doc):
                 break
         # allocate discount
         if allocated_amount > 0:
+            initial_discount = (sales_invoice_doc.discount_amount or 0)
             sales_invoice_doc.apply_discount_on = "Net Total"
-            sales_invoice_doc.discount_amount = (sales_invoice_doc.discount_amount or 0) + allocated_amount
+            sales_invoice_doc.additional_discount_percentage = 0
+            sales_invoice_doc.discount_amount = initial_discount + allocated_amount
             sales_invoice_doc.total_customer_credit = allocated_amount
             
     return sales_invoice_doc
