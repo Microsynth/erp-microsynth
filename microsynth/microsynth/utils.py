@@ -181,6 +181,8 @@ def create_sample(sample):
 def find_tax_template(company, customer, shipping_address, category):
     """
     Find the corresponding tax template
+    run
+    bench execute microsynth.microsynth.utils.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
     """
     
     # if the customer is "Individual" (B2C), always apply default tax template (with VAT)
