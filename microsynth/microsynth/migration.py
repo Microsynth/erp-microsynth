@@ -2044,12 +2044,12 @@ def find_invoices_of_unprocessed_samples():
     return
 
 
-def tag_duplicate_invoices(file):
+def tag_documents_by_web_id(file, tag):
     """
     Tag Sales Orders, Delivery Notes and Sales Invoices if they are in relation with a web order id given with the file.
 
     run
-    bench execute microsynth.microsynth.migration.tag_duplicate_invoices --kwargs "{'file':'/mnt/erp_share/Gecko/Invoiced_Seq_Orders/Gecko_Sequencing_Invoices_Export.tab'}"
+    bench execute microsynth.microsynth.migration.tag_documents_by_web_id --kwargs "{'file':'/mnt/erp_share/Invoices/tag_invoices.txt', 'tag': 'invoiced'}"
     """
 
     web_orders = []
@@ -2059,14 +2059,15 @@ def tag_duplicate_invoices(file):
         for line in file:
             elements = line.split("\t")
 
-            web_order_id = int("".join(d for d in elements[1] if d.isdigit()))
+            web_order_id = int("".join(d for d in elements[0] if d.isdigit()))
             web_orders.append(web_order_id)
 
     i = 0
     length = len(web_orders)
     for o in web_orders:
         print("{progress}% process web id '{id}'".format(id = o, progress = int(100 * i / length)))
-        tag_linked_documents(web_order_id = o, tag = "duplicate invoice")
+        tag_linked_documents(web_order_id = o, tag = tag)
+        frappe.db.commit()
         i += 1
 
     return
