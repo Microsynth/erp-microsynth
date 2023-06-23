@@ -1,4 +1,13 @@
 /* Custom script extension for Sales Invoice */
+
+// extend/create dashboard
+cur_frm.dashboard.add_transactions([
+    {
+        'label': __("Reference"),
+        'items': ["Payment Reminder"]
+    }
+]);
+
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
         prepare_naming_series(frm);             // common function
