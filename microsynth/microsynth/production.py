@@ -298,6 +298,10 @@ def process_internal_order(sales_order):
         print("hold")
         return
 
+    if sales_order.status == "Closed":
+        print("closed")
+        return
+
     check_sales_order_completion( [sales_order.name] )
     oligo_order_packaged(sales_order.web_order_id)
     frappe.db.commit()
