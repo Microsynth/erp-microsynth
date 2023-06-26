@@ -282,3 +282,61 @@ def print_delivery_label(delivery_note):
         return {'success': False, 'message': "Delivery Note not found"}
 
 
+def process_internal_oligos(file):
+    """
+    run
+    bench execute microsynth.microsynth.production.process_internal_oligos --kwargs "{'file': '/mnt/erp_share/internal_oligos.txt'}"
+    """
+    internal_oligos = []
+
+    with open(file) as file:
+        header = file.readline()    # skip header line
+        for line in file:
+            if line.strip() != "":
+                elements = line.split("\t")
+                oligo = {}
+                oligo['web_id'] = elements[1].strip()
+                oligo['production_id'] = elements[2].split('.')[0]  # only consider root oligo ID
+                oligo['status'] = elements[3].strip()
+                internal_oligos.append(oligo) 
+
+    affected_sales_orders = []
+    i =0
+    for oligo in internal_oligos:
+        print("process {} ({})".format(oligo['production_id'], oligo['web_id']))
+
+        # find oligo
+        oligos = frappe.db.sql("""
+            SELECT 
+              `tabOligo`.`name`,
+              `tabOligo Link`.`parent` AS `sales_order`
+            FROM `tabOligo`
+            LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+            WHERE 
+              `tabOligo`.`web_id` = "{web_id}"
+              AND `tabOligo Link`.`parenttype` = "Sales Order"
+            ORDER BY `tabOligo Link`.`creation` DESC;
+        """.format(web_id=oligo['web_id']), as_dict=True)
+
+        if len(oligos) > 0:
+            # get sales order
+            oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
+            if oligo_doc.status != oligo['status']:
+                oligo_doc.status = oligo['status']
+                if 'production_id' in oligo:
+                    oligo_doc.prod_id = oligo['production_id']
+                oligo_doc.save(ignore_permissions=True)
+
+            # append sales order (if available and not in list)
+            if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
+                print("affected order {0}".format(oligos[0]['sales_order']))
+                affected_sales_orders.append(oligos[0]['sales_order'])
+        else: 
+            continue
+
+    # check all affected sales orders for completion
+    for order in affected_sales_orders:
+        print("check sales order {0}".format(order))
+        check_sales_order_completion([order])
+        # TODO: submit delivery notes
+        i += 1
