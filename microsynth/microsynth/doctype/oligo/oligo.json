@@ -92,7 +92,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Web ID",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "column_ids",
@@ -147,8 +148,8 @@
    "label": "Specification"
   }
  ],
- "modified": "2022-12-09 07:27:23.916755",
- "modified_by": "Administrator",
+ "modified": "2023-06-26 12:40:40.911063",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Oligo",
  "owner": "Administrator",
