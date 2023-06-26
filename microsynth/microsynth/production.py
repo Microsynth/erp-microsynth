@@ -282,6 +282,29 @@ def print_delivery_label(delivery_note):
         return {'success': False, 'message': "Delivery Note not found"}
 
 
+def process_internal_order(sales_order):
+    from microsynth.microsynth.utils import get_tags
+    print("process {0}".format(sales_order))
+    sales_order = frappe.get_doc("Sales Order", sales_order)
+    
+    tags = get_tags("Sales Order", sales_order.name)
+
+    for tag in tags:
+        if "invoice" in tag.lower() or "duplicate invoice" in tag.lower():
+            print("invoiced")
+            return
+
+    if sales_order.hold_invoice or sales_order.hold_order:
+        print("hold")
+        return
+
+    check_sales_order_completion( [sales_order.name] )
+    oligo_order_packaged(sales_order.web_order_id)
+    frappe.db.commit()
+
+    return
+
+
 def process_internal_oligos(file):
     """
     run
@@ -303,7 +326,7 @@ def process_internal_oligos(file):
     affected_sales_orders = []
     i =0
     for oligo in internal_oligos:
-        print("process {} ({})".format(oligo['production_id'], oligo['web_id']))
+        print("oligo {} ({})".format(oligo['production_id'], oligo['web_id']))
 
         # find oligo
         oligos = frappe.db.sql("""
@@ -319,7 +342,7 @@ def process_internal_oligos(file):
         """.format(web_id=oligo['web_id']), as_dict=True)
 
         if len(oligos) > 0:
-            # get sales order
+            # update oligo
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
                 oligo_doc.status = oligo['status']
@@ -327,16 +350,6 @@ def process_internal_oligos(file):
                     oligo_doc.prod_id = oligo['production_id']
                 oligo_doc.save(ignore_permissions=True)
 
-            # append sales order (if available and not in list)
-            if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
-                print("affected order {0}".format(oligos[0]['sales_order']))
-                affected_sales_orders.append(oligos[0]['sales_order'])
+            process_internal_order(oligos[0]['sales_order'])
         else: 
             continue
-
-    # check all affected sales orders for completion
-    for order in affected_sales_orders:
-        print("check sales order {0}".format(order))
-        check_sales_order_completion([order])
-        # TODO: submit delivery notes
-        i += 1

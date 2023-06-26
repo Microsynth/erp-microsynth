@@ -1072,6 +1072,23 @@ def exact_copy_sales_invoice(sales_invoice):
     return new.name
 
 
+def get_tags(dt, dn):
+    """
+    Return the tags of a document specified by the DocType dt and the Document Name dn.
+    run
+    bench execute microsynth.microsynth.utils.get_tags --kwargs "{'dt': 'Sales Order', 'dn': 'SO-BAL-23029609'}"
+    """
+    tags = []
+    raw = frappe.db.get_value(dt, dn, "_user_tags")
+
+    if raw is not None:
+        for t in raw.split(","):
+            if t != "" and t not in tags:
+                tags.append(t)
+
+    return tags
+
+
 def tag_linked_documents(web_order_id, tag):
     """
     Add the specified Tag to all linked Sales Orders, Delivery Notes and Sales Invoices with the given Web Order ID.
