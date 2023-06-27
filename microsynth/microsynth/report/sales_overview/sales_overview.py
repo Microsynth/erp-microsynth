@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from datetime import date
 from frappe.utils import cint
+import calendar
 
 MONTHS = {
     1: _("January"),
@@ -147,38 +148,49 @@ def get_revenue(filters, month, territory, item_group):
     company = "%"
     if filters.company:
         company = filters.company
-    sql_query = """
-        SELECT 
-            IFNULL(SUM(`tabSales Invoice Item`.`qty`), 0) AS `qty`,
-            IFNULL(SUM(
-                IF(`tabCompany`.`default_currency` = "CHF",
-                   `tabSales Invoice Item`.`base_net_amount`,
-                   `tabSales Invoice Item`.`base_net_amount` / `tabCurrency Exchange`.`exchange_rate`
-                )), 0) AS `chf`,
-            IFNULL(SUM(
-                IF(`tabCompany`.`default_currency` = "EUR",
-                   `tabSales Invoice Item`.`base_net_amount`,
-                   `tabSales Invoice Item`.`base_net_amount` * `tabCurrency Exchange`.`exchange_rate`
-                )), 0) AS `eur`
-        FROM `tabSales Invoice Item`
-        LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
-        LEFT JOIN `tabCompany` ON `tabSales Invoice`.`company` = `tabCompany`.`name`
-        LEFT JOIN `tabCurrency Exchange` ON (
-            SUBSTRING(`tabSales Invoice`.`posting_date`, 1, 7) = SUBSTRING(`tabCurrency Exchange`.`date`, 1, 7)
-            AND `tabCurrency Exchange`.`from_currency` = "EUR"
-            AND `tabCurrency Exchange`.`to_currency` = "CHF"
-        )
-        WHERE 
-            `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`company` LIKE "{company}"
-            AND `tabSales Invoice`.`posting_date` LIKE "{year}-{month:02d}-%"
-            AND `tabSales Invoice`.`territory` = "{territory}"
-            AND `tabSales Invoice Item`.`item_group` = "{item_group}"
-        ;
-    """.format(company=company, year=filters.fiscal_year, month=month, 
-        territory=territory, item_group=item_group)
+    first_last_day = calendar.monthrange(cint(filters.fiscal_year), month)
+    invoices = frappe.db.sql("""
+            SELECT 
+                `tabSales Invoice Item`.`base_net_amount`, 
+                `tabSales Invoice`.`company`
+            FROM `tabSales Invoice Item`
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`company` LIKE "{company}"
+                AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-{from_day:02d}" AND "{year}-{month:02d}-{to_day:02d}"
+                AND `tabSales Invoice`.`territory` = "{territory}"
+                AND `tabSales Invoice Item`.`item_group` = "{item_group}"
+            ;
+        """.format(company=company, year=filters.fiscal_year, month=month, from_day=first_last_day[0], to_day=first_last_day[1],
+            territory=territory, item_group=item_group)
+        , as_dict=True)
     
-    revenue = frappe.db.sql(sql_query, as_dict=True)[0]
+    exchange_rate = frappe.db.sql("""
+        SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
+        FROM `tabCurrency Exchange`
+        WHERE `date` LIKE "{year}-{month:02d}-%"
+          AND `from_currency` = "EUR"
+          AND `to_currency` = "CHF"
+        ;
+    """.format(year=filters.fiscal_year, month=month), as_dict=True)
+    if len(exchange_rate) > 0:
+        exchange_rate = exchange_rate[0]['exchange_rate']
+    else:
+        exchange_rate = 1
+    
+    company_currency = {}
+    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
+        company_currency[c['name']] = c['default_currency']
+        
+    revenue = {'eur': 0, 'chf': 0}
+    for i in invoices:
+        if company_currency[i['company']] == "CHF":
+            revenue['chf'] += i['base_net_amount']
+            revenue['eur'] += i['base_net_amount'] * exchange_rate
+        else:
+            revenue['chf'] += i['base_net_amount'] / exchange_rate
+            revenue['eur'] += i['base_net_amount'] 
     
     return revenue
 
