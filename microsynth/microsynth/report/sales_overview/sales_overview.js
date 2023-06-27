@@ -8,9 +8,7 @@ frappe.query_reports["Sales Overview"] = {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
-            "options": "Company",
-            "reqd": 1,
-            "default": frappe.defaults.get_user_default("company") || frappe.defaults.get_global_default("company")
+            "options": "Company"
         },
         {
             "fieldname": "fiscal_year",
@@ -24,9 +22,9 @@ frappe.query_reports["Sales Overview"] = {
             "fieldname": "reporting_type",
             "label": __("Reporting Type"),
             "fieldtype": "Select",
-            "options": "Revenue\nQty",
+            "options": "CHF\nEUR",
             "reqd": 1,
-            "default": "Revenue"
+            "default": "CHF"
         }
     ]
 };

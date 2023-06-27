@@ -21,6 +21,7 @@ MONTHS = {
     11: _("November"),
     12: _("December"),
 }
+# product type aggregation is currently not used in favour of the item groups
 PRODUCT_TYPES = ["Oligos", "Labels", "Sequencing", "NGS", "FLA", "Material", "Service"]
 PRODUCT_TYPE_MAP = {
     "Oligo Synthesis": ["Oligos", "Material"],
@@ -35,10 +36,6 @@ COLOURS = [
     "grey",
     "red",
     "orange",
-    "grey",
-    "grey",
-    "grey",
-    "grey",
     "grey"
 ]
 
@@ -77,7 +74,7 @@ def get_columns(filters):
 
 def get_data(filters):
     # prepare
-    currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+    #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     territory_list = get_territories()
     group_list = get_item_groups()
     # prepare forcast:
@@ -98,21 +95,22 @@ def get_data(filters):
         total[key] = 0
     # create matrix
     for group in group_list:
+        color = COLOURS[group_count if group_count < len(COLOURS) else (len(COLOURS) - 1)]
         group_sums = {
-            'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=COLOURS[group_count], group=group),
+            'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=color, group=group),
             'ytd': 0,
             'fc': 0,
-            'currency': currency
+            'currency': filters.reporting_type
         }
         for territory in territory_list:
             _revenue = {
-                'description': """<span style="color: {color}; ">{territory}</span>""".format(color=COLOURS[group_count], territory=territory)
+                'description': """<span style="color: {color}; ">{territory}</span>""".format(color=color, territory=territory)
             }
             ytd = 0
             base = 0
             for m in range (1, 13):
                 key = 'month{0}'.format(m)
-                _revenue[key] = get_revenue(filters, m, territory, group)
+                _revenue[key] = get_revenue(filters, m, territory, group)[filters.reporting_type.lower()]
                 if not key in group_sums:
                     group_sums[key] = _revenue[key]
                 else:
@@ -122,7 +120,7 @@ def get_data(filters):
                     base += _revenue[key]
             _revenue['ytd'] = ytd
             _revenue['fc'] = (12 * base / elapsed_month) if elapsed_month > 0 else 0
-            _revenue['currency'] = currency
+            _revenue['currency'] = filters.reporting_type
             
             # add each territory
             output.append(_revenue)
@@ -146,25 +144,41 @@ def get_data(filters):
     return output
         
 def get_revenue(filters, month, territory, item_group):
-    if filters.reporting_type == "Qty":
-        selector = "`tabSales Invoice Item`.`qty`"
-    else:
-        selector = "`tabSales Invoice Item`.`base_net_amount`"
+    company = "%"
+    if filters.company:
+        company = filters.company
     sql_query = """
-        SELECT IFNULL(SUM({selector}), 0) AS `revenue`
+        SELECT 
+            IFNULL(SUM(`tabSales Invoice Item`.`qty`), 0) AS `qty`,
+            IFNULL(SUM(
+                IF(`tabCompany`.`default_currency` = "CHF",
+                   `tabSales Invoice Item`.`base_net_amount`,
+                   `tabSales Invoice Item`.`base_net_amount` / `tabCurrency Exchange`.`exchange_rate`
+                )), 0) AS `chf`,
+            IFNULL(SUM(
+                IF(`tabCompany`.`default_currency` = "EUR",
+                   `tabSales Invoice Item`.`base_net_amount`,
+                   `tabSales Invoice Item`.`base_net_amount` * `tabCurrency Exchange`.`exchange_rate`
+                )), 0) AS `eur`
         FROM `tabSales Invoice Item`
         LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
+        LEFT JOIN `tabCompany` ON `tabSales Invoice`.`company` = `tabCompany`.`name`
+        LEFT JOIN `tabCurrency Exchange` ON (
+            SUBSTRING(`tabSales Invoice`.`posting_date`, 1, 7) = SUBSTRING(`tabCurrency Exchange`.`date`, 1, 7)
+            AND `tabCurrency Exchange`.`from_currency` = "EUR"
+            AND `tabCurrency Exchange`.`to_currency` = "CHF"
+        )
         WHERE 
             `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`company` = "{company}"
+            AND `tabSales Invoice`.`company` LIKE "{company}"
             AND `tabSales Invoice`.`posting_date` LIKE "{year}-{month:02d}-%"
             AND `tabSales Invoice`.`territory` = "{territory}"
             AND `tabSales Invoice Item`.`item_group` = "{item_group}"
         ;
-    """.format(company=filters.company, year=filters.fiscal_year, month=month, 
-        territory=territory, item_group=item_group, selector=selector)
+    """.format(company=company, year=filters.fiscal_year, month=month, 
+        territory=territory, item_group=item_group)
     
-    revenue = frappe.db.sql(sql_query, as_dict=True)[0]['revenue']
+    revenue = frappe.db.sql(sql_query, as_dict=True)[0]
     
     return revenue
 
@@ -180,7 +194,7 @@ def get_item_groups():
     groups = frappe.get_all("Item Group", filters={'is_group': 0}, fields=['name'])
     group_list = []
     for g in groups:
-        if cint(g['name'][0]) > 0:
+        #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
             group_list.append(g['name'])
     group_list.sort()
     return group_list
