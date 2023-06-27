@@ -40,13 +40,13 @@ COLOURS = [
     "grey"
 ]
 
-def execute(filters=None):
+def execute(filters=None, debug=False):
     columns = get_columns(filters)
-    data = get_data(filters)
+    data = get_data(filters, debug)
     return columns, data
 
 def get_columns(filters):
-    if filters.reporting_type == "Qty":
+    if filters.get("reporting_type") == "Qty":
         month_data_type = "Float"
         data_type_options = ""
     else:
@@ -73,13 +73,13 @@ def get_columns(filters):
 
     return columns
 
-def get_data(filters):
+def get_data(filters, debug=False):
     # prepare
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     territory_list = get_territories()
     group_list = get_item_groups()
     # prepare forcast:
-    if cint(date.today().year) > cint(filters.fiscal_year):
+    if cint(date.today().year) > cint(filters.get("fiscal_year")):
         elapsed_month = 12          # the reporting year is complete
     else:
         elapsed_month = date.today().month - 1
@@ -101,7 +101,7 @@ def get_data(filters):
             'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=color, group=group),
             'ytd': 0,
             'fc': 0,
-            'currency': filters.reporting_type
+            'currency': filters.get("reporting_type")
         }
         for territory in territory_list:
             _revenue = {
@@ -111,7 +111,7 @@ def get_data(filters):
             base = 0
             for m in range (1, 13):
                 key = 'month{0}'.format(m)
-                _revenue[key] = get_revenue(filters, m, territory, group)[filters.reporting_type.lower()]
+                _revenue[key] = get_revenue(filters, m, territory, group, debug)[filters.get("reporting_type").lower()]
                 if not key in group_sums:
                     group_sums[key] = _revenue[key]
                 else:
@@ -121,7 +121,7 @@ def get_data(filters):
                     base += _revenue[key]
             _revenue['ytd'] = ytd
             _revenue['fc'] = (12 * base / elapsed_month) if elapsed_month > 0 else 0
-            _revenue['currency'] = filters.reporting_type
+            _revenue['currency'] = filters.get("reporting_type")
             
             # add each territory
             output.append(_revenue)
@@ -144,11 +144,11 @@ def get_data(filters):
     
     return output
         
-def get_revenue(filters, month, territory, item_group):
+def get_revenue(filters, month, territory, item_group, debug=False):
     company = "%"
-    if filters.company:
-        company = filters.company
-    first_last_day = calendar.monthrange(cint(filters.fiscal_year), month)
+    if filters.get("company"):
+        company = filters.get("company")
+    first_last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     invoices = frappe.db.sql("""
             SELECT 
                 `tabSales Invoice Item`.`base_net_amount`, 
@@ -162,7 +162,7 @@ def get_revenue(filters, month, territory, item_group):
                 AND `tabSales Invoice`.`territory` = "{territory}"
                 AND `tabSales Invoice Item`.`item_group` = "{item_group}"
             ;
-        """.format(company=company, year=filters.fiscal_year, month=month, from_day=first_last_day[0], to_day=first_last_day[1],
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, from_day=first_last_day[0], to_day=first_last_day[1],
             territory=territory, item_group=item_group)
         , as_dict=True)
     
@@ -173,7 +173,7 @@ def get_revenue(filters, month, territory, item_group):
           AND `from_currency` = "EUR"
           AND `to_currency` = "CHF"
         ;
-    """.format(year=filters.fiscal_year, month=month), as_dict=True)
+    """.format(year=filters.get("fiscal_year"), month=month), as_dict=True)
     if len(exchange_rate) > 0:
         exchange_rate = exchange_rate[0]['exchange_rate']
     else:
@@ -192,6 +192,11 @@ def get_revenue(filters, month, territory, item_group):
             revenue['chf'] += i['base_net_amount'] / exchange_rate
             revenue['eur'] += i['base_net_amount'] 
     
+    if debug:
+        print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
+            year=filters.get("fiscal_year"), month=month, item_group=item_group, territory=territory, 
+            chf=revenue['chf'], eur=revenue['eur']))
+            
     return revenue
 
 def get_territories():
@@ -210,3 +215,10 @@ def get_item_groups():
             group_list.append(g['name'])
     group_list.sort()
     return group_list
+
+def debug():
+    filters = {
+        'fiscal_year': date.today().year,
+        'reporting_type': "CHF"
+    }
+    execute(filters, debug=True)
