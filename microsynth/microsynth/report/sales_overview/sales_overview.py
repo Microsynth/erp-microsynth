@@ -200,7 +200,7 @@ def get_revenue(filters, month, territory, item_group, debug=False):
     return revenue
 
 def get_territories():
-    terr = frappe.get_all("Territory", filters={'is_group': 0}, fields=['name'])
+    terr = frappe.get_all("Territory", fields=['name'])
     territory_list = []
     for t in terr:
         territory_list.append(t['name'])
