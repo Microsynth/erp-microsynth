@@ -56,25 +56,29 @@ def create_customs_declaration():
 
 def get_delivery_notes_to_declare():
     sql_query = """SELECT
-        `tabDelivery Note`.`name` as `delivery_note`,
-        IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer`, `tabDelivery Note`.`customer`) as `customer`,
-        IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer_display`, `tabDelivery Note`.`customer_name`) as `customer_name`,
-        `tabDelivery Note`.`export_category`,
-        `tabDelivery Note`.`shipping_address_name` as `shipping_address`,
-        `tabCustomer`.`tax_id` as `tax_id`,
-        `tabAddress`.`country` as `country`,
-        `tabDelivery Note`.`currency`,
-        `tabDelivery Note`.`total` as `net_total`,
-        `tabDelivery Note`.`total_taxes_and_charges` as `taxes`,
-        `tabDelivery Note`.`grand_total`,
-        `tabDelivery Note`.`base_total`
-        FROM `tabDelivery Note`
-        JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
-        JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
-        WHERE `tabDelivery Note`.`export_category` IN ('AT', 'EU')
-        AND `tabDelivery Note`.`customs_declaration` is NULL
-        AND `tabDelivery Note`.`docstatus` <> 2
-        AND `tabDelivery Note`.`total` <> 0;
+            `tabDelivery Note`.`name` as `delivery_note`,
+            IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer`, `tabDelivery Note`.`customer`) as `customer`,
+            IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer_display`, `tabDelivery Note`.`customer_name`) as `customer_name`,
+            `tabDelivery Note`.`export_category`,
+            `tabDelivery Note`.`shipping_address_name` as `shipping_address`,
+            `tabCustomer`.`tax_id` as `tax_id`,
+            `tabAddress`.`country` as `country`,
+            `tabDelivery Note`.`currency`,
+            `tabDelivery Note`.`total` as `net_total`,
+            `tabDelivery Note`.`total_taxes_and_charges` as `taxes`,
+            `tabDelivery Note`.`grand_total`,
+            `tabDelivery Note`.`base_total`
+            FROM `tabDelivery Note` 
+            JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
+            JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
+            JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name` 
+                AND `tabDelivery Note Item`.`item_group` = "Shipping"
+                AND `tabDelivery Note Item`.`item_code` NOT IN ("1130", "1133"))
+            WHERE `tabDelivery Note`.`export_category` IN ('AT', 'EU')
+              AND `tabDelivery Note`.`customs_declaration` is NULL
+              AND `tabDelivery Note`.`docstatus` <> 2
+              AND `tabDelivery Note`.`total` <> 0
+              AND `tabDelivery Note Item`.`name` IS NOT NULL;
         """
     delivery_notes = frappe.db.sql(sql_query, as_dict=True)
     return delivery_notes
