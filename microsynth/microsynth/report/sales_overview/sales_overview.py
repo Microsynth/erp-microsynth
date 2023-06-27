@@ -76,7 +76,7 @@ def get_columns(filters):
 def get_data(filters, debug=False):
     # prepare
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
-    territory_list = get_territories()
+    # territory_list = get_territories()
     group_list = get_item_groups()
     # prepare forcast:
     if cint(date.today().year) > cint(filters.get("fiscal_year")):
@@ -89,7 +89,8 @@ def get_data(filters, debug=False):
     total = {
         'description': "<b>TOTAL</b>",
         'ytd': 0,
-        'fc': 0
+        'fc': 0,
+        'currency': filters.get("reporting_type")
     }
     for m in range (1, 13):
         key = 'month{0}'.format(m)
@@ -103,31 +104,32 @@ def get_data(filters, debug=False):
             'fc': 0,
             'currency': filters.get("reporting_type")
         }
-        for territory in territory_list:
-            _revenue = {
-                'description': """<span style="color: {color}; ">{territory}</span>""".format(color=color, territory=territory)
-            }
-            ytd = 0
-            base = 0
-            for m in range (1, 13):
-                key = 'month{0}'.format(m)
-                _revenue[key] = get_revenue(filters, m, territory, group, debug)[filters.get("reporting_type").lower()]
-                if not key in group_sums:
-                    group_sums[key] = _revenue[key]
-                else:
-                    group_sums[key] += _revenue[key]
-                ytd += _revenue[key]
-                if m <= elapsed_month:
-                    base += _revenue[key]
-            _revenue['ytd'] = ytd
-            _revenue['fc'] = (12 * base / elapsed_month) if elapsed_month > 0 else 0
-            _revenue['currency'] = filters.get("reporting_type")
-            
-            # add each territory
-            output.append(_revenue)
-            
-            group_sums['ytd'] += _revenue['ytd']
-            group_sums['fc'] = _revenue['fc']
+        # for territory in filters.get("territory"):
+        territory = filters.get("territory")
+        _revenue = {
+            'description': """<span style="color: {color}; ">{territory}</span>""".format(color=color, territory=territory)
+        }
+        ytd = 0
+        base = 0
+        for m in range (1, 13):
+            key = 'month{0}'.format(m)
+            _revenue[key] = get_revenue(filters, m, territory, group, debug)[filters.get("reporting_type").lower()]
+            if not key in group_sums:
+                group_sums[key] = _revenue[key]
+            else:
+                group_sums[key] += _revenue[key]
+            ytd += _revenue[key]
+            if m <= elapsed_month:
+                base += _revenue[key]
+        _revenue['ytd'] = ytd
+        _revenue['fc'] = (12 * base / elapsed_month) if elapsed_month > 0 else 0
+        _revenue['currency'] = filters.get("reporting_type")
+        
+        # add each territory
+        # output.append(_revenue)
+        
+        group_sums['ytd'] += _revenue['ytd']
+        group_sums['fc'] = _revenue['fc']
             
         # add group sum
         output.append(group_sums)
@@ -148,6 +150,9 @@ def get_revenue(filters, month, territory, item_group, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
+    territory = "%"
+    if filters.get("territory"):
+        territory = filters.get("territory")
     first_last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     invoices = frappe.db.sql("""
             SELECT 
@@ -159,7 +164,7 @@ def get_revenue(filters, month, territory, item_group, debug=False):
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-{from_day:02d}" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` = "{territory}"
+                AND `tabSales Invoice`.`territory` LIKE "{territory}"
                 AND `tabSales Invoice Item`.`item_group` = "{item_group}"
             ;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, from_day=first_last_day[0], to_day=first_last_day[1],
@@ -212,6 +217,7 @@ def get_item_groups():
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
+        if g['name'] not in ['ShippingThreshold', 'Financial Accounting']:
             group_list.append(g['name'])
     group_list.sort()
     return group_list
