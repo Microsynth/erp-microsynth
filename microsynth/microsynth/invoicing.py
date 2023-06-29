@@ -1005,7 +1005,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'taxPointDate':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
                         'description' :         "{0}% shipping tax".format(tax_rate)
                         }, 
-            'summary' : {'subtotal_amount' :        sales_invoice.base_total,
+            'summary' : {'subtotal_amount' :        sales_invoice.net_total,
                         'shipping_amount' :         shipping_costs,
                         'gross_amount' :            sales_invoice.rounded_total or sales_invoice.grand_total,
                         'total_amount_without_tax': sales_invoice.net_total,
