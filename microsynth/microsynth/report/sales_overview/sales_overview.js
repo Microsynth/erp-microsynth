@@ -27,7 +27,7 @@ frappe.query_reports["Sales Overview"] = {
             "default": "CHF"
         },
         {
-            "fieldname": "Territory",
+            "fieldname": "territory",
             "label": __("Territory"),
             "fieldtype": "Link",
             "options": "Territory"
