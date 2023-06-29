@@ -154,7 +154,8 @@ def get_revenue(filters, month, territory, item_group, debug=False):
     if filters.get("territory"):
         territory = filters.get("territory")
     first_last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
-    invoices = frappe.db.sql("""
+    
+    query = """
             SELECT 
                 `tabSales Invoice Item`.`base_net_amount`, 
                 `tabSales Invoice`.`company`
@@ -163,13 +164,13 @@ def get_revenue(filters, month, territory, item_group, debug=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
-                AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-{from_day:02d}" AND "{year}-{month:02d}-{to_day:02d}"
+                AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 AND `tabSales Invoice`.`territory` LIKE "{territory}"
                 AND `tabSales Invoice Item`.`item_group` = "{item_group}"
             ;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, from_day=first_last_day[0], to_day=first_last_day[1],
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=first_last_day[1],
             territory=territory, item_group=item_group)
-        , as_dict=True)
+    invoices = frappe.db.sql(query, as_dict=True)
     
     exchange_rate = frappe.db.sql("""
         SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
@@ -228,3 +229,14 @@ def debug():
         'reporting_type': "CHF"
     }
     execute(filters, debug=True)
+
+def test():
+    """
+    bench execute microsynth.microsynth.report.sales_overview.sales_overview.test
+    """
+    filters = {
+        'company': "Microsynth AG",
+        'fiscal_year': date.today().year,
+        'reporting_type': "CHF"
+    }    
+    return get_revenue(filters, month = 3, territory=None, item_group="3.1 DNA/RNA Synthese", debug=False)
