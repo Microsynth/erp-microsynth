@@ -2172,3 +2172,40 @@ def import_reminder_emails(file):
         set_reminder_to(task['contact'], task['customer'], task['email'])
         frappe.db.commit()
         i += 1
+
+
+def process_sample(sample):
+    label_name = frappe.get_value("Sample", sample, "sequencing_label")
+    label = frappe.get_doc("Sequencing Label", label_name)
+    label.status = "received"
+    label.save()
+    return
+
+
+def process_open_sequening_orders(customer):
+    """
+    Sets the Sequencing Label status of all a samples of the
+    open orders to 'received'.
+
+    run
+    bench execute microsynth.microsynth.migration.process_open_sequening_orders --kwargs "{'customer':'37497378'}"
+    """
+    query = """
+        SELECT `name`
+        FROM `tabSales Order`
+        WHERE 
+          `customer` = '{customer}'
+          AND `docstatus` = 1
+          AND `status` NOT IN ("Closed", "Completed")
+          AND `product_type` = "Sequencing"
+          AND `per_delivered` < 100;
+    """.format(customer=customer)
+
+    open_orders = frappe.db.sql(query, as_dict=True)
+
+    for o in open_orders:
+        order = frappe.get_doc("Sales Order", o['name'])
+        print("process {0}".format(order.name))
+        for s in order.samples:
+            process_sample(s.sample)
+    return

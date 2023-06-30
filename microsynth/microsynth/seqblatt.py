@@ -105,7 +105,11 @@ def processed_labels(content):
 
 
 def check_sales_order_completion():
-    # find sales orders that have no delivery note and are not closed
+    """
+    find sales orders that have no delivery note and are not closed
+    run 
+    bench execute microsynth.microsynth.seqblatt.check_sales_order_completion
+    """
     open_sequencing_sales_orders = frappe.db.sql("""
         SELECT `name`
         FROM `tabSales Order`
