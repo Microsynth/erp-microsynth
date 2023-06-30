@@ -169,7 +169,22 @@ def get_data(filters, debug=False):
     output.append(total)
     
     return output
-        
+
+def get_exchange_rate(year, month):
+    exchange_rate = frappe.db.sql("""
+        SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
+        FROM `tabCurrency Exchange`
+        WHERE `date` LIKE "{year}-{month:02d}-%"
+          AND `from_currency` = "EUR"
+          AND `to_currency` = "CHF"
+        ;
+    """.format(year=year, month=month), as_dict=True)
+    if len(exchange_rate) > 0:
+        exchange_rate = exchange_rate[0]['exchange_rate']
+    else:
+        exchange_rate = 1
+    return exchange_rate
+
 def get_item_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
@@ -196,22 +211,11 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             territory=territory, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
-    exchange_rate = frappe.db.sql("""
-        SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
-        FROM `tabCurrency Exchange`
-        WHERE `date` LIKE "{year}-{month:02d}-%"
-          AND `from_currency` = "EUR"
-          AND `to_currency` = "CHF"
-        ;
-    """.format(year=filters.get("fiscal_year"), month=month), as_dict=True)
-    if len(exchange_rate) > 0:
-        exchange_rate = exchange_rate[0]['exchange_rate']
-    else:
-        exchange_rate = 1
-    
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):
         company_currency[c['name']] = c['default_currency']
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
         
     revenue = {'eur': 0, 'chf': 0}
     for i in items:
