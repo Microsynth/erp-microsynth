@@ -115,7 +115,7 @@ def get_data(filters, debug=False):
         if group == "Genetic Analysis":
             query_groups = GENETIC_ANALSIS_GROUPS
         else:
-            query_groups = group
+            query_groups = [ group ]
         color = colors[group_count if group_count < len(colors) else (len(colors) - 1)]
         group_sums = {
             'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=color, group=group),
@@ -229,7 +229,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             
     return revenue
 
-def get_invoice_revenue(filters, month, item_group, debug=False):
+def get_invoice_revenue(filters, month, item_groups, debug=False):
     revenue = {'eur': 0, 'chf': 0}
     return revenue
 
