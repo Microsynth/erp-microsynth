@@ -250,7 +250,8 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`base_discount_amount`,
                 `tabSales Invoice`.`total_customer_credit`,
                 `tabSales Invoice`.`conversion_rate`,
-                `tabSales Invoice`.`company`
+                `tabSales Invoice`.`company`,
+                `tabSales Invoice`.`is_return`
             FROM `tabSales Invoice`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
@@ -277,7 +278,12 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
 
     revenue = {'eur': 0, 'chf': 0}
     for i in invoices:
-        invoice_revenue = i['base_total'] - (i['base_discount_amount'] - i['total_customer_credit'] * i['conversion_rate'])
+        if i['is_return']:
+            # The total customer credit is not multiplied with -1 when creating a credit note/return
+            invoice_revenue = i['base_total'] - (i['base_discount_amount'] + i['total_customer_credit'] * i['conversion_rate'])
+        else:
+            invoice_revenue = i['base_total'] - (i['base_discount_amount'] - i['total_customer_credit'] * i['conversion_rate'])
+        
         if company_currency[i['company']] == "CHF":
             revenue['chf'] += invoice_revenue
             revenue['eur'] += invoice_revenue * exchange_rate
