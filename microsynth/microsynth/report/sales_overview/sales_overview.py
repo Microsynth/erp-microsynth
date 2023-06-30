@@ -192,7 +192,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     territory = "%"
     if filters.get("territory"):
         territory = filters.get("territory")
-    first_last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
+    last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
     query = """
             SELECT 
@@ -207,7 +207,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 AND `tabSales Invoice`.`territory` LIKE "{territory}"
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=first_last_day[1],
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory=territory, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
@@ -234,7 +234,57 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     return revenue
 
 def get_invoice_revenue(filters, month, item_groups, debug=False):
+    company = "%"
+    if filters.get("company"):
+        company = filters.get("company")
+    territory = "%"
+    if filters.get("territory"):
+        territory = filters.get("territory")
+    last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
+    group_condition = "'{0}'".format("', '".join(item_groups))
+    
+    query = """
+            SELECT DISTINCT 
+                `tabSales Invoice`.`name`,
+                `tabSales Invoice`.`base_total`,
+                `tabSales Invoice`.`base_discount_amount`,
+                `tabSales Invoice`.`total_customer_credit`,
+                `tabSales Invoice`.`conversion_rate`,
+                `tabSales Invoice`.`company`
+            FROM `tabSales Invoice Item`
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`company` LIKE "{company}"
+                AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
+                AND `tabSales Invoice`.`territory` LIKE "{territory}"
+                AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
+            ;
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+            territory=territory, group_condition=group_condition)
+    invoices = frappe.db.sql(query, as_dict=True)
+    
+    company_currency = {}
+    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
+        company_currency[c['name']] = c['default_currency']
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
+
     revenue = {'eur': 0, 'chf': 0}
+    for i in invoices:
+        invoice_revenue = i['base_total'] - (i['base_discount_amount'] - i['total_customer_credit'] * i['conversion_rate'])
+        if company_currency[i['company']] == "CHF":
+            revenue['chf'] += invoice_revenue
+            revenue['eur'] += invoice_revenue * exchange_rate
+        else:
+            revenue['chf'] += invoice_revenue / exchange_rate
+            revenue['eur'] += invoice_revenue 
+
+    if debug:
+        print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
+            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
+            chf=revenue['chf'], eur=revenue['eur']))
+
     return revenue
 
 def get_territories():
