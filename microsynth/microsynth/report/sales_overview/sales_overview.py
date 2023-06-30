@@ -113,7 +113,12 @@ def get_data(filters, debug=False):
         base = 0
         for m in range (1, 13):
             key = 'month{0}'.format(m)
-            _revenue[key] = get_revenue(filters, m, territory, group, debug)[filters.get("reporting_type").lower()]
+            if filters.get("customer_credit_revenue") == "Credit deposit":
+                _revenue[key] = get_item_revenue(filters, m, group, debug)[filters.get("reporting_type").lower()]
+            elif filters.get("customer_credit_revenue") == "Credit allocation":
+                _revenue[key] = get_invoice_revenue(filters, m, group, debug)[filters.get("reporting_type").lower()]
+            else:
+                frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
             if not key in group_sums:
                 group_sums[key] = _revenue[key]
             else:
@@ -146,7 +151,7 @@ def get_data(filters, debug=False):
     
     return output
         
-def get_revenue(filters, month, territory, item_group, debug=False):
+def get_item_revenue(filters, month, item_group, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
@@ -170,7 +175,7 @@ def get_revenue(filters, month, territory, item_group, debug=False):
             ;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=first_last_day[1],
             territory=territory, item_group=item_group)
-    invoices = frappe.db.sql(query, as_dict=True)
+    items = frappe.db.sql(query, as_dict=True)
     
     exchange_rate = frappe.db.sql("""
         SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
@@ -190,7 +195,7 @@ def get_revenue(filters, month, territory, item_group, debug=False):
         company_currency[c['name']] = c['default_currency']
         
     revenue = {'eur': 0, 'chf': 0}
-    for i in invoices:
+    for i in items:
         if company_currency[i['company']] == "CHF":
             revenue['chf'] += i['base_net_amount']
             revenue['eur'] += i['base_net_amount'] * exchange_rate
@@ -203,6 +208,10 @@ def get_revenue(filters, month, territory, item_group, debug=False):
             year=filters.get("fiscal_year"), month=month, item_group=item_group, territory=territory, 
             chf=revenue['chf'], eur=revenue['eur']))
             
+    return revenue
+
+def get_invoice_revenue(filters, month, item_group, debug=False):
+    revenue = {'eur': 0, 'chf': 0}
     return revenue
 
 def get_territories():
@@ -239,4 +248,4 @@ def test():
         'fiscal_year': date.today().year,
         'reporting_type': "CHF"
     }    
-    return get_revenue(filters, month = 3, territory=None, item_group="3.1 DNA/RNA Synthese", debug=False)
+    return get_item_revenue(filters, month = 3, item_group="3.1 DNA/RNA Synthese", debug=False)

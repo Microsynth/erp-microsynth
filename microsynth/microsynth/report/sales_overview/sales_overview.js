@@ -11,6 +11,12 @@ frappe.query_reports["Sales Overview"] = {
             "options": "Company"
         },
         {
+            "fieldname": "territory",
+            "label": __("Territory"),
+            "fieldtype": "Link",
+            "options": "Territory"
+        },
+        {
             "fieldname": "fiscal_year",
             "label": __("Fiscal Year"),
             "fieldtype": "Link",
@@ -27,10 +33,17 @@ frappe.query_reports["Sales Overview"] = {
             "default": "CHF"
         },
         {
-            "fieldname": "territory",
-            "label": __("Territory"),
-            "fieldtype": "Link",
-            "options": "Territory"
+            "fieldname": "customer_credit_revenue",
+            "label": __("Customer Credits Revenue"),
+            "fieldtype": "Select",
+            "options": "Credit deposit\nCredit allocation",
+            "reqd": 1,
+            "default": "Credit allocation"
+        },
+        {
+            "fieldname": "aggregate_genetic_analyis",
+            "label": __("Aggregate Genetic Analysis"),
+            "fieldtype": "Check"
         }
     ]
 };
