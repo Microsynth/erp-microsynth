@@ -251,14 +251,19 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`total_customer_credit`,
                 `tabSales Invoice`.`conversion_rate`,
                 `tabSales Invoice`.`company`
-            FROM `tabSales Invoice Item`
-            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            FROM `tabSales Invoice`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 AND `tabSales Invoice`.`territory` LIKE "{territory}"
-                AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
+                AND (
+                    SELECT `tabSales Invoice Item`.`item_group`
+                    FROM `tabSales Invoice Item` 
+                    WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                    ORDER BY IDX
+                    LIMIT 1
+                ) IN ({group_condition})
             ;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory=territory, group_condition=group_condition)
