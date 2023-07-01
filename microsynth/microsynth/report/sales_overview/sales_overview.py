@@ -31,12 +31,21 @@ PRODUCT_TYPE_MAP = {
     "Library Prep and NGS": ["NGS"],
     "Ecogenics": ["Service"]
 }
+GENETIC_ANALSIS_GROUPS = ["3.3 Isolationen", "3.4 Genotyping", "3.5 PCR", "3.6 Library Prep", "3.7 NGS"]
 COLOURS = [
     "blue",
     "green",
-    "grey",
-    "red",
     "orange",
+    "orange",
+    "orange",
+    "red",
+    "red", 
+    "grey"
+]
+AGGREGATED_COLOURS = [
+    "blue",
+    "green",
+    "red",
     "grey"
 ]
 
@@ -77,7 +86,13 @@ def get_data(filters, debug=False):
     # prepare
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     # territory_list = get_territories()
-    group_list = get_item_groups()
+    if filters.get("aggregate_genetic_analyis"):
+        group_list = aggregate_genetic_analysis(get_item_groups())
+        colors = AGGREGATED_COLOURS
+    else:
+        group_list = get_item_groups()
+        colors = COLOURS
+
     # prepare forcast:
     if cint(date.today().year) > cint(filters.get("fiscal_year")):
         elapsed_month = 12          # the reporting year is complete
@@ -97,7 +112,11 @@ def get_data(filters, debug=False):
         total[key] = 0
     # create matrix
     for group in group_list:
-        color = COLOURS[group_count if group_count < len(COLOURS) else (len(COLOURS) - 1)]
+        if group == "Genetic Analysis":
+            query_groups = GENETIC_ANALSIS_GROUPS
+        else:
+            query_groups = [ group ]
+        color = colors[group_count if group_count < len(colors) else (len(colors) - 1)]
         group_sums = {
             'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=color, group=group),
             'ytd': 0,
@@ -113,7 +132,12 @@ def get_data(filters, debug=False):
         base = 0
         for m in range (1, 13):
             key = 'month{0}'.format(m)
-            _revenue[key] = get_revenue(filters, m, territory, group, debug)[filters.get("reporting_type").lower()]
+            if filters.get("customer_credit_revenue") == "Credit deposit":
+                _revenue[key] = get_item_revenue(filters, m, query_groups, debug)[filters.get("reporting_type").lower()]
+            elif filters.get("customer_credit_revenue") == "Credit allocation":
+                _revenue[key] = get_invoice_revenue(filters, m, query_groups, debug)[filters.get("reporting_type").lower()]
+            else:
+                frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
             if not key in group_sums:
                 group_sums[key] = _revenue[key]
             else:
@@ -145,16 +169,31 @@ def get_data(filters, debug=False):
     output.append(total)
     
     return output
-        
-def get_revenue(filters, month, territory, item_group, debug=False):
+
+def get_exchange_rate(year, month):
+    exchange_rate = frappe.db.sql("""
+        SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
+        FROM `tabCurrency Exchange`
+        WHERE `date` LIKE "{year}-{month:02d}-%"
+          AND `from_currency` = "EUR"
+          AND `to_currency` = "CHF"
+        ;
+    """.format(year=year, month=month), as_dict=True)
+    if len(exchange_rate) > 0:
+        exchange_rate = exchange_rate[0]['exchange_rate']
+    else:
+        exchange_rate = 1
+    return exchange_rate
+
+def get_item_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
     territory = "%"
     if filters.get("territory"):
         territory = filters.get("territory")
-    first_last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
-    
+    last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
+    group_condition = "'{0}'".format("', '".join(item_groups))
     query = """
             SELECT 
                 `tabSales Invoice Item`.`base_net_amount`, 
@@ -166,31 +205,20 @@ def get_revenue(filters, month, territory, item_group, debug=False):
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 AND `tabSales Invoice`.`territory` LIKE "{territory}"
-                AND `tabSales Invoice Item`.`item_group` = "{item_group}"
+                AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=first_last_day[1],
-            territory=territory, item_group=item_group)
-    invoices = frappe.db.sql(query, as_dict=True)
-    
-    exchange_rate = frappe.db.sql("""
-        SELECT IFNULL(`exchange_rate`, 1) AS `exchange_rate`
-        FROM `tabCurrency Exchange`
-        WHERE `date` LIKE "{year}-{month:02d}-%"
-          AND `from_currency` = "EUR"
-          AND `to_currency` = "CHF"
-        ;
-    """.format(year=filters.get("fiscal_year"), month=month), as_dict=True)
-    if len(exchange_rate) > 0:
-        exchange_rate = exchange_rate[0]['exchange_rate']
-    else:
-        exchange_rate = 1
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+            territory=territory, group_condition=group_condition)
+    items = frappe.db.sql(query, as_dict=True)
     
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):
         company_currency[c['name']] = c['default_currency']
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
         
     revenue = {'eur': 0, 'chf': 0}
-    for i in invoices:
+    for i in items:
         if company_currency[i['company']] == "CHF":
             revenue['chf'] += i['base_net_amount']
             revenue['eur'] += i['base_net_amount'] * exchange_rate
@@ -200,9 +228,86 @@ def get_revenue(filters, month, territory, item_group, debug=False):
     
     if debug:
         print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_group=item_group, territory=territory, 
+            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
             chf=revenue['chf'], eur=revenue['eur']))
             
+    return revenue
+
+def get_invoice_revenue(filters, month, item_groups, debug=False):
+    company = "%"
+    if filters.get("company"):
+        company = filters.get("company")
+    territory = "%"
+    if filters.get("territory"):
+        territory = filters.get("territory")
+    last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
+    group_condition = "'{0}'".format("', '".join(item_groups))
+
+    # Define the Item Group of an invoice by the item with the highest amount. 
+    # Use the absolute value of the base_amount due to credit notes/returns and 
+    # customer credits. 
+    # Ignore 'Shipping' items. 
+    # Important Note: 
+    # This excludes invoices with only 'Shipping' items. Though, these are usually
+    # intercompany invoices.
+
+    query = """
+            SELECT DISTINCT 
+                `tabSales Invoice`.`name`,
+                `tabSales Invoice`.`base_total`,
+                `tabSales Invoice`.`base_discount_amount`,
+                `tabSales Invoice`.`total_customer_credit`,
+                `tabSales Invoice`.`conversion_rate`,
+                `tabSales Invoice`.`company`,
+                `tabSales Invoice`.`is_return`
+            FROM `tabSales Invoice`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`company` LIKE "{company}"
+                AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
+                AND `tabSales Invoice`.`territory` LIKE "{territory}"
+                AND (
+                    SELECT `tabSales Invoice Item`.`item_group`
+                    FROM `tabSales Invoice Item` 
+                    WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                    AND `tabSales Invoice Item`.`item_group` <> 'Shipping'
+                    ORDER BY ABS(`tabSales Invoice Item`.`base_amount`) DESC
+                    LIMIT 1
+                ) IN ({group_condition})
+            ;
+        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+            territory=territory, group_condition=group_condition)
+    invoices = frappe.db.sql(query, as_dict=True)
+    
+    company_currency = {}
+    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
+        company_currency[c['name']] = c['default_currency']
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
+
+    revenue = {'eur': 0, 'chf': 0}
+    for i in invoices:
+        if i['is_return']:
+            # The total customer credit is not multiplied with -1 when creating a credit note/return
+            invoice_revenue = i['base_total'] - (i['base_discount_amount'] + i['total_customer_credit'] * i['conversion_rate'])
+        else:
+            invoice_revenue = i['base_total'] - (i['base_discount_amount'] - i['total_customer_credit'] * i['conversion_rate'])
+        
+        if company_currency[i['company']] == "CHF":
+            revenue['chf'] += invoice_revenue
+            revenue['eur'] += invoice_revenue * exchange_rate
+        else:
+            revenue['chf'] += invoice_revenue / exchange_rate
+            revenue['eur'] += invoice_revenue 
+
+    if debug:
+        print("{year}-{month}: {item_groups}, {territory}: CHF {chf}, EUR {eur}".format(
+            year=filters.get("fiscal_year"), month=month, item_groups=item_groups, territory=territory, 
+            chf=revenue['chf'], eur=revenue['eur']))
+        print("--")
+        for i in invoices:
+            print("{0}\t{1}".format(i['name'], i['base_total']))
+
     return revenue
 
 def get_territories():
@@ -223,6 +328,18 @@ def get_item_groups():
     group_list.sort()
     return group_list
 
+def aggregate_genetic_analysis(groups):
+    new_groups = []
+    for group in groups:
+        if group in GENETIC_ANALSIS_GROUPS:
+            if "Genetic Analysis" not in new_groups:
+                new_groups.append("Genetic Analysis") 
+            else:
+                continue
+        else:
+            new_groups.append(group)
+    return new_groups
+
 def debug():
     filters = {
         'fiscal_year': date.today().year,
@@ -235,8 +352,10 @@ def test():
     bench execute microsynth.microsynth.report.sales_overview.sales_overview.test
     """
     filters = {
-        'company': "Microsynth AG",
+        'company': None,
+        'territory': None,
         'fiscal_year': date.today().year,
         'reporting_type': "CHF"
     }    
-    return get_revenue(filters, month = 3, territory=None, item_group="3.1 DNA/RNA Synthese", debug=False)
+    item_groups = ["Shipping"]
+    return get_invoice_revenue(filters, month = 3, item_groups=item_groups, debug=True)
