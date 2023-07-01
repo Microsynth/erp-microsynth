@@ -242,7 +242,15 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
         territory = filters.get("territory")
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
-    
+
+    # Define the Item Group of an invoice by the item with the highest amount. 
+    # Use the absolute value of the base_amount due to credit notes/returns and 
+    # customer credits. 
+    # Ignore 'Shipping' items. 
+    # Important Note: 
+    # This excludes invoices with only 'Shipping' items. Though, these are usually
+    # intercompany invoices.
+
     query = """
             SELECT DISTINCT 
                 `tabSales Invoice`.`name`,
@@ -262,7 +270,8 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                     SELECT `tabSales Invoice Item`.`item_group`
                     FROM `tabSales Invoice Item` 
                     WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-                    ORDER BY IDX
+                    AND `tabSales Invoice Item`.`item_group` <> 'Shipping'
+                    ORDER BY ABS(`tabSales Invoice Item`.`base_amount`) DESC
                     LIMIT 1
                 ) IN ({group_condition})
             ;
@@ -292,9 +301,12 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
             revenue['eur'] += invoice_revenue 
 
     if debug:
-        print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
+        print("{year}-{month}: {item_groups}, {territory}: CHF {chf}, EUR {eur}".format(
+            year=filters.get("fiscal_year"), month=month, item_groups=item_groups, territory=territory, 
             chf=revenue['chf'], eur=revenue['eur']))
+        print("--")
+        for i in invoices:
+            print("{0}\t{1}".format(i['name'], i['base_total']))
 
     return revenue
 
@@ -340,8 +352,10 @@ def test():
     bench execute microsynth.microsynth.report.sales_overview.sales_overview.test
     """
     filters = {
-        'company': "Microsynth AG",
+        'company': None,
+        'territory': None,
         'fiscal_year': date.today().year,
         'reporting_type': "CHF"
     }    
-    return get_item_revenue(filters, month = 3, item_group="3.1 DNA/RNA Synthese", debug=False)
+    item_groups = ["Shipping"]
+    return get_invoice_revenue(filters, month = 3, item_groups=item_groups, debug=True)
