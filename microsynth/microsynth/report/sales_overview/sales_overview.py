@@ -270,8 +270,10 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                     SELECT `tabSales Invoice Item`.`item_group`
                     FROM `tabSales Invoice Item` 
                     WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-                    AND `tabSales Invoice Item`.`item_group` <> 'Shipping'
-                    ORDER BY ABS(`tabSales Invoice Item`.`base_amount`) DESC
+                    ORDER BY 
+                        IF (`tabSales Invoice Item`.`item_group` = 'Shipping', 
+                            -1,
+                            ABS(`tabSales Invoice Item`.`base_amount`)) DESC
                     LIMIT 1
                 ) IN ({group_condition})
             ;
@@ -306,7 +308,7 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
             chf=revenue['chf'], eur=revenue['eur']))
         print("--")
         for i in invoices:
-            print("{0}\t{1}".format(i['name'], i['base_total']))
+            print("{0}\t{1}".format(i['name'].ljust(20), i['base_total']))
 
     return revenue
 
