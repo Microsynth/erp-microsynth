@@ -11,7 +11,7 @@
 {%- set company = frappe.get_doc("Company", doc.company) %}
 <supplier_party vat_id="{{ (company.tax_id or '').replace(' ', '') }}">
     {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
-    <address street="{{ company_address.address_line1 }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+    <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
     {%- set account = frappe.get_doc("Account", doc.debit_to) %}
     <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
 </supplier_party>
