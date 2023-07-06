@@ -2241,3 +2241,74 @@ def update_territories():
         update_territory("Sales Invoice", si['name'], si['territory'])
         frappe.db.commit()
         i += 1
+
+
+def revise_delivery_note(delivery_note):
+    """
+    run
+    bench execute microsynth.microsynth.migration.revise_delivery_note --kwargs "{'delivery_note': 'DN-BAL-23142611'}"
+    """
+    from microsynth.microsynth.utils import find_tax_template
+    
+    original = frappe.get_doc("Delivery Note", delivery_note)
+    original.cancel()
+
+    new = frappe.get_doc(original.as_dict())
+    new.name = None
+    new.docstatus = 0
+    new.set_posting_time = 1
+    new.amended_from = original.name
+    new.creation = datetime.now()
+
+    if new.product_type == "Oligos" or new.product_type == "Material":
+        category = "Material"
+    else:
+        category = "Service"
+    if new.oligos is not None and len(new.oligos) > 0:
+        category = "Material"
+
+    tax_template = find_tax_template(new.company, new.customer, new.shipping_address_name, category)
+    new.taxes_and_charges = tax_template
+    
+    tax_template = frappe.get_doc("Sales Taxes and Charges Template", new.taxes_and_charges)
+    new.taxes = []
+    for tax in tax_template.taxes:
+        t = {
+            'charge_type': tax.charge_type,
+            'account_head': tax.account_head,
+            'description': tax.description,
+            'cost_center': tax.cost_center,
+            'rate': tax.rate
+        }    
+        new.append("taxes", t)
+
+    new.insert()
+    new.submit()
+    
+    return
+
+
+def revise_delivery_notes_with_missing_taxes():
+    """
+    run
+    bench execute microsynth.microsynth.migration.revise_delivery_notes_with_missing_taxes
+    """
+    query = """
+    SELECT `name`, `web_order_id`, `status`, `net_total`
+    FROM `tabDelivery Note` 
+    WHERE `docstatus` < 2
+    AND `grand_total` = `net_total` 
+    AND `taxes_and_charges` LIKE "%7.7%" 
+    AND `net_total` > 0
+    AND `status` <> 'Completed';
+    """
+
+    delivery_notes = frappe.db.sql(query, as_dict=True)
+
+    i = 0
+    length = len(delivery_notes)
+    for dn in delivery_notes:
+        print("{progress}% process '{dn}'".format(dn = dn['name'], progress = int(100 * i / length)))
+        revise_delivery_note(dn['name'])
+        frappe.db.commit()
+        i += 1
