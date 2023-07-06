@@ -329,7 +329,7 @@ def get_item_groups():
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
-        if g['name'] not in ['ShippingThreshold', 'Financial Accounting']:
+        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices']:
             group_list.append(g['name'])
     group_list.sort()
     return group_list
