@@ -2288,6 +2288,18 @@ def revise_delivery_note(delivery_note):
     return
 
 
+def remove_hold_invoice_flag(delivery_note):
+    """
+    run
+    bench execute microsynth.microsynth.migration.remove_hold_invoice_flag --kwargs "{'delivery_note': 'DN-BAL-23116237-1'}"
+    """
+    delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+    sales_order_name = delivery_note.items[0].against_sales_order
+    so = frappe.get_doc("Sales Order", sales_order_name)
+    so.hold_invoice = 0
+    so.save()
+
+
 def revise_delivery_notes_with_missing_taxes():
     """
     run
@@ -2310,5 +2322,6 @@ def revise_delivery_notes_with_missing_taxes():
     for dn in delivery_notes:
         print("{progress}% process '{dn}'".format(dn = dn['name'], progress = int(100 * i / length)))
         revise_delivery_note(dn['name'])
+        remove_hold_invoice_flag(dn['name'])
         frappe.db.commit()
         i += 1
