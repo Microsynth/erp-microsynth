@@ -112,6 +112,10 @@ def get_data(filters, debug=False):
         total[key] = 0
     # create matrix
     for group in group_list:
+        # skip customer credits in 'Credit allocation' mode to prevent counting revenue twice
+        if filters.get("customer_credit_revenue") == "Credit allocation" and group == "Customer Credits":
+            continue
+
         if group == "Genetic Analysis":
             query_groups = GENETIC_ANALSIS_GROUPS
         else:
