@@ -193,6 +193,8 @@ def get_user_details(person_id, client="webshop"):
     contact = frappe.get_doc("Contact", person_id)
     if not contact:
         return {'success': False, 'message': "Person not found"}
+    if contact.status == "Disabled":
+        return {'success': False, 'message': "Contact '{}' is disabled".format(contact.name)}
     # fetch customer
     # TODO: replace by utils.get_customer to get the customer_id
     customer_id = None
