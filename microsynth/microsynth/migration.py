@@ -2209,3 +2209,35 @@ def process_open_sequening_orders(customer):
         for s in order.samples:
             process_sample(s.sample)
     return
+
+
+def update_territory(dt, dn, territory):
+    query = """UPDATE `tab{dt}`
+        SET `territory` = "{territory}"
+        WHERE `name` = "{dn}"
+    """.format(dt=dt, dn=dn, territory=territory)
+    frappe.db.sql(query)    
+    return
+
+
+def update_territories():
+    """
+    run
+    bench execute microsynth.microsynth.migration.update_territories
+    """
+
+    sales_invoice_query = """
+    SELECT `tabSales Invoice`.`name`, `tabCustomer`.`territory` 
+    FROM `tabSales Invoice` 
+    LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
+    WHERE `tabSales Invoice`.`territory` LIKE "All%";"""
+
+    sales_invoices = frappe.db.sql(sales_invoice_query, as_dict=True)
+
+    i = 0
+    length = len(sales_invoices)
+    for si in sales_invoices:
+        print("{progress}% process '{dn}'".format(dn = si['name'], progress = int(100 * i / length)))
+        update_territory("Sales Invoice", si['name'], si['territory'])
+        frappe.db.commit()
+        i += 1
