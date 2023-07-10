@@ -225,9 +225,9 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     for i in items:
         if company_currency[i['company']] == "CHF":
             revenue['chf'] += i['base_net_amount']
-            revenue['eur'] += i['base_net_amount'] * exchange_rate
+            revenue['eur'] += i['base_net_amount'] / exchange_rate
         else:
-            revenue['chf'] += i['base_net_amount'] / exchange_rate
+            revenue['chf'] += i['base_net_amount'] * exchange_rate
             revenue['eur'] += i['base_net_amount'] 
     
     if debug:
@@ -301,9 +301,9 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
         
         if company_currency[i['company']] == "CHF":
             revenue['chf'] += invoice_revenue
-            revenue['eur'] += invoice_revenue * exchange_rate
+            revenue['eur'] += invoice_revenue / exchange_rate
         else:
-            revenue['chf'] += invoice_revenue / exchange_rate
+            revenue['chf'] += invoice_revenue * exchange_rate
             revenue['eur'] += invoice_revenue 
 
     if debug:
