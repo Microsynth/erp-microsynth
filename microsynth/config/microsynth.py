@@ -324,6 +324,12 @@ def get_data():
                         "label": _("Intrastat"),
                         "description": _("Intrastat"),
                         "is_query_report": True
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Abacus Export File",
+                       "label": _("Abacus Export"),
+                       "description": _("Abacus Export")
                     }
             ]
         },
