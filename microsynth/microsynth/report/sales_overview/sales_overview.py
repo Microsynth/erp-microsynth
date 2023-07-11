@@ -188,7 +188,7 @@ def get_exchange_rate(year, month):
     else:
         exchange_rate = 1
     return exchange_rate
-
+        
 def get_item_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
@@ -200,7 +200,9 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     group_condition = "'{0}'".format("', '".join(item_groups))
     query = """
             SELECT 
-                `tabSales Invoice Item`.`base_net_amount`, 
+                `tabSales Invoice Item`.`parent` AS `document`,
+                `tabSales Invoice Item`.`base_net_amount` AS `base_net_amount`, 
+                `tabSales Invoice Item`.`item_group` AS `remarks`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
@@ -257,13 +259,13 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
 
     query = """
             SELECT DISTINCT 
-                `tabSales Invoice`.`name`,
-                `tabSales Invoice`.`base_total`,
-                `tabSales Invoice`.`base_discount_amount`,
-                `tabSales Invoice`.`total_customer_credit`,
-                `tabSales Invoice`.`conversion_rate`,
-                `tabSales Invoice`.`company`,
-                `tabSales Invoice`.`is_return`
+                `tabSales Invoice`.`name` AS `document`,
+                IF (`tabSales Invoice`.`is_return` = 1,
+                  `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` + `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`),
+                  `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` - `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`)
+                  ) AS `base_net_amount`,
+                CONCAT("Customer credit: ", `tabSales Invoice`.`total_customer_credit`) AS `remarks`,
+                `tabSales Invoice`.`company`
             FROM `tabSales Invoice`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
@@ -292,19 +294,13 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
     exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
 
     revenue = {'eur': 0, 'chf': 0}
-    for i in invoices:
-        if i['is_return']:
-            # The total customer credit is not multiplied with -1 when creating a credit note/return
-            invoice_revenue = i['base_total'] - (i['base_discount_amount'] + i['total_customer_credit'] * i['conversion_rate'])
-        else:
-            invoice_revenue = i['base_total'] - (i['base_discount_amount'] - i['total_customer_credit'] * i['conversion_rate'])
-        
+    for i in invoices:        
         if company_currency[i['company']] == "CHF":
-            revenue['chf'] += invoice_revenue
-            revenue['eur'] += invoice_revenue / exchange_rate
+            revenue['chf'] += i['base_net_amount']
+            revenue['eur'] += i['base_net_amount'] / exchange_rate
         else:
-            revenue['chf'] += invoice_revenue * exchange_rate
-            revenue['eur'] += invoice_revenue 
+            revenue['chf'] += i['base_net_amount'] * exchange_rate
+            revenue['eur'] += i['base_net_amount'] 
 
     if debug:
         print("{year}-{month}: {item_groups}, {territory}: CHF {chf}, EUR {eur}".format(
