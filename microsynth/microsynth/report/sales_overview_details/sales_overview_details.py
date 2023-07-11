@@ -13,7 +13,7 @@ def execute(filters=None):
 
 def get_columns(filters):
     columns = [
-        {"label": _("Document"), "fieldname": "document", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
+        {"label": _("Document"), "fieldname": "document", "fieldtype": "Link", "options": "Sales Invoice", "width": 150},
         {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "options": "base_currency", "width": 120},
         {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "options": "currency_chf", "width": 120},
         {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "options": "currency_eur", "width": 120},

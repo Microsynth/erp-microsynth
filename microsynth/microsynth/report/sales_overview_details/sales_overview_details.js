@@ -37,14 +37,6 @@ frappe.query_reports["Sales Overview Details"] = {
             "reqd": 1
         },
         {
-            "fieldname": "reporting_type",
-            "label": __("Reporting Type"),
-            "fieldtype": "Select",
-            "options": "CHF\nEUR",
-            "reqd": 1,
-            "default": "CHF"
-        },
-        {
             "fieldname": "customer_credit_revenue",
             "label": __("Customer Credits Revenue"),
             "fieldtype": "Select",

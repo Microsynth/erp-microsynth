@@ -295,7 +295,7 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                   `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` + `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`),
                   `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` - `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`)
                   ) AS `base_net_amount`,
-                CONCAT("Customer credit: ", `tabSales Invoice`.`total_customer_credit`) AS `remarks`,
+                CONCAT("Customer credit: ", `tabSales Invoice`.`currency`, " ", ROUND(`tabSales Invoice`.`total_customer_credit`, 2)) AS `remarks`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice`
             WHERE 
