@@ -27,6 +27,9 @@ frappe.ui.form.on('Sales Invoice', {
                 close_against_expense(frm);
             }, __("Close"));
         };
+        if (frm.doc.__islocal) {
+            get_exchange_rate(frm);
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -48,6 +51,9 @@ frappe.ui.form.on('Sales Invoice', {
     is_return(frm) {
         prepare_naming_series(frm);
         setTimeout(() => { set_naming_series(frm); }, 1000);
+    },
+    posting_date(frm) {
+        get_exchange_rate(frm);
     }
 });
 
@@ -146,3 +152,20 @@ function close_against_expense(frm) {
         __('OK')
     )
 }
+
+function get_exchange_rate(frm) {
+    if (frm.doc.is_return === 0) {
+        frappe.call({
+            'method': 'erpnextswiss.erpnextswiss.finance.get_exchange_rate',
+            'args': {
+                'from_currency': frm.doc.currency,
+                'company': frm.doc.company,
+                'transaction_date': frm.doc.posting_date
+            },
+            'callback': function(response) {
+                cur_frm.set_value("conversion_rate", response.message);
+            }
+        });
+    }
+}
+

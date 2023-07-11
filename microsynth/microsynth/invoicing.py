@@ -25,6 +25,7 @@ import datetime
 from datetime import datetime, timedelta
 import json
 import random
+from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 
 @frappe.whitelist()
 def create_invoices(mode, company, customer):
@@ -330,6 +331,9 @@ def make_invoice(delivery_note):
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
     
     sales_invoice.insert()
+    # get time-true conversion rate (not from predecessor)
+    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
@@ -408,6 +412,9 @@ def make_punchout_invoice(delivery_note):
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
 
     sales_invoice.insert()
+    # get time-true conversion rate (not from predecessor)
+    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
@@ -462,6 +469,9 @@ def make_collective_invoice(delivery_notes):
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
 
     sales_invoice.insert()
+    # get time-true conversion rate (not from predecessor)
+    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
