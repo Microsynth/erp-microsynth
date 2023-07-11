@@ -49,6 +49,9 @@ AGGREGATED_COLOURS = [
     "grey"
 ]
 
+def get_genetic_analysis_groups():
+    return GENETIC_ANALSIS_GROUPS
+    
 def execute(filters=None, debug=False):
     columns = get_columns(filters)
     data = get_data(filters, debug)
