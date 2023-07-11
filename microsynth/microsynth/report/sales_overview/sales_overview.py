@@ -108,7 +108,8 @@ def get_data(filters, debug=False):
         'description': "<b>TOTAL</b>",
         'ytd': 0,
         'fc': 0,
-        'currency': filters.get("reporting_type")
+        'currency': filters.get("reporting_type"),
+        'group': 'Total'
     }
     for m in range (1, 13):
         key = 'month{0}'.format(m)
@@ -128,12 +129,14 @@ def get_data(filters, debug=False):
             'description': """<span style="color: {color}; "><b>{group}</b></span>""".format(color=color, group=group),
             'ytd': 0,
             'fc': 0,
-            'currency': filters.get("reporting_type")
+            'currency': filters.get("reporting_type"),
+            'group': group
         }
         # for territory in filters.get("territory"):
         territory = filters.get("territory")
         _revenue = {
-            'description': """<span style="color: {color}; ">{territory}</span>""".format(color=color, territory=territory)
+            'description': """<span style="color: {color}; ">{territory}</span>""".format(color=color, territory=territory),
+            'group': group
         }
         ytd = 0
         base = 0
