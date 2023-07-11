@@ -136,12 +136,7 @@ def get_data(filters, debug=False):
         base = 0
         for m in range (1, 13):
             key = 'month{0}'.format(m)
-            if filters.get("customer_credit_revenue") == "Credit deposit":
-                _revenue[key] = get_item_revenue(filters, m, query_groups, debug)[filters.get("reporting_type").lower()]
-            elif filters.get("customer_credit_revenue") == "Credit allocation":
-                _revenue[key] = get_invoice_revenue(filters, m, query_groups, debug)[filters.get("reporting_type").lower()]
-            else:
-                frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
+            _revenue[key] = get_revenue(filters, m, query_groups, debug)[filters.get("reporting_type").lower()]
             if not key in group_sums:
                 group_sums[key] = _revenue[key]
             else:
@@ -188,7 +183,53 @@ def get_exchange_rate(year, month):
     else:
         exchange_rate = 1
     return exchange_rate
+    
+
+def get_revenue(filters, month, item_groups, debug=False):
+    # fetch list of documents
+    details = get_revenue_details(filters, month, item_groups, debug=False)
+    
+    # create sums per chf and eur
+    revenue = {'eur': 0, 'chf': 0}
+    for i in details:
+        revenue['chf'] += i['chf']
+        revenue['eur'] += i['eur']
         
+    if debug:
+        print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
+            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
+            chf=revenue['chf'], eur=revenue['eur']))
+            
+    return revenue
+
+
+def get_revenue_details(filters, month, item_groups, debug=False):
+    # get raw document list depending on variant
+    if filters.get("customer_credit_revenue") == "Credit deposit":
+        details = get_item_revenue(filters, month, item_groups, debug)
+    elif filters.get("customer_credit_revenue") == "Credit allocation":
+        details = get_invoice_revenue(filters, month, item_groups, debug)
+    else:
+        frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
+    
+    # add chf and eur columns
+    company_currency = {}
+    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
+        company_currency[c['name']] = c['default_currency']
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
+        
+    for i in details:
+        if company_currency[i['company']] == "CHF":
+            i['chf'] = i['base_net_amount']
+            i['eur'] = i['base_net_amount'] / exchange_rate
+        else:
+            i['chf'] = i['base_net_amount'] * exchange_rate
+            i['eur'] = i['base_net_amount'] 
+    
+    return details
+
+
 def get_item_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
@@ -217,27 +258,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             territory=territory, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
-    company_currency = {}
-    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
-        company_currency[c['name']] = c['default_currency']
-    
-    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
-        
-    revenue = {'eur': 0, 'chf': 0}
-    for i in items:
-        if company_currency[i['company']] == "CHF":
-            revenue['chf'] += i['base_net_amount']
-            revenue['eur'] += i['base_net_amount'] / exchange_rate
-        else:
-            revenue['chf'] += i['base_net_amount'] * exchange_rate
-            revenue['eur'] += i['base_net_amount'] 
-    
-    if debug:
-        print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
-            chf=revenue['chf'], eur=revenue['eur']))
-            
-    return revenue
+    return items
 
 def get_invoice_revenue(filters, month, item_groups, debug=False):
     company = "%"
@@ -286,31 +307,8 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory=territory, group_condition=group_condition)
     invoices = frappe.db.sql(query, as_dict=True)
-    
-    company_currency = {}
-    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
-        company_currency[c['name']] = c['default_currency']
-    
-    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
 
-    revenue = {'eur': 0, 'chf': 0}
-    for i in invoices:        
-        if company_currency[i['company']] == "CHF":
-            revenue['chf'] += i['base_net_amount']
-            revenue['eur'] += i['base_net_amount'] / exchange_rate
-        else:
-            revenue['chf'] += i['base_net_amount'] * exchange_rate
-            revenue['eur'] += i['base_net_amount'] 
-
-    if debug:
-        print("{year}-{month}: {item_groups}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_groups=item_groups, territory=territory, 
-            chf=revenue['chf'], eur=revenue['eur']))
-        print("--")
-        for i in invoices:
-            print("{0}\t{1}".format(i['name'].ljust(20), i['base_total']))
-
-    return revenue
+    return invoices
 
 def get_territories():
     terr = frappe.get_all("Territory", fields=['name'])
