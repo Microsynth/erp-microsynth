@@ -14,9 +14,9 @@ def execute(filters=None):
 def get_columns(filters):
     columns = [
         {"label": _("Document"), "fieldname": "document", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
-        {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "width": 120},
-        {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "width": 120},
-        {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "width": 120},
+        {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "options": "base_currency", "width": 120},
+        {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "options": "currency_chf", "width": 120},
+        {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "options": "currency_eur", "width": 120},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 120},
         {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 250}
     ]

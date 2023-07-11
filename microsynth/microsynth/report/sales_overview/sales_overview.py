@@ -231,8 +231,12 @@ def get_revenue_details(filters, month, item_groups, debug=False):
             i['eur'] = i['base_net_amount'] / exchange_rate
         else:
             i['chf'] = i['base_net_amount'] * exchange_rate
-            i['eur'] = i['base_net_amount'] 
-    
+            i['eur'] = i['base_net_amount']
+        # add currency indicators
+        i['currency_chf'] = "CHF"
+        i['currency_eur'] = "EUR"
+        i['base_currency'] = company_currency[i['company']]
+        
     return details
 
 
