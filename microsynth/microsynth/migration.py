@@ -2325,3 +2325,72 @@ def revise_delivery_notes_with_missing_taxes():
         remove_hold_invoice_flag(dn['name'])
         frappe.db.commit()
         i += 1
+
+
+def reopen_sales_order(sales_order):
+    """
+    run
+    bench execute microsynth.microsynth.migration.reopen_sales_order --kwargs "{'sales_order': 'SO-BAL-22004889'}"
+    """
+    so = frappe.get_doc("Sales Order", sales_order)
+    so.update_status("Draft")
+
+
+def close_delivery_note_and_sales_order(delivery_note):
+    """
+    run
+    bench execute.microsynth.microsynth.migration.close_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
+    """
+    delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+    
+    # get affected sales orders
+    sales_orders = []
+    for item in delivery_note.items:
+        if item.against_sales_order not in sales_orders:
+            sales_orders.append(item.against_sales_order)
+    
+    # re-open sales order if it is closed
+    for so in sales_orders:
+        so = frappe.get_doc("Sales Order", so)
+        if so.status == "Closed":
+            so.update_status("Draft")
+    
+    # submit and close delivery note
+    delivery_note.submit()
+    delivery_note.update_status("Closed")
+
+    # close sales order
+    for so in sales_orders:
+        so = frappe.get_doc("Sales Order", so)
+        so.update_status("Closed")
+
+
+def close_invoiced_draft_delivery_notes():
+    """
+    run
+    bench execute microsynth.microsynth.migration.close_invoiced_draft_delivery_notes
+    """
+    import traceback
+    
+    query = """
+        SELECT `name`, `docstatus`, `status`
+        FROM `tabDelivery Note`
+        WHERE `_user_tags` LIKE "%invoiced%"
+        AND `docstatus` = 0
+    """
+
+    delivery_notes = frappe.db.sql(query, as_dict=True)
+    
+    i = 0
+    length = len(delivery_notes)
+    for dn in delivery_notes:
+        try:
+            print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
+            close_delivery_note_and_sales_order(dn['name'])
+            frappe.db.commit()
+        
+        except Exception as err:
+            msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
+            print(msg)
+            frappe.log_error(msg, "close_invoiced_draft_delivery_notes")
+
