@@ -196,12 +196,12 @@ def check_submit_delivery_note(delivery_note):
             print("Delivery Note '{0}' was created on {1}".format(delivery_note.name, delivery_note.creation))
             return
 
-        # Check that the sales order was created at least 7 days ago
-        sales_order_creation = frappe.get_value("Sales Order", sales_orders[0], "creation")
-        time_between_insertion = datetime.today() - sales_order_creation
-        if time_between_insertion.days <= 14:
-            print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order_creation))
-            return
+        # # Check that the sales order was created at least 7 days ago
+        # sales_order_creation = frappe.get_value("Sales Order", sales_orders[0], "creation")
+        # time_between_insertion = datetime.today() - sales_order_creation
+        # if time_between_insertion.days <= 7:
+        #     print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order_creation))
+        #     return
 
         delivery_note.submit()
 
