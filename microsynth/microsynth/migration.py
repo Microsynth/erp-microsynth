@@ -2336,10 +2336,10 @@ def reopen_sales_order(sales_order):
     so.update_status("Draft")
 
 
-def close_delivery_note_and_sales_order(delivery_note):
+def close_draft_delivery_note_and_sales_order(delivery_note):
     """
     run
-    bench execute.microsynth.microsynth.migration.close_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
+    bench execute.microsynth.microsynth.migration.close_draft_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
     
@@ -2386,11 +2386,67 @@ def close_invoiced_draft_delivery_notes():
     for dn in delivery_notes:
         try:
             print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
-            close_delivery_note_and_sales_order(dn['name'])
+            close_draft_delivery_note_and_sales_order(dn['name'])
             frappe.db.commit()
         
         except Exception as err:
             msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
             print(msg)
             frappe.log_error(msg, "close_invoiced_draft_delivery_notes")
+        i += 1
 
+
+def close_sales_order_of_delivery_note(delivery_note):
+    """
+    run
+    bench execute.microsynth.microsynth.migration.close_sales_order_of_delivery_note --kwargs "{'delivery_note':''}"
+    """
+    delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+    
+    # close delivery note if necessary
+    if delivery_note.status != "Closed":
+        delivery_note.update_status("Closed")
+
+    # get affected sales orders
+    sales_orders = []
+    for item in delivery_note.items:
+        if item.against_sales_order not in sales_orders:
+            sales_orders.append(item.against_sales_order)
+
+    # close sales order if necessary
+    for so in sales_orders:
+        so = frappe.get_doc("Sales Order", so)
+        if so.status != "Closed":
+            so.update_status("Closed")
+
+
+def close_orders_of_closed_delivery_notes():
+    """
+    run
+    bench execute microsynth.microsynth.migration.close_orders_of_closed_delivery_notes
+    """
+    import traceback
+
+    query = """
+        SELECT `name`, `docstatus`, `status`
+        FROM `tabDelivery Note`
+        WHERE `status` = "Closed"
+    """
+
+    delivery_notes = frappe.db.sql(query, as_dict=True)
+    
+    i = 0
+    length = len(delivery_notes)
+    for dn in delivery_notes:
+        try:
+            print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
+            close_sales_order_of_delivery_note(dn['name'])
+            frappe.db.commit()
+        
+        except Exception as err:
+            msg = "Failed to close order of delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
+            print(msg)
+            frappe.log_error(msg, "close_orders_of_closed_delivery_notes")
+        i += 1
+    print("processed delivery notes:")
+    print(len(delivery_notes))
