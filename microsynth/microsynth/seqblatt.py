@@ -178,7 +178,7 @@ def check_submit_delivery_note(delivery_note):
 
         sales_orders = []
         for i in delivery_note.items:
-            if i.item_code not in [ '0901', '0904', '3235', '3237', '3252', '3254', '0968', '0969', '0975']:
+            if i.item_code not in [ '0901', '0904', '3235', '3237', '3252', '3254', '0968', '0969', '0975', '3264', '3265','3266' ]:
                 print("Delivery Note '{0}': Item '{1}' is not allowed for autocompletion".format(delivery_note.name, i.item_code))
                 return
             if i.against_sales_order not in sales_orders:
@@ -190,12 +190,17 @@ def check_submit_delivery_note(delivery_note):
             frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
             return
 
-        sales_order = frappe.get_doc("Sales Order", sales_orders[0])
+        # Check that the delivery note was created at least 7 days ago
+        time_between_insertion = datetime.today() - delivery_note.creation
+        if time_between_insertion.days <= 7:
+            print("Delivery Note '{0}' was created on {1}".format(delivery_note.name, delivery_note.creation))
+            return
 
-        from datetime import datetime
-        time_between_insertion = datetime.today() - sales_order.creation
-        if time_between_insertion.days < 7:
-            print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order.transaction_date))
+        # Check that the sales order was created at least 7 days ago
+        sales_order_creation = frappe.get_value("Sales Order", sales_orders[0], "creation")
+        time_between_insertion = datetime.today() - sales_order_creation
+        if time_between_insertion.days <= 14:
+            print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order_creation))
             return
 
         delivery_note.submit()
