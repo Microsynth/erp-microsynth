@@ -48,9 +48,9 @@ jenv = {
     "methods": [
         "get_price_list_rate:microsynth.microsynth.jinja.get_price_list_rate",
         "get_destination_classification:microsynth.microsynth.jinja.get_destination_classification",
-        "get_sales_volume:microsynth.microsynth.sales_overview.get_sales_volume",
-        "get_sales_qty:microsynth.microsynth.sales_overview.get_sales_qty",
-        "get_product_type:microsynth.microsynth.sales_overview.get_product_type"
+        "get_sales_volume:microsynth.microsynth.portfolio.get_sales_volume",
+        "get_sales_qty:microsynth.microsynth.portfolio.get_sales_qty",
+        "get_product_type:microsynth.microsynth.portfolio.get_product_type"
     ]
 }
 
