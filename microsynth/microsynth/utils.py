@@ -867,6 +867,12 @@ def set_default_language(customer):
     return
 
 
+@frappe.whitelist()
+def configure_customer(customer):
+    set_default_language(customer)
+    set_debtor_accounts(customer)
+
+
 def get_alternative_account(account, currency):
     """
     run 

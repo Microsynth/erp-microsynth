@@ -14,7 +14,7 @@ from frappe.utils import cint, flt
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none
+from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -706,8 +706,7 @@ def update_customer(customer_data):
         frappe.db.commit()
 
         # some more administration
-        set_default_language(customer.name)
-        set_debtor_accounts(customer.name)
+        configure_customer(customer.name)
     return error
 
 def update_contact(contact_data):
