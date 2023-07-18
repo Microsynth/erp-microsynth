@@ -289,6 +289,12 @@ def get_data():
                        "name": "Tax Matrix",
                        "label": _("Tax Matrix"),
                        "description": _("Tax Matrix")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Accounts Settings",
+                       "label": _("Accounts Settings"),
+                       "description": _("Accounts Settings")
                    }
             ]
         },
