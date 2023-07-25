@@ -37,6 +37,7 @@ def get_total_credit(customer, company):
 
 def allocate_credits(sales_invoice_doc):
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company)
+    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company)
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
@@ -72,7 +73,8 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.additional_discount_percentage = 0
             sales_invoice_doc.discount_amount = initial_discount + allocated_amount
             sales_invoice_doc.total_customer_credit = allocated_amount
-            
+
+        sales_invoice_doc.remaining_customer_credit = total_customer_credit - allocated_amount
     return sales_invoice_doc
 
 
