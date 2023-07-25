@@ -309,6 +309,23 @@ def set_income_accounts(sales_invoice):
     sales_invoice.save()
 
 
+@frappe.whitelist()
+def get_income_accounts(address, currency, sales_invoice_items):
+
+    if type(sales_invoice_items) == str:
+        sales_invoice_items = json.loads(sales_invoice_items)
+    country = frappe.db.get_value("Address", address, "country")
+    income_accounts = []
+    for item in sales_invoice_items:
+        if item.get("item_code") == "6100":
+            # credit item
+            income_accounts.append(get_alternative_account(item.get("income_account"), currency))
+        else:
+            # all other items
+            income_accounts.append(get_alternative_income_account(item.get("income_account"), country))
+    return income_accounts
+
+
 def make_invoice(delivery_note):
     """
     Includes customer credits. Do not use for customer projects.

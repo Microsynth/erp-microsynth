@@ -45,6 +45,7 @@ frappe.ui.form.on('Sales Invoice', {
         }
     },
     before_save(frm) {
+        set_income_accounts(frm);
         // set goodwill period to 10 days
         cur_frm.set_value("exclude_from_payment_reminder_until", frappe.datetime.add_days(frm.doc.due_date, 10));
     },
@@ -99,6 +100,26 @@ function book_credits(sales_invoice) {
         'callback': function(r)
         {
             frappe.show_alert( __("booked credits"));
+        }
+    });
+}
+
+function set_income_accounts(frm) {
+    frappe.call({
+        'method': "microsynth.microsynth.invoicing.get_income_accounts",
+        'args': { 
+            'address': frm.doc.shipping_address_name || frm.doc.customer_address,
+            'currency': frm.doc.currency,
+            'sales_invoice_items': frm.doc.items
+        },
+        'async': false,
+        'callback': function(r)
+        {
+            var income_accounts = r.message;
+            console.log(income_accounts);
+            for (var i = 0; i < cur_frm.doc.items.length; i++) {
+                frappe.model.set_value("Sales Invoice Item", cur_frm.doc.items[i].name, "income_account", income_accounts[i]);
+            }
         }
     });
 }
