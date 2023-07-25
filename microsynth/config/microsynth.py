@@ -326,6 +326,14 @@ def get_data():
                     {
                         "type": "report",
                         "doctype": "GL Entry",
+                        "name": "Payment Allocation",
+                        "label": _("Payment Allocation"),
+                        "description": _("Payment Allocation"),
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "doctype": "GL Entry",
                         "name": "Intrastat",
                         "label": _("Intrastat"),
                         "description": _("Intrastat"),
