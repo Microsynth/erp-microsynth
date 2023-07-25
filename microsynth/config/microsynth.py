@@ -336,6 +336,12 @@ def get_data():
                        "name": "Abacus Export File",
                        "label": _("Abacus Export"),
                        "description": _("Abacus Export")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Abacus Export File Addition",
+                       "label": _("Abacus Export Addition"),
+                       "description": _("Abacus Export Addition")
                     }
             ]
         },
