@@ -47,7 +47,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
-                `tabSales Invoice Item`.`net_amount` AS `net_amount`,
+                SUM(`tabSales Invoice Item`.`net_amount`) AS `net_amount`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Item`.`name` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
@@ -58,7 +58,8 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 AND `tabSales Invoice`.`company` = "{company}"
-                
+            GROUP BY `tabSales Invoice`.`name`
+
             UNION SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
@@ -83,8 +84,8 @@ def get_data(filters, short=False):
     
         data = frappe.db.sql(sql_query, as_dict=True)
         
-        credit_positions = {}
-        # find open balances
+        credit_positions = {}       # Key is per invoice
+        # find open balances that have credit left
         for d in data:
             if d['type'] == "Credit":
                 # open credit
