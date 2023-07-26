@@ -326,6 +326,14 @@ def get_data():
                     {
                         "type": "report",
                         "doctype": "GL Entry",
+                        "name": "Payment Allocation",
+                        "label": _("Payment Allocation"),
+                        "description": _("Payment Allocation"),
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "doctype": "GL Entry",
                         "name": "Intrastat",
                         "label": _("Intrastat"),
                         "description": _("Intrastat"),
@@ -336,6 +344,12 @@ def get_data():
                        "name": "Abacus Export File",
                        "label": _("Abacus Export"),
                        "description": _("Abacus Export")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Abacus Export File Addition",
+                       "label": _("Abacus Export Addition"),
+                       "description": _("Abacus Export Addition")
                     }
             ]
         },
