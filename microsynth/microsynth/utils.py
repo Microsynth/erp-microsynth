@@ -7,6 +7,7 @@ import frappe
 import json
 from datetime import datetime
 from frappe.utils import flt
+from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 def get_customer(contact):
     """
@@ -866,12 +867,24 @@ def set_default_language(customer):
 
     return
 
+"""
+Assert that there is an invoice to set
+"""
+def set_invoice_to(customer):
+    doc = frappe.get_doc("Customer", customer)
+    if not doc.invoice_to:
+        contact = get_primary_customer_contact(customer)
+        doc.invoice_to = contact.name
+        doc.save()
+        frappe.db.commit()
+    return
 
 @frappe.whitelist()
 def configure_customer(customer):
     set_default_language(customer)
     set_debtor_accounts(customer)
-
+    set_invoice_to(customer)
+    return
 
 def get_alternative_account(account, currency):
     """
