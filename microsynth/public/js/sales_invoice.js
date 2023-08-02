@@ -30,6 +30,11 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.__islocal) {
             get_exchange_rate(frm);
         }
+        if ((frm.doc.docstatus === 1) && (!frm.doc.is_return) && (!frm.doc.invoice_sent_on)) {
+            frm.add_custom_button(__("Transmit"), function() {
+                transmit_invoice(frm);
+            });
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -190,3 +195,14 @@ function get_exchange_rate(frm) {
     }
 }
 
+function transmit_invoice(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.invoicing.transmit_sales_invoice',
+        'args': {
+            'sales_invoice': frm.doc.name
+        },
+        'callback': function(response) {
+            cur_frm.reload_doc();
+        }
+    });
+}

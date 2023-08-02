@@ -1049,7 +1049,7 @@ def escape_chars_for_xml(text):
     """
     return text.replace("&", "&amp;")
 
-
+@frappe.whitelist()
 def transmit_sales_invoice(sales_invoice):
     """
     This function will check the transfer mode and transmit the invoice
