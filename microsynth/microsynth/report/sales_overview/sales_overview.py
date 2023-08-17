@@ -89,6 +89,9 @@ def get_columns(filters):
     return columns
 
 def get_data(filters, debug=False):
+    # Allow only 'Credit allocation' that calculates from the invoices.
+    filters["customer_credit_revenue"] = "Credit allocation"
+
     # prepare
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     # territory_list = get_territories()
