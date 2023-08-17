@@ -31,6 +31,7 @@ PRODUCT_TYPE_MAP = {
     "Library Prep and NGS": ["NGS"],
     "Ecogenics": ["Service"]
 }
+NGS_GROUPS = ["3.6 Library Prep", "3.7 NGS"]
 GENETIC_ANALSIS_GROUPS = ["3.3 Isolationen", "3.4 Genotyping", "3.5 PCR", "3.6 Library Prep", "3.7 NGS"]
 COLOURS = [
     "blue",
@@ -38,7 +39,6 @@ COLOURS = [
     "orange",
     "orange",
     "orange",
-    "red",
     "red", 
     "grey"
 ]
@@ -48,6 +48,9 @@ AGGREGATED_COLOURS = [
     "red",
     "grey"
 ]
+
+def get_ngs_groups():
+    return NGS_GROUPS
 
 def get_genetic_analysis_groups():
     return GENETIC_ANALSIS_GROUPS
@@ -90,10 +93,10 @@ def get_data(filters, debug=False):
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     # territory_list = get_territories()
     if filters.get("aggregate_genetic_analyis"):
-        group_list = aggregate_genetic_analysis(get_item_groups())
+        group_list = aggregate_groups("Genetic Analysis", GENETIC_ANALSIS_GROUPS, get_item_groups())
         colors = AGGREGATED_COLOURS
     else:
-        group_list = get_item_groups()
+        group_list = aggregate_groups("3.67 NGS", NGS_GROUPS, get_item_groups())
         colors = COLOURS
 
     # prepare forcast:
@@ -120,7 +123,9 @@ def get_data(filters, debug=False):
         if filters.get("customer_credit_revenue") == "Credit allocation" and group == "Customer Credits":
             continue
 
-        if group == "Genetic Analysis":
+        if group == "3.67 NGS":
+            query_groups = NGS_GROUPS
+        elif group == "Genetic Analysis":
             query_groups = GENETIC_ANALSIS_GROUPS
         else:
             query_groups = [ group ]
@@ -333,17 +338,17 @@ def get_item_groups():
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
-        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices']:
+        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices', 'Andere', 'Shipping']:
             group_list.append(g['name'])
     group_list.sort()
     return group_list
 
-def aggregate_genetic_analysis(groups):
+def aggregate_groups(group_name, target_groups, groups):
     new_groups = []
     for group in groups:
-        if group in GENETIC_ANALSIS_GROUPS:
-            if "Genetic Analysis" not in new_groups:
-                new_groups.append("Genetic Analysis") 
+        if group in target_groups:
+            if group_name not in new_groups:
+                new_groups.append(group_name) 
             else:
                 continue
         else:

@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from microsynth.microsynth.report.sales_overview.sales_overview import get_revenue_details, get_genetic_analysis_groups
+from microsynth.microsynth.report.sales_overview.sales_overview import get_revenue_details, get_ngs_groups, get_genetic_analysis_groups
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -24,7 +24,9 @@ def get_columns(filters):
     return columns
 
 def get_data(filters):
-    if filters.get("item_groups") == "Genetic Analysis":
+    if filters.get("item_groups") == "3.67 NGS":
+        query_groups = get_ngs_groups()
+    elif filters.get("item_groups") == "Genetic Analysis":
         query_groups = get_genetic_analysis_groups()
     else:
         query_groups = [ filters.get("item_groups") ]
