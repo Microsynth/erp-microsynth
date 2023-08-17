@@ -698,6 +698,34 @@ def add_webshop_service(customer, service):
     return
 
 
+def get_child_territories(territory):
+    """
+    Returns all child territories for the given territory recursively. Includes the given parent directory and all nodes as well.
+    bench execute microsynth.microsynth.utils.get_child_territories --kwargs "{'territory': 'Switzerland'}"
+    """
+
+    entries = frappe.db.sql("""select name, lft, rgt, {parent} as parent
+			from `tab{tree}` order by lft"""
+		.format(tree="Territory", parent="parent_territory"), as_dict=1)
+    
+    range = {}
+    for d in entries:
+        if d.name == territory:
+            range['lft'] = d['lft']
+            range['rgt'] = d['rgt']
+    
+    if 'lft' not in range or 'rgt' not in range:
+        frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "sales_overview.get_all_child_territories")
+        return []
+
+    territories = []
+    for d in entries:
+        if range['lft'] <= d['lft'] and d['rgt'] <= range['rgt']:
+            territories.append(d.name)
+
+    return territories
+
+
 def get_debtor_account_currency(company, currency):
     """
     Return the deptor account for a company and the specified currency,
