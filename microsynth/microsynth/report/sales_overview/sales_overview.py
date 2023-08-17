@@ -7,6 +7,7 @@ from frappe import _
 from datetime import date
 from frappe.utils import cint
 import calendar
+from microsynth.microsynth.utils import get_child_territories
 
 MONTHS = {
     1: _("January"),
@@ -252,9 +253,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
-    territory = "%"
+
     if filters.get("territory"):
-        territory = filters.get("territory")
+        territory_condition = "IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+    else:
+        territory_condition = "LIKE '%'"
+
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
     query = """
@@ -269,11 +273,11 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` LIKE "{territory}"
+                AND `tabSales Invoice`.`territory` {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory=territory, group_condition=group_condition)
+            territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
     return items
@@ -282,9 +286,12 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
-    territory = "%"
+
     if filters.get("territory"):
-        territory = filters.get("territory")
+        territory_condition = "IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+    else:
+        territory_condition = "LIKE '%'"
+
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
 
@@ -310,7 +317,7 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` LIKE "{territory}"
+                AND `tabSales Invoice`.`territory` {territory_condition}
                 AND (
                     SELECT `tabSales Invoice Item`.`item_group`
                     FROM `tabSales Invoice Item` 
@@ -323,7 +330,7 @@ def get_invoice_revenue(filters, month, item_groups, debug=False):
                 ) IN ({group_condition})
             ;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory=territory, group_condition=group_condition)
+            territory_condition=territory_condition, group_condition=group_condition)
     invoices = frappe.db.sql(query, as_dict=True)
 
     return invoices
