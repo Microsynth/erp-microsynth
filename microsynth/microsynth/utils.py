@@ -911,7 +911,7 @@ def set_invoice_to(customer):
 def configure_customer(customer):
     set_default_language(customer)
     set_debtor_accounts(customer)
-    set_invoice_to(customer)
+    # set_invoice_to(customer)
     return
 
 def get_alternative_account(account, currency):
