@@ -845,58 +845,58 @@ def update_contact(contact_data):
         return None
 
 
-def update_address(customer_data, is_deleted=False, customer_id=None):
+def update_address(address_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record
     """
-    #frappe.log_error(customer_data)
-    if not 'person_id' in customer_data:
+    #frappe.log_error(address_data)
+    if not 'person_id' in address_data:
         return None
-    if not 'address_line1' in customer_data:
+    if not 'address_line1' in address_data:
         return None
 
-    print("Updating address {0}...".format(str(int(customer_data['person_id']))))
+    print("Updating address {0}...".format(str(int(address_data['person_id']))))
     # check if address exists (force insert onto target id)
-    if not frappe.db.exists("Address", str(int(customer_data['person_id']))):
-        print("Creating address {0}...".format(str(int(customer_data['person_id']))))
+    if not frappe.db.exists("Address", str(int(address_data['person_id']))):
+        print("Creating address {0}...".format(str(int(address_data['person_id']))))
         frappe.db.sql("""INSERT INTO `tabAddress` 
                         (`name`, `address_line1`) 
                         VALUES ("{0}", "{1}");""".format(
-                        str(int(customer_data['person_id'])), 
-                        customer_data['address_line1'] if 'address_line1' in customer_data else "-"))
+                        str(int(address_data['person_id'])), 
+                        address_data['address_line1'] if 'address_line1' in address_data else "-"))
 
     # update record
-    if 'address_type' in customer_data:
-        address_type = customer_data['address_type']
+    if 'address_type' in address_data:
+        address_type = address_data['address_type']
     else:
         address_type = None
-    address = frappe.get_doc("Address", str(int(customer_data['person_id'])))
-    if 'customer_name' in customer_data and 'address_line1' in customer_data:
-        address.address_title = "{0} - {1}".format(customer_data['customer_name'], customer_data['address_line1'])
-    if 'overwrite_company' in customer_data:
-        address.overwrite_company = customer_data['overwrite_company']
-    if 'address_line1' in customer_data:
-        address.address_line1 = customer_data['address_line1']
-    if 'address_line2' in customer_data:
-        address.address_line2 = customer_data['address_line2']
-    if 'pincode' in customer_data:
-        address.pincode = customer_data['pincode']
-    if 'city' in customer_data:
-        address.city = customer_data['city']
-    if 'country' in customer_data:
-        address.country = robust_get_country(customer_data['country'])
-    if customer_id or 'customer_id' in customer_data:
+    address = frappe.get_doc("Address", str(int(address_data['person_id'])))
+    if 'customer_name' in address_data and 'address_line1' in address_data:
+        address.address_title = "{0} - {1}".format(address_data['customer_name'], address_data['address_line1'])
+    if 'overwrite_company' in address_data:
+        address.overwrite_company = address_data['overwrite_company']
+    if 'address_line1' in address_data:
+        address.address_line1 = address_data['address_line1']
+    if 'address_line2' in address_data:
+        address.address_line2 = address_data['address_line2']
+    if 'pincode' in address_data:
+        address.pincode = address_data['pincode']
+    if 'city' in address_data:
+        address.city = address_data['city']
+    if 'country' in address_data:
+        address.country = robust_get_country(address_data['country'])
+    if customer_id or 'customer_id' in address_data:
         address.links = []
         if not is_deleted:
             address.append("links", {
                 'link_doctype': "Customer",
-                'link_name': customer_id or customer_data['customer_id']
+                'link_name': customer_id or address_data['customer_id']
             })
     # get type of address
     if address_type == "INV" or address_type == "Billing":
         address.is_primary_address = 1
         address.is_shipping_address = 0
-        # address.email_id = customer_data['email']        # invoice address: pull email also into address record. 
+        # address.email_id = address_data['email']        # invoice address: pull email also into address record. 
                                                            # Do not write to invoice_mail to address record anymore. 2022-10-03 Rolf Suter
         address.address_type = "Billing"
     else:
@@ -905,13 +905,13 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         address.address_type = "Shipping"
     
     # Overwrite is_primary_address and is_shipping_address if provided with the input data
-    if 'is_primary_address' in customer_data:
-        address.is_primary_address = customer_data['is_primary_address']
-    if 'is_shipping_address' in customer_data:
-        address.is_shipping_address = customer_data['is_shipping_address']
+    if 'is_primary_address' in address_data:
+        address.is_primary_address = address_data['is_primary_address']
+    if 'is_shipping_address' in address_data:
+        address.is_shipping_address = address_data['is_shipping_address']
 
-    if 'customer_address_id' in customer_data:
-        address.customer_address_id = customer_data['customer_address_id']
+    if 'customer_address_id' in address_data:
+        address.customer_address_id = address_data['customer_address_id']
 
     # extend address bindings here
 
