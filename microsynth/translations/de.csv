@@ -44,4 +44,4 @@ DocType: Payment Reminder,"Should you have questions about the invoice(s), pleas
 DocType: Payment Reminder,"Otherwise, we would be grateful for an immediate payment within 10 days.","Andernfalls wären wir für eine umgehende Überweisung bis in 10 Tagen dankbar."
 DocType: Payment Reminder,"If the payment has already been authorized, please ignore this message.","Sollte sich die Zahlung mit dieser Nachricht überschnitten haben, so bitten wir Sie, diese als hinfällig zu betrachten."
 DocType: Payment Reminder,"Kind regards","Freundliche Grüsse"
-DocType: Payment Reminder,"Microsynth Administration","IhreMicrosynth Administration"
+DocType: Payment Reminder,"Microsynth Administration","Microsynth Administration"
