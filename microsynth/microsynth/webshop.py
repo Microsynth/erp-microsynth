@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_customer, update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, set_default_language, set_debtor_accounts
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, configure_customer
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -22,6 +22,40 @@ def ping():
     return "pong"
 
 
+def validate_registration_data(user_data):
+    '''
+    Validate the user data provided with the register_user function.
+    '''
+
+    if 'customer' not in user_data or not user_data['customer']:
+        error = "Customer is missing. "
+        return error
+
+    if 'contact' not in user_data or not user_data['contact']:
+        error = "Contact is missing. "
+        return error
+
+    if 'invoice_contact' not in user_data or not user_data['invoice_contact']:
+        error = "Invoice Contact is missing. "
+        return error
+
+    if 'addresses' not in user_data or not user_data['addresses']:
+        error = "Addresses are missing. "
+        return error    
+
+    error = ""
+    if frappe.db.exists("Customer", user_data['customer']['name']):
+        error += "Customer '{0}' already exists. ".format(user_data['customer']['name'])
+
+    if frappe.db.exists("Contact", user_data['contact']['name']):
+        error += "Contact '{0}' already exists. ".format(user_data['contact']['name'])
+    
+    if error != "":
+        return error
+    else:
+        return None
+
+
 @frappe.whitelist()
 def register_user(user_data, client="webshop"):
     """
@@ -32,6 +66,11 @@ def register_user(user_data, client="webshop"):
     # make sure data is a dict or list
     if type(user_data) == str:
         user_data = json.loads(user_data)
+
+    # validate input data
+    error = validate_registration_data(user_data)
+    if error:
+        return {'success': False, 'message': error}
 
     # country locator
     country = None
@@ -67,17 +106,17 @@ def register_user(user_data, client="webshop"):
 
     # Create addresses
     for address in user_data['addresses']:
-        address['person_id'] = address['name']
+        address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = customer.name
         address_id = update_address(address)
 
     # Create contact
-    user_data['contact']['person_id'] = user_data['contact']['name']
+    user_data['contact']['person_id'] = user_data['contact']['name']    # Extend contact object to use the legacy update_contact function
     user_data['contact']['customer_id'] = customer.name
     contact_name = update_contact(user_data['contact'])
     
     # Create invoice contact
-    user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']
+    user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']    # Extend invoice_contact object to use the legacy update_contact function
     user_data['invoice_contact']['customer_id'] = customer.name
     invoice_contact_name = update_contact(user_data['invoice_contact'])
 
@@ -88,7 +127,6 @@ def register_user(user_data, client="webshop"):
     if not customer.territory:
         customer.territory = frappe.get_value("Selling Settings", "Selling Settings", "territory")
 
-
     if 'tax_id' in user_data['customer']:
         customer.tax_id = user_data['customer']['tax_id']
 
@@ -96,36 +134,29 @@ def register_user(user_data, client="webshop"):
         customer.siret = user_data['customer']['siret']
 
     if 'invoicing_method' in user_data['customer'] and user_data['customer']['invoicing_method'] == "Post":
-            customer.invoicing_method = "Post"
+        customer.invoicing_method = "Post"
     else:
         customer.invoicing_method = "Email"
 
-    # The invoice contact must be created before
+    # Set the invoice_to contact. Depends on its creation above.
     if 'invoice_to' in user_data['customer']:
         customer.invoice_to = invoice_contact_name
-
-    if 'punchout_shop_id' in user_data['customer']:
-        customer.punchout_shop_id = user_data['customer']['punchout_shop_id']
 
     if 'punchout_shop' in user_data['customer']:
         customer.punchout_shop = user_data['customer']['punchout_shop']
 
+    if 'punchout_shop_id' in user_data['customer']:
+        customer.punchout_buyer = user_data['customer']['punchout_shop_id']
+
     customer.save()
 
     # some more administration
-    set_default_language(customer.name)
-    set_debtor_accounts(customer.name)
+    configure_customer(customer.name)
 
-    # frappe.db.commit()
-    return contact_name#user_data['contact']#customer_query
-    
-    #error = register_user(user_data)
-
-
-    # if not error:
-    #     return {'success': True, 'message': "OK"}
-    # else: 
-    #     return {'success': False, 'message': error}
+    if not error:
+        return {'success': True, 'message': "OK"}
+    else: 
+        return {'success': False, 'message': error}
 
 
 @frappe.whitelist()
