@@ -903,6 +903,13 @@ def update_address(customer_data, is_deleted=False, customer_id=None):
         address.is_primary_address = 0
         address.is_shipping_address = 1
         address.address_type = "Shipping"
+    
+    # Overwrite is_primary_address and is_shipping_address if provided with the input data
+    if 'is_primary_address' in customer_data:
+        address.is_primary_address = customer_data['is_primary_address']
+    if 'is_shipping_address' in customer_data:
+        address.is_shipping_address = customer_data['is_shipping_address']
+
     if 'customer_address_id' in customer_data:
         address.customer_address_id = customer_data['customer_address_id']
 
