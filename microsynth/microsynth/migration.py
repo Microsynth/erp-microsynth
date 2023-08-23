@@ -2180,6 +2180,41 @@ def import_reminder_emails(file):
         i += 1
 
 
+def refactor_date(date_str):
+    """
+    Reformat a date from DD.MM.YYYY to YYYY-MM-DD
+    """
+    parts = date_str.split(".")
+    return f"{parts[2]}-{parts[1]}-{parts[0]}"
+
+
+def import_contact_notes(file):
+    """
+    This function reads every line as a customer.
+	:param file_name: name of the TSV file with five columns
+    :returns a dict with key = contact ID (person ID)
+    
+    run
+    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'file': '/mnt/erp_share/Gecko/CustomerVisits_edited.tab'}"
+    """    
+    counter = 0
+    with open(file) as tsv:
+        for line in csv.reader(tsv, delimiter="\t"):  # it's important to split lines exactly at CR LF (Windows encoding)
+            assert len(line) == 5
+            contact_note = frappe.get_doc({
+                'doctype': 'Contact Note',
+                'contact_person': line[1],  # line[1] should be the person ID (contact ID)
+                'date': refactor_date(line[3]) if len(line[3]) > 0 else datetime.now(),
+                'contact_note_type': "Other",
+                'notes': line[4]
+            })
+            contact_note.save()
+            counter += 1
+            if counter % 100 == 0:
+                print(f"Already imported {counter} contact notes. Still running ...")
+    print(f"Imported {counter} contact notes in total.")
+
+
 def process_sample(sample):
     label_name = frappe.get_value("Sample", sample, "sequencing_label")
     label = frappe.get_doc("Sequencing Label", label_name)
