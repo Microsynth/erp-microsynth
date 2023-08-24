@@ -15,6 +15,7 @@ from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer
+from microsynth.microsynth.invoicing import get_income_accounts
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -2491,3 +2492,130 @@ def close_orders_of_closed_delivery_notes():
         i += 1
     print("processed delivery notes:")
     print(len(delivery_notes))
+    
+"""
+This function will assess the impact of the account matrix in a given period
+
+Run as
+ $ bench execute microsynth.microsynth.migration.assess_income_account_matrix --kwargs "{'from_date': '2023-02-01', 'to_date': '2023-02-28'}"
+"""
+def assess_income_account_matrix(from_date, to_date, auto_correct=0):
+    invoices = frappe.db.sql("""
+        SELECT `name` 
+        FROM `tabSales Invoice`
+        WHERE `docstatus` = 1
+          AND `posting_date` BETWEEN "{from_date}" AND "{to_date}";
+        """.format(from_date=from_date, to_date=to_date), as_dict=True)
+    
+    deviation_count = 0
+    skipped_count = 0
+    for invoice in invoices:
+        doc = frappe.get_doc("Sales Invoice", invoice.get('name'))
+        if doc.base_grand_total > 0:        # skip returns and 0-sums
+            
+            correct_accounts = get_income_accounts(doc.shipping_address, doc.currency, doc.items)
+        
+            for i in range(0, len(doc.items)):
+                if doc.items[i].income_account != correct_accounts[i]:
+                    print("{doc} ({status}): {o} -> {c}".format(
+                        doc=doc.name, o=doc.items[i].income_account, c=correct_accounts[i], status=doc.status))
+                    deviation_count += 1
+                    
+                    if auto_correct:
+                        correct_income_account(doc.name)
+                        
+                    break
+        
+        else:
+            skipped_count += 1
+            
+    print("Checked {0} invoices, {1} deviations and {2} skipped".format(len(invoices), deviation_count, skipped_count))
+    
+"""
+This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable
+"""
+def correct_income_account(sales_invoice):
+    # get old invoice
+    old_doc = frappe.get_doc("Sales Invoice", sales_invoice)
+    if old_doc.docstatus > 1:
+        print("already cancelled")
+        return
+    # find payment entries
+    if old_doc.is_return == 0:
+        payments = frappe.db.sql("""
+            SELECT `voucher_type`, `voucher_no`, `credit_in_account_currency` AS `credit`
+            FROM `tabGL Entry`
+            WHERE 
+                `account` = "{debit_to}"
+                AND `against_voucher` = "{sales_invoice}"
+                AND `credit` > 0;
+            """.format(debit_to=old_doc.debit_to, sales_invoice=sales_invoice), as_dict=True)
+    else:
+        payments = []
+    
+    # check if there is a return on this invoice
+    credit_notes = False
+    for p in payments:
+        if p.get('voucher_type') == "Sales Invoice":
+            # this is a credit note
+            credit_notes = True
+            credit_note = frappe.get_doc("Sales Invoice", p.get('voucher_no'))
+            credit_note.cancel()
+    
+    if credit_notes:
+        # reload, because cancellation of credit note will change timestamp of invoice
+        frappe.db.commit()
+        old_doc = frappe.get_doc("Sales Invoice", sales_invoice)
+        
+    old_doc.cancel()
+    frappe.db.commit()
+    
+    # create amended invoice
+    new_doc = frappe.get_doc(old_doc.as_dict())
+    new_doc.name = None
+    new_doc.docstatus = 0
+    new_doc.set_posting_time = 1
+    new_doc.amended_from = old_doc.name
+    
+    # correct income accounts
+    correct_accounts = get_income_accounts(new_doc.shipping_address, new_doc.currency, new_doc.items)
+    for i in range(0, len(new_doc.items)):
+        new_doc.items[i].income_account = correct_accounts[i]
+                        
+    # pull payments
+    for p in payments:
+        if p.get('voucher_type') != "Sales Invoice":
+            new_doc.append("advances", {
+                'reference_type': p.get('voucher_type'),
+                'reference_name': p.get('voucher_no'),
+                'advance_amount': p.get('credit'),
+                'allocated_amount': p.get('credit')
+            })
+    
+    # insert and submit
+    new_doc.insert()
+    new_doc.submit()
+    frappe.db.commit()
+    
+    # if applicable: amend credit notes
+    for p in payments:
+        if p.get('voucher_type') == "Sales Invoice":
+            old_cn = frappe.get_doc("Sales Invoice", p.get('voucher_no'))
+            # create amended credit note
+            new_cn = frappe.get_doc(old_cn.as_dict())
+            new_cn.name = None
+            new_cn.docstatus = 0
+            new_cn.set_posting_time = 1
+            new_cn.amended_from = old_cn.name
+            new_cn.return_against = new_doc.name
+            
+            # correct income accounts
+            correct_accounts = get_income_accounts(new_cn.shipping_address, new_cn.currency, new_cn.items)
+            for i in range(0, len(new_cn.items)):
+                new_cn.items[i].income_account = correct_accounts[i]
+            new_cn.insert()
+            new_cn.submit()
+    
+    frappe.db.commit()
+    return
+    
