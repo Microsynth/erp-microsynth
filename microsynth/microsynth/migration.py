@@ -2492,14 +2492,15 @@ def close_orders_of_closed_delivery_notes():
         i += 1
     print("processed delivery notes:")
     print(len(delivery_notes))
-    
-"""
-This function will assess the impact of the account matrix in a given period
 
-Run as
- $ bench execute microsynth.microsynth.migration.assess_income_account_matrix --kwargs "{'from_date': '2023-02-01', 'to_date': '2023-02-28'}"
-"""
+
 def assess_income_account_matrix(from_date, to_date, auto_correct=0):
+    """
+    This function will assess the impact of the account matrix in a given period
+
+    Run as
+    bench execute microsynth.microsynth.migration.assess_income_account_matrix --kwargs "{'from_date': '2023-02-01', 'to_date': '2023-02-28'}"
+    """
     invoices = frappe.db.sql("""
         SELECT `name` 
         FROM `tabSales Invoice`
@@ -2513,12 +2514,12 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
         doc = frappe.get_doc("Sales Invoice", invoice.get('name'))
         if doc.base_grand_total > 0:        # skip returns and 0-sums
             
-            correct_accounts = get_income_accounts(doc.shipping_address, doc.currency, doc.items)
+            correct_accounts = get_income_accounts(doc.shipping_address_name, doc.currency, doc.items)
         
             for i in range(0, len(doc.items)):
                 if doc.items[i].income_account != correct_accounts[i]:
-                    print("{doc} ({status}): {o} -> {c}".format(
-                        doc=doc.name, o=doc.items[i].income_account, c=correct_accounts[i], status=doc.status))
+                    print("{doc} ({status}): item {i}: {o} -> {c}".format(
+                        doc=doc.name, i = i, o=doc.items[i].income_account, c=correct_accounts[i], status=doc.status))
                     deviation_count += 1
                     
                     if auto_correct:
@@ -2530,11 +2531,13 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
             skipped_count += 1
             
     print("Checked {0} invoices, {1} deviations and {2} skipped".format(len(invoices), deviation_count, skipped_count))
-    
-"""
-This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable
-"""
+
+
 def correct_income_account(sales_invoice):
+    """
+    This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable
+    """
+    
     # get old invoice
     old_doc = frappe.get_doc("Sales Invoice", sales_invoice)
     if old_doc.docstatus > 1:
