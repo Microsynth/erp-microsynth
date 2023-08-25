@@ -66,22 +66,22 @@ def get_columns(filters):
         month_data_type = "Float"
         data_type_options = ""
     else:
-        month_data_type = "Currency"
-        data_type_options = "currency"
+        month_data_type = "Float"
+        data_type_options = ""
     
     columns = [
         {"label": _(""), "fieldname": "description", "fieldtype": "Data", "width": 120}
     ]
     for m in range(1, 13):
         columns.append(
-            {"label": MONTHS[m], "fieldname": "month{0}".format(m), "fieldtype": month_data_type, "options": data_type_options, "width": 100}
+            {"label": MONTHS[m], "fieldname": "month{0}".format(m), "fieldtype": month_data_type, "options": data_type_options, "width": 100, "precision": "0" }
         )
         
     columns.append(
-        {"label": "YTD", "fieldname": "ytd", "fieldtype": month_data_type, "options": data_type_options, "width": 100}
+        {"label": "Year-to-Date", "fieldname": "ytd", "fieldtype": month_data_type, "options": data_type_options, "width": 100, "precision": "0" }
     )
     columns.append(
-        {"label": "FC", "fieldname": "fc", "fieldtype": month_data_type, "options": data_type_options, "width": 100}
+        {"label": "Forecast", "fieldname": "fc", "fieldtype": month_data_type, "options": data_type_options, "width": 100, "precision": "0" }
     )
     columns.append(
         {"label": "", "fieldname": "blank", "fieldtype": month_data_type, "width": 20}
