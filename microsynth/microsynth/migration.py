@@ -16,6 +16,8 @@ from microsynth.microsynth.report.pricing_configurator.pricing_configurator impo
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer
 from microsynth.microsynth.invoicing import get_income_accounts
+from erpnextswiss.scripts.crm_tools import get_primary_customer_address
+from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -1371,8 +1373,6 @@ def disable_customers_without_contacts():
     return
 
 
-from erpnextswiss.scripts.crm_tools import get_primary_customer_address 
-
 def set_default_company():
     customers = frappe.get_all("Customer", filters={'default_company': ''}, fields=['name'])    
     print(len(customers))
@@ -2664,4 +2664,45 @@ def correct_invoicing_email():
         customer.save()
 
 
+def set_missing_invoice_to():
+    """
+    Find all active Customers with Invoicing Method = "Email"
+    but without an entry in the invoice_to field
+    that do only have a single Contact and fix them.
+    Belonging to Task #13473 KB ERP.
 
+    Run from bench
+    $ bench execute microsynth.microsynth.migration.set_missing_invoice_to
+    """
+    sql_query = """SELECT `tabCustomer`.`name`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`invoicing_method` = 'Email'
+        AND `tabCustomer`.`invoice_to` IS NULL
+        AND `tabCustomer`.`disabled` = 0
+        AND
+            (SELECT COUNT(*)
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+            AND `tabDynamic Link`.`link_name` = `tabCustomer`.`name`) = 1;
+    """
+    query_results = frappe.db.sql(sql_query, as_dict=True)
+
+    for result in query_results:
+        customer = frappe.get_doc("Customer", result['name'])
+        # Get the main (primary) contact of Customer
+        main_contact = get_primary_customer_contact(result['name'])        
+        # duplicate main Contact to create the billing contact.
+        billing_contact = main_contact.as_dict()
+        billing_contact['person_id'] = main_contact.name + "-B"
+        # remove all e-mail addresses of the billing contact
+        billing_contact['email_ids'] = [None]
+        # save the Customer.invoice_email address to billing contact.email_ids[0] (including flag "is_primary")
+        billing_contact['email_ids'][0] = customer.invoice_email
+        billing_contact.is_primary_address = 1  # billing_contact.set('is_primary_address', True)
+        billing_contact['customer_id'] = customer.name
+        billing_contact['email'] = main_contact.email_id
+        update_contact(billing_contact)
+        # link the billing contact to Customer.invoice_to
+        customer.invoice_to = billing_contact['person_id']
+        customer.save()
