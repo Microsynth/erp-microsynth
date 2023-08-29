@@ -2536,6 +2536,12 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
 def correct_income_account(sales_invoice):
     """
     This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable
+
+    Important Note: 
+        This function does not consider links to invoices caused by deduction of customer credits.
+    
+    run
+    bench execute microsynth.microsynth.migration.correct_income_account --kwargs "{'sales_invoice': 'SI-BAL-23024016'}"
     """
     
     # get old invoice
@@ -2569,23 +2575,23 @@ def correct_income_account(sales_invoice):
         # reload, because cancellation of credit note will change timestamp of invoice
         frappe.db.commit()
         old_doc = frappe.get_doc("Sales Invoice", sales_invoice)
-        
+
     old_doc.cancel()
     frappe.db.commit()
-    
+
     # create amended invoice
     new_doc = frappe.get_doc(old_doc.as_dict())
     new_doc.name = None
     new_doc.docstatus = 0
     new_doc.set_posting_time = 1
     new_doc.amended_from = old_doc.name
-    
+
     # correct income accounts
-    correct_accounts = get_income_accounts(new_doc.shipping_address, new_doc.currency, new_doc.items)
+    correct_accounts = get_income_accounts(new_doc.shipping_address_name, new_doc.currency, new_doc.items)
     for i in range(0, len(new_doc.items)):
         new_doc.items[i].income_account = correct_accounts[i]
-                        
-    # pull payments
+
+    # pull payments without Credit Notes and link them as 'advance payments' on the new Sales Invoice
     for p in payments:
         if p.get('voucher_type') != "Sales Invoice":
             new_doc.append("advances", {
@@ -2594,12 +2600,13 @@ def correct_income_account(sales_invoice):
                 'advance_amount': p.get('credit'),
                 'allocated_amount': p.get('credit')
             })
-    
+
     # insert and submit
     new_doc.insert()
+    frappe.db.commit()
     new_doc.submit()
     frappe.db.commit()
-    
+
     # if applicable: amend credit notes
     for p in payments:
         if p.get('voucher_type') == "Sales Invoice":
@@ -2611,17 +2618,17 @@ def correct_income_account(sales_invoice):
             new_cn.set_posting_time = 1
             new_cn.amended_from = old_cn.name
             new_cn.return_against = new_doc.name
-            
+
             # correct income accounts
-            correct_accounts = get_income_accounts(new_cn.shipping_address, new_cn.currency, new_cn.items)
+            correct_accounts = get_income_accounts(new_cn.shipping_address_name, new_cn.currency, new_cn.items)
             for i in range(0, len(new_cn.items)):
                 new_cn.items[i].income_account = correct_accounts[i]
             new_cn.insert()
             new_cn.submit()
-    
+
     frappe.db.commit()
     return
-    
+
 
 def correct_invoicing_email():
     """
