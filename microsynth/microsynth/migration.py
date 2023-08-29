@@ -2713,3 +2713,16 @@ def set_missing_invoice_to():
         # link the billing contact to Customer.invoice_to
         customer.invoice_to = billing_contact['person_id']
         customer.save()
+
+
+def export_abacus_file_with_account_matrix(abacus_export_file):
+    doc = frappe.get_doc("Abacus Export File", abacus_export_file)
+
+    transactions = doc.get_individual_transactions()
+
+    for t in transactions:
+        si = frappe.get_doc("Sales Invoice", t.get("name"))
+
+        # TODO
+        
+
