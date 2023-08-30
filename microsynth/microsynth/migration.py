@@ -14,7 +14,7 @@ from frappe.utils import cint, flt
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer
+from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer, get_alternative_income_account
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -2714,15 +2714,61 @@ def set_missing_invoice_to():
         customer.invoice_to = billing_contact['person_id']
         customer.save()
 
+"""
+Export an Abacus Export File and replace income accounts according to account matrix
 
-def export_abacus_file_with_account_matrix(abacus_export_file):
+Run as
+
+ $ bench execute microsynth.microsynth.migration.export_abacus_file_with_account_matrix --kwargs "{'abacus_export_file': '2023-03-01..2023-03-01', 'output_file': '/tmp/aba_out.xml', 'validate': 1}"
+ 
+"""
+def export_abacus_file_with_account_matrix(abacus_export_file, output_file, validate=False):
     doc = frappe.get_doc("Abacus Export File", abacus_export_file)
 
     transactions = doc.get_individual_transactions()
 
     for t in transactions:
-        si = frappe.get_doc("Sales Invoice", t.get("name"))
+        if frappe.db.exists("Sales Invoice", t.get("text1")):
+            si = frappe.get_doc("Sales Invoice", t.get("text1"))
 
-        # TODO
-        
+            # fetch applicable country
+            country = frappe.get_value("Address", si.shipping_address_name, "country")
+            
+            # go through against accounts and switch according to matrix
+            for i in t.get("against_singles"):
+                i['account'] = doc.get_account_number(
+                    get_alternative_income_account(
+                        get_account_by_number(i['account'], si.company), country
+                    )
+                )
+            
+            # optional: validate according to assessment
+            if validate:
+                # fetch all corrected income accounts
+                correct_accounts = get_income_accounts(si.shipping_address_name, si.currency, si.items)
+                # check if all accounts are in the correct income accounts
+                for a in t.get("against_singles"):
+                    if get_account_by_number(a.get('account'), si.company) not in correct_accounts:
+                        print("{0} does not validate: {1} is not in the correct accounts ({2})".format(
+                            t.get("text1"), a.get('account'), correct_accounts))
+                    
+    # render output xml content
+    data = {
+        'transactions': transactions
+    }
+    content = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
+    
+    # write to output file
+    f = open(output_file, "w")
+    f.write(content)
+    f.close()
+    print ("Created {0}.".format(output_file))
+    
+    return
 
+def get_account_by_number(account_number, company):
+    accounts = frappe.get_all("Account", filters={'account_number': account_number, 'company': company}, fields=['name'])
+    if len(accounts) > 0:
+        return accounts[0]['name']
+    else:
+        return None
