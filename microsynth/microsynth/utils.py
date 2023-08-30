@@ -912,6 +912,7 @@ def configure_customer(customer):
     set_default_language(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
+    add_webshop_service(customer, 'FullPlasmidSeq')
     return
 
 def get_alternative_account(account, currency):
