@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 import os
+import re
 import frappe
 import json
 from datetime import datetime
@@ -985,6 +986,7 @@ def get_customers_for_country(country):
     
     return [ c['name'] for c in customers ]
 
+
 def set_default_company(customer):
     """
     Determine the default company 
@@ -1054,6 +1056,7 @@ def set_customer_default_company_for_country(country):
         if not frappe.db.get_value("Customer", c, "disabled"):
             set_default_company(c)
 
+
 TERRITORIES = {
     'lukas.hartl@microsynth.at':                    'Austria',
     'emeraude.hadjattou@microsynth.ch':             'France (North)',
@@ -1068,6 +1071,7 @@ TERRITORIES = {
     'andrea.sinatra@microsynth.ch':                 'Switzerland (German- and Italian-speaking)',
 }
 
+
 def set_territory(customer):
     """
     Set the territory according to the account manager if the current territory is 'All Territories'
@@ -1081,6 +1085,143 @@ def set_territory(customer):
     if customer.territory == "All Territories":
         customer.territory = TERRITORIES[customer.account_manager]
         customer.save()
+
+
+def determine_territory(address_id):
+    """
+    Determine the territory from an address id.
+    Assignment according to \\srvfs\Programm\Dokumente\4_Verkauf\4.1 Sales\SZ_Ungelenkt\Listen\LIST 4.1.0006 Sales Areas and Deputy Arrangements.docx
+
+    run
+    bench execute microsynth.microsynth.utils.determine_territory --kwargs "{'address_id': '207692'}"
+    """
+    address = frappe.get_doc("Address", address_id)
+
+    if address.country == "Switzerland":
+        postal_code = address.pincode
+        pc_int = int(re.sub('\D', '', postal_code))
+        if pc_int < 3000:
+            return frappe.get_doc("Territory", "Switzerland (French-speaking)")
+        else:
+            return frappe.get_doc("Territory", "Switzerland (German- and Italian-speaking)")
+
+    elif address.country == "Austria":
+        return frappe.get_doc("Territory", "Austria")
+
+    elif address.country == "Germany":
+        postal_code = address.pincode
+        postal_code = re.sub('\D', '', postal_code)
+        pc_prefix = int(postal_code[:2])
+        if  26 <= pc_prefix <= 29 or \
+            32 <= pc_prefix <= 36 or \
+            40 <= pc_prefix <= 63 or \
+            65 <= pc_prefix <= 69:
+            return frappe.get_doc("Territory", "Germany (Northwest)")
+        elif pc_prefix < 26 or \
+            30 <= pc_prefix <= 31 or \
+            38 <= pc_prefix <= 39 or \
+            pc_prefix == 98:  # including invalid 00
+            return frappe.get_doc("Territory", "Germany (Northeast)")
+        elif pc_prefix == 37:
+            return frappe.get_doc("Territory", "Göttingen")
+        elif pc_prefix == 64 or \
+            70 <= pc_prefix <= 97:
+            return frappe.get_doc("Territory", "Germany (South)")
+        else:
+            print(f"The postal code {postal_code} cannot be assigned to any specific German sales region. Territory is set to Germany (parent Territory).")
+            return frappe.get_doc("Territory", "Germany")
+
+    elif address.country == "France":
+        postal_code = address.pincode
+        pc_int = int(re.sub('\D', '', postal_code))
+        if   2000 <= pc_int <=  2999 or \
+             8000 <= pc_int <=  8999 or \
+            10000 <= pc_int <= 10999 or \
+            14000 <= pc_int <= 14999 or \
+            16000 <= pc_int <= 18999 or \
+            21000 <= pc_int <= 22999 or \
+            25000 <= pc_int <= 25999 or \
+            27000 <= pc_int <= 29999 or \
+            35000 <= pc_int <= 37999 or \
+            39000 <= pc_int <= 39999 or \
+            41000 <= pc_int <= 41999 or \
+            44000 <= pc_int <= 45999 or \
+            49000 <= pc_int <= 62999 or \
+            67000 <= pc_int <= 68999 or \
+            70000 <= pc_int <= 72999 or \
+            75000 <= pc_int <= 80999 or \
+            85000 <= pc_int <= 86999 or \
+            88000 <= pc_int <= 97999:
+            return frappe.get_doc("Territory", "France (North)")
+        elif 1000 <= pc_int <=  1999 or \
+             3000 <= pc_int <=  7999 or \
+             9000 <= pc_int <=  9999 or \
+            11000 <= pc_int <= 13999 or \
+            15000 <= pc_int <= 15999 or \
+            19000 <= pc_int <= 20999 or \
+            23000 <= pc_int <= 24999 or \
+            26000 <= pc_int <= 26999 or \
+            30000 <= pc_int <= 34999 or \
+            38000 <= pc_int <= 38999 or \
+            40000 <= pc_int <= 40999 or \
+            42000 <= pc_int <= 43999 or \
+            46000 <= pc_int <= 48999 or \
+            63000 <= pc_int <= 66999 or \
+            69000 <= pc_int <= 69999 or \
+            73000 <= pc_int <= 74999 or \
+            81000 <= pc_int <= 84999 or \
+            87000 <= pc_int <= 87999 or \
+            98000 <= pc_int <= 98999:
+            return frappe.get_doc("Territory", "France (South)")
+        else:
+            print(f"The postal code {postal_code} cannot be assigned to any specific French sales region. Territory is set to France (parent Territory).")
+            return frappe.get_doc("Territory", "France")
+
+    elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
+                             "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
+                             "Gibraltar", "Greece", "Greenland", "Guernsey", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy",
+                             "Jersey", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Malta", "Moldova, Republic of",
+                             "Monaco", "Montenegro", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia",
+                             "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "Ukraine", "United Kingdom"):
+        return frappe.get_doc("Territory", "Rest of Europe")
+    else:
+        return frappe.get_doc("Territory", "Rest of the World")
+
+
+def configure_territory_sales_manager(customer_id):
+    """
+    Update a customer given by its ID with a territory and sales manager
+
+    run
+    bench execute microsynth.microsynth.utils.configure_territory_sales_manager --kwargs "{'customer_id': '832739'}"
+
+    For testing: Territory of customer_id 832739 should be "Germany (Northeast)"
+    """
+    customer = frappe.get_doc("Customer", customer_id)
+    query = f"""
+            SELECT 
+                `tabAddress`.`name`,
+                `tabAddress`.`country`,
+                `tabAddress`.`is_shipping_address`,
+                `tabAddress`.`address_type`
+            FROM `tabDynamic Link`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+            WHERE   `tabDynamic Link`.`parenttype` = "Address"
+                AND `tabDynamic Link`.`link_doctype` = "Customer"
+                AND `tabDynamic Link`.`link_name` = {customer_id}              
+                AND `tabAddress`.`is_shipping_address` <> 0
+                AND `tabAddress`.`address_type` = "Shipping"
+            ;"""        
+    shipping_addresses = frappe.db.sql(query, as_dict=True)
+    if not shipping_addresses:
+        print(f"Customer {customer_id} has no shipping address.")
+        return
+    territory = determine_territory(shipping_addresses[0]['name'])
+    customer.territory = territory.name
+    customer.account_manager = territory.sales_manager  # TODO: Set the sales managers in the ERP
+    print(f"{territory.sales_manager=}")
+    customer.save()
+    print(f"Customer {customer_id} got assigned Territory {territory.name}.")
 
 
 def check_default_companies():
@@ -1214,7 +1355,8 @@ def tag_linked_documents(web_order_id, tag):
         add_tag(tag = tag, dt = "Sales Invoice", dn = si)
 
     return
-    
+
+
 @frappe.whitelist()
 def book_avis(company, intermediate_account, currency_deviation_account, invoices, amount, reference):
     if type(invoices) == str:
