@@ -2720,6 +2720,51 @@ def set_missing_invoice_to():
         customer.invoice_to = billing_contact['person_id']
         customer.save()
 
+
+def correct_invoice_to_contacts():
+    """
+    Find Customers that have an Invoice To contact named '%-B' which has a shipping address linked. Duplicate the shipping address, 
+    change the address type to billing and link it to the invoice to contact. Correct contacts created with the set_missing_invoice_to 
+    and the correct_invoicing_email functions.
+
+    run
+    bench execute microsynth.microsynth.migration.correct_invoice_to_contacts
+    """
+
+    query = """
+    SELECT 
+        `tabCustomer`.`name` AS `customer`,
+        `tabContact`.`name` AS `contact`,
+        `tabAddress`.`name` AS `address`
+    FROM `tabCustomer`
+    LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
+    LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+    WHERE `tabAddress`.`address_type` <> 'Billing'
+    AND `tabContact`.`name` <> `tabAddress`.`name`
+    AND `tabContact`.`name` LIKE '%-B'
+    AND CONCAT(`tabAddress`.`name`, '-B') = `tabContact`.`name`;
+    """
+
+    results = frappe.db.sql(query, as_dict=True)
+    count = 0
+    for result in results:
+        if count > 0:
+            return
+        contact = frappe.get_doc("Contact", result['contact'])
+        print(contact.name)
+        old_address = frappe.get_doc("Address", contact.address)
+        new_address = old_address.as_dict()
+        # TODO
+        # change update_address to accept string person_ids 
+        new_address['person_id'] = contact.name
+        new_address['address_type'] = "Billing"
+        update_address(new_address)
+        contact.address = new_address['name']
+        contact.save()
+
+        count += 1
+
+
 """
 Export an Abacus Export File and replace income accounts according to account matrix
 
