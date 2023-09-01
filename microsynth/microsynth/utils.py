@@ -908,13 +908,17 @@ def set_invoice_to(customer):
         frappe.db.commit()
     return
 
+
 @frappe.whitelist()
 def configure_customer(customer):
     set_default_language(customer)
+    configure_territory_and_sales_manager(customer)
+    set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
     add_webshop_service(customer, 'FullPlasmidSeq')
     return
+
 
 def get_alternative_account(account, currency):
     """
@@ -935,6 +939,7 @@ def get_alternative_account(account, currency):
         return alternative_accounts[0].alternative_account
     else:
         return account
+
 
 def get_alternative_income_account(account, country):
     """
@@ -1188,16 +1193,11 @@ def determine_territory(address_id):
         return frappe.get_doc("Territory", "Rest of the World")
 
 
-def configure_territory_sales_manager(customer_id):
+def get_first_shipping_address(customer_id):
     """
-    Update a customer given by its ID with a territory and sales manager
-
-    run
-    bench execute microsynth.microsynth.utils.configure_territory_sales_manager --kwargs "{'customer_id': '832739'}"
-
-    For testing: Territory of customer_id 832739 should be "Germany (Northeast)"
+    Return the ID (name) of the first shipping address of the given Customer
+    or None if the given Customer has no shipping address.
     """
-    customer = frappe.get_doc("Customer", customer_id)
     query = f"""
             SELECT 
                 `tabAddress`.`name`,
@@ -1215,13 +1215,55 @@ def configure_territory_sales_manager(customer_id):
     shipping_addresses = frappe.db.sql(query, as_dict=True)
     if not shipping_addresses:
         print(f"Customer {customer_id} has no shipping address.")
+        return None
+    return shipping_addresses[0]['name']
+
+
+def configure_territory_and_sales_manager(customer_id):
+    """
+    Update a customer given by its ID with a territory and sales manager.
+
+    run
+    bench execute microsynth.microsynth.utils.configure_territory_sales_manager --kwargs "{'customer_id': '832739'}"
+    """
+    customer = frappe.get_doc("Customer", customer_id)
+    shipping_address = get_first_shipping_address(customer_id)
+    if shipping_address is None:
         return
-    territory = determine_territory(shipping_addresses[0]['name'])
+    territory = determine_territory(shipping_address)
     customer.territory = territory.name
-    customer.account_manager = territory.sales_manager  # TODO: Set the sales managers in the ERP
-    print(f"{territory.sales_manager=}")
+    country = frappe.get_value("Address", shipping_address, "Country")
+    if country == "Italy":
+        customer.account_manager = "servizioclienticer@dgroup.it"
+    # TODO: Logic to set Account managers rupert.hagg_agent@microsynth.ch and ktrade@ktrade.sk
+    else:
+        customer.account_manager = territory.sales_manager
+
     customer.save()
     print(f"Customer {customer_id} got assigned Territory {territory.name}.")
+
+
+def set_default_distributor(customer_id):
+    """
+    Set the distributor if the Customers first shipping address is in Italy or Hungary.
+
+    run
+    bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35277857'}"
+    bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35280995'}"
+    """
+    shipping_address = get_first_shipping_address(customer_id)
+    if shipping_address is None:
+        return
+    country = frappe.get_value("Address", shipping_address, "Country")
+    if country == "Italy":
+        distributor = '35914214'
+        set_distributor(customer_id, distributor, 'Sequencing')
+        set_distributor(customer_id, distributor, 'Labels')
+    elif country == "Hungary":
+        distributor = '832700'
+        set_distributor(customer_id, distributor, 'Oligos')
+        set_distributor(customer_id, distributor, 'Labels')
+        set_distributor(customer_id, distributor, 'Sequencing')
 
 
 def check_default_companies():
