@@ -2633,12 +2633,12 @@ def correct_income_account(sales_invoice):
 def correct_invoicing_email():
     """
     Corrects Customer.invoice_to in case Customer.invoice_email differs from email_id of the contact linked in Customer.invoice_to due to changes of Lars.
+    Handels only Customers with exactly 1 Contact.
+
     Belonging to Task #11328 KB ERP.
-    The Customer ID list in the SQL query was created via ERP frontend -> Sales Invoice -> report ->
-        Filter: Sales Invoice.exclude_from_payment_reminder = 21.08.2023; no company filter! -> Export
 
     Run from bench
-    $ bench execute microsynth.microsynth.migration.correct_invoicing_email
+    bench execute microsynth.microsynth.migration.correct_invoicing_email
     """
     sql_query = """SELECT 
             `tabCustomer`.`name` AS customer_name,
@@ -2652,6 +2652,13 @@ def correct_invoicing_email():
                 SELECT DISTINCT `tabSales Invoice`.`customer`
                 FROM `tabSales Invoice`
                 WHERE `exclude_from_payment_reminder_until` = '2023-08-21')
+        AND
+            (SELECT COUNT(*)
+            FROM `tabDynamic Link`
+            WHERE `tabDynamic Link`.`parenttype` = "Contact"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+            AND `tabDynamic Link`.`link_name` = `tabCustomer`.`name`) = 1
+
         ORDER BY `tabContact`.`name`;
     """
     query_results = frappe.db.sql(sql_query, as_dict=True)
@@ -2662,9 +2669,8 @@ def correct_invoicing_email():
         if "-B" in contact.name:
             print(f"Warning: there is already a contact {contact.name}, going to create {contact.name}-B ...")
         new_contact['person_id'] = contact.name + "-B"
-        # new_contact['email_id'] = result['invoice_email']  # should be done manually by Administration
         new_contact['customer_id'] = result['customer_name']
-        new_contact['email'] = contact.email_id
+        new_contact['email'] = result['invoice_email']
         update_contact(new_contact)  # phone, receive_newsletter, subscribe_date, unsubscribe_date, cost_center not saved
         customer = frappe.get_doc("Customer", result['customer_name'])
         customer.invoice_to = new_contact['person_id']
