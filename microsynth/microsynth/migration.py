@@ -858,22 +858,22 @@ def update_address(address_data, is_deleted=False, customer_id=None):
     if not 'address_line1' in address_data:
         return None
 
-    print("Updating address {0}...".format(str(int(address_data['person_id']))))
     # check if address exists (force insert onto target id)
-    if not frappe.db.exists("Address", str(int(address_data['person_id']))):
-        print("Creating address {0}...".format(str(int(address_data['person_id']))))
+    if not frappe.db.exists("Address", address_data['person_id']):
+        print("Creating address {0}...".format(address_data['person_id']))
         frappe.db.sql("""INSERT INTO `tabAddress` 
                         (`name`, `address_line1`) 
                         VALUES ("{0}", "{1}");""".format(
-                        str(int(address_data['person_id'])), 
+                        address_data['person_id'], 
                         address_data['address_line1'] if 'address_line1' in address_data else "-"))
+    print("Updating address {0}...".format(address_data['person_id']))
 
     # update record
     if 'address_type' in address_data:
         address_type = address_data['address_type']
     else:
         address_type = None
-    address = frappe.get_doc("Address", str(int(address_data['person_id'])))
+    address = frappe.get_doc("Address", address_data['person_id'])
     if 'customer_name' in address_data and 'address_line1' in address_data:
         address.address_title = "{0} - {1}".format(address_data['customer_name'], address_data['address_line1'])
     if 'overwrite_company' in address_data:
