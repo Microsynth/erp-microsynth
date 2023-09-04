@@ -2723,8 +2723,9 @@ def set_missing_invoice_to():
 
 def correct_invoice_to_contacts():
     """
-    Find Customers that have an Invoice To contact named '%-B' which has a shipping address linked. Duplicate the shipping address, 
-    change the address type to billing and link it to the invoice to contact. Correct contacts created with the set_missing_invoice_to 
+    Find Customers that have an Invoice To contact named '%-B' which has a shipping address linked and has a single billing address.
+    Link the single billing address to the invoice_to contact. 
+    This function corrects contacts created with the set_missing_invoice_to 
     and the correct_invoicing_email functions.
 
     run
@@ -2732,37 +2733,55 @@ def correct_invoice_to_contacts():
     """
 
     query = """
-    SELECT 
-        `tabCustomer`.`name` AS `customer`,
-        `tabContact`.`name` AS `contact`,
-        `tabAddress`.`name` AS `address`
-    FROM `tabCustomer`
-    LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
-    LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
-    WHERE `tabAddress`.`address_type` <> 'Billing'
-    AND `tabContact`.`name` <> `tabAddress`.`name`
-    AND `tabContact`.`name` LIKE '%-B'
-    AND CONCAT(`tabAddress`.`name`, '-B') = `tabContact`.`name`;
+        SELECT `tabCustomer`.`name` AS `customer`,
+            `tabContact`.`name` AS `contact`,
+            `tabAddress`.`name` AS `address`
+        FROM `tabCustomer`
+        LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+        WHERE `tabAddress`.`address_type` <> 'Billing'
+        AND `tabContact`.`name` <> `tabAddress`.`name`
+        AND `tabContact`.`name` LIKE '%-B'
+        AND CONCAT(`tabAddress`.`name`, '-B') = `tabContact`.`name`
+        AND (
+                (SELECT COUNT(*)
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                    AND `tabDynamic Link`.`link_doctype` = "Customer"
+                    AND `tabDynamic Link`.`link_name` = `tabCustomer`.`name`
+                    AND `tabAddress`.`is_primary_address` = 1
+                    AND `tabAddress`.`address_type` = 'Billing'
+                    AND (`tabAddress`.`email_id` IS NULL
+                        OR `tabAddress`.`email_id` = '')) = 1)
     """
 
     results = frappe.db.sql(query, as_dict=True)
-    count = 0
     for result in results:
-        if count > 0:
-            return
+        # get billing address
+        address_query = """
+            SELECT `tabDynamic Link`.`parent` AS `address`
+            FROM `tabDynamic Link`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+            WHERE `tabDynamic Link`.`parenttype` = "Address"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+            AND `tabDynamic Link`.`link_name` = {customer}
+            AND `tabAddress`.`is_primary_address` = 1
+            AND `tabAddress`.`address_type` = 'Billing'
+            AND (`tabAddress`.`email_id` IS NULL
+                OR `tabAddress`.`email_id` = '')
+        """.format(customer=result['customer'])
+        address_ids = frappe.db.sql(address_query, as_dict=True)
+        address_id = address_ids[0]['address']
+
         contact = frappe.get_doc("Contact", result['contact'])
         print(contact.name)
-        old_address = frappe.get_doc("Address", contact.address)
-        new_address = old_address.as_dict()
-        # TODO
-        # change update_address to accept string person_ids 
-        new_address['person_id'] = contact.name
-        new_address['address_type'] = "Billing"
-        update_address(new_address)
-        contact.address = new_address['name']
-        contact.save()
 
-        count += 1
+        assert '-B' in contact.name
+        # TODO: update invoice_to contact name
+        # contact.name = address_id
+        contact.address = address_id
+        contact.save()
 
 
 """
