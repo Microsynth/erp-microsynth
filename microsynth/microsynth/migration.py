@@ -2755,8 +2755,10 @@ def correct_invoice_to_contacts():
                     AND (`tabAddress`.`email_id` IS NULL
                         OR `tabAddress`.`email_id` = '')) = 1)
     """
-
     results = frappe.db.sql(query, as_dict=True)
+
+    i = 0
+    length = len(results)
     for result in results:
         # get billing address
         address_query = """
@@ -2775,13 +2777,19 @@ def correct_invoice_to_contacts():
         address_id = address_ids[0]['address']
 
         contact = frappe.get_doc("Contact", result['contact'])
-        print(contact.name)
+
+        print("{progress}% process '{contact}'".format(contact = contact.name, progress = int(100 * i / length)))
 
         assert '-B' in contact.name
-        # TODO: update invoice_to contact name
-        # contact.name = address_id
+
         contact.address = address_id
         contact.save()
+
+        frappe.rename_doc("Contact", contact.name, address_id, merge=False)
+        frappe.db.commit()
+
+        print(f"renamed '{contact.name}' to '{address_id}'")
+        i += 1
 
 
 """
