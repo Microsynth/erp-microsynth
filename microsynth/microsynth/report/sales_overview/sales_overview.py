@@ -212,7 +212,7 @@ def get_revenue(filters, month, item_groups, debug=False):
         
     if debug:
         print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=territory, 
+            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=filters.get("territory"), 
             chf=revenue['chf'], eur=revenue['eur']))
             
     return revenue
@@ -378,9 +378,10 @@ def test():
     """
     filters = {
         'company': None,
-        'territory': None,
+        'territory': "Switzerland",
         'fiscal_year': date.today().year,
-        'reporting_type': "CHF"
+        'reporting_type': "CHF",
+        'customer_credit_revenue': "Credit allocation"
     }    
     item_groups = ["Shipping"]
-    return get_invoice_revenue(filters, month = 3, item_groups=item_groups, debug=True)
+    return get_revenue(filters, month = 3, item_groups=item_groups, debug=True)
