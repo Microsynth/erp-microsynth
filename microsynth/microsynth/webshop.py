@@ -190,10 +190,13 @@ def update_customer(customer, client="webshop"):
     if not frappe.db.exists("Customer", customer['customer_id']):
         return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' not found."}
 
-    #TODO: do not update disabled customers
-    #TODO: do not update if doc.webshop_address_readonly
-
     doc = frappe.get_doc("Customer", customer['customer_id'])
+
+    if doc.disabled:
+        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' is disabled."}
+
+    if doc.webshop_address_readonly:
+        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' is readonly."}
 
     if 'customer_name' in customer:
         doc.customer_name = customer['customer_name']
