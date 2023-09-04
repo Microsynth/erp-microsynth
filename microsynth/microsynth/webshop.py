@@ -163,6 +163,9 @@ def register_user(user_data, client="webshop"):
 def create_update_customer(customer_data, client="webshop"):
     """
     This function will create or update a customer and also the given contact and address
+    
+    Note: This function and endpoint is deprecated and will be removed soon
+    
     """
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
@@ -171,6 +174,41 @@ def create_update_customer(customer_data, client="webshop"):
         return {'success': True, 'message': "OK"}
     else: 
         return {'success': False, 'message': error}
+
+
+@frappe.whitelist()
+def update_customer(customer, client="webshop"):
+    """
+    Update a customer.
+    """
+
+    if not customer:
+        return {'success': False, 'message': "Customer missing"}
+    if not 'customer_id' in customer:
+        return {'success': False, 'message': "Customer ID missing"}
+
+    if not frappe.db.exists("Customer", customer['customer_id']):
+        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' not found."}
+
+    #TODO: do not update disabled customers
+    #TODO: do not update if doc.webshop_address_readonly
+
+    doc = frappe.get_doc("Customer", customer['customer_id'])
+
+    if 'customer_name' in customer:
+        doc.customer_name = customer['customer_name']
+
+    if 'tax_id' in customer:
+        doc.tax_id = customer['tax_id']
+
+    if 'siret' in customer:
+        doc.siret = customer['siret']
+
+    if 'invoicing_method' in customer:
+        doc.invoicing_method = customer['invoicing_method']
+
+    doc.save()
+    return {'success': True, 'message': f"Updated customer '{ customer['customer_id'] }'" }
 
 
 @frappe.whitelist()
