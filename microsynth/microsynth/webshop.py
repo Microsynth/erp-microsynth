@@ -595,7 +595,7 @@ def get_contact_quotations(contact, client="webshop"):
             OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
             AND `tabQuotation`.`docstatus` = 1 
             AND (`tabQuotation`.`valid_till` >= CURDATE() OR `tabQuotation`.`valid_till` IS NULL)
-            ORDER BY `tabQuotation`.`name` """.format(contact, customer_name) 
+            ORDER BY `tabQuotation`.`name` DESC, `tabQuotation Item`.`idx` ASC;""".format(contact, customer_name) 
 
         qtns = frappe.db.sql(query, as_dict=True)
 
