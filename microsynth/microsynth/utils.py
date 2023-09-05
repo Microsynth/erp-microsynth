@@ -1198,6 +1198,8 @@ def get_first_shipping_address(customer_id):
     Return the ID (name) of the first shipping address of the given Customer
     or None if the given Customer has no shipping address.
     """
+    
+    # TODO Webshop update to send the attribute is_shipping_address. Uncomment line 'AND `tabAddress`.`is_shipping_address` <> 0'
     query = f"""
             SELECT 
                 `tabAddress`.`name`,
@@ -1208,8 +1210,8 @@ def get_first_shipping_address(customer_id):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE   `tabDynamic Link`.`parenttype` = "Address"
                 AND `tabDynamic Link`.`link_doctype` = "Customer"
-                AND `tabDynamic Link`.`link_name` = {customer_id}              
-                AND `tabAddress`.`is_shipping_address` <> 0
+                AND `tabDynamic Link`.`link_name` = {customer_id}
+                -- AND `tabAddress`.`is_shipping_address` <> 0
                 AND `tabAddress`.`address_type` = "Shipping"
             ;"""        
     shipping_addresses = frappe.db.sql(query, as_dict=True)
