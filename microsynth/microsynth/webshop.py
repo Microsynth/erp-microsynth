@@ -7,7 +7,7 @@
 
 import frappe
 import json
-from microsynth.microsynth.migration import update_customer, update_contact, update_address, robust_get_country
+from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, configure_customer
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
@@ -167,6 +167,7 @@ def create_update_customer(customer_data, client="webshop"):
     Note: This function and endpoint is deprecated and will be removed soon
     
     """
+    from microsynth.microsynth.migration import update_customer
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
     error = update_customer(customer_data)
