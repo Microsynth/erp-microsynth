@@ -2272,7 +2272,7 @@ def update_territories():
     SELECT `tabSales Invoice`.`name`, `tabCustomer`.`territory` 
     FROM `tabSales Invoice` 
     LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
-    WHERE `tabSales Invoice`.`territory` LIKE "All%";"""
+    WHERE `tabSales Invoice`.`territory` <> `tabCustomer`.`territory`;"""
 
     sales_invoices = frappe.db.sql(sales_invoice_query, as_dict=True)
 
