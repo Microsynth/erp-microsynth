@@ -167,10 +167,10 @@ def create_update_customer(customer_data, client="webshop"):
     Note: This function and endpoint is deprecated and will be removed soon
     
     """
-    from microsynth.microsynth.migration import update_customer
+    from microsynth.microsynth.migration import update_customer as migration_update_customer
     if type(customer_data) == str:
         customer_data = json.loads(customer_data)
-    error = update_customer(customer_data)
+    error = migration_update_customer(customer_data)
     if not error:
         return {'success': True, 'message': "OK"}
     else: 
