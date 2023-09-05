@@ -2186,20 +2186,20 @@ def refactor_date(date_str):
     Reformat a date from DD.MM.YYYY to YYYY-MM-DD
     """
     parts = date_str.split(".")
+    assert len(parts) == 3
     return f"{parts[2]}-{parts[1]}-{parts[0]}"
 
 
-def import_contact_notes(file):
+def import_contact_notes(notes_file):
     """
     This function reads every line as a customer.
-	:param file_name: name of the TSV file with five columns
-    :returns a dict with key = contact ID (person ID)
+	:param notes_file: name of the TSV file with five columns
     
     run
     bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'file': '/mnt/erp_share/Gecko/CustomerVisits_edited.tab'}"
     """    
     counter = 0
-    with open(file) as tsv:
+    with open(notes_file) as tsv:
         for line in csv.reader(tsv, delimiter="\t"):  # it's important to split lines exactly at CR LF (Windows encoding)
             assert len(line) == 5
             contact_note = frappe.get_doc({
