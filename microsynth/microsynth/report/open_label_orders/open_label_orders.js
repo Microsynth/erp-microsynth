@@ -111,7 +111,8 @@ function first_barcode_dialog() {
                 // validation: if it fails, leave status on 0 and continue, on success move to 1
                 var validated = false;
                 var from_barcode = Number(values.from_barcode.replace(/\s+/g, ''));
-
+                var to_barcode = from_barcode + Number(locals.label_queue[0].qty) - 1;
+                
                 validated = is_in_range(locals.label_queue[0].range, from_barcode);
                 
                 if (validated) {
@@ -122,7 +123,10 @@ function first_barcode_dialog() {
                     frappe.msgprint("invalid barcode range");
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
-                process_queue();
+                
+                
+                //process_queue(); // check availability, the proceed
+                are_labels_available(locals.label_queue[0].item_code, from_barcode, to_barcode);
             },
             __("Pick first label"),
             __("OK")
@@ -209,4 +213,25 @@ function is_in_range(ranges, value) {
         }
     }
     return false;
+}
+
+function are_labels_available(item_code, from_barcode, to_barcode) {
+    frappe.call({
+        'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.are_labels_available",
+        'args': {
+            'item_code': item_code,
+            'from_barcode': from_barcode,
+            'to_barcode': to_barcode
+        },
+        'asyc': false,
+        'callback': function(r) {
+            if (r.message == 1) {
+                // labels available, proceed
+                process_queue()
+            } else {
+                // labels have already been used -> stop
+                frappe.msgprint("labels already used");
+            }
+        }
+    });
 }

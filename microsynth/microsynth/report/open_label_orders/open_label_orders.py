@@ -149,3 +149,19 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     
     # return print format
     return dn.name
+
+@frappe.whitelist()
+def are_labels_available(item_code, from_barcode, to_barcode):
+    conflicts = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabSequencing Label` 
+        WHERE `item` = "{item_code}"
+          AND `label_id` BETWEEN "{from_barcode}" AND "{to_barcode}"
+          AND LENGTH(`label_id`) = "{length}";
+    """.format(item_code=item_code, from_barcode=from_barcode, to_barcode=to_barcode, length=len(from_barcode)), as_dict=True)
+    
+    if len(conflicts) == 0:
+        return 1
+    else:
+        return 0
+    
