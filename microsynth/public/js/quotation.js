@@ -33,5 +33,32 @@ frappe.ui.form.on('Quotation', {
             category = "Material";
         }; 
         update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category);
+        
+        // assert customer master fields on initial save
+        if (frm.doc.__islocal) {
+            assert_customer_fields(frm);
+        }
     }
 });
+
+/* this function will pull
+ * territory, currency and selling_price_list 
+ * from the customer master data */
+function assert_customer_fields(frm) {
+    if ((frm.doc.quotation_to === "Customer") && (frm.doc.party_name)) {
+        frappe.call({
+            'method': "frappe.client.get",
+            'args': {
+                'doctype': "Customer",
+                'name': frm.doc.party_name
+            },
+            'asyc': false,
+            'callback': function(r) {
+                var customer = r.message;
+                cur_frm.set_value("territory", customer.territory);
+                cur_frm.set_value("currency", customer.default_currency);
+                cur_frm.set_value("selling_price_list", customer.default_price_list);
+            }
+        });
+    }
+}
