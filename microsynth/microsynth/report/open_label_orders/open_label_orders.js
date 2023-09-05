@@ -17,6 +17,9 @@ frappe.query_reports["Open Label Orders"] = {
         report.page.add_inner_button( __("Pick labels"), function() {
             queue_builder(report.get_values());
         });
+        report.page.add_inner_button( __("PrioPick"), function() {
+            prio_pick(report.get_values());
+        });
     }
 };
 
@@ -234,4 +237,41 @@ function are_labels_available(item_code, from_barcode, to_barcode) {
             }
         }
     });
+}
+
+function prio_pick(report_data) {
+    // collect all sales orders
+    var orders = [];
+    for (var i = 0; i < frappe.query_report.data.length; i++) {
+        orders.push(frappe.query_report.data[i].sales_order);
+    }
+    // show order selection dialog
+    frappe.prompt([
+            {
+                'fieldname': 'sales_order', 
+                'fieldtype': 'Select', 
+                'label': 'Sales Order', 
+                'reqd': 1,
+                'options': orders.join("\n"),
+                'default': orders[0]
+            }  
+        ],
+        function(values){
+            // reset and prepare queue
+            locals.label_queue = [];
+            // find order details
+            order_details = null;
+            for (var i = 0; i < frappe.query_report.data.length; i++) {
+                if (frappe.query_report.data[i].sales_order === values.sales_order) {
+                    locals.label_queue.push(frappe.query_report.data[i]);
+                    locals.label_queue[0].status = 0;
+                    break;
+                }
+            }
+            // start queue
+            process_queue();
+        },
+        'Select Sales Order',
+        'OK'
+    );
 }
