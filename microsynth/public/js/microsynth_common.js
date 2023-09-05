@@ -251,3 +251,11 @@ function recalc_allocation(d) {
     d.set_value("allocated", sum);
     return sum
 }
+
+function hide_in_words() {
+    // remove in words (because customisation and setting both do not apply)
+    cur_frm.set_df_property('in_words', 'hidden', 1);
+    cur_frm.set_df_property('base_in_words', 'hidden', 1);
+    // this all does not work on base_in_words :-( last resort
+    $("[data-fieldname='base_in_words']").hide();
+}

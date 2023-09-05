@@ -14,7 +14,7 @@ frappe.ui.form.on('Sales Order', {
             prepare_naming_series(frm);             // common function
         }
         
-
+        hide_in_words();
     },
     before_save(frm) {
         if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {

@@ -35,6 +35,8 @@ frappe.ui.form.on('Sales Invoice', {
                 transmit_invoice(frm);
             });
         }
+        
+        hide_in_words();
     },
     company(frm) {
         set_naming_series(frm);                 // common function

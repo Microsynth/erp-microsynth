@@ -19,11 +19,7 @@ frappe.ui.form.on('Quotation', {
             } 
         },500);
         
-        // remove in words (because customisation and setting both do not apply)
-        cur_frm.set_df_property('in_words', 'hidden', 1);
-        cur_frm.set_df_property('base_in_words', 'hidden', 1);
-        // this all does not work on base_in_words :-( last resort
-        $("[data-fieldname='base_in_words']").hide();
+        hide_in_words();
     },
     
     before_save(frm) {
