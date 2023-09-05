@@ -669,6 +669,15 @@ def get_item_prices(content, client="webshop"):
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
 
 
+def apply_discount(quotation, sales_order):
+    if quotation.additional_discount_percentage > 0:
+        sales_order.additional_discount_percentage = quotation.additional_discount_percentage
+    elif sales_order.total == quotation.total:
+        sales_order.discount_amount = quotation.discount_amount
+    else:
+        frappe.log_error(f"Unable to apply discount on { sales_order.name }. Mismatch between quotation and sales order.", "webshop.apply_discount")
+    return sales_order
+
 @frappe.whitelist()
 def place_order(content, client="webshop"):
     """
@@ -862,7 +871,9 @@ def place_order(content, client="webshop"):
             if item.item_code in quotation_rate:                    # check if this item had a quotation rate
                 item.rate = quotation_rate[item.item_code]
                 item.price_list_rate = quotation_rate[item.item_code]
-    
+
+    so_doc = apply_discount(qtn_doc, so_doc)
+
     # prepayment: hold order
     if "Prepayment" in (customer.invoicing_method or ""):
         so_doc.hold_order = 1
