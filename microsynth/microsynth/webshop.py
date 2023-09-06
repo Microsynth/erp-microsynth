@@ -671,6 +671,8 @@ def get_item_prices(content, client="webshop"):
 
 
 def apply_discount(quotation, sales_order):
+    if not quotation:
+        return sales_order
     if quotation.additional_discount_percentage > 0:
         sales_order.additional_discount_percentage = quotation.additional_discount_percentage
     elif sales_order.total == quotation.total:
@@ -769,6 +771,7 @@ def place_order(content, client="webshop"):
                 quotation_rate[item.item_code] = item.rate
     else:
         quotation = None
+        qtn_doc = None
     # create oligos
     if 'oligos' in content:
         consolidated_item_qtys = {}
@@ -873,7 +876,7 @@ def place_order(content, client="webshop"):
                 item.rate = quotation_rate[item.item_code]
                 item.price_list_rate = quotation_rate[item.item_code]
 
-    so_doc = apply_discount(qtn_doc, so_doc)
+        so_doc = apply_discount(qtn_doc, so_doc)
 
     # prepayment: hold order
     if "Prepayment" in (customer.invoicing_method or ""):
