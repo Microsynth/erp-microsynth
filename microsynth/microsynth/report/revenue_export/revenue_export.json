@@ -1,0 +1,33 @@
+{
+ "add_total_row": 0,
+ "creation": "2023-09-06 08:46:00.653830",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2023-09-06 08:46:00.653830",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Revenue Export",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Sales Invoice",
+ "report_name": "Revenue Export",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "Sales Manager Extended"
+  }
+ ]
+}

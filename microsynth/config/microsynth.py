@@ -359,23 +359,23 @@ def get_data():
             "items": [
                     {
                         "type": "report",
-                        "name": "Sales Analytics",
-                        "label": _("Sales Analytics"),
-                        "doctype": "Sales Order",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Sales Pivot",
-                        "label": _("Sales Pivot"),
-                        "doctype": "Sales Invoice",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
                         "name": "Sales Overview",
                         "label": _("Sales Overview"),
                         "doctype": "Sales Invoice",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Revenue Export",
+                        "label": _("Revenue Export"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Sales Analytics",
+                        "label": _("Sales Analytics"),
+                        "doctype": "Sales Order",
                         "is_query_report": True
                     }
             ]
