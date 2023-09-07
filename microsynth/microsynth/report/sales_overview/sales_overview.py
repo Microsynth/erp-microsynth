@@ -218,22 +218,12 @@ def get_revenue(filters, month, item_groups, debug=False):
     return revenue
 
 
-def get_revenue_details(filters, month, item_groups, debug=False):
-    # get raw document list depending on variant
-    if filters.get("customer_credit_revenue") == "Credit deposit":
-        details = get_item_revenue(filters, month, item_groups, debug)
-    elif filters.get("customer_credit_revenue") == "Credit allocation":
-        details = get_invoice_revenue(filters, month, item_groups, debug)
-    else:
-        frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
-    
+def calculate_chf_eur(exchange_rate, details):
     # add chf and eur columns
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):
         company_currency[c['name']] = c['default_currency']
-    
-    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
-        
+
     for i in details:
         if company_currency[i['company']] == "CHF":
             i['chf'] = i['base_net_amount']
@@ -245,7 +235,23 @@ def get_revenue_details(filters, month, item_groups, debug=False):
         i['currency_chf'] = "CHF"
         i['currency_eur'] = "EUR"
         i['base_currency'] = company_currency[i['company']]
-        
+
+    return details
+
+
+def get_revenue_details(filters, month, item_groups, debug=False):
+    # get raw document list depending on variant
+    if filters.get("customer_credit_revenue") == "Credit deposit":
+        details = get_item_revenue(filters, month, item_groups, debug)
+    elif filters.get("customer_credit_revenue") == "Credit allocation":
+        details = get_invoice_revenue(filters, month, item_groups, debug)
+    else:
+        frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
+    
+    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
+
+    details = calculate_chf_eur(exchange_rate, details)
+
     return details
 
 

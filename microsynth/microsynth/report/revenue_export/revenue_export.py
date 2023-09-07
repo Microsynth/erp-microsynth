@@ -67,6 +67,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
 
     query = """
             SELECT 
+                `tabSales Invoice Item`.`parent` AS `sales_invoice`,
                 `tabSales Invoice Item`.`parent` AS `document`,
                 `tabSales Invoice Item`.`base_net_amount` AS `base_net_amount`, 
                 `tabSales Invoice Item`.`item_code` AS `item_code`,
@@ -103,33 +104,17 @@ def get_revenue_details(filters, debug=False):
 
     if filters.get("month"): 
         m = get_month_number(filters.get("month"))
-        details = get_item_revenue(filters, m, item_groups, debug)
+        exchange_rate = get_exchange_rate(filters.get("fiscal_year"), m)
+        records = get_item_revenue(filters, m, item_groups, debug)
+        details = calculate_chf_eur(exchange_rate, records)
+
     else:
         details = []
         for m in range(1, 12 + 1):
-            details += get_item_revenue(filters, month = m, item_groups=item_groups, debug=debug)
+            exchange_rate = get_exchange_rate(filters.get("fiscal_year"), m)
+            records = get_item_revenue(filters, month = m, item_groups=item_groups, debug=debug)
+            details += calculate_chf_eur(exchange_rate, records)
 
-    # add chf and eur columns
-    company_currency = {}
-    for c in frappe.get_all("Company", fields=['name', 'default_currency']):
-        company_currency[c['name']] = c['default_currency']
-    
-    # TODO use month to get exchange rate
-    exchange_rate = get_exchange_rate(filters.get("fiscal_year"), 7)
-
-    for i in details:
-        i['sales_invoice'] = i['document']
-        if company_currency[i['company']] == "CHF":
-            i['chf'] = i['base_net_amount']
-            i['eur'] = i['base_net_amount'] / exchange_rate
-        else:
-            i['chf'] = i['base_net_amount'] * exchange_rate
-            i['eur'] = i['base_net_amount']
-        # add currency indicators
-        i['currency_chf'] = "CHF"
-        i['currency_eur'] = "EUR"
-        i['base_currency'] = company_currency[i['company']]
-        
     return details
 
 
