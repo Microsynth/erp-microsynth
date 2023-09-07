@@ -38,8 +38,10 @@ frappe.ui.form.on('Quotation', {
             assert_customer_fields(frm);
         }
         
-        if (frm.doc.shipping_address_name) {
+        if (frm.doc.shipping_address_name && frm.doc.shipping_address_name != "") {
             update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category);
+        } else {
+            frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
     }
 });
