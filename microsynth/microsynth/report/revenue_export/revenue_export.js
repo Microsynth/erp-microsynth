@@ -35,7 +35,7 @@ frappe.query_reports["Revenue Export"] = {
             "fieldname": "month",
             "label": __("Month"),
             "fieldtype": "Select",
-            "options": [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+            "options": [ '', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
         }
     ]
 };

@@ -7,7 +7,7 @@ from frappe import _
 from frappe.utils import cint
 import calendar
 from microsynth.microsynth.utils import get_child_territories
-from microsynth.microsynth.report.sales_overview.sales_overview import get_exchange_rate, get_item_groups
+from microsynth.microsynth.report.sales_overview.sales_overview import calculate_chf_eur, get_exchange_rate, get_item_groups
 
 
 def get_month_number(month):
@@ -69,7 +69,9 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             SELECT 
                 `tabSales Invoice Item`.`parent` AS `document`,
                 `tabSales Invoice Item`.`base_net_amount` AS `base_net_amount`, 
+                `tabSales Invoice Item`.`item_code` AS `item_code`,
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
+                `tabSales Invoice Item`.`qty` AS `qty`,
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
                 `tabSales Invoice`.`company`,
                 `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
