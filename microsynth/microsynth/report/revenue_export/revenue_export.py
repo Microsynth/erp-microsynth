@@ -9,9 +9,28 @@ import calendar
 from microsynth.microsynth.utils import get_child_territories
 from microsynth.microsynth.report.sales_overview.sales_overview import get_exchange_rate
 
+
+def get_month_number(month):
+    months = {
+        "January": 1,
+        "February": 2,
+        "March": 3,
+        "April": 4,
+        "May": 5,
+        "June": 6,
+        "July": 7,
+        "August": 8, 
+        "September": 9,
+        "October": 10, 
+        "November": 11,
+        "December": 12
+    }
+    return months[month]
+
+
 def get_columns(filters):
     return [
-        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120 },
+        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 130 },
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Float", "options": "", "precision": "0", "width": 75 },
         {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "options": "base_currency", "width": 120},
@@ -64,15 +83,14 @@ def get_item_revenue(filters, month, debug=False):
 
 def get_revenue_details(filters, debug=False):
 
-    # TODO: consider month filter
-    details = []
     if filters.get("month"): 
-        # details = get_item_revenue(filters, filters.get("month"), debug)
-        details = get_item_revenue(filters, 7, debug)
+        m = get_month_number(filters.get("month"))
+        details = get_item_revenue(filters, m, debug)
     else:
+        details = []
         for m in range(1, 12 + 1):
-            details.append(get_item_revenue(filters, month = m, debug=debug))
-    
+            details += get_item_revenue(filters, month = m, debug=debug)
+
     # add chf and eur columns
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):

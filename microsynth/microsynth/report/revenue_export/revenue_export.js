@@ -16,6 +16,13 @@ frappe.query_reports["Revenue Export"] = {
             "fieldtype": "Link",
             "options": "Territory"
         },
+        ,
+        {
+            "fieldname": "item_group",
+            "label": __("Item Group"),
+            "fieldtype": "Link",
+            "options": "Item Group"
+        },
         {
             "fieldname": "fiscal_year",
             "label": __("Fiscal Year"),
@@ -26,11 +33,9 @@ frappe.query_reports["Revenue Export"] = {
         },
         {
             "fieldname": "month",
-            "label": __("Month Year"),
-            "fieldtype": "Data",
-            "options": [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ],
-            "reqd": 1,
-            "default": 7
+            "label": __("Month"),
+            "fieldtype": "Select",
+            "options": [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
         }
     ]
 };
