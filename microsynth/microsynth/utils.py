@@ -911,8 +911,13 @@ def set_invoice_to(customer):
 
 @frappe.whitelist()
 def configure_customer(customer):
+    """
+    Configures a customer. This function is run upon webshop user registration (webshop.register_user) 
+    and when saving the customer or an address (customer.js, address.js).
+    """
     set_default_language(customer)
-    configure_territory_and_sales_manager(customer)
+    # TODO Set Territory and Sales Manager only if current value is default (new entries)
+    # configure_territory_and_sales_manager(customer)
     set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
