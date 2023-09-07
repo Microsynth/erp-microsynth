@@ -40,6 +40,8 @@ def get_columns(filters):
         {"label": _("Invoice Conversion Rate"), "fieldname": "conversion_rate", "fieldtype": "Float", "precision": "6", "width": 120},
         {"label": _("Monthly Currency Exchange"), "fieldname": "exchange_rate", "fieldtype": "Float", "precision": "6", "width": 120},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 175},
+        {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 120},
+        {"label": _("Institute Key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 120},
     ]
 
 
@@ -70,9 +72,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
                 `tabSales Invoice`.`company`,
-                `tabSales Invoice`.`conversion_rate` AS `conversion_rate`
+                `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
+                `tabContact`.`group_leader` AS `group_leader`,
+                `tabContact`.`institute_key` AS `institute_key`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Invoice`.`contact_person`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` LIKE "{company}"
