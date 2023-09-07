@@ -91,6 +91,7 @@
    "fieldname": "web_id",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Web ID",
    "read_only": 1,
    "search_index": 1
@@ -103,6 +104,7 @@
    "fieldname": "prod_id",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Production ID",
    "read_only": 1
   },
@@ -148,7 +150,7 @@
    "label": "Specification"
   }
  ],
- "modified": "2023-06-26 12:40:40.911063",
+ "modified": "2023-09-07 08:52:47.510633",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Oligo",
