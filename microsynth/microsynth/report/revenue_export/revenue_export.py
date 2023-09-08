@@ -34,14 +34,23 @@ def get_columns(filters):
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Float", "options": "", "precision": "0", "width": 75 },
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype":"Link", "options": "Currency", "width":"100" },
+        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype":"Currency", "options": "currency", "width":"100" },
         {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "options": "base_currency", "width": 120},
         {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "options": "currency_chf", "width": 120},
         {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "options": "currency_eur", "width": 120},
         {"label": _("Invoice Conversion Rate"), "fieldname": "conversion_rate", "fieldtype": "Float", "precision": "6", "width": 120},
         {"label": _("Monthly Currency Exchange"), "fieldname": "exchange_rate", "fieldtype": "Float", "precision": "6", "width": 120},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype":"data", "width":"100" },
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype":"Data", "width":"100" },
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 175},
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 175},
+        {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 175},
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 175},
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 175},
         {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 120},
         {"label": _("Institute Key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 120},
+        {"label": _(""), "fieldname": "", "fieldtype":"", "options": "", "width":"100" },
     ]
 
 
@@ -58,9 +67,6 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
-
-    # TODO: replace base_net_amount by a discount-corrected version 'discounted item amount in company currency'
-    #     (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` - `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate` AS `discounted item amount in company currency`,
 
     # TODO: unify with implementation on Sales Overview, consider Month, Item Group and Territory
     
@@ -79,8 +85,16 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice Item`.`item_code` AS `item_code`,
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
                 `tabSales Invoice Item`.`qty` AS `qty`,
+                `tabSales Invoice`.`currency` AS `currency`,
+                `tabSales Invoice Item`.`price_list_rate` AS `price_list_rate`,
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
+                `tabSales Invoice`.`web_order_id`,
+                `tabSales Invoice`.`product_type`,
                 `tabSales Invoice`.`company`,
+                `tabSales Invoice`.`territory`,
+                `tabSales Invoice`.`contact_person`,
+                `tabSales Invoice`.`customer`,
+                `tabSales Invoice`.`customer_name`,
                 `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
                 `tabContact`.`group_leader` AS `group_leader`,
                 `tabContact`.`institute_key` AS `institute_key`
