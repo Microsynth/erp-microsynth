@@ -1202,6 +1202,9 @@ def get_first_shipping_address(customer_id):
     """
     Return the ID (name) of the first shipping address of the given Customer
     or None if the given Customer has no shipping address.
+
+    run
+    bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '35475873'}"
     """
     # TODO Webshop update to send the attribute is_shipping_address. Uncomment line 'AND `tabAddress`.`is_shipping_address` <> 0'
     query = f"""
@@ -1252,21 +1255,24 @@ def configure_sales_manager(customer_id):
     bench execute microsynth.microsynth.utils.configure_sales_manager --kwargs "{'customer_id': '832739'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
+
     if customer.account_manager is None or customer.account_manager == '' or customer.account_manager == 'null':
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
             country = None
         else:
             country = frappe.get_value("Address", shipping_address, "Country")
+
         if country == "Italy":
             customer.account_manager = "servizioclienticer@dgroup.it"
         # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
-        if country == "Slovakia":
-            if frappe.get_value("Address", shipping_address, "City") in ["Kosice", "Košice"]:
+        elif country == "Slovakia":
+            if frappe.get_value("Address", shipping_address, "City") in ["Kocice", "Kosice", "Košice", "KOSICE"]:
                 # according to an email of Elges from Mi 06.09.2023 16:23
                 customer.account_manager = "ktrade@ktrade.sk"
         else:
             customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
+
         customer.save()
         print(f"Customer {customer_id} got assigned Account Manager {customer.account_manager}.")
 
