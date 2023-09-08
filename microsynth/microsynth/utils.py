@@ -1204,7 +1204,7 @@ def get_first_shipping_address(customer_id):
     or None if the given Customer has no shipping address.
 
     run
-    bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '35475873'}"
+    bench execute microsynth.microsynth.utils.get_first_shipping_address --kwargs "{'customer_id': '35475873'}"
     """
     # TODO Webshop update to send the attribute is_shipping_address. Uncomment line 'AND `tabAddress`.`is_shipping_address` <> 0'
     query = f"""
@@ -1230,7 +1230,8 @@ def get_first_shipping_address(customer_id):
 
 def configure_territory(customer_id):
     """
-    Update a customer given by its ID with a territory if the territory is not "All Territories" (default).
+    Update a customer given by its ID with a territory derived from
+    the shipping address if the territory is "All Territories" (default).
 
     run
     bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '832739'}"
@@ -1239,7 +1240,7 @@ def configure_territory(customer_id):
     if customer.territory == "All Territories":
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
-            print(f"Customer {customer_id} has no shipping address. Can't update territory.")
+            print(f"Customer {customer_id} has no Shipping Address. Can't configure Territory.")
             return
         territory = determine_territory(shipping_address)
         customer.territory = territory.name
@@ -1265,13 +1266,13 @@ def configure_sales_manager(customer_id):
 
         if country == "Italy":
             customer.account_manager = "servizioclienticer@dgroup.it"
-        # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
         elif country == "Slovakia":
             if frappe.get_value("Address", shipping_address, "City") in ["Kocice", "Kosice", "Košice", "KOSICE"]:
                 # according to an email of Elges from Mi 06.09.2023 16:23
                 customer.account_manager = "ktrade@ktrade.sk"
         else:
             customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
+        # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
 
         customer.save()
         print(f"Customer {customer_id} got assigned Account Manager {customer.account_manager}.")
