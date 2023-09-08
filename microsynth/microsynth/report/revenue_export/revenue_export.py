@@ -69,7 +69,13 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             SELECT 
                 `tabSales Invoice Item`.`parent` AS `sales_invoice`,
                 `tabSales Invoice Item`.`parent` AS `document`,
-                `tabSales Invoice Item`.`base_net_amount` AS `base_net_amount`, 
+                IF (`tabSales Invoice`.`total` <> 0,
+                    IF (`tabSales Invoice`.`is_return` = 1,
+                        (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` + `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`,
+                        (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` - `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`
+                    ), 
+                    0
+                ) AS `base_net_amount`, 
                 `tabSales Invoice Item`.`item_code` AS `item_code`,
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
                 `tabSales Invoice Item`.`qty` AS `qty`,
@@ -83,11 +89,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Invoice`.`contact_person`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 AND `tabSales Invoice`.`territory` {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
-            ;
+            ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
