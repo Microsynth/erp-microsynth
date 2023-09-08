@@ -35,14 +35,6 @@ frappe.query_reports["Sales Overview Details"] = {
             "label": __("Item Group"),
             "fieldtype": "Data",
             "reqd": 1
-        },
-        // {
-        //     "fieldname": "customer_credit_revenue",
-        //     "label": __("Customer Credits Revenue"),
-        //     "fieldtype": "Select",
-        //     "options": "Credit deposit\nCredit allocation",
-        //     "reqd": 1,
-        //     "default": "Credit allocation"
-        // }
+        }
     ]
 };

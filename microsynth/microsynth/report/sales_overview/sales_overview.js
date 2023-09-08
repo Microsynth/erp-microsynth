@@ -32,14 +32,6 @@ frappe.query_reports["Sales Overview"] = {
             "reqd": 1,
             "default": "CHF"
         },
-        // {
-        //     "fieldname": "customer_credit_revenue",
-        //     "label": __("Customer Credits Revenue"),
-        //     "fieldtype": "Select",
-        //     "options": "Credit deposit\nCredit allocation",
-        //     "reqd": 1,
-        //     "default": "Credit allocation"
-        // },
         {
             "fieldname": "aggregate_genetic_analyis",
             "label": __("Aggregate Genetic Analysis"),
@@ -59,7 +51,6 @@ frappe.query_reports["Sales Overview"] = {
                         'territory': frappe.query_report.get_filter_value('territory'),
                         'year': frappe.query_report.get_filter_value('fiscal_year'),
                         'reporting_type': frappe.query_report.get_filter_value('reporting_type'),
-                        // 'customer_credit_revenue': frappe.query_report.get_filter_value('customer_credit_revenue'),
                         'customer_credit_revenue': 'Credit allocation'
                     }
                     

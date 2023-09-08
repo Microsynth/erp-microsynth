@@ -243,12 +243,8 @@ def calculate_chf_eur(exchange_rate, details):
 
 def get_revenue_details(filters, month, item_groups, debug=False):
     # get raw document list depending on variant
-    if filters.get("customer_credit_revenue") == "Credit deposit":
-        details = get_item_revenue(filters, month, item_groups, debug)
-    elif filters.get("customer_credit_revenue") == "Credit allocation":
-        details = get_invoice_revenue(filters, month, item_groups, debug)
-    else:
-        frappe.throw("Sales Overview.get_data: customer_credit_revenue has invalid value '{0}'".format(filters.get("customer_credit_revenue")))
+    details = get_item_revenues(filters, month, item_groups, debug)
+    # details = get_invoice_revenues(filters, month, item_groups, debug)
     
     exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
 
@@ -257,7 +253,7 @@ def get_revenue_details(filters, month, item_groups, debug=False):
     return details
 
 
-def get_item_revenue(filters, month, item_groups, debug=False):
+def get_item_revenues(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
@@ -290,7 +286,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     
     return items
 
-def get_invoice_revenue(filters, month, item_groups, debug=False):
+def get_invoice_revenues(filters, month, item_groups, debug=False):
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
