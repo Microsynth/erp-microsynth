@@ -235,6 +235,8 @@ def calculate_chf_eur(exchange_rate, details):
         i['currency_chf'] = "CHF"
         i['currency_eur'] = "EUR"
         i['base_currency'] = company_currency[i['company']]
+        # add exchange rate for revenue export
+        i['exchange_rate'] = exchange_rate
 
     return details
 
@@ -354,7 +356,7 @@ def get_item_groups():
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
-        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices', 'Andere', 'Shipping']:
+        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices', 'Andere']:
             group_list.append(g['name'])
     group_list.sort()
     return group_list
