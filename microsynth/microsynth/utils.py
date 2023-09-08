@@ -916,8 +916,7 @@ def configure_customer(customer):
     and when saving the customer or an address (customer.js, address.js).
     """
     set_default_language(customer)
-    # TODO Set Territory and Sales Manager only if current value is default (new entries)
-    # configure_territory_and_sales_manager(customer)
+    configure_territory_and_sales_manager(customer)
     set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
@@ -1228,26 +1227,37 @@ def get_first_shipping_address(customer_id):
 
 def configure_territory_and_sales_manager(customer_id):
     """
-    Update a customer given by its ID with a territory and sales manager.
+    Update a customer given by its ID with a territory and sales manager if those values are not yet set (default).
 
     run
     bench execute microsynth.microsynth.utils.configure_territory_sales_manager --kwargs "{'customer_id': '832739'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
-    shipping_address = get_first_shipping_address(customer_id)
-    if shipping_address is None:
-        return
-    territory = determine_territory(shipping_address)
-    customer.territory = territory.name
-    country = frappe.get_value("Address", shipping_address, "Country")
-    if country == "Italy":
-        customer.account_manager = "servizioclienticer@dgroup.it"
-    # TODO: Logic to set Account managers rupert.hagg_agent@microsynth.ch and ktrade@ktrade.sk
-    else:
-        customer.account_manager = territory.sales_manager
 
-    customer.save()
-    print(f"Customer {customer_id} got assigned Territory {territory.name}.")
+    if customer.territory == "All Territories":
+        shipping_address = get_first_shipping_address(customer_id)
+        if shipping_address is None:
+            return
+        territory = determine_territory(shipping_address)
+        customer.territory = territory.name
+        customer.save()
+        print(f"Customer {customer_id} got assigned Territory {territory.name}.")
+
+    if customer.account_manager is None or customer.account_manager == '' or customer.account_manager == "null":
+        shipping_address = get_first_shipping_address(customer_id)
+        country = frappe.get_value("Address", shipping_address, "Country")
+        if country == "Italy":
+            customer.account_manager = "servizioclienticer@dgroup.it"
+        # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
+        if country == "Slovakia":
+            if frappe.get_value("Address", shipping_address, "City") in ["Kosice", "Košice"]:
+                # according to an email of Elges from Mi 06.09.2023 16:23
+                customer.account_manager = "ktrade@ktrade.sk"
+        else:
+            territory = frappe.get_doc("Territory", customer.territory)
+            customer.account_manager = territory.sales_manager
+        customer.save()
+        print(f"Customer {customer_id} got assigned Account Manager {customer.account_manager}.")
 
 
 def set_default_distributor(customer_id):
