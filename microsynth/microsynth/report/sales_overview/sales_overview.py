@@ -201,10 +201,12 @@ def get_exchange_rate(year, month):
     
 
 def get_revenue(filters, month, item_groups, debug=False):
-    # fetch list of documents
+    """
+    Fetch a list of documents (Items or Sales Invoices) and calculate the sum.
+    """
     details = get_revenue_details(filters, month, item_groups, debug=False)
     
-    # create sums per chf and eur
+    # create sums per chf and eur to show as total in the report
     revenue = {'eur': 0, 'chf': 0}
     for i in details:
         revenue['chf'] += i['chf']
@@ -219,7 +221,9 @@ def get_revenue(filters, month, item_groups, debug=False):
 
 
 def calculate_chf_eur(exchange_rate, details):
-    # add chf and eur columns
+    """
+    Add CHF and EUR columns to the raw data
+    """
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):
         company_currency[c['name']] = c['default_currency']
@@ -242,7 +246,9 @@ def calculate_chf_eur(exchange_rate, details):
 
 
 def get_revenue_details(filters, month, item_groups, debug=False):
-    # get raw document list depending on variant
+    """
+    Get raw document list depending on variant including CHF and EUR columns.
+    """
     details = get_item_revenues(filters, month, item_groups, debug)
     # details = get_invoice_revenues(filters, month, item_groups, debug)
     
@@ -254,6 +260,11 @@ def get_revenue_details(filters, month, item_groups, debug=False):
 
 
 def get_item_revenues(filters, month, item_groups, debug=False):
+    """
+    Get raw item records for revenue calculation (Sales Invoice Item). Base net amount
+    is corrected for additional discounts and includes payments with customer credits.
+    Exclude the customer credit item 6100.
+    """
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
@@ -268,18 +279,25 @@ def get_item_revenues(filters, month, item_groups, debug=False):
     query = """
             SELECT 
                 `tabSales Invoice Item`.`parent` AS `document`,
-                `tabSales Invoice Item`.`base_net_amount` AS `base_net_amount`, 
+                IF (`tabSales Invoice`.`total` <> 0,
+                    IF (`tabSales Invoice`.`is_return` = 1,
+                        (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` + `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`,
+                        (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` - `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`
+                    ), 
+                    0
+                ) AS `base_net_amount`, 
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 AND `tabSales Invoice`.`territory` {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
-            ;
+            ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
@@ -287,6 +305,9 @@ def get_item_revenues(filters, month, item_groups, debug=False):
     return items
 
 def get_invoice_revenues(filters, month, item_groups, debug=False):
+    """
+    Get raw invoice records for revenue calculation (Sales Invoice)
+    """
     company = "%"
     if filters.get("company"):
         company = filters.get("company")

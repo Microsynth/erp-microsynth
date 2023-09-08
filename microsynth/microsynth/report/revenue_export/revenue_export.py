@@ -55,6 +55,11 @@ def get_columns(filters):
 
 
 def get_item_revenue(filters, month, item_groups, debug=False):
+    """
+    Get raw item records for revenue export (Sales Invoice Item). Base net amount
+    is corrected for additional discounts and includes payments with customer credits.
+    Exclude the customer credit item 6100.
+    """
     company = "%"
     if filters.get("company"):
         company = filters.get("company")
@@ -67,9 +72,6 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
-
-    # TODO: unify with implementation on Sales Overview, consider Month, Item Group and Territory
-    
 
     query = """
             SELECT 
