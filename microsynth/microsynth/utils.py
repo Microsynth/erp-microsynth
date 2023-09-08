@@ -916,7 +916,8 @@ def configure_customer(customer):
     and when saving the customer or an address (customer.js, address.js).
     """
     set_default_language(customer)
-    configure_territory_and_sales_manager(customer)
+    configure_territory(customer)
+    configure_sales_manager(customer)
     set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
@@ -1202,7 +1203,6 @@ def get_first_shipping_address(customer_id):
     Return the ID (name) of the first shipping address of the given Customer
     or None if the given Customer has no shipping address.
     """
-    
     # TODO Webshop update to send the attribute is_shipping_address. Uncomment line 'AND `tabAddress`.`is_shipping_address` <> 0'
     query = f"""
             SELECT 
@@ -1225,27 +1225,39 @@ def get_first_shipping_address(customer_id):
     return shipping_addresses[0]['name']
 
 
-def configure_territory_and_sales_manager(customer_id):
+def configure_territory(customer_id):
     """
-    Update a customer given by its ID with a territory and sales manager if those values are not yet set (default).
+    Update a customer given by its ID with a territory if the territory is not "All Territories" (default).
 
     run
-    bench execute microsynth.microsynth.utils.configure_territory_sales_manager --kwargs "{'customer_id': '832739'}"
+    bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '832739'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
-
     if customer.territory == "All Territories":
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
+            print(f"Customer {customer_id} has no shipping address. Can't update territory.")
             return
         territory = determine_territory(shipping_address)
         customer.territory = territory.name
         customer.save()
         print(f"Customer {customer_id} got assigned Territory {territory.name}.")
 
-    if customer.account_manager is None or customer.account_manager == '' or customer.account_manager == "null":
+
+def configure_sales_manager(customer_id):
+    """
+    Update a customer given by its ID with a sales manager if it is not yet set (default).
+
+    run
+    bench execute microsynth.microsynth.utils.configure_sales_manager --kwargs "{'customer_id': '832739'}"
+    """
+    customer = frappe.get_doc("Customer", customer_id)
+    if customer.account_manager is None or customer.account_manager == '' or customer.account_manager == 'null':
         shipping_address = get_first_shipping_address(customer_id)
-        country = frappe.get_value("Address", shipping_address, "Country")
+        if shipping_address is None:
+            country = None
+        else:
+            country = frappe.get_value("Address", shipping_address, "Country")
         if country == "Italy":
             customer.account_manager = "servizioclienticer@dgroup.it"
         # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
@@ -1254,8 +1266,7 @@ def configure_territory_and_sales_manager(customer_id):
                 # according to an email of Elges from Mi 06.09.2023 16:23
                 customer.account_manager = "ktrade@ktrade.sk"
         else:
-            territory = frappe.get_doc("Territory", customer.territory)
-            customer.account_manager = territory.sales_manager
+            customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
         customer.save()
         print(f"Customer {customer_id} got assigned Account Manager {customer.account_manager}.")
 
