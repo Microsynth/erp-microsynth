@@ -222,7 +222,8 @@ def get_revenue(filters, month, item_groups, debug=False):
 
 def calculate_chf_eur(exchange_rate, details):
     """
-    Add CHF and EUR columns to the raw data
+    Add CHF and EUR columns to the raw data. Use the invoice conversion rate for
+    CHF → EUR and EUR → CHF conversions.
     """
     company_currency = {}
     for c in frappe.get_all("Company", fields=['name', 'default_currency']):
@@ -230,11 +231,24 @@ def calculate_chf_eur(exchange_rate, details):
 
     for i in details:
         if company_currency[i['company']] == "CHF":
-            i['chf'] = i['base_net_amount']
-            i['eur'] = i['base_net_amount'] / exchange_rate
+            if i['currency'] == "EUR":
+                i['chf'] = i['base_net_amount']
+                i['eur'] = i['base_net_amount'] / i['conversion_rate']  # conversion_rate: (EUR → CHF); other conversion rates (USD → CHF), (SEK → CHF) cannot be applied
+            else:
+                i['chf'] = i['base_net_amount']
+                i['eur'] = i['base_net_amount'] / exchange_rate         # exchange rate:   (EUR → CHF)
+        elif company_currency[i['company']] == "EUR":
+            if i['currency'] == "CHF":
+                i['chf'] = i['base_net_amount'] / i['conversion_rate']  # conversion_rate: (CHF → EUR); other conversion rates (USD → EUR), (SEK → EUR) cannot be applied
+                i['eur'] = i['base_net_amount']
+            else:
+                i['chf'] = i['base_net_amount'] * exchange_rate         # exchange rate:   (EUR → CHF)
+                i['eur'] = i['base_net_amount']
         else:
-            i['chf'] = i['base_net_amount'] * exchange_rate
-            i['eur'] = i['base_net_amount']
+            frappe.throw(
+                title='Company currency error',
+                msg=f"Invalid currency {company_currency[i['company']]} of company '{i['company']}'"
+            )
         # add currency indicators
         i['currency_chf'] = "CHF"
         i['currency_eur'] = "EUR"
@@ -287,6 +301,8 @@ def get_item_revenues(filters, month, item_groups, debug=False):
                     0
                 ) AS `base_net_amount`, 
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
+                `tabSales Invoice`.`currency`,
+                `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`

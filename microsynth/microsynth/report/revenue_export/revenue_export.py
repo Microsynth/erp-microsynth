@@ -40,7 +40,7 @@ def get_columns(filters):
         {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "options": "currency_chf", "width": 120},
         {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "options": "currency_eur", "width": 120},
         {"label": _("Invoice Conversion Rate"), "fieldname": "conversion_rate", "fieldtype": "Float", "precision": "6", "width": 120},
-        {"label": _("Monthly Currency Exchange"), "fieldname": "exchange_rate", "fieldtype": "Float", "precision": "6", "width": 120},
+        {"label": _("Monthly Currency Exchange (EUR → CHF)"), "fieldname": "exchange_rate", "fieldtype": "Float", "precision": "6", "width": 120},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype":"data", "width":"100" },
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype":"Data", "width":"100" },
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 175},
