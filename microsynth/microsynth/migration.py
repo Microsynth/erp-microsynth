@@ -2205,7 +2205,7 @@ def import_contact_notes(notes_file):
             contact_note = frappe.get_doc({
                 'doctype': 'Contact Note',
                 'contact_person': line[1],  # line[1] should be the person ID (contact ID)
-                'date': refactor_date(line[3]) if len(line[3]) > 0 else datetime.now(),
+                'date': datetime.now(),  # refactor_date(line[3]) if len(line[3]) > 0 else datetime.now(),
                 'contact_note_type': "Other",
                 'notes': line[4]
             })
@@ -2213,7 +2213,7 @@ def import_contact_notes(notes_file):
             counter += 1
             if counter % 100 == 0:
                 print(f"Already imported {counter} contact notes. Still running ...")
-    print(f"Imported {counter} contact notes in total.")
+    print(f"Finished: Imported {counter} contact notes in total.")
 
 
 def process_sample(sample):
