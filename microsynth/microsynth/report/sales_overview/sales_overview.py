@@ -93,14 +93,15 @@ def get_data(filters, debug=False):
     # Allow only 'Credit allocation' that calculates from the invoices.
     filters["customer_credit_revenue"] = "Credit allocation"
 
+    initial_groups = remove_groups_for_overview(get_item_groups())
     # prepare
     #currency = frappe.get_cached_value("Company", filters.company, "default_currency")
     # territory_list = get_territories()
     if filters.get("aggregate_genetic_analyis"):
-        group_list = aggregate_groups("Genetic Analysis", GENETIC_ANALSIS_GROUPS, get_item_groups())
+        group_list = aggregate_groups("Genetic Analysis", GENETIC_ANALSIS_GROUPS, initial_groups)
         colors = AGGREGATED_COLOURS
     else:
-        group_list = aggregate_groups("3.67 NGS", NGS_GROUPS, get_item_groups())
+        group_list = aggregate_groups("3.67 NGS", NGS_GROUPS, initial_groups)
         colors = COLOURS
 
     # prepare forcast:
@@ -383,16 +384,33 @@ def get_territories():
         territory_list.append(t['name'])
     territory_list.sort()
     return territory_list
-    
+
+
 def get_item_groups():
+    """
+    Return a list of item groups that are used to show on Sales Overview and also Revenue Export.
+    """
     groups = frappe.get_all("Item Group", filters={'is_group': 0}, fields=['name'])
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
-        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices', 'Andere']:
+        if g['name'] not in ['ShippingThreshold', 'Financial Accounting', 'Internal Invoices']:
             group_list.append(g['name'])
     group_list.sort()
     return group_list
+
+
+def remove_groups_for_overview(groups):
+    """
+    Remove item groups that should not be shown in the Sales Overview.
+    """
+    new_groups = []
+    for g in groups:
+        if g not in new_groups and g not in ["Shipping", "Andere"]:
+            new_groups.append(g)
+
+    return new_groups
+
 
 def aggregate_groups(group_name, target_groups, groups):
     new_groups = []
