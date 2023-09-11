@@ -75,12 +75,12 @@
    "fieldname": "contact_note_type",
    "fieldtype": "Select",
    "label": "Contact Note Type",
-   "options": "\nEmail\nVisit\nPhone\nVideo Call\nConference\nOther",
+   "options": "\nEmail\nVisit\nPhone\nVideo Call\nConference\nMarketing\nOther",
    "reqd": 1
   }
  ],
- "modified": "2023-06-14 09:01:55.573080",
- "modified_by": "Administrator",
+ "modified": "2023-09-11 21:05:23.135377",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Contact Note",
  "owner": "Administrator",
