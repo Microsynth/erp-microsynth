@@ -2190,30 +2190,32 @@ def refactor_date(date_str):
     return f"{parts[2]}-{parts[1]}-{parts[0]}"
 
 
-def import_contact_notes(notes_file):
+def import_contact_notes(notes_file, contact_note_type):
     """
     This function reads every line as a customer.
-	:param notes_file: name of the TSV file with five columns
+	notes_file: name of the TSV file with five columns
+    contact_note_type: type that is set for all imported contact notes (e.g. 'Other', 'Marketing', 'Email')
     
     run
-    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'file': '/mnt/erp_share/Gecko/CustomerVisits_edited.tab'}"
+    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'file': '/mnt/erp_share/Gecko/CustomerVisits_edited.tab', 'contact_note_type': 'Other'}"
     """    
     counter = 0
     with open(notes_file) as tsv:
+        print(f"Importing contact notes from {notes_file} with {contact_note_type=} ...")
         for line in csv.reader(tsv, delimiter="\t"):  # it's important to split lines exactly at CR LF (Windows encoding)
             assert len(line) == 5
             contact_note = frappe.get_doc({
                 'doctype': 'Contact Note',
                 'contact_person': line[1],  # line[1] should be the person ID (contact ID)
                 'date': datetime.now(),  # refactor_date(line[3]) if len(line[3]) > 0 else datetime.now(),
-                'contact_note_type': "Other",
+                'contact_note_type': contact_note_type,
                 'notes': line[4]
             })
             contact_note.save()
             counter += 1
             if counter % 100 == 0:
                 print(f"Already imported {counter} contact notes. Still running ...")
-    print(f"Finished: Imported {counter} contact notes in total.")
+    print(f"Finished: Imported {counter} contact notes in total from {notes_file} with {contact_note_type=}.")
 
 
 def process_sample(sample):
