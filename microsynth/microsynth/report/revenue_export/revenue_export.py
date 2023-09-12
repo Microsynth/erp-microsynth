@@ -151,12 +151,6 @@ def get_revenue_details(filters, debug=False):
 
 
 def get_data(filters):
-    data = []
-    element = { 
-        "sales_invoice": "SI-BAL-23021267",
-        "item_code": "0010",
-        "qty": 42 }
-    data.append(element)
     data = get_revenue_details(filters)
     return data
 
