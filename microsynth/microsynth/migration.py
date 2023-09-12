@@ -14,7 +14,7 @@ from frappe.utils import cint, flt
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer, get_alternative_income_account
+from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -2814,12 +2814,15 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
             
             # go through against accounts and switch according to matrix
             for i in t.get("against_singles"):
-                i['account'] = doc.get_account_number(
-                    get_alternative_income_account(
-                        get_account_by_number(i['account'], si.company), country
+                if i['account'] == "2010":
+                    income_account = get_alternative_account(get_account_by_number(i['account'], si.company), si.currency)
+                else: 
+                    income_account = get_alternative_income_account(
+                        get_account_by_number(i['account'], si.company),
+                        country
                     )
-                )
-            
+                i['account'] = doc.get_account_number(income_account)
+
             # optional: validate according to assessment
             if validate:
                 # fetch all corrected income accounts
