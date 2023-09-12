@@ -64,14 +64,15 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     is corrected for additional discounts and includes payments with customer credits.
     Exclude the customer credit item 6100.
     """
-    company = "%"
     if filters.get("company"):
-        company = filters.get("company")
-
-    if filters.get("territory"):
-        territory_condition = "IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+        company_condition = filters.get("company")
     else:
-        territory_condition = "LIKE '%'"
+        company_condition = ""
+        
+    if filters.get("territory"):
+        territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+    else:
+        territory_condition = ""
 
     
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
@@ -115,12 +116,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
-                AND `tabSales Invoice`.`company` LIKE "{company}"
+                "{company_condition}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` {territory_condition}
+                {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+        """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
@@ -152,11 +153,6 @@ def get_revenue_details(filters, debug=False):
 
 def get_data(filters):
     data = []
-    element = { 
-        "sales_invoice": "SI-BAL-23021267",
-        "item_code": "0010",
-        "qty": 42 }
-    data.append(element)
     data = get_revenue_details(filters)
     return data
 
