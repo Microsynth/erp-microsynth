@@ -280,14 +280,15 @@ def get_item_revenues(filters, month, item_groups, debug=False):
     is corrected for additional discounts and includes payments with customer credits.
     Exclude the customer credit item 6100.
     """
-    company = "%"
     if filters.get("company"):
-        company = filters.get("company")
-
-    if filters.get("territory"):
-        territory_condition = "IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+        company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
-        territory_condition = "LIKE '%'"
+        company_condition = ""
+        
+    if filters.get("territory"):
+        territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+    else:
+        territory_condition = ""
 
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
@@ -310,12 +311,12 @@ def get_item_revenues(filters, month, item_groups, debug=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
-                AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` {territory_condition}
+                {company_condition}
+                {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+        """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
     
@@ -325,14 +326,15 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
     """
     Get raw invoice records for revenue calculation (Sales Invoice)
     """
-    company = "%"
     if filters.get("company"):
-        company = filters.get("company")
-
-    if filters.get("territory"):
-        territory_condition = "IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+        company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
-        territory_condition = "LIKE '%'"
+        company_condition = ""
+        
+    if filters.get("territory"):
+        territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
+    else:
+        territory_condition = ""
 
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
@@ -353,13 +355,15 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                   `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` - `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`)
                   ) AS `base_net_amount`,
                 CONCAT("Customer credit: ", `tabSales Invoice`.`currency`, " ", ROUND(`tabSales Invoice`.`total_customer_credit`, 2)) AS `remarks`,
+                `tabSales Invoice`.`currency`,
+                `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`company` LIKE "{company}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
-                AND `tabSales Invoice`.`territory` {territory_condition}
+                {company_condition}
+                {territory_condition}
                 AND (
                     SELECT `tabSales Invoice Item`.`item_group`
                     FROM `tabSales Invoice Item` 
@@ -371,7 +375,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                     LIMIT 1
                 ) IN ({group_condition})
             ;
-        """.format(company=company, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
+        """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     invoices = frappe.db.sql(query, as_dict=True)
 

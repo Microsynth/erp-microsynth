@@ -65,7 +65,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     Exclude the customer credit item 6100.
     """
     if filters.get("company"):
-        company_condition = filters.get("company")
+        company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
         company_condition = ""
         
@@ -74,7 +74,6 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     else:
         territory_condition = ""
 
-    
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
 
@@ -116,8 +115,8 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
-                "{company_condition}"
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
+                {company_condition}
                 {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
@@ -152,6 +151,7 @@ def get_revenue_details(filters, debug=False):
 
 
 def get_data(filters):
+    data = []
     data = get_revenue_details(filters)
     return data
 
