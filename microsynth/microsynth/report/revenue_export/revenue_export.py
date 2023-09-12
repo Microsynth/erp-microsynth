@@ -152,7 +152,6 @@ def get_revenue_details(filters, debug=False):
 
 
 def get_data(filters):
-    data = []
     data = get_revenue_details(filters)
     return data
 
