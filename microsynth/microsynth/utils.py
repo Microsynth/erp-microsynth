@@ -1217,7 +1217,7 @@ def get_first_shipping_address(customer_id):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE   `tabDynamic Link`.`parenttype` = "Address"
                 AND `tabDynamic Link`.`link_doctype` = "Customer"
-                AND `tabDynamic Link`.`link_name` = {customer_id}
+                AND `tabDynamic Link`.`link_name` = '{customer_id}'
                 -- AND `tabAddress`.`is_shipping_address` <> 0
                 AND `tabAddress`.`address_type` = "Shipping"
             ;"""        
