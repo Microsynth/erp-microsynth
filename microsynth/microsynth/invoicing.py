@@ -178,7 +178,7 @@ def async_create_invoices(mode, company, customer):
                         # TODO: Fix issue with EPFL and UNI-ZUR and remove this condition
                         continue
                     if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR"] or
-                        (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) or      #TODO does not yet work!
+                        # (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) or      #TODO does not yet work!
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth Seqlab GmbH") ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
                         transmit_sales_invoice(si)
@@ -1091,7 +1091,12 @@ def transmit_sales_invoice(sales_invoice):
 
         # Determine transmission mode
         if sales_invoice.is_punchout:
-            mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
+            if (sales_invoice.punchout_shop == "ROC-PENGEP" and sales_invoice.company == "Microsynth AG" ):
+                mode = "Email"
+                print(f"Cannot transmit {sales_invoice.name}. Email transmission mode for ROC-PENGEP for Microsynth AG is not yet implemented")
+                return
+            else:
+                mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
             if customer.invoicing_method == "Post":
                 # Send all invoices with credit account per mail
