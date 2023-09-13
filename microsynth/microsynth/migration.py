@@ -6,7 +6,6 @@ from email.policy import default
 import os
 import frappe
 from frappe import _
-import csv
 import pandas as pd
 import numpy as np
 import json
@@ -18,6 +17,9 @@ from microsynth.microsynth.utils import find_label, set_default_language, set_de
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
+import sys
+import csv
+csv.field_size_limit(sys.maxsize)
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
