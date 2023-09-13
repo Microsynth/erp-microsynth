@@ -22,13 +22,21 @@ frappe.ui.form.on('Customer', {
                 frappe.set_route("query-report", "Pricing Configurator", {'price_list': frm.doc.default_price_list});
             });
         };
-        if ((frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to)) {
-            fetch_primary_contact(frm);
+        if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to)) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'orange',
+                message: __("Please select an <strong>invoice to</strong> contact with an email address.")
+            });
         }
     },
     validate(frm) {
         if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to)) {
-            frappe.msgprint( __("Please select an invoice contact"), __("Validation") );
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please select an <strong>invoice to</strong> contact with an email address.<br>Changes are <strong>not saved</strong>.")
+            });
             frappe.validated=false;
         }
     },
