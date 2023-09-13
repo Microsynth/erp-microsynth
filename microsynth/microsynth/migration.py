@@ -2793,6 +2793,7 @@ def correct_invoice_to_contacts():
 
         print(f"renamed '{contact.name}' to '{address_id}'")
         i += 1
+    print(f"processed {i} invoice_to contacts")
 
 
 """
