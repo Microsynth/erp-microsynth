@@ -2197,7 +2197,8 @@ def import_contact_notes(notes_file, contact_note_type):
     contact_note_type: type that is set for all imported contact notes (e.g. 'Other', 'Marketing', 'Email')
     
     run
-    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'file': '/mnt/erp_share/Gecko/CustomerVisits_edited.tab', 'contact_note_type': 'Other'}"
+    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/CustomerVisits_edited_2023-09-13.tab', 'contact_note_type': 'Other'}"
+    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/MarketingNotes_edited_2023-09-13.tab', 'contact_note_type': 'Marketing'}"
     """    
     counter = 0
     with open(notes_file) as tsv:
