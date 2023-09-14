@@ -20,6 +20,23 @@ frappe.ui.form.on('Quotation', {
         },500);
         
         hide_in_words();
+
+        // fetch Sales Manager from Customer if not yet set
+        if (!frm.doc.sales_manager || frm.doc.sales_manager == "") {
+            frappe.call({
+                'method': 'frappe.client.get_value',
+                'args': {
+                    'doctype': 'Customer',
+                    'fieldname': 'account_manager',
+                    'filters': {
+                        'name': cur_frm.doc.party_name,
+                    }
+                },
+                callback: function(r){
+                    frm.doc.sales_manager = r.message.account_manager;
+                }
+            });
+        }
     },
     
     before_save(frm) {
