@@ -196,6 +196,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if default and len(default) > 0:
             return default[0]['name']
         else:
+            frappe.log_error(f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", "utils.find_tax_template")
             return None
     else:
         country = frappe.get_value("Address", shipping_address, "country")
@@ -214,6 +215,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if len(find_tax_record) > 0:
             return find_tax_record[0]['sales_taxes_template']
         else:
+            frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "utils.find_tax_template")
             return None
 
 
