@@ -117,11 +117,13 @@ def register_user(user_data, client="webshop"):
     # Create contact
     user_data['contact']['person_id'] = user_data['contact']['name']    # Extend contact object to use the legacy update_contact function
     user_data['contact']['customer_id'] = customer.name
+    user_data['contact']['status'] = "Open"
     contact_name = update_contact(user_data['contact'])
-    
+
     # Create invoice contact
     user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']    # Extend invoice_contact object to use the legacy update_contact function
     user_data['invoice_contact']['customer_id'] = customer.name
+    user_data['contact']['status'] = "Open"
     invoice_contact_name = update_contact(user_data['invoice_contact'])
 
     # Update customer data

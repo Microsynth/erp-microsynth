@@ -740,6 +740,9 @@ def update_contact(contact_data):
 
     # Update record
     contact = frappe.get_doc("Contact", contact_data['person_id'])
+    if 'status' in contact_data:
+        contact.status = contact_data['status']
+
     # TODO Update data
     # copy code from update_customer
     contact.first_name = first_name
