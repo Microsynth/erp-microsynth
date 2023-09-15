@@ -123,7 +123,7 @@ def register_user(user_data, client="webshop"):
     # Create invoice contact
     user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']    # Extend invoice_contact object to use the legacy update_contact function
     user_data['invoice_contact']['customer_id'] = customer.name
-    user_data['contact']['status'] = "Open"
+    user_data['invoice_contact']['status'] = "Open"
     invoice_contact_name = update_contact(user_data['invoice_contact'])
 
     # Update customer data
