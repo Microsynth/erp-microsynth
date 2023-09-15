@@ -915,14 +915,24 @@ def configure_customer(customer):
     Configures a customer. This function is run upon webshop user registration (webshop.register_user) 
     and when saving the customer or an address (customer.js, address.js).
     """
+    # TODO: Adjust function comment and check what should be done here and what only for new customers.
     set_default_language(customer)
     configure_territory(customer)
     configure_sales_manager(customer)
-    set_default_distributor(customer)
+    # set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
     add_webshop_service(customer, 'FullPlasmidSeq')
-    return
+
+
+@frappe.whitelist()
+def configure_new_customer(customer):
+    """
+    Configures a new customer. This function is run upon webshop user registration (webshop.register_user).
+    """
+    configure_customer(customer)
+    # TODO: @Rolf: Is the order of function calls unproblematic?
+    set_default_distributor(customer)
 
 
 def get_alternative_account(account, currency):
@@ -1280,15 +1290,22 @@ def configure_sales_manager(customer_id):
 
 def set_default_distributor(customer_id):
     """
-    Set the distributor if the Customers first shipping address is in Italy or Hungary.
+    Set the distributors if the Customer has none and its first shipping address is in Italy or Hungary.
 
     run
     bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35277857'}"
     bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35280995'}"
     """
+    # customer = frappe.get_doc("Customer", customer_id)
+    # distributors =  frappe.get_value("Customer", customer_id, "distributors")
+    # if len(customer.distributors) > 0:
+    #     return
+
     shipping_address = get_first_shipping_address(customer_id)
     if shipping_address is None:
+        print(f"Can't set distributor for customer {customer_id} due to the lack of a shipping address.")
         return
+
     country = frappe.get_value("Address", shipping_address, "Country")
     if country == "Italy":
         distributor = '35914214'
