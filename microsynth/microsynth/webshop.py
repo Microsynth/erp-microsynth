@@ -8,7 +8,7 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, configure_customer
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, configure_new_customer
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -157,7 +157,7 @@ def register_user(user_data, client="webshop"):
     customer.save()
 
     # some more administration
-    configure_customer(customer.name)
+    configure_new_customer(customer.name)
 
     if not error:
         return {'success': True, 'message': "OK"}

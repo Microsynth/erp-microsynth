@@ -921,7 +921,6 @@ def configure_customer(customer):
     set_default_language(customer)
     configure_territory(customer)
     configure_sales_manager(customer)
-    # set_default_distributor(customer)
     set_debtor_accounts(customer)
     # set_invoice_to(customer)
     add_webshop_service(customer, 'FullPlasmidSeq')
@@ -933,7 +932,6 @@ def configure_new_customer(customer):
     Configures a new customer. This function is run upon webshop user registration (webshop.register_user).
     """
     configure_customer(customer)
-    # TODO: @Rolf: Is the order of function calls unproblematic?
     set_default_distributor(customer)
 
 
