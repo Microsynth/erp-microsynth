@@ -13,6 +13,38 @@ def cleanup_languages():
     frappe.db.sql(sql_query, as_dict=1)
     return
 
+
+def disable_notifications():
+    """
+    Set Notification.enabled = 0 for all notifications except four old ones missing channel field.
+    """
+    print("Disabling notifications...")
+    notifications = frappe.get_all("Notification", 
+        fields=['name', 'enabled']
+    )
+    for notification in notifications:
+        if notification['name'] not in ['Retention Bonus', 'Notification for new fiscal year', 'Training Scheduled', 'Training Feedback']:
+            # print(f"Processing notification {notification['name']} ...")
+            doc = frappe.get_doc("Notification", notification['name'])
+            doc.enabled = 0
+            doc.save()
+            # print(f"Successfully processed notification {notification['name']} ...")
+    frappe.db.commit()
+
+
+def disable_email_accounts():
+    print("Disabling email accounts...")
+    email_accounts = frappe.get_all("Email Account", 
+        fields=['name', 'enable_incoming', 'enable_outgoing']
+    )
+    for account in email_accounts:
+        doc = frappe.get_doc("Email Account", account['name'])
+        doc.enable_incoming = 0
+        doc.enable_outgoing = 0
+        doc.save()
+    frappe.db.commit()
+
+
 def disable_hot_config_in_dev():
     """
     run
@@ -26,16 +58,9 @@ def disable_hot_config_in_dev():
     if "erp.microsynth.local" not in (frappe.conf.host_name or ""):
         print("This is a test/develop system: disabling productive values")
         
-        print("Disabling email accounts...")
-        email_accounts = frappe.get_all("Email Account", 
-            fields=['name', 'enable_incoming', 'enable_outgoing']
-        )
-        for account in email_accounts:
-            doc = frappe.get_doc("Email Account", account['name'])
-            doc.enable_incoming = 0
-            doc.enable_outgoing = 0
-            doc.save()
-        frappe.db.commit()
+        disable_email_accounts()
+
+        disable_notifications()
 
         print("Deactivating hot export path...")
         config = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
