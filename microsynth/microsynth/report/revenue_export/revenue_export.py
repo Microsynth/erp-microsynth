@@ -165,7 +165,7 @@ def execute(filters):
     return columns, data
 
 @frappe.whitelist()
-def download_data(filters):
+def download_data(filters, save_to=None):
     """
     Test with
     $ bench execute microsynth.microsynth.report.revenue_export.revenue_export.download_data --kwargs "{'filters': {'fiscal_year': '2023'}}"
@@ -180,4 +180,10 @@ def download_data(filters):
         {'columns': columns, 'data': data}
     )
     
+    # save to a file on the server
+    if save_to:
+        f = open(save_to, "w")
+        f.write(csv)
+        f.close()
+        
     return csv
