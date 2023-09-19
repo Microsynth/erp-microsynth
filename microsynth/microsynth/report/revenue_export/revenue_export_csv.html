@@ -1,0 +1,8 @@
+{%- for c in columns -%}
+    "{{- c['label'] -}}";
+{%- endfor %}
+{% for d in data -%}
+    {%- for c in columns -%}
+        {%- if c['fieldtype'] in ("Data", "Link") %}"{% endif %}{{- d[c['fieldname']] or "" -}}{%- if c['fieldtype'] in ("Data", "Link") %}"{% endif %};
+    {%- endfor %}
+{% endfor %}

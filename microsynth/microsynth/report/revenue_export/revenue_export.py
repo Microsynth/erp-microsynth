@@ -8,7 +8,7 @@ from frappe.utils import cint
 import calendar
 from microsynth.microsynth.utils import get_child_territories
 from microsynth.microsynth.report.sales_overview.sales_overview import calculate_chf_eur, get_exchange_rate, get_item_groups
-
+import json
 
 def get_month_number(month):
     months = {
@@ -66,12 +66,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     is corrected for additional discounts and includes payments with customer credits.
     Exclude the customer credit item 6100.
     """
-    if filters.get("company"):
+    if filters and filters.get("company"):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
         company_condition = ""
         
-    if filters.get("territory"):
+    if filters and filters.get("territory"):
         territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
     else:
         territory_condition = ""
@@ -132,13 +132,13 @@ def get_item_revenue(filters, month, item_groups, debug=False):
 
 
 def get_revenue_details(filters, debug=False):
-    if filters.get("item_group"):
+    if filters and filters.get("item_group"):
         item_groups = [ filters.get("item_group") ]
     else:
         # TODO get_item_groups does not include shipping
         item_groups = get_item_groups()
 
-    if filters.get("month"): 
+    if filters and filters.get("month"): 
         m = get_month_number(filters.get("month"))
         exchange_rate = get_exchange_rate(filters.get("fiscal_year"), m)
         records = get_item_revenue(filters, m, item_groups, debug)
@@ -160,6 +160,24 @@ def get_data(filters):
     return data
 
 
-def execute(filters=None):
+def execute(filters):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+@frappe.whitelist()
+def download_data(filters):
+    """
+    Test with
+    $ bench execute microsynth.microsynth.report.revenue_export.revenue_export.download_data --kwargs "{'filters': {'fiscal_year': '2023'}}"
+    """
+    if type(filters) == str:
+        filters = json.loads(filters)
+        
+    columns, data = execute(filters)
+    
+    csv = frappe.render_template(
+        "microsynth/microsynth/report/revenue_export/revenue_export_csv.html", 
+        {'columns': columns, 'data': data}
+    )
+    
+    return csv

@@ -37,5 +37,40 @@ frappe.query_reports["Revenue Export"] = {
             "fieldtype": "Select",
             "options": [ '', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
         }
-    ]
+    ],
+    "onload": (report) => {
+        report.page.add_inner_button(__('Download CSV'), function () {
+           download_csv();
+        });
+    }
 };
+
+function download_csv() {
+    //  call server to prepare csv content
+    console.log("Let's go...");
+    frappe.call({
+        'method': "microsynth.microsynth.report.revenue_export.revenue_export.download_data",
+        'args': {
+            'filters': frappe.query_report.get_filter_values()
+        },
+        'freeze': true,
+        'freeze_message': __("Generating CSV, please have some patience..."),
+        'callback': function(response) {
+            console.log("I'm back");
+            var csv = response.message;
+            
+            download("revenue_export.csv", csv);
+            //console.log(csv);
+        }
+    });
+}
+
+function download(filename, content) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
