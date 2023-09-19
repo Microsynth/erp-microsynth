@@ -826,7 +826,6 @@ def update_contact(contact_data):
                 try:
                     contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y")
                 except:
-                    frappe.throw(":-(")
                     print("failed to parse subscription date: {0}".format(contact_data['newsletter_registration_date']))
     if 'newsletter_unregistration_date' in contact_data:
         try:
@@ -844,7 +843,6 @@ def update_contact(contact_data):
         contact.address = contact_data['contact_address']
 
     try:
-        # contact.save(ignore_permissions=True)
         contact.save(ignore_permissions=True)
         return contact.name
     except Exception as err:
@@ -2799,6 +2797,75 @@ def correct_invoice_to_contacts():
         print(f"renamed '{contact.name}' to '{address_id}'")
         i += 1
     print(f"processed {i} invoice_to contacts")
+
+
+def correct_invoice_addresses():
+    """
+    Correct invoice_to contacts that don't have a billing address.
+    Belongs to task #13718 KB ERP.
+
+    run
+    bench execute microsynth.microsynth.migration.correct_invoice_addresses
+    """
+    sql_query = """SELECT `tabCustomer`.`name` AS `customer`,
+            `tabContact`.`name` AS `contact`,
+            `tabAddress`.`name` AS `address`
+        FROM `tabCustomer`
+        LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+        WHERE `tabAddress`.`address_type` <> 'Billing'
+        AND `tabAddress`.`name` = `tabContact`.`name`
+        -- AND `tabCustomer`.`invoice_email` = `tabContact`.`email_id`
+        AND (
+                (SELECT COUNT(*)
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Address"
+                    AND `tabDynamic Link`.`link_doctype` = "Customer"
+                    AND `tabDynamic Link`.`link_name` = `tabCustomer`.`name`) = 2)
+        AND (
+                (SELECT COUNT(*)
+                FROM `tabDynamic Link`
+                LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabDynamic Link`.`parent`
+                WHERE `tabDynamic Link`.`parenttype` = "Contact"
+                    AND `tabDynamic Link`.`link_doctype` = "Customer"
+                    AND `tabDynamic Link`.`link_name` = `tabCustomer`.`name`) = 1);
+    """
+    query_results = frappe.db.sql(sql_query, as_dict=True)
+
+    for i, result in enumerate(query_results):
+        invoice_to_id = frappe.get_value("Customer", result['customer'], 'invoice_to')
+        invoice_to_contact = frappe.get_doc("Contact", invoice_to_id)
+        # Duplicate Invoice_to contact
+        new_contact = invoice_to_contact.as_dict()
+
+        # Get billing address
+        query = """SELECT `tabDynamic Link`.`parent` AS `address`
+            FROM `tabDynamic Link`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+            WHERE `tabDynamic Link`.`parenttype` = "Address"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+            AND `tabDynamic Link`.`link_name` = {customer}
+            AND `tabAddress`.`is_primary_address` = 1
+            AND `tabAddress`.`address_type` = 'Billing'
+        """.format(customer=result['customer'])
+        billing_address_ids = frappe.db.sql(query, as_dict=True)
+        assert len(billing_address_ids) == 1
+        billing_address_id = billing_address_ids[0]['address']
+
+        # Rename the new duplicate contact to the name of the billing address (tabAddress.name)
+        new_contact['person_id'] = billing_address_id
+        # Change the address of the new contact to the name of the billing address (Contact.address = tabAddress.name)
+        new_contact['address'] = billing_address_id
+        new_contact['customer_id'] = result['customer']
+        new_contact['email'] = frappe.get_value("Customer", result['customer'], 'invoice_email')
+        update_contact(new_contact)
+        # Set the Customer.invoice_to to the name of the new contact (= name of billing address)
+        customer = frappe.get_doc("Customer", result['customer'])
+        customer.invoice_to = new_contact['person_id']
+        customer.save()
+        print(f"Changed invoice_to of customer {result['customer']} from {invoice_to_id} to {new_contact['person_id']}.")
+    frappe.db.commit()
 
 
 """
