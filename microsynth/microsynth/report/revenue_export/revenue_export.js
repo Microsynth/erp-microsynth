@@ -52,7 +52,7 @@ function download_csv() {
         'method': "microsynth.microsynth.report.revenue_export.revenue_export.download_data",
         'args': {
             'filters': frappe.query_report.get_filter_values(),
-            'save_to': "/tmp/revenue_export.csv"
+            'save_to': "/mnt/erp_share/revenue_export.csv"
         },
         'freeze': true,
         'freeze_message': __("Generating CSV, please have some patience..."),
