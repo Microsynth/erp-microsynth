@@ -8,25 +8,6 @@ def get_data():
             "icon": "octicon octicon-file-submodule",
             "items": [
                     {
-                        "type": "report",
-                        "name": "Customer Finder",
-                        "label": _("Customer Finder"),
-                        "doctype": "Contact",
-                        "is_query_report": True
-                    },
-                    {
-                       "type": "doctype",
-                       "name": "Customer",
-                       "label": _("Customer"),
-                       "description": _("Customer")
-                    },
-                    {
-                       "type": "doctype",
-                       "name": "Contact",
-                       "label": _("Contact"),
-                       "description": _("Contact")
-                    },
-                    {
                        "type": "doctype",
                        "name": "Quotation",
                        "label": _("Quotation"),
@@ -55,6 +36,38 @@ def get_data():
                        "name": "Sales Invoice",
                        "label": _("Sales Invoice"),
                        "description": _("Sales Invoice")
+                    }
+            ]
+        },
+                {
+            "label": _("CRM"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Customer Finder",
+                        "label": _("Customer Finder"),
+                        "doctype": "Contact",
+                        "is_query_report": True
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Customer",
+                       "label": _("Customer"),
+                       "description": _("Customer")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "Contact",
+                       "label": _("Contact"),
+                       "description": _("Contact")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Find Notes",
+                        "label": _("Find Notes"),
+                        "doctype": "Contact Note",
+                        "is_query_report": True
                     }
             ]
         },
@@ -231,32 +244,6 @@ def get_data():
             ]
         },
         {
-            "label": _("Human Resources"),
-            "icon": "fa fa-users",
-            "items": [
-                   {
-                       "type": "doctype",
-                       "name": "Salary Certificate",
-                       "label": _("Salary Certificate"),
-                       "description": _("Salary Certificate")
-                   },
-                   {
-                        "type": "report",
-                        "name": "Worktime Overview",
-                        "label": _("Worktime Overview"),
-                        "doctype": "Timesheet",
-                        "is_query_report": True
-                   },
-                   {
-                        "type": "report",
-                        "name": "Monthly Worktime",
-                        "label": _("Monthly Worktime"),
-                        "doctype": "Timesheet",
-                        "is_query_report": True
-                   }
-            ]
-        },
-        {
             "label": _("Settings"),
             "icon": "fa fa-users",
             "items": [
@@ -378,6 +365,32 @@ def get_data():
                         "doctype": "Sales Order",
                         "is_query_report": True
                     }
+            ]
+        },
+        {
+            "label": _("Human Resources"),
+            "icon": "fa fa-users",
+            "items": [
+                   {
+                       "type": "doctype",
+                       "name": "Salary Certificate",
+                       "label": _("Salary Certificate"),
+                       "description": _("Salary Certificate")
+                   },
+                   {
+                        "type": "report",
+                        "name": "Worktime Overview",
+                        "label": _("Worktime Overview"),
+                        "doctype": "Timesheet",
+                        "is_query_report": True
+                   },
+                   {
+                        "type": "report",
+                        "name": "Monthly Worktime",
+                        "label": _("Monthly Worktime"),
+                        "doctype": "Timesheet",
+                        "is_query_report": True
+                   }
             ]
         }
     ]
