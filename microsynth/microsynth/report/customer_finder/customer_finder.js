@@ -72,7 +72,7 @@ frappe.query_reports["Customer Finder"] = {
         },
         {
             "fieldname": "account_manager",
-            "label": __("Account Manager"),
+            "label": __("Sales Manager"),
             "fieldtype": "Data",
             "options": ""
         }

@@ -15,7 +15,7 @@ def get_columns(filters):
         {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 75},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 125},
         {"label": _("Type"), "fieldname": "address_type", "fieldtype": "Data", "width": 35},
-        {"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 60},
+        {"label": _("Contact ID"), "fieldname": "contact_id", "fieldtype": "Link", "options":"Contact", "width": 75},
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 75},
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 75},
         {"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 100},
@@ -24,9 +24,10 @@ def get_columns(filters):
         {"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
         {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
         {"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
-        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 75},
-        {"label": _("Account Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 75},
+        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 125},
+        {"label": _("Sales Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 75},
         {"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 125},
+        {"label": _("Contact created"), "fieldname": "contact_created", "fieldtype": "Date", "width": 125},
     ]
 
 def get_data(filters):
@@ -108,7 +109,8 @@ def get_data(filters):
             `tabAddress`.`address_line1` AS `address_line1`,
             `tabAddress`.`city` AS `city`,
             `tabCustomer`.`account_manager` AS `account_manager`,
-            `tabCustomer`.`default_price_list` as `price_list`
+            `tabCustomer`.`default_price_list` as `price_list`,
+            `tabContact`.`creation` AS `contact_created`
 
             FROM `tabContact`
             LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
@@ -139,7 +141,8 @@ def get_data(filters):
                 "city": d.city,
                 "street": d.address_line1,
                 "account_manager": d.account_manager,
-                "price_list": d.price_list
+                "price_list": d.price_list,
+                "contact_created": d.contact_created
             }
             data.append(entry)
 
