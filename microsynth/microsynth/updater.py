@@ -23,8 +23,8 @@ def disable_notifications():
         fields=['name', 'enabled']
     )
     for notification in notifications:
-        if notification['name'] not in ['Material Request Receipt Notification']:
-            # print(f"Processing notification {notification['name']} ...")
+        if notification['name'] not in ['Retention Bonus', 'Notification for new fiscal year', 'Training Scheduled', 'Training Feedback', 'Material Request Receipt Notification']:
+            print(f"    processing notification '{notification['name']}' ...")
             doc = frappe.get_doc("Notification", notification['name'])
             doc.enabled = 0
             doc.save()
