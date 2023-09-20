@@ -16,14 +16,14 @@ def cleanup_languages():
 
 def disable_notifications():
     """
-    Set Notification.enabled = 0 for all notifications except four old ones missing channel field.
+    Set Notification.enabled = 0 for all notifications except old one with a bug.
     """
     print("Disabling notifications...")
     notifications = frappe.get_all("Notification", 
         fields=['name', 'enabled']
     )
     for notification in notifications:
-        if notification['name'] not in ['Retention Bonus', 'Notification for new fiscal year', 'Training Scheduled', 'Training Feedback', 'Material Request Receipt Notification']:
+        if notification['name'] not in ['Material Request Receipt Notification']:
             # print(f"Processing notification {notification['name']} ...")
             doc = frappe.get_doc("Notification", notification['name'])
             doc.enabled = 0
