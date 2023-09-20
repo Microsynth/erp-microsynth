@@ -505,6 +505,7 @@ def request_quote(content, client="webshop"):
         'valid_till': date.today() + timedelta(days=90),
         'sales_manager': frappe.get_value("Customer", content['customer'], "account_manager")
     })
+    oligo_items_consolidated = dict()
     # create oligos
     for o in content['oligos']:
         # create or update oligo
@@ -514,16 +515,20 @@ def request_quote(content, client="webshop"):
             if not frappe.db.exists("Item", i['item_code']):
                 return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
                     'reference': None}
-            qtn_doc.append('items', {
-                'item_code': i['item_code'],
-                'qty': i['qty'],
-                'oligo': oligo_name
-            })
+            if not i['item_code'] in oligo_items_consolidated:
+                oligo_items_consolidated[i['item_code']] = i['qty']
+            else:
+                oligo_items_consolidated[i['item_code']] += i['qty']
         # Append oligo to quotation
         qtn_doc.append('oligos', {
             'oligo': oligo_name
         })
     # append items
+    for item_code, qty in oligo_items_consolidated.items():
+        qtn_doc.append('items', {
+            'item_code': item_code,
+            'qty': qty
+        })
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
