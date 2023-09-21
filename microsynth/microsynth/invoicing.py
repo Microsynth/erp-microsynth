@@ -1050,6 +1050,7 @@ def escape_chars_for_xml(text):
     """
     return text.replace("&", "&amp;")
 
+
 @frappe.whitelist()
 def transmit_sales_invoice(sales_invoice):
     """
@@ -1538,3 +1539,26 @@ def transmit_carlo_erba_invoices(sales_invoices):
         frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
 
     return
+
+
+def process_daily_invoices():
+    """
+    Executed by a Cron job every evening to transmit sales invoices electronically or via Post.
+
+    for testing: run
+    bench execute microsynth.microsynth.invoicing.process_daily_invoices
+    """
+    for company in frappe.db.get_all('Company', fields=['name']):  #['Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH']:
+        for mode in ['Post', 'Electronic']:
+            async_create_invoices(mode, company['name'], None)
+
+
+def process_collective_invoices_monthly():
+    """
+    Executed by a Cron job every month to transmit collective sales invoices.
+
+    for testing: run
+    bench execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
+    """
+    for company in frappe.db.get_all('Company', fields=['name']):
+        async_create_invoices("Collective", company['name'], None)
