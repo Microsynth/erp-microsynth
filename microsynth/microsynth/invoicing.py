@@ -1054,7 +1054,7 @@ def escape_chars_for_xml(text):
 @frappe.whitelist()
 def transmit_sales_invoice(sales_invoice):
     """
-    This function will check the transfer mode and transmit the invoice
+    Check the invoicing method of the customer and punchout shop and transmit the invoice accordingly.
 
     run
     bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23001808'}"
@@ -1289,6 +1289,8 @@ def transmit_sales_invoice(sales_invoice):
 
 def transmit_sales_invoices(sales_invoices):
     """
+    Transmit multiple sales invoices with the `transmit_sales_invoice` function. 
+
     run
     bench execute microsynth.microsynth.invoicing.transmit_sales_invoices --kwargs "{'sales_invoices': [ 'SI-BAL-23014018', 'SI-BAL-23014019' ]}"
     """
@@ -1299,7 +1301,7 @@ def transmit_sales_invoices(sales_invoices):
 
 def transmit_sales_invoices_from_file(file):
     """
-    Read a file with a list of Sales Invoice IDs and transmit the Sales Invoices.
+    Read a file with a list of Sales Invoice IDs and transmit the Sales Invoices with the `transmit_sales_invoice` function.
 
     run
     bench execute microsynth.microsynth.invoicing.transmit_sales_invoices_from_file --kwargs "{'file':'/mnt/erp_share/Invoices/invoices.txt'}"
