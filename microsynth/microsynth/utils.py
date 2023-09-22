@@ -1347,6 +1347,7 @@ def exact_copy_sales_invoice(sales_invoice):
     new.docstatus = 0
     new.set_posting_time = 1
     new.amended_from = original.name
+    new.invoice_sent_on = None
     new.creation = datetime.now()
     new.owner = user.name
     new.insert()
