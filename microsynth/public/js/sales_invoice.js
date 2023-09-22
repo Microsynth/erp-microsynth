@@ -35,6 +35,11 @@ frappe.ui.form.on('Sales Invoice', {
                 transmit_invoice(frm);
             });
         }
+        if (frm.doc.docstatus === 1) {
+            frm.add_custom_button(__("ZUGFeRD XML"), function() {
+                download_zugferd_xml(frm);
+            });
+        }
         
         hide_in_words();
     },
@@ -207,4 +212,15 @@ function transmit_invoice(frm) {
             cur_frm.reload_doc();
         }
     });
+}
+
+// call zugferd to create and download xml
+function download_zugferd_xml(frm) {
+    var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"  
+        + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name);
+    var w = window.open( frappe.urllib.get_full_url(url) );
+    if (!w) {
+        frappe.msgprint(__("Please enable pop-ups")); 
+        return;
+    }
 }
