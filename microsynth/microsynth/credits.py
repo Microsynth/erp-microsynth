@@ -15,6 +15,14 @@ def get_available_credits(customer, company):
     return customer_credits
 
 
+@frappe.whitelist()
+def has_credits(customer):
+    # TODO
+    # get all companies
+    # loop through the companies and call get_available_credits
+    return True
+
+
 def get_total_credit(customer, company):
     """
     Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
