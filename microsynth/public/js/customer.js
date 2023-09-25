@@ -9,12 +9,10 @@ try {
 
 frappe.ui.form.on('Customer', {
     refresh(frm) {
-        // show button "Customer Credits" if customer has a credit account
-        if (frm.doc.has_credit_account) {
-            frm.add_custom_button(__("Customer Credits"), function() {
-                frappe.set_route("query-report", "Customer Credits", {'customer': frm.doc.name});
-            });
-        }
+        // show button "Customer Credits"
+        frm.add_custom_button(__("Customer Credits"), function() {
+            frappe.set_route("query-report", "Customer Credits", {'customer': frm.doc.name, 'company': frm.doc.default_company});
+        });
         if ((!frm.doc.__islocal) && (frm.doc.default_price_list)) {
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({
