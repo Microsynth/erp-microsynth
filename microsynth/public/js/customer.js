@@ -7,12 +7,31 @@ try {
     ]);
 } catch { /* do nothing for older versions */ }
 
+
+function has_credits(frm) {
+    var return_value;
+    frappe.call({
+        'method': 'microsynth.microsynth.credits.has_credits',
+        'args': {
+            'customer': frm.doc.name
+        },
+        "async": false,
+        'callback': function(response) {
+            return_value = response.message;
+        }
+    });
+    return return_value;
+}
+
+
 frappe.ui.form.on('Customer', {
     refresh(frm) {
-        // show button "Customer Credits"
-        frm.add_custom_button(__("Customer Credits"), function() {
-            frappe.set_route("query-report", "Customer Credits", {'customer': frm.doc.name, 'company': frm.doc.default_company});
-        });
+        // show button "Customer Credits" only if Customer has credits for any company
+        if (has_credits(frm)) { 
+            frm.add_custom_button(__("Customer Credits"), function() {
+                frappe.set_route("query-report", "Customer Credits", {'customer': frm.doc.name, 'company': frm.doc.default_company});
+            });
+        };   
         if ((!frm.doc.__islocal) && (frm.doc.default_price_list)) {
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({

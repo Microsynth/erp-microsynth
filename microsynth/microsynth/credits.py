@@ -17,10 +17,14 @@ def get_available_credits(customer, company):
 
 @frappe.whitelist()
 def has_credits(customer):
-    # TODO
     # get all companies
+    companies = frappe.get_all("Company", fields=['name'])
     # loop through the companies and call get_available_credits
-    return True
+    for company in companies:
+        credits = get_available_credits(customer, company['name'])
+        if len(credits) > 0:
+            return True
+    return False
 
 
 def get_total_credit(customer, company):
