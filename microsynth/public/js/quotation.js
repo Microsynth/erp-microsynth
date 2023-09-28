@@ -22,7 +22,7 @@ frappe.ui.form.on('Quotation', {
         hide_in_words();
 
         // fetch Sales Manager from Customer if not yet set
-        if (!frm.doc.sales_manager || frm.doc.sales_manager == "") {
+        if (frm.doc.__islocal && (!frm.doc.sales_manager || frm.doc.sales_manager == "")) {
             frappe.call({
                 'method': 'frappe.client.get_value',
                 'args': {
