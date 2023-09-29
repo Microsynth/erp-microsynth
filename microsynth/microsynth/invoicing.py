@@ -1551,7 +1551,7 @@ def process_daily_invoices():
     bench execute microsynth.microsynth.invoicing.process_daily_invoices
     """
     for company in frappe.db.get_all('Company', fields=['name']):  #['Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH']:
-        for mode in ['Post', 'Electronic']:
+        for mode in ['Electronic']:
             async_create_invoices(mode, company['name'], None)
 
 
