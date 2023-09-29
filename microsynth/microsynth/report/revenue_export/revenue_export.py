@@ -41,16 +41,18 @@ def get_columns(filters):
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Float", "options": "", "precision": "0", "width": 75 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype":"Link", "options": "Currency", "width":"100" },
-        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype":"Currency", "options": "currency", "width":100 },
+        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype":"Currency", "options": "currency", "width": 100 },
         {"label": _("Base net amount"), "fieldname": "base_net_amount", "fieldtype": "Currency", "options": "base_currency", "width": 120 },
         {"label": _("CHF"), "fieldname": "chf", "fieldtype": "Currency", "options": "currency_chf", "width": 120 },
         {"label": _("EUR"), "fieldname": "eur", "fieldtype": "Currency", "options": "currency_eur", "width": 120 },
         {"label": _("Invoice Conversion Rate"), "fieldname": "conversion_rate", "fieldtype": "Float", "precision": "6", "width": 120 },
         {"label": _("Monthly Currency Exchange (EUR → CHF)"), "fieldname": "exchange_rate", "fieldtype": "Float", "precision": "6", "width": 120 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype":"data", "width":100 },
-        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype":"Data", "width":100 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype":"Data", "width": 100 },
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype":"Data", "width": 100 },
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160 },
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 140 },
+        {"label": _("Country"), "fieldname": "country", "fieldtype":"Data", "width": 100 },
+        {"label": _("City"), "fieldname": "city", "fieldtype":"Data", "width": 125 },
         {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 110 },
         {"label": _("Contact"), "fieldname": "contact_display", "fieldtype": "Data", "width": 110 },
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 85 },
@@ -106,6 +108,8 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`product_type`,
                 `tabSales Invoice`.`company`,
                 `tabSales Invoice`.`territory`,
+                `tabAddress`.`country`,
+                `tabAddress`.`city`,
                 `tabSales Invoice`.`contact_person`,
                 `tabSales Invoice`.`contact_display`,
                 `tabSales Invoice`.`customer`,
@@ -116,6 +120,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Invoice`.`contact_person`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`shipping_address_name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
