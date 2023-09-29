@@ -1562,5 +1562,7 @@ def process_collective_invoices_monthly():
     for testing: run
     bench execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
     """
-    for company in frappe.db.get_all('Company', fields=['name']):
-        async_create_invoices("Collective", company['name'], None)
+    # TODO: split up collective invoices into Post and electronic invoices
+    return
+    # for company in frappe.db.get_all('Company', fields=['name']):
+    #     async_create_invoices("Collective", company['name'], None)
