@@ -14,8 +14,10 @@ def get_columns(filters):
 		{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200 },
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 75 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
         {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 125 },
+        {"label": _("Tracking Code"), "fieldname": "tracking_code", "fieldtype": "Data", "width": 175 },
+        {"label": _("Tracking URL"), "fieldname": "tracking_url", "fieldtype": "Data", "width": 500 },
     ]
 
 
@@ -34,20 +36,25 @@ def get_data(filters):
     if filters and filters.get('web_order_id'):
         web_order_id_condition = f"AND `tabSales Order`.`web_order_id` = '{filters.get('web_order_id')}' "
     if filters and filters.get('delivery_note'):
-        delivery_note_condition = f"AND `tabSales Order`.`name` = '{filters.get('delivery_note')}' "  # TODO
+        delivery_note_condition = f"AND `tabDelivery Note Item`.`parent` = '{filters.get('delivery_note')}' "
 
     query = """
-            SELECT
+            SELECT DISTINCT
                 `tabSales Order`.`contact_person` AS `contact`,
-                `tabContact`.`first_name`,
-                `tabContact`.`last_name`,
+                `tabContact`.`first_name` AS `first_name`,
+                `tabContact`.`last_name` AS `last_name`,
                 `tabSales Order`.`customer` AS `customer`,
                 `tabCustomer`.`customer_name` AS `customer_name`,
                 `tabSales Order`.`name` AS `sales_order`,
-                `tabSales Order`.`web_order_id` AS `web_order_id`
+                `tabSales Order`.`web_order_id` AS `web_order_id`,
+                `tabDelivery Note Item`.`parent` AS `delivery_note`,
+                `tabTracking Code`.`tracking_code` AS `tracking_code`,
+                `tabTracking Code`.`tracking_url` AS `tracking_url`
             FROM `tabSales Order`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Order`.`contact_person`
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
+            LEFT JOIN `tabTracking Code` ON `tabTracking Code`.`sales_order` = `tabSales Order`.`name`
+            LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
             WHERE TRUE
                 {contact_condition}
                 {customer_condition}
