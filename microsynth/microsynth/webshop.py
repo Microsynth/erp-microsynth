@@ -599,7 +599,7 @@ def get_contact_quotations(contact, client="webshop"):
                 `tabQuotation`.`transaction_date`, 
                 `tabQuotation`.`customer_request`, 
                 `tabQuotation Item`.`item_code`, 
-                `tabQuotation Item`.`description`, 
+                `tabQuotation Item`.`item_name`, 
                 `tabQuotation Item`.`qty`, 
                 `tabQuotation Item`.`rate`
             FROM `tabQuotation`
@@ -673,7 +673,7 @@ def get_item_prices(content, client="webshop"):
                 'item_code': i.item_code,
                 'qty': i.qty,
                 'rate': i.rate,
-                'description': i.description
+                'description': i.item_name
             })
         # remove temporary record
         so.delete()
