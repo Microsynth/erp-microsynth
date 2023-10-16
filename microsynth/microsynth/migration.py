@@ -2222,6 +2222,128 @@ def import_contact_notes(notes_file, contact_note_type):
     print(f"Finished: Imported {counter} contact notes in total from {notes_file} with {contact_note_type=}.")
 
 
+def create_leads_contacts_addresses(fm_export_file):
+    """
+    Parse FM leads export file, create new contacts and addresses.
+    Link customer if existing.
+
+    run
+    bench execute microsynth.microsynth.migration.create_leads_contacts_addresses --kwargs "{'fm_export_file': '/mnt/erp_share/Gecko/JPe_testing/leads.tab'}"
+    """
+    counter = 0
+    with open(fm_export_file) as tsv:
+        print(f"Importing leads from {fm_export_file} ...")
+        csv_reader = csv.reader(tsv, delimiter="\t")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            assert len(line) == 35
+            assert line[1] == ''
+            assert line[17] == 'Nein'  # is_deleted
+            customer_id = line[2]
+            customer_name = line[3]
+            if frappe.db.exists("Address", f"L-{line[0]}"):
+                print(f"Address L-{line[0]} does already exist, going to continie with the next line.")
+                continue
+
+            # create new address
+            address = frappe.get_doc({
+                'doctype': 'Address',
+                'name': f"L-{line[0]}",
+                'address_title': f"L-{line[0]}",
+                'address_line1': line[7],
+                'pincode': line[8],
+                'city': line[9] #,
+                #'country': line[12]  # TODO: Needs to be converted from DE, AT, ES, etc. to Germany, Austria, Spain, etc.
+            })
+            if frappe.db.exists("Contact", f"L-{line[0]}"):
+                print(f"Contact L-{line[0]} does already exist, going to continue with the next line.")
+                continue
+
+            # create new contact
+            contact = frappe.get_doc({
+                'doctype': 'Contact',
+                'name': f"L-{line[0]}",
+                'first_name': line[4] if line[4] != '' else '-',
+                'last_name': line[5],
+                'full_name': f"{line[4]}{' ' if line[4] != '' else ''}{line[5]}",
+                'address': address.name,
+                'salutation': line[22],
+                'designation': line[23],  # title
+                'institute': line[10],
+                'department': line[11],
+                'room': line[21],
+                'institute_key': line[28],
+                'group_leader': line[25],
+                # TODO: complex date handling as in update_contact necessary?:
+                'subscribe_date': line[30],  # newsletter_registration_date
+                'unsubscribe_date': line[31],  # newsletter_unregistration_date
+            })
+
+            contact.email_ids = []
+            if line[6] != '':
+                contact.append("email_ids", {
+                    'email_id': line[6],
+                    'is_primary': 1
+                })
+            if line[25] != '':  # email_cc
+                contact.append("email_ids", {
+                    'email_id': line[25],
+                    'is_primary': 0
+                })
+            if line[34] != '' and line[34] != line[6] and line[34] != line[25]:
+                contact.append("email_ids", {
+                    'email_id': line[34],  # invoice_email
+                    'is_primary': 0
+                })
+
+            contact.phone_nos = []
+            if line[26] != '' and line[27] == '':
+                print(f"WARNING: phone number {line[26]} without any country code for DS_Nr {line[0]}")
+            if line[26] != '':
+                contact.append("phone_nos", {
+                    'phone': f"{line[27]}{' ' if line[27] != '' else ''}{line[26]}",  # phone_country + phone_number
+                    'is_primary_phone': 1
+                })
+
+            # newsletter_registration_state
+            if line[29] == "registered":
+                contact.receive_newsletter = 'registered'
+            elif line[29].upper() == "NEIN":
+                contact.receive_newsletter = 'unregistered'
+            
+            # necessary to perform contact.add_comment()
+            address.insert()
+            frappe.db.commit()
+            print(f"Adress {address.name} was inserted successfully.")  # TODO: only for testing
+            contact.insert()
+            frappe.db.commit()
+
+            if customer_id != '' and frappe.db.exists("Customer", customer_id):
+                # link customer (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
+                contact.append("links", {
+                    'link_doctype': "Customer",
+                    'link_name': customer_id
+                })
+                address.append("links", {
+                    'link_doctype': "Customer",
+                    'link_name': customer_id
+                })
+                if frappe.get_value("Customer", customer_id, "customer_name") != customer_name:
+                    # customer_name in FM export does not match Customer.customer_name
+                    address.overwrite_company = customer_name
+                address.save()
+            else:
+                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on 2023-10-18)")
+
+            contact.save()
+            counter += 1
+            if counter > 0:
+                return  # TODO: only for testing
+            if counter % 50 == 0:
+                print(f"Already imported {counter} leads. Still running ...")
+    print(f"Finished: Imported {counter} leads in total from {fm_export_file}.")
+
+
 def process_sample(sample):
     label_name = frappe.get_value("Sample", sample, "sequencing_label")
     label = frappe.get_doc("Sequencing Label", label_name)
