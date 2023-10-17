@@ -27,6 +27,13 @@ frappe.query_reports["Customer Finder"] = {
             "label": __("Customer (Company/Uni)"),
             "fieldtype": "Data",
             "options": ""
+        },
+        {
+            "fieldname": "customer_id",
+            "label": __("Customer ID"),
+            "fieldtype": "Data",
+            "options": "",
+            "hidden": 1
         }, 
         {
             "fieldname": "contact_institute",

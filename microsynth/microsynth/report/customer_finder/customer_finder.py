@@ -58,6 +58,10 @@ def get_data(filters):
     if 'customer' in filters:
         criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
         hasFilters = True
+    
+    if 'customer_id' in filters:
+        criteria += """ AND `tabCustomer`.`name` = '{0}' """.format(filters['customer_id'])
+        hasFilters = True
 
     if 'contact_institute' in filters:
         criteria += """ AND `tabContact`.`institute` LIKE '%{0}%' """.format(filters['contact_institute'])

@@ -26,6 +26,10 @@ function has_credits(frm) {
 
 frappe.ui.form.on('Customer', {
     refresh(frm) {
+        // show button "Contacts" that directs to the Customer Finder
+        frm.add_custom_button(__("Contacts"), function() {
+            frappe.set_route("query-report", "Customer Finder", {'customer_id': frm.doc.name});
+        });
         // show button "Customer Credits" only if Customer has credits for any company
         if (has_credits(frm)) { 
             frm.add_custom_button(__("Customer Credits"), function() {
