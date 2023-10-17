@@ -15,8 +15,13 @@ def get_columns(filters):
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 100 },
         {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 125 },
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 150 },
+        {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 100 },
+        {"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 175 },
+        {"label": _("Institute Key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100 },
+        {"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 125 },
+        {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 100 },
         {"label": _("Note Type"), "fieldname": "note_type", "fieldtype": "Data", "width": 80 },
-        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "options": "Notes", "width": 300 },
+        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "options": "Notes", "width": 250 },
     ]
 
 
@@ -24,8 +29,9 @@ def get_data(filters):
     """
     Get raw Contact Notes records for find notes report.
     """
-    contact_condition = first_name_cond = last_name_cond = sales_manager_cond = ""
-    territory_cond = city_cond = from_date_cond = to_date_cond = ""
+    contact_condition = first_name_cond = last_name_cond = sales_manager_cond = ''
+    territory_cond = city_cond = institute_cond = institute_key_cond = ''
+    group_leader_cond = department_cond = from_date_cond = to_date_cond = ''
 
     if filters and filters.get('contact'):
         contact_condition = f"AND `tabContact Note`.`contact_person` = '{filters.get('contact')}' "
@@ -39,6 +45,14 @@ def get_data(filters):
         territory_cond = f"AND `tabCustomer`.`territory` = '{filters.get('territory')}' "
     if filters and filters.get('city'):
         city_cond = f"AND `tabAddress`.`city` LIKE '%{filters.get('city')}%'"
+    if filters and filters.get('institute'):
+        institute_cond = f"AND `tabContact`.`institute` LIKE '%{filters.get('institute')}%'"
+    if filters and filters.get('institute_key'):
+        institute_key_cond = f"AND `tabContact`.`institute_key` LIKE '%{filters.get('institute_key')}%'"
+    if filters and filters.get('department'):
+        department_cond = f"AND `tabContact`.`department` LIKE '%{filters.get('department')}%'"
+    if filters and filters.get('group_leader'):
+        group_leader_cond = f"AND `tabContact`.`group_leader` LIKE '%{filters.get('group_leader')}%'"
     if filters and filters.get('from_date'):
         from_date_cond = f"AND `tabContact Note`.`date` >= DATE('{filters.get('from_date')}')"
     if filters and filters.get('to_date'):
@@ -53,6 +67,11 @@ def get_data(filters):
                 `tabContact Note`.`last_name`,
                 `tabCustomer`.`account_manager` AS `sales_manager`,
                 `tabCustomer`.`territory`,
+                `tabAddress`.`city`,
+                `tabContact`.`institute`,
+                `tabContact`.`institute_key`,
+                `tabContact`.`department`,
+                `tabContact`.`group_leader`,
                 `tabContact Note`.`contact_note_type` AS `note_type`,
                 `tabContact Note`.`notes`
             FROM `tabContact Note`
@@ -69,13 +88,19 @@ def get_data(filters):
                 {sales_manager_cond}
                 {territory_cond}
                 {city_cond}
+                {institute_cond}
+                {institute_key_cond}
+                {department_cond}
+                {group_leader_cond}
                 {from_date_cond}
                 {to_date_cond}
             ORDER BY `tabContact Note`.`date` DESC
         """.format(contact_condition=contact_condition, first_name_cond=first_name_cond,
                    last_name_cond=last_name_cond, sales_manager_cond=sales_manager_cond,
                    territory_cond=territory_cond, city_cond=city_cond,
-                   from_date_cond=from_date_cond, to_date_cond=to_date_cond)
+                   from_date_cond=from_date_cond, to_date_cond=to_date_cond,
+                   institute_cond=institute_cond, institute_key_cond=institute_key_cond,
+                   department_cond=department_cond, group_leader_cond=group_leader_cond)
 
     return frappe.db.sql(query, as_dict=True)
 

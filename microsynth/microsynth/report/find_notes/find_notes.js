@@ -37,6 +37,26 @@ frappe.query_reports["Find Notes"] = {
             "fieldtype": "Data"
         },
         {
+            "fieldname": "institute",
+            "label": __("Institute"),
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "institute_key",
+            "label": __("Institute Key"),
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "department",
+            "label": __("Department"),
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "group_leader",
+            "label": __("Group Leader"),
+            "fieldtype": "Data"
+        },
+        {
             "fieldname": "from_date",
             "label": __("From date"),
             "fieldtype": "Date"
