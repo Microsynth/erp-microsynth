@@ -32,6 +32,7 @@ PRICE_LIST_NAMES = {
 CUSTOMER_HEADER = """person_id\tcustomer_id\tcompany\tfirst_name\tlast_name\temail\taddress_line1\tpincode\tcity\tinstitute\tdepartment\tcountry\tDS_Nr\taddress_type\tvat_nr\tsiret\tcurrency\tis_deleted\tdefault_discount\tis_electronic_invoice\treceive_updates_per_email\tis_punchout_user\tpunchout_identifier\tpunchout_shop_id\troom\tsalutation\ttitle\tgroup_leader\temail_cc\tphone_number\tphone_country\tinstitute_key\tnewsletter_registration_state\tnewsletter_registration_date\tnewsletter_unregistration_date\tumr_nr\tinvoicing_method\tsales_manager\text_debitor_number\tinvoice_email\tphone\tdefault_company\n"""
 CUSTOMER_HEADER_FIELDS = """{person_id}\t{customer_id}\t{company}\t{first_name}\t{last_name}\t{email}\t{address_line1}\t{pincode}\t{city}\t{institute}\t{department}\t{country}\t{DS_Nr}\t{address_type}\t{vat_nr}\t{siret}\t{currency}\t{is_deleted}\t{default_discount}\t{is_electronic_invoice}\t{receive_updates_per_email}\t{is_punchout_user}\t{punchout_identifier}\t{punchout_shop_id}\t{room}\t{salutation}\t{title}\t{group_leader}\t{email_cc}\t{phone_number}\t{phone_country}\t{institute_key}\t{newsletter_registration_state}\t{newsletter_registration_date}\t{newsletter_unregistration_date}\t{umr_nr}\t{invoicing_method}\t{sales_manager}\t{ext_debitor_number}\t{invoice_email}\t{phone}\t{default_company}\n"""
 
+
 def import_customers(filename):
     """
     This function imports/updates the customer master data from a CSV file
@@ -190,8 +191,10 @@ def export_customers(filename, from_date):
     f.close()
     return
 
+
 BILLING_ADDRESS_HEADER = """customer_id;title;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;invoice_email;phonecountry_gecko;phone_gecko;person_id;tax_id;unreliable;default_discount;;address_type;salutation;;;electronic_invoice;is_punchout_user;punchout_buyer;punchout_identifier;static_billing_address_id;webshop_billing_address_readonly;\n"""
 BILLING_ADDRESS_FIELDS = """{customer_id};{title};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{invoice_email};;;{person_id};{tax_id};;{default_discount};;{address_type};{salutation};;;{electronic_invoice};;;;;{webshop_billing_address_readonly};\n"""
+
 
 def export_billing_address(filename, customer_name):
     """
@@ -311,6 +314,7 @@ def export_billing_address(filename, customer_name):
     f.close()
     return
 
+
 @frappe.whitelist()
 def export_customer_to_gecko(customer_name):
     billing_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Billing/billing_address_export_for_gecko.tab"    
@@ -321,8 +325,10 @@ def export_customer_to_gecko(customer_name):
     frappe.msgprint("Exported for Gecko")
     return
 
+
 SHIPPING_ADDRESS_HEADER = """customer_id;title;first_name;last_name;institute;department;room;customer_name;address_line1;country;pincode;city;email;phonecountry_gecko;phone_gecko;username;password;person_id;;address_type;;email_cc;salutation;group_leader;;;;is_punchout_user;punchout_buyer;punchout_identifier;newsletter_registration_state;newsletter_registration_date;newsletter_unregistration_date;webshop_address_readonly;\n"""
 SHIPPING_ADDRESS_FIELDS = """{customer_id};{title};{first_name};{last_name};{institute};{department};{room};{customer_name};{address_line1};{country};{pincode};{city};{email};;;;;{person_id};;{address_type};;;{salutation};{group_leader};;;;{is_punchout_user};{punchout_buyer};{punchout_identifier};{newsletter_registration_state};{newsletter_registration_date};{newsletter_unregistration_date};{webshop_address_readonly};"""
+
 
 def export_shipping_address(filename, person_id):
     """
@@ -442,6 +448,7 @@ def export_shipping_address(filename, person_id):
     f.close()
     return
 
+
 @frappe.whitelist()
 def export_contact_to_gecko(contact_name):
     shipping_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Shipping/shipping_address_export_for_gecko.tab"
@@ -451,6 +458,7 @@ def export_contact_to_gecko(contact_name):
         export_shipping_address(shipping_address_file, contact_name)
         frappe.msgprint("Exported for Gecko")
     return
+
 
 def update_customer(customer_data):
     """
@@ -714,6 +722,7 @@ def update_customer(customer_data):
         configure_customer(customer.name)
     return error
 
+
 def update_contact(contact_data):
     """
     Update or create a contact record. If no first_name is provided, set it to "-".
@@ -943,7 +952,8 @@ def robust_get_country(country_name_or_code):
             return countries[0]['name']
         else:
             return frappe.defaults.get_global_default('country')
-            
+
+
 def import_prices(filename):
     """
     This function imports/updates the item price data from a CSV file
@@ -976,6 +986,7 @@ def import_prices(filename):
                     frappe.throw("Data length mismatch on {0} (header:{1}/row:{2}".format(row, len(headers), len(row)))
     return
 
+
 def update_prices(price_data):
     """
     This function will update item prices
@@ -1000,7 +1011,8 @@ def update_prices(price_data):
     else:
         print("Item {0} not found.".format(price_data['item_code']))
     return
-    
+
+
 def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
     # check if this item price already exists
     matching_item_prices = frappe.get_all("Item Price", 
@@ -1024,6 +1036,7 @@ def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
         item_price.insert()
     frappe.db.commit()
     return
+
 
 def import_discounts(filename):
     """
@@ -1053,6 +1066,7 @@ def import_discounts(filename):
                 update_pricing_rule(discount_data)
                 print("Imported {0}".format(discount_data))
     return
+
 
 def update_pricing_rule(price_data):
     """
@@ -1091,6 +1105,7 @@ def update_pricing_rule(price_data):
         print("Customer {0} not found.".format(price_data['customer']))
     return
 
+
 def import_customer_price_lists(filename):
     """
     Import customer price list
@@ -1126,9 +1141,11 @@ def import_customer_price_lists(filename):
     frappe.db.commit()
     return
 
+
 def get_long_price_list_name(price_list_code):
     return "Pricelist {0}".format(price_list_code)
-        
+
+
 def create_update_customer_price_list(pricelist_code, currency, 
         general_discount, item_code, discount, qty=1):
     pl_long_name = get_long_price_list_name(pricelist_code)
@@ -1197,6 +1214,7 @@ def create_update_customer_price_list(pricelist_code, currency,
             print("created customer item price {0}".format(price_doc.name))
     return
 
+
 def map_customer_price_list(filename):
     """
     Map customer price lists to customers
@@ -1230,6 +1248,7 @@ def map_customer_price_list(filename):
     frappe.db.commit()
     return
 
+
 def populate_price_lists():
     """
     Go through all price lists and populate missing prices
@@ -1251,6 +1270,7 @@ def populate_price_lists():
         populate_from_reference(price_list=p['name'])
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
+
 
 def clean_price_lists():
     """
@@ -1274,6 +1294,7 @@ def clean_price_lists():
         clean_price_list(price_list=p['name'])
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
+
 
 def move_staggered_item_price(filename):
     """
@@ -1306,6 +1327,7 @@ def move_staggered_item_price(filename):
                 item_price_doc.save()
         frappe.db.commit()
     return
+
 
 def set_webshop_address_readonly():
     """ 
@@ -1394,8 +1416,7 @@ def set_default_company():
             if not customer.default_company:
                 customer.default_company = default_company
                 customer.save()
-            
-        
+
         if i > 100:
             frappe.db.commit()
             i = 0
@@ -1403,6 +1424,7 @@ def set_default_company():
         print(count)
 
     return
+
 
 # # refactor to a dict
 # def get_item_from_service(service):
@@ -1664,8 +1686,6 @@ def import_sequencing_labels(filename, skip_rows = 0):
     return
 
 
-
-
 def create_credit_import_journal_entry(sales_invoice):
     """
     Create a journal entry.
@@ -1779,6 +1799,7 @@ def import_credit_accounts(filename):
             i += 1
             # if i > 5:
             #     break
+
 
 def set_distributor_carlo_erba():
     """
@@ -2193,42 +2214,47 @@ def refactor_date(date_str):
     return f"{parts[2]}-{parts[1]}-{parts[0]}"
 
 
-def import_contact_notes(notes_file, contact_note_type):
+def import_lead_notes(notes_file, contact_note_type):
     """
-    This function reads every line as a customer.
-	notes_file: name of the TSV file with five columns
+    This function reads every line as a contact note.
+	notes_file: name of the TSV file exported from FM/Gecko
     contact_note_type: type that is set for all imported contact notes (e.g. 'Other', 'Marketing', 'Email')
+    See commit 5ec21ed24c11f999c41479c17a54a8345f3448b2 and previous for former version used for non-leads import.
     
     run
-    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/CustomerVisits_edited_2023-09-13.tab', 'contact_note_type': 'Other'}"
-    bench execute microsynth.microsynth.migration.import_contact_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/MarketingNotes_edited_2023-09-13.tab', 'contact_note_type': 'Marketing'}"
+    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/Leads_Sales_Notes.tab', 'contact_note_type': 'Other'}"
+    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/Leads_Marketing_Notes.tab', 'contact_note_type': 'Marketing'}"
     """    
     counter = 0
     with open(notes_file) as tsv:
         print(f"Importing contact notes from {notes_file} with {contact_note_type=} ...")
-        for line in csv.reader(tsv, delimiter="\t"):  # it's important to split lines exactly at CR LF (Windows encoding)
-            assert len(line) == 5
+        csv_reader = csv.reader(tsv, delimiter="\t")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            assert len(line) == 2
             contact_note = frappe.get_doc({
                 'doctype': 'Contact Note',
-                'contact_person': line[1],  # line[1] should be the person ID (contact ID)
-                'date': datetime.now(),  # refactor_date(line[3]) if len(line[3]) > 0 else datetime.now(),
+                'contact_person': f"L-{line[0]}",
+                'date': datetime.now(),
                 'contact_note_type': contact_note_type,
-                'notes': line[4]
+                'notes': line[1]
             })
             contact_note.save()
             counter += 1
-            if counter % 100 == 0:
-                print(f"Already imported {counter} contact notes. Still running ...")
+            if counter > 1:
+                return  # TODO: only for testing
+            if counter % 50 == 0:
+                print(f"Already imported {counter} contact notes.")
     print(f"Finished: Imported {counter} contact notes in total from {notes_file} with {contact_note_type=}.")
 
 
-def create_leads_contacts_addresses(fm_export_file):
+def create_lead_contacts_addresses(fm_export_file):
     """
     Parse FM leads export file, create new contacts and addresses.
     Link customer if existing.
 
     run
-    bench execute microsynth.microsynth.migration.create_leads_contacts_addresses --kwargs "{'fm_export_file': '/mnt/erp_share/Gecko/JPe_testing/leads.tab'}"
+    bench execute microsynth.microsynth.migration.create_lead_contacts_addresses --kwargs "{'fm_export_file': '/mnt/erp_share/Gecko/JPe_testing/leads.tab'}"
     """
     counter = 0
     with open(fm_export_file) as tsv:
@@ -2237,50 +2263,73 @@ def create_leads_contacts_addresses(fm_export_file):
         next(csv_reader)  # skip header
         for line in csv_reader:
             assert len(line) == 35
-            assert line[1] == ''
+            assert line[1] == ''  # person_id
             assert line[17] == 'Nein'  # is_deleted
-            customer_id = line[2]
-            customer_name = line[3]
-            if frappe.db.exists("Address", f"L-{line[0]}"):
-                print(f"Address L-{line[0]} does already exist, going to continie with the next line.")
+
+            address_name = f"L-{line[0]}"
+            if not frappe.db.exists("Address", address_name):
+                print(f"Creating Address {address_name} ...")
+                # create new address (this way since address.insert() changes name)
+                frappe.db.sql("""INSERT INTO `tabAddress`
+                                (`name`, `address_line1`)
+                                VALUES ("{0}", "{1}");""".format(
+                                address_name, line[7] if line[7] != '' else '-'))
+            else:
+                print(f"Address {address_name} does already exist, going to continue with the next line.")
                 continue
 
-            # create new address
-            address = frappe.get_doc({
-                'doctype': 'Address',
-                'name': f"L-{line[0]}",
-                'address_title': f"L-{line[0]}",
-                'address_line1': line[7],
-                'pincode': line[8],
-                'city': line[9] #,
-                #'country': line[12]  # TODO: Needs to be converted from DE, AT, ES, etc. to Germany, Austria, Spain, etc.
-            })
-            if frappe.db.exists("Contact", f"L-{line[0]}"):
-                print(f"Contact L-{line[0]} does already exist, going to continue with the next line.")
+            address = frappe.get_doc("Address", address_name)
+            address.address_title = f"L-{line[0]}"  # TODO?
+            address.pincode = line[8]
+            address.city = line[9]
+            address.country = robust_get_country(line[12])  # needs to be converted from DE, AT, ES, etc. to Germany, Austria, Spain, etc.
+
+            address_type = line[13]
+            if address_type == "INV" or address_type == "Billing":
+                address.is_primary_address = 1
+                address.is_shipping_address = 0
+                address.address_type = "Billing"
+            else:
+                address.is_primary_address = 0
+                address.is_shipping_address = 1
+                address.address_type = "Shipping"
+
+            contact_name = f"L-{line[0]}"
+            if not frappe.db.exists("Contact", contact_name):
+                print(f"Creating Contact {contact_name} ...")
+                # create new contact (this way since contact.insert() changes name)
+                frappe.db.sql("""INSERT INTO `tabContact`
+                                (`name`, `first_name`)
+                                VALUES ("{0}", "{1}");""".format(
+                                contact_name, line[4] if line[4] != '' else '-'))
+            else:
+                print(f"Contact {contact_name} does already exist, going to continue with the next line.")
                 continue
 
-            # create new contact
-            contact = frappe.get_doc({
-                'doctype': 'Contact',
-                'name': f"L-{line[0]}",
-                'first_name': line[4] if line[4] != '' else '-',
-                'last_name': line[5],
-                'full_name': f"{line[4]}{' ' if line[4] != '' else ''}{line[5]}",
-                'address': address.name,
-                'salutation': line[22],
-                'designation': line[23],  # title
-                'institute': line[10],
-                'department': line[11],
-                'room': line[21],
-                'institute_key': line[28],
-                'group_leader': line[25],
-                # TODO: complex date handling as in update_contact necessary?:
-                'subscribe_date': line[30],  # newsletter_registration_date
-                'unsubscribe_date': line[31],  # newsletter_unregistration_date
-            })
+            salutation = line[22]
+            if not frappe.db.exists("Salutation", salutation):
+                frappe.get_doc({
+                    'doctype': 'Salutation',
+                    'salutation': salutation
+                }).insert()
+
+            contact = frappe.get_doc("Contact", contact_name)
+            contact.last_name = line[5]
+            contact.full_name = f"{line[4]}{' ' if line[4] != '' else ''}{line[5]}"
+            contact.address = address.name  #f"{address.name}-{address.address_type}",
+            contact.salutation = salutation
+            contact.designation = line[23]  # title
+            contact.institute = line[10]
+            contact.department = line[11]
+            contact.room = line[21]
+            contact.institute_key = line[28]
+            contact.group_leader = line[25]
+            # TODO: complex date handling as in update_contact necessary?:
+            contact.subscribe_date = line[30]  # newsletter_registration_date
+            contact.unsubscribe_date = line[31]  # newsletter_unregistration_date
 
             contact.email_ids = []
-            if line[6] != '':
+            if line[6] != '':  # email
                 contact.append("email_ids", {
                     'email_id': line[6],
                     'is_primary': 1
@@ -2310,13 +2359,9 @@ def create_leads_contacts_addresses(fm_export_file):
                 contact.receive_newsletter = 'registered'
             elif line[29].upper() == "NEIN":
                 contact.receive_newsletter = 'unregistered'
-            
-            # necessary to perform contact.add_comment()
-            address.insert()
-            frappe.db.commit()
-            print(f"Adress {address.name} was inserted successfully.")  # TODO: only for testing
-            contact.insert()
-            frappe.db.commit()
+
+            customer_id = line[2]
+            customer_name = line[3]
 
             if customer_id != '' and frappe.db.exists("Customer", customer_id):
                 # link customer (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
@@ -2331,16 +2376,15 @@ def create_leads_contacts_addresses(fm_export_file):
                 if frappe.get_value("Customer", customer_id, "customer_name") != customer_name:
                     # customer_name in FM export does not match Customer.customer_name
                     address.overwrite_company = customer_name
-                address.save()
             else:
-                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on 2023-10-18)")
+                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()}")
 
+            address.save()
             contact.save()
+            frappe.db.commit()
             counter += 1
-            if counter > 0:
+            if counter > 10:
                 return  # TODO: only for testing
-            if counter % 50 == 0:
-                print(f"Already imported {counter} leads. Still running ...")
     print(f"Finished: Imported {counter} leads in total from {fm_export_file}.")
 
 
@@ -3044,6 +3088,7 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
     print ("Created {0}.".format(output_file))
     
     return
+
 
 def get_account_by_number(account_number, company):
     accounts = frappe.get_all("Account", filters={'account_number': account_number, 'company': company}, fields=['name'])
