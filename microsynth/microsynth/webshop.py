@@ -604,9 +604,10 @@ def get_contact_quotations(contact, client="webshop"):
                 `tabQuotation Item`.`rate`
             FROM `tabQuotation`
             LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`
-            WHERE (`tabQuotation`.`contact_person` = '{0}' 
+            WHERE (`tabQuotation`.`contact_person` = '{0}'
             OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
-            AND `tabQuotation`.`docstatus` = 1 
+            AND `tabQuotation`.`docstatus` = 1
+            AND `tabQuotation`.`status` <> 'Lost'
             AND (`tabQuotation`.`valid_till` >= CURDATE() OR `tabQuotation`.`valid_till` IS NULL)
             ORDER BY `tabQuotation`.`name` DESC, `tabQuotation Item`.`idx` ASC;""".format(contact, customer_name) 
 
