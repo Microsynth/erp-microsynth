@@ -2220,10 +2220,10 @@ def import_lead_notes(notes_file, contact_note_type):
 	notes_file: name of the TSV file exported from FM/Gecko
     contact_note_type: type that is set for all imported contact notes (e.g. 'Other', 'Marketing', 'Email')
     See commit 5ec21ed24c11f999c41479c17a54a8345f3448b2 and previous for former version used for non-leads import.
-    
+
     run
-    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/Leads_Sales_Notes.tab', 'contact_note_type': 'Other'}"
-    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/Leads_Marketing_Notes.tab', 'contact_note_type': 'Marketing'}"
+    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/JPe_testing/leads_sales_notes.tab', 'contact_note_type': 'Other'}"
+    bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/JPe_testing/leads_marketing_notes.tab', 'contact_note_type': 'Marketing'}"
     """    
     counter = 0
     with open(notes_file) as tsv:
@@ -2232,6 +2232,8 @@ def import_lead_notes(notes_file, contact_note_type):
         next(csv_reader)  # skip header
         for line in csv_reader:
             assert len(line) == 2
+            if line[1].strip() == '':
+                continue
             contact_note = frappe.get_doc({
                 'doctype': 'Contact Note',
                 'contact_person': f"L-{line[0]}",
@@ -2241,9 +2243,7 @@ def import_lead_notes(notes_file, contact_note_type):
             })
             contact_note.save()
             counter += 1
-            if counter > 1:
-                return  # TODO: only for testing
-            if counter % 50 == 0:
+            if counter % 100 == 0:
                 print(f"Already imported {counter} contact notes.")
     print(f"Finished: Imported {counter} contact notes in total from {notes_file} with {contact_note_type=}.")
 
@@ -2261,19 +2261,24 @@ def create_lead_contacts_addresses(fm_export_file):
         print(f"Importing leads from {fm_export_file} ...")
         csv_reader = csv.reader(tsv, delimiter="\t")
         next(csv_reader)  # skip header
+        #line_count = sum(1 for row in csv_reader)
         for line in csv_reader:
             assert len(line) == 35
             assert line[1] == ''  # person_id
             assert line[17] == 'Nein'  # is_deleted
 
             address_name = f"L-{line[0]}"
+            address_line1 = line[7]
+            if '"' in address_line1:
+                print(f'WARNING: address_line1 of DS_Nr {line[0]} contains ". Going to delete ".')
+                address_line1 = address_line1.replace('"', '')
             if not frappe.db.exists("Address", address_name):
                 print(f"Creating Address {address_name} ...")
                 # create new address (this way since address.insert() changes name)
                 frappe.db.sql("""INSERT INTO `tabAddress`
                                 (`name`, `address_line1`)
                                 VALUES ("{0}", "{1}");""".format(
-                                address_name, line[7] if line[7] != '' else '-'))
+                                address_name, address_line1 if address_line1 else '-'))
             else:
                 print(f"Address {address_name} does already exist, going to continue with the next line.")
                 continue
@@ -2281,7 +2286,7 @@ def create_lead_contacts_addresses(fm_export_file):
             address = frappe.get_doc("Address", address_name)
             address.address_title = f"L-{line[0]}"  # TODO?
             address.pincode = line[8]
-            address.city = line[9]
+            address.city = line[9] if line[9].strip() else '-'
             address.country = robust_get_country(line[12])  # needs to be converted from DE, AT, ES, etc. to Germany, Austria, Spain, etc.
 
             address_type = line[13]
@@ -2301,13 +2306,13 @@ def create_lead_contacts_addresses(fm_export_file):
                 frappe.db.sql("""INSERT INTO `tabContact`
                                 (`name`, `first_name`)
                                 VALUES ("{0}", "{1}");""".format(
-                                contact_name, line[4] if line[4] != '' else '-'))
+                                contact_name, line[4] if line[4] else '-'))
             else:
                 print(f"Contact {contact_name} does already exist, going to continue with the next line.")
                 continue
 
             salutation = line[22]
-            if not frappe.db.exists("Salutation", salutation):
+            if salutation.strip() and not frappe.db.exists("Salutation", salutation):
                 frappe.get_doc({
                     'doctype': 'Salutation',
                     'salutation': salutation
@@ -2315,7 +2320,7 @@ def create_lead_contacts_addresses(fm_export_file):
 
             contact = frappe.get_doc("Contact", contact_name)
             contact.last_name = line[5]
-            contact.full_name = f"{line[4]}{' ' if line[4] != '' else ''}{line[5]}"
+            contact.full_name = f"{line[4]}{' ' if line[4] else ''}{line[5]}"
             contact.address = address.name  #f"{address.name}-{address.address_type}",
             contact.salutation = salutation
             contact.designation = line[23]  # title
@@ -2324,33 +2329,57 @@ def create_lead_contacts_addresses(fm_export_file):
             contact.room = line[21]
             contact.institute_key = line[28]
             contact.group_leader = line[25]
-            # TODO: complex date handling as in update_contact necessary?:
-            contact.subscribe_date = line[30]  # newsletter_registration_date
-            contact.unsubscribe_date = line[31]  # newsletter_unregistration_date
+
+            newsletter_registration_date = line[30]
+            if len(newsletter_registration_date) > 3:  # avoid e.g. '-'
+                try:
+                    contact.subscribe_date = datetime.fromisoformat(newsletter_registration_date)
+                except:
+                    try:
+                        contact.subscribe_date = datetime.strptime(newsletter_registration_date, "%d.%m.%Y %H:%M:%S")
+                    except:
+                        # fallback date only 
+                        try:
+                            contact.subscribe_date = datetime.strptime(newsletter_registration_date, "%d.%m.%Y")
+                        except:
+                            print(f"WARNING: Failed to parse newsletter subscription date '{newsletter_registration_date}' for DS_Nr {line[0]}.")
+            newsletter_unregistration_date = line[31]
+            if len(newsletter_unregistration_date) > 3:
+                try:
+                    contact.unsubscribe_date = datetime.fromisoformat(newsletter_unregistration_date)
+                except:
+                    try:
+                        contact.unsubscribe_date = datetime.strptime(newsletter_unregistration_date, "%d.%m.%Y %H:%M:%S")
+                    except:
+                        # fallback date only 
+                        try:
+                            contact.unsubscribe_date = datetime.strptime(newsletter_unregistration_date, "%d.%m.%Y")
+                        except:
+                            print(f"WARNING: Failed to parse newsletter subscription date '{newsletter_unregistration_date}' for DS_Nr {line[0]}.")
 
             contact.email_ids = []
-            if line[6] != '':  # email
+            if line[6]:  # email
                 contact.append("email_ids", {
                     'email_id': line[6],
                     'is_primary': 1
                 })
-            if line[25] != '':  # email_cc
+            if line[25]:  # email_cc
                 contact.append("email_ids", {
                     'email_id': line[25],
                     'is_primary': 0
                 })
-            if line[34] != '' and line[34] != line[6] and line[34] != line[25]:
+            if line[34] and line[34] != line[6] and line[34] != line[25]:
                 contact.append("email_ids", {
                     'email_id': line[34],  # invoice_email
                     'is_primary': 0
                 })
 
             contact.phone_nos = []
-            if line[26] != '' and line[27] == '':
-                print(f"WARNING: phone number {line[26]} without any country code for DS_Nr {line[0]}")
-            if line[26] != '':
+            if line[26] and line[27] == '':
+                print(f"WARNING: phone number '{line[26]}' without any country code for DS_Nr {line[0]}")
+            if line[26]:  # phone_number
                 contact.append("phone_nos", {
-                    'phone': f"{line[27]}{' ' if line[27] != '' else ''}{line[26]}",  # phone_country + phone_number
+                    'phone': f"{line[27]}{' ' if line[27] else ''}{line[26]}",  # phone_country + phone_number
                     'is_primary_phone': 1
                 })
 
@@ -2363,7 +2392,7 @@ def create_lead_contacts_addresses(fm_export_file):
             customer_id = line[2]
             customer_name = line[3]
 
-            if customer_id != '' and frappe.db.exists("Customer", customer_id):
+            if customer_id and frappe.db.exists("Customer", customer_id):
                 # link customer (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
                 contact.append("links", {
                     'link_doctype': "Customer",
@@ -2383,8 +2412,6 @@ def create_lead_contacts_addresses(fm_export_file):
             contact.save()
             frappe.db.commit()
             counter += 1
-            if counter > 10:
-                return  # TODO: only for testing
     print(f"Finished: Imported {counter} leads in total from {fm_export_file}.")
 
 
