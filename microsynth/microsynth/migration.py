@@ -2406,7 +2406,7 @@ def create_lead_contacts_addresses(fm_export_file):
                     # customer_name in FM export does not match Customer.customer_name
                     address.overwrite_company = customer_name
             else:
-                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()}")
+                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()})")
 
             address.save()
             contact.save()

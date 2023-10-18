@@ -20,6 +20,11 @@ frappe.query_reports["Find Notes"] = {
             "label": __("Last Name"),
             "fieldtype": "Data"
         },
+        {
+            "fieldname": "customer_name",
+            "label": __("Customer Name"),
+            "fieldtype": "Data"
+        },
 		{
             "fieldname": "sales_manager",
             "label": __("Sales Manager"),
@@ -32,23 +37,18 @@ frappe.query_reports["Find Notes"] = {
             "options": "Territory"
         },
         {
+            "fieldname": "country",
+            "label": __("Country"),
+            "fieldtype": "Data"
+        },
+        {
             "fieldname": "city",
             "label": __("City"),
             "fieldtype": "Data"
         },
         {
-            "fieldname": "institute",
-            "label": __("Institute"),
-            "fieldtype": "Data"
-        },
-        {
             "fieldname": "institute_key",
             "label": __("Institute Key"),
-            "fieldtype": "Data"
-        },
-        {
-            "fieldname": "department",
-            "label": __("Department"),
             "fieldtype": "Data"
         },
         {
