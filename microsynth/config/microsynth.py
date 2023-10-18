@@ -188,9 +188,16 @@ def get_data():
                     {
                         "type": "page",
                         "name": "tracking_codes",
-                        "label": _("Tracking Codes"),
+                        "label": _("Tracking Code Registration"),
                         "description": _("Tracking Codes")
-                    }
+                    },
+                    {
+                        "type": "report",
+                        "name": "Find Tracking Code",
+                        "label": _("Find Tracking Code"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
             ]
         },
         {
