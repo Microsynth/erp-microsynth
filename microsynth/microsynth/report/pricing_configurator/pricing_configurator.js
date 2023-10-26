@@ -101,14 +101,14 @@ function change_general_discount(){
         {'fieldname': 'new_general_discount', 'fieldtype': 'Float', 'label': __('New General Discount'), 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br><b>Prices</b> might be <b>overwritten</b>.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> of this price list whose discount corresponds to the previously defined general discount of the price list <b>will be adjusted</b> according to the new general discount (' + values.new_general_discount + '%).<br><br>Please be patient, the process may take up to one minute.',
             () => {
                 frappe.call({
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_general_discount",
                     'args':{
                         'price_list': frappe.query_report.filters[0].value,
                         'new_general_discount': values.new_general_discount
-                    },
+                    },  // TODO: How to show some loading animation in the meanwhile (process takes 15-20 seconds in the development system)?
                     'callback': function(r)
                     {
                         frappe.query_report.refresh();
