@@ -1544,3 +1544,24 @@ def comment_invoice(sales_invoice, comment):
     })
     new_comment.insert()
     return
+
+
+@frappe.whitelist()    
+def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
+    if type(prev_items) == str:
+        prev_items = json.loads(prev_items)
+    
+    prevdoc_price_list_rates = []
+    # check each item
+    for prev_item in prev_items:
+        # check if there is a previous document
+        if prev_item:
+            prev_doc_price_list_rate = frappe.get_value("{0} Item".format(prevdoc_doctype), prev_item, "price_list_rate")
+            prevdoc_price_list_rates.append(prev_doc_price_list_rate)
+        else:
+            prevdoc_price_list_rates.append(None)
+    
+    if len(prevdoc_price_list_rates) != len(prev_items):
+        frappe.throw("This can never happen! If not, ask Lars")
+        
+    return prevdoc_price_list_rates
