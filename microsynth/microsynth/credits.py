@@ -4,6 +4,7 @@
 import frappe
 from datetime import datetime
 
+from frappe.utils import flt
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
@@ -56,7 +57,7 @@ def allocate_credits(sales_invoice_doc):
         for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
-            if not 'outstanding' in credit or credit['outstanding'] == 0:
+            if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
                 continue
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
