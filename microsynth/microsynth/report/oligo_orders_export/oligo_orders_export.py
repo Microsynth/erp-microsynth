@@ -23,9 +23,10 @@ def get_columns():
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Region"), "fieldname": "export_code", "fieldtype": "Data", "width": 60},
+        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 120},
         {"label": _("Item"), "fieldname": "shipping_item", "fieldtype": "Data", "width": 45},
-        {"label": _("Description"), "fieldname": "shipping_description", "fieldtype": "Data", "width": 70},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
+        {"label": _("Description"), "fieldname": "shipping_description", "fieldtype": "Data", "width": 200},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200}
     ]
 
 @frappe.whitelist()
@@ -41,6 +42,7 @@ def get_data(filters=None):
             `tabSales Order`.`contact_display` AS `contact_name`,
             `tabSales Order`.`transaction_date` AS `date`,
             `tabCountry`.`export_code` AS `export_code`,
+            `tabCustomer`.`tax_id` AS `tax_id`,
             `tabSales Order`.`comment` AS `comment`,
             `tabSales Order Item`.`item_code` AS `shipping_item`,
             `tabSales Order Item`.`description` AS `shipping_description`
@@ -48,6 +50,7 @@ def get_data(filters=None):
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
         LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
         WHERE 
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabSales Order`.`docstatus` = 1

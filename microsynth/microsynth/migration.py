@@ -13,7 +13,7 @@ from frappe.utils import cint, flt
 from datetime import datetime, date
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, set_default_language, set_debtor_accounts, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
+from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -2233,10 +2233,15 @@ def import_lead_notes(notes_file, contact_note_type):
         for line in csv_reader:
             assert len(line) == 2
             if line[1].strip() == '':
-                continue
+                continue  # nothing to do, empty notes
+            contact_person = f"L-{line[0]}"
+            if not frappe.db.exists("Contact", contact_person):
+                print(f"WARNING: Contact '{contact_person}' does not exist. Going to return immediatly. "
+                      f"Please make sure that the function create_lead_contacts_addresses was executed before and that the DS_Nr columns match.")
+                return
             contact_note = frappe.get_doc({
                 'doctype': 'Contact Note',
-                'contact_person': f"L-{line[0]}",
+                'contact_person': contact_person,
                 'date': datetime.now(),
                 'contact_note_type': contact_note_type,
                 'notes': line[1]
@@ -2246,6 +2251,82 @@ def import_lead_notes(notes_file, contact_note_type):
             if counter % 100 == 0:
                 print(f"Already imported {counter} contact notes.")
     print(f"Finished: Imported {counter} contact notes in total from {notes_file} with {contact_note_type=}.")
+
+
+def set_newsletter_dates(contact, registration_date, unregistration_date):
+    """
+    Set newsletter registration and unregistration date for the given contact.
+    """
+    if len(registration_date) > 3:  # avoid e.g. '-'
+        try:
+            contact.subscribe_date = datetime.fromisoformat(registration_date)
+        except:
+            try:
+                contact.subscribe_date = datetime.strptime(registration_date, "%d.%m.%Y %H:%M:%S")
+            except:
+                # fallback date only 
+                try:
+                    contact.subscribe_date = datetime.strptime(registration_date, "%d.%m.%Y")
+                except:
+                    print(f"WARNING: Failed to parse newsletter subscription date '{registration_date}'.")
+    if len(unregistration_date) > 3:
+        try:
+            contact.unsubscribe_date = datetime.fromisoformat(unregistration_date)
+        except:
+            try:
+                contact.unsubscribe_date = datetime.strptime(unregistration_date, "%d.%m.%Y %H:%M:%S")
+            except:
+                # fallback date only 
+                try:
+                    contact.unsubscribe_date = datetime.strptime(unregistration_date, "%d.%m.%Y")
+                except:
+                    print(f"WARNING: Failed to parse newsletter subscription date '{unregistration_date}'.")
+
+
+def assign_or_create_customer(contact, address, customer_id, customer_name):
+    """
+    Takes a contact and address of e.g. a lead.
+    Tries to assign it to an existing customer.
+    If not possible, create a new, disabled Customer.
+    """
+    if customer_id and frappe.db.exists("Customer", customer_id):
+        print(f"Customer '{customer_id}' already exists.")
+        existing_customer_name = frappe.get_value("Customer", customer_id, "customer_name")     
+        if existing_customer_name != customer_name:
+            print(f"{customer_name=} in FM export does not match existing Customer.customer_name={existing_customer_name}. "
+                  f"Going to set Address.overwrite_company to '{customer_name}'.")
+            address.overwrite_company = customer_name
+        customer = frappe.get_doc("Customer", customer_id)
+        if customer.customer_group is None or customer.customer_group == '':
+            customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")  # mandatory when saving the customer later
+    else:
+        customers = frappe.get_all("Customer", filters={'customer_name': customer_name}, fields=['name'])
+        if len(customers) == 1:
+            customer_id = customers[0]['name']
+            print(f"Contact '{contact.name}' is going to be assigned to the already existing Customer '{customer_id}' "
+                  f"since the name '{customer_name}' matches and there is exactly one Customer with this name.")
+        else:
+            customer_id = customer_name
+            if not frappe.db.exists("Customer", customer_id):
+                # Create a new, disabled Customer
+                customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")  # mandatory when saving the customer later
+                print(f"Creating Customer '{customer_id}' with {customer_group=} ...")
+                frappe.db.sql("""INSERT INTO `tabCustomer`
+                                (`name`, `customer_name`, `disabled`, `customer_group`)
+                                VALUES ("{0}", "{1}", 1, "{2}");""".format(
+                                customer_id, customer_name, customer_group))
+            #contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()})")
+
+    # link customer_id in Contact and Address (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
+    contact.append("links", {
+        'link_doctype': "Customer",
+        'link_name': customer_id
+    })
+    address.append("links", {
+        'link_doctype': "Customer",
+        'link_name': customer_id
+    })
+    return customer_id
 
 
 def create_lead_contacts_addresses(fm_export_file):
@@ -2284,7 +2365,7 @@ def create_lead_contacts_addresses(fm_export_file):
                 continue
 
             address = frappe.get_doc("Address", address_name)
-            address.address_title = f"L-{line[0]}"  # TODO?
+            address.address_title = f"L-{line[0]}"
             address.pincode = line[8]
             address.city = line[9] if line[9].strip() else '-'
             address.country = robust_get_country(line[12])  # needs to be converted from DE, AT, ES, etc. to Germany, Austria, Spain, etc.
@@ -2329,34 +2410,6 @@ def create_lead_contacts_addresses(fm_export_file):
             contact.room = line[21]
             contact.institute_key = line[28]
             contact.group_leader = line[25]
-
-            newsletter_registration_date = line[30]
-            if len(newsletter_registration_date) > 3:  # avoid e.g. '-'
-                try:
-                    contact.subscribe_date = datetime.fromisoformat(newsletter_registration_date)
-                except:
-                    try:
-                        contact.subscribe_date = datetime.strptime(newsletter_registration_date, "%d.%m.%Y %H:%M:%S")
-                    except:
-                        # fallback date only 
-                        try:
-                            contact.subscribe_date = datetime.strptime(newsletter_registration_date, "%d.%m.%Y")
-                        except:
-                            print(f"WARNING: Failed to parse newsletter subscription date '{newsletter_registration_date}' for DS_Nr {line[0]}.")
-            newsletter_unregistration_date = line[31]
-            if len(newsletter_unregistration_date) > 3:
-                try:
-                    contact.unsubscribe_date = datetime.fromisoformat(newsletter_unregistration_date)
-                except:
-                    try:
-                        contact.unsubscribe_date = datetime.strptime(newsletter_unregistration_date, "%d.%m.%Y %H:%M:%S")
-                    except:
-                        # fallback date only 
-                        try:
-                            contact.unsubscribe_date = datetime.strptime(newsletter_unregistration_date, "%d.%m.%Y")
-                        except:
-                            print(f"WARNING: Failed to parse newsletter subscription date '{newsletter_unregistration_date}' for DS_Nr {line[0]}.")
-
             contact.email_ids = []
             if line[6]:  # email
                 contact.append("email_ids", {
@@ -2388,29 +2441,23 @@ def create_lead_contacts_addresses(fm_export_file):
                 contact.receive_newsletter = 'registered'
             elif line[29].upper() == "NEIN":
                 contact.receive_newsletter = 'unregistered'
+            
+            set_newsletter_dates(contact, line[30], line[31])
 
             customer_id = line[2]
             customer_name = line[3]
 
-            if customer_id and frappe.db.exists("Customer", customer_id):
-                # link customer (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
-                contact.append("links", {
-                    'link_doctype': "Customer",
-                    'link_name': customer_id
-                })
-                address.append("links", {
-                    'link_doctype': "Customer",
-                    'link_name': customer_id
-                })
-                if frappe.get_value("Customer", customer_id, "customer_name") != customer_name:
-                    # customer_name in FM export does not match Customer.customer_name
-                    address.overwrite_company = customer_name
-            else:
-                contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()})")
+            if len(customer_name.strip()) > 0:  # do not create a Customer if customer_name is empty
+                customer_id = assign_or_create_customer(contact, address, customer_id, customer_name)
 
             address.save()
             contact.save()
             frappe.db.commit()
+            
+            if len(customer_name.strip()) > 0:
+                #set_default_language(customer_id)  # will throw a error if there is no billing address
+                configure_territory(customer_id)
+                configure_sales_manager(customer_id)
             counter += 1
     print(f"Finished: Imported {counter} leads in total from {fm_export_file}.")
 

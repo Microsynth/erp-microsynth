@@ -46,7 +46,7 @@ frappe.tracking_codes = {
                         clear_fields();
                         web_order_id = null;
                         tracking_code = null;
-                    }, 1000 );
+                    }, 300 );
                 } else {
                     // frappe.show_alert("one field missing");
                 }

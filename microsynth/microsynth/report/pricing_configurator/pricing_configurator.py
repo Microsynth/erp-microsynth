@@ -6,10 +6,12 @@ import frappe
 from frappe import _
 import json
 
+
 def execute(filters=None):
     columns = get_columns(filters)
     data = get_data(filters)
     return columns, data
+
 
 def get_columns(filters):
     price_list_currency = frappe.get_value("Price List", filters.price_list, "currency")
@@ -17,19 +19,20 @@ def get_columns(filters):
     if reference_price_list:
         reference_currency = frappe.get_value("Price List", reference_price_list, "currency")
     else:
-        reference_currency = "-" 
+        reference_currency = "-"
     return [
-        {"label": _("Item code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
-        {"label": _("Item name"), "fieldname": "item_name", "fieldtype": "Data", "width": 120},
-        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 120},
+        {"label": _("Item code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 350},
+        {"label": _("Item name"), "fieldname": "item_name", "fieldtype": "Data", "width": 250},
+        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Float", "precision": "1", "width": 60},
         {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 50},
-        {"label": "{0} [{1}]".format(_("Reference Rate"), reference_currency), "fieldname": "reference_rate", "fieldtype": "Float", "precision": 2, "width": 150},
-        {"label": "{0} [{1}]".format(_("Price List Rate"), price_list_currency), "fieldname": "price_list_rate", "fieldtype": "Float", "precision": 2, "width": 150},
-        {"label": _("Discount"), "fieldname": "discount", "fieldtype": "Percent", "precision": 2, "width": 150},
+        {"label": "{0} [{1}]".format(_("Reference Rate"), reference_currency), "fieldname": "reference_rate", "fieldtype": "Float", "precision": 2, "width": 140},
+        {"label": "{0} [{1}]".format(_("Price List Rate"), price_list_currency), "fieldname": "price_list_rate", "fieldtype": "Float", "precision": 2, "width": 140},
+        {"label": _("Discount"), "fieldname": "discount", "fieldtype": "Percent", "precision": 2, "width": 75},
         {"label": _("Record"), "fieldname": "record", "fieldtype": "Link", "options": "Item Price", "width": 100},
         {"label": _(""), "fieldname": "blank", "fieldtype": "Data", "width": 20}
     ]
+
 
 def get_item_prices(price_list):
     """
@@ -50,6 +53,7 @@ def get_item_prices(price_list):
     """.format(price_list=price_list)
     data = frappe.db.sql(simple_sql_query, as_dict=True)
     return data
+
 
 def get_data(filters):
     """
@@ -116,7 +120,8 @@ def get_data(filters):
         return [ x for x in filtered_data if x['discount'] is not None and round(x['discount'],2) != general_discount and x['discount'] != 0 ]
     else:
         return filtered_data
-    
+
+
 def get_data_legacy(filters):
     # fetch accounts
     conditions = ""
@@ -191,8 +196,10 @@ def get_data_legacy(filters):
     data = frappe.db.sql(sql_query, as_dict=True)   
     return data
 
+
 def get_reference_price_list(price_list):
     return frappe.get_value("Price List", price_list, "reference_price_list")
+
 
 def get_rate(item_code, price_list, qty):
     data = frappe.db.sql("""
@@ -212,6 +219,7 @@ def get_rate(item_code, price_list, qty):
         return data[0]['rate']
     else:
         return 0
+
 
 @frappe.whitelist()
 def populate_from_reference(price_list, item_group=None):
@@ -259,6 +267,7 @@ def populate_from_reference(price_list, item_group=None):
 
     return
 
+
 @frappe.whitelist()
 def populate_with_factor(price_list, item_group=None, factor=1.0):
     """
@@ -284,6 +293,7 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
     clean_price_list(price_list=price_list)
     
     return
+
 
 @frappe.whitelist()
 def set_rate(item_code, price_list, qty, rate):
@@ -315,12 +325,14 @@ def set_rate(item_code, price_list, qty, rate):
     frappe.db.commit()
     return
 
+
 @frappe.whitelist()
 def get_discount_items(price_list):
     """
     Pull all items with discounts for external use (~standing quotation)
     """
     return get_data(filters={'price_list': price_list, 'discounts': 1})
+
 
 @frappe.whitelist()
 def clean_price_list(price_list):
@@ -330,7 +342,6 @@ def clean_price_list(price_list):
     print("process '{0}'".format(price_list))
     
     item_prices = get_item_prices(price_list)
-
 
     prices = {}
     for p in item_prices:
@@ -358,3 +369,36 @@ def clean_price_list(price_list):
         memory = item_price
 
     return
+
+
+@frappe.whitelist()
+def change_general_discount(price_list, new_general_discount):
+    """
+    Calculate new item price with the new general discount in relation to the item price of the reference price list
+    if calculated discount of the item price in relation to the item price of the reference price list = old general discount of price list.
+    Save the new general discount on the price list.
+    """
+    reference_price_list = get_reference_price_list(price_list)
+    old_general_discount = frappe.get_value("Price List", price_list, "general_discount")
+    item_prices = get_item_prices(price_list)
+
+    for item_price in item_prices:
+        reference_rate = get_rate(item_price.item_code, reference_price_list, item_price.min_qty)
+        customer_rate = get_rate(item_price.item_code, price_list, item_price.min_qty)  # item_price.price_list_rate
+
+        if item_price.item_code is None:
+            frappe.log_error("item_price is None in function change_general_discount in pricing_configurator.py")
+        if reference_price_list is None:
+            frappe.log_error("reference_price_list is None in function change_general_discount in pricing_configurator.py")
+        if item_price.min_qty is None:
+            frappe.log_error("item_price.min_qty is None in function change_general_discount in pricing_configurator.py")
+
+        calculated_discount = (reference_rate - customer_rate) / reference_rate * 100
+    
+        if abs(old_general_discount - calculated_discount) < 0.001:
+            new_rate = ((100 - float(new_general_discount)) / 100) * reference_rate
+            set_rate(item_price.item_code, price_list, item_price.min_qty, new_rate)
+    
+    price_list_object = frappe.get_doc("Price List", price_list)
+    price_list_object.general_discount = new_general_discount
+    price_list_object.save()

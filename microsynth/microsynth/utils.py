@@ -1119,7 +1119,11 @@ def determine_territory(address_id):
 
     if address.country == "Switzerland":
         postal_code = address.pincode
-        pc_int = int(re.sub('\D', '', postal_code))
+        postal_code = re.sub('\D', '', postal_code)
+        if postal_code == '':
+            print(f"WARNING: Empty postal_code for {address_id=}.")
+            return frappe.get_doc("Territory", "Switzerland")
+        pc_int = int(postal_code)
         if pc_int < 3000:
             return frappe.get_doc("Territory", "Switzerland (French-speaking)")
         else:
@@ -1131,6 +1135,9 @@ def determine_territory(address_id):
     elif address.country == "Germany":
         postal_code = address.pincode
         postal_code = re.sub('\D', '', postal_code)
+        if postal_code == '':
+            print(f"WARNING: Empty postal_code for {address_id=}.")
+            return frappe.get_doc("Territory", "Germany")
         pc_prefix = int(postal_code[:2])
         if  26 <= pc_prefix <= 29 or \
             32 <= pc_prefix <= 36 or \
@@ -1153,7 +1160,11 @@ def determine_territory(address_id):
 
     elif address.country == "France":
         postal_code = address.pincode
-        pc_int = int(re.sub('\D', '', postal_code))
+        postal_code = re.sub('\D', '', postal_code)
+        if postal_code == '':
+            print(f"WARNING: Empty postal_code for {address_id=}.")
+            return frappe.get_doc("Territory", "France")
+        pc_int = int(postal_code)
         if   2000 <= pc_int <=  2999 or \
              8000 <= pc_int <=  8999 or \
             10000 <= pc_int <= 10999 or \
@@ -1227,7 +1238,7 @@ def get_first_shipping_address(customer_id):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE   `tabDynamic Link`.`parenttype` = "Address"
                 AND `tabDynamic Link`.`link_doctype` = "Customer"
-                AND `tabDynamic Link`.`link_name` = '{customer_id}'
+                AND `tabDynamic Link`.`link_name` = "{customer_id}"
                 -- AND `tabAddress`.`is_shipping_address` <> 0
                 AND `tabAddress`.`address_type` = "Shipping"
             ;"""        
@@ -1247,15 +1258,17 @@ def configure_territory(customer_id):
     bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '832739'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
-    if customer.territory == "All Territories":
+    if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
-            print(f"Customer {customer_id} has no Shipping Address. Can't configure Territory.")
+            print(f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory.")
             return
         territory = determine_territory(shipping_address)
         customer.territory = territory.name
         customer.save()
-        print(f"Customer {customer_id} got assigned Territory {territory.name}.")
+        print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
+    #else:
+        #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
 
 
 def configure_sales_manager(customer_id):
@@ -1285,7 +1298,7 @@ def configure_sales_manager(customer_id):
         # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
 
         customer.save()
-        print(f"Customer {customer_id} got assigned Account Manager {customer.account_manager}.")
+        print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
 
 
 def set_default_distributor(customer_id):
