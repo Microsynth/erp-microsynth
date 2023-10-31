@@ -24,11 +24,11 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
-        if (1 == 1) {  // TODO: How to check here whether the Price List entered into the filter has a reference price list?
-            report.page.add_inner_button(__('Change General Discount'), function () {
-                change_general_discount();
-            });
-        }
+        // if (1 == 1) {  // TODO: How to check here whether the Price List entered into the filter has a reference price list?
+        //     report.page.add_inner_button(__('Change General Discount'), function () {
+        //         change_general_discount();
+        //     });
+        // }
         report.page.add_inner_button(__('Clean price list'), function () {
             clean_price_list();
         });        
