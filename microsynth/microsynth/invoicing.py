@@ -23,6 +23,7 @@ from microsynth.microsynth.credits import allocate_credits, book_credit, get_tot
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import json
 import random
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
@@ -941,6 +942,11 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         customer_id = 11309
     else:
         customer_id = customer.name
+    
+    raw_timestamp = datetime.now(tz=ZoneInfo('Europe/Zurich')).strftime("%Y-%m-%dT%H:%M:%S%z")
+    timestamp = f"{raw_timestamp[:-2]}:{raw_timestamp[-2:]}"  # add a colon to fulfil ISO 8601
+    raw_invoice_date = posting_timepoint.replace(tzinfo=ZoneInfo('Europe/Zurich')).strftime("%Y-%m-%dT%H:%M:%S%z")
+    invoice_date = f"{raw_invoice_date[:-2]}:{raw_invoice_date[-2:]}"
 
     data = {'basics' : {'sender_network_id' :   sender_network_id,
                         'receiver_network_id':  customer.invoice_network_id,
@@ -948,14 +954,14 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
                         'paynet_sender_pid':    settings.paynet_id, 
                         'payload_id':           posting_timepoint.strftime("%Y%m%d%H%M%S") + str(random.randint(0, 10000000)) + "@microsynth.ch",
                         'transaction_id':       sales_invoice.name + "--" + datetime.now().strftime("%Y%m%d%H%M%S"),              # Transaction ID for yellowbill. Max 50 chars, no underscore '_'
-                        'timestamp':            datetime.now().strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'timestamp':            timestamp,
                         'supplier_id':          replace_none(customer.ext_supplier_id),
                         'customer_id':          customer_id,
                         'is_punchout':          sales_invoice.is_punchout,
                         'order_id':             replace_none(order_reference), 
                         'currency':             sales_invoice.currency,
                         'invoice_id':           sales_invoice.name,
-                        'invoice_date':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'invoice_date':         invoice_date,
                         'invoice_date_only':    posting_timepoint.strftime("%Y-%m-%d"),
                         'invoice_date_paynet':  posting_timepoint.strftime("%Y%m%d"),
                         'due_date':             sales_invoice.due_date.strftime("%Y-%m-%d"),
@@ -1022,7 +1028,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             'tax' :     {'amount' :         sales_invoice.total_taxes_and_charges,
                         'taxable_amount' :  sales_invoice.net_total,
                         'percent' :         tax_rate, 
-                        'taxPointDate' :    posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'taxPointDate' :    invoice_date,
                         'description' :     sales_invoice.taxes[0].description if len(sales_invoice.taxes)>0 else 0
                         },
             
@@ -1030,7 +1036,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
             'shippingTax' : {'taxable_amount':  shipping_costs,
                         'amount':               shipping_costs * tax_rate / 100,
                         'percent':              tax_rate,
-                        'taxPointDate':         posting_timepoint.strftime("%Y-%m-%dT%H:%M:%S+01:00"),
+                        'taxPointDate':         invoice_date,
                         'description' :         "{0}% shipping tax".format(tax_rate)
                         }, 
             'summary' : {'subtotal_amount' :        sales_invoice.net_total,
