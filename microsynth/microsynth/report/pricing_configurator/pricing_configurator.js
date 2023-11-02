@@ -24,11 +24,11 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
-        // if (1 == 1) {  // TODO: How to check here whether the Price List entered into the filter has a reference price list?
-        //     report.page.add_inner_button(__('Change General Discount'), function () {
-        //         change_general_discount();
-        //     });
-        // }
+        if (1 == 0) {
+            report.page.add_inner_button(__('Change General Discount'), function () {
+                change_general_discount();
+            });
+        }
         report.page.add_inner_button(__('Clean price list'), function () {
             clean_price_list();
         });        
@@ -101,14 +101,14 @@ function change_general_discount(){
         {'fieldname': 'new_general_discount', 'fieldtype': 'Float', 'label': __('New General Discount'), 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> of this price list whose discount corresponds to the previously defined general discount of the price list <b>will be adjusted</b> according to the new general discount (' + values.new_general_discount + '%).<br><br>Please be patient, the process may take up to one minute.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> of this price list whose discount corresponds to the previously defined general discount of the price list <b>will be adjusted</b> according to the new general discount (' + values.new_general_discount + '%).<br><br>Please be patient, the process may takes several minutes. The table is automatically reloaded after completion.',
             () => {
                 frappe.call({
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_general_discount",
                     'args':{
-                        'price_list': frappe.query_report.filters[0].value,
+                        'price_list_name': frappe.query_report.filters[0].value,
                         'new_general_discount': values.new_general_discount
-                    },  // TODO: How to show some loading animation in the meanwhile (process takes 15-20 seconds in the development system)?
+                    },
                     'callback': function(r)
                     {
                         frappe.query_report.refresh();

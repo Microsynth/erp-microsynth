@@ -232,7 +232,7 @@ def populate_from_reference(price_list, item_group=None):
     if item_group:
         filters['item_group'] = item_group
     # get base data
-    data = get_data(filters)    
+    data = get_data(filters)
     print("Number of data sets: {0}".format(len(data)))
     reference_price_list = get_reference_price_list(filters['price_list'])
     general_discount = frappe.get_value("Price List", price_list, "general_discount")
@@ -372,33 +372,53 @@ def clean_price_list(price_list):
 
 
 @frappe.whitelist()
-def change_general_discount(price_list, new_general_discount):
+def change_general_discount(price_list_name, new_general_discount):
     """
     Calculate new item price with the new general discount in relation to the item price of the reference price list
     if calculated discount of the item price in relation to the item price of the reference price list = old general discount of price list.
     Save the new general discount on the price list.
     """
-    reference_price_list = get_reference_price_list(price_list)
-    old_general_discount = frappe.get_value("Price List", price_list, "general_discount")
-    item_prices = get_item_prices(price_list)
+    reference_price_list = get_reference_price_list(price_list_name)
+    if not reference_price_list:
+        frappe.log_error("pricing_configurator.change_general_discount", f"no reference_price_list for {price_list_name=}")
+        frappe.throw(f"No reference price list found for {price_list_name=}")
+        return
+    old_general_discount = frappe.get_value("Price List", price_list_name, "general_discount")
+    item_prices = get_item_prices(price_list_name)
 
     for item_price in item_prices:
+        group = frappe.get_value("Item", item_price.item_code, "item_group")
+        # The general discount applies only to items of the item group 3.1 and 3.2
+        if not ("3.1 " in group or "3.2" in group):
+            continue
+
         reference_rate = get_rate(item_price.item_code, reference_price_list, item_price.min_qty)
-        customer_rate = get_rate(item_price.item_code, price_list, item_price.min_qty)  # item_price.price_list_rate
+        customer_rate = get_rate(item_price.item_code, price_list_name, item_price.min_qty)
 
         if item_price.item_code is None:
-            frappe.log_error("item_price is None in function change_general_discount in pricing_configurator.py")
+            error_msg = f"item_price.item_code is None. {item_price=} will left unchanged."
+            frappe.log_error("pricing_configurator.change_general_discount", error_msg)
+            frappe.throw(error_msg)
+            continue
         if reference_price_list is None:
-            frappe.log_error("reference_price_list is None in function change_general_discount in pricing_configurator.py")
+            error_msg = f"reference_price_list is None. {item_price=} will left unchanged."
+            frappe.log_error("pricing_configurator.change_general_discount", error_msg)
+            frappe.throw(error_msg)
+            continue
         if item_price.min_qty is None:
-            frappe.log_error("item_price.min_qty is None in function change_general_discount in pricing_configurator.py")
+            error_msg = f"item_price.min_qty is None. {item_price=} will left unchanged."
+            frappe.log_error("pricing_configurator.change_general_discount", error_msg)
+            frappe.throw(error_msg)
+            continue
+        if reference_rate < 0.000001:  # is possible and happens
+            continue
 
         calculated_discount = (reference_rate - customer_rate) / reference_rate * 100
-    
+
         if abs(old_general_discount - calculated_discount) < 0.001:
             new_rate = ((100 - float(new_general_discount)) / 100) * reference_rate
-            set_rate(item_price.item_code, price_list, item_price.min_qty, new_rate)
-    
-    price_list_object = frappe.get_doc("Price List", price_list)
-    price_list_object.general_discount = new_general_discount
-    price_list_object.save()
+            set_rate(item_price.item_code, price_list_name, item_price.min_qty, new_rate)
+
+    price_list = frappe.get_doc("Price List", price_list_name)
+    price_list.general_discount = new_general_discount
+    price_list.save()
