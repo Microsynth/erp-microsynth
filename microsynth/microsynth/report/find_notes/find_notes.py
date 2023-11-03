@@ -14,7 +14,7 @@ def get_columns(filters):
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 80 },
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 100 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 130 },
-        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Data", "width": 90 },
+        {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90 },
         {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 100 },
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 135 },
         {"label": _("Country"), "fieldname": "country", "fieldtype": "Data", "width": 75 },
