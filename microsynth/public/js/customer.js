@@ -51,7 +51,7 @@ frappe.ui.form.on('Customer', {
                 frappe.set_route("query-report", "Pricing Configurator", {'price_list': frm.doc.default_price_list});
             });
         };
-        if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to)) {
+        if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to) && (!frm.doc.disabled)) {
             frappe.msgprint({
                 title: __('Validation'),
                 indicator: 'orange',
@@ -60,7 +60,7 @@ frappe.ui.form.on('Customer', {
         }
     },
     validate(frm) {
-        if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to)) {
+        if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to) && (!frm.doc.disabled)) {
             frappe.msgprint({
                 title: __('Validation'),
                 indicator: 'red',
