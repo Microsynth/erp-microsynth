@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from datetime import datetime
 import json
 
 
@@ -422,3 +423,50 @@ def change_general_discount(price_list_name, new_general_discount):
     price_list = frappe.get_doc("Price List", price_list_name)
     price_list.general_discount = new_general_discount
     price_list.save()
+
+
+def populate_price_lists():
+    """
+    Go through all price lists and populate missing prices
+
+    Run from bench like
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_price_lists
+    """
+    price_lists = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabPrice List`
+        WHERE `reference_price_list` IS NOT NULL
+        AND `enabled` = 1;""", as_dict=True)
+    count = 0
+    start_ts = None
+    for p in price_lists:
+        count += 1
+        start_ts = datetime.now()
+        print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
+        populate_from_reference(price_list=p['name'])
+        print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
+    return
+
+
+def clean_price_lists():
+    """
+    Go through all price lists and clean up conflicting prices
+
+    Run from bench like
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_lists
+    """
+    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import clean_price_list
+
+    price_lists = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabPrice List`
+        WHERE `reference_price_list` IS NOT NULL;""", as_dict=True)
+    count = 0
+    start_ts = None
+    for p in price_lists:
+        count += 1
+        start_ts = datetime.now()
+        print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
+        clean_price_list(price_list=p['name'])
+        print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
+    return
