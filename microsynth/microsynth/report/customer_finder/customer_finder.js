@@ -82,6 +82,11 @@ frappe.query_reports["Customer Finder"] = {
             "label": __("Sales Manager"),
             "fieldtype": "Data",
             "options": ""
+        },
+        {
+            "fieldname":"include_disabled",
+            "label": __("Include disabled Customers (e.g. leads)"),
+            "fieldtype": "Check"
         }
     ]
 };

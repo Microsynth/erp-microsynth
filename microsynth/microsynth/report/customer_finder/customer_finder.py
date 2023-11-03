@@ -6,9 +6,11 @@ import frappe
 from frappe import _
 import json
 
+
 def execute(filters=None):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
 
 def get_columns(filters):
     return [
@@ -30,6 +32,7 @@ def get_columns(filters):
         {"label": _("Contact created"), "fieldname": "contact_created", "fieldtype": "Date", "width": 125},
     ]
 
+
 def get_data(filters):
     
     if type(filters) == str:
@@ -42,6 +45,11 @@ def get_data(filters):
     criteria = ""
 
     hasFilters = False
+
+    if not 'include_disabled' in filters:
+        criteria += """ AND `tabCustomer`.`disabled` <> 1 """
+    else:
+        hasFilters = True
 
     if 'contact_name' in filters:
         criteria += """ AND `tabContact`.`name` LIKE '%{0}%' """.format(filters['contact_name'])
@@ -123,7 +131,7 @@ def get_data(filters):
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
             LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
             
-            WHERE `tabCustomer`.`disabled` <> 1
+            WHERE TRUE
                 {criteria}
         """.format(criteria=criteria)
 
