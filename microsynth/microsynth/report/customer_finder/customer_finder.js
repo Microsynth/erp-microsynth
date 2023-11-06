@@ -7,8 +7,8 @@ frappe.query_reports["Customer Finder"] = {
         {
             "fieldname": "contact_name",
             "label": __("Person ID"),
-            "fieldtype": "Data",
-            "options": ""
+            "fieldtype": "Link",
+            "options": "Contact"
         },
         {
             "fieldname": "contact_full_name",
@@ -34,22 +34,10 @@ frappe.query_reports["Customer Finder"] = {
             "fieldtype": "Data",
             "options": "",
             "hidden": 1
-        }, 
+        },
         {
             "fieldname": "contact_institute",
             "label": __("Institute"),
-            "fieldtype": "Data",
-            "options": ""
-        },  
-        {
-            "fieldname": "contact_department",
-            "label": __("Department"),
-            "fieldtype": "Data",
-            "options": ""
-        },  
-        {
-            "fieldname": "contact_group_leader",
-            "label": __("Group Leader"),
             "fieldtype": "Data",
             "options": ""
         },
@@ -58,6 +46,24 @@ frappe.query_reports["Customer Finder"] = {
             "label": __("Institute Key"),
             "fieldtype": "Data",
             "options": ""
+        },
+        {
+            "fieldname": "contact_department",
+            "label": __("Department"),
+            "fieldtype": "Data",
+            "options": ""
+        },
+        {
+            "fieldname": "contact_group_leader",
+            "label": __("Group Leader"),
+            "fieldtype": "Data",
+            "options": ""
+        },
+        {
+            "fieldname": "address_country",
+            "label": __("Country"),
+            "fieldtype": "Link",
+            "options": "Country"
         },
         {
             "fieldname": "address_city",
@@ -74,14 +80,14 @@ frappe.query_reports["Customer Finder"] = {
         {
             "fieldname": "price_list",
             "label": __("Price List"),
-            "fieldtype": "Data",
-            "options": ""
+            "fieldtype": "Link",
+            "options": "Price List"
         },
         {
             "fieldname": "account_manager",
             "label": __("Sales Manager"),
-            "fieldtype": "Data",
-            "options": ""
+            "fieldtype": "Link",
+            "options": "User"
         },
         {
             "fieldname":"include_disabled",

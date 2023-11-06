@@ -21,9 +21,10 @@ def get_columns(filters):
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 75},
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 75},
         {"label": _("Institute"), "fieldname": "institute", "fieldtype": "Data", "width": 100},
+        {"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
         {"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 100},
         {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 75},
-        {"label": _("Institute key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100},
+        {"label": _("Country"), "fieldname": "country", "fieldtype": "Data", "width": 75},
         {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
         {"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
         {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 125},
@@ -75,6 +76,10 @@ def get_data(filters):
         criteria += """ AND `tabContact`.`institute` LIKE '%{0}%' """.format(filters['contact_institute'])
         hasFilters = True
 
+    if 'contact_institute_key' in filters:
+        criteria += """ AND `tabContact`.`institute_key` LIKE '%{0}%' """.format(filters['contact_institute_key'])
+        hasFilters = True
+
     if 'contact_department' in filters:
         criteria += """ AND `tabContact`.`department` LIKE '%{0}%' """.format(filters['contact_department'])
         hasFilters = True
@@ -83,8 +88,8 @@ def get_data(filters):
         criteria += """ AND `tabContact`.`group_leader` LIKE '%{0}%' """.format(filters['contact_group_leader'])
         hasFilters = True
 
-    if 'contact_institute_key' in filters:
-        criteria += """ AND `tabContact`.`institute_key` LIKE '%{0}%' """.format(filters['contact_institute_key'])
+    if 'address_country' in filters:
+        criteria += """ AND `tabAddress`.`country` LIKE '%{0}%' """.format(filters['address_country'])
         hasFilters = True
 
     if 'address_city' in filters:
@@ -120,6 +125,7 @@ def get_data(filters):
             `tabContact`.`institute_key` AS `institute_key`,
             `tabAddress`.`address_line1` AS `address_line1`,
             `tabAddress`.`city` AS `city`,
+            `tabAddress`.`country` AS `country`,
             `tabCustomer`.`account_manager` AS `account_manager`,
             `tabCustomer`.`default_price_list` as `price_list`,
             `tabContact`.`creation` AS `contact_created`
@@ -147,9 +153,10 @@ def get_data(filters):
                 "last_name": d.last_name,
                 "email_id": d.email_id,
                 "institute": d.institute,
+                "institute_key": d.institute_key,
                 "department": d.department,
                 "group_leader": d.group_leader,
-                "institute_key": d.institute_key,
+                "country": d.country,
                 "city": d.city,
                 "street": d.address_line1,
                 "account_manager": d.account_manager,
