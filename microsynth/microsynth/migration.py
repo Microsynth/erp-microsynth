@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import json
 from frappe.utils import cint, flt
-from datetime import datetime, date
+from datetime import datetime, timedelta
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
@@ -2236,39 +2236,43 @@ def set_newsletter_dates(contact, registration_date, unregistration_date):
                     print(f"WARNING: Failed to parse newsletter subscription date '{unregistration_date}'.")
 
 
-def assign_or_create_customer(contact, address, customer_id, customer_name):
+def assign_or_create_customer(contact, address, customer_id, customer_name, counters):
     """
     Takes a contact and address of e.g. a lead.
-    Tries to assign it to an existing customer.
+    Tries to assign it to an existing customer by customer_id.
     If not possible, create a new, disabled Customer.
     """
     if customer_id and frappe.db.exists("Customer", customer_id):
-        print(f"Customer '{customer_id}' already exists.")
+        print(f"Customer '{customer_id}' already exists. Going to assign '{contact.name}' to it.")
+        counters[1] += 1
         existing_customer_name = frappe.get_value("Customer", customer_id, "customer_name")     
         if existing_customer_name != customer_name:
             print(f"{customer_name=} in FM export does not match existing Customer.customer_name={existing_customer_name}. "
                   f"Going to set Address.overwrite_company to '{customer_name}'.")
             address.overwrite_company = customer_name
+            counters[2] += 1
         customer = frappe.get_doc("Customer", customer_id)
         if customer.customer_group is None or customer.customer_group == '':
             customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")  # mandatory when saving the customer later
+            counters[3] += 1
     else:
-        customers = frappe.get_all("Customer", filters={'customer_name': customer_name}, fields=['name'])
-        if len(customers) == 1:
-            customer_id = customers[0]['name']
-            print(f"Contact '{contact.name}' is going to be assigned to the already existing Customer '{customer_id}' "
-                  f"since the name '{customer_name}' matches and there is exactly one Customer with this name.")
+        customer_id = customer_name
+        if not frappe.db.exists("Customer", customer_id):
+            # Create a new, disabled Customer
+            customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")  # mandatory when saving the customer later
+            #print(f"Creating Customer '{customer_id}' with {customer_group=} ...")
+            counters[4] += 1
+            frappe.db.sql("""INSERT INTO `tabCustomer`
+                            (`name`, `customer_name`, `disabled`, `customer_group`)
+                            VALUES ("{0}", "{1}", 1, "{2}");""".format(
+                            customer_id, customer_name, customer_group))
         else:
-            customer_id = customer_name
-            if not frappe.db.exists("Customer", customer_id):
-                # Create a new, disabled Customer
-                customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")  # mandatory when saving the customer later
-                print(f"Creating Customer '{customer_id}' with {customer_group=} ...")
-                frappe.db.sql("""INSERT INTO `tabCustomer`
-                                (`name`, `customer_name`, `disabled`, `customer_group`)
-                                VALUES ("{0}", "{1}", 1, "{2}");""".format(
-                                customer_id, customer_name, customer_group))
-            #contact.add_comment('Comment', text=f"{customer_name=} (part of FileMaker leads import on {datetime.now()})")
+            creation = frappe.get_value("Customer", customer_id, "creation")
+            delta = datetime.now() - creation
+            if timedelta(minutes=60) < delta:  # assuming that the import does not take longer than 60 minutes
+                print(f"########## WARNING: Customer with ID (name) and customer_name '{customer_id}' already existed more than 60 minutes ago. "
+                      f"Contact '{contact.name}' is going to be assigned to it.")
+                counters[5] += 1
 
     # link customer_id in Contact and Address (in section Reference: Link DocType = Customer, Link Name = Link Title = customer_id)
     contact.append("links", {
@@ -2290,7 +2294,7 @@ def create_lead_contacts_addresses(fm_export_file):
     run
     bench execute microsynth.microsynth.migration.create_lead_contacts_addresses --kwargs "{'fm_export_file': '/mnt/erp_share/Gecko/JPe_testing/leads.tab'}"
     """
-    counter = 0
+    counters = [0]*6  # create six counters
     with open(fm_export_file) as tsv:
         print(f"Importing leads from {fm_export_file} ...")
         csv_reader = csv.reader(tsv, delimiter="\t")
@@ -2304,10 +2308,10 @@ def create_lead_contacts_addresses(fm_export_file):
             address_name = f"L-{line[0]}"
             address_line1 = line[7]
             if '"' in address_line1:
-                print(f'WARNING: address_line1 of DS_Nr {line[0]} contains ". Going to delete ".')
+                #print(f'WARNING: address_line1 of DS_Nr {line[0]} contains ". Going to delete ".')
                 address_line1 = address_line1.replace('"', '')
             if not frappe.db.exists("Address", address_name):
-                print(f"Creating Address {address_name} ...")
+                #print(f"Creating Address {address_name} ...")
                 # create new address (this way since address.insert() changes name)
                 frappe.db.sql("""INSERT INTO `tabAddress`
                                 (`name`, `address_line1`)
@@ -2335,7 +2339,7 @@ def create_lead_contacts_addresses(fm_export_file):
 
             contact_name = f"L-{line[0]}"
             if not frappe.db.exists("Contact", contact_name):
-                print(f"Creating Contact {contact_name} ...")
+                #print(f"Creating Contact {contact_name} ...")
                 # create new contact (this way since contact.insert() changes name)
                 frappe.db.sql("""INSERT INTO `tabContact`
                                 (`name`, `first_name`)
@@ -2381,8 +2385,8 @@ def create_lead_contacts_addresses(fm_export_file):
                 })
 
             contact.phone_nos = []
-            if line[26] and line[27] == '':
-                print(f"WARNING: phone number '{line[26]}' without any country code for DS_Nr {line[0]}")
+            #if line[26] and line[27] == '':
+                #print(f"WARNING: phone number '{line[26]}' without any country code for DS_Nr {line[0]}")
             if line[26]:  # phone_number
                 contact.append("phone_nos", {
                     'phone': f"{line[27]}{' ' if line[27] else ''}{line[26]}",  # phone_country + phone_number
@@ -2401,7 +2405,8 @@ def create_lead_contacts_addresses(fm_export_file):
             customer_name = line[3]
 
             if len(customer_name.strip()) > 0:  # do not create a Customer if customer_name is empty
-                customer_id = assign_or_create_customer(contact, address, customer_id, customer_name)
+                # need to be done here since at least the address is necessary to be able to set address.overwrite_company
+                customer_id = assign_or_create_customer(contact, address, customer_id, customer_name, counters)
 
             address.save()
             contact.save()
@@ -2411,8 +2416,10 @@ def create_lead_contacts_addresses(fm_export_file):
                 #set_default_language(customer_id)  # will throw a error if there is no billing address
                 configure_territory(customer_id)
                 configure_sales_manager(customer_id)
-            counter += 1
-    print(f"Finished: Imported {counter} leads in total from {fm_export_file}.")
+            counters[0] += 1
+    print(f"Finished: Imported {counters[0]} leads in total from {fm_export_file}. Thereby, {counters[1]} leads could be assigned to an existing customer by ID "
+          f"({counters[2]}x existing_customer_name != customer_name and {counters[3]}x customer.customer_group is None or ''), {counters[4]} Customer are "
+          f"created and for {counters[5]} leads, a Customer with ID (name) = customer_name already existed more than 60 minutes ago.")
 
 
 def process_sample(sample):

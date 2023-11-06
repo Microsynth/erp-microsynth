@@ -10,6 +10,7 @@ from datetime import datetime
 from frappe.utils import flt
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
+
 def get_customer(contact):
     """
     Returns the customer for a contact ID. 
@@ -27,9 +28,10 @@ def get_customer(contact):
             customer_id = l.link_name
 
     if not customer_id: 
-        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact))
+        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact), "utils.get_customer")
 
     return customer_id
+
 
 # TODO
 # Rename get_billing_address to find_billing_address
@@ -344,12 +346,12 @@ def get_country_express_shipping_item(country_name):
             express_items.append(item)
 
     if len(express_items) == 0:
-        frappe.log_error("No preferred express item found for country '{0}'".format(country_name))
+        frappe.log_error("No preferred express item found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
         None
     if len(express_items) > 0:
         
         if len(express_items) > 1:
-            frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name))
+            frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
         return express_items[0]
 
 
@@ -369,7 +371,7 @@ def get_customer_express_shipping_item(customer_name):
         return None
     if len(express_items) > 0:
         if len(express_items) > 1:
-            frappe.log_error("Multiple preferred express shipping items found for customer '{0}'".format(customer_name))
+            frappe.log_error("Multiple preferred express shipping items found for customer '{0}'".format(customer_name), "utils.get_customer_express_shipping_item")
         return express_items[0]
 
 
@@ -469,7 +471,7 @@ def clean_up_delivery_notes(sales_order_id):
         
         if dn.docstatus == 1:
             if has_dn:
-                frappe.log_error("Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), "Migration.clean_up_delivery_notes")
+                frappe.log_error("Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), "utils.clean_up_delivery_notes")
             # delivery note is submitted. keep it.
             has_dn = True
         
@@ -483,7 +485,7 @@ def clean_up_delivery_notes(sales_order_id):
             dn.delete()
         
         else:
-            frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "Migration.clean_up_delivery_notes")
+            frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "utils.clean_up_delivery_notes")
     
     frappe.db.commit()
     return
@@ -718,7 +720,7 @@ def get_child_territories(territory):
             range['rgt'] = d['rgt']
     
     if 'lft' not in range or 'rgt' not in range:
-        frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "sales_overview.get_all_child_territories")
+        frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "utils.get_all_child_territories")
         return []
 
     territories = []
@@ -880,7 +882,7 @@ def set_default_language(customer):
             else:
                 l = "de"
         except Exception as err:
-            frappe.log_error("Billing address '{0}' of customer '{1}' has an invalid pincode".format(a.name, customer), "set_default_language")
+            frappe.log_error("Billing address '{0}' of customer '{1}' has an invalid pincode".format(a.name, customer), "utils.set_default_language")
             l = "de"
     elif a.country in ("Germany", "Austria"):
         l = "de"
@@ -898,10 +900,11 @@ def set_default_language(customer):
 
     return
 
-"""
-Assert that there is an invoice to set
-"""
+
 def set_invoice_to(customer):
+    """
+    Assert that there is an invoice to set
+    """
     doc = frappe.get_doc("Customer", customer)
     if not doc.invoice_to:
         contact = get_primary_customer_contact(customer)
@@ -1121,7 +1124,7 @@ def determine_territory(address_id):
         postal_code = address.pincode
         postal_code = re.sub('\D', '', postal_code)
         if postal_code == '':
-            print(f"WARNING: Empty postal_code for {address_id=}.")
+            frappe.log_error(f"Empty postal_code for {address_id=} in Switzerland.", "utils.determine_territory")
             return frappe.get_doc("Territory", "Switzerland")
         pc_int = int(postal_code)
         if pc_int < 3000:
@@ -1136,7 +1139,7 @@ def determine_territory(address_id):
         postal_code = address.pincode
         postal_code = re.sub('\D', '', postal_code)
         if postal_code == '':
-            print(f"WARNING: Empty postal_code for {address_id=}.")
+            frappe.log_error(f"Empty postal_code for {address_id=} in Germany.", "utils.determine_territory")
             return frappe.get_doc("Territory", "Germany")
         pc_prefix = int(postal_code[:2])
         if  26 <= pc_prefix <= 29 or \
@@ -1147,7 +1150,7 @@ def determine_territory(address_id):
         elif pc_prefix < 26 or \
             30 <= pc_prefix <= 31 or \
             38 <= pc_prefix <= 39 or \
-            pc_prefix == 98:  # including invalid 00
+            pc_prefix >= 98:  # including invalid 00
             return frappe.get_doc("Territory", "Germany (Northeast)")
         elif pc_prefix == 37:
             return frappe.get_doc("Territory", "Göttingen")
@@ -1155,14 +1158,15 @@ def determine_territory(address_id):
             70 <= pc_prefix <= 97:
             return frappe.get_doc("Territory", "Germany (South)")
         else:
-            print(f"The postal code {postal_code} cannot be assigned to any specific German sales region. Territory is set to Germany (parent Territory).")
+            frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific German sales region. "
+                             f"Territory is set to Germany (parent Territory).", "utils.determine_territory")
             return frappe.get_doc("Territory", "Germany")
 
     elif address.country == "France":
         postal_code = address.pincode
         postal_code = re.sub('\D', '', postal_code)
         if postal_code == '':
-            print(f"WARNING: Empty postal_code for {address_id=}.")
+            frappe.log_error(f"Empty postal_code for {address_id=} in France.", "utils.determine_territory")
             return frappe.get_doc("Territory", "France")
         pc_int = int(postal_code)
         if   2000 <= pc_int <=  2999 or \
@@ -1205,7 +1209,8 @@ def determine_territory(address_id):
             98000 <= pc_int <= 98999:
             return frappe.get_doc("Territory", "France (South)")
         else:
-            print(f"The postal code {postal_code} cannot be assigned to any specific French sales region. Territory is set to France (parent Territory).")
+            frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific French sales region. "
+                             f"Territory is set to France (parent Territory).", "utils.determine_territory")
             return frappe.get_doc("Territory", "France")
 
     elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
@@ -1261,12 +1266,12 @@ def configure_territory(customer_id):
     if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
-            print(f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory.")
+            frappe.log_error(f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory.", "utils.configure_territory")
             return
         territory = determine_territory(shipping_address)
         customer.territory = territory.name
         customer.save()
-        print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
+        #print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
     #else:
         #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
 
@@ -1296,9 +1301,8 @@ def configure_sales_manager(customer_id):
         else:
             customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
         # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
-
         customer.save()
-        print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
+        #print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
 
 
 def set_default_distributor(customer_id):
@@ -1316,7 +1320,7 @@ def set_default_distributor(customer_id):
 
     shipping_address = get_first_shipping_address(customer_id)
     if shipping_address is None:
-        print(f"Can't set distributor for customer {customer_id} due to the lack of a shipping address.")
+        frappe.log_error(f"Can't set distributor for customer {customer_id} due to the lack of a shipping address.", "utils.set_default_distributor")
         return
 
     country = frappe.get_value("Address", shipping_address, "Country")
