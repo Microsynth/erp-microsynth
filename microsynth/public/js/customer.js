@@ -70,15 +70,17 @@ frappe.ui.form.on('Customer', {
         }
     },
     after_save(frm) {
-        frappe.call({
-            "method":"microsynth.microsynth.utils.configure_customer",
-            "args": {
-                "customer": frm.doc.name
-            },
-            "callback": function(response) { 
-                cur_frm.reload_doc();
-            }
-        });
+        if (!frm.doc.disabled) {
+            frappe.call({
+                "method":"microsynth.microsynth.utils.configure_customer",
+                "args": {
+                    "customer": frm.doc.name
+                },
+                "callback": function(response) {
+                    cur_frm.reload_doc();
+                }
+            });
+        }
     }
 });
 
