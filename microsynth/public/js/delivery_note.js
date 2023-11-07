@@ -37,7 +37,9 @@ function check_prevdoc_rates(frm) {
         'callback': function(response) {
             var prevdoc_price_list_rates = response.message;
             for (var i = 0; i < cur_frm.doc.items.length; i++) {
-                frappe.model.set_value(cur_frm.doc.items[i].doctype, cur_frm.doc.items[i].name, "price_list_rate", prevdoc_price_list_rates[i]);
+                if(prevdoc_price_list_rates[i]) {
+                    frappe.model.set_value(cur_frm.doc.items[i].doctype, cur_frm.doc.items[i].name, "price_list_rate", prevdoc_price_list_rates[i]);
+                }
             }
         }
     });
