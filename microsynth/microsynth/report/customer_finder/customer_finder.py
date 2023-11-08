@@ -27,9 +27,10 @@ def get_columns(filters):
         {"label": _("Country"), "fieldname": "country", "fieldtype": "Data", "width": 75},
         {"label": _("City"), "fieldname": "city", "fieldtype": "Data", "width": 75},
         {"label": _("Street"), "fieldname": "street", "fieldtype": "Data", "width": 100},
-        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 125},
-        {"label": _("Sales Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 75},
-        {"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 125},
+        {"label": _("Email"), "fieldname": "email_id", "fieldtype": "Data", "width": 120},
+        {"label": _("Sales Manager"), "fieldname": "account_manager", "fieldtype": "Data", "width": 70},
+        {"label": _("Price List"), "fieldname": "price_list", "fieldtype": "Link", "options":"Price List", "width": 120},
+        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 110},
         {"label": _("Contact created"), "fieldname": "contact_created", "fieldtype": "Date", "width": 125},
     ]
 
@@ -97,15 +98,19 @@ def get_data(filters):
         hasFilters = True
 
     if 'address_street' in filters:
-        criteria += """ AND `tabAddress`.`address_line1` LIKE '%{0}%' """.format(filters['address_street'])        
+        criteria += """ AND `tabAddress`.`address_line1` LIKE '%{0}%' """.format(filters['address_street'])
         hasFilters = True
 
     if 'price_list' in filters:
-        criteria += """ AND `tabCustomer`.`default_price_list` LIKE '%{0}%' """.format(filters['price_list'])        
+        criteria += """ AND `tabCustomer`.`default_price_list` LIKE '%{0}%' """.format(filters['price_list'])
+        hasFilters = True
+
+    if 'tax_id' in filters:
+        criteria += """ AND `tabCustomer`.`tax_id` LIKE '%{0}%' """.format(filters['tax_id'])
         hasFilters = True
 
     if 'account_manager' in filters:
-        criteria += """ AND `tabCustomer`.`account_manager` LIKE '%{0}%' """.format(filters['account_manager'])        
+        criteria += """ AND `tabCustomer`.`account_manager` LIKE '%{0}%' """.format(filters['account_manager'])
         hasFilters = True
 
     data = []
@@ -128,6 +133,7 @@ def get_data(filters):
             `tabAddress`.`country` AS `country`,
             `tabCustomer`.`account_manager` AS `account_manager`,
             `tabCustomer`.`default_price_list` as `price_list`,
+            `tabCustomer`.`tax_id` as `tax_id`,
             `tabContact`.`creation` AS `contact_created`
 
             FROM `tabContact`
@@ -161,6 +167,7 @@ def get_data(filters):
                 "street": d.address_line1,
                 "account_manager": d.account_manager,
                 "price_list": d.price_list,
+                "tax_id": d.tax_id,
                 "contact_created": d.contact_created
             }
             data.append(entry)

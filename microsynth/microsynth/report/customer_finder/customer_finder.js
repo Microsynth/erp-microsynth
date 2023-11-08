@@ -90,6 +90,12 @@ frappe.query_reports["Customer Finder"] = {
             "options": "User"
         },
         {
+            "fieldname": "tax_id",
+            "label": __("Tax ID"),
+            "fieldtype": "Data",
+            "options": ""
+        },
+        {
             "fieldname":"include_disabled",
             "label": __("Include disabled Customers (e.g. leads)"),
             "fieldtype": "Check"
