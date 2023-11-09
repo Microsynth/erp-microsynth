@@ -8,8 +8,10 @@ cur_frm.dashboard.add_transactions([
     }
 ]);
 
+
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
+        locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
         
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0) {
@@ -46,7 +48,7 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.__islocal) {
             setTimeout(function () {
                 check_prevdoc_rates(cur_frm);
-            }, 500);
+            }, frm.doc.items.length * 100 + 500);
         }
     },
     company(frm) {
@@ -73,14 +75,22 @@ frappe.ui.form.on('Sales Invoice', {
     },
     posting_date(frm) {
         get_exchange_rate(frm);
+    },
+    validate(frm) {
+        if (!locals.prevdoc_checked && frm.doc.__islocal) {
+            frappe.msgprint( __("Please be patient, prices are being checked..."), __("Validation") );
+            frappe.validated=false;
+        }
     }
 });
+
 
 frappe.ui.form.on('Sales Invoice Item', {
     qty(frm, cdt, cdn) {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
 
 function clone(frm) {
     frappe.call({
@@ -94,6 +104,7 @@ function clone(frm) {
         }
     });
 }
+
 
 function allocate_credits(frm) {
     frappe.call({
@@ -109,6 +120,7 @@ function allocate_credits(frm) {
     });
 }
 
+
 function book_credits(sales_invoice) {
     frappe.call({
         'method': "microsynth.microsynth.credits.book_credit",
@@ -122,6 +134,7 @@ function book_credits(sales_invoice) {
     });
 }
 
+
 function set_income_accounts(frm) {
     frappe.call({
         'method': "microsynth.microsynth.invoicing.get_income_accounts",
@@ -134,13 +147,14 @@ function set_income_accounts(frm) {
         'callback': function(r)
         {
             var income_accounts = r.message;
-            console.log(income_accounts);
+            //console.log(income_accounts);
             for (var i = 0; i < cur_frm.doc.items.length; i++) {
                 frappe.model.set_value("Sales Invoice Item", cur_frm.doc.items[i].name, "income_account", income_accounts[i]);
             }
         }
     });
 }
+
 
 function cancel_credit_journal_entry(sales_invoice) {
     frappe.call({
@@ -154,6 +168,7 @@ function cancel_credit_journal_entry(sales_invoice) {
         }
     });
 }
+
 
 function close_against_expense(frm) {
     frappe.prompt([
@@ -192,6 +207,7 @@ function close_against_expense(frm) {
     )
 }
 
+
 function get_exchange_rate(frm) {
     if (frm.doc.is_return === 0) {
         frappe.call({
@@ -208,6 +224,7 @@ function get_exchange_rate(frm) {
     }
 }
 
+
 function transmit_invoice(frm) {
     frappe.call({
         'method': 'microsynth.microsynth.invoicing.transmit_sales_invoice',
@@ -220,6 +237,7 @@ function transmit_invoice(frm) {
     });
 }
 
+
 // call zugferd to create and download xml
 function download_zugferd_xml(frm) {
     var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"  
@@ -231,12 +249,12 @@ function download_zugferd_xml(frm) {
     }
 }
 
+
 function check_prevdoc_rates(frm) {
     var dn_details = [];
     for (var i = 0; i < frm.doc.items.length; i++) {
         dn_details.push(frm.doc.items[i].dn_detail);
-    }
-    
+    }    
     frappe.call({
         'method': 'microsynth.microsynth.utils.fetch_price_list_rates_from_prevdoc',
         'args': {
@@ -246,10 +264,11 @@ function check_prevdoc_rates(frm) {
         'callback': function(response) {
             var prevdoc_price_list_rates = response.message;
             for (var i = 0; i < cur_frm.doc.items.length; i++) {
-                if(prevdoc_price_list_rates[i]) {
+                if(prevdoc_price_list_rates[i] != null) {
                     frappe.model.set_value(cur_frm.doc.items[i].doctype, cur_frm.doc.items[i].name, "price_list_rate", prevdoc_price_list_rates[i]);
                 }
             }
+            locals.prevdoc_checked = true;
         }
     });
 }
