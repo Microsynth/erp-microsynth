@@ -470,3 +470,13 @@ def clean_price_lists():
         clean_price_list(price_list=p['name'])
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
+
+
+@frappe.whitelist()
+def change_reference_rate(reference_price_list_name, item_code, minimum_qty, current_reference_rate, new_reference_rate):
+    """
+    TODO: This function should be moved somewhere else, e.g. to a new file pricing.py
+    """
+    # frappe.log_error(f"{reference_price_list_name=}, {item_code=}, {minimum_qty=}, {current_reference_rate=}, {new_reference_rate=}", 'pricing_configurator.change_reference_rate')
+    # TODO: implement
+    return
