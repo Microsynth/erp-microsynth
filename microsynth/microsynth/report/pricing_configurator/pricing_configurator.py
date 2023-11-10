@@ -473,10 +473,76 @@ def clean_price_lists():
 
 
 @frappe.whitelist()
-def change_reference_rate(reference_price_list_name, item_code, minimum_qty, current_reference_rate, new_reference_rate):
+def change_reference_rate(reference_price_list_name, item_code, min_qty, current_reference_rate, new_reference_rate):
     """
-    TODO: This function should be moved somewhere else, e.g. to a new file pricing.py
+    Change the rate (price) of the given combination of Item Code and minimum quantity
+    on each customer price list referring to the given reference price list.
+    Thereby, the existing discounts are kept and the new rate is computed
+    by applying this computed discount to the new reference rate.
+
+    TODO: This function should be moved somewhere else together with async_change_reference_rate, e.g. to a new file pricing.py
+    (Don't forget to change the call in microsynth/microsynth/public/js/item_price.js:25)
     """
-    # frappe.log_error(f"{reference_price_list_name=}, {item_code=}, {minimum_qty=}, {current_reference_rate=}, {new_reference_rate=}", 'pricing_configurator.change_reference_rate')
-    # TODO: implement
-    return
+    # frappe.log_error(f"{reference_price_list_name=}, {item_code=}, {min_qty=}, {current_reference_rate=}, {new_reference_rate=}", 'pricing_configurator.change_reference_rate')
+    try:
+        current_reference_rate = float(current_reference_rate)
+        new_reference_rate = float(new_reference_rate)
+    except ValueError:
+        frappe.log_error(f"Cannot convert '{current_reference_rate}' or '{new_reference_rate}' to a float. "
+                         f"Going to return.", "pricing_configurator.change_reference_rate")
+        return
+
+    sql_query = """
+        SELECT `name`
+        FROM `tabPrice List`
+        WHERE `reference_price_list` = '{reference_price_list_name}'
+        ;""".format(reference_price_list_name=reference_price_list_name)
+
+    price_lists = frappe.db.sql(sql_query, as_dict=True)
+
+    for price_list in price_lists:
+        reference_rate = get_rate(item_code, reference_price_list_name, min_qty)
+
+        if abs(reference_rate - current_reference_rate) > 0.000001:
+            frappe.log_error(f"{current_reference_rate=} is unequals {reference_rate=} what should never happen. "
+                             f"Going to return.", "pricing_configurator.change_reference_rate")
+            return
+
+        customer_rate = get_rate(item_code, price_list['name'], min_qty)
+        # If the combination of item_code and min_qty is not on the customer Price List, the get_rate function in pricing_configurator.py returns 0.
+        # TODO: Unable to distinguish this 0 from the case where the rate is actually 0.
+        # Consequence: If the combination of item_code and min_qty was not yet on the customer Price List,
+        # it will be added with the new_reference_rate (ignoring if the customer Price List has a general discount).
+
+        if abs(current_reference_rate) < 0.000001:  # current_reference_rate is too close to 0 to divide by it
+            frappe.log_error(f"Unable to change customer Price List rate for item {item_code} with {min_qty=} "
+                             f"on Price List '{price_list['name']}' since {current_reference_rate=} is too close to 0 "
+                             f"to divide by it for computing the current discount", 'pricing_configurator.change_reference_rate')
+            continue  # TODO: Or set new_customer_rate to 0 instead in this case?
+
+        discount = (current_reference_rate - customer_rate) / current_reference_rate * 100
+
+        if discount < 0:
+            frappe.log_error(f"Warning: {discount=} < 0 for item {item_code} with {min_qty=} "
+                             f"on Price List '{price_list['name']}'", 'pricing_configurator.change_reference_rate')
+
+        new_customer_rate = ((100 - float(discount)) / 100) * new_reference_rate
+        # frappe.log_error(f"{discount=}; {current_reference_rate=}; {customer_rate=}; {new_customer_rate=}", 'pricing_configurator.change_reference_rate')
+        set_rate(item_code, price_list['name'], min_qty, new_customer_rate)
+    
+    # set the new reference rate on the reference price list
+    set_rate(item_code, reference_price_list_name, min_qty, new_reference_rate)
+    # TODO: Add some logging?
+
+
+@frappe.whitelist()
+def async_change_reference_rate(reference_price_list_name, item_code, min_qty, current_reference_rate, new_reference_rate):
+    """
+    Wrapper to call function change_reference_rate with a timeout > 120 seconds (here 1800 seconds = 30 minutes).
+    """        
+    frappe.enqueue(method=change_reference_rate, queue='long', timeout=1800, is_async=True,
+                   reference_price_list_name=reference_price_list_name,
+                   item_code=item_code,
+                   min_qty=min_qty,
+                   current_reference_rate=current_reference_rate,
+                   new_reference_rate=new_reference_rate)
