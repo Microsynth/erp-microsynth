@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from datetime import datetime
 import json
+import csv
 
 
 def execute(filters=None):
@@ -506,24 +507,39 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     on each customer price list referring to the given reference price list.
     Thereby, the existing discounts are kept and the new rate is computed
     by applying this computed discount to the new reference rate.
-
-    TODO: This function should be moved somewhere else together with async_change_reference_rate, e.g. to a new file pricing.py
-    (Don't forget to change the call in microsynth/microsynth/public/js/item_price.js:25)
     """
     start_ts = datetime.now()
     try:
         reference_rate = float(reference_rate)
         new_reference_rate = float(new_reference_rate)
     except ValueError:
-        frappe.log_error(f"Cannot convert '{reference_rate}' or '{new_reference_rate}' to a float. "
-                         f"Going to return.", "pricing_configurator.change_reference_rate")
+        msg = f"Cannot convert '{reference_rate}' or '{new_reference_rate}' to a float. Going to return."
+        print(msg)
+        frappe.log_error(msg, "pricing_configurator.change_reference_rate")
         return
 
     current_reference_rate = get_rate_or_none(item_code, reference_price_list_name, min_qty)
+    if current_reference_rate is None:
+        msg = f"No reference rate found for {item_code=}, {reference_price_list_name=}, {min_qty=}"
+        print(msg)
+        frappe.log_error(msg, "pricing_configurator.change_reference_rate")
+        return
+
+    if abs(reference_rate - new_reference_rate) < 0.0001:
+        print(f"{reference_rate=} == {new_reference_rate=} -> nothing to do. Going to return.")
+        return
+
     if abs(current_reference_rate - reference_rate) > 0.0001:
         frappe.log_error(f"{current_reference_rate=} is unequals {reference_rate=} what should never happen. "
                             f"Going to return.", "pricing_configurator.change_reference_rate")
         return
+    
+    if frappe.get_value('Item', item_code, 'disabled'):
+        msg = f"Item {item_code} is disabled. Unable to change Item Prices. Going to return."
+        print(msg)
+        frappe.log_error(msg, "pricing_configurator.change_reference_rate")
+        return
+     
     changes = "pricelist;item_code;min_qty;old_rate;new_rate"
     counter = 0
     
@@ -545,8 +561,10 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
 
         if abs(reference_rate) < 0.0001:  # reference_rate is too close to 0 to calculate the discount (division by 0 issue)
             #frappe.log_error(f"Unable to change customer Price List rate for item {item_code} with {min_qty=} on Price List '{price_list['name']}' since {reference_rate=} is too close to 0 to divide by it for computing the current discount", 'pricing_configurator.change_reference_rate')
-            frappe.log_error(f"WARNING: {reference_rate=} -> Customer Price List rate is set to 0", 'pricing_configurator.change_reference_rate')
+            msg = f"WARNING: {reference_rate=} -> Customer Price List rate is set to 0"
+            #frappe.log_error(msg, 'pricing_configurator.change_reference_rate')
             set_rate(item_code, price_list['name'], min_qty, 0)
+            changes += '\n' + msg
             continue
 
         discount = (reference_rate - customer_rate) / reference_rate * 100
@@ -562,9 +580,9 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         try:
             set_rate(item_code, price_list['name'], min_qty, new_customer_rate)
         except Exception as e:
-            frappe.log_error(f"Got the following exception when trying to save the new customer rate {new_customer_rate} "
-                             f"for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}",
-                             'pricing_configurator.change_reference_rate')
+            msg = f"Got the following exception when trying to save the new customer rate {new_customer_rate} for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
+            print(msg)
+            frappe.log_error(msg, 'pricing_configurator.change_reference_rate')
         else:
             changes += f"\n{price_list['name']};{item_code};{min_qty};{customer_rate};{new_customer_rate}"
             counter += 1
@@ -585,6 +603,56 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         'changes': changes
     })
     item_price_log.insert()
+
+
+def change_rates_from_csv(csv_file, user):
+    """
+    Change the reference rate and all dependent customer rates for all entries in the given CSV file
+    using the function change_reference_rate.
+    IMPORTANT: It is expected that the CSV file has a header and exactly the following columns in this order:
+    Reference Price List Name, Item Code, Item Name, Minimum Qty, Current Rate, New Rate
+
+    run from bench
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_rates_from_csv --kwargs "{'csv_file': '/mnt/erp_share/JPe/testprices.csv', 'user': 'firstname.lastname@microsynth.ch'}"
+    """
+    no_lines = 0
+    # Dry run to check CSV file
+    with open(csv_file) as file:
+        print(f"Checking {csv_file} ...")
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 6:
+                print(f"Expected line length 6 but was {len(line)} for the following line:\n{line}\n"
+                      f"No Prices are changed. Please correct CSV file and restart. Going to return.")
+                return
+            if line[0] not in ('Sales Prices CHF', 'Sales Prices EUR', 'Sales Prices SEK', 'Sales Prices USD'):
+                print(f"Got unknown reference price list '{line[0]}'. No Prices are changed. "
+                      f"Please correct CSV file or add '{line[0]}' here in the code and restart. Going to return.")
+            try:
+                min_qty = int(line[3])
+                reference_rate = float(line[4])
+                new_reference_rate = float(line[5])
+            except Exception as error:
+                print(f"The following exception occurred during type conversion of min_qty, reference_rate or new_reference_rate:\n{error}\n"
+                      f"No Prices are changed. Please correct CSV file and restart. Going to return.")
+            no_lines += 1
+
+    with open(csv_file) as file:
+        print(f"Changing prices according to {csv_file} ...")
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        line_counter = 0
+        for line in csv_reader:
+            reference_price_list_name = line[0]
+            item_code = line[1]  # keep as string since leading zeros are removed when converting it to an integer
+            # line[2] is Item name and only for human readability
+            min_qty = int(line[3])
+            reference_rate = float(line[4])
+            new_reference_rate = float(line[5])
+            change_reference_rate(reference_price_list_name, item_code, min_qty, reference_rate, new_reference_rate, user)
+            line_counter += 1
+            print(f"Finished line {line_counter}/{no_lines}: {line}")
 
 
 @frappe.whitelist()

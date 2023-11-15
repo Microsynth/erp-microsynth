@@ -33,13 +33,12 @@ function change_reference_rate(){
                         'min_qty': cur_frm.doc.min_qty,
                         'reference_rate': cur_frm.doc.price_list_rate,
                         'new_reference_rate': values.new_reference_rate,
-                        'user': session.user
+                        'user': frappe.session.user
                     },
                     'callback': function(r)
                     {
-                        cur_frm.refresh();  // Won't work as intended since called function is async
-                        // TODO: How to show some success message in case everything was fine?
-                        // Maybe https://frappeframework.com/docs/user/en/api/realtime
+                        setTimeout(function() {cur_frm.refresh();}, 180000);  // reload at least after three minutes
+                        // How to show some success message in case everything was fine?
                         // Or is it nearly impossible to get feedback from the enqueued async function?
                     }
                 });
