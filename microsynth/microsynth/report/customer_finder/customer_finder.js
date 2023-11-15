@@ -96,6 +96,12 @@ frappe.query_reports["Customer Finder"] = {
             "options": ""
         },
         {
+            "fieldname": "contact_status",
+            "label": __("Contact Status"),
+            "fieldtype": "Select",
+            "options": [ '', 'Passive', 'Open', 'Lead', 'Replied', 'Disabled']
+        },
+        {
             "fieldname":"include_disabled",
             "label": __("Include disabled Customers (e.g. leads)"),
             "fieldtype": "Check"

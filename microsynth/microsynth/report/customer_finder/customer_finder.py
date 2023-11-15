@@ -113,6 +113,10 @@ def get_data(filters):
         criteria += """ AND `tabCustomer`.`account_manager` LIKE '%{0}%' """.format(filters['account_manager'])
         hasFilters = True
 
+    if 'contact_status' in filters and filters['contact_status']:
+        criteria += """ AND `tabContact`.`status` = '{0}' """.format(filters['contact_status'])
+        hasFilters = True
+
     data = []
 
     if hasFilters:
