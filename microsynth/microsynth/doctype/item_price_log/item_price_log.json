@@ -4,6 +4,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "price_list",
+  "item_code",
+  "min_qty",
   "original_rate",
   "new_rate",
   "user",
@@ -30,10 +33,27 @@
    "fieldname": "changes",
    "fieldtype": "Text",
    "label": "Changes"
+  },
+  {
+   "fieldname": "price_list",
+   "fieldtype": "Link",
+   "label": "Price List",
+   "options": "Price List"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "min_qty",
+   "fieldtype": "Int",
+   "label": "Minimum Qty"
   }
  ],
- "modified": "2023-11-14 16:25:25.652251",
- "modified_by": "Administrator",
+ "modified": "2023-11-15 08:50:02.434524",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Price Log",
  "owner": "rolf.suter@microsynth.ch",

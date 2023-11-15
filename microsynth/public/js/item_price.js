@@ -5,7 +5,7 @@
 frappe.ui.form.on('Item Price', {
     refresh(frm) {
         console.log()
-        if (frm.doc.price_list.includes('Sales Prices') && false) {  // TODO: remove " && false" once the button should be visible
+        if (frm.doc.price_list.includes('Sales Prices') && session.user.has_role("Sales Manager Extended") && false) {  // TODO: remove " && false" once the button should be visible
             frm.add_custom_button(__("Change reference price"), function() {
                 change_reference_rate();
             });
@@ -23,7 +23,7 @@ function change_reference_rate(){
             frappe.show_alert('New reference Price List rate equals current reference Price List Rate. No changes applied.');
             return;
         }
-        frappe.confirm('Are you sure you want to proceed?<br>All <b>Price Lists</b> referring to this reference Price List ' + cur_frm.doc.price_list + ' <b>will be changed</b> by applying their current discount relative to the current reference price (' + cur_frm.doc.price_list_rate + ' ' + cur_frm.doc.currency + ') to the new reference price (' + values.new_reference_rate + ' ' + cur_frm.doc.currency + ') for item ' + cur_frm.doc.item_code + ': ' + cur_frm.doc.item_name + ' with minimum quantity ' + cur_frm.doc.min_qty +'.<br><br>Please be patient, the process may takes several minutes.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>Price Lists</b> referring to this reference Price List "' + cur_frm.doc.price_list + '" <b>will be changed</b> by applying their current discount relative to the current reference price (' + cur_frm.doc.price_list_rate + ' ' + cur_frm.doc.currency + ') to the new reference price (' + values.new_reference_rate + ' ' + cur_frm.doc.currency + ') for item ' + cur_frm.doc.item_code + ': ' + cur_frm.doc.item_name + ' with minimum quantity ' + cur_frm.doc.min_qty +'.<br><br>Please be patient, the process may takes several minutes.',
             () => {
                 frappe.call({
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.async_change_reference_rate",
@@ -32,7 +32,8 @@ function change_reference_rate(){
                         'item_code': cur_frm.doc.item_code,
                         'min_qty': cur_frm.doc.min_qty,
                         'reference_rate': cur_frm.doc.price_list_rate,
-                        'new_reference_rate': values.new_reference_rate
+                        'new_reference_rate': values.new_reference_rate,
+                        'user': session.user
                     },
                     'callback': function(r)
                     {
