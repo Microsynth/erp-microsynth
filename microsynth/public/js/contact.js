@@ -16,7 +16,7 @@ cur_frm.dashboard.add_transactions([
 frappe.ui.form.on('Contact', {
     before_save(frm) {
         update_address_links(frm);
-        
+
         let first_name = frm.doc.first_name || "";
         let last_name = frm.doc.last_name || "";
         let spacer = "";
@@ -37,7 +37,6 @@ frappe.ui.form.on('Contact', {
                 preview_address(frm, frm.doc.links[0].link_name);
             });
 
-            
             // Button to jump to customer
             frm.add_custom_button(__("Customer"), function() {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
@@ -59,7 +58,7 @@ frappe.ui.form.on('Contact', {
             frm.add_custom_button(__("Quotation"), function() {
                 create_quotation(frm);
             }, __("Create"));
-            
+
             // Gecko export button in Create menu
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({
@@ -73,6 +72,7 @@ frappe.ui.form.on('Contact', {
     }
 });
 
+
 function update_address_links(frm) {
     if (frm.doc.address) {
         frappe.call({
@@ -84,6 +84,7 @@ function update_address_links(frm) {
         })
     }
 }
+
 
 function preview_address(frm, customer) {
     if (!frm.doc.address) {
@@ -107,6 +108,7 @@ function preview_address(frm, customer) {
         });
     }
 }
+
 
 function create_quotation(frm){
 
