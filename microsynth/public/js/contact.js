@@ -31,25 +31,18 @@ frappe.ui.form.on('Contact', {
     refresh(frm) {
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
-            
+
             // Preview Address button
             frm.add_custom_button(__("Preview Address"), function() {
                 preview_address(frm, frm.doc.links[0].link_name);
             });
-            
-            // Gecko export button
-            frm.add_custom_button(__("Gecko Export"), function() {
-                frappe.call({
-                    "method":"microsynth.microsynth.migration.export_contact_to_gecko",
-                    "args": { "contact_name":frm.doc.name }
-                });
-            });
+
             
             // Button to jump to customer
             frm.add_custom_button(__("Customer"), function() {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
-                      
+
             frappe.call({
                 "method": "frappe.client.get",
                 "args": {
@@ -61,6 +54,21 @@ frappe.ui.form.on('Contact', {
                     cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, 'blue', true);
                 }
             });
+
+            // Quotation button in Create menu
+            frm.add_custom_button(__("Quotation"), function() {
+                create_quotation(frm);
+            }, __("Create"));
+            
+            // Gecko export button in Create menu
+            frm.add_custom_button(__("Gecko Export"), function() {
+                frappe.call({
+                    "method":"microsynth.microsynth.migration.export_contact_to_gecko",
+                    "args": { "contact_name":frm.doc.name }
+                });
+            }, __("Create"));
+
+            frm.page.set_inner_btn_group_as_primary(__('Create'));
         }
     }
 });
@@ -98,4 +106,13 @@ function preview_address(frm, customer) {
             }
         });
     }
+}
+
+function create_quotation(frm){
+
+    frappe.model.open_mapped_doc({
+        method: "microsynth.microsynth.quotation.make_quotation",
+        args: {contact_name: frm.doc.name },
+        frm: frm
+    })
 }
