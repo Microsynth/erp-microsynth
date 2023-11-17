@@ -18,7 +18,7 @@ def make_quotation(contact_name):
     if len(contact.links) != 1:
         frappe.log_error(f"WARNING: Contact.links has length {len(contact.links)} != 1 for Contact {contact_name} and Quotation {doc.name}. "
                          f"Took contact.links[0].link_name for Quotation.party_name but might be wrong. Please check Contact {contact_name} "
-                         f"and Quotation {doc.name}.", 'microsynth/microsynth/microsynth/quotation.py')
+                         f"and Quotation {doc.name}.", 'microsynth.quotation.make_quotation')
 
     doc.party_name = contact.links[0].link_name
     doc.contact_person = contact_name
