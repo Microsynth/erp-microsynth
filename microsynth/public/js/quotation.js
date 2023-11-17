@@ -77,9 +77,9 @@ function assert_customer_fields(frm) {
             'asyc': false,
             'callback': function(r) {
                 var customer = r.message;
-                cur_frm.set_value("territory", customer.territory);
-                cur_frm.set_value("currency", customer.default_currency);
-                cur_frm.set_value("selling_price_list", customer.default_price_list);
+                if (customer.territory) { cur_frm.set_value("territory", customer.territory); }
+                if (customer.default_currency) { cur_frm.set_value("currency", customer.default_currency); }
+                if (customer.default_price_list) {cur_frm.set_value("selling_price_list", customer.default_price_list); }
             }
         });
     }
