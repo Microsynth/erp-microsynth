@@ -15,6 +15,7 @@
    "fieldname": "sales_order",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Sales Order",
    "options": "Sales Order",
    "reqd": 1
@@ -22,6 +23,7 @@
   {
    "fieldname": "tracking_code",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Tracking Code"
   },
   {
@@ -41,8 +43,8 @@
    "label": "Recipient Name"
   }
  ],
- "modified": "2023-06-08 11:12:48.269614",
- "modified_by": "Administrator",
+ "modified": "2023-11-17 09:11:35.436347",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Tracking Code",
  "owner": "rolf.suter@microsynth.ch",
