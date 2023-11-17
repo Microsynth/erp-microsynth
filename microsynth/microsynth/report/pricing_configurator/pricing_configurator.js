@@ -24,7 +24,7 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
-        if (1 == 0) {
+        if (frappe.user.has_role("Sales Manager") && false) {  // TODO: remove && false to release
             report.page.add_inner_button(__('Change General Discount'), function () {
                 change_general_discount();
             });
@@ -101,17 +101,31 @@ function change_general_discount(){
         {'fieldname': 'new_general_discount', 'fieldtype': 'Float', 'label': __('New General Discount'), 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> of this price list whose discount corresponds to the previously defined general discount of the price list <b>will be adjusted</b> according to the new general discount (' + values.new_general_discount + '%).<br><br>Please be patient, the process may takes several minutes. The table is automatically reloaded after completion.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount <b>will be changed</b> to the new general discount (' + values.new_general_discount + '%).<br><br><b>Please be patient</b>, the process may takes several minutes. The table is automatically reloaded after completion.',
             () => {
+                if (values.new_general_discount > 100) {
+                    frappe.show_alert('New general discount has to be <= 100. Otherwise prices would get negative.');
+                    return;
+                }
                 frappe.call({
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_general_discount",
                     'args':{
                         'price_list_name': frappe.query_report.filters[0].value,
                         'new_general_discount': values.new_general_discount
                     },
-                    'callback': function(r)
+                    'callback': function(response)
                     {
                         frappe.query_report.refresh();
+                        if (response.message.length > 0) {
+                            // show message box with return value from python function (contains errors about item prices not present on the reference price list)
+                            frappe.msgprint({
+                                title: __('Warning'),
+                                indicator: 'orange',
+                                message: 'The discount could not be changed for the following items:<br><br>' + response.message
+                            });
+                        } else {
+                            frappe.show_alert('New general discount has been applied.');
+                        }
                     }
                 });
             }, () => {
@@ -122,6 +136,7 @@ function change_general_discount(){
     __('OK')
     );
 }
+
 
 function clean_price_list(){
     frappe.call({
@@ -136,6 +151,7 @@ function clean_price_list(){
     });
 }
 
+
 function populate_from_reference() {
     frappe.call({
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_from_reference",
@@ -149,6 +165,7 @@ function populate_from_reference() {
         }
     });
 }
+
 
 function populate_with_factor() {
     frappe.prompt([
@@ -177,6 +194,7 @@ function populate_with_factor() {
     __('OK')
     );
 }
+
 
 function edit_cell(item_code, price_list, qty, value) {
     var d = new frappe.ui.Dialog({
@@ -208,6 +226,7 @@ function edit_cell(item_code, price_list, qty, value) {
     });
     d.show();
 }
+
 
 function edit_discount_cell(item_code, price_list, qty, discount, reference_rate) {
     var d = new frappe.ui.Dialog({
