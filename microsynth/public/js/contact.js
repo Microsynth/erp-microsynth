@@ -55,9 +55,9 @@ frappe.ui.form.on('Contact', {
             });
 
             // Quotation button in Create menu
-            //frm.add_custom_button(__("Quotation"), function() {
-            //    create_quotation(frm);
-            //}, __("Create"));
+            frm.add_custom_button(__("Quotation"), function() {
+                create_quotation(frm);
+            }, __("Create"));
 
             // Gecko export button in Create menu
             frm.add_custom_button(__("Gecko Export"), function() {
@@ -111,10 +111,9 @@ function preview_address(frm, customer) {
 
 
 function create_quotation(frm){
-
     frappe.model.open_mapped_doc({
         method: "microsynth.microsynth.quotation.make_quotation",
-        args: {contact_name: frm.doc.name },
+        args: {contact_name: frm.doc.name},
         frm: frm
     })
 }
