@@ -101,7 +101,7 @@ function change_general_discount(){
         {'fieldname': 'new_general_discount', 'fieldtype': 'Float', 'label': __('New General Discount'), 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount <b>will be changed</b> to the new general discount (' + values.new_general_discount + '%).<br><br><b>Please be patient</b>, the process may takes several minutes. The table is automatically reloaded after completion.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount <b>will be changed</b> to the new general discount (' + values.new_general_discount + '%).<br><br><b>Please be patient</b>, the process may take several minutes. The table is automatically reloaded after completion.',
             () => {
                 if (values.new_general_discount > 100) {
                     frappe.show_alert('New general discount has to be <= 100. Otherwise prices would get negative.');

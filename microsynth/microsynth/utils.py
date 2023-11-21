@@ -920,7 +920,6 @@ def configure_customer(customer):
     Configures a customer. This function is run upon webshop user registration (webshop.register_user) 
     and when saving the customer or an address (customer.js, address.js).
     """
-    # TODO: Adjust function comment and check what should be done here and what only for new customers.
     set_default_language(customer)
     configure_territory(customer)
     configure_sales_manager(customer)
