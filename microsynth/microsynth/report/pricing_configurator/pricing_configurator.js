@@ -24,7 +24,7 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
-        if (frappe.user.has_role("Sales Manager") && false) {  // TODO: remove && false to release
+        if (frappe.user.has_role("Sales Manager")) {
             report.page.add_inner_button(__('Change General Discount'), function () {
                 change_general_discount();
             });
