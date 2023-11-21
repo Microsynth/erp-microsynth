@@ -111,7 +111,8 @@ function change_general_discount(){
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_general_discount",
                     'args':{
                         'price_list_name': frappe.query_report.filters[0].value,
-                        'new_general_discount': values.new_general_discount
+                        'new_general_discount': values.new_general_discount,
+                        'user': frappe.session.user
                     },
                     'callback': function(response)
                     {

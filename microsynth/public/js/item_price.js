@@ -5,7 +5,7 @@
 frappe.ui.form.on('Item Price', {
     refresh(frm) {
         console.log()
-        if (frm.doc.price_list.includes('Sales Prices') && session.user.has_role("Sales Manager Extended") && false) {  // TODO: remove " && false" once the button should be visible
+        if (frm.doc.price_list.includes('Sales Prices') && frappe.user.has_role("Sales Manager Extended") && false) {  // TODO: remove " && false" once the button should be visible
             frm.add_custom_button(__("Change reference price"), function() {
                 change_reference_rate();
             });
