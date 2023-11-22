@@ -1,14 +1,16 @@
-# Copyright (c) 2022-2023, libracore AG and contributors
+# Copyright (c) 2023, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
 import frappe
 from frappe import _
 
+
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
+
 
 def get_columns():
     columns = [
@@ -24,10 +26,14 @@ def get_columns():
     ]
     return columns
 
+
 def get_data(filters, short=False):
-    conditions = ""
+    conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
+
+    if filters.get('product_type'):
+        conditions += f"AND `tabSales Invoice`.`product_type` = '{filters.get('product_type')}'"
+
     if filters.get('customer'):
-    
         # customer based evaluation: ledger
         sql_query = """
         SELECT
@@ -57,7 +63,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
-                AND `tabSales Invoice`.`company` = "{company}"
+                {conditions}
             GROUP BY `tabSales Invoice`.`name`
 
             UNION SELECT
@@ -75,15 +81,15 @@ def get_data(filters, short=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`customer` = "{customer}"
-                AND `tabSales Invoice`.`company` = "{company}"
+                {conditions}
         ) AS `raw`
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"), 
             customer=filters.get('customer'),
-            company=filters.get('company'))
-    
+            conditions=conditions)
+
         data = frappe.db.sql(sql_query, as_dict=True)
-        
+
         credit_positions = {}       # Key is per invoice
         # find open balances that have credit left
         for d in data:
@@ -97,12 +103,12 @@ def get_data(filters, short=False):
                 if not d['reference'] in credit_positions:
                     credit_positions[d['reference']] = 0
                 credit_positions[d['reference']] += d['net_amount']
-        
+
         # apply to credits
         for d in data:
             if d['type'] == "Credit":
                 d['outstanding'] = credit_positions[d['sales_invoice']]
-                
+
         # shorten output
         if short:
             output = []
@@ -134,8 +140,8 @@ def get_data(filters, short=False):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
-                AND `tabSales Invoice`.`company` = "{company}"
-                
+                {conditions}
+
             UNION SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
@@ -150,15 +156,13 @@ def get_data(filters, short=False):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`company` = "{company}"
+                {conditions}
         ) AS `raw`
         GROUP BY `raw`.`customer`
         ORDER BY `raw`.`customer` ASC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"), 
-            company=filters.get('company'))
-    
-    
+            conditions=conditions)
+
         data = frappe.db.sql(sql_query, as_dict=True)
-    
-    return data
-    
+
+    return data 
