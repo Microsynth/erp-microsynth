@@ -1438,7 +1438,7 @@
    "modified_by": "rolf.suter@microsynth.ch",
    "name": "Sales Invoice-product_type",
    "no_copy": 0,
-   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nMaterial\nService",
+   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService",
    "owner": "rolf.suter@microsynth.ch",
    "parent": null,
    "parentfield": null,

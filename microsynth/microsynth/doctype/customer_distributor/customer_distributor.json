@@ -30,12 +30,12 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Product Type",
-   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA"
+   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService"
   }
  ],
  "istable": 1,
- "modified": "2023-01-24 16:29:43.567453",
- "modified_by": "Administrator",
+ "modified": "2023-11-22 12:30:52.588130",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Customer Distributor",
  "owner": "Administrator",
