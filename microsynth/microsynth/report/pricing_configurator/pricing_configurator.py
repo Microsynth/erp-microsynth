@@ -313,6 +313,7 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
             reference_rate = get_rate(d['item_code'], reference_price_list, d['qty'])
             new_rate = factor * reference_rate
             set_rate(d['item_code'], price_list, d['qty'], new_rate)
+            # TODO: Add logging using Item Price Log
     
     clean_price_list(price_list=price_list)
     
@@ -419,7 +420,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
         return
 
     old_general_discount = frappe.get_value("Price List", price_list_name, "general_discount")
-    if not old_general_discount:
+    if old_general_discount is None:
         frappe.throw(f"Price List '{price_list_name}' has no general discount. No changes are made. Going to return.")
         return
     
@@ -452,7 +453,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
             frappe.throw(f"{reference_rate=} < 0 for Item Code {item_price.item_code}. {item_price=} will left unchanged. No changes are made. Going to return.")
             return
         if customer_rate is None:
-            frappe.throw(f"customer_rate is None. {item_price=} will left unchanged. No changes are made. Going to return.")
+            frappe.throw(f"customer_rate is None. {item_price=} will left unchanged. No changes are made. Going to return. You may need to populate from reference first.")
             return
 
         if item_price.item_code is None:
