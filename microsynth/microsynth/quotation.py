@@ -4,7 +4,8 @@
 
 import frappe
 from frappe.model.mapper import get_mapped_doc
-
+from erpnextswiss.erpnextswiss.finance import get_exchange_rate
+from datetime import datetime
 
 @frappe.whitelist()
 def make_quotation(contact_name):
@@ -22,13 +23,14 @@ def make_quotation(contact_name):
 
     doc.party_name = contact.links[0].link_name
     doc.contact_person = contact_name
-    doc.company = frappe.get_value('Customer', doc.party_name, 'default_company')
-    doc.territory = frappe.get_value('Customer', doc.party_name, 'territory')
-    doc.currency = frappe.get_value('Customer', doc.party_name, 'default_currency')
-    doc.selling_price_list = frappe.get_value('Customer', doc.party_name, 'default_price_list')
-    doc.sales_manager = frappe.get_value('Customer', doc.party_name, 'account_manager')
-    invoice_to = frappe.get_value('Customer', doc.party_name, 'invoice_to')
+    customer = frappe.get_doc("Customer", doc.party_name)
+    doc.company = customer.default_company
+    doc.territory = customer.territory
+    doc.currency = customer.default_currency
+    doc.selling_price_list = customer.default_price_list
+    doc.conversion_rate = get_exchange_rate(from_currency=doc.currency, company=doc.company, date=datetime.today().date())
+    doc.sales_manager = customer.account_manager
+    invoice_to = customer.invoice_to
     doc.customer_address = frappe.get_value('Contact', invoice_to, 'address')
     doc.shipping_address_name = frappe.get_value('Contact', doc.contact_person, 'address')
-    # TODO: Error: "Exchange Rate is mandatory. Maybe Currency Exchange record is not created for USD to EUR" (Task #14321 KB ERP)
     return doc
