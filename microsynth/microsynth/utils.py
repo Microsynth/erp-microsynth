@@ -1581,3 +1581,30 @@ def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
         frappe.throw("This can never happen! If not, ask Lars")
         
     return prevdoc_price_list_rates
+
+"""
+This function will deduct the unallocated amount to the provided account and submit the payment entry
+"""
+@frappe.whitelist()
+def deduct_and_close(payment_entry, account, cost_center):
+    doc = frappe.get_doc("Payment Entry", payment_entry)
+    if doc.payment_type == "Pay":
+        amount = doc.unallocated_amount or doc.difference_amount or 0
+    else:
+        amount = ((-1) * doc.unallocated_amount) or doc.difference_amount
+
+    add_deduction(doc, account, cost_center, amount)
+    
+    doc.save()
+    doc.submit()
+    
+    return
+    
+def add_deduction(doc, account, cost_center, amount):
+    doc.append('deductions', {
+        'account': account,
+        'cost_center': cost_center,
+        'amount': amount
+    })
+    return
+
