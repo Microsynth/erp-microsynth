@@ -11,7 +11,6 @@ import numpy as np
 import json
 from frappe.utils import cint, flt
 from datetime import datetime, timedelta
-from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
 from microsynth.microsynth.invoicing import get_income_accounts

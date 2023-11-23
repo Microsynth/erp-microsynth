@@ -246,7 +246,7 @@ def get_rate_or_none(item_code, price_list, qty):
 
 
 @frappe.whitelist()
-def populate_from_reference(price_list, item_group=None):
+def populate_from_reference(price_list, user, item_group=None):
     """
     This will fill up the missing rates from the reference
     """
@@ -287,13 +287,11 @@ def populate_from_reference(price_list, item_group=None):
                 print("Cannot insert {0} in {1}: {2}".format(d['item_code'], price_list, err))
     frappe.db.commit()
 
-    clean_price_list(price_list=price_list)
-
-    return
+    clean_price_list(price_list, user)
 
 
 @frappe.whitelist()
-def populate_with_factor(price_list, item_group=None, factor=1.0):
+def populate_with_factor(price_list, user, item_group=None, factor=1.0):
     """
     This will set all rates from the reference price list with a factor
     """
@@ -307,17 +305,27 @@ def populate_with_factor(price_list, item_group=None, factor=1.0):
     # get base data
     data = get_data(filters)
     reference_price_list = get_reference_price_list(filters['price_list'])
+    changes = "item_code;min_qty;old_rate;new_rate"
     # set new prices
     for d in data:
         if d['reference_rate']:
             reference_rate = get_rate(d['item_code'], reference_price_list, d['qty'])
             new_rate = factor * reference_rate
             set_rate(d['item_code'], price_list, d['qty'], new_rate)
-            # TODO: Add logging using Item Price Log
-    
-    clean_price_list(price_list=price_list)
-    
-    return
+            changes += f"\n{d['item_code']};{d['qty']};{d['price_list_rate']};{new_rate}"
+
+    changes += f"\n\nChanges made by function pricing_configurator.populate_with_factor using a factor of {factor}."
+    # Log changes using Item Price Log
+    item_price_log = frappe.get_doc({
+        'doctype': 'Item Price Log',
+        'price_list': price_list,
+        'user': user,
+        'changes': changes
+    })
+    item_price_log.insert()
+
+    clean_price_list(price_list, user)
+
 
 
 @frappe.whitelist()
@@ -360,7 +368,7 @@ def get_discount_items(price_list):
 
 
 @frappe.whitelist()
-def clean_price_list(price_list):
+def clean_price_list(price_list, user):
     """
     Corrects rates if there is a lower rate for a smaller quantity.
     """
@@ -378,12 +386,16 @@ def clean_price_list(price_list):
     (code_memory, quantity_memory), memory = sorted_prices[0]
     rate_memory = memory.rate
 
+    changes = "item_code;min_qty;old_rate;new_rate"
+    orig_len = len(changes)
+
     for key, item_price in sorted_prices:
 
         if item_price.item_code == memory.item_code: 
         
             if item_price.rate > rate_memory and item_price.min_qty > memory.min_qty:
                 set_rate(item_price.item_code, price_list, item_price.min_qty, rate_memory)
+                changes += f"\n{item_price.item_code};{item_price.min_qty};{item_price.rate};{rate_memory}"
                 print("Set rate for item {code}, quantity {qty}: {rate} --> {mem_rate}".format(code=item_price.item_code, qty=str(item_price.min_qty).rjust(6), rate=item_price.rate, mem_rate=rate_memory))
             else:                
                 rate_memory = item_price.rate
@@ -393,7 +405,16 @@ def clean_price_list(price_list):
         
         memory = item_price
 
-    return
+    if (len(changes) > orig_len):
+        changes += f"\n\nChanges made by function pricing_configurator.clean_price_list."
+        # Log changes using Item Price Log
+        item_price_log = frappe.get_doc({
+            'doctype': 'Item Price Log',
+            'price_list': price_list,
+            'user': user,
+            'changes': changes
+        })
+        item_price_log.insert()
 
 
 @frappe.whitelist()
@@ -528,12 +549,12 @@ def change_general_discount(price_list_name, new_general_discount, user):
     return warnings
 
 
-def populate_price_lists():
+def populate_price_lists(user):
     """
     Go through all price lists and populate missing prices
 
     Run from bench like
-    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_price_lists
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}
     """
     price_lists = frappe.db.sql("""
         SELECT `name`
@@ -546,20 +567,18 @@ def populate_price_lists():
         count += 1
         start_ts = datetime.now()
         print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
-        populate_from_reference(price_list=p['name'])
+        populate_from_reference(p['name'], user)
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
 
 
-def clean_price_lists():
+def clean_price_lists(user):
     """
     Go through all price lists and clean up conflicting prices
 
     Run from bench like
-    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_lists
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}
     """
-    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import clean_price_list
-
     price_lists = frappe.db.sql("""
         SELECT `name`
         FROM `tabPrice List`
@@ -570,7 +589,7 @@ def clean_price_lists():
         count += 1
         start_ts = datetime.now()
         print("Updating {0}... ({1}%)".format(p['name'], int(100 * count / len(price_lists))))
-        clean_price_list(price_list=p['name'])
+        clean_price_list(p['name'], user)
         print("... {0} sec".format((datetime.now() - start_ts).total_seconds()))
     return
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Microsynth, libracore and contributors
+// Copyright (c) 2023, Microsynth, libracore and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -143,7 +143,8 @@ function clean_price_list(){
     frappe.call({
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_list",
         'args':{
-            'price_list': frappe.query_report.filters[0].value
+            'price_list': frappe.query_report.filters[0].value,
+            'user': frappe.session.user
         },
         'callback': function(r)
         {
@@ -158,6 +159,7 @@ function populate_from_reference() {
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_from_reference",
         'args':{
             'price_list': frappe.query_report.filters[0].value,
+            'user': frappe.session.user,
             'item_group': frappe.query_report.filters[1].value
         },
         'callback': function(r)
@@ -179,6 +181,7 @@ function populate_with_factor() {
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_with_factor",
                     'args':{
                         'price_list': frappe.query_report.filters[0].value,
+                        'user': frappe.session.user,
                         'item_group': frappe.query_report.filters[1].value,
                         'factor': values.factor
                     },
