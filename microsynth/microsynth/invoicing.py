@@ -351,7 +351,7 @@ def make_invoice(delivery_note):
     
     sales_invoice.insert()
     # get time-true conversion rate (not from predecessor)
-    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
@@ -432,7 +432,7 @@ def make_punchout_invoice(delivery_note):
 
     sales_invoice.insert()
     # get time-true conversion rate (not from predecessor)
-    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
@@ -489,7 +489,7 @@ def make_collective_invoice(delivery_notes):
 
     sales_invoice.insert()
     # get time-true conversion rate (not from predecessor)
-    sales_invoice.conversion_rate = get_exchange_rate(sales_invoice.currency, sales_invoice.company, sales_invoice.posting_date)
+    sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
     # for payment reminders: set 10 days goodwill period
