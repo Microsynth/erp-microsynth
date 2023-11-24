@@ -17,12 +17,13 @@ def get_columns():
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 150},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 80},
-        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 150, 'options': 'currency'},
-        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 150, 'options': 'currency'},
+        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 75},
+        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
+        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 80}
+        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125}
     ]
     return columns
 
@@ -43,6 +44,7 @@ def get_data(filters, short=False):
             `raw`.`customer_name` AS `customer_name`,
             `raw`.`sales_invoice` AS `sales_invoice`,
             `raw`.`net_amount` AS `net_amount`,
+            `raw`.`product_type` AS `product_type`,
             `raw`.`status` AS `status`,
             `raw`.`reference` AS `reference`,
             `raw`.`currency` AS `currency`
@@ -54,6 +56,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
                 SUM(`tabSales Invoice Item`.`net_amount`) AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Item`.`name` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
@@ -73,6 +76,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
                 ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
@@ -123,6 +127,7 @@ def get_data(filters, short=False):
             `raw`.`customer` AS `customer`,
             `raw`.`customer_name` AS `customer_name`,
             SUM(`raw`.`net_amount`) AS `outstanding`,
+            `raw`.`product_type` AS `product_type`,
             `raw`.`currency` AS `currency`
         FROM (
             SELECT
@@ -132,6 +137,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
                 `tabSales Invoice Item`.`net_amount` AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Item`.`name` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
@@ -149,6 +155,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
                 ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`

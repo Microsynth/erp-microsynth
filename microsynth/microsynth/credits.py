@@ -53,9 +53,11 @@ def get_total_credit(customer, company, product_type):
 
 def allocate_credits(sales_invoice_doc):
     """
+    Allocate the matching customer credit (Project / non-Project) to the given Sales Invoice.
     """
-    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, sales_invoice_doc.product_type)
-    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, sales_invoice_doc.product_type)
+    product_type = sales_invoice_doc.product_type if sales_invoice_doc.product_type == "Project" else None
+    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
+    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
@@ -63,6 +65,9 @@ def allocate_credits(sales_invoice_doc):
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
+                continue
+            if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
+                # don't pay Project invoice with non-Project credits
                 continue
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
