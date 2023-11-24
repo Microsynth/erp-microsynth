@@ -1281,7 +1281,7 @@ def transmit_sales_invoice(sales_invoice):
         # sales_invoice.invoice_sent_on = datetime.now()
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
-
+        frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoicing_method", mode, update_modified = False)
         frappe.db.commit()
 
     except Exception as err:
