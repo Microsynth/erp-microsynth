@@ -935,6 +935,7 @@ def configure_new_customer(customer):
     """
     configure_customer(customer)
     set_default_distributor(customer)
+    set_default_company(customer)
 
 
 def get_alternative_account(account, currency):
@@ -1009,52 +1010,42 @@ def get_customers_for_country(country):
     return [ c['name'] for c in customers ]
 
 
-def set_default_company(customer):
+def set_default_company(customer_id):
     """
-    Determine the default company 
+    Determine the default company according to the shipping address of the given customer_id
 
     run
     bench execute microsynth.microsynth.utils.set_default_company --kwargs "{'customer': '8003'}"
     """
-
     query = """ 
             SELECT 
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
-                `tabAddress`.`overwrite_company`,
-                `tabAddress`.`address_line1`,
-                `tabAddress`.`address_line2`,
-                `tabAddress`.`pincode`,
-                `tabAddress`.`city`,
                 `tabAddress`.`country`,
                 `tabAddress`.`is_shipping_address`,
-                `tabAddress`.`is_primary_address`,
-                `tabAddress`.`geo_lat`,
-                `tabAddress`.`geo_long`,
-                `tabAddress`.`customer_address_id`
+                `tabAddress`.`is_primary_address`
             FROM `tabDynamic Link`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE `tabDynamic Link`.`parenttype` = "Address"
               AND `tabDynamic Link`.`link_doctype` = "Customer"
               AND `tabDynamic Link`.`link_name` = "{customer_id}"
-            ;""".format(customer_id=customer)
-        
+              AND `tabAddress`.`address_type` = "Shipping"
+            ;""".format(customer_id=customer_id)
+
     addresses = frappe.db.sql(query, as_dict=True)
-        
+
     countries = []
     for a in addresses:
         if not a['country'] in countries:
             countries.append(a['country'])
 
-    customer = frappe.get_doc("Customer", customer) 
+    customer = frappe.get_doc("Customer", customer_id)
 
     if len(countries) != 1:
         msg = "Cannot set default company for Customer '{0}': No or multiple countries found ({1})".format(customer.name, len(countries))
         frappe.log_error(msg, "utils.set_default_company")
-
         from frappe.desk.tags import add_tag
-        add_tag(tag = "check default company", dt = "Customer", dn = customer.name )
-
+        add_tag(tag="check default company", dt="Customer", dn=customer.name)
         print(msg)
         return
 
@@ -1062,7 +1053,6 @@ def set_default_company(customer):
 
     if customer.default_company != country_default_company:
         print("Customer '{0}': Set default company '{1}'".format(customer.name, country_default_company))
-
         customer.default_company = country_default_company
         customer.save()
 
@@ -1072,7 +1062,6 @@ def set_customer_default_company_for_country(country):
     run
     bench execute microsynth.microsynth.utils.set_customer_default_company_for_country --kwargs "{'country': 'Austria'}"
     """
-
     customers = get_customers_for_country(country)
     for c in customers:
         if not frappe.db.get_value("Customer", c, "disabled"):
@@ -1245,7 +1234,7 @@ def get_first_shipping_address(customer_id):
                 AND `tabDynamic Link`.`link_name` = "{customer_id}"
                 -- AND `tabAddress`.`is_shipping_address` <> 0
                 AND `tabAddress`.`address_type` = "Shipping"
-            ;"""        
+            ;"""
     shipping_addresses = frappe.db.sql(query, as_dict=True)
     if not shipping_addresses:
         print(f"Customer {customer_id} has no shipping address.")
