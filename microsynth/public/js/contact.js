@@ -42,6 +42,13 @@ frappe.ui.form.on('Contact', {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
 
+            if (frm.doc.status === "Lead") {
+                var dashboard_comment_color = 'green';
+                frm.dashboard.add_comment('This is a lead.', dashboard_comment_color, true);
+            } else {
+                var dashboard_comment_color = 'blue';
+            }
+
             frappe.call({
                 "method": "frappe.client.get",
                 "args": {
@@ -50,7 +57,7 @@ frappe.ui.form.on('Contact', {
                 },
                 "callback": function(response) {
                     var customer = response.message;
-                    cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, 'blue', true);
+                    cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, dashboard_comment_color, true);
                 }
             });
 
