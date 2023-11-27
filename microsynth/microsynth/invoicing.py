@@ -1100,8 +1100,6 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.is_punchout:
             if (sales_invoice.punchout_shop == "ROC-PENGEP" and sales_invoice.company == "Microsynth AG" ):
                 mode = "Email"
-                print(f"Cannot transmit {sales_invoice.name}. Email transmission mode for ROC-PENGEP for Microsynth AG is not yet implemented")
-                return
             else:
                 mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
