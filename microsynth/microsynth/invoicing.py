@@ -453,7 +453,7 @@ def make_punchout_invoices(delivery_notes):
     """
     sales_invoices = []
     for dn in delivery_notes:
-        si = make_invoice(dn)
+        si = make_punchout_invoice(dn)
         sales_invoices.append(si)
     return sales_invoices
 
