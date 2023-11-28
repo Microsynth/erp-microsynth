@@ -1127,8 +1127,8 @@ def transmit_sales_invoice(sales_invoice):
 
             # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
-            recipients = invoice_contact.email_ids
-            if not recipients:
+            recipient = invoice_contact.email_id
+            if not recipient:
                 frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
                 return
 
@@ -1161,7 +1161,7 @@ def transmit_sales_invoice(sales_invoice):
                 message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
 
             make(
-                recipients = [ r.email_id for r in recipients ],
+                recipients = recipient,
                 sender = "info@microsynth.ch",
                 sender_full_name = "Microsynth",
                 cc = "info@microsynth.ch",
