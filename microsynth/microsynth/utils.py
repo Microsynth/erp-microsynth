@@ -6,7 +6,8 @@ import os
 import re
 import frappe
 import json
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from frappe.utils import flt
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
@@ -1462,7 +1463,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     if type(invoices) == str:
         invoices = json.loads(invoices)
     amount = flt(amount)
-    
+
     # find exchange rate for intermediate account
     intermediate_currency = frappe.get_cached_value("Account", intermediate_account, "account_currency")
     if frappe.get_cached_value("Company", company, "default_currency") == intermediate_currency:
@@ -1496,7 +1497,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             }
         ]
     })
-    
+
     # extend invoices
     base_total_debit = flt(amount) * current_exchange_rate
     base_total_credit = 0
@@ -1515,7 +1516,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             'credit': round(invoice.get('outstanding_amount') * exchange_rate, 2)
         })
         base_total_credit += invoice.get('outstanding_amount') * exchange_rate
-    
+
     # other currencies: currency deviation
     jv.set_total_debit_credit()
     currency_deviation = round(jv.total_debit - jv.total_credit, 2)
@@ -1523,13 +1524,13 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
         'account': currency_deviation_account,
         'credit': currency_deviation
     })
-    
+
     jv.set_total_debit_credit()
     # insert and submit
     jv.flags.ignore_validate = True
     jv.insert()
     jv.submit()
-    
+
     return jv.name
 
 
@@ -1555,7 +1556,7 @@ def comment_invoice(sales_invoice, comment):
 def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
     if type(prev_items) == str:
         prev_items = json.loads(prev_items)
-    
+
     prevdoc_price_list_rates = []
     # check each item
     for prev_item in prev_items:
@@ -1565,17 +1566,18 @@ def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
             prevdoc_price_list_rates.append(prev_doc_price_list_rate)
         else:
             prevdoc_price_list_rates.append(None)
-    
+
     if len(prevdoc_price_list_rates) != len(prev_items):
         frappe.throw("This can never happen! If not, ask Lars")
-        
+
     return prevdoc_price_list_rates
 
-"""
-This function will deduct the unallocated amount to the provided account and submit the payment entry
-"""
+
 @frappe.whitelist()
 def deduct_and_close(payment_entry, account, cost_center):
+    """
+    This function will deduct the unallocated amount to the provided account and submit the payment entry
+    """
     doc = frappe.get_doc("Payment Entry", payment_entry)
     if doc.payment_type == "Pay":
         amount = doc.unallocated_amount or doc.difference_amount or 0
@@ -1583,12 +1585,12 @@ def deduct_and_close(payment_entry, account, cost_center):
         amount = ((-1) * doc.unallocated_amount) or doc.difference_amount
 
     add_deduction(doc, account, cost_center, amount)
-    
+
     doc.save()
     doc.submit()
-    
     return
-    
+
+
 def add_deduction(doc, account, cost_center, amount):
     doc.append('deductions', {
         'account': account,
@@ -1597,3 +1599,222 @@ def add_deduction(doc, account, cost_center, amount):
     })
     return
 
+
+def get_sales_orders(start_date, end_date, contact_person=None):
+    """
+    Returns a dictionary of all submitted Sales Orders in the given date range that are not Closed or Cancelled.
+    """
+    if contact_person:
+        person_filter = f"AND `contact_person` = '{contact_person}'"
+    else:
+        person_filter = ""
+
+    sql_query = f"""
+        SELECT `name`,
+            `contact_person`,
+            `customer`,
+            `transaction_date`
+        FROM `tabSales Order`
+        WHERE
+          `docstatus` = 1
+          AND `status` NOT IN ("Closed", "Cancelled")
+          AND `transaction_date` BETWEEN '{start_date}' AND '{end_date}'
+          {person_filter}
+        ORDER BY `transaction_date` DESC
+        """
+    #print(sql_query)
+    return frappe.db.sql(sql_query, as_dict=True)
+
+
+def get_contacts(customer_id):
+    """
+    Returns a list of the Contact IDs of the given Customer.
+    """
+    sql_query = f"""
+        SELECT `tabContact`.`name` AS `name`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Contact" 
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+        WHERE `tabCustomer`.`name` = "{customer_id}"
+        """
+    return frappe.db.sql(sql_query, as_dict=True)
+
+
+def update_contacts_from_new_orders():
+    """
+    Sets a Contact to active and Buyer if this Contact is contact_person of a new Sales Order.
+    Should be run by a cron job at midnight or a few minutes after midnight.
+
+    run
+    bench execute microsynth.microsynth.utils.update_contacts_from_new_orders
+    """
+    end_date = date.today()
+    start_date = end_date - timedelta(days = 1)  # replace 1 by 7 if executed weekly
+    updated_contact_persons = set()
+
+    new_orders = get_sales_orders(start_date, end_date)
+
+    for order in new_orders:
+        if order['contact_person'] in updated_contact_persons:
+            continue  # avoid processing twice
+
+        contact_person = frappe.get_doc('Contact', order['contact_person'])
+
+        if contact_person.contact_classification != 'Buyer':
+            contact_person.contact_classification = 'Buyer'
+            contact_person.save()
+
+        customer_contacts = get_contacts(order['customer'])
+
+        for contact_id in customer_contacts:
+            contact = frappe.get_doc('Contact', contact_id)
+            if contact.customer_status != 'active':
+                contact.customer_status = 'active'
+                contact.save()
+        
+        updated_contact_persons.add(order['contact_person'])
+    
+        frappe.db.commit()
+
+
+def update_contacts_from_old_orders():
+    """
+    Updates marketing section of Contacts from Sales Orders that turned one year old last month.
+    Should be run by a cron job once per month (always on the same day of the month).
+
+    run
+    bench execute microsynth.microsynth.utils.update_contacts_from_old_orders
+    """
+    today = date.today()
+    one_year_ago = today - relativedelta(months = 12)
+    start_date = one_year_ago - relativedelta(months = 1)
+
+    orders = get_sales_orders(start_date, one_year_ago)
+
+    updated_contact_persons = set()
+    customers_to_check = set()  # empty set (no duplicates)
+
+    for order in orders:
+        if order['contact_person'] in updated_contact_persons:
+            continue  # avoid processing twice
+
+        new_orders = get_sales_orders(one_year_ago, today, order['contact_person'])
+        if len(new_orders) < 1:
+            contact_person = frappe.get_doc('Contact', order['contact_person'])
+            contact_person.contact_classification = 'Former Buyer'
+            contact_person.save()
+        
+        customers_to_check.add(order['customer'])
+        updated_contact_persons.add(order['contact_person'])
+        frappe.db.commit()
+    
+    for customer in customers_to_check:
+        contacts = get_contacts(customer)
+        is_active = False
+        for contact in contacts:
+            new_orders = get_sales_orders(one_year_ago, today, contact)
+            if len(new_orders) > 0:
+                is_active = True
+                break
+        if not is_active:
+            for contact in contacts:
+                contact.customer_status = 'former'
+                contact.save()
+        frappe.db.commit()
+
+
+def initialize_contact_classification():
+    """
+    Initializes the field Contact.contact_classification for all Contacts.
+    Expected runtime: 7-10 hours
+
+    run
+    bench execute microsynth.microsynth.utils.initialize_contact_classification
+    """
+    start_ts = datetime.now()
+    contacts = frappe.get_all("Contact", fields=['name'])
+    today = date.today()
+    one_year_ago = today - relativedelta(months = 12)
+    erp_start = today - relativedelta(months = 15)
+    no_contact_ids = len(contacts)
+    print(f"Going to initialize contact_classification of {no_contact_ids} Contacts...")
+
+    for idx, contact in enumerate(contacts):
+        contact = frappe.get_doc('Contact', contact['name'])
+        sales_orders = get_sales_orders(erp_start, today, contact.name)
+        if len(sales_orders) > 0:
+            newest_order = sales_orders[0]
+            if newest_order['transaction_date'] >= one_year_ago:
+                contact.contact_classification = 'Buyer'
+            else:
+                contact.contact_classification = 'Former Buyer'
+        else:
+            contact.contact_classification = 'Lead'
+        contact.save()
+        
+        if idx % 50 == 0:
+            frappe.db.commit()
+            perc = round(100 * idx / no_contact_ids, 2)
+            print(f"Already initialized {perc} % of all Contacts.")
+            
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"Finished after {elapsed_time} hh:mm:ss.")
+
+
+def initialize_customer_status():
+    """
+    Initializes the field Contact.customer_status for all Contacts of all Customers.
+    Assumes the function initialize_contact_classification to be run beforehand.
+    Expected runtime: 3-5 hours
+
+    run
+    bench execute microsynth.microsynth.utils.initialize_customer_status
+    """
+    start_ts = datetime.now()
+    customers = frappe.get_all("Customer", fields=['name'])
+    no_customer_id = len(customers)
+    print(f"Going to initialize customer_status of {no_customer_id} Customers...")
+
+    for idx, customer in enumerate(customers):
+        contacts = get_contacts(customer['name'])
+        status = {'active': False, 'former': False}
+
+        for contact in contacts:
+            contact_classification = frappe.get_value('Contact', contact['name'], 'contact_classification')
+            if contact_classification == 'Buyer':
+                status['active'] = True
+            elif contact_classification == 'Former Buyer':
+                status['former'] = True
+
+        if status['active']:
+            customer_status = 'active'
+        elif status['former']:
+            customer_status = 'former'
+        else:
+            customer_status = 'potential'
+        
+        for contact in contacts:
+            contact_doc = frappe.get_doc('Contact', contact['name'])
+            contact_doc.customer_status = customer_status
+            contact_doc.save()
+
+        if idx % 20 == 0:
+            frappe.db.commit()
+            print(f"Already initialized Contacts of {round(100 * idx / no_customer_id, 2)} % of all Customers.")
+
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"Finished after {elapsed_time} hh:mm:ss.")
+
+
+def initialize_marketing_classification():
+    """
+    Initializes the two fields Contact.contact_classification and Contact.customer_status as a wrapper function.
+    Expected runtime: 10-15 hours
+
+    run
+    bench execute microsynth.microsynth.utils.initialize_marketing_classification
+    """
+    initialize_contact_classification()
+    initialize_customer_status()
