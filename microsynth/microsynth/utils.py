@@ -1622,13 +1622,12 @@ def get_sales_orders(start_date, end_date, contact_person=None):
           {person_filter}
         ORDER BY `transaction_date` DESC
         """
-    #print(sql_query)
     return frappe.db.sql(sql_query, as_dict=True)
 
 
 def get_contacts(customer_id):
     """
-    Returns a list of the Contact IDs of the given Customer.
+    Returns a list of the Contact IDs of all non-Disabled Contacts of the given Customer.
     """
     sql_query = f"""
         SELECT `tabContact`.`name` AS `name`
@@ -1638,6 +1637,7 @@ def get_contacts(customer_id):
                                               AND `tDLA`.`link_doctype` = "Customer"
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         WHERE `tabCustomer`.`name` = "{customer_id}"
+            AND `tabContact`.`status` != "Disabled"
         """
     return frappe.db.sql(sql_query, as_dict=True)
 
@@ -1672,7 +1672,12 @@ def update_contacts_from_new_orders():
             contact = frappe.get_doc('Contact', contact_id)
             if contact.customer_status != 'active':
                 contact.customer_status = 'active'
-                contact.save()
+                try:
+                    contact.save()
+                except Exception as e:
+                    msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
+                    print(msg)
+                    frappe.log_error(msg, 'utils.update_contacts_from_new_orders')
         
         updated_contact_persons.add(order['contact_person'])
     
@@ -1721,20 +1726,25 @@ def update_contacts_from_old_orders():
         if not is_active:
             for contact in contacts:
                 contact.customer_status = 'former'
-                contact.save()
+                try:
+                    contact.save()
+                except Exception as e:
+                    msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
+                    print(msg)
+                    frappe.log_error(msg, 'utils.update_contacts_from_old_orders')
         frappe.db.commit()
 
 
 def initialize_contact_classification():
     """
-    Initializes the field Contact.contact_classification for all Contacts.
+    Initializes the field Contact.contact_classification for all Contacts that have not Status Disabled.
     Expected runtime: 7-10 hours
 
     run
     bench execute microsynth.microsynth.utils.initialize_contact_classification
     """
     start_ts = datetime.now()
-    contacts = frappe.get_all("Contact", fields=['name'])
+    contacts = frappe.get_all("Contact", filters={'status': ('!=', 'Disabled')}, fields=['name'])
     today = date.today()
     one_year_ago = today - relativedelta(months = 12)
     erp_start = today - relativedelta(months = 15)
@@ -1743,6 +1753,9 @@ def initialize_contact_classification():
 
     for idx, contact in enumerate(contacts):
         contact = frappe.get_doc('Contact', contact['name'])
+        if contact.status == 'Disabled':
+            print("There should be no disabled Contact.")
+            continue  # saving a disabled Contact throws an error
         sales_orders = get_sales_orders(erp_start, today, contact.name)
         if len(sales_orders) > 0:
             newest_order = sales_orders[0]
@@ -1752,12 +1765,18 @@ def initialize_contact_classification():
                 contact.contact_classification = 'Former Buyer'
         else:
             contact.contact_classification = 'Lead'
-        contact.save()
+
+        try:
+            contact.save()
+        except Exception as e:
+            msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
+            print(msg)
+            frappe.log_error(msg, 'utils.initialize_contact_classification')
         
-        if idx % 50 == 0:
+        if idx % 100 == 0:
             frappe.db.commit()
             perc = round(100 * idx / no_contact_ids, 2)
-            print(f"Already initialized {perc} % of all Contacts.")
+            print(f"Already initialized {perc} % ({idx}) of all {no_contact_ids} Contacts.")
             
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
@@ -1797,12 +1816,20 @@ def initialize_customer_status():
         
         for contact in contacts:
             contact_doc = frappe.get_doc('Contact', contact['name'])
+            if contact_doc.status == 'Disabled':
+                print("There should still be no disabled Contact.")
+                continue  # saving a disabled Contact throws an error
             contact_doc.customer_status = customer_status
-            contact_doc.save()
+            try:
+                contact_doc.save()
+            except Exception as e:
+                msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
+                print(msg)
+                frappe.log_error(msg, 'utils.initialize_customer_status')
 
-        if idx % 20 == 0:
+        if idx % 25 == 0:
             frappe.db.commit()
-            print(f"Already initialized Contacts of {round(100 * idx / no_customer_id, 2)} % of all Customers.")
+            print(f"Already initialized Contacts of {round(100 * idx / no_customer_id, 2)} % ({idx}) of all {no_customer_id} Customers.")
 
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
