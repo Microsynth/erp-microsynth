@@ -505,6 +505,9 @@ def change_general_discount(price_list_name, new_general_discount, user):
         if reference_rate <= -0.0001:
             frappe.log_error(f"negative reference rate {reference_rate} for {item_price=}", "pricing_configurator.change_general_discount")
             continue
+        if frappe.get_value('Item', item_price.item_code, 'disabled'):
+            warnings += f"Item <b>{item_price['item_code']}: {item_price['item_name']}</b> is disabled.<br>"
+            continue
 
         calculated_discount = (reference_rate - customer_rate) / reference_rate * 100
 
