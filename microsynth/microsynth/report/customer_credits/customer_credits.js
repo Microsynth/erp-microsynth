@@ -22,7 +22,7 @@ frappe.query_reports["Customer Credits"] = {
             "fieldname": "product_type",
             "label": __("Product Type"),
             "fieldtype": "Select",
-            "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService"
+            "options": "\nProject"
         }
     ]
 };

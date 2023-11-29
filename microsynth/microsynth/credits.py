@@ -66,6 +66,9 @@ def allocate_credits(sales_invoice_doc):
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
                 continue
+            if sales_invoice_doc.product_type != "Project" and credit['product_type'] == "Project":
+                # don't pay non-Project invoice with Project credits
+                continue
             if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
                 # don't pay Project invoice with non-Project credits
                 continue
