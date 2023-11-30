@@ -1605,7 +1605,7 @@ def get_sales_orders(start_date, end_date, contact_person=None):
     Returns a dictionary of all submitted Sales Orders in the given date range that are not Closed or Cancelled.
     """
     if contact_person:
-        person_filter = f"AND `contact_person` = '{contact_person}'"
+        person_filter = f'AND `contact_person` = "{contact_person}"'
     else:
         person_filter = ""
 
@@ -1618,7 +1618,7 @@ def get_sales_orders(start_date, end_date, contact_person=None):
         WHERE
           `docstatus` = 1
           AND `status` NOT IN ("Closed", "Cancelled")
-          AND `transaction_date` BETWEEN '{start_date}' AND '{end_date}'
+          AND `transaction_date` BETWEEN "{start_date}" AND "{end_date}"
           {person_filter}
         ORDER BY `transaction_date` DESC
         """
@@ -1738,7 +1738,7 @@ def update_contacts_from_old_orders():
 def initialize_contact_classification():
     """
     Initializes the field Contact.contact_classification for all Contacts that have not Status Disabled.
-    Expected runtime: 7-10 hours
+    Expected runtime: 6-7 hours
 
     run
     bench execute microsynth.microsynth.utils.initialize_contact_classification
@@ -1765,6 +1765,8 @@ def initialize_contact_classification():
                 contact.contact_classification = 'Former Buyer'
         else:
             contact.contact_classification = 'Lead'
+            contact.status = 'Lead'
+            # TODO: What about orders prior to the ERP?
 
         try:
             contact.save()
@@ -1776,7 +1778,7 @@ def initialize_contact_classification():
         if idx % 100 == 0:
             frappe.db.commit()
             perc = round(100 * idx / no_contact_ids, 2)
-            print(f"Already initialized {perc} % ({idx}) of all {no_contact_ids} Contacts.")
+            print(f"{datetime.now()}: Already initialized {perc} % ({idx}) of all {no_contact_ids} Contacts.")
             
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
@@ -1786,7 +1788,7 @@ def initialize_customer_status():
     """
     Initializes the field Contact.customer_status for all Contacts of all Customers.
     Assumes the function initialize_contact_classification to be run beforehand.
-    Expected runtime: 3-5 hours
+    Expected runtime: 5 hours
 
     run
     bench execute microsynth.microsynth.utils.initialize_customer_status
@@ -1797,7 +1799,14 @@ def initialize_customer_status():
     print(f"Going to initialize customer_status of {no_customer_id} Customers...")
 
     for idx, customer in enumerate(customers):
-        contacts = get_contacts(customer['name'])
+        try:
+            contacts = get_contacts(customer['name'])
+        except Exception as e:
+            msg = f"Got the following error when querying Contacts of the Customer '{customer['name']}':\n{e}"
+            print(msg)
+            frappe.log_error(msg, 'utils.initialize_customer_status')
+            continue
+        
         status = {'active': False, 'former': False}
 
         for contact in contacts:
@@ -1827,9 +1836,9 @@ def initialize_customer_status():
                 print(msg)
                 frappe.log_error(msg, 'utils.initialize_customer_status')
 
-        if idx % 25 == 0:
+        if idx % 50 == 0:
             frappe.db.commit()
-            print(f"Already initialized Contacts of {round(100 * idx / no_customer_id, 2)} % ({idx}) of all {no_customer_id} Customers.")
+            print(f"{datetime.now()}: Already initialized Contacts of {round(100 * idx / no_customer_id, 2)} % ({idx}) of all {no_customer_id} Customers.")
 
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
@@ -1838,7 +1847,7 @@ def initialize_customer_status():
 def initialize_marketing_classification():
     """
     Initializes the two fields Contact.contact_classification and Contact.customer_status as a wrapper function.
-    Expected runtime: 10-15 hours
+    Expected runtime: 11-12 hours
 
     run
     bench execute microsynth.microsynth.utils.initialize_marketing_classification
