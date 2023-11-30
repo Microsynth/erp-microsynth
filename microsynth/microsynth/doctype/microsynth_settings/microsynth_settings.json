@@ -6,6 +6,7 @@
  "field_order": [
   "sec_webshop_api",
   "url",
+  "webshop_url",
   "col_webshop_api",
   "shared_secret",
   "invoicing_section",
@@ -141,11 +142,16 @@
    "fieldname": "paynet_export_path",
    "fieldtype": "Data",
    "label": "Paynet Export Path"
+  },
+  {
+   "fieldname": "webshop_url",
+   "fieldtype": "Data",
+   "label": "Webshop URL"
   }
  ],
  "issingle": 1,
- "modified": "2023-04-12 12:06:23.290773",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2023-11-30 11:24:57.252167",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",
  "owner": "Administrator",

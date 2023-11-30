@@ -46,9 +46,19 @@ frappe.ui.form.on('Contact', {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
 
-            if (frm.doc.status === "Lead") {
+            // Webshop button (show only if Contact ID is numeric)
+            if (/^\d+$/.test(frm.doc.name)){
+                frm.add_custom_button(__("Webshop"), function() {
+                    frappe.db.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url', function(value) {
+                        window.open(value["webshop_url"] + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
+                    });
+                });
+            }
+            
+
+            if (frm.doc.status === 'Lead' || frm.doc.contact_classification === 'Lead') {
                 var dashboard_comment_color = 'green';
-                frm.dashboard.add_comment('This is a lead.', dashboard_comment_color, true);
+                frm.dashboard.add_comment('This is a lead (no Sales Order since the introduction of the ERP).', dashboard_comment_color, true);
             } else {
                 var dashboard_comment_color = 'blue';
             }
