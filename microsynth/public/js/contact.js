@@ -29,6 +29,10 @@ frappe.ui.form.on('Contact', {
         frappe.route_history = []; 
     },
     refresh(frm) {
+        // remove Menu > Email
+        var target ="span[data-label='" + __("Email") + "']";
+        $(target).parent().parent().remove();   
+
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
 
@@ -60,6 +64,11 @@ frappe.ui.form.on('Contact', {
                     cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, dashboard_comment_color, true);
                 }
             });
+
+            // Custom email dialog
+            frm.add_custom_button(__("Email"), function() {
+                open_mail_dialog(frm);
+            }, __("Create"));
 
             // Quotation button in Create menu
             frm.add_custom_button(__("Quotation"), function() {
@@ -123,4 +132,18 @@ function create_quotation(frm){
         args: {contact_name: frm.doc.name},
         frm: frm
     })
+}
+
+
+function open_mail_dialog(frm){
+    new frappe.erpnextswiss.MailComposer({
+        doc: cur_frm.doc,
+        frm: cur_frm,
+        subject: "",
+        recipients: frm.doc.email_id,
+        cc: "info@microsynth.ch",
+        attach_document_print: false,
+        txt: "",
+        check_all_attachments: false
+    });
 }
