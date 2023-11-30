@@ -31,10 +31,21 @@ frappe.ui.form.on('Contact', {
     refresh(frm) {
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
-        $(target).parent().parent().remove();   
+        $(target).parent().parent().remove();
+
+        $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
+
+            // Webshop button (show only if Contact ID is numeric)
+            if (/^\d+$/.test(frm.doc.name)){
+                frm.add_custom_button(__("Webshop"), function() {
+                    frappe.db.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url', function(value) {
+                        window.open(value["webshop_url"] + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
+                    });
+                });
+            }
 
             // Preview Address button
             frm.add_custom_button(__("Preview Address"), function() {
@@ -45,16 +56,6 @@ frappe.ui.form.on('Contact', {
             frm.add_custom_button(__("Customer"), function() {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
-
-            // Webshop button (show only if Contact ID is numeric)
-            if (/^\d+$/.test(frm.doc.name)){
-                frm.add_custom_button(__("Webshop"), function() {
-                    frappe.db.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url', function(value) {
-                        window.open(value["webshop_url"] + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
-                    });
-                });
-            }
-            
 
             if (frm.doc.status === 'Lead' || frm.doc.contact_classification === 'Lead') {
                 var dashboard_comment_color = 'green';
