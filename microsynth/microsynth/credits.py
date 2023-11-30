@@ -4,7 +4,7 @@
 import frappe
 from datetime import datetime
 
-from frappe.utils import flt
+from frappe.utils import flt, cint
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
@@ -144,14 +144,14 @@ def book_credit(sales_invoice):
         'accounts': [
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
-                'account': credit_account,
-                'debit_in_account_currency': sales_invoice.total_customer_credit,
+                'account': credit_account if not cint(sales_invoice.is_return) else income_account,  # invert for credit note,
+                'debit_in_account_currency': sales_invoice.total_customer_credit, 
                 'exchange_rate': sales_invoice.conversion_rate,
                 'cost_center': cost_center
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
-                'account': income_account,
+                'account': income_account if not cint(sales_invoice.is_return) else credit_account,  # invert for credit note,
                 'credit_in_account_currency': base_credit_total,
                 'cost_center': cost_center
             }
