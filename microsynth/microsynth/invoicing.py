@@ -453,7 +453,7 @@ def make_punchout_invoices(delivery_notes):
     """
     sales_invoices = []
     for dn in delivery_notes:
-        si = make_invoice(dn)
+        si = make_punchout_invoice(dn)
         sales_invoices.append(si)
     return sales_invoices
 
@@ -1100,8 +1100,6 @@ def transmit_sales_invoice(sales_invoice):
         if sales_invoice.is_punchout:
             if (sales_invoice.punchout_shop == "ROC-PENGEP" and sales_invoice.company == "Microsynth AG" ):
                 mode = "Email"
-                print(f"Cannot transmit {sales_invoice.name}. Email transmission mode for ROC-PENGEP for Microsynth AG is not yet implemented")
-                return
             else:
                 mode = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "invoicing_method")
         else:
@@ -1129,8 +1127,8 @@ def transmit_sales_invoice(sales_invoice):
 
             # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
-            target_email = invoice_contact.email_id
-            if not target_email:
+            recipient = invoice_contact.email_id
+            if not recipient:
                 frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
                 return
 
@@ -1163,7 +1161,7 @@ def transmit_sales_invoice(sales_invoice):
                 message = "Dear Customer<br>Please find attached the invoice '{0}'.<br>Best regards<br>Administration<br><br>{1}".format(sales_invoice.name, footer)
 
             make(
-                recipients = target_email,
+                recipients = recipient,
                 sender = "info@microsynth.ch",
                 sender_full_name = "Microsynth",
                 cc = "info@microsynth.ch",
@@ -1281,7 +1279,7 @@ def transmit_sales_invoice(sales_invoice):
         # sales_invoice.invoice_sent_on = datetime.now()
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
-
+        frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoicing_method", mode, update_modified = False)
         frappe.db.commit()
 
     except Exception as err:
