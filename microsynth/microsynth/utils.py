@@ -1765,7 +1765,7 @@ def initialize_contact_classification():
                 contact.contact_classification = 'Former Buyer'
         else:
             contact.contact_classification = 'Lead'
-            contact.status = 'Lead'
+            #contact.status = 'Lead'  # Do not change contact.status since webshop is using it
             # TODO: What about orders prior to the ERP?
 
         try:

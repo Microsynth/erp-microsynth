@@ -54,6 +54,7 @@ def allocate_credits(sales_invoice_doc):
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
+        sales_invoice_doc.customer_credits = []
         for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))

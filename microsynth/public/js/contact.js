@@ -33,6 +33,7 @@ frappe.ui.form.on('Contact', {
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
 
+        // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
         // Show buttons if a customer is linked
@@ -59,7 +60,7 @@ frappe.ui.form.on('Contact', {
 
             if (frm.doc.status === 'Lead' || frm.doc.contact_classification === 'Lead') {
                 var dashboard_comment_color = 'green';
-                frm.dashboard.add_comment('This is a lead (no Sales Order since the introduction of the ERP).', dashboard_comment_color, true);
+                frm.dashboard.add_comment('This is a lead.', dashboard_comment_color, true);
             } else {
                 var dashboard_comment_color = 'blue';
             }
