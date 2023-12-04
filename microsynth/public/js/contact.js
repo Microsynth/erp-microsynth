@@ -42,8 +42,12 @@ frappe.ui.form.on('Contact', {
             // Webshop button (show only if Contact ID is numeric)
             if (/^\d+$/.test(frm.doc.name)){
                 frm.add_custom_button(__("Webshop"), function() {
-                    frappe.db.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url', function(value) {
-                        window.open(value["webshop_url"] + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
+                    frappe.call({
+                        "method": "microsynth.microsynth.utils.get_webshop_url",
+                        "callback": function(response) {
+                            var webshop_url = response.message;
+                            window.open(webshop_url + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
+                        }
                     });
                 });
             }

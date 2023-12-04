@@ -75,6 +75,11 @@ def get_billing_address(customer_id):
 
 
 @frappe.whitelist()
+def get_webshop_url():
+    return frappe.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url')
+
+
+@frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
     
     if frappe.db.exists("Address", address_name):
