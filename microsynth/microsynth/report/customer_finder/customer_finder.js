@@ -102,6 +102,18 @@ frappe.query_reports["Customer Finder"] = {
             "options": [ '', 'Passive', 'Open', 'Lead', 'Replied', 'Disabled']
         },
         {
+            "fieldname": "contact_classification",
+            "label": __("Contact Classification"),
+            "fieldtype": "Select",
+            "options": [ '', 'Buyer', 'Former Buyer', 'Lead']
+        },
+        {
+            "fieldname": "customer_status",
+            "label": __("Customer Status"),
+            "fieldtype": "Select",
+            "options": [ '', 'active', 'former', 'potential']
+        },
+        {
             "fieldname":"include_disabled",
             "label": __("Include disabled Customers (e.g. leads)"),
             "fieldtype": "Check"
