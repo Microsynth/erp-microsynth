@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2023, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 from email.policy import default
@@ -3163,3 +3163,32 @@ def export_sanger_customers(filepath):
         for c in contacts:
             file.write(f"{c['default_company']};{c['territory']};{c['language']};{c['first_name']};{c['last_name']};"
                        f"{c['email_id']};{c['contact_id']};{c['customer_name']};{c['customer_id']}\n")
+
+
+def correct_inverted_credit_journal_entries()
+    """
+    This is a bugfix-patch for journal entries of customer credits that were returned before 2023-11-30
+    """
+    from microsynth.microsynth.credits import book_credit
+    
+    affected_jvs = frappe.get_all("Journal Entry", filters=[['user_remark', 'LIKE', 'Credit from CN-%'], ['docstatus', '=', 1]], fields=['name', 'user_remark'])
+
+    for jv in affected_jvs:
+        print("processing {0} ({1})".format(jv['name'], jv['user_remark']))
+        # cancel "original"/faulty JV:
+        doc = frappe.get_doc("Journal Entry", jv['name'])
+        try:
+            doc.cancel()
+        except:
+            print("Could not cancel {0} ({1})".format(jv['name'], jv['user_remark']))
+            
+        # re-create journal entry
+        sales_invoice = jv['user_remark'].split(" ")[-1]
+        if not frappe.db.exists("Sales Invoice", sales_invoice):
+            print("Sales invoice not found for {0} ({1})".format(jv['name'], jv['user_remark']))
+            continue
+        
+        if frappe.get_value("Sales Invoice", sales_invoice, "docstatus") == 1:
+            book_credit(sales_invoice)
+        
+    frappe.db.commit()
