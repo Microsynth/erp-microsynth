@@ -3179,8 +3179,8 @@ def correct_inverted_credit_journal_entries():
         doc = frappe.get_doc("Journal Entry", jv['name'])
         try:
             doc.cancel()
-        except:
-            print("Could not cancel {0} ({1})".format(jv['name'], jv['user_remark']))
+        except Exception as e:
+            print("Could not cancel {0} ({1})\n{2}".format(jv['name'], jv['user_remark'], e))
             
         # re-create journal entry
         sales_invoice = jv['user_remark'].split(" ")[-1]
