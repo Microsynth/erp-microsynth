@@ -146,14 +146,15 @@ def book_credit(sales_invoice):
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
                 'account': credit_account if not cint(sales_invoice.is_return) else income_account,  # invert for credit note,
-                'debit_in_account_currency': sales_invoice.total_customer_credit, 
-                'exchange_rate': sales_invoice.conversion_rate,
+                'debit_in_account_currency': sales_invoice.total_customer_credit if not cint(sales_invoice.is_return) else base_credit_total, 
+                'exchange_rate': sales_invoice.conversion_rate if not cint(sales_invoice.is_return) else 1,
                 'cost_center': cost_center
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
                 'account': income_account if not cint(sales_invoice.is_return) else credit_account,  # invert for credit note,
-                'credit_in_account_currency': base_credit_total,
+                'credit_in_account_currency': base_credit_total if not cint(sales_invoice.is_return) else sales_invoice.total_customer_credit,
+                'exchange_rate': 1 if not cint(sales_invoice.is_return) else sales_invoice.conversion_rate,
                 'cost_center': cost_center
             }
         ],
