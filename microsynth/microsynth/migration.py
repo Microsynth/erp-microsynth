@@ -3165,7 +3165,7 @@ def export_sanger_customers(filepath):
                        f"{c['email_id']};{c['contact_id']};{c['customer_name']};{c['customer_id']}\n")
 
 
-def correct_inverted_credit_journal_entries()
+def correct_inverted_credit_journal_entries():
     """
     This is a bugfix-patch for journal entries of customer credits that were returned before 2023-11-30
     """
