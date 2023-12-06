@@ -88,6 +88,7 @@ def update_contacts_from_new_orders(previous_days):
     start_date = date.today() - timedelta(days=previous_days)
     updated_contact_persons = set()
     new_orders = get_sales_orders(start_date=start_date, end_date=date.today())
+    print(f"{datetime.now()}: Going to update Contacts of {len(new_orders)} new Sales Orders...")
 
     for idx, order in enumerate(new_orders):
         if order['contact_person'] in updated_contact_persons:
@@ -116,9 +117,9 @@ def update_contacts_from_new_orders(previous_days):
         updated_contact_persons.add(order['contact_person'])
         frappe.db.commit()
 
-        if idx % 20 == 0:
+        if idx % 50 == 0 and idx > 0:
             perc = round(100 * idx / len(new_orders), 2)
-            print(f"{datetime.now()}: Already updated {perc} % ({idx}) of all {len(new_orders)} new Sales Orders.")
+            print(f"{datetime.now()}: Already updated Contacts of {perc} % ({idx}) of {len(new_orders)} new Sales Orders.")
 
     return updated_contact_persons
 
@@ -127,6 +128,7 @@ def update_new_and_active_contacts():
     """
     Update Contact Classification and Customer Status of Contact Persons from new Sales Orders and newly created Contacts.
     Should be run by a cron job at every day at midnight or a few minutes after midnight.
+    Expected local runtime: less than 5 minutes
 
     run
     bench execute microsynth.microsynth.marketing.update_new_and_active_contacts
@@ -136,7 +138,7 @@ def update_new_and_active_contacts():
     updated_contact_persons = update_contacts_from_new_orders(previous_days)
     update_newly_created_contacts(updated_contact_persons, previous_days)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    print(f"Finished update_new_and_active_contacts after {elapsed_time} hh:mm:ss.")
+    print(f"{datetime.now()}: Finished update_new_and_active_contacts after {elapsed_time} hh:mm:ss.")
 
 
 def update_customer_status(customers):
@@ -144,7 +146,7 @@ def update_customer_status(customers):
     Sets the Customer Status of all Contacts of the given Customers.
     Assumes that the Contact Classification of the Contacts is correctly set.
     """
-    print(f"Going to update customer_status of {len(customers)} Customers...")
+    print(f"\n{datetime.now()}: Going to update customer_status of Contacts of {len(customers)} Customers...")
 
     for idx, customer in enumerate(customers):
         try:
@@ -188,9 +190,9 @@ def update_customer_status(customers):
                 print(msg)
                 frappe.log_error(msg, 'marketing.update_customer_status')
 
-        if idx % 50 == 0:
+        if idx % 25 == 0 and idx > 0:
             frappe.db.commit()
-            print(f"{datetime.now()}: Already updated Customer Status of Contacts of {round(100 * idx / len(customers), 2)} % ({idx}) of all {len(customers)} Customers.")
+            print(f"{datetime.now()}: Already updated Customer Status of Contacts of {round(100 * idx / len(customers), 2)} % ({idx}) of {len(customers)} Customers.")
 
     frappe.db.commit()
 
@@ -200,6 +202,7 @@ def update_contacts_from_old_orders():
     Updates the two fields Contact.contact_classification and Contact.customer_status
     of Contact Persons from Sales Orders that turned one year old last month.
     Should be run by a cron job once per month (always on the same day of the month).
+    Expected local runtime: 5-10 minutes
 
     run
     bench execute microsynth.microsynth.marketing.update_contacts_from_old_orders
@@ -209,12 +212,13 @@ def update_contacts_from_old_orders():
     start_date = one_year_ago - relativedelta(months = 1)
 
     orders = get_sales_orders(start_date=start_date, end_date=one_year_ago)
+    print(f"{datetime.now()}: Going to update Contacts of {len(orders)} old Sales Orders...")
 
     # create empty sets (no duplicates)
     updated_contact_persons = set()
     customers_to_check = set()
 
-    for order in orders:
+    for idx, order in enumerate(orders):
         if order['contact_person'] in updated_contact_persons:
             continue  # avoid processing Contacts twice
 
@@ -227,11 +231,16 @@ def update_contacts_from_old_orders():
 
         customers_to_check.add(order['customer'])
         updated_contact_persons.add(order['contact_person'])
+
+        if idx % 50 == 0 and idx > 0:
+            perc = round(100 * idx / len(orders), 2)
+            print(f"{datetime.now()}: Already updated Contact Classification of Contact Persons of {perc} % ({idx}) of {len(orders)} old Sales Orders.")
+
         frappe.db.commit()
 
     update_customer_status(customers_to_check)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    print(f"Finished update_contacts_from_old_orders after {elapsed_time} hh:mm:ss.")
+    print(f"{datetime.now()}: Finished update_contacts_from_old_orders after {elapsed_time} hh:mm:ss.")
 
 
 def update_contact_classification(sales_orders, contact):
@@ -264,20 +273,21 @@ def initialize_contact_classification():
     """
     start_ts = datetime.now()
     contacts = frappe.get_all("Contact", filters={'status': ('!=', 'Disabled')}, fields=['name'])
-    print(f"Going to initialize contact_classification of {len(contacts)} Contacts...")
+    print(f"{datetime.now()}: Going to initialize contact_classification of {len(contacts)} Contacts...")
 
     for idx, contact in enumerate(contacts):
         contact = frappe.get_doc('Contact', contact['name'])
         sales_orders = get_sales_orders(contact_person=contact.name)
         update_contact_classification(sales_orders, contact)
         
-        if idx % 100 == 0:
+        if idx % 100 == 0 and idx > 0:
             frappe.db.commit()
             perc = round(100 * idx / len(contacts), 2)
             print(f"{datetime.now()}: Already initialized Contact Classification of {perc} % ({idx}) of all {len(contacts)} Contacts.")
+
     frappe.db.commit()
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    print(f"Finished initialize_contact_classification after {elapsed_time} hh:mm:ss.")
+    print(f"{datetime.now()}: Finished initialize_contact_classification after {elapsed_time} hh:mm:ss.")
 
 
 def initialize_customer_status():
@@ -290,16 +300,16 @@ def initialize_customer_status():
     customers_set = set([c['name'] for c in customers_dict])  # convert dict to a set
     update_customer_status(customers_set)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    print(f"Finished initialize_customer_status after {elapsed_time} hh:mm:ss.")
+    print(f"{datetime.now()}: Finished initialize_customer_status after {elapsed_time} hh:mm:ss.")
 
 
 def initialize_marketing_classification():
     """
     Initializes the two fields Contact.contact_classification and Contact.customer_status.
-    Expected runtime: 11-12 hours
+    Expected runtime: 4 - 4:10 hours locally
 
     run
     bench execute microsynth.microsynth.marketing.initialize_marketing_classification
     """
-    initialize_contact_classification()  # expected runtime: 6-7 hours
-    initialize_customer_status()  # expected runtime: 5 hours
+    initialize_contact_classification()  # expected runtime: 2:40 hours
+    initialize_customer_status()  # expected runtime: 1:20 - 1:30 hours
