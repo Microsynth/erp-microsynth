@@ -95,8 +95,8 @@ def make_collective_invoices(delivery_notes):
             for d in delivery_notes:
                 if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
                     total = frappe.get_value("Delivery Note", d, "total")
-
-                    if credit is not None and frappe.get_value("Customer",customer,"has_credit_account"):
+                    customer_credits = frappe.get_value("Customer", customer, "customer_credits")
+                    if credit is not None and customer_credits == 'Credit Account':
                         # there is some credit - check if it is sufficient
                         if total <= credit:
                             filtered_dns.append(d)
@@ -190,7 +190,8 @@ def async_create_invoices(mode, company, customer):
 
                 # check credit
                 credit = get_total_credit(dn.get('customer'), company)
-                if credit is not None and frappe.get_value("Customer", dn.get('customer'),"has_credit_account"):
+                customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
+                if credit is not None and customer_credits == 'Credit Account':
                     delivery_note =  dn.get('delivery_note')
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
@@ -1572,3 +1573,25 @@ def process_collective_invoices_monthly():
     return
     # for company in frappe.db.get_all('Company', fields=['name']):
     #     async_create_invoices("Collective", company['name'], None)
+
+
+def initialize_field_customer_credits():
+    """
+    Loops over all non-disabled Customers and initializes the new Select field customer_credits
+    according to the existing checkbox has_credit_account.
+    Expected runtime: less than 5 seconds
+
+    Run
+    bench execute microsynth.microsynth.migration.initialize_field_customer_credits
+    """
+    # TODO: Move this function to migration.py after merging the branch customer_credits into develop to avoid a merge conflict
+
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name', 'has_credit_account'])
+    counter = 0
+    for customer in customers:
+        if customer['has_credit_account']:
+            frappe.db.set_value("Customer", customer['name'], "customer_credits", "Credit Account", update_modified = False)
+            counter += 1
+            if counter % 100 == 0:
+                frappe.db.commit()
+    frappe.db.commit()
