@@ -26,7 +26,7 @@ function change_reference_rate(){
         frappe.confirm('Are you sure you want to proceed?<br>All <b>Price Lists</b> referring to this reference Price List "' + cur_frm.doc.price_list + '" <b>will be changed</b> by applying their current discount relative to the current reference price (' + cur_frm.doc.price_list_rate + ' ' + cur_frm.doc.currency + ') to the new reference price (' + values.new_reference_rate + ' ' + cur_frm.doc.currency + ') for item ' + cur_frm.doc.item_code + ': ' + cur_frm.doc.item_name + ' with minimum quantity ' + cur_frm.doc.min_qty +'.<br><br>Please be patient, the process may take several minutes.',
             () => {
                 frappe.call({
-                    'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.async_change_reference_rate",
+                    'method': "microsynth.microsynth.pricing.async_change_reference_rate",
                     'args':{
                         'reference_price_list_name': cur_frm.doc.price_list,
                         'item_code': cur_frm.doc.item_code,
