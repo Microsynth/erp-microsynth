@@ -33,7 +33,11 @@ def get_data(filters, short=False):
 
     if filters.get('product_type'):
         conditions += f"AND `tabSales Invoice`.`product_type` = '{filters.get('product_type')}'"
-
+    if filters.get('to_date'):
+        conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
+    if filters.get('currency'):
+        conditions += f"AND `tabSales Invoice`.`currency` = '{filters.get('currency')}'"
+    
     if filters.get('customer'):
         # customer based evaluation: ledger
         sql_query = """

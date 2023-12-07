@@ -23,6 +23,17 @@ frappe.query_reports["Customer Credits"] = {
             "label": __("Product Type"),
             "fieldtype": "Select",
             "options": "\nProject"
+        },
+        {
+            "fieldname": "to_date",
+            "label": __("To Date"),
+            "fieldtype": "Date"
+        },
+        {
+            "fieldname": "currency",
+            "label": __("Currency"),
+            "fieldtype": "Select",
+            "options": "\nCHF\n\EUR\nUSD"
         }
     ]
 };
