@@ -1854,7 +1854,7 @@
    "modified_by": "jens.petermann@microsynth.ch",
    "name": "Customer-customer_credits",
    "no_copy": 0,
-   "options": "\nCredit Account\nBlock",
+   "options": "\nCredit Account\nblocked",
    "owner": "jens.petermann@microsynth.ch",
    "parent": null,
    "parentfield": null,
