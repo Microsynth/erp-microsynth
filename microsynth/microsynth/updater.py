@@ -77,6 +77,7 @@ def disable_hot_config_in_dev():
 
         print("Set test webshop...")
         config.url = (config.url or "").replace("srvweb.", "srvweb-test.")
+        config.webshop_url = (config.webshop_url or "").replace("srvweb.", "srvweb-test.")
         config.save()
 
         print("Set Slims test server...")

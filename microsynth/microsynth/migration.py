@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2023, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 from email.policy import default
@@ -11,7 +11,6 @@ import numpy as np
 import json
 from frappe.utils import cint, flt
 from datetime import datetime, timedelta
-from microsynth.microsynth.report.pricing_configurator.pricing_configurator import populate_from_reference
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
 from microsynth.microsynth.invoicing import get_income_accounts
@@ -3068,15 +3067,13 @@ def correct_invoice_addresses():
     frappe.db.commit()
 
 
-"""
-Export an Abacus Export File and replace income accounts according to account matrix
-
-Run as
-
- $ bench execute microsynth.microsynth.migration.export_abacus_file_with_account_matrix --kwargs "{'abacus_export_file': '2023-03-01..2023-03-01', 'output_file': '/tmp/aba_out.xml', 'validate': 1}"
- 
-"""
 def export_abacus_file_with_account_matrix(abacus_export_file, output_file, validate=False):
+    """
+    Export an Abacus Export File and replace income accounts according to account matrix
+
+    Run as
+    bench execute microsynth.microsynth.migration.export_abacus_file_with_account_matrix --kwargs "{'abacus_export_file': '2023-03-01..2023-03-01', 'output_file': '/tmp/aba_out.xml', 'validate': 1}"
+    """
     doc = frappe.get_doc("Abacus Export File", abacus_export_file)
 
     transactions = doc.get_individual_transactions()
@@ -3087,7 +3084,7 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
 
             # fetch applicable country
             country = frappe.get_value("Address", si.shipping_address_name, "country")
-            
+
             # go through against accounts and switch according to matrix
             for i in t.get("against_singles"):
                 if i['account'] == "2010":
@@ -3108,19 +3105,18 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
                     if get_account_by_number(a.get('account'), si.company) not in correct_accounts:
                         print("{0} does not validate: {1} is not in the correct accounts ({2})".format(
                             t.get("text1"), a.get('account'), correct_accounts))
-                    
+
     # render output xml content
     data = {
         'transactions': transactions
     }
     content = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
-    
+
     # write to output file
     f = open(output_file, "w")
     f.write(content)
     f.close()
     print ("Created {0}.".format(output_file))
-    
     return
 
 
@@ -3130,3 +3126,69 @@ def get_account_by_number(account_number, company):
         return accounts[0]['name']
     else:
         return None
+
+
+def export_sanger_customers(filepath):
+    """
+    Create a CSV file of Contacts that appear as Contact Person
+    on at least one Sales Order with Product Type Labels or Sequencing
+
+    run
+    bench execute microsynth.microsynth.migration.export_sanger_customers --kwargs "{'filepath': '/mnt/erp_share/sanger_customers.csv'}"
+    """
+    sql_query = """
+            SELECT DISTINCT `tabCustomer`.`default_company`,
+                `tabCustomer`.`territory`,
+                `tabCustomer`.`language`,
+                `tabContact`.`first_name`,
+                `tabContact`.`last_name`,
+                `tabContact`.`email_id`,
+                `tabContact`.`name` AS `contact_id`,
+                `tabCustomer`.`customer_name`,
+                `tabCustomer`.`name` AS `customer_id`
+            FROM `tabSales Order`
+            JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
+            JOIN `tabContact` ON `tabContact`.`name` = `tabSales Order`.`contact_person`
+            WHERE `tabSales Order`.`product_type` in ('Sequencing', 'Labels')
+            AND `tabSales Order`.`total` > 0
+            AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`status` NOT IN ("Closed", "Cancelled");
+            """
+    
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+
+    with open(filepath, mode='w') as file:
+        header = 'Default Company of Customer;Territory of Customer;Language of Customer;First name (Contact);Last name (Contact);Email (Contact);Contact ID;Customer name;Customer ID\n'
+        file.write(header)
+        for c in contacts:
+            file.write(f"{c['default_company']};{c['territory']};{c['language']};{c['first_name']};{c['last_name']};"
+                       f"{c['email_id']};{c['contact_id']};{c['customer_name']};{c['customer_id']}\n")
+
+
+def correct_inverted_credit_journal_entries():
+    """
+    This is a bugfix-patch for journal entries of customer credits that were returned before 2023-11-30
+    """
+    from microsynth.microsynth.credits import book_credit
+    
+    affected_jvs = frappe.get_all("Journal Entry", filters=[['user_remark', 'LIKE', 'Credit from CN-%'], ['docstatus', '=', 1]], fields=['name', 'user_remark'])
+
+    for jv in affected_jvs:
+        print("processing {0} ({1})".format(jv['name'], jv['user_remark']))
+        # cancel "original"/faulty JV:
+        doc = frappe.get_doc("Journal Entry", jv['name'])
+        try:
+            doc.cancel()
+        except Exception as e:
+            print("Could not cancel {0} ({1})\n{2}".format(jv['name'], jv['user_remark'], e))
+            
+        # re-create journal entry
+        sales_invoice = jv['user_remark'].split(" ")[-1]
+        if not frappe.db.exists("Sales Invoice", sales_invoice):
+            print("Sales invoice not found for {0} ({1})".format(jv['name'], jv['user_remark']))
+            continue
+        
+        if frappe.get_value("Sales Invoice", sales_invoice, "docstatus") == 1:
+            book_credit(sales_invoice)
+        
+    frappe.db.commit()

@@ -4,7 +4,7 @@
 import frappe
 from datetime import datetime
 
-from frappe.utils import flt
+from frappe.utils import flt, cint
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
@@ -61,7 +61,8 @@ def allocate_credits(sales_invoice_doc):
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
-        for credit in reversed(customer_credits):  # customer credits are sorted newest to oldest
+        sales_invoice_doc.customer_credits = []
+        for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
@@ -157,15 +158,16 @@ def book_credit(sales_invoice):
         'accounts': [
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
-                'account': credit_account,
-                'debit_in_account_currency': sales_invoice.total_customer_credit,
-                'exchange_rate': sales_invoice.conversion_rate,
+                'account': credit_account if not cint(sales_invoice.is_return) else income_account,  # invert for credit note,
+                'debit_in_account_currency': sales_invoice.total_customer_credit if not cint(sales_invoice.is_return) else base_credit_total, 
+                'exchange_rate': sales_invoice.conversion_rate if not cint(sales_invoice.is_return) else 1,
                 'cost_center': cost_center
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
-                'account': income_account,
-                'credit_in_account_currency': base_credit_total,
+                'account': income_account if not cint(sales_invoice.is_return) else credit_account,  # invert for credit note,
+                'credit_in_account_currency': base_credit_total if not cint(sales_invoice.is_return) else sales_invoice.total_customer_credit,
+                'exchange_rate': 1 if not cint(sales_invoice.is_return) else sales_invoice.conversion_rate,
                 'cost_center': cost_center
             }
         ],

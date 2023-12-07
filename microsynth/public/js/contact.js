@@ -29,8 +29,28 @@ frappe.ui.form.on('Contact', {
         frappe.route_history = []; 
     },
     refresh(frm) {
+        // remove Menu > Email
+        var target ="span[data-label='" + __("Email") + "']";
+        $(target).parent().parent().remove();
+
+        // remove 'Invite as User' button from ERPNext
+        $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
+
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
+
+            // Webshop button (show only if Contact ID is numeric)
+            if (/^\d+$/.test(frm.doc.name)){
+                frm.add_custom_button(__("Webshop"), function() {
+                    frappe.call({
+                        "method": "microsynth.microsynth.utils.get_webshop_url",
+                        "callback": function(response) {
+                            var webshop_url = response.message;
+                            window.open(webshop_url + "/MasterUser/MasterUser/Impersonate?IdPerson=" + frm.doc.name, "_blank");
+                        }
+                    });
+                });
+            }
 
             // Preview Address button
             frm.add_custom_button(__("Preview Address"), function() {
@@ -42,6 +62,13 @@ frappe.ui.form.on('Contact', {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
 
+            if (frm.doc.status === 'Lead' || frm.doc.contact_classification === 'Lead') {
+                var dashboard_comment_color = 'green';
+                frm.dashboard.add_comment('This is a lead.', dashboard_comment_color, true);
+            } else {
+                var dashboard_comment_color = 'blue';
+            }
+
             frappe.call({
                 "method": "frappe.client.get",
                 "args": {
@@ -50,9 +77,14 @@ frappe.ui.form.on('Contact', {
                 },
                 "callback": function(response) {
                     var customer = response.message;
-                    cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, 'blue', true);
+                    cur_frm.dashboard.add_comment(__('Customer') + ": " + customer.customer_name, dashboard_comment_color, true);
                 }
             });
+
+            // Custom email dialog
+            frm.add_custom_button(__("Email"), function() {
+                open_mail_dialog(frm);
+            }, __("Create"));
 
             // Quotation button in Create menu
             frm.add_custom_button(__("Quotation"), function() {
@@ -116,4 +148,18 @@ function create_quotation(frm){
         args: {contact_name: frm.doc.name},
         frm: frm
     })
+}
+
+
+function open_mail_dialog(frm){
+    new frappe.erpnextswiss.MailComposer({
+        doc: cur_frm.doc,
+        frm: cur_frm,
+        subject: "",
+        recipients: frm.doc.email_id,
+        cc: "info@microsynth.ch",
+        attach_document_print: false,
+        txt: "",
+        check_all_attachments: false
+    });
 }
