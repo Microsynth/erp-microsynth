@@ -1470,7 +1470,7 @@ def tag_linked_documents(web_order_id, tag):
 
 
 @frappe.whitelist()
-def book_avis(company, intermediate_account, currency_deviation_account, invoices, amount, reference):
+def book_avis(company, intermediate_account, currency_deviation_account, invoices, amount, reference, date=None):
     if type(invoices) == str:
         invoices = json.loads(invoices)
     amount = flt(amount)
@@ -1494,7 +1494,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     # create base document
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
-        'posting_date': datetime.now(),
+        'posting_date': date if date else datetime.now(),
         'company': company,
         'multi_currency': 1,
         'user_remark': reference,
