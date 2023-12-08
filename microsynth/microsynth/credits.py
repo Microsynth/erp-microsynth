@@ -4,42 +4,45 @@
 import frappe
 from datetime import datetime
 
-from frappe.utils import flt
+from frappe.utils import flt, cint
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
 
-def get_available_credits(customer, company):
+def get_available_credits(customer, company, product_type):
     from microsynth.microsynth.report.customer_credits.customer_credits import \
         get_data
-    customer_credits = get_data({'customer': customer, 'company': company})
+    customer_credits = get_data({'customer': customer, 'company': company, 'product_type': product_type})
     return customer_credits
 
 
 @frappe.whitelist()
-def has_credits(customer):
+def has_credits(customer, product_type=None):
+    """
+    Called in customer.js
+    """
     # get all companies
     companies = frappe.get_all("Company", fields=['name'])
     # loop through the companies and call get_available_credits
     for company in companies:
-        credits = get_available_credits(customer, company['name'])
+        credits = get_available_credits(customer, company['name'], product_type)
         if len(credits) > 0:
             return True
     return False
 
 
-def get_total_credit(customer, company):
+def get_total_credit(customer, company, product_type):
     """
     Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
 
     Run
     bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
     """
-    credits = get_available_credits(customer, company)
+    credits = get_available_credits(customer, company, product_type)
 
     if len(credits) == 0:
         return None
-    
+
     total = 0
     for credit in credits:
         if not 'outstanding' in credit: 
@@ -49,15 +52,26 @@ def get_total_credit(customer, company):
 
 
 def allocate_credits(sales_invoice_doc):
-    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company)
-    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company)
+    """
+    Allocate the matching customer credit (Project / non-Project) to the given Sales Invoice.
+    """
+    product_type = sales_invoice_doc.product_type if sales_invoice_doc.product_type == "Project" else None
+    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
+    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
+        sales_invoice_doc.customer_credits = []
         for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
+                continue
+            if sales_invoice_doc.product_type != "Project" and credit['product_type'] == "Project":
+                # don't pay non-Project invoice with Project credits
+                continue
+            if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
+                # don't pay Project invoice with non-Project credits
                 continue
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
@@ -116,12 +130,12 @@ def book_credit(sales_invoice):
     sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
-    
+
     if sales_invoice.shipping_address_name:
         country = frappe.get_value("Address", sales_invoice.shipping_address_name, "country")
     else:
         country = frappe.get_value("Address", sales_invoice.customer_address, "country")
-    
+
     credit_account = None
     for d in credit_item.item_defaults:
         if d.company == sales_invoice.company:
@@ -144,15 +158,16 @@ def book_credit(sales_invoice):
         'accounts': [
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
-                'account': credit_account,
-                'debit_in_account_currency': sales_invoice.total_customer_credit,
-                'exchange_rate': sales_invoice.conversion_rate,
+                'account': credit_account if not cint(sales_invoice.is_return) else income_account,  # invert for credit note,
+                'debit_in_account_currency': sales_invoice.total_customer_credit if not cint(sales_invoice.is_return) else base_credit_total, 
+                'exchange_rate': sales_invoice.conversion_rate if not cint(sales_invoice.is_return) else 1,
                 'cost_center': cost_center
             },
             # put into income account e.g. '3300 - 3.1 DNA-Oligosynthese Ausland - BAL'
             {
-                'account': income_account,
-                'credit_in_account_currency': base_credit_total,
+                'account': income_account if not cint(sales_invoice.is_return) else credit_account,  # invert for credit note,
+                'credit_in_account_currency': base_credit_total if not cint(sales_invoice.is_return) else sales_invoice.total_customer_credit,
+                'exchange_rate': 1 if not cint(sales_invoice.is_return) else sales_invoice.conversion_rate,
                 'cost_center': cost_center
             }
         ],
@@ -164,7 +179,7 @@ def book_credit(sales_invoice):
     jv.submit()
     # frappe.db.commit()
     return jv.name
-    
+
 
 @frappe.whitelist()
 def cancel_credit_journal_entry(sales_invoice):
@@ -189,13 +204,14 @@ def cancel_credit_journal_entry(sales_invoice):
     journal_entry.cancel()
 
     return journal_entry.name
-    
+
+
 @frappe.whitelist()
 def close_invoice_against_expense(sales_invoice, account):
     sinv = frappe.get_doc("Sales Invoice", sales_invoice)
     debit_currency = frappe.get_cached_value("Account", account, "account_currency")
     credit_currency = frappe.get_cached_value("Account", sinv.debit_to, "account_currency")
-    
+
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
         'company': sinv.company,

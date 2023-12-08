@@ -116,6 +116,14 @@ def get_data(filters):
     if 'contact_status' in filters and filters['contact_status']:
         criteria += """ AND `tabContact`.`status` = '{0}' """.format(filters['contact_status'])
         hasFilters = True
+    
+    if 'contact_classification' in filters and filters['contact_classification']:
+        criteria += """ AND `tabContact`.`contact_classification` = '{0}' """.format(filters['contact_classification'])
+        hasFilters = True
+    
+    if 'customer_status' in filters and filters['customer_status']:
+        criteria += """ AND `tabContact`.`customer_status` = '{0}' """.format(filters['customer_status'])
+        hasFilters = True
 
     data = []
 

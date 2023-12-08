@@ -398,7 +398,7 @@
    "modified_by": "Administrator",
    "name": "Sales Order-product_type",
    "no_copy": 0,
-   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nMaterial\nService",
+   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,

@@ -14,7 +14,7 @@ frappe.ui.form.on('Sales Invoice', {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
         
-        if (frm.doc.docstatus == 0 && frm.doc.net_total > 0) {
+        if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frm.add_custom_button(__("Allocate credit"), function() {
                 allocate_credits(frm);
             });
@@ -56,6 +56,10 @@ frappe.ui.form.on('Sales Invoice', {
                 check_prevdoc_rates(cur_frm);
             }, time_out);
         }
+        // Clear Customer Credits on this invoice if it has just been duplicated from another invoice
+        if (frm.doc.__islocal && frm.doc.amended_from == null && frm.doc.total_customer_credit != 0) {
+            clear_credits(frm);
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -96,6 +100,15 @@ frappe.ui.form.on('Sales Invoice Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function clear_credits(frm) {
+    frm.doc.customer_credits = [];
+    frm.doc.discount_amount = frm.doc.discount_amount - frm.doc.total_customer_credit;
+    frm.doc.total_customer_credit = 0;
+    frm.doc.remaining_customer_credit = 0;
+    frappe.show_alert("Customer credits were cleared. Please check invoice and discount percentage before allocating customer credits again.");
+}
 
 
 function clone(frm) {

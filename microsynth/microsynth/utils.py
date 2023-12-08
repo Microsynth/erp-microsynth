@@ -74,6 +74,11 @@ def get_billing_address(customer_id):
 
 
 @frappe.whitelist()
+def get_webshop_url():
+    return frappe.get_value('Microsynth Settings', 'Microsynth Settings', 'webshop_url')
+
+
+@frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
     
     if frappe.db.exists("Address", address_name):
@@ -920,7 +925,6 @@ def configure_customer(customer):
     Configures a customer. This function is run upon webshop user registration (webshop.register_user) 
     and when saving the customer or an address (customer.js, address.js).
     """
-    # TODO: Adjust function comment and check what should be done here and what only for new customers.
     set_default_language(customer)
     configure_territory(customer)
     configure_sales_manager(customer)
@@ -936,6 +940,7 @@ def configure_new_customer(customer):
     """
     configure_customer(customer)
     set_default_distributor(customer)
+    set_default_company(customer)
 
 
 def get_alternative_account(account, currency):
@@ -1010,52 +1015,42 @@ def get_customers_for_country(country):
     return [ c['name'] for c in customers ]
 
 
-def set_default_company(customer):
+def set_default_company(customer_id):
     """
-    Determine the default company 
+    Determine the default company according to the shipping address of the given customer_id
 
     run
     bench execute microsynth.microsynth.utils.set_default_company --kwargs "{'customer': '8003'}"
     """
-
     query = """ 
             SELECT 
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
-                `tabAddress`.`overwrite_company`,
-                `tabAddress`.`address_line1`,
-                `tabAddress`.`address_line2`,
-                `tabAddress`.`pincode`,
-                `tabAddress`.`city`,
                 `tabAddress`.`country`,
                 `tabAddress`.`is_shipping_address`,
-                `tabAddress`.`is_primary_address`,
-                `tabAddress`.`geo_lat`,
-                `tabAddress`.`geo_long`,
-                `tabAddress`.`customer_address_id`
+                `tabAddress`.`is_primary_address`
             FROM `tabDynamic Link`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE `tabDynamic Link`.`parenttype` = "Address"
               AND `tabDynamic Link`.`link_doctype` = "Customer"
               AND `tabDynamic Link`.`link_name` = "{customer_id}"
-            ;""".format(customer_id=customer)
-        
+              AND `tabAddress`.`address_type` = "Shipping"
+            ;""".format(customer_id=customer_id)
+
     addresses = frappe.db.sql(query, as_dict=True)
-        
+
     countries = []
     for a in addresses:
         if not a['country'] in countries:
             countries.append(a['country'])
 
-    customer = frappe.get_doc("Customer", customer) 
+    customer = frappe.get_doc("Customer", customer_id)
 
     if len(countries) != 1:
         msg = "Cannot set default company for Customer '{0}': No or multiple countries found ({1})".format(customer.name, len(countries))
         frappe.log_error(msg, "utils.set_default_company")
-
         from frappe.desk.tags import add_tag
-        add_tag(tag = "check default company", dt = "Customer", dn = customer.name )
-
+        add_tag(tag="check default company", dt="Customer", dn=customer.name)
         print(msg)
         return
 
@@ -1063,7 +1058,6 @@ def set_default_company(customer):
 
     if customer.default_company != country_default_company:
         print("Customer '{0}': Set default company '{1}'".format(customer.name, country_default_company))
-
         customer.default_company = country_default_company
         customer.save()
 
@@ -1073,7 +1067,6 @@ def set_customer_default_company_for_country(country):
     run
     bench execute microsynth.microsynth.utils.set_customer_default_company_for_country --kwargs "{'country': 'Austria'}"
     """
-
     customers = get_customers_for_country(country)
     for c in customers:
         if not frappe.db.get_value("Customer", c, "disabled"):
@@ -1246,7 +1239,7 @@ def get_first_shipping_address(customer_id):
                 AND `tabDynamic Link`.`link_name` = "{customer_id}"
                 -- AND `tabAddress`.`is_shipping_address` <> 0
                 AND `tabAddress`.`address_type` = "Shipping"
-            ;"""        
+            ;"""
     shipping_addresses = frappe.db.sql(query, as_dict=True)
     if not shipping_addresses:
         print(f"Customer {customer_id} has no shipping address.")
@@ -1474,7 +1467,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     if type(invoices) == str:
         invoices = json.loads(invoices)
     amount = flt(amount)
-    
+
     # find exchange rate for intermediate account
     intermediate_currency = frappe.get_cached_value("Account", intermediate_account, "account_currency")
     if frappe.get_cached_value("Company", company, "default_currency") == intermediate_currency:
@@ -1508,7 +1501,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             }
         ]
     })
-    
+
     # extend invoices
     base_total_debit = flt(amount) * current_exchange_rate
     base_total_credit = 0
@@ -1527,7 +1520,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             'credit': round(invoice.get('outstanding_amount') * exchange_rate, 2)
         })
         base_total_credit += invoice.get('outstanding_amount') * exchange_rate
-    
+
     # other currencies: currency deviation
     jv.set_total_debit_credit()
     currency_deviation = round(jv.total_debit - jv.total_credit, 2)
@@ -1535,13 +1528,13 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
         'account': currency_deviation_account,
         'credit': currency_deviation
     })
-    
+
     jv.set_total_debit_credit()
     # insert and submit
     jv.flags.ignore_validate = True
     jv.insert()
     jv.submit()
-    
+
     return jv.name
 
 
@@ -1567,7 +1560,7 @@ def comment_invoice(sales_invoice, comment):
 def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
     if type(prev_items) == str:
         prev_items = json.loads(prev_items)
-    
+
     prevdoc_price_list_rates = []
     # check each item
     for prev_item in prev_items:
@@ -1577,8 +1570,35 @@ def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
             prevdoc_price_list_rates.append(prev_doc_price_list_rate)
         else:
             prevdoc_price_list_rates.append(None)
-    
+
     if len(prevdoc_price_list_rates) != len(prev_items):
         frappe.throw("This can never happen! If not, ask Lars")
-        
+
     return prevdoc_price_list_rates
+
+
+@frappe.whitelist()
+def deduct_and_close(payment_entry, account, cost_center):
+    """
+    This function will deduct the unallocated amount to the provided account and submit the payment entry
+    """
+    doc = frappe.get_doc("Payment Entry", payment_entry)
+    if doc.payment_type == "Pay":
+        amount = doc.unallocated_amount or doc.difference_amount or 0
+    else:
+        amount = ((-1) * doc.unallocated_amount) or doc.difference_amount
+
+    add_deduction(doc, account, cost_center, amount)
+
+    doc.save()
+    doc.submit()
+    return
+
+
+def add_deduction(doc, account, cost_center, amount):
+    doc.append('deductions', {
+        'account': account,
+        'cost_center': cost_center,
+        'amount': amount
+    })
+    return

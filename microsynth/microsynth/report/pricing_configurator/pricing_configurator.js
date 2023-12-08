@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Microsynth, libracore and contributors
+// Copyright (c) 2023, Microsynth, libracore and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -24,7 +24,7 @@ frappe.query_reports["Pricing Configurator"] = {
         }
     ],
     "onload": (report) => {
-        if (frappe.user.has_role("Sales Manager") && false) {  // TODO: remove && false to release
+        if (frappe.user.has_role("Sales Manager")) {
             report.page.add_inner_button(__('Change General Discount'), function () {
                 change_general_discount();
             });
@@ -101,7 +101,7 @@ function change_general_discount(){
         {'fieldname': 'new_general_discount', 'fieldtype': 'Float', 'label': __('New General Discount'), 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount <b>will be changed</b> to the new general discount (' + values.new_general_discount + '%).<br><br><b>Please be patient</b>, the process may takes several minutes. The table is automatically reloaded after completion.',
+        frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount <b>will be changed</b> to the new general discount (' + values.new_general_discount + '%).<br><br><b>Please be patient</b>, the process may take several minutes. The table is automatically reloaded after completion.',
             () => {
                 if (values.new_general_discount > 100) {
                     frappe.show_alert('New general discount has to be <= 100. Otherwise prices would get negative.');
@@ -111,7 +111,8 @@ function change_general_discount(){
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_general_discount",
                     'args':{
                         'price_list_name': frappe.query_report.filters[0].value,
-                        'new_general_discount': values.new_general_discount
+                        'new_general_discount': values.new_general_discount,
+                        'user': frappe.session.user
                     },
                     'callback': function(response)
                     {
@@ -142,7 +143,8 @@ function clean_price_list(){
     frappe.call({
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_list",
         'args':{
-            'price_list': frappe.query_report.filters[0].value
+            'price_list': frappe.query_report.filters[0].value,
+            'user': frappe.session.user
         },
         'callback': function(r)
         {
@@ -157,6 +159,7 @@ function populate_from_reference() {
         'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_from_reference",
         'args':{
             'price_list': frappe.query_report.filters[0].value,
+            'user': frappe.session.user,
             'item_group': frappe.query_report.filters[1].value
         },
         'callback': function(r)
@@ -178,6 +181,7 @@ function populate_with_factor() {
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_with_factor",
                     'args':{
                         'price_list': frappe.query_report.filters[0].value,
+                        'user': frappe.session.user,
                         'item_group': frappe.query_report.filters[1].value,
                         'factor': values.factor
                     },
