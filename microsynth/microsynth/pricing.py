@@ -3,40 +3,9 @@
 
 import frappe
 from frappe import _
+from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate, get_rate_or_none
 from datetime import datetime, timedelta
 import csv
-
-
-def get_price_list_rates(item_code, price_list, qty):
-    """
-    Only called by get_rate and get_rate_or_none to avoid too much code duplication.
-    Returns a dictionary of price list rates sorted ascending by minimum quantity.
-    """
-    data = frappe.db.sql("""
-        SELECT
-            IFNULL(`tP`.`price_list_rate`, 0) AS `rate`
-         FROM `tabItem Price` AS `tP`
-         WHERE `tP`.`item_code` = "{item_code}"
-           AND `tP`.`price_list` = "{price_list}"
-           AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
-           AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
-           AND `tP`.`min_qty` <= {qty}
-         ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
-         LIMIT 1;
-        """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)
-    return data
-
-
-def get_rate_or_none(item_code, price_list, qty):
-    """
-    Return the rate for the given combination of item code and quantity on the given price list
-    or None if the given item code is not on the price list or the smallest minimum quantity is not reached.
-    """
-    data = get_price_list_rates(item_code, price_list, qty)
-    if len(data) > 0:
-        return data[0]['rate']
-    else:
-        return None
 
 
 def change_reference_rate(reference_price_list_name, item_code, min_qty, reference_rate, new_reference_rate, user):
@@ -46,7 +15,6 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     Thereby, the existing discounts are kept and the new rate is calculated
     by applying this calculated discount to the new reference rate.
     """
-    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate
     start_ts = datetime.now()
     negative_discount_warnings = ""
     try:
@@ -118,6 +86,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
             discount = 0
 
         new_customer_rate = ((100 - discount) / 100) * new_reference_rate
+        new_customer_rate = round(new_customer_rate, 4)
         try:
             set_rate(item_code, price_list['name'], min_qty, new_customer_rate)
         except Exception as e:
@@ -216,17 +185,20 @@ def change_rates_from_csv(csv_file, user):
     print(f"Finished after {elapsed_time} hh:mm:ss.")
 
 
-def change_rates_from_csv_files(user):
+def change_rates_from_csv_files(user, file_path):
     """
     Wrapper to call function change_rates_from_csv with multiple csv files.
     Don't forget to change the hard coded file path if necessary.
 
     run from bench
-    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.change_rates_from_csv_files --kwargs "{'user': 'firstname.lastname@microsynth.ch'}"
+    bench execute microsynth.microsynth.pricing.change_rates_from_csv_files --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'file_path': '/mnt/erp_share/price_adjustments'}"
     """
-    for currency in ['sek', 'usd', 'eur', 'chf']:
+    if not frappe.db.exists("User", user):
+        print(f"User '{user}' does not exist. Please check User and restart. Going to return.")
+        return
+    for currency in ['sek', 'usd', 'eur']:  # , 'chf'
         print(f"\n########## Start with {currency} ...")
-        change_rates_from_csv(f"/mnt/erp_share/price_adjustments/{currency}.csv", user)
+        change_rates_from_csv(f"{file_path}/{currency}.csv", user)
 
 
 @frappe.whitelist()
@@ -274,18 +246,20 @@ def find_credits_without_jv():
     invoices = frappe.get_all('Sales Invoice', filters=[['total_customer_credit', '!=', 0], ['docstatus', '=', 1]], fields=['name'])
     counter = 0
     names = []
-
+    sum = {'EUR': 0, 'USD': 0, 'CHF': 0}
     for invoice in invoices:
-        journal_entries = frappe.get_all('Journal Entry', filters=[['user_remark', '=', f"Credit from {invoice['name']}"], ['docstatus', '=', 1]], fields=['name'])
-        if not journal_entries:
+        #journal_entries_cancelled = frappe.get_all('Journal Entry', filters=[['user_remark', '=', f"Credit from {invoice['name']}"], ['docstatus', '=', 2]], fields=['name'])
+        journal_entries_submitted = frappe.get_all('Journal Entry', filters=[['user_remark', '=', f"Credit from {invoice['name']}"], ['docstatus', '=', 1]], fields=['name'])
+        if not journal_entries_submitted:  # journal_entries_cancelled and
             if counter == 0:
                 print('Sales Invoice name\tposting_date\ttotal\tcurrency\tdocstatus')
             invoice_obj = frappe.get_doc('Sales Invoice', invoice['name'])
             print(f'{invoice_obj.name}{"  " if len(invoice_obj.name) < 17 else ""}\t{invoice_obj.posting_date}\t{invoice_obj.total}\t{invoice_obj.currency}\t\t{invoice_obj.docstatus}')
             counter += 1
+            sum[invoice_obj.currency] += abs(invoice_obj.total)
             names.append(invoice_obj.name)
         else:
             # TODO: Check whether the Journal Entries sum up to the correct amount?
             continue
 
-    print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry.')
+    print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry. {sum=}')

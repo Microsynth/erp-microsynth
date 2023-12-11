@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from microsynth.microsynth.pricing import get_price_list_rates, get_rate_or_none
 from datetime import datetime
 import json
 
@@ -211,6 +210,38 @@ def get_rate(item_code, price_list, qty):
         return data[0]['rate']
     else:
         return 0
+
+
+def get_rate_or_none(item_code, price_list, qty):
+    """
+    Return the rate for the given combination of item code and quantity on the given price list
+    or None if the given item code is not on the price list or the smallest minimum quantity is not reached.
+    """
+    data = get_price_list_rates(item_code, price_list, qty)
+    if len(data) > 0:
+        return data[0]['rate']
+    else:
+        return None
+
+
+def get_price_list_rates(item_code, price_list, qty):
+    """
+    Only called by get_rate and get_rate_or_none to avoid too much code duplication.
+    Returns a dictionary of price list rates sorted ascending by minimum quantity.
+    """
+    data = frappe.db.sql("""
+        SELECT
+            IFNULL(`tP`.`price_list_rate`, 0) AS `rate`
+         FROM `tabItem Price` AS `tP`
+         WHERE `tP`.`item_code` = "{item_code}"
+           AND `tP`.`price_list` = "{price_list}"
+           AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
+           AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
+           AND `tP`.`min_qty` <= {qty}
+         ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
+         LIMIT 1;
+        """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)
+    return data
 
 
 @frappe.whitelist()
