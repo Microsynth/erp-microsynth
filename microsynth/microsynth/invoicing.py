@@ -99,7 +99,6 @@ def make_collective_invoices(delivery_notes):
         # check if there are multiple tax templates
         taxes = get_tax_templates(delivery_notes)
         product_types = get_product_types(delivery_notes)
-        print(f"{len(product_types)=}; {product_types=}")
 
         # create one invoice per tax template
         for tax in taxes:
@@ -108,7 +107,8 @@ def make_collective_invoices(delivery_notes):
                 for d in delivery_notes:
                     taxes_and_charges = frappe.db.get_value("Delivery Note", d, "taxes_and_charges")
                     d_product_type = frappe.db.get_value("Delivery Note", d, "product_type")
-                    if taxes_and_charges == tax and d_product_type == product_type or (d_product_type != 'Project' and product_type == ''):
+                    prod_type_fit = d_product_type == product_type or (d_product_type != 'Project' and product_type == '')
+                    if taxes_and_charges == tax and prod_type_fit:
                         total = frappe.get_value("Delivery Note", d, "total")
                         credit = get_total_credit(customer, company, product_type)
                         customer_credits = frappe.get_value("Customer", customer, "customer_credits")
