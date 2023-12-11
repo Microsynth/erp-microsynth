@@ -122,20 +122,64 @@ def update_contacts_from_new_orders(previous_days):
     return updated_contact_persons
 
 
-def update_new_and_active_contacts():
+def update_new_and_active_contacts(previous_days):
     """
-    Update Contact Classification and Customer Status of Contact Persons from new Sales Orders and newly created Contacts.
+    Update Contact Classification and Customer Status of Contact Persons from new Sales Orders and newly created Contacts from the last previous_days.
     Should be run by a cron job every day at midnight or a few minutes after midnight.
 
     run
-    bench execute microsynth.microsynth.marketing.update_new_and_active_contacts
+    bench execute microsynth.microsynth.marketing.update_new_and_active_contacts --kwargs "{'previous_days': 1}"
     """
     start_ts = datetime.now()
-    previous_days = 1  # replace 1 by 7 if executed weekly
     updated_contact_persons = update_contacts_from_new_orders(previous_days)
     update_newly_created_contacts(updated_contact_persons, previous_days)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"{datetime.now()}: Finished update_new_and_active_contacts after {elapsed_time} hh:mm:ss.")
+
+
+def update_contacts_from_old_orders(days):
+    """
+    Updates the two fields Contact.contact_classification and Contact.customer_status
+    of Contact Persons from Sales Orders that turned one year old in the last :param days.
+    Should be run by a cron job once per week (always on the same day of the week).
+
+    run
+    bench execute microsynth.microsynth.marketing.update_contacts_from_old_orders --kwargs "{'days': 7}"
+    """
+    start_ts = datetime.now()
+    one_year_ago = date.today() - relativedelta(months = 12)
+    start_date = one_year_ago - timedelta(days=days)
+
+    orders = get_sales_orders(start_date=start_date, end_date=one_year_ago)
+    print(f"{datetime.now()}: Going to update Contacts of {len(orders)} old Sales Orders...")
+
+    # create empty sets (no duplicates)
+    updated_contact_persons = set()
+    customers_to_check = set()
+
+    for idx, order in enumerate(orders):
+        if order['contact_person'] in updated_contact_persons:
+            continue  # avoid processing Contacts twice
+
+        new_orders = get_sales_orders(start_date=one_year_ago, end_date=date.today(), contact_person=order['contact_person'])
+        if len(new_orders) < 1:
+            contact_person = frappe.get_doc('Contact', order['contact_person'])
+            contact_person.contact_classification = 'Former Buyer'
+            contact_person.save()
+        # else: contact_classification should remain 'Buyer'
+
+        customers_to_check.add(order['customer'])
+        updated_contact_persons.add(order['contact_person'])
+
+        if idx % 50 == 0 and idx > 0:
+            perc = round(100 * idx / len(orders), 2)
+            print(f"{datetime.now()}: Already updated Contact Classification of Contact Persons of {perc} % ({idx}) of {len(orders)} old Sales Orders.")
+
+        frappe.db.commit()
+
+    update_customer_status(customers_to_check)
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"{datetime.now()}: Finished update_contacts_from_old_orders after {elapsed_time} hh:mm:ss.")
 
 
 def update_customer_status(customers):
@@ -194,51 +238,6 @@ def update_customer_status(customers):
             print(f"{datetime.now()}: Already updated Customer Status of Contacts of {round(100 * idx / len(customers), 2)} % ({idx}) of {len(customers)} Customers.")
 
     frappe.db.commit()
-
-
-def update_contacts_from_old_orders():
-    """
-    Updates the two fields Contact.contact_classification and Contact.customer_status
-    of Contact Persons from Sales Orders that turned one year old last month.
-    Should be run by a cron job once per week (always on the same day of the week).
-
-    run
-    bench execute microsynth.microsynth.marketing.update_contacts_from_old_orders
-    """
-    start_ts = datetime.now()
-    one_year_ago = date.today() - relativedelta(months = 12)
-    start_date = one_year_ago - timedelta(days=7)
-
-    orders = get_sales_orders(start_date=start_date, end_date=one_year_ago)
-    print(f"{datetime.now()}: Going to update Contacts of {len(orders)} old Sales Orders...")
-
-    # create empty sets (no duplicates)
-    updated_contact_persons = set()
-    customers_to_check = set()
-
-    for idx, order in enumerate(orders):
-        if order['contact_person'] in updated_contact_persons:
-            continue  # avoid processing Contacts twice
-
-        new_orders = get_sales_orders(start_date=one_year_ago, end_date=date.today(), contact_person=order['contact_person'])
-        if len(new_orders) < 1:
-            contact_person = frappe.get_doc('Contact', order['contact_person'])
-            contact_person.contact_classification = 'Former Buyer'
-            contact_person.save()
-        # else: contact_classification should remain 'Buyer'
-
-        customers_to_check.add(order['customer'])
-        updated_contact_persons.add(order['contact_person'])
-
-        if idx % 50 == 0 and idx > 0:
-            perc = round(100 * idx / len(orders), 2)
-            print(f"{datetime.now()}: Already updated Contact Classification of Contact Persons of {perc} % ({idx}) of {len(orders)} old Sales Orders.")
-
-        frappe.db.commit()
-
-    update_customer_status(customers_to_check)
-    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    print(f"{datetime.now()}: Finished update_contacts_from_old_orders after {elapsed_time} hh:mm:ss.")
 
 
 def update_contact_classification(sales_orders, contact_name):
