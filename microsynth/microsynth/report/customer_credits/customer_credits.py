@@ -73,7 +73,7 @@ def get_data(filters, short=False):
                 {conditions}
             GROUP BY `tabSales Invoice`.`name`
 
-            UNION SELECT
+            UNION ALL SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
                 `tabSales Invoice`.`customer` AS `customer`,
@@ -152,7 +152,7 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 {conditions}
 
-            UNION SELECT
+            UNION ALL SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
                 `tabSales Invoice`.`customer` AS `customer`,
