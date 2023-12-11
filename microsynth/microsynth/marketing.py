@@ -59,7 +59,6 @@ def update_newly_created_contacts(already_updated_contacts, previous_days):
     Called by the function update_new_and_active_contacts.
     Sets the Contact Classification and Customer Status of all new Contacts that are not already processed by the function update_contacts_from_new_orders.
     """
-    #print(f"{datetime.now()}: Start update_new_contacts_marketing.")
     customers = set()
     sql_query = f"""
         SELECT `tabContact`.`name` AS `name`
@@ -72,7 +71,6 @@ def update_newly_created_contacts(already_updated_contacts, previous_days):
     for contact in new_contacts:
         if contact['name'] in already_updated_contacts:
             continue
-        #contact_obj = frappe.get_doc('Contact', contact['name'])
         sales_orders = get_sales_orders(contact_person=contact['name'])
         update_contact_classification(sales_orders, contact['name'])
         customer = get_customer(contact['name'])
@@ -127,8 +125,7 @@ def update_contacts_from_new_orders(previous_days):
 def update_new_and_active_contacts():
     """
     Update Contact Classification and Customer Status of Contact Persons from new Sales Orders and newly created Contacts.
-    Should be run by a cron job at every day at midnight or a few minutes after midnight.
-    Expected local runtime: less than 5 minutes
+    Should be run by a cron job every day at midnight or a few minutes after midnight.
 
     run
     bench execute microsynth.microsynth.marketing.update_new_and_active_contacts
@@ -181,15 +178,16 @@ def update_customer_status(customers):
             customer_status = 'potential'
 
         for contact in contacts:
-            #contact_doc = frappe.get_doc('Contact', contact['name'])
-            #contact_doc.customer_status = customer_status
-            frappe.db.set_value("Contact", contact['name'], "customer_status", customer_status, update_modified = False)
-            # try:
-            #     contact_doc.save()
-            # except Exception as e:
-            #     msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
-            #     print(msg)
-            #     frappe.log_error(msg, 'marketing.update_customer_status')
+            contact_doc = frappe.get_doc('Contact', contact['name'])
+            if contact_doc.customer_status != customer_status:
+                contact_doc.customer_status = customer_status
+                #frappe.db.set_value("Contact", contact['name'], "customer_status", customer_status, update_modified = False)
+                try:
+                    contact_doc.save()
+                except Exception as e:
+                    msg = f"Unable to save Contact {contact.name} due to the following error:\n{e}"
+                    print(msg)
+                    frappe.log_error(msg, 'marketing.update_customer_status')
 
         if idx % 200 == 0 and idx > 0:
             frappe.db.commit()
@@ -203,7 +201,6 @@ def update_contacts_from_old_orders():
     Updates the two fields Contact.contact_classification and Contact.customer_status
     of Contact Persons from Sales Orders that turned one year old last month.
     Should be run by a cron job once per week (always on the same day of the week).
-    Expected local runtime: 5-10 minutes
 
     run
     bench execute microsynth.microsynth.marketing.update_contacts_from_old_orders
@@ -249,26 +246,28 @@ def update_contact_classification(sales_orders, contact_name):
     Sets the Contact Classification of the given Contact according to the given Sales Orders.
     Assumes that the given Sales Orders are sorted by transaction_date descending (newest first).
     """
+    contact = frappe.get_doc("Contact", contact_name)
     one_year_ago = date.today() - relativedelta(months = 12)
     if len(sales_orders) > 0:
         newest_order = sales_orders[0]
         if newest_order['transaction_date'] >= one_year_ago:
-            #contact.contact_classification = 'Buyer'
-            frappe.db.set_value("Contact", contact_name, "contact_classification", 'Buyer', update_modified = False)
+            contact_classification = 'Buyer'
         else:
-            #contact.contact_classification = 'Former Buyer'
-            frappe.db.set_value("Contact", contact_name, "contact_classification", 'Former Buyer', update_modified = False)
+            contact_classification = 'Former Buyer'
     else:
-        #contact.contact_classification = 'Lead'
-        frappe.db.set_value("Contact", contact_name, "contact_classification", 'Lead', update_modified = False)
-        #contact.status = 'Lead'  # Do not change contact.status since webshop is using it
-    # try:
-    #     contact.save()
-    # except Exception as e:
-    #     msg = f"Unable to save Contact {contact_name} due to the following error:\n{e}"
-    #     print(msg)
-    #     frappe.log_error(msg, 'marketing.initialize_contact_classification')
-    frappe.db.commit()
+        # Do not change contact.status since webshop is using it
+        contact_classification = 'Lead'
+        
+    #frappe.db.set_value("Contact", contact_name, "contact_classification", contact_classification, update_modified = False)
+    if contact.contact_classification != contact_classification:
+        contact.contact_classification = contact_classification
+        try:
+            contact.save()
+        except Exception as e:
+            msg = f"Unable to save Contact {contact_name} due to the following error:\n{e}"
+            print(msg)
+            frappe.log_error(msg, 'marketing.initialize_contact_classification')
+        frappe.db.commit()
 
 
 def initialize_contact_classification():
@@ -280,7 +279,6 @@ def initialize_contact_classification():
     print(f"{datetime.now()}: Going to initialize contact_classification of {len(contacts)} Contacts...")
 
     for idx, contact in enumerate(contacts):
-        #contact = frappe.get_doc('Contact', contact['name'])
         sales_orders = get_sales_orders(contact_person=contact['name'])
         update_contact_classification(sales_orders, contact['name'])
         
@@ -310,10 +308,9 @@ def initialize_customer_status():
 def initialize_marketing_classification():
     """
     Initializes the two fields Contact.contact_classification and Contact.customer_status.
-    Expected runtime: 52 minutes locally
 
     run
     bench execute microsynth.microsynth.marketing.initialize_marketing_classification
     """
-    initialize_contact_classification()  # expected runtime: 50 minutes
-    initialize_customer_status()  # expected runtime: less than 100 seconds
+    initialize_contact_classification()
+    initialize_customer_status()
