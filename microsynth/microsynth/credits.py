@@ -244,3 +244,78 @@ def close_invoice_against_expense(sales_invoice, account):
     jv.submit()
     frappe.db.commit()
     return jv.name
+
+"""
+Deug function to fnd customer credit transaction per day
+
+Run as
+ $ bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kargs "{'currency': 'EUR', 'date': '2023-06-15'}"
+ 
+"""
+def get_customer_credit_transactions(currency, date):
+    for d in frappe.db.sql("""
+        SELECT
+            `raw`.`type` AS `type`,
+            `raw`.`date` AS `date`,
+            `raw`.`customer` AS `customer`,
+            `raw`.`customer_name` AS `customer_name`,
+            `raw`.`sales_invoice` AS `sales_invoice`,
+            `raw`.`net_amount` AS `net_amount`,
+            `raw`.`product_type` AS `product_type`,
+            `raw`.`status` AS `status`,
+            `raw`.`reference` AS `reference`,
+            `raw`.`currency` AS `currency`
+        FROM (
+            SELECT
+                "Credit" AS `type`,
+                `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice`.`customer` AS `customer`,
+                `tabSales Invoice`.`customer_name` AS `customer_name`,
+                `tabSales Invoice`.`name` AS `sales_invoice`,
+                SUM(`tabSales Invoice Item`.`net_amount`) AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
+                `tabSales Invoice`.`status` AS `status`,
+                `tabSales Invoice Item`.`name` AS `reference`,
+                `tabSales Invoice`.`currency` AS `currency`
+            FROM `tabSales Invoice Item` 
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice Item`.`item_code` = "6100"
+                AND `tabSales Invoice`.`company` = 'Microsynth AG'
+                AND `tabSales Invoice`.`posting_date` = "{date}"
+                AND `tabSales Invoice`.`currency` = '{currency}'
+            GROUP BY `tabSales Invoice`.`name`
+
+            UNION SELECT
+                "Allocation" AS `type`,
+                `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice`.`customer` AS `customer`,
+                `tabSales Invoice`.`customer_name` AS `customer_name`,
+                `tabSales Invoice`.`name` AS `sales_invoice`,
+                ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
+                `tabSales Invoice`.`product_type` AS `product_type`,
+                `tabSales Invoice`.`status` AS `status`,
+                `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
+                `tabSales Invoice`.`currency` AS `currency`
+            FROM `tabSales Invoice Customer Credit` 
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`company` = 'Microsynth AG'
+                AND `tabSales Invoice`.`posting_date` = "{date}"
+                AND `tabSales Invoice`.`currency` = '{currency}'
+        ) AS `raw`
+        WHERE `raw`.`net_amount` != 0
+        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date), as_dict=True):
+        print("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
+            d['date'],
+            d['customer'],
+            d['customer_name'],
+            d['sales_invoice'],
+            d['net_amount'],
+            d['product_type'],
+            d['status'],
+            d['reference'],
+            d['currency']))
+            
