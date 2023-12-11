@@ -3168,6 +3168,9 @@ def export_sanger_customers(filepath):
 def correct_inverted_credit_journal_entries():
     """
     This is a bugfix-patch for journal entries of customer credits that were returned before 2023-11-30
+
+    run
+    bench execute microsynth.microsynth.migration.correct_inverted_credit_journal_entries
     """
     from microsynth.microsynth.credits import book_credit
     
@@ -3191,4 +3194,24 @@ def correct_inverted_credit_journal_entries():
         if frappe.get_value("Sales Invoice", sales_invoice, "docstatus") == 1:
             book_credit(sales_invoice)
         
+    frappe.db.commit()
+
+
+def initialize_field_customer_credits():
+    """
+    Loops over all non-disabled Customers and initializes the new Select field customer_credits
+    according to the existing checkbox has_credit_account.
+    Expected runtime: less than 5 seconds
+
+    Run
+    bench execute microsynth.microsynth.migration.initialize_field_customer_credits
+    """
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name', 'has_credit_account'])
+    counter = 0
+    for customer in customers:
+        if customer['has_credit_account']:
+            frappe.db.set_value("Customer", customer['name'], "customer_credits", "Credit Account", update_modified = False)
+            counter += 1
+            if counter % 100 == 0:
+                frappe.db.commit()
     frappe.db.commit()

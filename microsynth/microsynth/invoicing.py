@@ -52,9 +52,20 @@ def get_tax_templates(delivery_notes):
     return taxes
 
 
+def get_product_types(delivery_notes):
+    product_types = set()
+    for dn in delivery_notes:
+        product_type = frappe.db.get_value('Delivery Note', dn, 'product_type')
+        if product_type == 'Project':
+            product_types.add(product_type)
+        else:
+            product_types.add('')
+    return product_types
+
+
 def make_collective_invoices(delivery_notes):
     """
-    Make collective invoices from the given Deliver Notes. All documents must 
+    Make collective invoices from the given Delivery Notes. All documents must 
     be for a single customer and from the same company. 
     Considers customer credits if available.
 
@@ -79,7 +90,7 @@ def make_collective_invoices(delivery_notes):
             frappe.log_error("The provided Delivery Notes do not have a single customer.\nDelivery Notes: {0}\nCustomers: {1}".format(delivery_notes, customers), "invocing.make_collective_invoices")
             return invoices
         if len(set(companies)) != 1:
-            frappe.log_error("The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: l{1}".format(delivery_notes, companies), "invocing.make_collective_invoices")
+            frappe.log_error("The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: {1}".format(delivery_notes, companies), "invocing.make_collective_invoices")
             return invoices
 
         customer = customers[0]
@@ -87,29 +98,34 @@ def make_collective_invoices(delivery_notes):
 
         # check if there are multiple tax templates
         taxes = get_tax_templates(delivery_notes)
-        credit = get_total_credit(customer, company)
+        product_types = get_product_types(delivery_notes)
+        print(f"{len(product_types)=}; {product_types=}")
 
         # create one invoice per tax template
         for tax in taxes:
-            filtered_dns = []
-            for d in delivery_notes:
-                if frappe.db.get_value("Delivery Note", d, "taxes_and_charges") == tax:
-                    total = frappe.get_value("Delivery Note", d, "total")
-                    customer_credits = frappe.get_value("Customer", customer, "customer_credits")
-                    if credit is not None and customer_credits == 'Credit Account':
-                        # there is some credit - check if it is sufficient
-                        if total <= credit:
-                            filtered_dns.append(d)
-                            credit = credit - total
+            for product_type in product_types:
+                filtered_dns = []
+                for d in delivery_notes:
+                    taxes_and_charges = frappe.db.get_value("Delivery Note", d, "taxes_and_charges")
+                    d_product_type = frappe.db.get_value("Delivery Note", d, "product_type")
+                    if taxes_and_charges == tax and d_product_type == product_type or (d_product_type != 'Project' and product_type == ''):
+                        total = frappe.get_value("Delivery Note", d, "total")
+                        credit = get_total_credit(customer, company, product_type)
+                        customer_credits = frappe.get_value("Customer", customer, "customer_credits")
+                        if credit is not None and customer_credits == 'Credit Account':
+                            # there is some credit - check if it is sufficient
+                            if total <= credit:
+                                filtered_dns.append(d)
+                                credit = credit - total
+                            else:
+                                frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), "invocing.async_create_invoices")
                         else:
-                            frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), "invocing.async_create_invoices")
-                    else:
-                        # there is no credit account
-                        filtered_dns.append(d)
+                            # there is no credit account
+                            filtered_dns.append(d)
 
-            if len(filtered_dns) > 0:
-                si = make_collective_invoice(filtered_dns)
-                invoices.append(si)
+                if len(filtered_dns) > 0:
+                    si = make_collective_invoice(filtered_dns)
+                    invoices.append(si)
 
     return invoices
 
@@ -123,7 +139,7 @@ def make_carlo_erba_invoices(company):
     invoices = []
     for dn in all_invoiceable:
         if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
-            and cint(dn.get('collective_billing')) == 0):           # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
+            and cint(dn.get('collective_billing')) == 0):  # Do not allow collective billing for Carlo Erba because the distributor must pass the invoices to the order customer individually
 
             si = make_invoice(dn.get('delivery_note'))
             invoices.append(si)
@@ -174,7 +190,7 @@ def async_create_invoices(mode, company, customer):
                     if punchout_shop == "IMP-WIE":
                         # Do not create single invoices because a collective invoice should be sent
                         continue
-                    if (punchout_shop == "EPFL" or punchout_shop == "UNI-ZUR") and dn.product_type == "Sequencing":
+                    if (punchout_shop == "EPFL" or punchout_shop == "UNI-ZUR") and dn.get('product_type') == "Sequencing":
                         # Do not create punchout invoices of Sequencing orders because of positions with 0.00 cost that cause errors at EPFL
                         # TODO: Fix issue with EPFL and UNI-ZUR and remove this condition
                         continue
@@ -189,7 +205,7 @@ def async_create_invoices(mode, company, customer):
                         continue
 
                 # check credit
-                credit = get_total_credit(dn.get('customer'), company)
+                credit = get_total_credit(dn.get('customer'), company, dn.get('product_type'))
                 customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
                 if credit is not None and customer_credits == 'Credit Account':
                     delivery_note =  dn.get('delivery_note')
@@ -1571,25 +1587,3 @@ def process_collective_invoices_monthly():
     return
     # for company in frappe.db.get_all('Company', fields=['name']):
     #     async_create_invoices("Collective", company['name'], None)
-
-
-def initialize_field_customer_credits():
-    """
-    Loops over all non-disabled Customers and initializes the new Select field customer_credits
-    according to the existing checkbox has_credit_account.
-    Expected runtime: less than 5 seconds
-
-    Run
-    bench execute microsynth.microsynth.migration.initialize_field_customer_credits
-    """
-    # TODO: Move this function to migration.py after merging the branch customer_credits into develop to avoid a merge conflict
-
-    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name', 'has_credit_account'])
-    counter = 0
-    for customer in customers:
-        if customer['has_credit_account']:
-            frappe.db.set_value("Customer", customer['name'], "customer_credits", "Credit Account", update_modified = False)
-            counter += 1
-            if counter % 100 == 0:
-                frappe.db.commit()
-    frappe.db.commit()
