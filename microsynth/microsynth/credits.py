@@ -55,6 +55,8 @@ def allocate_credits(sales_invoice_doc):
     """
     Allocate the matching customer credit (Project / non-Project) to the given Sales Invoice.
     """
+    if frappe.get_value("Customer", sales_invoice_doc.customer, "customer_credits") == 'blocked':
+        return sales_invoice_doc
     product_type = sales_invoice_doc.product_type if sales_invoice_doc.product_type == "Project" else None
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)

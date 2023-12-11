@@ -15,9 +15,14 @@ frappe.ui.form.on('Sales Invoice', {
         prepare_naming_series(frm);             // common function
         
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
-            frm.add_custom_button(__("Allocate credit"), function() {
-                allocate_credits(frm);
-            });
+            frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
+            .then(r => {
+                if (r.message.customer_credits != 'blocked'){
+                    frm.add_custom_button(__("Allocate credit"), function() {
+                        allocate_credits(frm);
+                    });
+                }
+            })            
         };
         if (frm.doc.docstatus > 0) {
             frm.add_custom_button(__("Clone"), function() {
