@@ -11,7 +11,7 @@
   "currency",
   "rate",
   "column_break",
-  "contact",
+  "contact_person",
   "item_group",
   "item",
   "notes_section",
@@ -67,20 +67,20 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "contact",
-   "fieldtype": "Link",
-   "label": "Contact",
-   "options": "Contact"
-  },
-  {
    "description": "Competitor's product/service",
    "fieldname": "product",
    "fieldtype": "Data",
    "label": "Product"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
   }
  ],
- "modified": "2023-12-12 19:16:19.296169",
- "modified_by": "Administrator",
+ "modified": "2023-12-12 20:48:04.336185",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Benchmark",
  "owner": "Administrator",

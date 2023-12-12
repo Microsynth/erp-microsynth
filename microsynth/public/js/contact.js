@@ -3,12 +3,12 @@
 // extend/create dashboard
 cur_frm.dashboard.add_transactions([
     {
-        'label': __("Pre-Sales"),
+        'label': __("Selling"),
         'items': ["Quotation"]
     },
     {
-        'label': __("Notes"),
-        'items': ["Contact Note"]
+        'label': __("Marketing"),
+        'items': ["Contact Note", "Benchmark", "Product Idea"]
     }
 ]);
 

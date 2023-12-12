@@ -6,7 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "contact",
+  "contact_person",
   "product",
   "rating",
   "column_break",
@@ -21,12 +21,6 @@
    "fieldtype": "Select",
    "label": "Naming Series",
    "options": "PI-.YY.#####"
-  },
-  {
-   "fieldname": "contact",
-   "fieldtype": "Link",
-   "label": "Contact",
-   "options": "Contact"
   },
   {
    "fieldname": "item_group",
@@ -65,10 +59,16 @@
    "fieldtype": "Select",
    "label": "Rating",
    "options": "\nImportant"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
   }
  ],
- "modified": "2023-12-12 19:24:50.357771",
- "modified_by": "Administrator",
+ "modified": "2023-12-12 20:48:36.145365",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Product Idea",
  "owner": "Administrator",
