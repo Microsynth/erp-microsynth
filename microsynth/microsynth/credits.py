@@ -245,14 +245,14 @@ def close_invoice_against_expense(sales_invoice, account):
     frappe.db.commit()
     return jv.name
 
-"""
-Deug function to fnd customer credit transaction per day
 
-Run as
- $ bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kargs "{'currency': 'EUR', 'date': '2023-06-15'}"
- 
-"""
 def get_customer_credit_transactions(currency, date):
+    """
+    Debug function to find customer credit transactions per day
+
+    run
+    bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kargs "{'currency': 'EUR', 'date': '2023-06-15'}"
+    """
     for d in frappe.db.sql("""
         SELECT
             `raw`.`type` AS `type`,
