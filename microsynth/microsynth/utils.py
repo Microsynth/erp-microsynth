@@ -27,8 +27,8 @@ def get_customer(contact):
         if l.link_doctype == "Customer":
             customer_id = l.link_name
 
-    if not customer_id: 
-        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact), "utils.get_customer")
+    if not customer_id:
+        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact.name), "utils.get_customer")
 
     return customer_id
 
