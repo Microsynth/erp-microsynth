@@ -4,6 +4,11 @@
 
 frappe.query_reports["Label Accounting"] = {
 	"filters": [
-
+		{
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company",
+        }
 	]
 };
