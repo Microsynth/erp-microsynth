@@ -79,8 +79,8 @@
    "label": "Product"
   }
  ],
- "modified": "2023-12-12 18:56:09.648504",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2023-12-12 19:16:19.296169",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Benchmark",
  "owner": "Administrator",
@@ -99,13 +99,10 @@
   },
   {
    "create": 1,
-   "email": 1,
-   "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Sales User",
-   "share": 1,
    "write": 1
   }
  ],
