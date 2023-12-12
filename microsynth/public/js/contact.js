@@ -96,6 +96,11 @@ frappe.ui.form.on('Contact', {
                 create_benchmark(frm);
             }, __("Create"));
 
+            // Product Idea button in Create menu
+            frm.add_custom_button(__("Product Idea"), function() {
+                create_product_idea(frm);
+            }, __("Create"));
+
             // Gecko export button in Create menu
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({
@@ -159,6 +164,15 @@ function create_quotation(frm){
 function create_benchmark(frm){
     frappe.model.open_mapped_doc({
         method: "microsynth.microsynth.marketing.make_benchmark",
+        args: {contact_name: frm.doc.name},
+        frm: frm
+    })
+}
+
+
+function create_product_idea(frm){
+    frappe.model.open_mapped_doc({
+        method: "microsynth.microsynth.marketing.make_product_idea",
         args: {contact_name: frm.doc.name},
         frm: frm
     })
