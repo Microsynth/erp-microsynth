@@ -91,6 +91,11 @@ frappe.ui.form.on('Contact', {
                 create_quotation(frm);
             }, __("Create"));
 
+            // Benchmark button in Create menu
+            frm.add_custom_button(__("Benchmark"), function() {
+                create_benchmark(frm);
+            }, __("Create"));
+
             // Gecko export button in Create menu
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({
@@ -145,6 +150,15 @@ function preview_address(frm, customer) {
 function create_quotation(frm){
     frappe.model.open_mapped_doc({
         method: "microsynth.microsynth.quotation.make_quotation",
+        args: {contact_name: frm.doc.name},
+        frm: frm
+    })
+}
+
+
+function create_benchmark(frm){
+    frappe.model.open_mapped_doc({
+        method: "microsynth.microsynth.marketing.make_benchmark",
         args: {contact_name: frm.doc.name},
         frm: frm
     })
