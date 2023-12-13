@@ -45,6 +45,7 @@
    "options": "Item"
   },
   {
+   "description": "Short description of product/service",
    "fieldname": "product",
    "fieldtype": "Data",
    "label": "Product"
@@ -54,11 +55,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Rating by Sales Manager",
+   "description": "Rating by Sales Manager (5: most promising)",
    "fieldname": "rating",
    "fieldtype": "Select",
    "label": "Rating",
-   "options": "\nImportant"
+   "options": "0\n1\n2\n3\n4\n5"
   },
   {
    "fieldname": "contact_person",
@@ -67,7 +68,7 @@
    "options": "Contact"
   }
  ],
- "modified": "2023-12-12 20:48:36.145365",
+ "modified": "2023-12-13 10:29:14.670581",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Product Idea",
