@@ -1671,7 +1671,7 @@ def create_credit_import_journal_entry(sales_invoice):
     journal_entry.submit()
 
 
-def create_credit_import_sales_invoice(company, customer, currency, total):
+def create_credit_import_sales_invoice(company, customer, currency, total, product_type):
     """
     run
     bench execute "microsynth.microsynth.migration.create_credit_import_sales_invoice" --kwargs "{'company': 'Microsynth AG', 'customer': '1257', 'currency': 'CHF', 'total':42}"
@@ -1707,6 +1707,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total):
         'company': company,
         'naming_series': naming_series,
         'customer': customer.name,
+        'product_type': product_type,
         'currency': currency,
         'set_posting_time': True,
         'posting_date': "2022-12-31",
@@ -1746,8 +1747,9 @@ def import_credit_accounts(filename):
             customer = elements[2]
             currency = elements[1].upper()
             total = elements[6]
+            product_type = elements[7]
             print("Import: {0}\t{1}".format(customer, total))
-            create_credit_import_sales_invoice(company, customer, currency, total)
+            create_credit_import_sales_invoice(company, customer, currency, total, product_type)
             i += 1
             # if i > 5:
             #     break
