@@ -313,8 +313,9 @@ def get_user_details(person_id, client="webshop"):
               AND `tabDynamic Link`.`link_doctype` = "Customer"
               AND `tabDynamic Link`.`link_name` = "{customer_id}"
               AND (`tabAddress`.`is_primary_address` = 1 
-                   OR `tabAddress`.`name` = "{person_id}")
-            ;""".format(customer_id=customer_id, person_id=person_id), as_dict=True)
+                   OR `tabAddress`.`name` = "{person_id}"
+                   OR `tabAddress`.`name` = "{contact_address_id}")
+            ;""".format(customer_id=customer_id, person_id=person_id, contact_address_id=contact.address), as_dict=True)
         
     # return structure
     return {
