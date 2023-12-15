@@ -12,7 +12,7 @@ def get_columns(filters):
         {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 150 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 65 },
-        {"label": _("Sum"), "fieldname": "sum", "fieldtype": "Currency", "width": 125 },  # TODO: How to display the correct default company currency if it is not CHF?
+        {"label": _("Sum"), "fieldname": "sum", "fieldtype": "Currency", "options": "currency", "width": 125 },
         {"label": _("Destination"), "fieldname": "destination", "fieldtype": "Data", "width": 85 },
     ]
 
@@ -169,7 +169,7 @@ def get_data(filters=None):
             WHERE TRUE
             {company_condition}
             GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`, ":", `raw`.`rate`, ":", `raw`.`territory`)
-        """  # TODO: Are non-submitted Sales Order (docstatus != 1) a problem here? If yes, what is the most efficient way to find them?
+        """
 
         raw_data = frappe.db.sql(sql_query, as_dict=True)
         average_selling_prices = calculate_average_selling_prices(raw_data)
@@ -242,6 +242,7 @@ def get_data(filters=None):
                 "item_code": company_item_dest[1],
                 "qty": qty_sum['qty'],
                 "sum": qty_sum['sum'],
+                "currency": frappe.get_value("Company", company_item_dest[0], "default_currency"),
                 "destination": company_item_dest[2]
             }
             data.append(entry)
