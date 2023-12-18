@@ -4,7 +4,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "taxes"
+  "taxes",
+  "alternative_tax_templates"
  ],
  "fields": [
   {
@@ -12,10 +13,16 @@
    "fieldtype": "Table",
    "label": "Tax Allocation",
    "options": "Tax Matrix Entry"
+  },
+  {
+   "fieldname": "alternative_tax_templates",
+   "fieldtype": "Table",
+   "label": "Alternative Tax Templates",
+   "options": "Alternative Tax Template"
   }
  ],
  "issingle": 1,
- "modified": "2022-09-06 15:54:40.420040",
+ "modified": "2023-12-18 07:19:49.538692",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Tax Matrix",

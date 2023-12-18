@@ -1,0 +1,44 @@
+{
+ "creation": "2023-12-18 07:18:58.144290",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tax_template",
+  "valid_from",
+  "alternative_tax_template"
+ ],
+ "fields": [
+  {
+   "fieldname": "tax_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Tax Template",
+   "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "fieldname": "alternative_tax_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Alternative Tax Template",
+   "options": "Sales Taxes and Charges Template"
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Valid From"
+  }
+ ],
+ "istable": 1,
+ "modified": "2023-12-18 07:23:57.461130",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Alternative Tax Template",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
