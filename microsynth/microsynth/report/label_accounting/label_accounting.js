@@ -9,6 +9,7 @@ frappe.query_reports["Label Accounting"] = {
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company",
+            "reqd": 1
         }
 	]
 };

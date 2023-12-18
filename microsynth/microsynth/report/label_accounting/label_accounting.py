@@ -10,9 +10,9 @@ def get_columns(filters):
     return [
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 160 },
         {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
-        #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 150 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 65 },
         {"label": _("Sum"), "fieldname": "sum", "fieldtype": "Currency", "options": "currency", "width": 125 },
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70 },
         {"label": _("Destination"), "fieldname": "destination", "fieldtype": "Data", "width": 85 },
     ]
 
@@ -80,7 +80,7 @@ def identify_unclear_company_assignments(filters):
             SELECT 
                 `name`, 
                 `item_code`,
-                (SELECT `default_company` 
+                (SELECT `default_company`
                 FROM `tabCustomer` 
                 WHERE `tabCustomer`.`name` = `base`.`customer`) AS `company`
             FROM (
@@ -252,3 +252,7 @@ def get_data(filters=None):
 def execute(filters=None):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+
+def parse_remaining_labels(filepath):
+    return
