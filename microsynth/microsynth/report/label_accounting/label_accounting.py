@@ -4,14 +4,14 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import flt, rounded
+from frappe.utils import flt
 
 def get_columns(filters):
     return [
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 160 },
         {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 65 },
-        {"label": _("Valuation Rate"), "fieldname": "valuation_rate", "fieldtype": "Currency", "options": "currency", "width": 80 },
+        #{"label": _("Valuation Rate"), "fieldname": "valuation_rate", "fieldtype": "Currency", "options": "currency", "width": 80 },
         {"label": _("Sum"), "fieldname": "sum", "fieldtype": "Currency", "options": "currency", "width": 125 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70 },
         {"label": _("Destination"), "fieldname": "destination", "fieldtype": "Data", "width": 85 },
@@ -37,7 +37,7 @@ def calculate_average_selling_prices(raw_data):
     for company_item, qty_sum in summary.items():
         average_selling_prices[company_item] = qty_sum['sum']/qty_sum['qty']
         print(f"Average selling price of {qty_sum['qty']} x Item {company_item[1]} for {company_item[0]}: "
-              f"{rounded(average_selling_prices[company_item])}")
+              f"{round(average_selling_prices[company_item], 2)}")
 
     return average_selling_prices
 
@@ -70,8 +70,8 @@ def identify_unclear_company_assignments(filters):
     """
     company_condition = ''
 
-    if filters and filters.get('company'):
-        company_condition = f" `raw`.`company` = '{filters.get('company')}' "
+    if filters.get('company'):
+        company_condition = f"WHERE `raw`.`company` = '{filters.get('company')}' "
 
     query = f"""
         SELECT `company`,
@@ -98,7 +98,6 @@ def identify_unclear_company_assignments(filters):
                 AND `tabSequencing Label`.`sales_order` IS NULL
             ) AS `base`
         )  AS `raw`
-        WHERE
         {company_condition}
         GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`)
         """
@@ -117,7 +116,7 @@ def get_data(filters):
     company_condition = ''
 
     if filters.get('company'):
-        company_condition = f" `raw`.`company` = '{filters.get('company')}'"
+        company_condition = f"WHERE `raw`.`company` = '{filters.get('company')}'"
 
     sql_query = f"""
         SELECT `company`,
@@ -162,7 +161,6 @@ def get_data(filters):
                 WHERE `tabSequencing Label`.`status` IN ("unused", "submitted")
             ) AS `base`
         )  AS `raw`
-        WHERE
         {company_condition}
         GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`, ":", `raw`.`rate`, ":", `raw`.`territory`)
     """
@@ -197,8 +195,8 @@ def get_data(filters):
                 print(msg)
             continue
 
-        # ~ if d['rate'] is None:
-            # ~ print(f"d.rate is None: {d=}")
+        # if d['rate'] is None:
+            # print(f"d.rate is None: {d=}")
         
         # Distinguish territory only for Microsynth Seqlab GmbH
         if d['company'] == 'Microsynth Seqlab GmbH':
@@ -220,7 +218,7 @@ def get_data(filters):
             company_item_dest = (d['company'], d['item_code'], None)
 
         if d['rate'] == 0 or d['rate'] is None:
-            # fallback: find rate from average or reference price list
+            # fallback: find rate from average selling rate if available or reference price list rate otherwise
             d['rate'] = get_rate(company_item_dest, average_selling_prices)
             if d['rate'] is None:
                 continue
@@ -238,13 +236,13 @@ def get_data(filters):
             "company": company_item_dest[0],
             "item_code": company_item_dest[1],
             "qty": qty_sum['qty'],
-            "valuation_rate": get_rate(company_item_dest, average_selling_prices),
+            #"valuation_rate": get_rate(company_item_dest, average_selling_prices),  # can be confusing because it is not necessary that qty * valuation_rate = sum
             "sum": qty_sum['sum'],
             "currency": frappe.get_cached_value("Company", company_item_dest[0], "default_currency"),
             "destination": company_item_dest[2]
         }
         data.append(entry)
-        
+
     return data
 
 
