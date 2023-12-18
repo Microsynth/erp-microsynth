@@ -158,8 +158,7 @@ def change_rates_from_csv(csv_file, user):
                 return
             no_lines += 1
 
-    # header for a CSV file collecting warnings about negative discounts
-    negative_discount_warnings = "customer_price_list;reference_price_list;item_code;min_qty;customer_rate;reference_rate;discount\n"
+    negative_discount_warnings = ""
 
     with open(csv_file, 'r') as file:
         print(f"Changing prices according to {csv_file} ...")
@@ -178,8 +177,11 @@ def change_rates_from_csv(csv_file, user):
             line_counter += 1
             print(f"Finished line {line_counter}/{no_lines}: {line}")
     
-    with open(csv_file + '_warnings.csv', 'w') as warnings_file:
-        warnings_file.write(negative_discount_warnings)
+    if len(negative_discount_warnings) > 0:
+        with open(csv_file + '_warnings.csv', 'w') as warnings_file:
+            # header for a CSV file collecting warnings about negative discounts
+            warnings_file.write("customer_price_list;reference_price_list;item_code;min_qty;customer_rate;reference_rate;discount\n")
+            warnings_file.write(negative_discount_warnings)
     
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
