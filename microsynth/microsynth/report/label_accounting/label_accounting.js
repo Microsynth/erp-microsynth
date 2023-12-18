@@ -3,13 +3,13 @@
 /* eslint-disable */
 
 frappe.query_reports["Label Accounting"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company",
-            "reqd": 1
+            "reqd": 1           // no default set because of loading time
         }
-	]
+    ]
 };

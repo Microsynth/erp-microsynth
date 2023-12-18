@@ -4,13 +4,14 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-
+from frappe.utils import flt, rounded
 
 def get_columns(filters):
     return [
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 160 },
         {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         {"label": _("Quantity"), "fieldname": "qty", "fieldtype": "Int", "width": 65 },
+        {"label": _("Valuation Rate"), "fieldname": "valuation_rate", "fieldtype": "Currency", "options": "currency", "width": 80 },
         {"label": _("Sum"), "fieldname": "sum", "fieldtype": "Currency", "options": "currency", "width": 125 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70 },
         {"label": _("Destination"), "fieldname": "destination", "fieldtype": "Data", "width": 85 },
@@ -21,10 +22,10 @@ def calculate_average_selling_prices(raw_data):
     """
     Calculate the average selling prices according of the given data considering only positive rates.
     """
-    summary = dict()
-    average_selling_prices = dict()
+    summary = {}
+    average_selling_prices = {}
     for d in raw_data:
-        if d['company'] is None or d['rate'] is None or float(d['rate']) < 0.0001 or d['item_code'] is None:
+        if d['company'] is None or d['item_code'] is None or flt(d['rate']) < 0.01:
             continue
         company_item = (d['company'], d['item_code'])
         if company_item not in summary:
@@ -36,7 +37,7 @@ def calculate_average_selling_prices(raw_data):
     for company_item, qty_sum in summary.items():
         average_selling_prices[company_item] = qty_sum['sum']/qty_sum['qty']
         print(f"Average selling price of {qty_sum['qty']} x Item {company_item[1]} for {company_item[0]}: "
-              f"{round(average_selling_prices[company_item], 2)}")
+              f"{rounded(average_selling_prices[company_item])}")
 
     return average_selling_prices
 
@@ -58,7 +59,7 @@ def get_rate(company_item_dest, average_selling_prices):
             frappe.log_error(msg, 'label_accounting.get_data')
             print(msg)
             return None
-        if float(rates[0].price_list_rate) < 0.0001:
+        if float(rates[0].price_list_rate) < 0.01:
             return None  # avoid listing non-prepaid labels
         return rates[0].price_list_rate
 
@@ -70,7 +71,7 @@ def identify_unclear_company_assignments(filters):
     company_condition = ''
 
     if filters and filters.get('company'):
-        company_condition = f"AND `raw`.`company` = '{filters.get('company')}' "
+        company_condition = f" `raw`.`company` = '{filters.get('company')}' "
 
     query = f"""
         SELECT `company`,
@@ -97,7 +98,7 @@ def identify_unclear_company_assignments(filters):
                 AND `tabSequencing Label`.`sales_order` IS NULL
             ) AS `base`
         )  AS `raw`
-        WHERE TRUE
+        WHERE
         {company_condition}
         GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`)
         """
@@ -105,154 +106,148 @@ def identify_unclear_company_assignments(filters):
     return more_details
 
 
-def get_data(filters=None):
+def get_data(filters):
     """
     Return Sequencing Labels with status unused or submitted grouped by Company and Item Code
     together with quantity sum and sum of rates.
     If there is no rate, the average selling rate as calculated by calculate_average_selling_prices is used instead.
 
-    bench execute microsynth.microsynth.report.label_accounting.label_accounting.get_data
+    bench execute microsynth.microsynth.report.label_accounting.label_accounting.get_data --kwargs "{'filters': {'company': 'Microsynth AG'}}"
     """
     company_condition = ''
-    hasFilters = False
 
-    if filters and filters.get('company'):
-        company_condition = f"AND `raw`.`company` = '{filters.get('company')}'"
-        hasFilters = True
+    if filters.get('company'):
+        company_condition = f" `raw`.`company` = '{filters.get('company')}'"
+
+    sql_query = f"""
+        SELECT `company`,
+            `item_code`,
+            COUNT(`name`) AS `count`,
+            `rate`,
+            `territory`
+        FROM (
+            SELECT 
+                `name`, 
+                `item_code`,
+                IFNULL (`company`, 
+                    (SELECT `default_company` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`)) AS `company`,
+                `rate`,
+                (SELECT `territory` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`) AS `territory`,
+                sales_order
+            FROM (
+                SELECT
+                    `tabSequencing Label`.`name`,
+
+                    `tabSequencing Label`.`item` AS `item_code`,
+
+                    `tabSequencing Label`.`sales_order`,
+
+                    (SELECT `company`
+                    FROM `tabSales Order`
+                    WHERE `tabSales Order`.`name` = `tabSequencing Label`.`sales_order`) AS `company`,
+
+                    (SELECT `tabSales Order Item`.`base_net_rate`
+                    FROM `tabSales Order Item`
+                    WHERE `tabSales Order Item`.`parent` = `tabSequencing Label`.`sales_order` 
+                    AND `tabSales Order Item`.`item_code` = `tabSequencing Label`.`item`
+                    LIMIT 1) AS `rate`,
+
+                    (SELECT `link_name` 
+                    FROM `tabDynamic Link` 
+                    WHERE `tabDynamic Link`.`link_doctype` = "Customer"
+                    AND `tabDynamic Link`.`parenttype`= "Contact"
+                    AND `tabDynamic Link`.`parent` = `tabSequencing Label`.`contact`) AS `customer`
+
+                FROM `tabSequencing Label`
+                WHERE `tabSequencing Label`.`status` IN ("unused", "submitted")
+            ) AS `base`
+        )  AS `raw`
+        WHERE
+        {company_condition}
+        GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`, ":", `raw`.`rate`, ":", `raw`.`territory`)
+    """
+
+    raw_data = frappe.db.sql(sql_query, as_dict=True)
+    average_selling_prices = calculate_average_selling_prices(raw_data)
+    summary = {}
+
+    for d in raw_data:
+        if d['company'] is None and d['rate'] is None:
+            print(f"Need to identify unclear company assignments: {d=}")
+            details = identify_unclear_company_assignments(filters)
+            sum = 0
+
+            for det in details:
+                if det['count'] is None:
+                    continue
+                sum += det['count']
+                if det['company'] is None:
+                    # no company assignment possible -> ignore according to DSc
+                    print(f"No company assignment possible: {det=}")
+                    continue
+                company_item_dest = (det['company'], det['item_code'], None)
+                rate = get_rate(company_item_dest, average_selling_prices)
+                if rate is None:
+                    continue                    
+                summary[company_item_dest] = {'qty': det['count'], 'sum': det['count'] * rate}
+
+            if sum != d.count:
+                msg = f"Mismatch in the number of Labels without rate and company (no Sales Order): {d['count']=} but {sum=}", 'label_accounting.get_data'
+                frappe.log_error(msg)
+                print(msg)
+            continue
+
+        # ~ if d['rate'] is None:
+            # ~ print(f"d.rate is None: {d=}")
+        
+        # Distinguish territory only for Microsynth Seqlab GmbH
+        if d['company'] == 'Microsynth Seqlab GmbH':
+            if 'Germany' in d['territory'] or 'Göttingen' in d['territory']:
+                destination = 'DE'
+            elif 'France' in d['territory'] or d['territory'] == 'Austria' or d['territory'] == 'Rest of Europe':
+                destination = 'Europe'  # without DE and CH
+            elif d['territory'] == 'Rest of the World':
+                destination = 'ROW'
+            else:
+                print(f"This should be a mistake: {d=}")
+                if 'Switzerland' in d['territory']:
+                    destination = 'CH'
+                else:
+                    # This should never happen
+                    destination = None
+            company_item_dest = (d['company'], d['item_code'], destination)
+        else:
+            company_item_dest = (d['company'], d['item_code'], None)
+
+        if d['rate'] == 0 or d['rate'] is None:
+            # fallback: find rate from average or reference price list
+            d['rate'] = get_rate(company_item_dest, average_selling_prices)
+            if d['rate'] is None:
+                continue
+
+        if company_item_dest not in summary:
+            summary[company_item_dest] = {'qty': d['count'], 'sum': d['count'] * d['rate']}
+        else:
+            summary[company_item_dest]['qty'] += d['count']
+            summary[company_item_dest]['sum'] += d['count'] * d['rate']
 
     data = []
 
-    if hasFilters:
-        sql_query = f"""
-            SELECT `company`,
-                `item_code`,
-                COUNT(`name`) AS `count`,
-                `rate`,
-                `territory`
-            FROM (
-                SELECT 
-                    `name`, 
-                    `item_code`,
-                    IFNULL (`company`, 
-                        (SELECT `default_company` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`)) AS `company`,
-                    `rate`,
-                    (SELECT `territory` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`) AS `territory`,
-                    sales_order
-                FROM (
-                    SELECT
-                        `tabSequencing Label`.`name`,
-
-                        `tabSequencing Label`.`item` AS `item_code`,
-
-                        `tabSequencing Label`.`sales_order`,
-
-                        (SELECT `company`
-                        FROM `tabSales Order`
-                        WHERE `tabSales Order`.`name` = `tabSequencing Label`.`sales_order`) AS `company`,
-
-                        (SELECT `tabSales Order Item`.`base_net_rate`
-                        FROM `tabSales Order Item`
-                        WHERE `tabSales Order Item`.`parent` = `tabSequencing Label`.`sales_order` 
-                        AND `tabSales Order Item`.`item_code` = `tabSequencing Label`.`item`
-                        LIMIT 1) AS `rate`,
-
-                        (SELECT `link_name` 
-                        FROM `tabDynamic Link` 
-                        WHERE `tabDynamic Link`.`link_doctype` = "Customer"
-                        AND `tabDynamic Link`.`parenttype`= "Contact"
-                        AND `tabDynamic Link`.`parent` = `tabSequencing Label`.`contact`) AS `customer`
-
-                    FROM `tabSequencing Label`
-                    WHERE `tabSequencing Label`.`status` IN ("unused", "submitted")
-                ) AS `base`
-            )  AS `raw`
-            WHERE TRUE
-            {company_condition}
-            GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`, ":", `raw`.`rate`, ":", `raw`.`territory`)
-        """
-
-        raw_data = frappe.db.sql(sql_query, as_dict=True)
-        average_selling_prices = calculate_average_selling_prices(raw_data)
-        summary = dict()
-
-        for d in raw_data:
-            if d['company'] is None and d['rate'] is None:
-                print(f"Need to identify unclear company assignments: {d=}")
-                details = identify_unclear_company_assignments(filters)
-                sum = 0
-
-                for det in details:
-                    if det['count'] is None:
-                        continue
-                    sum += det['count']
-                    if det['company'] is None:
-                        # no company assignment possible -> ignore according to DSc
-                        print(f"No company assignment possible: {det=}")
-                        continue
-                    company_item_dest = (det['company'], det['item_code'], None)
-                    rate = get_rate(company_item_dest, average_selling_prices)
-                    if rate is None:
-                        continue                    
-                    summary[company_item_dest] = {'qty': det['count'], 'sum': det['count'] * rate}
-
-                if sum != d.count:
-                    msg = f"Mismatch in the number of Labels without rate and company (no Sales Order): {d['count']=} but {sum=}", 'label_accounting.get_data'
-                    frappe.log_error(msg)
-                    print(msg)
-                continue
-
-            if d['rate'] is None:
-                print(f"d.rate is None: {d=}")
-            
-            # Distinguish territory only for Microsynth Seqlab GmbH
-            if d['company'] == 'Microsynth Seqlab GmbH':
-                if 'Germany' in d['territory'] or 'Göttingen' in d['territory']:
-                    destination = 'DE'
-                elif 'France' in d['territory'] or d['territory'] == 'Austria' or d['territory'] == 'Rest of Europe':
-                    destination = 'Europe'  # without DE and CH
-                elif d['territory'] == 'Rest of the World':
-                    destination = 'ROW'
-                else:
-                    print(f"This should be a mistake: {d=}")
-                    if 'Switzerland' in d['territory']:
-                        destination = 'CH'
-                    else:
-                        # This should never happen
-                        destination = None
-                company_item_dest = (d['company'], d['item_code'], destination)
-            else:
-                company_item_dest = (d['company'], d['item_code'], None)
-
-            if d['rate'] == 0 or d['rate'] is None:
-                rate = get_rate(company_item_dest, average_selling_prices)
-                if rate is None:
-                    continue
-            else:
-                rate = d['rate']
-
-            if company_item_dest not in summary:
-                summary[company_item_dest] = {'qty': d['count'], 'sum': d['count'] * rate}
-            else:
-                summary[company_item_dest]['qty'] += d['count']
-                summary[company_item_dest]['sum'] += d['count'] * rate
-
-        for company_item_dest, qty_sum in summary.items():
-            entry = {
-                "company": company_item_dest[0],
-                "item_code": company_item_dest[1],
-                "qty": qty_sum['qty'],
-                "sum": qty_sum['sum'],
-                "currency": frappe.get_value("Company", company_item_dest[0], "default_currency"),
-                "destination": company_item_dest[2]
-            }
-            data.append(entry)
+    for company_item_dest, qty_sum in summary.items():
+        entry = {
+            "company": company_item_dest[0],
+            "item_code": company_item_dest[1],
+            "qty": qty_sum['qty'],
+            "valuation_rate": get_rate(company_item_dest, average_selling_prices),
+            "sum": qty_sum['sum'],
+            "currency": frappe.get_cached_value("Company", company_item_dest[0], "default_currency"),
+            "destination": company_item_dest[2]
+        }
+        data.append(entry)
+        
     return data
 
 
-def execute(filters=None):
+def execute(filters):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
-
-
-def parse_remaining_labels(filepath):
-    return
