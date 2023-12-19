@@ -3217,3 +3217,145 @@ def initialize_field_customer_credits():
             if counter % 100 == 0:
                 frappe.db.commit()
     frappe.db.commit()
+
+
+def check_remaining_labels(filepath):
+    """
+    exxpectted runtime: more than one hour
+
+    bench execute microsynth.microsynth.migration.check_remaining_labels --kwargs "{'filepath': '/mnt/erp_share/Sequencing/Label_Sync/SeqBlattExport_2023-12-18/'}"
+    """
+    total_with_date = total_no_date = total_found = total_not_found = total_multiple = 0
+    for comp in ('BAL', 'GOE', 'LYO'):
+        full_path = f"{filepath}{comp}/remaining.tab"
+        with_date = no_date = counter = found = not_found = multiple = 0
+        with open(full_path, 'r', encoding = "ISO-8859-1") as file:
+            row_count = sum(1 for row in file)
+            file.seek(0)  # go to the start of the file again
+            csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter='\t')  # replace NULL bytes (throwing an error)
+            for line in csv_reader:
+                counter += 1
+                if len(line) != 7:
+                    print(f"{len(line)=}; {line=}; skipping")
+                    continue
+                unused_labels = line[-1].split('\v')
+                if line[0]:
+                    with_date += len(unused_labels)
+                else:
+                    no_date += len(unused_labels)
+                
+                for label_code in unused_labels:
+                    # get all Sequencing Labels with Label Barcode == label_code
+                    labels = frappe.get_all("Sequencing Label", filters=[['label_id', '=', label_code]], fields=['name'])
+                    if len(labels) == 1:
+                        found += 1
+                    elif len(labels) == 0:
+                        not_found += 1
+                    elif len(labels) > 1:
+                        found += 1
+                        multiple += 1
+                
+                if counter % 100 == 0:
+                    print(f"Already processed {round((counter/row_count) * 100, 2)} % ({counter}/{row_count}) of lines of {full_path}: {found=}, {not_found=}, {with_date=}, {no_date=}, {multiple=}")
+        print(f"{comp}: {counter=}, {with_date=}, {no_date=}, {found=}, {not_found=}, {multiple=}")
+        total_with_date += with_date
+        total_no_date += no_date
+        total_found += found
+        total_not_found += not_found
+        total_multiple += multiple
+    print(f"{total_with_date=}, {total_no_date=}, {total_found=}, {total_not_found=}, {total_multiple=}")
+
+
+def check_used_plate_labels(filepath):
+    """
+    expected runtime: a few seconds
+
+    bench execute microsynth.microsynth.migration.check_used_plate_labels --kwargs "{'filepath': '/mnt/erp_share/Sequencing/Label_Sync/SeqBlattExport_2023-12-18/'}"
+    """
+    total_found = total_not_found = total_status_mismatch = total_multiple = 0
+    for comp in ('BAL', 'GOE', 'LYO'):
+        full_path = f"{filepath}{comp}/plates.tab"
+        with open(full_path, 'r', encoding = "ISO-8859-1") as file:
+            counter = found = not_found = status_mismatch = multiple = 0
+            csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter='\t')  # replace NULL bytes (throwing an error)
+            for line in csv_reader:
+                counter += 1
+                if len(line) != 4:
+                    print(f"{len(line)=}; {line=}; skipping")
+                    continue
+                order_nr = line[0]
+                if order_nr.startswith("H"):
+                    continue
+                if line[3] != '99':  # int(line[3]) < 30
+                    continue
+
+                labels = frappe.get_all("Sequencing Label", filters=[['label_id', '=', line[1]]], fields=['name', 'status'])
+                if len(labels) == 1:
+                    found += 1
+                    if labels[0]['status'] != 'received':
+                        status_mismatch += 1
+                        #print(f"Label not marked as used in the ERP: {line=}, status={labels[0]['status']}")
+                else:
+                    if len(labels) > 1:
+                        found += 1
+                        #print(f"Found more than one Sequencing Label in the ERP: {line=}")
+                        multiple += 1
+                    else:
+                        not_found += 1
+                        #print(f"Sequencing Label not found in the ERP: {line=}")
+
+        print(f"{comp=}: {counter=}; {found=}; {not_found=}, {status_mismatch=}, {multiple=}")
+        total_found += found
+        total_not_found += not_found
+        total_status_mismatch += status_mismatch
+        total_multiple += multiple
+    print(f"{total_found=}, {total_not_found=}, {total_status_mismatch=}, {total_multiple=}")
+
+
+def check_used_tube_labels(filepath):
+    """
+    expected runtime: a few minutes
+
+    bench execute microsynth.microsynth.migration.check_used_tube_labels --kwargs "{'filepath': '/mnt/erp_share/Sequencing/Label_Sync/SeqBlattExport_2023-12-18/'}"
+    """
+    # TODO: Reduce code duplication with the two previous functions
+    total_found = total_not_found = total_status_mismatch = total_multiple = 0
+    for comp in ('BAL', 'GOE', 'LYO'):
+        full_path = f"{filepath}{comp}/tubes.tab"
+        with open(full_path, 'r', encoding = "ISO-8859-1") as file:
+            counter = found = not_found = status_mismatch = multiple = 0
+            row_count = sum(1 for row in file)
+            file.seek(0)  # go to the start of the file again
+            csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter='\t')  # replace NULL bytes (throwing an error)
+            for line in csv_reader:
+                counter += 1
+                if len(line) != 5:
+                    print(f"{len(line)=}; {line=}; skipping")
+                    continue
+                if line[3] == '' or int(line[3]) < 30:
+                    continue
+
+                labels = frappe.get_all("Sequencing Label", filters=[['label_id', '=', line[0]]], fields=['name', 'status'])
+                if len(labels) == 1:
+                    found += 1
+                    if labels[0]['status'] != 'received':
+                        status_mismatch += 1
+                        #print(f"Label not marked as used in the ERP: {line=}, status={labels[0]['status']}")
+                else:
+                    if len(labels) > 1:
+                        found += 1
+                        #print(f"Found more than one Sequencing Label in the ERP: {line=}")
+                        multiple += 1
+                    else:
+                        not_found += 1
+                        #print(f"Sequencing Label not found in the ERP: {line=}")
+
+                if counter % 2000 == 0:
+                    print(f"Already processed {round((counter/row_count) * 100, 2)} % ({counter}/{row_count}) Labels: {comp=}: {counter=}; {found=}; {not_found=}, {status_mismatch=}, {multiple=}")
+
+        print(f"{comp=}: {found=}; {not_found=}, {status_mismatch=}, {multiple=}")
+        total_found += found
+        total_not_found += not_found
+        total_status_mismatch += status_mismatch
+        total_multiple += multiple
+    print(f"{total_found=}, {total_not_found=}, {total_status_mismatch=}, {total_multiple=}")
