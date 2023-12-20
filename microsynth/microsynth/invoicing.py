@@ -19,7 +19,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
-from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
+from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit, get_total_credit_without_project
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -110,7 +110,10 @@ def make_collective_invoices(delivery_notes):
                     prod_type_fit = d_product_type == product_type or (d_product_type != 'Project' and product_type == '')
                     if taxes_and_charges == tax and prod_type_fit:
                         total = frappe.get_value("Delivery Note", d, "total")
-                        credit = get_total_credit(customer, company, product_type)
+                        if product_type == 'Project':
+                            credit = get_total_credit(customer, company, product_type)
+                        else:
+                            credit = get_total_credit_without_project(customer, company)
                         customer_credits = frappe.get_value("Customer", customer, "customer_credits")
                         if credit is not None and customer_credits == 'Credit Account':
                             # there is some credit - check if it is sufficient
@@ -152,7 +155,7 @@ def make_carlo_erba_invoices(company):
 def async_create_invoices(mode, company, customer):
     """
     run 
-    bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG' }"
+    bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
 
     # # Not implemented exceptions to catch cases that are not yet developed
@@ -171,7 +174,7 @@ def async_create_invoices(mode, company, customer):
 
         count = 0
         for dn in all_invoiceable:
-            try:
+            #try:
                 # # TODO: implement for other export categories
                 # if dn.region != "CH":
                 #     continue
@@ -205,7 +208,10 @@ def async_create_invoices(mode, company, customer):
                         continue
 
                 # check credit
-                credit = get_total_credit(dn.get('customer'), company, dn.get('product_type'))
+                if dn.get('product_type') == 'Project':
+                    credit = get_total_credit(dn.get('customer'), company, dn.get('product_type'))
+                else:
+                    credit = get_total_credit_without_project(dn.get('customer'), company)
                 customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
                 if credit is not None and customer_credits == 'Credit Account':
                     delivery_note =  dn.get('delivery_note')
@@ -261,8 +267,8 @@ def async_create_invoices(mode, company, customer):
                             count += 1
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
-            except Exception as err:
-                frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+            # except Exception as err:
+            #     frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)

@@ -36,7 +36,7 @@ def get_total_credit(customer, company, product_type):
     Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
 
     Run
-    bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
+    bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG', 'product_type': 'Project' }"
     """
     credits = get_available_credits(customer, company, product_type)
 
@@ -45,6 +45,29 @@ def get_total_credit(customer, company, product_type):
 
     total = 0
     for credit in credits:
+        if not 'outstanding' in credit: 
+            continue
+        total = total + credit['outstanding']
+    return total
+
+
+def get_total_credit_without_project(customer, company):
+    """
+    Return the total credit amount available to a customer for the specified company excluding credits with product type project.
+    Returns None if there is no credit account.
+
+    Run
+    bench execute microsynth.microsynth.credits.get_total_credit_without_project --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
+    """
+    credits = get_available_credits(customer, company, None)
+
+    if len(credits) == 0:
+        return None
+
+    total = 0
+    for credit in credits:
+        if credit['product_type'] == "Project":
+            continue
         if not 'outstanding' in credit: 
             continue
         total = total + credit['outstanding']
