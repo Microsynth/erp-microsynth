@@ -174,7 +174,7 @@ def async_create_invoices(mode, company, customer):
 
         count = 0
         for dn in all_invoiceable:
-            #try:
+            try:
                 # # TODO: implement for other export categories
                 # if dn.region != "CH":
                 #     continue
@@ -267,8 +267,8 @@ def async_create_invoices(mode, company, customer):
                             count += 1
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
-            # except Exception as err:
-            #     frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+            except Exception as err:
+                frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)
