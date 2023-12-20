@@ -17,7 +17,6 @@ def get_alternative_tax_template(tax_template, date):
     """.format(tax_template = tax_template, current_date = date)
 
     alternative_templates = frappe.db.sql(query, as_dict=True)
-    # frappe.throw(len(alternative_templates))
     if len(alternative_templates) > 0:
         return alternative_templates[0].alternative_tax_template
     else:
@@ -48,7 +47,6 @@ def set_alternative_tax_template(self, event):
         template_name = get_alternative_tax_template(
             tax_template = self.taxes_and_charges,
             date = self.posting_date)
-        # frappe.throw(template_name)
     else:
         frappe.log_error (f"Cannot process doctype '{self.doctype}'", "taxes.set_alternative_tax_template")
         return
