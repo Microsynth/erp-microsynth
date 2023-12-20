@@ -4,6 +4,28 @@
 
 frappe.query_reports["Commission Calculator"] = {
 	"filters": [
-
+		{
+            "fieldname": "country",
+            "label": __("Country"),
+            "fieldtype": "Link",
+            "options": "Country",
+            "reqd": 1
+        },
+		{
+            "fieldname": "factor",
+            "label": __("Commission Factor"),
+            "fieldtype": "Float",
+            "reqd": 1
+        },
+		{
+            "fieldname": "from_date",
+            "label": __("From date"),
+            "fieldtype": "Date"
+        },
+        {
+            "fieldname": "to_date",
+            "label": __("To date"),
+            "fieldtype": "Date"
+        }
 	]
 };
