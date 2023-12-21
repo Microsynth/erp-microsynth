@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils import flt
+from datetime import datetime
+
 
 def get_columns(filters):
     return [
@@ -56,7 +58,8 @@ def get_rate(company_item_dest, average_selling_prices):
         rates = frappe.get_all("Item Price", filters=filters, fields=['price_list_rate'])
         if len(rates) != 1:
             msg = f"{len(rates)=}: There seems to be none or multiple Item Prices with {filters=} -> Unable to take rate for Label Accounting"
-            frappe.log_error(msg, 'label_accounting.get_data')
+            if len(rates) > 1:
+                frappe.log_error(msg, 'label_accounting.get_data')
             print(msg)
             return None
         if float(rates[0].price_list_rate) < 0.01:
@@ -249,3 +252,25 @@ def get_data(filters):
 def execute(filters):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+
+def create_csvs(path):
+    """
+    Create one CSV file per Company except Ecogenics.
+    Save the CSV files at the given path.
+    Should be run by a cronjob once per month.
+
+    bench execute microsynth.microsynth.report.label_accounting.label_accounting.create_csvs --kwargs "{'path': '/mnt/erp_share/label_accounting/'}"
+    """
+    companies = frappe.get_all("Company", fields=['name'])
+    for comp in companies:
+        if 'Ecogenics' in comp['name']:
+            continue  # Ecogenics does not sell its own labels
+        filters = {'company': comp['name']}
+        data = get_data(filters)
+        datetime_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        filepath = path + datetime_str + '_label_accounting_' + (comp['name'].replace(' ', '_')) + '.csv'
+        with open(filepath, 'x') as file:  # do not execute the function more than once per minute
+            file.write('company;item_code;qty;sum;currency;destination\n')  # header
+            for entry in data:
+                file.write(f"{entry['company']};{entry['item_code']};{entry['qty']};{round(entry['sum'], 2)};{entry['currency']};{entry['destination']}\n")
