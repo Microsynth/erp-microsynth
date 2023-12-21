@@ -54,7 +54,7 @@ def get_data(filters, short=False):
             `raw`.`currency` AS `currency`
         FROM (
             SELECT
-                IF(`tabSales Invoice`.`is_return`=0,
+                IF(`tabSales Invoice`.`is_return` = 0,
                     "Credit",
                     "Allocation"
                     ) AS `type`,
@@ -65,7 +65,7 @@ def get_data(filters, short=False):
                 SUM(`tabSales Invoice Item`.`net_amount`) AS `net_amount`,
                 `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
-                IF(`tabSales Invoice`.`is_return`=0,
+                IF(`tabSales Invoice`.`is_return` = 0,
                     `tabSales Invoice Item`.`name`,
                     `tabSales Invoice`.`return_against`
                 ) AS `reference`,
@@ -74,7 +74,6 @@ def get_data(filters, short=False):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`is_return` = 0
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 {conditions}
@@ -156,7 +155,6 @@ def get_data(filters, short=False):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`is_return` = 0
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 {conditions}
 
