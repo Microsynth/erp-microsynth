@@ -8,13 +8,13 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 150 },
+        #{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 150 },
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125 },
         #{"label": _("Payment Entry"), "fieldname": "payment_entry", "fieldtype": "Link", "options": "Payment Entry", "width": 125 },
-        {"label": _("Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "options": "currency", "width": 125 },
+        {"label": _("Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "options": "currency", "width": 100 },
         {"label": _("Provision Fraction"), "fieldname": "provision_fraction", "fieldtype": "Float", "width": 125 },
-        {"label": _("Provision Base Amount"), "fieldname": "provision_base_amount", "fieldtype": "Currency", "options": "currency", "width": 125 },
-        {"label": _("Commission"), "fieldname": "commission", "fieldtype": "Currency", "options": "currency", "width": 125 },
+        {"label": _("Provision Base Amount"), "fieldname": "provision_base_amount", "fieldtype": "Currency", "options": "currency", "width": 150 },
+        {"label": _("Commission"), "fieldname": "commission", "fieldtype": "Currency", "options": "currency", "width": 100 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70 }
     ]
 
@@ -26,7 +26,8 @@ def get_data(filters):
             `provision_base`.`allocated_amount`,
             `provision_base`.`currency`,
             `provision_base`.`provision_fraction`,
-            (`provision_base`.`allocated_amount` * `provision_base`.`provision_fraction`) AS `provision_base_amount`
+            (`provision_base`.`allocated_amount` * `provision_base`.`provision_fraction`) AS `provision_base_amount`,
+            (`provision_base`.`allocated_amount` * `provision_base`.`provision_fraction` * ({filters.get('factor')} / 100)) AS `commission`
         FROM
         (
             SELECT
