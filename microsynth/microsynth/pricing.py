@@ -198,7 +198,7 @@ def change_rates_from_csv_files(user, file_path):
     if not frappe.db.exists("User", user):
         print(f"User '{user}' does not exist. Please check User and restart. Going to return.")
         return
-    for currency in ['sek', 'usd', 'eur']:  # , 'chf'
+    for currency in ['chf', 'sek', 'usd', 'eur']:
         print(f"\n########## Start with {currency} ...")
         change_rates_from_csv(f"{file_path}/{currency}.csv", user)
 
