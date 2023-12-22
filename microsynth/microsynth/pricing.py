@@ -21,7 +21,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         reference_rate = float(reference_rate)
         new_reference_rate = float(new_reference_rate)
     except ValueError:
-        msg = f"Cannot convert '{reference_rate}' or '{new_reference_rate}' to a float. Going to return."
+        msg = f"Cannot convert '{reference_rate}' or '{new_reference_rate}' to a float ({reference_price_list_name=}, {item_code=}, {min_qty=}). Going to return."
         print(msg)
         frappe.log_error(msg, "pricing_configurator.change_reference_rate")
         return negative_discount_warnings
@@ -38,13 +38,13 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         return negative_discount_warnings
 
     if abs(current_reference_rate - reference_rate) > 0.0001:
-        msg = f"{current_reference_rate=} in the ERP is unequals given {reference_rate=}. Going to return."
+        msg = f"{current_reference_rate=} in the ERP is unequals given {reference_rate=} ({reference_price_list_name=}, {item_code=}, {min_qty=}). Going to return."
         print(msg)
         frappe.log_error(msg, "pricing_configurator.change_reference_rate")
         return negative_discount_warnings
     
     if frappe.get_value('Item', item_code, 'disabled'):
-        msg = f"Item {item_code} is disabled. Unable to change Item Prices. Going to return."
+        msg = f"Item {item_code} is disabled. Unable to change Item Prices with {min_qty=} for reference price list '{reference_price_list_name}'. Going to return."
         print(msg)
         frappe.log_error(msg, "pricing_configurator.change_reference_rate")
         return negative_discount_warnings
@@ -198,7 +198,7 @@ def change_rates_from_csv_files(user, file_path):
     if not frappe.db.exists("User", user):
         print(f"User '{user}' does not exist. Please check User and restart. Going to return.")
         return
-    for currency in ['chf', 'sek', 'usd', 'eur']:
+    for currency in ['sek', 'usd', 'eur']:  # 'chf',
         print(f"\n########## Start with {currency} ...")
         change_rates_from_csv(f"{file_path}/{currency}.csv", user)
 
