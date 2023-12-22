@@ -31,6 +31,11 @@ def set_alternative_tax_template(self, event):
     triggered by document events and called through hooks
     """
 
+    if not self.taxes_and_charges:
+        # Do not try to change taxes_and_charges if it is not set at all.
+        # Webshop.get_item_prices creates a temporaty sales order without tax template. 
+        return
+
     if self.doctype == "Sales Order":
         template_name = get_alternative_tax_template(
             tax_template = self.taxes_and_charges, 

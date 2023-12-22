@@ -114,15 +114,15 @@ jenv = {
 doc_events = {
     "Payment Reminder": {
         "after_insert": "microsynth.microsynth.payment_reminder.extend_values"
-    # },
-    # "Sales Order": {
-    #     "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
-    # },
-    # "Delivery Note": {
-    #     "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
-    # },
-    # "Sales Invoice": {
-    #     "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+    },
+    "Sales Order": {
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+    },
+    "Delivery Note": {
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+    },
+    "Sales Invoice": {
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     }
  }
 
