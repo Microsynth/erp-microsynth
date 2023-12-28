@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2023, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 import os
@@ -7,7 +7,7 @@ import re
 import frappe
 import json
 from datetime import datetime
-from frappe.utils import flt
+from frappe.utils import flt, rounded
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 
@@ -1522,13 +1522,15 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
 
     # other currencies: currency deviation
     jv.set_total_debit_credit()
-    currency_deviation = round(jv.total_debit - jv.total_credit, 2)
-    jv.append('accounts', {
-        'account': currency_deviation_account,
-        'credit': currency_deviation
-    })
+    currency_deviation = rounded(jv.total_debit - jv.total_credit, 2)
+    if currency_deviation != 0:
+        jv.append('accounts', {
+            'account': currency_deviation_account,
+            'credit': currency_deviation,
+            'account_currency': frappe.get_cached_value("Account", currency_deviation_account, "account_currency")
+        })
 
-    jv.set_total_debit_credit()
+        jv.set_total_debit_credit()
     # insert and submit
     jv.flags.ignore_validate = True
     jv.insert()
