@@ -185,6 +185,7 @@ def async_create_invoices(mode, company, customer):
 
                 if cint(dn.get('is_punchout') == 1) and mode != "Electronic":
                     # All punchout invoices must be send electronically
+                    frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(dn.get('delivery_note')), "invoicing.async_create_invoices")
                     continue
 
                 # process punchout orders separately
@@ -205,6 +206,7 @@ def async_create_invoices(mode, company, customer):
                         continue
                     else:
                         # TODO implement punchout orders
+                        frappe.log_error("Cannot invoice {0}: \nThe punchout shop '{1}' is not implemented for invoicing".format(dn.get('delivery_note'), punchout_shop), "invoicing.async_create_invoices")
                         continue
 
                 # check credit
@@ -284,6 +286,7 @@ def async_create_invoices(mode, company, customer):
 
             # TODO process other invoicing methods
             if dn.get('invoicing_method') not in  ["Email", "Post"]:
+                frappe.log_error("Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), "invoicing.async_create_invoices")
                 continue
 
             if (cint(dn.get('collective_billing')) == 1 and 
