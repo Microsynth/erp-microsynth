@@ -36,7 +36,12 @@ def set_alternative_tax_template(self, event):
         # Webshop.get_item_prices creates a temporaty sales order without tax template. 
         return
 
-    if self.doctype == "Sales Order":
+    if self.doctype == "Quotation":
+        template_name = get_alternative_tax_template(
+            tax_template = self.taxes_and_charges, 
+            date = self.transaction_date )
+
+    elif self.doctype == "Sales Order":
         template_name = get_alternative_tax_template(
             tax_template = self.taxes_and_charges, 
             date = self.delivery_date)
