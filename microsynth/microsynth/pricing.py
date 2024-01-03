@@ -14,6 +14,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     on each customer price list referring to the given reference price list.
     Thereby, the existing discounts are kept and the new rate is calculated
     by applying this calculated discount to the new reference rate.
+    Exception: If the reference rate is 0, no discount can be computed and the general discount is used instead.
     """
     start_ts = datetime.now()
     negative_discount_warnings = ""
@@ -72,8 +73,18 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
             #msg = f"Unable to change customer Price List rate for item {item_code} with {min_qty=} on Price List '{price_list['name']}' since {reference_rate=} is too close to 0 to divide by it for computing the current discount"
             #msg = f"WARNING: {reference_rate=} -> Customer Price List rate is set to 0"
             #frappe.log_error(msg, 'pricing_configurator.change_reference_rate')
-            set_rate(item_code, price_list['name'], min_qty, 0)
-            counter += 1
+            try:
+                general_discount = frappe.get_value("Price List", price_list['name'], "general_discount")
+                new_customer_rate = ((100 - general_discount) / 100) * new_reference_rate
+                new_customer_rate = round(new_customer_rate, 4)
+                set_rate(item_code, price_list['name'], min_qty, new_customer_rate)
+            except Exception as e:
+                msg = f"Got the following exception when trying to save the new customer rate {new_customer_rate} for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
+                print(msg)
+                frappe.log_error(msg, 'pricing_configurator.change_reference_rate')
+            else:
+                changes += f"\n{price_list['name']};{customer_rate};{new_customer_rate}"
+                counter += 1
             continue
 
         discount = (reference_rate - customer_rate) / reference_rate * 100
