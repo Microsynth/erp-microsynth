@@ -123,41 +123,45 @@ def check_sales_order_completion():
     for sales_order in open_sequencing_sales_orders:
 
         if not validate_sales_order(sales_order['name']):
+            # validate_sales_order writes to the error log in case of an issue
             continue
 
-        # check status of labels assigned to each sample
-        pending_samples = frappe.db.sql("""
-            SELECT 
-                `tabSample`.`name`
-            FROM `tabSample Link`
-            LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
-            LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
-            WHERE
-                `tabSample Link`.`parent` = "{sales_order}"
-                AND `tabSample Link`.`parenttype` = "Sales Order"
-                AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
-            """.format(sales_order=sales_order['name']), as_dict=True)
+        try:
+            # check status of labels assigned to each sample
+            pending_samples = frappe.db.sql("""
+                SELECT 
+                    `tabSample`.`name`
+                FROM `tabSample Link`
+                LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
+                WHERE
+                    `tabSample Link`.`parent` = "{sales_order}"
+                    AND `tabSample Link`.`parenttype` = "Sales Order"
+                    AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
+                """.format(sales_order=sales_order['name']), as_dict=True)
 
-        if len(pending_samples) == 0:
-            # all processed: create delivery
-            customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
-            customer = frappe.get_doc("Customer", customer_name)
+            if len(pending_samples) == 0:
+                # all processed: create delivery
+                customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
+                customer = frappe.get_doc("Customer", customer_name)
 
-            if customer.disabled:
-                frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
-                return
-            
-            ## create delivery note (leave on draft: submitted in a batch process later on)
-            dn_content = make_delivery_note(sales_order['name'])
-            dn = frappe.get_doc(dn_content)
-            company = frappe.get_value("Sales Order", sales_order, "company")
-            dn.naming_series = get_naming_series("Delivery Note", company)
+                if customer.disabled:
+                    frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
+                    return
+                
+                ## create delivery note (leave on draft: submitted in a batch process later on)
+                dn_content = make_delivery_note(sales_order['name'])
+                dn = frappe.get_doc(dn_content)
+                company = frappe.get_value("Sales Order", sales_order, "company")
+                dn.naming_series = get_naming_series("Delivery Note", company)
 
-            # insert record
-            dn.flags.ignore_missing = True
-            dn.insert(ignore_permissions=True)
-            frappe.db.commit()
-            
+                # insert record
+                dn.flags.ignore_missing = True
+                dn.insert(ignore_permissions=True)
+                frappe.db.commit()
+
+        except Exception as err:
+            frappe.log_error("Cannot create a Delivery Note for Sales Order '{0}': \n{1}".format(sales_order['name'], err), "seqblatt.check_sales_order_completion")
     return
 
 
@@ -206,7 +210,7 @@ def check_submit_delivery_note(delivery_note):
         delivery_note.submit()
 
     except Exception as err:
-        frappe.log_error("Cannot invoice Delivery Note '{0}': \n{1}".format(delivery_note.name, err), "invoicing.async_create_invoices")
+        frappe.log_error("Cannot process Delivery Note '{0}': \n{1}".format(delivery_note.name, err), "seqblatt.check_submit_delivery_note")
 
 
 def submit_delivery_notes():
