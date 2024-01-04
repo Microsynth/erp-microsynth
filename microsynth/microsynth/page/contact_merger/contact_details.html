@@ -1,0 +1,26 @@
+<table class="table" style="width: 100%; ">
+    <thead>
+        <tr>
+            <td>Field</td>
+            <td>Contact 1</td>
+            <td>Contact 2</td>
+        </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>First name</td>
+        <td><button class="btn btn-sm btn-primary form_btn" id="btn_first_name_1">{{ contact_1.first_name or "-" }}</button></td>
+        <td><button class="btn btn-sm form_btn" id="btn_first_name_2">{{ contact_2.first_name or "-"  }}</button></td>
+    </tr>
+    <tr>
+        <td>Last name</td>
+        <td><button class="btn btn-sm btn-primary form_btn" id="btn_last_name_1">{{ contact_1.last_name or "-"  }}</button></td>
+        <td><button class="btn btn-sm form_btn" id="btn_last_name_2">{{ contact_2.last_name or "-"  }}</button></td>
+    </tr>
+    <tr>
+        <td>Email</td>
+        <td><button class="btn btn-sm btn-primary form_btn" id="btn_email_1">{{ contact_1.email_id or "-"  }}</button></td>
+        <td><button class="btn btn-sm form_btn" id="btn_email_2">{{ contact_2.email_id or "-"  }}</button></td>
+    </tr>
+    </tbody>
+</table>
