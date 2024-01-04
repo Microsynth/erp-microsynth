@@ -6,6 +6,7 @@
 #
 
 import frappe
+import json
 
 @frappe.whitelist()
 def get_contact_details(contact_1=None, contact_2=None):
@@ -19,3 +20,29 @@ def get_contact_details(contact_1=None, contact_2=None):
     
     return {'data': data, 'html': html}
     
+@frappe.whitelist()
+def merge_contacts(contact_1, contact_2, values):
+    if not frappe.db.exists("Contact", contact_1):
+        return {'error': "Contact 1 not found"}
+    if not frappe.db.exists("Contact", contact_2):
+        return {'error': "Contact 2 not found"}
+        
+    contact = frappe.get_doc("Contact", contact_1)
+    
+    values = json.loads(values)         # parse string to dict
+    contact.update(values)
+    
+    contact.save()
+    
+    if frappe.db.exists("Contact", contact_2):
+        # make sure to replace all traces to new contact
+        # TODO
+        #frappe.db.delete("Contact", contact_2)
+        contact2 = frappe.get_doc("Contact", contact_2)
+        contact2.status = "Disabled"
+        contact2.save()
+        
+    frappe.db.commit()
+    
+    return
+

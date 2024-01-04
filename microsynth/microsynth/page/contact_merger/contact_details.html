@@ -1,3 +1,4 @@
+
 <table class="table" style="width: 100%; ">
     <thead>
         <tr>
@@ -9,18 +10,18 @@
     <tbody>
     <tr>
         <td>First name</td>
-        <td><button class="btn btn-sm btn-primary form_btn" id="btn_first_name_1">{{ contact_1.first_name or "-" }}</button></td>
-        <td><button class="btn btn-sm form_btn" id="btn_first_name_2">{{ contact_2.first_name or "-"  }}</button></td>
+        <td><button class="btn btn-sm {% if contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_1" data-fieldname="first_name" data-value="{{ contact_1.first_name }}">{{ contact_1.first_name or "-" }}</button></td>
+        <td><button class="btn btn-sm {% if not contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_2" data-fieldname="first_name" data-value="{{ contact_2.first_name }}">{{ contact_2.first_name or "-" }}</button></td>
     </tr>
     <tr>
         <td>Last name</td>
-        <td><button class="btn btn-sm btn-primary form_btn" id="btn_last_name_1">{{ contact_1.last_name or "-"  }}</button></td>
-        <td><button class="btn btn-sm form_btn" id="btn_last_name_2">{{ contact_2.last_name or "-"  }}</button></td>
+        <td><button class="btn btn-sm {% if contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_1" data-fieldname="last_name" data-value="{{ contact_1.last_name }}">{{ contact_1.last_name or "-" }}</button></td>
+        <td><button class="btn btn-sm {% if not contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_2" data-fieldname="last_name" data-value="{{ contact_2.last_name }}">{{ contact_2.last_name or "-" }}</button></td>
     </tr>
     <tr>
         <td>Email</td>
-        <td><button class="btn btn-sm btn-primary form_btn" id="btn_email_1">{{ contact_1.email_id or "-"  }}</button></td>
-        <td><button class="btn btn-sm form_btn" id="btn_email_2">{{ contact_2.email_id or "-"  }}</button></td>
+        <td><button class="btn btn-sm {% if contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_1" data-fieldname="email_id" data-value="{{ contact_1.email_id }}">{{ contact_1.email_id or "-" }}</button></td>
+        <td><button class="btn btn-sm {% if not contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_2" data-fieldname="email_id" data-value="{{ contact_2.email_id }}">{{ contact_2.email_id or "-" }}</button></td>
     </tr>
     </tbody>
 </table>
