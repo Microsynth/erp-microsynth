@@ -1925,6 +1925,51 @@ def set_territory_for_customers():
     return
 
 
+def update_territories_and_sales_managers():
+    """
+    Update the territories and sales managers for all Customers whose current territory is in France or Switzerland
+
+    Workflow / TODOs:
+    0) Update function determine_territory in utils.py and test the new code
+    1) In the ERP frontend:
+        - Create new Territory 'Paris'
+        - Rename 'Paris (North)' to 'France (without Paris and Lyon)' and rename 'France (South)' to 'Lyon'
+        - Set correct Sales Managers on Territories
+    2) On the server / backend:
+        - Run this function (takes a few minutes)
+
+    run 
+    bench execute microsynth.microsynth.migration.update_territories_and_sales_managers
+    """    
+    from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
+    
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name'])
+
+    for i, cust in enumerate(customers):
+        try:
+            if i % 100 == 0:
+                print(f"Already processed {i}/{len(customers)} Customers.")
+                frappe.db.commit()
+            c = frappe.get_doc("Customer", cust)
+            if not ('France' in c.territory or 'Paris' in c.territory or 'Lyon' in c.territory or 'Switzerland' in c.territory):  # TODO: Move conditions to frappe.db.get_all call above
+                continue
+            address_id = get_first_shipping_address(c.name)
+            if not address_id:
+                continue
+            country = frappe.get_value("Address", address_id, "country")
+            if (country == "Switzerland" and not 'Switzerland' in c.territory) or (country == "France" and not 'France' in c.territory):
+                print(f"Customer '{c.customer_name}' ({c.name}) has Territory {c.territory} but the country of the first shipping address is {country}.")
+            territory = determine_territory(address_id)
+            c.territory = territory.name
+            c.account_manager = frappe.get_value("Territory", territory.name, "sales_manager")
+            c.save()
+        except Exception as err:
+            print(f"##### Could not update Territory for Customer '{c.name}': {err}")
+    frappe.db.commit()
+
+
 def remove_item_account_settings():
     """
     Set the debitor account
