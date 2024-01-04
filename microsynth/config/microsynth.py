@@ -371,6 +371,13 @@ def get_data():
                         "label": _("Sales Analytics"),
                         "doctype": "Sales Order",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Commission Calculator",
+                        "label": _("Commission Calculator"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
                     }
             ]
         },
