@@ -8,6 +8,18 @@ frappe.ui.form.on('Payment Entry', {
     },
     difference_amount(frm) {
         check_display_unallocated_warning(frm);
+    },
+    before_save: function(frm) {
+        // hotfix: check for < 0.01 allocations
+        if ((frm.doc.references) && (frm.doc.references.length > 0)) {
+            for (var i = 0; i < frm.doc.references.length; i++) {
+                var delta = Math.abs(frm.doc.references[i].outstanding_amount - frm.doc.references[i].allocated_amount);
+                console.log(i + ": delta=" + delta);
+                if ((delta < 0.01) && (delta > 0)) {
+                    frappe.model.set_value(frm.doc.references[i].doctype, frm.doc.references[i].name, 'allocated_amount', frm.doc.references[i].outstanding_amount);
+                }
+            }
+        }
     }
 });
 
