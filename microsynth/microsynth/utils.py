@@ -1075,23 +1075,26 @@ def set_customer_default_company_for_country(country):
 
 TERRITORIES = {
     'lukas.hartl@microsynth.at':                    'Austria',
-    'emeraude.hadjattou@microsynth.ch':             'France (North)',
-    'agnes.nguyen@microsynth.fr':                   'France (South)',
+    'sarah.fajon@microsynth.fr':                    'Paris',
+    'emeraude.hadjattou@microsynth.ch':             'Lyon',  # agnes.nguyen@microsynth.fr
+    'emeraude.hadjattou@microsynth.ch':             'France (without Paris and Lyon)',
     'roderick.lambertz@microsynth.seqlab.de':       'Germany (Northeast)',
     'georg.brenzel@microsynth.ch':                  'Germany (Northwest)',
     'atila.durmus@microsynth.seqlab.de':            'Germany (South)',
     'helena.schwellenbach@microsynth.seqlab.de':    'Göttingen',
     'rupert.hagg@microsynth.ch':                    'Rest of Europe',
     'elges.lardi@microsynth.ch':                    'Rest of the World',
-    'mathias.beysard@microsynth.ch':                'Switzerland (French-speaking)',
-    'andrea.sinatra@microsynth.ch':                 'Switzerland (German- and Italian-speaking)',
-}  # TODO: outdated
+    'philippe.suarez@microsynth.ch':                'Switzerland (French-speaking, Bern, Valais, Ticino)',
+    'kirsi.schindler@microsynth.ch':                'Switzerland (German-speaking)',
+}  # This dictionary is currently only used in the below function set_territory
 
 
 def set_territory(customer):
     """
     Set the territory according to the account manager if the current territory is 'All Territories'
     otherwise do not change the territory.
+    This function is currently only called in the function migration.set_territory_for_customers.
+    The function migration.set_territory_for_customers is currently called nowhere in this repository.
 
     run
     bench execute microsynth.microsynth.utils.set_territory --kwargs "{'customer': '8003'}"
@@ -1099,7 +1102,7 @@ def set_territory(customer):
 
     customer = frappe.get_doc("Customer", customer)
     if customer.territory == "All Territories":
-        customer.territory = TERRITORIES[customer.account_manager]
+        customer.territory = TERRITORIES[customer.account_manager]  # TODO: won't work due to duplicate key
         customer.save()
 
 
@@ -1127,10 +1130,25 @@ def determine_territory(address_id):
             frappe.log_error(f"Postal Code '{postal_code}' for {address_id=} in Switzerland does not contain any numbers.", "utils.determine_territory")
             return frappe.get_doc("Territory", "Switzerland")
         pc_int = int(numeric_postal_code)
-        if pc_int < 3000:
-            return frappe.get_doc("Territory", "Switzerland (French-speaking)")
+        if  pc_int < 4000 or \
+            6500 <= pc_int < 7000 or \
+            4536 <= pc_int <= 4539 or \
+            pc_int == 4564 or \
+            pc_int == 4704 or \
+            4900 <= pc_int <= 4902 or \
+            4911 <= pc_int <= 4914 or \
+            4916 <= pc_int <= 4917 or \
+            pc_int == 4919 or \
+            4922 <= pc_int <= 4924 or \
+            4932 <= pc_int <= 4938 or \
+            4942 <= pc_int <= 4944 or \
+            pc_int == 4950 or \
+            4952 <= pc_int <= 4955 or \
+            6083 <= pc_int <= 6086 or \
+            pc_int == 6197:
+            return frappe.get_doc("Territory", "Switzerland (French-speaking, Bern, Valais, Ticino)")
         else:
-            return frappe.get_doc("Territory", "Switzerland (German- and Italian-speaking)")
+            return frappe.get_doc("Territory", "Switzerland (German-speaking)")
 
     elif address.country == "Austria":
         return frappe.get_doc("Territory", "Austria")
@@ -1182,50 +1200,13 @@ def determine_territory(address_id):
         if numeric_postal_code == '':
             frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain any numbers.", "utils.determine_territory")
             return frappe.get_doc("Territory", "France")
-        pc_int = int(numeric_postal_code)
-        if   2000 <= pc_int <=  2999 or \
-             8000 <= pc_int <=  8999 or \
-            10000 <= pc_int <= 10999 or \
-            14000 <= pc_int <= 14999 or \
-            16000 <= pc_int <= 18999 or \
-            21000 <= pc_int <= 22999 or \
-            25000 <= pc_int <= 25999 or \
-            27000 <= pc_int <= 29999 or \
-            35000 <= pc_int <= 37999 or \
-            39000 <= pc_int <= 39999 or \
-            41000 <= pc_int <= 41999 or \
-            44000 <= pc_int <= 45999 or \
-            49000 <= pc_int <= 62999 or \
-            67000 <= pc_int <= 68999 or \
-            70000 <= pc_int <= 72999 or \
-            75000 <= pc_int <= 80999 or \
-            85000 <= pc_int <= 86999 or \
-            88000 <= pc_int <= 97999:
-            return frappe.get_doc("Territory", "France (North)")
-        elif 1000 <= pc_int <=  1999 or \
-             3000 <= pc_int <=  7999 or \
-             9000 <= pc_int <=  9999 or \
-            11000 <= pc_int <= 13999 or \
-            15000 <= pc_int <= 15999 or \
-            19000 <= pc_int <= 20999 or \
-            23000 <= pc_int <= 24999 or \
-            26000 <= pc_int <= 26999 or \
-            30000 <= pc_int <= 34999 or \
-            38000 <= pc_int <= 38999 or \
-            40000 <= pc_int <= 40999 or \
-            42000 <= pc_int <= 43999 or \
-            46000 <= pc_int <= 48999 or \
-            63000 <= pc_int <= 66999 or \
-            69000 <= pc_int <= 69999 or \
-            73000 <= pc_int <= 74999 or \
-            81000 <= pc_int <= 84999 or \
-            87000 <= pc_int <= 87999 or \
-            98000 <= pc_int <= 98999:
-            return frappe.get_doc("Territory", "France (South)")
+        pc_prefix = int(numeric_postal_code[:2])
+        if pc_prefix == 69:
+            return frappe.get_doc("Territory", "Lyon")
+        elif pc_prefix == 75 or pc_prefix == 92 or pc_prefix == 93 or pc_prefix == 94:
+            return frappe.get_doc("Territory", "Paris")
         else:
-            frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific French sales region. "
-                             f"Territory is set to France (parent Territory).", "utils.determine_territory")
-            return frappe.get_doc("Territory", "France")
+            return frappe.get_doc("Territory", "France (without Paris and Lyon)")
 
     elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
                              "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
@@ -1284,7 +1265,7 @@ def get_first_shipping_address(customer_id):
 def configure_territory(customer_id):
     """
     Update a customer given by its ID with a territory derived from
-    the shipping address if the territory is "All Territories" (default).
+    the shipping address if the territory is "All Territories" (default), empty or None.
 
     run
     bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '832739'}"

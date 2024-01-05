@@ -1929,15 +1929,6 @@ def update_territories_and_sales_managers():
     """
     Update the territories and sales managers for all Customers whose current territory is in France or Switzerland
 
-    Workflow / TODOs:
-    0) Update function determine_territory in utils.py and test the new code
-    1) In the ERP frontend:
-        - Create new Territory 'Paris'
-        - Rename 'Paris (North)' to 'France (without Paris and Lyon)' and rename 'France (South)' to 'Lyon'
-        - Set correct Sales Managers on Territories
-    2) On the server / backend:
-        - Run this function (takes a few minutes)
-
     run 
     bench execute microsynth.microsynth.migration.update_territories_and_sales_managers
     """    
@@ -1959,7 +1950,7 @@ def update_territories_and_sales_managers():
             if not address_id:
                 continue
             country = frappe.get_value("Address", address_id, "country")
-            if (country == "Switzerland" and not 'Switzerland' in c.territory) or (country == "France" and not 'France' in c.territory):
+            if (country == "Switzerland" and not 'Switzerland' in c.territory) or (country == "France" and not ('France' in c.territory or 'Lyon' in c.territory or 'Paris' in c.territory)):
                 print(f"Customer '{c.customer_name}' ({c.name}) has Territory {c.territory} but the country of the first shipping address is {country}.")
             territory = determine_territory(address_id)
             c.territory = territory.name

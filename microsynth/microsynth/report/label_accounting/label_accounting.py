@@ -205,7 +205,7 @@ def get_data(filters):
         if d['company'] == 'Microsynth Seqlab GmbH':
             if 'Germany' in d['territory'] or 'Göttingen' in d['territory']:
                 destination = 'DE'
-            elif 'France' in d['territory'] or d['territory'] == 'Austria' or d['territory'] == 'Rest of Europe':
+            elif 'France' in d['territory'] or 'Paris' in d['territory'] or 'Lyon' in d['territory'] or d['territory'] == 'Austria' or d['territory'] == 'Rest of Europe':
                 destination = 'Europe'  # without DE and CH
             elif d['territory'] == 'Rest of the World':
                 destination = 'ROW'
