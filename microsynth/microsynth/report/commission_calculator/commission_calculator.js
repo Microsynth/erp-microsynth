@@ -28,6 +28,12 @@ frappe.query_reports["Commission Calculator"] = {
             "label": __("To date"),
             "fieldtype": "Date",
             "reqd": 1
+        },
+        {
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company"
         }
 	]
 };
