@@ -2,8 +2,12 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import os
+import json
+from datetime import datetime
 import frappe
 from frappe import _
+from microsynth.microsynth.invoicing import pdf_export
 
 
 def get_columns(filters):
@@ -92,3 +96,34 @@ def get_data(filters):
 def execute(filters=None):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+
+@frappe.whitelist()
+def async_pdf_export(filters):
+    if type(filters) == str:
+        filters = json.loads(filters)
+        
+    frappe.enqueue(method=pdf_export_cc, queue='long', timeout=600, is_async=True, filters=filters)
+
+
+def pdf_export_cc(filters):
+    """
+    Exports the selected Sales Invoices as one PDF each to the specified path.
+    """
+    path_prefix = frappe.get_value("Microsynth Settings", "Microsynth Settings", "commission_calculator_export_path")
+
+    if not os.path.exists(path_prefix):
+        os.mkdir(path_prefix)
+    
+    path = path_prefix + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    raw_data = get_data(filters)
+    sales_invoices = []
+
+    for si in raw_data:
+        sales_invoices.append(si['sales_invoice'])
+
+    pdf_export(sales_invoices, path)

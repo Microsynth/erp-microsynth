@@ -35,5 +35,23 @@ frappe.query_reports["Commission Calculator"] = {
             "fieldtype": "Link",
             "options": "Company"
         }
-	]
+	],
+    "onload": (report) => {
+        report.page.add_inner_button( __("Export Sales Invoices"), function() {
+            pdf_export(report.get_values());
+        });
+    }
 };
+
+
+function pdf_export(filters) {
+    frappe.call({
+        'method': "microsynth.microsynth.report.commission_calculator.commission_calculator.async_pdf_export",
+        'args': {
+            'filters': filters
+        },
+        'callback': function(r) {
+            frappe.show_alert( __("Export ongoing ...") );
+        }
+    });
+}

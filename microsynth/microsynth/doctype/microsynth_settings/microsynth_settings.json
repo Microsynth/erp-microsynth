@@ -13,12 +13,13 @@
   "ariba_id",
   "ariba_secret",
   "paynet_id",
-  "col_invoicing",
   "invoice_printer",
+  "col_invoicing",
   "ariba_cxml_export_path",
   "gep_cxml_export_path",
   "paynet_export_path",
   "carlo_erba_export_path",
+  "commission_calculator_export_path",
   "sec_credits",
   "credit_item",
   "sec_datev",
@@ -147,10 +148,15 @@
    "fieldname": "webshop_url",
    "fieldtype": "Data",
    "label": "Webshop URL"
+  },
+  {
+   "fieldname": "commission_calculator_export_path",
+   "fieldtype": "Data",
+   "label": "Commission Calculator Export Path"
   }
  ],
  "issingle": 1,
- "modified": "2023-11-30 11:24:57.252167",
+ "modified": "2024-01-08 11:23:31.909503",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",
