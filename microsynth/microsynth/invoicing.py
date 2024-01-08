@@ -766,7 +766,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                     position["number"] = n.idx
 
                 position["item"] = n.item_code
-                position["description"] = n.description
+                position["description"] = n.item_name
                 position["quantity"] = n.qty
                 position["uom"] = n.stock_uom
                 position["rate"] = n.rate
@@ -787,7 +787,7 @@ def create_position_list(sales_invoice, exclude_shipping):
                     position["number"] = n.idx
 
                 position["item"] = n.item_code
-                position["description"] = n.description
+                position["description"] = n.item_name
                 position["quantity"] = n.qty - used_items[n.item_code]
                 position["rate"] = n.rate
                 position["amount"] = n.amount
