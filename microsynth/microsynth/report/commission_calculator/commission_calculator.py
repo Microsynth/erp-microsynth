@@ -14,13 +14,13 @@ def get_columns(filters):
     return [
         
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125 },
-        {"label": _("Customer"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 200 },
-        {"label": _("Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "options": "currency", "width": 80 },
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 200 },
+        {"label": _("Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "options": "currency", "width": 100 },
         {"label": _("Provision Fraction"), "fieldname": "provision_fraction", "fieldtype": "Float", "width": 125 },
         {"label": _("Provision Base Amount"), "fieldname": "provision_base_amount", "fieldtype": "Currency", "options": "currency", "width": 150 },
-        {"label": _("Commission"), "fieldname": "commission", "fieldtype": "Currency", "options": "currency", "width": 90 },
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70 },
-        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 90 },
+        {"label": _("Commission"), "fieldname": "commission", "fieldtype": "Currency", "options": "currency", "width": 100 },
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 75 },
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100 },
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 150 },
         {"label": _("Billing Address"), "fieldname": "customer_address", "fieldtype": "Data", "width": 150 },
     ]
@@ -100,6 +100,9 @@ def execute(filters=None):
 
 @frappe.whitelist()
 def async_pdf_export(filters):
+    """
+    Wrapper to start an asyncronous job for the function pdf_export_cc
+    """
     if type(filters) == str:
         filters = json.loads(filters)
         
@@ -115,7 +118,7 @@ def pdf_export_cc(filters):
     if not os.path.exists(path_prefix):
         os.mkdir(path_prefix)
     
-    path = path_prefix + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
+    path = path_prefix + "/" + datetime.now().strftime("%Y-%m-%d_%H-%M_") + filters.get('country') + "_from_" + filters.get('from_date') + "_to_" + filters.get('to_date')
 
     if not os.path.exists(path):
         os.mkdir(path)
