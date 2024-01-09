@@ -34,6 +34,12 @@ frappe.query_reports["Commission Calculator"] = {
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company"
+        },
+        {
+            "fieldname": "product_type",
+            "label": __("Product Type"),
+            "fieldtype": "Select",
+            "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService"
         }
 	],
     "onload": (report) => {

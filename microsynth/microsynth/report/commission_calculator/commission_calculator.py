@@ -12,7 +12,6 @@ from microsynth.microsynth.invoicing import pdf_export
 
 def get_columns(filters):
     return [
-        
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 200 },
         {"label": _("Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "options": "currency", "width": 100 },
@@ -27,10 +26,12 @@ def get_columns(filters):
 
 
 def get_data(filters):
-    company_condition = ''
+    company_condition = product_type_condition = ''
 
     if filters.get('company'):
         company_condition += f"AND `company` = '{filters.get('company')}'"
+    if filters.get('product_type'):
+        product_type_condition += f"AND `product_type` = '{filters.get('product_type')}'"
 
     sql_query = f"""
         SELECT
@@ -88,6 +89,7 @@ def get_data(filters):
         ) AS `provision_base`
         WHERE `provision_base`.`provision_fraction` != 0
         {company_condition}
+        {product_type_condition}
         """
     data = frappe.db.sql(sql_query, as_dict=True)
     return data
