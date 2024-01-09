@@ -2,12 +2,12 @@ import frappe
 from datetime import datetime
 
 
-@frappe.whitelist()
 def find_tax_template(company, customer, shipping_address, category):
     """
-    Find the corresponding tax template
+    Find the corresponding tax template in the tax matrix. Does not consider alternative tax templates.
+
     run
-    bench execute microsynth.microsynth.utils.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
+    bench execute microsynth.microsynth.taxes.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
     """
     
     # if the customer is "Individual" (B2C), always apply default tax template (with VAT)
@@ -19,7 +19,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if default and len(default) > 0:
             return default[0]['name']
         else:
-            frappe.log_error(f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", "utils.find_tax_template")
+            frappe.log_error(f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", "taxes.find_tax_template")
             return None
     else:
         country = frappe.get_value("Address", shipping_address, "country")
@@ -38,7 +38,7 @@ def find_tax_template(company, customer, shipping_address, category):
         if len(find_tax_record) > 0:
             return find_tax_record[0]['sales_taxes_template']
         else:
-            frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "utils.find_tax_template")
+            frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_tax_template")
             return None
 
 
@@ -114,3 +114,17 @@ def set_alternative_tax_template(self, event):
         self.append("taxes", new_tax)
 
     return
+
+
+@frappe.whitelist()
+def find_dated_tax_template(company, customer, shipping_address, category, date):
+    """
+    Find the corresponding tax template in the tax matrix while considering alternative tax templates.
+    Category must be 'Material' or 'Service'.
+
+    run
+    bench execute microsynth.microsynth.taxes.find_dated_tax_template --kwargs "{'company':'Microsynth AG', 'customer':'23057', 'shipping_address':'237472', 'category':'Material', 'date': '2024-01-09'}"
+    """
+    template = find_tax_template(company, customer, shipping_address, category)
+    alternative_template = get_alternative_tax_template(template, date)
+    return alternative_template

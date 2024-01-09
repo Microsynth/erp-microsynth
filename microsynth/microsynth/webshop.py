@@ -9,7 +9,7 @@ import frappe
 import json
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer
-from microsynth.microsynth.taxes import find_tax_template
+from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -492,6 +492,7 @@ def request_quote(content, client="webshop"):
             company = frappe.defaults.get_default('company')
     company = "Microsynth AG"       # TODO send company with webshop request. Currently request_quote is only used for oligo orders.
     # create quotation
+    transaction_date = date.today()
     qtn_doc = frappe.get_doc({
         'doctype': "Quotation",
         'quotation_to': "Customer",
@@ -505,7 +506,8 @@ def request_quote(content, client="webshop"):
         'customer_request': content['customer_request'],
         'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
         'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
-        'valid_till': date.today() + timedelta(days=90),
+        'transaction_date': transaction_date,
+        'valid_till': transaction_date + timedelta(days=90),
         'sales_manager': frappe.get_value("Customer", content['customer'], "account_manager")
     })
     oligo_items_consolidated = dict()
@@ -553,7 +555,7 @@ def request_quote(content, client="webshop"):
     category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
         category = "Material" 
-    taxes = find_tax_template(company, content['customer'], content['delivery_address'], category)
+    taxes = find_dated_tax_template(company, content['customer'], content['delivery_address'], category, transaction_date)
     if taxes:
         qtn_doc.taxes_and_charges = taxes
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
@@ -747,6 +749,8 @@ def place_order(content, client="webshop"):
     #   consider product type
 
     # create sales order
+    transaction_date = date.today()
+    delivery_date = transaction_date + timedelta(days=3)
     so_doc = frappe.get_doc({
         'doctype': "Sales Order",
         'company': company,
@@ -763,7 +767,8 @@ def place_order(content, client="webshop"):
         'contact_email': contact.email_id,
         'territory': order_customer.territory if order_customer else customer.territory,
         'customer_request': content['customer_request'] if 'customer_request' in content else None,
-        'delivery_date': (date.today() + timedelta(days=3)),
+        'transaction_date': transaction_date,
+        'delivery_date': delivery_date,
         'web_order_id': content['web_order_id'] if 'web_order_id' in content else None,
         'is_punchout': content['is_punchout'] if 'is_punchout' in content else None,
         'po_no': content['po_no'] if 'po_no' in content else None,
@@ -859,7 +864,7 @@ def place_order(content, client="webshop"):
         category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
         category = "Material"
-    taxes = find_tax_template(company, content['customer'], content['delivery_address'], category)
+    taxes = find_dated_tax_template(company, content['customer'], content['delivery_address'], category, delivery_date)
     if taxes:
         so_doc.taxes_and_charges = taxes
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)

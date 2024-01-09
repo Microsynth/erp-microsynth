@@ -36,7 +36,7 @@ frappe.ui.form.on('Sales Order', {
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
         };         
-        update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category);
+        update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
     company(frm) {
         if (frm.doc.__islocal) {

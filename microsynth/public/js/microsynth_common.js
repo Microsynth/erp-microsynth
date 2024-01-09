@@ -44,18 +44,19 @@ function sleep(milliseconds) {
 }
 
 // Set the taxes from the tax template 
-function update_taxes(company, customer, address, category) {   
+function update_taxes(company, customer, address, category, date) {
     frappe.call({
-        "method": "microsynth.microsynth.taxes.find_tax_template",
+        "method": "microsynth.microsynth.taxes.find_dated_tax_template",
         "args": {
             "company": company,
             "customer": customer,
             "shipping_address": address,
-            "category": category 
+            "category": category,
+            "date": date 
         },
         "async": false,
         "callback": function(response){
-            var taxes = response.message;   
+            var taxes = response.message;
             
             cur_frm.set_value("taxes_and_charges", taxes);
 

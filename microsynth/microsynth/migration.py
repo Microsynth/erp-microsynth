@@ -2533,7 +2533,7 @@ def revise_delivery_note(delivery_note):
     run
     bench execute microsynth.microsynth.migration.revise_delivery_note --kwargs "{'delivery_note': 'DN-BAL-23142611'}"
     """
-    from microsynth.microsynth.taxes import find_tax_template
+    from microsynth.microsynth.taxes import find_dated_tax_template
     
     original = frappe.get_doc("Delivery Note", delivery_note)
     original.cancel()
@@ -2552,7 +2552,7 @@ def revise_delivery_note(delivery_note):
     if new.oligos is not None and len(new.oligos) > 0:
         category = "Material"
 
-    tax_template = find_tax_template(new.company, new.customer, new.shipping_address_name, category)
+    tax_template = find_dated_tax_template(new.company, new.customer, new.shipping_address_name, category, new.posting_date)
     new.taxes_and_charges = tax_template
     
     tax_template = frappe.get_doc("Sales Taxes and Charges Template", new.taxes_and_charges)

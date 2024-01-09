@@ -56,7 +56,7 @@ frappe.ui.form.on('Quotation', {
         }
         
         if (frm.doc.shipping_address_name && frm.doc.shipping_address_name != "") {
-            update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category);
+            update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category, frm.doc.transaction_date);
         } else {
             frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
