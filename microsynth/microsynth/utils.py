@@ -186,46 +186,6 @@ def create_sample(sample):
     return sample_doc.name
 
 
-@frappe.whitelist()
-def find_tax_template(company, customer, shipping_address, category):
-    """
-    Find the corresponding tax template
-    run
-    bench execute microsynth.microsynth.utils.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
-    """
-    
-    # if the customer is "Individual" (B2C), always apply default tax template (with VAT)
-    if frappe.get_value("Customer", customer, "customer_type") == "Individual":
-        default = frappe.get_all("Sales Taxes and Charges Template",
-            filters={'company': company, 'is_default': 1},
-            fields=['name']
-        )
-        if default and len(default) > 0:
-            return default[0]['name']
-        else:
-            frappe.log_error(f"Could not find default tax template for company '{company}'\ncustomer '{customer}' has customer_type='Individual'", "utils.find_tax_template")
-            return None
-    else:
-        country = frappe.get_value("Address", shipping_address, "country")
-        if frappe.get_value("Country", country, "eu"):
-            eu_pattern = """ OR `country` = "EU" """
-        else:
-            eu_pattern = ""
-        find_tax_record = frappe.db.sql("""SELECT `sales_taxes_template`
-            FROM `tabTax Matrix Entry`
-            WHERE `company` = "{company}"
-              AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
-              AND `category` = "{category}"
-            ORDER BY `idx` ASC;""".format(
-            company=company, country=country, category=category, eu_pattern=eu_pattern), 
-            as_dict=True)
-        if len(find_tax_record) > 0:
-            return find_tax_record[0]['sales_taxes_template']
-        else:
-            frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "utils.find_tax_template")
-            return None
-
-
 def find_label(label_barcode, item):
     """
     Find a Sequencing Label by its barcode and item.

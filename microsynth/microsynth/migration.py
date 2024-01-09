@@ -2533,7 +2533,7 @@ def revise_delivery_note(delivery_note):
     run
     bench execute microsynth.microsynth.migration.revise_delivery_note --kwargs "{'delivery_note': 'DN-BAL-23142611'}"
     """
-    from microsynth.microsynth.utils import find_tax_template
+    from microsynth.microsynth.taxes import find_tax_template
     
     original = frappe.get_doc("Delivery Note", delivery_note)
     original.cancel()

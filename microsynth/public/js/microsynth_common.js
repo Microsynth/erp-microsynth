@@ -46,7 +46,7 @@ function sleep(milliseconds) {
 // Set the taxes from the tax template 
 function update_taxes(company, customer, address, category) {   
     frappe.call({
-        "method": "microsynth.microsynth.utils.find_tax_template",
+        "method": "microsynth.microsynth.taxes.find_tax_template",
         "args": {
             "company": company,
             "customer": customer,

@@ -8,11 +8,13 @@
 import frappe
 import json
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, find_tax_template, get_express_shipping_item, get_billing_address, configure_new_customer
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer
+from microsynth.microsynth.taxes import find_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+
 
 @frappe.whitelist(allow_guest=True)
 def ping():
