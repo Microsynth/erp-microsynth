@@ -9,19 +9,99 @@
     </thead>
     <tbody>
     <tr>
-        <td>First name</td>
-        <td><button class="btn btn-sm {% if contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_1" data-fieldname="first_name" data-value="{{ contact_1.first_name }}">{{ contact_1.first_name or "-" }}</button></td>
-        <td><button class="btn btn-sm {% if not contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_2" data-fieldname="first_name" data-value="{{ contact_2.first_name }}">{{ contact_2.first_name or "-" }}</button></td>
+        <td {% if contact_1.first_name != contact_2.first_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>First name</td>
+        <td {% if contact_1.first_name != contact_2.first_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_1" data-fieldname="first_name" data-value="{{ contact_1.first_name }}">{{ contact_1.first_name or "-" }}</button></td>
+        <td {% if contact_1.first_name != contact_2.first_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_2" data-fieldname="first_name" data-value="{{ contact_2.first_name }}">{{ contact_2.first_name or "-" }}</button></td>
     </tr>
     <tr>
-        <td>Last name</td>
-        <td><button class="btn btn-sm {% if contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_1" data-fieldname="last_name" data-value="{{ contact_1.last_name }}">{{ contact_1.last_name or "-" }}</button></td>
-        <td><button class="btn btn-sm {% if not contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_2" data-fieldname="last_name" data-value="{{ contact_2.last_name }}">{{ contact_2.last_name or "-" }}</button></td>
+        <td {% if contact_1.last_name != contact_2.last_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Last name</td>
+        <td {% if contact_1.last_name != contact_2.last_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_1" data-fieldname="last_name" data-value="{{ contact_1.last_name }}">{{ contact_1.last_name or "-" }}</button></td>
+        <td {% if contact_1.last_name != contact_2.last_name %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_2" data-fieldname="last_name" data-value="{{ contact_2.last_name }}">{{ contact_2.last_name or "-" }}</button></td>
     </tr>
     <tr>
-        <td>Email</td>
-        <td><button class="btn btn-sm {% if contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_1" data-fieldname="email_id" data-value="{{ contact_1.email_id }}">{{ contact_1.email_id or "-" }}</button></td>
-        <td><button class="btn btn-sm {% if not contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_2" data-fieldname="email_id" data-value="{{ contact_2.email_id }}">{{ contact_2.email_id or "-" }}</button></td>
+        <td {% if contact_1.email_id != contact_2.email_id %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Email</td>
+        <td {% if contact_1.email_id != contact_2.email_id %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_1" data-fieldname="email_id" data-value="{{ contact_1.email_id }}">{{ contact_1.email_id or "-" }}</button></td>
+        <td {% if contact_1.email_id != contact_2.email_id %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.email_id %}btn-primary{% endif %} btn-toggle form_btn" id="btn_email_2" data-fieldname="email_id" data-value="{{ contact_2.email_id }}">{{ contact_2.email_id or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.phone != contact_2.phone %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Phone</td>
+        <td {% if contact_1.phone != contact_2.phone %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.phone %}btn-primary{% endif %} btn-toggle form_btn" id="btn_phone_1" data-fieldname="phone" data-value="{{ contact_1.phone }}">{{ contact_1.phone or "-" }}</button></td>
+        <td {% if contact_1.phone != contact_2.phone %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.phone %}btn-primary{% endif %} btn-toggle form_btn" id="btn_phone_2" data-fieldname="phone" data-value="{{ contact_2.phone }}">{{ contact_2.phone or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.institute != contact_2.institute %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Institute</td>
+        <td {% if contact_1.institute != contact_2.institute %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.institute %}btn-primary{% endif %} btn-toggle form_btn" id="btn_institute_1" data-fieldname="institute" data-value="{{ contact_1.institute }}">{{ contact_1.institute or "-" }}</button></td>
+        <td {% if contact_1.institute != contact_2.institute %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.institute %}btn-primary{% endif %} btn-toggle form_btn" id="btn_institute_2" data-fieldname="institute" data-value="{{ contact_2.institute }}">{{ contact_2.institute or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.department != contact_2.department %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Department</td>
+        <td {% if contact_1.department != contact_2.department %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.department %}btn-primary{% endif %} btn-toggle form_btn" id="btn_department_1" data-fieldname="department" data-value="{{ contact_1.department }}">{{ contact_1.department or "-" }}</button></td>
+        <td {% if contact_1.department != contact_2.department %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.department %}btn-primary{% endif %} btn-toggle form_btn" id="btn_department_2" data-fieldname="department" data-value="{{ contact_2.department }}">{{ contact_2.department or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Contact Classification</td>
+        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.contact_classification %}btn-primary{% endif %} btn-toggle form_btn" id="btn_contact_classification_1" data-fieldname="contact_classification" data-value="{{ contact_1.contact_classification }}">{{ contact_1.contact_classification or "-" }}</button></td>
+        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.contact_classification %}btn-primary{% endif %} btn-toggle form_btn" id="btn_contact_classification_2" data-fieldname="contact_classification" data-value="{{ contact_2.contact_classification }}">{{ contact_2.contact_classification or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Receive Newsletter</td>
+        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.receive_newsletter %}btn-primary{% endif %} btn-toggle form_btn" id="btn_receive_newsletter_1" data-fieldname="receive_newsletter" data-value="{{ contact_1.receive_newsletter }}">{{ contact_1.receive_newsletter or "-" }}</button></td>
+        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.receive_newsletter %}btn-primary{% endif %} btn-toggle form_btn" id="btn_receive_newsletter_2" data-fieldname="receive_newsletter" data-value="{{ contact_2.receive_newsletter }}">{{ contact_2.receive_newsletter or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address</td>
+        <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.address %}btn-primary{% endif %} btn-toggle form_btn" id="btn_address_1" data-fieldname="address" data-value="{{ contact_1.address }}">{{ contact_1.address or "-" }}</button></td>
+        <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.address %}btn-primary{% endif %} btn-toggle form_btn" id="btn_address_2" data-fieldname="address" data-value="{{ contact_2.address }}">{{ contact_2.address or "-" }}</button></td>
+    </tr>
+    <tr>
+        <td {% if address_1.address_type != address_2.address_type %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address Type</td>
+        <td {% if address_1.address_type != address_2.address_type %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.address_type or '-' }}</td>
+        <td {% if address_1.address_type != address_2.address_type %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.address_type or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.address_line1 != address_2.address_line1 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address Line 1</td>
+        <td {% if address_1.address_line1 != address_2.address_line1 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.address_line1 or '-' }}</td>
+        <td {% if address_1.address_line1 != address_2.address_line1 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.address_line1 or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.address_line2 != address_2.address_line2 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address Line 2</td>
+        <td {% if address_1.address_line2 != address_2.address_line2 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.address_line2 or '-' }}</td>
+        <td {% if address_1.address_line2 != address_2.address_line2 %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.address_line2 or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.pincode != address_2.pincode %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Pincode</td>
+        <td {% if address_1.pincode != address_2.pincode %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.pincode or '-' }}</td>
+        <td {% if address_1.pincode != address_2.pincode %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.pincode or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.city != address_2.city %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>City</td>
+        <td {% if address_1.city != address_2.city %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.city or '-' }}</td>
+        <td {% if address_1.city != address_2.city %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.city or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.country != address_2.country %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Country</td>
+        <td {% if address_1.country != address_2.country %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.country or '-' }}</td>
+        <td {% if address_1.country != address_2.country %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.country or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.is_primary_address != address_2.is_primary_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Preferred Billing Address</td>
+        <td {% if address_1.is_primary_address != address_2.is_primary_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.is_primary_address or '-' }}</td>
+        <td {% if address_1.is_primary_address != address_2.is_primary_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.is_primary_address or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.is_shipping_address != address_2.is_shipping_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Preferred Shipping Address</td>
+        <td {% if address_1.is_shipping_address != address_2.is_shipping_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.is_shipping_address or '-' }}</td>
+        <td {% if address_1.is_shipping_address != address_2.is_shipping_address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.is_shipping_address or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.overwrite_company != address_2.overwrite_company %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Overwrite Company</td>
+        <td {% if address_1.overwrite_company != address_2.overwrite_company %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.overwrite_company or '-' }}</td>
+        <td {% if address_1.overwrite_company != address_2.overwrite_company %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.overwrite_company or '-' }}</td>
+    </tr>
+    <tr>
+        <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address Title</td>
+        <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_1.address_title or '-' }}</td>
+        <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ address_2.address_title or '-' }}</td>
     </tr>
     </tbody>
 </table>

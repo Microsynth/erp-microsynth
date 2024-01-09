@@ -4,13 +4,14 @@ frappe.pages['contact_merger'].on_page_load = function(wrapper) {
         title: 'Contact Merger',
         single_column: true
     });
-    
+
     frappe.contact_merger.make(page);
     frappe.contact_merger.run();
-    
+
     // add the application reference
     frappe.breadcrumbs.add("Microsynth");
 }
+
 
 frappe.contact_merger = {
     start: 0,
@@ -24,7 +25,7 @@ frappe.contact_merger = {
         // attach event handlers
         this.page.main.find("#contact_1").on('change', function() {
             frappe.contact_merger.display_contact_details();
-        });
+        });  // TODO: Move input fields "Contact 1" and "Contact 2" to the right such that they align with the columns "Contact 1" and "Contact 2"
         this.page.main.find("#contact_2").on('change', function() {
             frappe.contact_merger.display_contact_details();
         });
@@ -54,7 +55,6 @@ frappe.contact_merger = {
                 } 
             }
         });
-        
         // check and enable merge button
         if ((document.getElementById("contact_1").value) 
             && (document.getElementById("contact_2").value)
@@ -83,9 +83,9 @@ frappe.contact_merger = {
         for (var i = 0; i < buttons.length; i++) {
             values[buttons[i].dataset.fieldname] = buttons[i].dataset.value;
         }
-        
+
         console.log(values);
-        
+
         frappe.call({
             'method': 'microsynth.microsynth.page.contact_merger.contact_merger.merge_contacts',
             'args': {
