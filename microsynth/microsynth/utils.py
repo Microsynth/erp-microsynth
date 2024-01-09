@@ -1074,118 +1074,123 @@ def determine_territory(address_id):
     run
     bench execute microsynth.microsynth.utils.determine_territory --kwargs "{'address_id': '207692'}"
     """
-    address = frappe.get_doc("Address", address_id)
+    try:
+        address = frappe.get_doc("Address", address_id)
 
-    if address.country == "Switzerland":
-        postal_code = address.pincode
-        if postal_code == '':
-            #frappe.log_error(f"Empty postal_code for {address_id=} in Switzerland.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Switzerland")
-        try:
-            numeric_postal_code = re.sub('\D', '', postal_code)
-        except Exception as err:
-            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Switzerland")
-        if not numeric_postal_code:
-            frappe.log_error(f"Postal Code '{postal_code}' for {address_id=} in Switzerland does not contain any numbers.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Switzerland")
-        if len(numeric_postal_code) != 4:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Switzerland does not contain four digits.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Switzerland")
-        pc_int = int(numeric_postal_code)
-        if  pc_int < 4000 or \
-            6500 <= pc_int < 7000 or \
-            4536 <= pc_int <= 4539 or \
-            pc_int == 4564 or \
-            pc_int == 4704 or \
-            4900 <= pc_int <= 4902 or \
-            4911 <= pc_int <= 4914 or \
-            4916 <= pc_int <= 4917 or \
-            pc_int == 4919 or \
-            4922 <= pc_int <= 4924 or \
-            4932 <= pc_int <= 4938 or \
-            4942 <= pc_int <= 4944 or \
-            pc_int == 4950 or \
-            4952 <= pc_int <= 4955 or \
-            6083 <= pc_int <= 6086 or \
-            pc_int == 6197:
-            return frappe.get_doc("Territory", "Switzerland (French-speaking, Bern, Valais, Ticino)")
+        if address.country == "Switzerland":
+            postal_code = address.pincode
+            if postal_code == '':
+                #frappe.log_error(f"Empty postal_code for {address_id=} in Switzerland.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Switzerland")
+            try:
+                numeric_postal_code = re.sub('\D', '', postal_code)
+            except Exception as err:
+                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Switzerland")
+            if not numeric_postal_code:
+                frappe.log_error(f"Postal Code '{postal_code}' for {address_id=} in Switzerland does not contain any numbers.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Switzerland")
+            if len(numeric_postal_code) != 4:
+                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Switzerland does not contain four digits.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Switzerland")
+            pc_int = int(numeric_postal_code)
+            if  pc_int < 4000 or \
+                6500 <= pc_int < 7000 or \
+                4536 <= pc_int <= 4539 or \
+                pc_int == 4564 or \
+                pc_int == 4704 or \
+                4900 <= pc_int <= 4902 or \
+                4911 <= pc_int <= 4914 or \
+                4916 <= pc_int <= 4917 or \
+                pc_int == 4919 or \
+                4922 <= pc_int <= 4924 or \
+                4932 <= pc_int <= 4938 or \
+                4942 <= pc_int <= 4944 or \
+                pc_int == 4950 or \
+                4952 <= pc_int <= 4955 or \
+                6083 <= pc_int <= 6086 or \
+                pc_int == 6197:
+                return frappe.get_doc("Territory", "Switzerland (French-speaking, Bern, Valais, Ticino)")
+            else:
+                return frappe.get_doc("Territory", "Switzerland (German-speaking)")
+
+        elif address.country == "Austria":
+            return frappe.get_doc("Territory", "Austria")
+
+        elif address.country == "Germany":
+            postal_code = address.pincode
+            if postal_code == '':
+                frappe.log_error(f"Empty postal_code for {address_id=} in Germany.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Germany")
+            try:
+                numeric_postal_code = re.sub('\D', '', postal_code)
+            except Exception as err:
+                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Germany")
+            if not numeric_postal_code:
+                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain any numbers.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Germany")
+            if len(numeric_postal_code) != 5:
+                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain five digits.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Germany")
+            pc_prefix = int(numeric_postal_code[:2])
+            if  26 <= pc_prefix <= 29 or \
+                32 <= pc_prefix <= 36 or \
+                40 <= pc_prefix <= 63 or \
+                65 <= pc_prefix <= 69:
+                return frappe.get_doc("Territory", "Germany (Northwest)")
+            elif pc_prefix < 26 or \
+                30 <= pc_prefix <= 31 or \
+                38 <= pc_prefix <= 39 or \
+                pc_prefix >= 98:  # including invalid 00
+                return frappe.get_doc("Territory", "Germany (Northeast)")
+            elif pc_prefix == 37:
+                return frappe.get_doc("Territory", "Göttingen")
+            elif pc_prefix == 64 or \
+                70 <= pc_prefix <= 97:
+                return frappe.get_doc("Territory", "Germany (South)")
+            else:
+                frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific German sales region. "
+                                f"Territory is set to Germany (parent Territory).", "utils.determine_territory")
+                return frappe.get_doc("Territory", "Germany")
+
+        elif address.country == "France":
+            postal_code = address.pincode
+            if postal_code == '':
+                frappe.log_error(f"Empty postal_code for {address_id=} in France.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "France")
+            try:
+                numeric_postal_code = re.sub('\D', '', postal_code)
+            except Exception as err:
+                frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
+                return frappe.get_doc("Territory", "France")
+            if not numeric_postal_code:
+                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain any numbers.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "France")
+            if len(numeric_postal_code) != 5:
+                frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain five digits.", "utils.determine_territory")
+                return frappe.get_doc("Territory", "France")
+            pc_prefix = int(numeric_postal_code[:2])
+            if pc_prefix == 69:
+                return frappe.get_doc("Territory", "Lyon")
+            elif pc_prefix == 75 or pc_prefix == 92 or pc_prefix == 93 or pc_prefix == 94:
+                return frappe.get_doc("Territory", "Paris")
+            else:
+                return frappe.get_doc("Territory", "France (without Paris and Lyon)")
+
+        elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
+                                "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
+                                "Gibraltar", "Greece", "Greenland", "Guernsey", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy",
+                                "Jersey", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Malta", "Moldova, Republic of",
+                                "Monaco", "Montenegro", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia",
+                                "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "Ukraine", "United Kingdom"):
+            return frappe.get_doc("Territory", "Rest of Europe")
         else:
-            return frappe.get_doc("Territory", "Switzerland (German-speaking)")
-
-    elif address.country == "Austria":
-        return frappe.get_doc("Territory", "Austria")
-
-    elif address.country == "Germany":
-        postal_code = address.pincode
-        if postal_code == '':
-            frappe.log_error(f"Empty postal_code for {address_id=} in Germany.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Germany")
-        try:
-            numeric_postal_code = re.sub('\D', '', postal_code)
-        except Exception as err:
-            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Germany")
-        if not numeric_postal_code:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain any numbers.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Germany")
-        if len(numeric_postal_code) != 5:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in Germany does not contain five digits.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Germany")
-        pc_prefix = int(numeric_postal_code[:2])
-        if  26 <= pc_prefix <= 29 or \
-            32 <= pc_prefix <= 36 or \
-            40 <= pc_prefix <= 63 or \
-            65 <= pc_prefix <= 69:
-            return frappe.get_doc("Territory", "Germany (Northwest)")
-        elif pc_prefix < 26 or \
-            30 <= pc_prefix <= 31 or \
-            38 <= pc_prefix <= 39 or \
-            pc_prefix >= 98:  # including invalid 00
-            return frappe.get_doc("Territory", "Germany (Northeast)")
-        elif pc_prefix == 37:
-            return frappe.get_doc("Territory", "Göttingen")
-        elif pc_prefix == 64 or \
-            70 <= pc_prefix <= 97:
-            return frappe.get_doc("Territory", "Germany (South)")
-        else:
-            frappe.log_error(f"The postal code {postal_code} cannot be assigned to any specific German sales region. "
-                             f"Territory is set to Germany (parent Territory).", "utils.determine_territory")
-            return frappe.get_doc("Territory", "Germany")
-
-    elif address.country == "France":
-        postal_code = address.pincode
-        if postal_code == '':
-            frappe.log_error(f"Empty postal_code for {address_id=} in France.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "France")
-        try:
-            numeric_postal_code = re.sub('\D', '', postal_code)
-        except Exception as err:
-            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_id=}:\n{err}", "utils.determine_territory")
-            return frappe.get_doc("Territory", "France")
-        if not numeric_postal_code:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain any numbers.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "France")
-        if len(numeric_postal_code) != 5:
-            frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain five digits.", "utils.determine_territory")
-            return frappe.get_doc("Territory", "France")
-        pc_prefix = int(numeric_postal_code[:2])
-        if pc_prefix == 69:
-            return frappe.get_doc("Territory", "Lyon")
-        elif pc_prefix == 75 or pc_prefix == 92 or pc_prefix == 93 or pc_prefix == 94:
-            return frappe.get_doc("Territory", "Paris")
-        else:
-            return frappe.get_doc("Territory", "France (without Paris and Lyon)")
-
-    elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
-                             "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
-                             "Gibraltar", "Greece", "Greenland", "Guernsey", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy",
-                             "Jersey", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Malta", "Moldova, Republic of",
-                             "Monaco", "Montenegro", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia",
-                             "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "Ukraine", "United Kingdom"):
-        return frappe.get_doc("Territory", "Rest of Europe")
-    else:
-        return frappe.get_doc("Territory", "Rest of the World")
+            return frappe.get_doc("Territory", "Rest of the World")
+    
+    except Exception as err:
+        frappe.log_error(f"Could not determine territory from address '{address_id}'\n{err}", "utils.determine_territory")
+        return None
 
 
 def get_first_shipping_address(customer_id):
@@ -1246,8 +1251,12 @@ def configure_territory(customer_id):
             frappe.log_error(f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory.", "utils.configure_territory")
             return
         territory = determine_territory(shipping_address)
-        customer.territory = territory.name
-        customer.save()
+        if territory: 
+            customer.territory = territory.name
+            customer.save()
+        else:
+            return
+
         #print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
     #else:
         #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
