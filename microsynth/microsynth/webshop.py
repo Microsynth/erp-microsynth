@@ -699,6 +699,7 @@ def apply_discount(quotation, sales_order):
         frappe.log_error(f"Unable to apply discount on { sales_order.name }. Mismatch between quotation and sales order.", "webshop.apply_discount")
     return sales_order
 
+
 @frappe.whitelist()
 def place_order(content, client="webshop"):
     """
@@ -709,19 +710,19 @@ def place_order(content, client="webshop"):
         content = json.loads(content)
     # validate input
     if not frappe.db.exists("Customer", content['customer']):
-        return {'success': False, 'message': "Customer not found", 'reference': None}
+        return {'success': False, 'message': f"Customer '{content['customer']}' not found", 'reference': None}
     if not frappe.db.exists("Address", content['delivery_address']):
-        return {'success': False, 'message': "Delivery address not found", 'reference': None}
+        return {'success': False, 'message': f"Delivery address '{content['delivery_address']}' not found", 'reference': None}
     if not frappe.db.exists("Address", content['invoice_address']):
-        return {'success': False, 'message': "Invoice address not found", 'reference': None}
+        return {'success': False, 'message': f"Invoice address '{content['invoice_address']}' not found", 'reference': None}
     if not frappe.db.exists("Contact", content['contact']):
-        return {'success': False, 'message': "Contact not found", 'reference': None}
+        return {'success': False, 'message': f"Contact '{content['contact']}' not found", 'reference': None}
     company = None
     if "company" in content:
         if frappe.db.exists("Company", content['company']):
             company = content['company']
         else:
-            return {'success': False, 'message': "Invalid company", 'reference': None}
+            return {'success': False, 'message': f"Invalid company '{content['company']}'", 'reference': None}
     else:
         company = frappe.get_value("Customer", content['customer'], 'default_company')
     if not company:
@@ -730,7 +731,7 @@ def place_order(content, client="webshop"):
     naming_series = get_naming_series("Sales Order", company)
 
     customer = frappe.get_doc("Customer", content['customer'])
-    contact = frappe.get_doc("Contact", content['contact'])     # cache contact values (Frappe bug in binding)
+    contact = frappe.get_doc("Contact", content['contact'])  # cache contact values (Frappe bug in binding)
     billing_address = content['invoice_address']
 
     order_customer = None
@@ -739,7 +740,7 @@ def place_order(content, client="webshop"):
     if 'product_type' in content:
         for distributor in customer.distributors:
             if distributor.product_type == content['product_type']:
-                #swap customer and replace billing address
+                # swap customer and replace billing address
                 order_customer = customer
                 customer = frappe.get_doc("Customer", distributor.distributor)
 
@@ -793,6 +794,7 @@ def place_order(content, client="webshop"):
     else:
         quotation = None
         qtn_doc = None
+
     # create oligos
     if 'oligos' in content:
         consolidated_item_qtys = {}
@@ -822,8 +824,10 @@ def place_order(content, client="webshop"):
                 'prevdoc_docname': quotation
             }
             so_doc.append('items', _item)
+
     # create samples
     if 'samples' in content:
+        consolidated_item_qtys = {}
         for s in content['samples']:
             # create or update sample
             sample_name = create_sample(s)
@@ -831,18 +835,60 @@ def place_order(content, client="webshop"):
             so_doc.append('samples', {
                 'sample': sample_name
             })
-            # insert positions
+            # insert positions (add to consolidated)
             for i in s['items']:
                 if not frappe.db.exists("Item", i['item_code']):
                     return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
                         'reference': None}
-                _item = {
-                    'item_code': i['item_code'],
-                    'qty': i['qty'],
-                    'prevdoc_docname': quotation
-                }
-                so_doc.append('items', _item)
+                if i['item_code'] in consolidated_item_qtys:
+                    consolidated_item_qtys[i['item_code']] += i['qty']
+                else:
+                    consolidated_item_qtys[i['item_code']] = i['qty']
+
+        # apply consolidated items
+        for item, qty in consolidated_item_qtys.items():
+            _item = {
+                'item_code': item,
+                'qty': qty,
+                'prevdoc_docname': quotation
+            }
+            so_doc.append('items', _item)
+
     # append items
+    # if 'product_type' in content and content['product_type'] == 'Sequencing':
+    #     # consolidate items
+    #     consolidated_item_qtys = {}
+    #     for i in content['items']:
+    #         if not frappe.db.exists("Item", i['item_code']):
+    #             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
+    #                 'reference': None}
+
+    #         if i['item_code'] in consolidated_item_qtys:
+    #             if 'rate' in i and i['rate'] is not None:
+    #                 # this item is overriding the normal rate (e.g. shipping item)
+    #                 consolidated_item_qtys[(i['item_code'], i['rate'])] += i['qty']
+    #             else:
+    #                 consolidated_item_qtys[(i['item_code'], None)] += i['qty']
+    #         else:
+    #             if 'rate' in i and i['rate'] is not None:
+    #                 consolidated_item_qtys[(i['item_code'], i['rate'])] = i['qty']
+    #             else:
+    #                 consolidated_item_qtys[(i['item_code'], None)] = i['qty']
+
+    #     # apply consolidated items
+    #     for item_rate, qty in consolidated_item_qtys.items():
+    #         item_detail = {
+    #             'item_code': item_rate[0],
+    #             'qty': qty,
+    #             'prevdoc_docname': quotation
+    #         }
+    #         if item_rate[1] is not None:
+    #             # this item is overriding the normal rate (e.g. shipping item)
+    #             item_detail['rate'] = i['rate']
+    #             item_detail['price_list_rate'] = i['rate']
+    #         so_doc.append('items', item_detail)
+    # else:
+    #     # do NOT consolidate items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
@@ -857,6 +903,7 @@ def place_order(content, client="webshop"):
             item_detail['rate'] = i['rate']
             item_detail['price_list_rate'] = i['rate']
         so_doc.append('items', item_detail)
+
     # append taxes
     if so_doc.product_type == "Oligos" or so_doc.product_type == "Material":
         category = "Material"
