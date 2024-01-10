@@ -1320,34 +1320,49 @@ def set_webshop_address_readonly():
 
 def disable_customers_without_contacts():
     """
-    Sets the customer field "disabled" for all customers that do not have any contacts.
+    Sets the Customer field "disabled" for all Customers that do not have any non-Billing Contacts.
+    Does only disable Customers with a numeric ID, no Quotations and no Sales Orders.
 
     Run from
     $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
     """
-    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])    
-    count = 0
-    for c in customers:
-        count += 1
+    customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
+    disabled = failed = skipped = 0
+
+    for count, c in enumerate(customers):
         # find number of linked contacts
         linked_contacts = frappe.db.sql("""
-            SELECT `name`
-            FROM `tabDynamic Link`
-            WHERE `tabDynamic Link`.`parenttype` = "Contact"
-                AND `tabDynamic Link`.`link_doctype` = "Customer"
-                AND `tabDynamic Link`.`link_name` = "{customer_id}"
+            SELECT `tabContact`.`name` AS `name`
+            FROM `tabContact`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
+                                              AND `tDLA`.`link_doctype` = "Customer"
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+            LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+            WHERE `tDLA`.`link_name` = "{customer_id}"
+                AND `tabAddress`.`address_type` != "Billing"
         """.format(customer_id=c['name']), as_dict=True)
-        if len(linked_contacts) == 0:
+
+        sales_orders = frappe.get_all("Sales Order", filters=[['customer', '=', c['name']]], fields=['name'])
+        quotations = frappe.get_all("Quotation", filters=[['party_name', '=', c['name']]], fields=['name'])
+        
+        if len(linked_contacts) == 0 and len(quotations) == 0 and len(sales_orders) == 0 and c['name'].isnumeric(): 
+            # disable only customers with numeric names (created by the webshop)
             customer = frappe.get_doc("Customer", c['name'])
             customer.disabled = True
             try:
                 customer.save()
-                print("{1}%... Disabled {0}".format(c['name'], int(100 * count / len(customers))))
             except Exception as err:
-                print("{2}%... Failed updating {0} ({1})".format(c['name'], err, int(100 * count / len(customers))))
+                print(f"{int(100 * count / len(customers))}%... Failed updating {c['name']} ({err})")
+                failed += 1
+            else:
+                print(f"{int(100 * count / len(customers))}% ({count}/{len(customers)})... Successfully disabled {c['name']}")
+                disabled += 1
         else:
-            print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
-    return
+            skipped += 1
+            #print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
+    print(f"Disabled {disabled} Customers, failed {failed} times, skipped {skipped} Customers.")
+    frappe.db.commit()
 
 
 def set_default_company():
