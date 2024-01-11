@@ -1,28 +1,32 @@
 <div class="section-body">
-    <div class="row"> 
-      <div class="form-column col-sm-4">
-        <p>{{ __("Contact 1") }}</p>
+    <div class="row">
 
-        <input id="contact_1" class="contact_1"  />
+      <div class="form-column col-sm-3">
+        <p>{{ __("Contact 1") }}</p>
+        <input id="contact_1" class="contact_1" />
       </div>
 
-      <div class="form-column col-sm-4">
-        <p>{{ __("Contact 2") }}</p>
+      <div class="form-column col-sm-3">
+        <br>
+        <button type="submit" id="switch" class="btn btn-sm">{{ __("Switch") }}</button>  
+      </div>
 
+      <div class="form-column col-sm-3">
+        <p>{{ __("Contact 2") }}</p>
         <input id="contact_2" class="contact_2" />
       </div>
 
-      <div class="form-column col-sm-4" style="text-align: right; ">
+      <div class="form-column col-sm-3" style="text-align: right; ">
         <br>
-        <button type="submit" id="switch" class="btn btn-sm">{{ __("Switch") }}</button>  
         <button type="submit" id="merge" class="btn btn-sm btn-primary" disabled>{{ __("Merge") }}</button>  
-
       </div>
+
     </div>
       
     <div class="row">
         <div class="col-sm-12">
         <div id="table_placeholder"></div>
     </div>
+
     </div>
 </div>

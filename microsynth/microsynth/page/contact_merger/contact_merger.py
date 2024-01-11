@@ -38,12 +38,16 @@ def get_contact_details(contact_1=None, contact_2=None):
 
 @frappe.whitelist()
 def merge_contacts(contact_1, contact_2, values):
-    """ THIS IS V1
+    """
+    Merge Contact 2 into Contact 1 preserving the values in the parameter 'values'
+    """
+    
     if not frappe.db.exists("Contact", contact_1):
         return {'error': "Contact 1 not found"}
     if not frappe.db.exists("Contact", contact_2):
         return {'error': "Contact 2 not found"}
 
+    """ THIS IS V1
     contact_1 = frappe.get_doc("Contact", contact_1)
     values = json.loads(values)  # parse string to dict
     contact_1.update(values)
@@ -63,7 +67,7 @@ def merge_contacts(contact_1, contact_2, values):
     values = json.loads(values)  # parse string to dict
     new_contact = frappe.get_doc("Contact", new_contact_name)
     new_contact.update(values)
-    links = new_contact.as_dict()['links']         # this is to preserve potential other links
+    links = new_contact.as_dict()['links']  # this is to preserve potential other links
     new_contact.links = []
     new_contact.append('links', {
         'link_doctype': "Customer",
@@ -76,9 +80,6 @@ def merge_contacts(contact_1, contact_2, values):
                 'link_name': l.link_name
             })
     new_contact.save()
-    
     new_contact.add_comment(comment_type='Comment', text=(f"Merged from '{contact_2}' on {datetime.now()}"))
-    
     frappe.db.commit()
-
     return {'error': None, 'contact': new_contact_name}
