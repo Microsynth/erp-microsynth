@@ -113,6 +113,8 @@ def set_alternative_tax_template(self, event):
                     'rate': tax.rate }
         self.append("taxes", new_tax)
 
+    self.calculate_taxes_and_totals()
+    
     return
 
 
