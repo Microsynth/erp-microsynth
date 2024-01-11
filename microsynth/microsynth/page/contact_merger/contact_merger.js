@@ -96,12 +96,14 @@ frappe.contact_merger = {
                 'contact_2': document.getElementById("contact_2").value,
                 'values': values
             },
+            'freeze': true,
+            'freeze_message': __("&#129668; Merging magic happening..."),
             'callback': function(r) {
                 if (r.message) {
                     if (r.message.error) {
                         frappe.msgprint( r.message.error , "Error" );
                     } else {
-                        document.getElementById("contact_1").value = "";
+                        document.getElementById("contact_1").value = r.message.contact;
                         document.getElementById("contact_2").value = "";
                         frappe.contact_merger.display_contact_details();
                     }

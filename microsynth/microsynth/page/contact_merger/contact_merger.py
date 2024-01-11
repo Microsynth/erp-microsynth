@@ -8,7 +8,7 @@
 import frappe
 import json
 from datetime import datetime
-
+from frappe.model.rename_doc import rename_doc
 
 @frappe.whitelist()
 def get_contact_details(contact_1=None, contact_2=None):
@@ -38,6 +38,7 @@ def get_contact_details(contact_1=None, contact_2=None):
 
 @frappe.whitelist()
 def merge_contacts(contact_1, contact_2, values):
+    """ THIS IS V1
     if not frappe.db.exists("Contact", contact_1):
         return {'error': "Contact 1 not found"}
     if not frappe.db.exists("Contact", contact_2):
@@ -56,5 +57,28 @@ def merge_contacts(contact_1, contact_2, values):
         contact2.status = "Disabled"
         contact2.add_comment(comment_type='Comment', text=(f"Merged into Contact '{contact_1.name}' on {datetime.now()}"))
         contact2.save()
-
+    """
+    
+    new_contact_name = rename_doc(doctype="Contact", old=contact_2, new=contact_1, merge=True, ignore_permissions=True)
+    values = json.loads(values)  # parse string to dict
+    new_contact = frappe.get_doc("Contact", new_contact_name)
+    new_contact.update(values)
+    links = new_contact.as_dict()['links']         # this is to preserve potential other links
+    new_contact.links = []
+    new_contact.append('links', {
+        'link_doctype': "Customer",
+        'link_name': values['customer']
+    })
+    for l in links:
+        if l.link_doctype != "Customer":
+            new_contact.append('links', {
+                'link_doctype': l.link_doctype,
+                'link_name': l.link_name
+            })
+    new_contact.save()
+    
+    new_contact.add_comment(comment_type='Comment', text=(f"Merged from '{contact_2}' on {datetime.now()}"))
+    
     frappe.db.commit()
+
+    return {'error': None, 'contact': new_contact_name}
