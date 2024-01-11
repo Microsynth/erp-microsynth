@@ -16,10 +16,18 @@ def get_contact_details(contact_1=None, contact_2=None):
 
     if frappe.db.exists("Contact", contact_1):
         data['contact_1'] = frappe.get_doc("Contact", contact_1).as_dict()
+        for l in data['contact_1'].get("links"):
+            if l.link_doctype == "Customer":
+                data['contact_1']['customer'] = l.link_name
+                break
         if frappe.db.exists("Address", data['contact_1']['address']):
             data['address_1'] = frappe.get_doc("Address", data['contact_1']['address']).as_dict()
     if frappe.db.exists("Contact", contact_2):
         data['contact_2'] = frappe.get_doc("Contact", contact_2).as_dict()
+        for l in data['contact_2'].get("links"):
+            if l.link_doctype == "Customer":
+                data['contact_2']['customer'] = l.link_name
+                break
         if frappe.db.exists("Address", data['contact_2']['address']):
             data['address_2'] = frappe.get_doc("Address", data['contact_2']['address']).as_dict()
 

@@ -49,6 +49,11 @@
         <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.receive_newsletter %}btn-primary{% endif %} btn-toggle form_btn" id="btn_receive_newsletter_2" data-fieldname="receive_newsletter" data-value="{{ contact_2.receive_newsletter }}">{{ contact_2.receive_newsletter or "-" }}</button></td>
     </tr>
     <tr>
+        <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>{{ _("Customer") }}</td>
+        <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_1" data-fieldname="customer" data-value="{{ contact_1.customer }}">{{ contact_1.customer or "-" }}</button></td>
+        <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_2" data-fieldname="customer" data-value="{{ contact_2.customer }}">{{ contact_2.customer or "-" }}</button></td>
+    </tr>
+    <tr>
         <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}>Address</td>
         <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if contact_1.address %}btn-primary{% endif %} btn-toggle form_btn" id="btn_address_1" data-fieldname="address" data-value="{{ contact_1.address }}">{{ contact_1.address or "-" }}</button></td>
         <td {% if contact_1.address != contact_2.address %} bgcolor="#F5A9A9" {% else %} bgcolor="#A9F5A9" {% endif %}><button class="btn btn-sm {% if not contact_1.address %}btn-primary{% endif %} btn-toggle form_btn" id="btn_address_2" data-fieldname="address" data-value="{{ contact_2.address }}">{{ contact_2.address or "-" }}</button></td>

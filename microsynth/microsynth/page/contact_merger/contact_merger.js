@@ -32,6 +32,9 @@ frappe.contact_merger = {
         this.page.main.find("#merge").on('click', function() {
             frappe.contact_merger.merge_contact();
         });
+        this.page.main.find("#switch").on('click', function() {
+            frappe.contact_merger.switch_contacts();
+        });
     },
     run: function() {
         
@@ -105,6 +108,12 @@ frappe.contact_merger = {
                 } 
             }
         });
+    },
+    switch_contacts: function() {
+        var tmp = document.getElementById("contact_1").value;
+        document.getElementById("contact_1").value = document.getElementById("contact_2").value;
+        document.getElementById("contact_2").value = tmp;
+        frappe.contact_merger.display_contact_details();
     }
 }
 
