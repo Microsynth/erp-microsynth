@@ -207,6 +207,16 @@ def check_submit_delivery_note(delivery_note):
         #     print("Delivery Note '{0}' is from a sales order created on {1}".format(delivery_note.name, sales_order_creation))
         #     return
 
+        # Check that the Delivery Note does not contain a Sample with a Barcode Label associated with more than one Sample
+        for sample in delivery_note.samples:
+            barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
+            samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]])
+            if len(samples) > 1:
+                msg = f"Delivery Note '{delivery_note.name}' contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples: {samples=}"
+                print(msg)
+                frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+                return
+
         delivery_note.submit()
 
     except Exception as err:
