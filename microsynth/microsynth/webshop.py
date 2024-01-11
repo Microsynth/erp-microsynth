@@ -855,40 +855,6 @@ def place_order(content, client="webshop"):
             so_doc.append('items', _item)
 
     # append items
-    # if 'product_type' in content and content['product_type'] == 'Sequencing':
-    #     # consolidate items
-    #     consolidated_item_qtys = {}
-    #     for i in content['items']:
-    #         if not frappe.db.exists("Item", i['item_code']):
-    #             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
-    #                 'reference': None}
-
-    #         if i['item_code'] in consolidated_item_qtys:
-    #             if 'rate' in i and i['rate'] is not None:
-    #                 # this item is overriding the normal rate (e.g. shipping item)
-    #                 consolidated_item_qtys[(i['item_code'], i['rate'])] += i['qty']
-    #             else:
-    #                 consolidated_item_qtys[(i['item_code'], None)] += i['qty']
-    #         else:
-    #             if 'rate' in i and i['rate'] is not None:
-    #                 consolidated_item_qtys[(i['item_code'], i['rate'])] = i['qty']
-    #             else:
-    #                 consolidated_item_qtys[(i['item_code'], None)] = i['qty']
-
-    #     # apply consolidated items
-    #     for item_rate, qty in consolidated_item_qtys.items():
-    #         item_detail = {
-    #             'item_code': item_rate[0],
-    #             'qty': qty,
-    #             'prevdoc_docname': quotation
-    #         }
-    #         if item_rate[1] is not None:
-    #             # this item is overriding the normal rate (e.g. shipping item)
-    #             item_detail['rate'] = i['rate']
-    #             item_detail['price_list_rate'] = i['rate']
-    #         so_doc.append('items', item_detail)
-    # else:
-    #     # do NOT consolidate items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
             return {'success': False, 'message': "invalid item: {0}".format(i['item_code']), 
