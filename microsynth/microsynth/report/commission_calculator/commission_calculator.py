@@ -85,6 +85,16 @@ def get_data(filters):
                     `tabPayment Entry`.`docstatus` = 1
                     AND `tabPayment Entry`.`posting_date` BETWEEN "{filters.get('from_date')}" AND "{filters.get('to_date')}"
                     AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Invoice" /* map to allocated invoices */
+                UNION ALL SELECT
+                    `tabJournal Entry Account`.`reference_name`,
+                    `tabJournal Entry Account`.`credit_in_account_currency`,
+                    `tabJournal Entry Account`.`account_currency` AS `currency`
+                FROM `tabJournal Entry Account`
+                LEFT JOIN `tabJournal Entry` ON `tabJournal Entry`.`name` = `tabJournal Entry Account`.`parent`
+                WHERE 
+                    `tabJournal Entry`.`docstatus` = 1
+                    AND `tabJournal Entry`.`posting_date` BETWEEN "{filters.get('from_date')}" AND "{filters.get('to_date')}"
+                    AND `tabJournal Entry Account`.`reference_type` = "Sales Invoice" /* map to allocated invoices */
             ) AS `gross_cash_flow`
         ) AS `provision_base`
         WHERE `provision_base`.`provision_fraction` != 0
