@@ -5,10 +5,11 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 #
 
-import frappe
 import json
 from datetime import datetime
+import frappe
 from frappe.model.rename_doc import rename_doc
+
 
 @frappe.whitelist()
 def get_contact_details(contact_1=None, contact_2=None):
@@ -20,16 +21,35 @@ def get_contact_details(contact_1=None, contact_2=None):
             if l.link_doctype == "Customer":
                 data['contact_1']['customer'] = l.link_name
                 break
+        data['contact_1']['email_id2'] = data['contact_1']['email_ids'][1].email_id if len(data['contact_1']['email_ids']) > 1 else None
+        data['contact_1']['email_id3'] = data['contact_1']['email_ids'][2].email_id if len(data['contact_1']['email_ids']) > 2 else None
         if frappe.db.exists("Address", data['contact_1']['address']):
             data['address_1'] = frappe.get_doc("Address", data['contact_1']['address']).as_dict()
+            data['address_1']['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
+                                                                        {
+                                                                            'contact': contact_1,
+                                                                            'address': data['contact_1']['address'],
+                                                                            'customer_name': data['contact_1']['customer']
+                                                                        })
     if frappe.db.exists("Contact", contact_2):
         data['contact_2'] = frappe.get_doc("Contact", contact_2).as_dict()
         for l in data['contact_2'].get("links"):
             if l.link_doctype == "Customer":
                 data['contact_2']['customer'] = l.link_name
                 break
+        if len(data['contact_2']['email_ids']) > 1:
+            data['contact_2']['email_id2'] = data['contact_2']['email_ids'][1].email_id
+        else:
+            data['contact_2']['email_id2'] = None
+        data['contact_2']['email_id3'] = data['contact_2']['email_ids'][2].email_id if len(data['contact_2']['email_ids']) > 2 else None
         if frappe.db.exists("Address", data['contact_2']['address']):
             data['address_2'] = frappe.get_doc("Address", data['contact_2']['address']).as_dict()
+            data['address_2']['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
+                                                                        {
+                                                                            'contact': contact_2,
+                                                                            'address': data['contact_2']['address'],
+                                                                            'customer_name': data['contact_2']['customer']
+                                                                        })
 
     html = frappe.render_template("microsynth/microsynth/page/contact_merger/contact_details.html", data)
 
@@ -79,6 +99,16 @@ def merge_contacts(contact_1, contact_2, values):
                 'link_doctype': l.link_doctype,
                 'link_name': l.link_name
             })
+    if values['email_id2']:
+        new_contact.append("email_ids", {
+                    'email_id': values['email_id2'],
+                    'is_primary': 0
+                })
+    if values['email_id3']:
+        new_contact.append("email_ids", {
+                    'email_id': values['email_id3'],
+                    'is_primary': 0
+                })
     new_contact.save()
     new_contact.add_comment(comment_type='Comment', text=(f"Merged from '{contact_2}' on {datetime.now()}"))
     frappe.db.commit()

@@ -35,6 +35,12 @@ frappe.contact_merger = {
         this.page.main.find("#switch").on('click', function() {
             frappe.contact_merger.switch_contacts();
         });
+        this.page.main.find("#btn_contact_1").on('click', function() {
+            frappe.contact_merger.open_contact_1();
+        });
+        this.page.main.find("#btn_contact_2").on('click', function() {
+            frappe.contact_merger.open_contact_2();
+        });
     },
     run: function() {
         
@@ -116,6 +122,14 @@ frappe.contact_merger = {
         document.getElementById("contact_1").value = document.getElementById("contact_2").value;
         document.getElementById("contact_2").value = tmp;
         frappe.contact_merger.display_contact_details();
+    },
+    open_contact_1: function() {
+        var contact_1 = document.getElementById("contact_1").value;
+        frappe.set_route("Form", "Contact", contact_1);
+    },
+    open_contact_2: function() {
+        var contact_2 = document.getElementById("contact_2").value;
+        frappe.set_route("Form", "Contact", contact_2);
     }
 }
 

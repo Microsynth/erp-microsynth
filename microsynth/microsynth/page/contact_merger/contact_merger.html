@@ -1,32 +1,31 @@
-<div class="section-body">
-    <div class="row">
+<table class="table" style="width: 100%; ">
+    <tr>
+        <td style="width: 20%; "></td>
 
-      <div class="form-column col-sm-3">
-        <p>{{ __("Contact 1") }}</p>
-        <input id="contact_1" class="contact_1" />
-      </div>
+        <td style="width: 27%; ">
+            <p>{{ __("Contact 1") }}</p>
+            <input id="contact_1" class="contact_1" />
+            <button type="submit" id="btn_contact_1" class="btn btn-sm">{{ __("Contact 1") }}</button>
+        </td>
 
-      <div class="form-column col-sm-3">
-        <br>
-        <button type="submit" id="switch" class="btn btn-sm">{{ __("Switch") }}</button>  
-      </div>
+        <td style="width: 13%; ">
+            <br>
+            <button type="submit" id="switch" class="btn btn-sm">{{ __("Switch") }}</button>
+        </td>
 
-      <div class="form-column col-sm-3">
-        <p>{{ __("Contact 2") }}</p>
-        <input id="contact_2" class="contact_2" />
-      </div>
+        <td style="width: 35%; ">
+            <p>{{ __("Contact 2") }}</p>
+            <input id="contact_2" class="contact_2" />
+            <button type="submit" id="btn_contact_2" class="btn btn-sm">{{ __("Contact 2") }}</button>
+        </td>
 
-      <div class="form-column col-sm-3" style="text-align: right; ">
-        <br>
-        <button type="submit" id="merge" class="btn btn-sm btn-primary" disabled>{{ __("Merge") }}</button>  
-      </div>
+        <td style="width: 5%; ">
+            <br>
+            <button type="submit" id="merge" class="btn btn-sm btn-primary" disabled>{{ __("Merge") }}</button>
+        </td>
 
-    </div>
-      
-    <div class="row">
-        <div class="col-sm-12">
-        <div id="table_placeholder"></div>
-    </div>
+    </tr>
+</table>
 
-    </div>
-</div>
+
+<div id="table_placeholder"></div>
