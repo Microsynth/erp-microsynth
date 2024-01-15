@@ -556,7 +556,7 @@ def populate_price_lists(user):
     Go through all price lists and populate missing prices
 
     Run from bench like
-    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}"
     """
     price_lists = frappe.db.sql("""
         SELECT `name`
@@ -579,7 +579,7 @@ def clean_price_lists(user):
     Go through all price lists and clean up conflicting prices
 
     Run from bench like
-    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}
+    bench execute microsynth.microsynth.report.pricing_configurator.pricing_configurator.clean_price_lists --kwargs "{'user': 'firstname.lastname@microsynth.ch'}"
     """
     price_lists = frappe.db.sql("""
         SELECT `name`

@@ -86,15 +86,7 @@ frappe.contact_merger = {
             document.getElementById(button.replace("_2", "_1")).classList.remove("btn-primary");
         }
     },
-    merge_contact: function() {
-        var values = {};
-        var buttons = document.getElementsByClassName("btn-toggle btn-primary");
-        for (var i = 0; i < buttons.length; i++) {
-            values[buttons[i].dataset.fieldname] = buttons[i].dataset.value;
-        }
-
-        console.log(values);
-
+    merge: function(values) {
         frappe.call({
             'method': 'microsynth.microsynth.page.contact_merger.contact_merger.merge_contacts',
             'args': {
@@ -116,6 +108,27 @@ frappe.contact_merger = {
                 } 
             }
         });
+    },
+    merge_contact: function() {
+        var values = {};
+        var buttons = document.getElementsByClassName("btn-toggle btn-primary");
+        for (var i = 0; i < buttons.length; i++) {
+            values[buttons[i].dataset.fieldname] = buttons[i].dataset.value;
+        }
+
+        console.log(values);  // TODO: Delete this line after testing
+
+        // Show warning if Contact ID is numeric
+        if (/^\d+$/.test(document.getElementById("contact_2").value)){
+            frappe.confirm('Are you sure you want to <b>delete a Contact</b> with a numeric ID by merging?<br>This <b>contact may lose</b> access to their <b>webshop account</b>.',
+            () => {
+                frappe.contact_merger.merge(values);
+            }, () => {
+                frappe.show_alert('No merge done');
+            });        
+        } else {
+            frappe.contact_merger.merge(values);
+        }
     },
     switch_contacts: function() {
         var tmp = document.getElementById("contact_1").value;
