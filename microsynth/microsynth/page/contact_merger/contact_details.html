@@ -216,5 +216,46 @@
         <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F6CDCE" {% endif %}>{{ address_1.address_title or '-' }}</td>
         <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F6CDCE" {% endif %}>{{ address_2.address_title or '-' }}</td>
     </tr>
+
+    {% if contact_1.contact_note_count or contact_2.contact_note_count  %}
+    <tr>
+        <td>Contact Notes</td>
+        <td>{{ contact_1.contact_note_count or '-' }}</td>
+        <td>{{ contact_2.contact_note_count or '-' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if contact_1.quotation_count or contact_2.quotation_count  %}
+    <tr>
+        <td>Quotations</td>
+        <td>{{ contact_1.quotation_count or '-' }}</td>
+        <td>{{ contact_2.quotation_count or '-' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if contact_1.sales_order_count or contact_2.sales_order_count  %}
+    <tr>
+        <td>Sales Orders</td>
+        <td>{{ contact_1.sales_order_count or '-' }}</td>
+        <td>{{ contact_2.sales_order_count or '-' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if contact_1.delivery_note_count or contact_2.delivery_note_count  %}
+    <tr>
+        <td>Delivery Notes</td>
+        <td>{{ contact_1.delivery_note_count or '-' }}</td>
+        <td>{{ contact_2.delivery_note_count or '-' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if contact_1.sales_invoice_count or contact_2.sales_invoice_count  %}
+    <tr>
+        <td>Sales Invoices</td>
+        <td>{{ contact_1.sales_invoice_count or '-' }}</td>
+        <td>{{ contact_2.sales_invoice_count or '-' }}</td>
+    </tr>
+    {% endif %}
+
     </tbody>
 </table>
