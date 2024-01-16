@@ -9,6 +9,7 @@ import json
 from datetime import datetime
 import frappe
 from frappe.model.rename_doc import rename_doc
+from microsynth.microsynth.marketing import update_marketing_classification
 
 
 @frappe.whitelist()
@@ -23,15 +24,12 @@ def get_contact_details(contact_1=None, contact_2=None):
                 break
         data['contact_1']['email_id2'] = data['contact_1']['email_ids'][1].email_id if len(data['contact_1']['email_ids']) > 1 else None
         data['contact_1']['email_id3'] = data['contact_1']['email_ids'][2].email_id if len(data['contact_1']['email_ids']) > 2 else None
+        data['contact_1']['email_id_count'] = len(data['contact_1']['email_ids'])
         if frappe.db.exists("Address", data['contact_1']['address']):
             data['address_1'] = frappe.get_doc("Address", data['contact_1']['address']).as_dict()
-            data['address_1']['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
-                                                                        {
-                                                                            'contact': contact_1,
-                                                                            'address': data['contact_1']['address'],
-                                                                            'customer_name': data['contact_1']['customer']
-                                                                        })
+            add_address_print(data, 'contact_1', 'address_1')
         add_document_count(data, 'contact_1')
+
     if frappe.db.exists("Contact", contact_2):
         data['contact_2'] = frappe.get_doc("Contact", contact_2).as_dict()
         for l in data['contact_2'].get("links"):
@@ -40,17 +38,25 @@ def get_contact_details(contact_1=None, contact_2=None):
                 break
         data['contact_2']['email_id2'] = data['contact_2']['email_ids'][1].email_id if len(data['contact_2']['email_ids']) > 1 else None
         data['contact_2']['email_id3'] = data['contact_2']['email_ids'][2].email_id if len(data['contact_2']['email_ids']) > 2 else None
+        data['contact_2']['email_id_count'] = len(data['contact_2']['email_ids'])
         if frappe.db.exists("Address", data['contact_2']['address']):
             data['address_2'] = frappe.get_doc("Address", data['contact_2']['address']).as_dict()
-            data['address_2']['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
-                                                                        {
-                                                                            'contact': contact_2,
-                                                                            'address': data['contact_2']['address'],
-                                                                            'customer_name': data['contact_2']['customer']
-                                                                        })
+            add_address_print(data, 'contact_2', 'address_2')
         add_document_count(data, 'contact_2')
+
     html = frappe.render_template("microsynth/microsynth/page/contact_merger/contact_details.html", data)
     return {'data': data, 'html': html}
+
+
+def add_address_print(data, contact_key, address_key):
+    contact_id = data[contact_key]['name']
+    customer_name = frappe.get_value("Customer", data[contact_key]['customer'], "customer_name")
+    data[address_key]['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
+                                                        {
+                                                            'contact': contact_id,
+                                                            'address': data[contact_key]['address'],
+                                                            'customer_name': customer_name
+                                                        })
 
 
 def add_document_count(data, contact_key):
@@ -108,7 +114,7 @@ def merge_contacts(contact_1, contact_2, values):
         values = json.loads(values)  # parse string to dict
 
         if ('punchout_identifier' in values and values['punchout_identifier']) or ('punchout_shop' in values and values['punchout_shop']):
-            return {'error': f"Not allowed to merge punchout Contact: punchout_shop='{values['punchout_shop']}', punchout_identifier='{values['punchout_identifier']}'", 'contact': None}
+            return {'error': f"Not allowed to merge punchout Contact: punchout_shop='{values['punchout_shop'] if 'punchout_shop' in values else None}', punchout_identifier='{values['punchout_identifier'] if 'punchout_identifier' in values else None}'", 'contact': None}
 
         new_contact_name = rename_doc(doctype="Contact", old=contact_2, new=contact_1, merge=True, ignore_permissions=True)
         new_contact = frappe.get_doc("Contact", new_contact_name)
@@ -135,6 +141,7 @@ def merge_contacts(contact_1, contact_2, values):
                         'email_id': values['email_id3'],
                         'is_primary': 0
                     })
+        update_marketing_classification(new_contact_name)
         new_contact.save()
         frappe.db.commit()
     except Exception as err:

@@ -40,6 +40,14 @@
     </tr>
     {% endif %}
 
+    {% if (contact_1.email_id_count and contact_1.email_id_count > 3) or (contact_2.email_id_count and contact_2.email_id_count > 3) %}
+    <tr>
+        <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>Number of Email IDs</td>
+        <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>{{ contact_1.email_id_count }}</td>
+        <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.email_id_count }}</td>
+    </tr>
+    {% endif %}
+
     {% if contact_1.phone or contact_2.phone %}
     <tr>
         <td {% if contact_1.phone != contact_2.phone %} bgcolor="#F6CDCE" {% endif %}>Phone</td>
@@ -126,15 +134,15 @@
 
     <tr>
         <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F6CDCE" {% endif %}>Contact Classification</td>
-        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.contact_classification %}btn-primary{% endif %} btn-toggle form_btn" id="btn_contact_classification_1" data-fieldname="contact_classification" data-value="{{ contact_1.contact_classification }}">{{ contact_1.contact_classification or "-" }}</button></td>
-        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.contact_classification %}btn-primary{% endif %} btn-toggle form_btn" id="btn_contact_classification_2" data-fieldname="contact_classification" data-value="{{ contact_2.contact_classification }}">{{ contact_2.contact_classification or "-" }}</button></td>
+        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F6CDCE" {% endif %}>{{ contact_1.contact_classification or "-" }}</td>
+        <td {% if contact_1.contact_classification != contact_2.contact_classification %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.contact_classification or "-" }}</td>
     </tr>
 
     {% if contact_1.punchout_identifier or contact_2.punchout_identifier %}
     <tr>
         <td {% if contact_1.punchout_identifier != contact_2.punchout_identifier %} bgcolor="#F6CDCE" {% endif %}>{{ _("Punchout Identifier") }}</td>
         <td {% if contact_1.punchout_identifier != contact_2.punchout_identifier %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.punchout_identifier %}btn-primary{% endif %} btn-toggle form_btn" id="btn_punchout_identifier_1" data-fieldname="punchout_identifier" data-value="{{ contact_1.punchout_identifier }}">{{ contact_1.punchout_identifier or "-" }}</button></td>
-        <td {% if contact_1.punchout_identifier != contact_2.custpunchout_identifieromer %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.punchout_identifier %}btn-primary{% endif %} btn-toggle form_btn" id="btn_punchout_identifier_2" data-fieldname="punchout_identifier" data-value="{{ contact_2.punchout_identifier }}">{{ contact_2.punchout_identifier or "-" }}</button></td>
+        <td {% if contact_1.punchout_identifier != contact_2.punchout_identifier %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.punchout_identifier %}btn-primary{% endif %} btn-toggle form_btn" id="btn_punchout_identifier_2" data-fieldname="punchout_identifier" data-value="{{ contact_2.punchout_identifier }}">{{ contact_2.punchout_identifier or "-" }}</button></td>
     </tr>
     {% endif %}
 

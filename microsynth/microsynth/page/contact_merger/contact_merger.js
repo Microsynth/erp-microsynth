@@ -32,6 +32,9 @@ frappe.contact_merger = {
         this.page.main.find("#merge").on('click', function() {
             frappe.contact_merger.merge_contact();
         });
+        this.page.main.find("#reload").on('click', function() {
+            frappe.contact_merger.reload_contacts();
+        });
         this.page.main.find("#switch").on('click', function() {
             frappe.contact_merger.switch_contacts();
         });
@@ -95,7 +98,7 @@ frappe.contact_merger = {
                 'values': values
             },
             'freeze': true,
-            'freeze_message': __("&#129668; Merging magic happening..."),
+            'freeze_message': __("&#129668; Merging Contact '" + document.getElementById("contact_2").value + "' into Contact '" + document.getElementById("contact_1").value + "' ..."),
             'callback': function(r) {
                 if (r.message) {
                     if (r.message.error) {
@@ -129,6 +132,11 @@ frappe.contact_merger = {
         } else {
             frappe.contact_merger.merge(values);
         }
+    },
+    reload_contacts: function() {
+        document.getElementById("contact_1").value = document.getElementById("contact_1").value;
+        document.getElementById("contact_2").value = document.getElementById("contact_2").value;
+        frappe.contact_merger.display_contact_details();
     },
     switch_contacts: function() {
         var tmp = document.getElementById("contact_1").value;

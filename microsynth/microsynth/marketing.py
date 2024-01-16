@@ -7,6 +7,19 @@ from dateutil.relativedelta import relativedelta
 from microsynth.microsynth.utils import get_customer
 
 
+def update_marketing_classification(contact_id):
+    """
+    Updates the marketing classification of the given Contact ID.
+
+    run
+    bench execute microsynth.microsynth.marketing.update_marketing_classification --kwargs "{'contact_id': 236203}"
+    """
+    sales_orders = get_sales_orders(contact_person=contact_id)
+    update_contact_classification(sales_orders, contact_id)
+    customer = get_customer(contact_id)
+    update_customer_status([customer])
+
+
 def get_sales_orders(start_date=None, end_date=None, contact_person=None):
     """
     Returns a dictionary of all submitted Sales Orders in the given date range with the given Contact Person that are not Closed or Cancelled.
