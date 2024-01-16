@@ -237,10 +237,10 @@ def merge_price_lists(filepath):
     merge = dict()
     for currency in ['SEK', 'USD', 'EUR', 'CHF']:
         with open(f"{filepath}/{currency}.csv", 'r') as file:
-            csv_reader = csv.reader(file, delimiter=',')
+            csv_reader = csv.reader(file, delimiter=';')
             next(csv_reader)  # skip header
             for line in csv_reader:
-                assert len(line) == 9  # Sr,Name,Docstatus,Item Code,Minimum Qty,Item Name,Price List,Rate,Currency
+                assert len(line) == 9, f"Line '{line}' is expected to have length 9, but has length {len(line)}."  # Sr,Name,Docstatus,Item Code,Minimum Qty,Item Name,Price List,Rate,Currency
                 item_code_qty = (line[3], line[4])  # tuple of Item Code and Minimum Qty
                 if item_code_qty not in merge:
                     merge[item_code_qty] = {'CHF': None, 'EUR': None, 'USD': None, 'SEK': None, 'item_name': line[5]}  # create new dict as value of the dict merge

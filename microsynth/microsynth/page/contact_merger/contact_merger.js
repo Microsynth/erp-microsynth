@@ -25,7 +25,7 @@ frappe.contact_merger = {
         // attach event handlers
         this.page.main.find("#contact_1").on('change', function() {
             frappe.contact_merger.display_contact_details();
-        });  // TODO: Move input fields "Contact 1" and "Contact 2" to the right such that they align with the columns "Contact 1" and "Contact 2"
+        });
         this.page.main.find("#contact_2").on('change', function() {
             frappe.contact_merger.display_contact_details();
         });
@@ -119,11 +119,9 @@ frappe.contact_merger = {
             values[buttons[i].dataset.fieldname] = buttons[i].dataset.value;
         }
 
-        console.log(values);  // TODO: Delete this line after testing
-
         // Show warning if Contact ID is numeric
         if (/^\d+$/.test(document.getElementById("contact_2").value)){
-            frappe.confirm('Are you sure you want to <b>delete a Contact</b> with the numeric ID ' + document.getElementById("contact_2").value + ' by merging?<br>This <b>contact may lose</b> access to their <b>webshop account</b>.',
+            frappe.confirm('Are you sure you want to <b>delete the Contact</b> with the numeric ID ' + document.getElementById("contact_2").value + ' by merging?<br>This <b>contact will lose</b> access to their <b>webshop account</b>.',
             () => {
                 frappe.contact_merger.merge(values);
             }, () => {

@@ -1036,7 +1036,7 @@ def set_customer_default_company_for_country(country):
 TERRITORIES = {
     'lukas.hartl@microsynth.at':                    'Austria',
     'sarah.fajon@microsynth.fr':                    'Paris',
-    'emeraude.hadjattou@microsynth.ch':             'Lyon',  # agnes.nguyen@microsynth.fr
+    'agnes.nguyen@microsynth.fr':                   'Lyon',
     'emeraude.hadjattou@microsynth.ch':             'France (without Paris and Lyon)',
     'roderick.lambertz@microsynth.seqlab.de':       'Germany (Northeast)',
     'georg.brenzel@microsynth.ch':                  'Germany (Northwest)',

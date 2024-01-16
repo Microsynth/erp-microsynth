@@ -87,7 +87,7 @@ def get_data(filters):
                     AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Invoice" /* map to allocated invoices */
                 UNION ALL SELECT
                     `tabJournal Entry Account`.`reference_name`,
-                    `tabJournal Entry Account`.`credit_in_account_currency`,
+                    `tabJournal Entry Account`.`credit_in_account_currency` AS `allocated_amount`,
                     `tabJournal Entry Account`.`account_currency` AS `currency`
                 FROM `tabJournal Entry Account`
                 LEFT JOIN `tabJournal Entry` ON `tabJournal Entry`.`name` = `tabJournal Entry Account`.`parent`
