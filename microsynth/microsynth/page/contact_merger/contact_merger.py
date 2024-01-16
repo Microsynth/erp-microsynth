@@ -14,6 +14,9 @@ from microsynth.microsynth.marketing import update_marketing_classification
 
 @frappe.whitelist()
 def get_contact_details(contact_1=None, contact_2=None):
+    """
+    Get and add Contact details, call HTML rendering.
+    """
     data = {'contact_1': {}, 'contact_2': {}, 'address_1':{}, 'address_2':{} }
 
     if frappe.db.exists("Contact", contact_1):
@@ -25,6 +28,7 @@ def get_contact_details(contact_1=None, contact_2=None):
         data['contact_1']['email_id2'] = data['contact_1']['email_ids'][1].email_id if len(data['contact_1']['email_ids']) > 1 else None
         data['contact_1']['email_id3'] = data['contact_1']['email_ids'][2].email_id if len(data['contact_1']['email_ids']) > 2 else None
         data['contact_1']['email_id_count'] = len(data['contact_1']['email_ids'])
+        # Address of Contact 1
         if frappe.db.exists("Address", data['contact_1']['address']):
             data['address_1'] = frappe.get_doc("Address", data['contact_1']['address']).as_dict()
             add_address_print(data, 'contact_1', 'address_1')
@@ -39,6 +43,7 @@ def get_contact_details(contact_1=None, contact_2=None):
         data['contact_2']['email_id2'] = data['contact_2']['email_ids'][1].email_id if len(data['contact_2']['email_ids']) > 1 else None
         data['contact_2']['email_id3'] = data['contact_2']['email_ids'][2].email_id if len(data['contact_2']['email_ids']) > 2 else None
         data['contact_2']['email_id_count'] = len(data['contact_2']['email_ids'])
+        # Address of Contact 2
         if frappe.db.exists("Address", data['contact_2']['address']):
             data['address_2'] = frappe.get_doc("Address", data['contact_2']['address']).as_dict()
             add_address_print(data, 'contact_2', 'address_2')
@@ -49,6 +54,9 @@ def get_contact_details(contact_1=None, contact_2=None):
 
 
 def add_address_print(data, contact_key, address_key):
+    """
+    Add Address data to the Contact details using the adress template.
+    """
     contact_id = data[contact_key]['name']
     customer_name = frappe.get_value("Customer", data[contact_key]['customer'], "customer_name")
     data[address_key]['address_print'] = frappe.render_template("microsynth/templates/includes/address.html",
@@ -60,6 +68,9 @@ def add_address_print(data, contact_key, address_key):
 
 
 def add_document_count(data, contact_key):
+    """
+    Determine and add the number of documents (Contact Note, QTN, SO, DN, SI) to the Contact details.
+    """
     contact_id = data[contact_key]['name']
 
     contact_notes = frappe.db.sql(f"""
@@ -104,6 +115,7 @@ def merge_contacts(contact_1, contact_2, values):
     Merge Contact 2 into Contact 1 preserving the values in the parameter 'values'.
     Thereby, Contact 2 is deleted.
     Return an error if there is a value for punchout_identifier or punchout_shop.
+    Update Customer Status and Contact Classification (Marketing section) after merging.
     """
     try:
         if not frappe.db.exists("Contact", contact_1):
@@ -116,6 +128,7 @@ def merge_contacts(contact_1, contact_2, values):
         if ('punchout_identifier' in values and values['punchout_identifier']) or ('punchout_shop' in values and values['punchout_shop']):
             return {'error': f"Not allowed to merge punchout Contact: punchout_shop='{values['punchout_shop'] if 'punchout_shop' in values else None}', punchout_identifier='{values['punchout_identifier'] if 'punchout_identifier' in values else None}'", 'contact': None}
 
+        # rename_doc is a core function and deletes the old Contact (here contact_2)
         new_contact_name = rename_doc(doctype="Contact", old=contact_2, new=contact_1, merge=True, ignore_permissions=True)
         new_contact = frappe.get_doc("Contact", new_contact_name)
         new_contact.update(values)
@@ -131,6 +144,12 @@ def merge_contacts(contact_1, contact_2, values):
                     'link_doctype': l.link_doctype,
                     'link_name': l.link_name
                 })
+        new_contact.email_ids = []
+        if 'email_id' in values and values['email_id']:
+            new_contact.append("email_ids", {
+                        'email_id': values['email_id'],
+                        'is_primary': 1
+                    })
         if 'email_id2' in values and values['email_id2']:
             new_contact.append("email_ids", {
                         'email_id': values['email_id2'],
