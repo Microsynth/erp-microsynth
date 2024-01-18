@@ -121,7 +121,7 @@ frappe.contact_merger = {
 
         // Show warning if Contact ID is numeric
         if (/^\d+$/.test(document.getElementById("contact_2").value)){
-            frappe.confirm('Are you sure you want to <b>delete the Contact</b> with the numeric ID ' + document.getElementById("contact_2").value + ' by merging?<br>This <b>contact will lose</b> access to their <b>webshop account</b>.',
+            frappe.confirm('Are you sure you want to <b>delete the Contact</b> with the numeric ID ' + document.getElementById("contact_2").value + ' by merging?<br>This <b>contact will lose</b> access to the <b>webshop account</b>.',
             () => {
                 frappe.contact_merger.merge(values);
             }, () => {
