@@ -3458,11 +3458,9 @@ def lock_all_contacts():
 
     contacts = frappe.get_all("Contact", fields=['name'])
 
-    i = 0
-    for c in contacts:
-        print (c['name'])
+    for i, c in enumerate(contacts):
         lock_contact(c)
-        if i > 1000:
+        if i % 1000 == 0:
+            print(f"{datetime.now()} Already locked {i}/{len(contacts)} Contacts.")
             frappe.db.commit()
-            i = 0
-        i += 1
+    print(f"{datetime.now()} Finished locking of {len(contacts)} Contacts.")
