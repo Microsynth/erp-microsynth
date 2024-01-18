@@ -13,6 +13,15 @@
         <td {% if contact_1.first_name != contact_2.first_name %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_1" data-fieldname="first_name" data-value="{{ contact_1.first_name }}">{{ contact_1.first_name or "-" }}</button></td>
         <td {% if contact_1.first_name != contact_2.first_name %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.first_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_first_name_2" data-fieldname="first_name" data-value="{{ contact_2.first_name }}">{{ contact_2.first_name or "-" }}</button></td>
     </tr>
+
+    {% if contact_1.middle_name or contact_2.middle_name %}
+    <tr>
+        <td {% if contact_1.middle_name != contact_2.middle_name %} bgcolor="#F6CDCE" {% endif %}>Middle Name</td>
+        <td {% if contact_1.middle_name != contact_2.middle_name %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.middle_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_middle_name_1" data-fieldname="middle_name" data-value="{{ contact_1.middle_name }}">{{ contact_1.middle_name or "-" }}</button></td>
+        <td {% if contact_1.middle_name != contact_2.middle_name %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.middle_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_middle_name_2" data-fieldname="middle_name" data-value="{{ contact_2.middle_name }}">{{ contact_2.middle_name or "-" }}</button></td>
+    </tr>
+    {% endif %}
+
     <tr>
         <td {% if contact_1.last_name != contact_2.last_name %} bgcolor="#F6CDCE" {% endif %}>Last name</td>
         <td {% if contact_1.last_name != contact_2.last_name %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.last_name %}btn-primary{% endif %} btn-toggle form_btn" id="btn_last_name_1" data-fieldname="last_name" data-value="{{ contact_1.last_name }}">{{ contact_1.last_name or "-" }}</button></td>
@@ -45,6 +54,14 @@
         <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>Number of Email IDs</td>
         <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>{{ contact_1.email_id_count }}</td>
         <td {% if contact_1.email_id_count != contact_2.email_id_count %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.email_id_count }}</td>
+    </tr>
+    {% endif %}
+
+    {% if contact_1.user or contact_2.user %}
+    <tr>
+        <td {% if contact_1.user != contact_2.user %} bgcolor="#F6CDCE" {% endif %}>User ID</td>
+        <td {% if contact_1.user != contact_2.user %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.user %}btn-primary{% endif %} btn-toggle form_btn" id="btn_user_1" data-fieldname="user" data-value="{{ contact_1.user }}">{{ contact_1.user or "-" }}</button></td>
+        <td {% if contact_1.user != contact_2.user %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.user %}btn-primary{% endif %} btn-toggle form_btn" id="btn_user_2" data-fieldname="user" data-value="{{ contact_2.user }}">{{ contact_2.user or "-" }}</button></td>
     </tr>
     {% endif %}
 
@@ -118,11 +135,13 @@
     </tr>
     {% endif %}
 
+    {% if contact_1.group_leader or contact_2.group_leader %}
     <tr>
         <td {% if contact_1.group_leader != contact_2.group_leader %} bgcolor="#F6CDCE" {% endif %}>Group Leader</td>
         <td {% if contact_1.group_leader != contact_2.group_leader %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.group_leader %}btn-primary{% endif %} btn-toggle form_btn" id="btn_group_leader_1" data-fieldname="group_leader" data-value="{{ contact_1.group_leader }}">{{ contact_1.group_leader or "-" }}</button></td>
         <td {% if contact_1.group_leader != contact_2.group_leader %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.group_leader %}btn-primary{% endif %} btn-toggle form_btn" id="btn_group_leader_2" data-fieldname="group_leader" data-value="{{ contact_2.group_leader }}">{{ contact_2.group_leader or "-" }}</button></td>
     </tr>
+    {% endif %}
 
     {% if contact_1.cost_center or contact_2.cost_center %}
     <tr>
@@ -157,8 +176,8 @@
     {% if contact_1.receive_newsletter or contact_2.receive_newsletter %}
     <tr>
         <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F6CDCE" {% endif %}>Receive Newsletter</td>
-        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.receive_newsletter %}btn-primary{% endif %} btn-toggle form_btn" id="btn_receive_newsletter_1" data-fieldname="receive_newsletter" data-value="{{ contact_1.receive_newsletter }}">{{ contact_1.receive_newsletter or "-" }}</button></td>
-        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.receive_newsletter %}btn-primary{% endif %} btn-toggle form_btn" id="btn_receive_newsletter_2" data-fieldname="receive_newsletter" data-value="{{ contact_2.receive_newsletter }}">{{ contact_2.receive_newsletter or "-" }}</button></td>
+        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F6CDCE" {% endif %}>{{ contact_1.receive_newsletter or "-" }}</td>
+        <td {% if contact_1.receive_newsletter != contact_2.receive_newsletter %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.receive_newsletter or "-" }}</td>
     </tr>
     {% endif %}
 
@@ -176,7 +195,12 @@
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}>{{ _("Customer") }}</td>
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_1" data-fieldname="customer" data-value="{{ contact_1.customer }}">{{ contact_1.customer or "-" }}</button></td>
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_2" data-fieldname="customer" data-value="{{ contact_2.customer }}">{{ contact_2.customer or "-" }}</button></td>
-    </tr>    
+    </tr>
+    <tr>
+        <td {% if contact_1.customer_status != contact_2.customer_status %} bgcolor="#F6CDCE" {% endif %}>Customer Status</td>
+        <td {% if contact_1.customer_status != contact_2.customer_status %} bgcolor="#F6CDCE" {% endif %}>{{ contact_1.customer_status or "-" }}</td>
+        <td {% if contact_1.customer_status != contact_2.customer_status %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.customer_status or "-" }}</td>
+    </tr>
     <tr>
         <td {% if contact_1.address != contact_2.address %} bgcolor="#F6CDCE" {% endif %}>Address</td>
         <td {% if contact_1.address != contact_2.address %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.address %}btn-primary{% endif %} btn-toggle form_btn" id="btn_address_1" data-fieldname="address" data-value="{{ contact_1.address }}">{{ contact_1.address or "-" }}</button></td>
@@ -219,11 +243,13 @@
     </tr>
     {% endif %}
 
+    {% if address_1.address_title or address_2.address_title %}
     <tr>
         <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F6CDCE" {% endif %}>Address Title</td>
         <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F6CDCE" {% endif %}>{{ address_1.address_title or '-' }}</td>
         <td {% if address_1.address_title != address_2.address_title %} bgcolor="#F6CDCE" {% endif %}>{{ address_2.address_title or '-' }}</td>
     </tr>
+    {% endif %}
 
     {% if contact_1.contact_note_count or contact_2.contact_note_count  %}
     <tr>

@@ -123,6 +123,13 @@ def merge_contacts(contact_1, contact_2, values):
         if not frappe.db.exists("Contact", contact_2):
             return {'error': f"Contact 2 '{contact_2}' not found", 'contact': None}
 
+        shipping_1 = frappe.get_value("Address", frappe.get_value("Contact", contact_1, "address"), "is_shipping_address")
+        shipping_2 = frappe.get_value("Address", frappe.get_value("Contact", contact_2, "address"), "is_shipping_address")
+        billing_1 = frappe.get_value("Address", frappe.get_value("Contact", contact_1, "address"), "is_primary_address")
+        billing_2 = frappe.get_value("Address", frappe.get_value("Contact", contact_2, "address"), "is_primary_address")
+        if shipping_1 != shipping_2 or billing_1 != billing_2:
+            return {'error': "Not allowed to merge a billing with a shipping Contact or vice versa.", 'contact': None}
+
         values = json.loads(values)  # parse string to dict
 
         if ('punchout_identifier' in values and values['punchout_identifier']) or ('punchout_shop' in values and values['punchout_shop']):
