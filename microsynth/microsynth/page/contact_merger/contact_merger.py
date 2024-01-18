@@ -164,6 +164,7 @@ def merge_contacts(contact_1, contact_2, values):
         new_contact.save()
         frappe.db.commit()
     except Exception as err:
+        frappe.log_error(f"Error when merging contact {contact_2} into {contact_1}\n{err}", "contact_merger.merge_contacts")
         return {'error': err, 'contact': new_contact_name}
     else:
         return {'error': None, 'contact': new_contact_name}

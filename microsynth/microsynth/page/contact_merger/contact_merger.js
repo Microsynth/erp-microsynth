@@ -57,7 +57,7 @@ frappe.contact_merger = {
             },
             'callback': function(r) {
                 if (r.message) {
-                    console.log(r.message);
+                    // console.log(r.message);
                     try {
                         document.getElementById("table_placeholder").innerHTML = r.message.html;
                         frappe.contact_merger.attach_toggle_handlers();
