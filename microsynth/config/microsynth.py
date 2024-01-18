@@ -63,6 +63,12 @@ def get_data():
                        "description": _("Contact")
                     },
                     {
+                        "type": "page",
+                        "name": "contact_merger",
+                        "label": _("Contact Merger"),
+                        "description": _("Contact Merger")
+                    },
+                    {
                         "type": "report",
                         "name": "Find Notes",
                         "label": _("Find Notes"),
