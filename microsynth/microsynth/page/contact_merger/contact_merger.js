@@ -67,6 +67,12 @@ frappe.contact_merger = {
                 } 
             }
         });
+    },
+    attach_toggle_handlers: function() {
+        // add toggle handler to each button with class btn-toggle
+        this.page.main.find(".btn-toggle").on('click', function(btn) {
+            frappe.contact_merger.toggle(btn.target.id);
+        });
         // check and enable merge button
         if ((document.getElementById("contact_1").value) 
             && (document.getElementById("contact_2").value)
@@ -75,11 +81,6 @@ frappe.contact_merger = {
         } else {
             document.getElementById("merge").disabled = true;
         }
-    },
-    attach_toggle_handlers: function() {
-        this.page.main.find(".btn-toggle").on('click', function(btn) {
-            frappe.contact_merger.toggle(btn.target.id);
-        });
     },
     toggle: function(button) {
         document.getElementById(button).classList.add("btn-primary");
