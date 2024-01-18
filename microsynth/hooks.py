@@ -112,6 +112,9 @@ jenv = {
 #	}
 # }
 doc_events = {
+    "Contact": {
+        "after_insert": "microsynth.microsynth.marketing.lock_contact"
+    },
     "Payment Reminder": {
         "after_insert": "microsynth.microsynth.payment_reminder.extend_values"
     },

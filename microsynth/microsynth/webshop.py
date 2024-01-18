@@ -10,6 +10,7 @@ import json
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
+from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
@@ -122,11 +123,17 @@ def register_user(user_data, client="webshop"):
     user_data['contact']['status'] = "Open"
     contact_name = update_contact(user_data['contact'])
 
+    # Create Contact Lock
+    lock_contact_by_name(contact_name)
+
     # Create invoice contact
     user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']    # Extend invoice_contact object to use the legacy update_contact function
     user_data['invoice_contact']['customer_id'] = customer.name
     user_data['invoice_contact']['status'] = "Open"
     invoice_contact_name = update_contact(user_data['invoice_contact'])
+
+    # Create Contact Lock for invoice contact
+    lock_contact_by_name(invoice_contact_name)
 
     # Update customer data
 
@@ -167,7 +174,7 @@ def register_user(user_data, client="webshop"):
         return {'success': False, 'message': error}
 
 
-@frappe.whitelist()
+# @frappe.whitelist()
 def create_update_customer(customer_data, client="webshop"):
     """
     This function will create or update a customer and also the given contact and address
@@ -237,6 +244,7 @@ def create_update_contact(contact, client="webshop"):
     if not 'first_name' in contact:
         return{'success': False, 'message': "First Name missing"}
     contact_name = update_contact(contact)
+    lock_contact_by_name(contact_name)
     if contact_name:
         return {'success': True, 'message': "OK"}
     else: 

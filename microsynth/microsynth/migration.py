@@ -3445,3 +3445,24 @@ def update_used_plate_labels(filepath):
         total_customer_disabled += counters['customer_disabled']
         total_sold_twice += counters['sold_twice']
     print(f"together: {total_counter=}, {total_found=}, {total_not_found=}, {total_status_mismatch=}, {total_multiple=}, {total_customer_disabled=}, {total_sold_twice=}")
+
+
+def lock_all_contacts():
+    """
+    Create Contact Locks for all Contacts
+
+    run 
+    bench execute microsynth.microsynth.migration.lock_all_contacts
+    """
+    from microsynth.microsynth.marketing import lock_contact
+
+    contacts = frappe.get_all("Contact", fields=['name'])
+
+    i = 0
+    for c in contacts:
+        print (c['name'])
+        lock_contact(c)
+        if i > 1000:
+            frappe.db.commit()
+            i = 0
+        i += 1

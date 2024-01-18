@@ -326,3 +326,26 @@ def initialize_marketing_classification():
     """
     initialize_contact_classification()
     initialize_customer_status()
+
+
+def lock_contact_by_name(contact):
+    """
+    Create Contact Lock for the contact specified by its name.
+
+    run
+    bench execute microsynth.microsynth.marketing.lock_contact_by_name --kwargs "{'contact': '220000'}"
+    """
+    existing_locks = frappe.get_all("Contact Lock", filters={'contact': contact})
+
+    if len(existing_locks) == 0:
+        frappe.get_doc({
+            'doctype': 'Contact Lock',
+            'contact': contact
+        }).insert(ignore_permissions=True)
+    return
+
+
+def lock_contact(self, event=None):
+    lock_contact_by_name(self.name)
+    frappe.db.commit()
+    return
