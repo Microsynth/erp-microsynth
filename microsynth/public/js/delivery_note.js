@@ -2,7 +2,7 @@
 frappe.ui.form.on('Delivery Note', {
     refresh(frm) {
         locals.prevdoc_checked = false;
-        prepare_naming_series(frm);				// common function
+        prepare_naming_series(frm);             // common function
         
         hide_in_words();
 
@@ -15,9 +15,15 @@ frappe.ui.form.on('Delivery Note', {
                 check_prevdoc_rates(cur_frm);
             }, time_out);
         }
+
+        // remove Menu > Email if document is not valid
+        if (frm.doc.docstatus != 1) {
+            var target ="span[data-label='" + __("Email") + "']";
+            $(target).parent().parent().remove();
+        }
     },
     company(frm) {
-        set_naming_series(frm);					// common function
+        set_naming_series(frm);                 // common function
     },
     validate(frm) {
         if (!locals.prevdoc_checked && frm.doc.__islocal) {

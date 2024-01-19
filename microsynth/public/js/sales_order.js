@@ -12,6 +12,12 @@ cur_frm.dashboard.add_transactions([
 /* Custom script extension for Sales Order */
 frappe.ui.form.on('Sales Order', {
     refresh(frm) {
+        // remove Menu > Email if document is not valid
+        if (frm.doc.docstatus != 1) {
+            var target ="span[data-label='" + __("Email") + "']";
+            $(target).parent().parent().remove();
+        }
+
         if (!frm.doc.__islocal) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({

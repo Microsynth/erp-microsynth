@@ -13,7 +13,13 @@ frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
-        
+
+        // remove Menu > Email if document is not valid
+        if (frm.doc.docstatus != 1) {
+            var target ="span[data-label='" + __("Email") + "']";
+            $(target).parent().parent().remove();
+        }
+
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
             .then(r => {
@@ -22,7 +28,7 @@ frappe.ui.form.on('Sales Invoice', {
                         allocate_credits(frm);
                     });
                 }
-            })            
+            })
         };
         if (frm.doc.docstatus > 0) {
             frm.add_custom_button(__("Clone"), function() {
@@ -47,7 +53,7 @@ frappe.ui.form.on('Sales Invoice', {
                 download_zugferd_xml(frm);
             });
         }
-        
+
         hide_in_words();
 
         var time_out = 500;
