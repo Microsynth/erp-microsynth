@@ -220,9 +220,10 @@ def async_create_invoices(mode, company, customer):
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
                         subject = "Delivery Note {0}: Insufficient credit".format(delivery_note)
-                        message = "Delivery Note '{delivery_note}': Insufficient credit balance<br>Customer: {customer}<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
+                        message = "Delivery Note '{delivery_note}': Insufficient credit balance<br>Customer ID: {customer}<br>Customer Name: {customer_name}<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
                             delivery_note = delivery_note,
                             customer = dn.get('customer'),
+                            customer_name = dn.get('customer_name'),
                             total = total,
                             credit = round(credit, 2),
                             currency = dn.get('currency'))
