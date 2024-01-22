@@ -94,6 +94,7 @@ def get_data(filters):
                     row[month_key] = count
             data.append(row)
 
+    data.sort(key=lambda row: row['scale'])
     return data
 
 

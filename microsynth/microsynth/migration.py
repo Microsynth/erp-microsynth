@@ -3464,3 +3464,67 @@ def lock_all_contacts():
             print(f"{datetime.now()} Already locked {i}/{len(contacts)} Contacts.")
             frappe.db.commit()
     print(f"{datetime.now()} Finished locking of {len(contacts)} Contacts.")
+
+
+# Mapping from BOS to ERP Oligo scales
+SCALES = {
+    'GEN': 'Genomics',
+    '0.04': '0.04 µmol',
+    '0.2': '0.2 µmol',
+    '1.0': '1.0 µmol',
+    '15': '15 µmol',
+}
+
+
+def import_oligo_scales(directory_path):
+    """
+    Parses several files exported from BOS having all the following format:
+    IDX   IDORDERPOS	OLIGOID	WEBID	SCALE
+    1    	4657881	    4657881	1801066	GEN
+
+    Sets the Scale of the Oligo with the given Web ID accordingly.
+    Estimated runtime: 4 h
+
+    bench execute microsynth.microsynth.migration.import_oligo_scales --kwargs "{'directory_path': '/mnt/erp_share/Oligo/'}"
+    """
+    oligo_dict = {}
+
+    for filename in os.scandir(directory_path):
+        if filename.is_file():
+            with open(filename.path, 'r') as file:
+                csv_reader = csv.reader(file, delimiter='\t')
+                next(csv_reader)  # skip header
+                for line in csv_reader:
+                    if len(line) != 5:
+                        print(f"{len(line)=}; {line=}; skipping")
+                        continue
+                    id_order_pos = line[1]
+                    web_id = line[3]
+                    scale = line[4]
+                    if web_id not in oligo_dict:
+                        oligo_dict[web_id] = [(id_order_pos, scale)]
+                    else:
+                        oligo_dict[web_id].append((id_order_pos, scale))
+            print(f"{datetime.now()} Successfully read file '{filename.path}': {len(oligo_dict)=}.")
+    counter = multiple_counter = none_counter = 0
+    for web_id, tuple_list in oligo_dict.items():
+        if counter % 1000 == 0:
+            print(f"{datetime.now()} Already processed {counter}/{len(oligo_dict)} Oligos ({multiple_counter=}; {none_counter=}).")
+            frappe.db.commit()
+        counter += 1
+        if len(tuple_list) > 1:
+            multiple_counter += 1
+            # Sort list of tuples by id_order_pos ascending
+            tuple_list.sort()  # a list of tuples is sorted by the first elemenent of each tuple ascending by default
+        # Take the scale of the smallest (first) id_order_pos
+        scale = tuple_list[0][1]
+        oligos = frappe.get_all("Oligo", filters=[['web_id', '=', web_id]], fields=['name'])
+        if len(oligos) < 1:
+            #print(f"There is no Oligo with Web ID '{web_id}' in the ERP.")
+            none_counter += 1
+            continue
+        elif len(oligos) > 1:
+            print(f"{web_id=}: {len(oligos)=}; {oligos=}")
+        oligo = frappe.get_doc("Oligo", oligos[0]['name'])
+        oligo.scale = SCALES[scale]
+        oligo.save()
