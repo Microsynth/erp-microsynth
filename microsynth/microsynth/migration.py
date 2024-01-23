@@ -3483,7 +3483,7 @@ def import_oligo_scales(directory_path):
     1    	4657881	    4657881	1801066	GEN
 
     Sets the Scale of the Oligo with the given Web ID accordingly.
-    Estimated runtime: 4 h
+    Estimated runtime: 4-5 h
 
     bench execute microsynth.microsynth.migration.import_oligo_scales --kwargs "{'directory_path': '/mnt/erp_share/Oligo/'}"
     """
@@ -3509,7 +3509,7 @@ def import_oligo_scales(directory_path):
     counter = multiple_counter = none_counter = 0
     for web_id, tuple_list in oligo_dict.items():
         if counter % 1000 == 0:
-            print(f"{datetime.now()} Already processed {counter}/{len(oligo_dict)} Oligos ({multiple_counter=}; {none_counter=}).")
+            print(f"{datetime.now()} Already processed {counter}/{len(oligo_dict)} Oligos (Number of Web IDs occured more than once in the BOS export: {multiple_counter}; Number of distinct Web IDs from BOS export not found in the ERP: {none_counter}).")
             frappe.db.commit()
         counter += 1
         if len(tuple_list) > 1:
@@ -3528,3 +3528,5 @@ def import_oligo_scales(directory_path):
         oligo = frappe.get_doc("Oligo", oligos[0]['name'])
         oligo.scale = SCALES[scale]
         oligo.save()
+    print(f"{datetime.now()} Finished: processed {counter}/{len(oligo_dict)} Oligos (Number of Web IDs occured more than once in the BOS export: {multiple_counter}; Number of distinct Web IDs from BOS export not found in the ERP: {none_counter}).")
+    frappe.db.commit()
