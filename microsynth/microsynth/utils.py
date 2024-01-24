@@ -115,6 +115,8 @@ def create_oligo(oligo):
     # update record
     if 'name' in oligo:
         oligo_doc.oligo_name = oligo['name']
+    if 'scale' in oligo:
+        oligo_doc.scale = oligo['scale']
     if 'substance_type' in oligo:
         oligo_doc.substance_type = oligo['substance_type']
     if 'sequence' in oligo:
