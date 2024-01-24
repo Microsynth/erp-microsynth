@@ -400,13 +400,21 @@ def validate_sales_order(sales_order):
     if sales_order_status != 1:
         frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
         return False
+    
+    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
+    if web_order_id:
+        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {web_order_id}"
+    else:
+        web_order_id_condition = ""
         
-    delivery_notes = frappe.db.sql("""
+    delivery_notes = frappe.db.sql(f"""
         SELECT `tabDelivery Note Item`.`parent`
-            FROM `tabDelivery Note Item`
-            WHERE `tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
-            AND `tabDelivery Note Item`.`docstatus` < 2;
-        """.format(sales_order=sales_order), as_dict=True)
+        FROM `tabDelivery Note Item`
+        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
+            AND `tabDelivery Note Item`.`docstatus` < 2)
+            {web_order_id_condition};
+        """, as_dict=True)
 
     if len(delivery_notes) > 0:
         # frappe.log_error("Order '{0}' has already Delivery Notes. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
