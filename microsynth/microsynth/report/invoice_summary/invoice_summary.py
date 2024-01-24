@@ -11,14 +11,13 @@ def get_columns(filters):
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 250 },
         {"label": _("Customer ID"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90 },
-        {"label": _("Rounded Grand Total"), "fieldname": "rounded_total", "fieldtype": "Currency", "width": 100 },
+        {"label": _("Rounded Grand Total"), "fieldname": "rounded_total", "fieldtype": "Currency", "width": 120 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 75 },
         {"label": _("Customer's Purchase Order"), "fieldname": "po_no", "fieldtype": "Data", "width": 200 },
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100 },
         {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 90 },
-        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 150 },
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 160 },
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 100 },
-        # What about Billing Address, Outstanding Amount, Price List, Punchout Shop?
     ]
 
 
