@@ -1177,6 +1177,9 @@ def determine_territory(address_id):
                 return frappe.get_doc("Territory", "Paris")
             else:
                 return frappe.get_doc("Territory", "France (without Paris and Lyon)")
+        
+        elif address.country == "Réunion" or address.country == "French Guiana":
+            return frappe.get_doc("Territory", "France (without Paris and Lyon)")
 
         elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
                                 "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
