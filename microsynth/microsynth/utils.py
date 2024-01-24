@@ -115,12 +115,20 @@ def create_oligo(oligo):
     # update record
     if 'name' in oligo:
         oligo_doc.oligo_name = oligo['name']
-    if 'scale' in oligo:
-        oligo_doc.scale = oligo['scale']
     if 'substance_type' in oligo:
         oligo_doc.substance_type = oligo['substance_type']
     if 'sequence' in oligo:
         oligo_doc.sequence = oligo['sequence']
+    if 'scale' in oligo:
+        oligo_doc.scale = oligo['scale']
+    if 'purification' in oligo:
+        oligo_doc.purification = oligo['purification']
+    if 'phys_cond' in oligo:
+        oligo_doc.phys_cond = oligo['phys_cond']
+    if 'data_sheet' in oligo:
+        oligo_doc.data_sheet = oligo['data_sheet']
+    if 'aliquots' in oligo:
+        oligo_doc.aliquots = oligo['aliquots']
     # update child table
     if 'items' in oligo:
         oligo_doc.items = []
