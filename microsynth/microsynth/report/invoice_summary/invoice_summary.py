@@ -11,7 +11,7 @@ def get_columns(filters):
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 250 },
         {"label": _("Customer ID"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90 },
-        {"label": _("Rounded Grand Total"), "fieldname": "rounded_total", "fieldtype": "Currency", "width": 120 },
+        {"label": _("Rounded Grand Total"), "fieldname": "rounded_total", "fieldtype": "Currency", "options": "currency", "width": 120 },
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 75 },
         {"label": _("Customer's Purchase Order"), "fieldname": "po_no", "fieldtype": "Data", "width": 200 },
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100 },
@@ -30,13 +30,15 @@ def get_data(filters):
         conditions += f"AND `po_no` = '{filters.get('po_no')}'"
     if filters.get('company'):
         conditions += f"AND `company` = '{filters.get('company')}'"
+    if filters.get('currency'):
+        conditions += f"AND `currency` = '{filters.get('currency')}'"
 
     sql_query = f"""
         SELECT
-			`tabSales Invoice`.`name` AS `sales_invoice`,
-			`tabSales Invoice`.`posting_date` AS `date`,
+            `tabSales Invoice`.`name` AS `sales_invoice`,
+            `tabSales Invoice`.`posting_date` AS `date`,
             `tabSales Invoice`.`customer_name` AS `customer_name`,
-			`tabSales Invoice`.`customer` AS `customer`,
+            `tabSales Invoice`.`customer` AS `customer`,
             `tabSales Invoice`.`rounded_total` AS `rounded_total`,
             `tabSales Invoice`.`currency` AS `currency`,
             `tabSales Invoice`.`po_no` AS `po_no`,
@@ -46,11 +48,17 @@ def get_data(filters):
             `tabSales Invoice`.`web_order_id` AS `web_order_id`
         FROM `tabSales Invoice`
         WHERE `tabSales Invoice`.`docstatus` = 1
-        	AND `tabSales Invoice`.`posting_date` >= DATE('{filters.get('from_date')}') AND `tabSales Invoice`.`posting_date` <= DATE('{filters.get('to_date')}')
-			{conditions}
+            AND `tabSales Invoice`.`posting_date` >= DATE('{filters.get('from_date')}') AND `tabSales Invoice`.`posting_date` <= DATE('{filters.get('to_date')}')
+            {conditions}
         ORDER BY `tabSales Invoice`.`posting_date`;
         """
     data = frappe.db.sql(sql_query, as_dict=True)
+    if len(data) > 0:
+        first_currency = data[0]['currency']
+        for entry in data:
+            if entry['currency'] != first_currency:
+                data = [{'currency': 'mismatch'}]
+                break
     return data
 
 

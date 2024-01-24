@@ -33,5 +33,11 @@ frappe.query_reports["Invoice Summary"] = {
             "fieldtype": "Link",
             "options": "Company"
         },
+		{
+            "fieldname": "currency",
+            "label": __("Currency"),
+            "fieldtype": "Link",
+            "options": "Currency"
+        }
 	]
 };
