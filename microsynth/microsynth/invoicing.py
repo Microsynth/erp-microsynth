@@ -219,27 +219,28 @@ def async_create_invoices(mode, company, customer):
                     delivery_note =  dn.get('delivery_note')
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
-                        subject = "Delivery Note {0}: Insufficient credit".format(delivery_note)
-                        message = "Delivery Note '{delivery_note}': Insufficient credit balance<br>Customer ID: {customer}<br>Customer Name: {customer_name}<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
-                            delivery_note = delivery_note,
-                            customer = dn.get('customer'),
-                            customer_name = dn.get('customer_name'),
-                            total = total,
-                            credit = round(credit, 2),
-                            currency = dn.get('currency'))
-                        
-                        frappe.log_error(message.replace("<br>","\n"), "invocing.async_create_invoices")
-                        print(message)
-                        # make(
-                        #     recipients = "info@microsynth.ch",
-                        #     sender = "erp@microsynth.ch",
-                        #     cc = "rolf.suter@microsynth.ch",
-                        #     subject = subject,
-                        #     content = message,
-                        #     doctype = "Delivery Note",
-                        #     name = delivery_note,
-                        #     send_email = True
-                        # )
+                        customer = dn.get('customer')
+                        customer_name = dn.get('customer_name')
+                        currency = dn.get('currency')
+                        subject = f"Insufficient credit: Customer {customer}: {delivery_note}"
+                        message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{customer}' ({customer_name}) " \
+                            f"has not enough credit balance to invoice Delivery Note '{delivery_note}':<br>" \
+                            f"Total: {total} {currency}<br>" \
+                            f"Credit: {round(credit, 2)} {currency}<br><br>" \
+                            f"Please request the Customer to recharge the credit account or to close it.<br><br>Best regards,<br>Jens"
+
+                        frappe.log_error(message.replace("<br>","\n"), subject)
+                        print(message.replace("<br>","\n"))
+                        make(
+                            recipients = "info@microsynth.ch",
+                            sender = "jens.petermann@microsynth.ch",
+                            #cc = "rolf.suter@microsynth.ch",
+                            subject = subject,
+                            content = message,
+                            #doctype = "Delivery Note",
+                            #name = delivery_note,
+                            send_email = True
+                        )
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
