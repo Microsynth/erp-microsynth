@@ -5,11 +5,24 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "overview",
+  "document_identification_section",
   "document_type",
   "process_number",
   "subprocess_number",
   "chapter",
-  "amended_from"
+  "title",
+  "amended_from",
+  "meta_data_section",
+  "created_on",
+  "created_by",
+  "reviewed_on",
+  "reviewed_by",
+  "released_on",
+  "released_by",
+  "documents_section",
+  "print_document",
+  "raw_document"
  ],
  "fields": [
   {
@@ -51,10 +64,77 @@
    "in_list_view": 1,
    "label": "Chapter",
    "reqd": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "meta_data_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on"
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Date",
+   "label": "Reviewed on"
+  },
+  {
+   "fieldname": "released_on",
+   "fieldtype": "Date",
+   "label": "Released on"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed by",
+   "options": "User"
+  },
+  {
+   "fieldname": "released_by",
+   "fieldtype": "Link",
+   "label": "Released by",
+   "options": "User"
+  },
+  {
+   "fieldname": "overview",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "document_identification_section",
+   "fieldtype": "Section Break",
+   "label": "Document Identification"
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents"
+  },
+  {
+   "fieldname": "print_document",
+   "fieldtype": "Attach",
+   "label": "Print Document"
+  },
+  {
+   "fieldname": "raw_document",
+   "fieldtype": "Attach",
+   "label": "Raw Document"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-25 09:34:40.286036",
+ "modified": "2024-01-25 10:17:42.533580",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
@@ -75,5 +155,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "title",
  "track_changes": 1
 }
