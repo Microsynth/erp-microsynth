@@ -28,7 +28,7 @@ def get_customer(contact):
             customer_id = l.link_name
 
     if not customer_id:
-        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact.name), "utils.get_customer")
+        frappe.log_error(f"Contact '{contact.name}' (created by {contact.owner}) is not linked to a Customer.", "utils.get_customer")
 
     return customer_id
 
