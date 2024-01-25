@@ -1,0 +1,79 @@
+{
+ "autoname": "format:{document_type} {process_number}.{subprocess_number}.{chapter}.Doc.#####",
+ "creation": "2024-01-25 09:06:30.719922",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "process_number",
+  "subprocess_number",
+  "chapter",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "SOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Document",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "process_number",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Process Number",
+   "options": "1\n2\n3\n4\n5",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subprocess_number",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Subprocess Number",
+   "options": "1\n2\n3\n4\n5\n6\n7\n37",
+   "reqd": 1
+  },
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Chapter",
+   "reqd": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-01-25 09:34:40.286036",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Document",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
