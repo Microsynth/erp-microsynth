@@ -7,7 +7,8 @@
  "field_order": [
   "user",
   "full_name",
-  "signature"
+  "signature",
+  "approval_password"
  ],
  "fields": [
   {
@@ -30,10 +31,15 @@
    "fieldname": "signature",
    "fieldtype": "Attach Image",
    "label": "Signature"
+  },
+  {
+   "fieldname": "approval_password",
+   "fieldtype": "Password",
+   "label": "Approval Password"
   }
  ],
- "modified": "2023-02-03 15:26:22.686514",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-01-25 10:40:00.837696",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Signature",
  "owner": "rolf.suter@microsynth.ch",
