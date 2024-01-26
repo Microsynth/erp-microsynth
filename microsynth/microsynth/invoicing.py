@@ -157,7 +157,6 @@ def async_create_invoices(mode, company, customer):
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
-
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
@@ -169,10 +168,10 @@ def async_create_invoices(mode, company, customer):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
-
         all_invoiceable = get_data(filters={'company': company, 'customer': customer})
-
         count = 0
+        insufficient_credit_warnings = {}
+
         for dn in all_invoiceable:
             try:
                 # # TODO: implement for other export categories
@@ -219,28 +218,13 @@ def async_create_invoices(mode, company, customer):
                     delivery_note =  dn.get('delivery_note')
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
-                        customer = dn.get('customer')
-                        customer_name = dn.get('customer_name')
-                        currency = dn.get('currency')
-                        subject = f"Insufficient credit: Customer {customer}: {delivery_note}"
-                        message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{customer}' ({customer_name}) " \
-                            f"has not enough credit balance to invoice Delivery Note '{delivery_note}':<br>" \
-                            f"Total: {total} {currency}<br>" \
-                            f"Credit: {round(credit, 2)} {currency}<br><br>" \
-                            f"Please request the Customer to recharge the credit account or to close it.<br><br>Best regards,<br>Jens"
-
-                        frappe.log_error(message.replace("<br>","\n"), subject)
-                        print(message.replace("<br>","\n"))
-                        make(
-                            recipients = "info@microsynth.ch",
-                            sender = "jens.petermann@microsynth.ch",
-                            #cc = "rolf.suter@microsynth.ch",
-                            subject = "[ERP] " + subject,
-                            content = message,
-                            #doctype = "Delivery Note",
-                            #name = delivery_note,
-                            send_email = True
-                        )
+                        dn_customer = dn.get('customer')                
+                        if not dn_customer in insufficient_credit_warnings:
+                            insufficient_credit_warnings[dn_customer] = {}
+                        insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
+                                                                                 'currency': dn.get('currency'),
+                                                                                 'credit': round(credit, 2),
+                                                                                 'customer_name': dn.get('customer_name')}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
@@ -272,7 +256,37 @@ def async_create_invoices(mode, company, customer):
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
             except Exception as err:
-                frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+                message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}"
+                frappe.log_error(message, "invoicing.async_create_invoices")
+                #print(message)
+
+        for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
+            if len(warnings) < 1:
+                continue
+            subject = f"Insufficient credit: Customer {dn_customer}"
+            dn_details = ""
+
+            for delivery_note, values in warnings.items():
+                currency = values['currency']
+                dn_details += f"{delivery_note}: {values['total']} {currency}<br>"
+                customer_name = values['customer_name']
+                credit = values['credit']
+
+            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{dn_customer}' ({customer_name}) "
+            message += f"has a credit balance of {credit} {currency} at {company} and therefore not enough to invoice the following Delivery Note(s):<br><br>"
+            message += dn_details
+            message += f"<br>Please request the Customer to recharge the credit account or close it.<br><br>Best regards,<br>Jens"
+            non_html_message = message.replace("<br>","\n")
+            frappe.log_error(non_html_message, subject)
+            #print(non_html_message)
+            make(
+                recipients = "info@microsynth.ch",
+                sender = "jens.petermann@microsynth.ch",
+                #cc = "rolf.suter@microsynth.ch",
+                subject = "[ERP] " + subject,
+                content = message,
+                send_email = True
+            )
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)
