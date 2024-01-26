@@ -235,7 +235,7 @@ def async_create_invoices(mode, company, customer):
                             recipients = "info@microsynth.ch",
                             sender = "jens.petermann@microsynth.ch",
                             #cc = "rolf.suter@microsynth.ch",
-                            subject = subject,
+                            subject = "[ERP] " + subject,
                             content = message,
                             #doctype = "Delivery Note",
                             #name = delivery_note,
@@ -1086,18 +1086,25 @@ def escape_chars_for_xml(text):
 
 
 @frappe.whitelist()
-def transmit_sales_invoice(sales_invoice):
+def transmit_sales_invoice(sales_invoice_id):
     """
     Check the invoicing method of the customer and punchout shop and transmit the invoice accordingly.
 
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23001808'}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_id':'SI-BAL-23001808'}"
     """
 
     try:
-        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_id)
         customer = frappe.get_doc("Customer", sales_invoice.customer)
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+
+        if not sales_invoice:
+            frappe.log_error(f"Sales Invoice '{sales_invoice_id}' not found", "invoicing.transmit_sales_invoice")
+            return
+        if not customer:
+            frappe.log_error(f"Customer '{sales_invoice.customer}' not found", "invoicing.transmit_sales_invoice")
+            return
 
         if sales_invoice.is_punchout:
             punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
@@ -1157,7 +1164,18 @@ def transmit_sales_invoice(sales_invoice):
 
             recipient = invoice_contact.email_id
             if not recipient:
-                frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
+                subject = f"[ERP] Unable to send {sales_invoice.name} to Contact {invoice_contact.name}: no email address found."
+                frappe.log_error(subject, "Sending invoice email failed")
+                message = f"Dear Administration,<br><br>this is an automatic email to inform you that the ERP did not found an email address " \
+                            f"to send '{sales_invoice.name}' to Contact '{invoice_contact.name}'.<br>" \
+                            f"Please try to determine the email address and enter it at the appropriate place. <br><br>Best regards,<br>Jens"
+                make(
+                    recipients = "info@microsynth.ch",
+                    sender = "jens.petermann@microsynth.ch",
+                    subject = subject,
+                    content = message,
+                    send_email = True
+                    )
                 return
 
             if sales_invoice.company == "Microsynth AG":
@@ -1291,7 +1309,7 @@ Your administration team<br><br>{footer}"
                 is_private=True
             )
             '''
-        
+
         elif mode == "GEP":
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
@@ -1301,11 +1319,11 @@ Your administration team<br><br>{footer}"
                 file.write(cxml)
             '''
             # TODO: comment in after development to save gep file to filesystem
-        
+
             # attach to sales invoice
             folder = create_folder("ariba", "Home")
             # store EDI File
-            
+
             f = save_file(
                 "{0}.txt".format(sales_invoice.name), 
                 cxml, 
@@ -1318,7 +1336,7 @@ Your administration team<br><br>{footer}"
 
         else:
             return
-        
+
         # sales_invoice.invoice_sent_on = datetime.now()
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
@@ -1327,7 +1345,7 @@ Your administration team<br><br>{footer}"
 
     except Exception as err:
         frappe.log_error("Cannot transmit sales invoice {0}: \n{1}\n{2}".format(
-            sales_invoice.name, 
+            sales_invoice_id, 
             err,
             traceback.format_exc()), "invoicing.transmit_sales_invoice")
 

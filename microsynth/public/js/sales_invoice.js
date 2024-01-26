@@ -259,7 +259,7 @@ function transmit_invoice(frm) {
     frappe.call({
         'method': 'microsynth.microsynth.invoicing.transmit_sales_invoice',
         'args': {
-            'sales_invoice': frm.doc.name
+            'sales_invoice_id': frm.doc.name
         },
         'callback': function(response) {
             cur_frm.reload_doc();
