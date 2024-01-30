@@ -81,35 +81,41 @@
   {
    "fieldname": "created_on",
    "fieldtype": "Date",
-   "label": "Created on"
+   "label": "Created on",
+   "read_only": 1
   },
   {
    "fieldname": "reviewed_on",
    "fieldtype": "Date",
-   "label": "Reviewed on"
+   "label": "Reviewed on",
+   "read_only": 1
   },
   {
    "fieldname": "released_on",
    "fieldtype": "Date",
-   "label": "Released on"
+   "label": "Released on",
+   "read_only": 1
   },
   {
    "fieldname": "created_by",
    "fieldtype": "Link",
    "label": "Created by",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "reviewed_by",
    "fieldtype": "Link",
    "label": "Reviewed by",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "released_by",
    "fieldtype": "Link",
    "label": "Released by",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "overview",
@@ -158,8 +164,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-30 11:19:39.736882",
- "modified_by": "Administrator",
+ "modified": "2024-01-30 11:53:26.077574",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
