@@ -106,6 +106,16 @@ def create_new_version(doc):
     new_doc.reviewed_by = None
     new_doc.released_on = None
     new_doc.released_by = None
+    new_doc.signature = None
     new_doc.insert()
     frappe.db.commit()
     return {'name': new_doc.name, 'url': get_url_to_form("QM Document", new_doc.name)}
+
+
+@frappe.whitelist()
+def set_released(doc, user):
+    qm_doc = frappe.get_doc(frappe.get_doc("QM Document", doc))
+    qm_doc.released_by = user
+    qm_doc.released_on = datetime.now()
+    qm_doc.save()
+    frappe.db.commit()
