@@ -12,6 +12,12 @@ def get_data():
                        "name": "QM Document",
                        "label": _("Document"),
                        "description": _("Document")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "QM Review",
+                       "label": _("Review"),
+                       "description": _("REview")
                     }
             ]
         },

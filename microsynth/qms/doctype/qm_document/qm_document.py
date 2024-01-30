@@ -5,31 +5,90 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint
+from frappe.utils import cint, get_url_to_form
+from datetime import datetime
 
-class QMDocument(Document):
-    def autoname(self):
-        # auto name function
-        base_name = "{0} {1}.{2}.{3}.".format(
-            self.document_type,
-            self.process_number,
-            self.subprocess_number,
-            self.chapter or "00"
-        )
-        # find document number
-        docs = frappe.db.sql("""
-            SELECT `name` 
-            FROM `tabQM Document`
-            WHERE `name` LIKE "{0}%"
-            LIMIT 1;
-            """.format(base_name), as_dict=True)
-        
-        if len(docs) == 0:
-            doc = 1
-        else:
-            doc = cint((docs[0]['name'][len(base_name):]).split("-")[0]) + 1
+naming_patterns = {
+    "Code1": {
+        "base": "{document_type} {process_number}.{subprocess_number}.{chapter}.",
+        "document_number": "{doc:03d}"
+    },
+    "Code2": {
+        "base": "{document_type} {process_number}.{subprocess_number}.{date}.",
+        "document_number": "{doc:02d}"
+    },
+    "Code3": {
+        "base": "{document_type} {process_number}.{subprocess_number}.",
+        "document_number": "{doc:04d}"
+    }
+}
+naming_code = {
+    "SOP": "Code1",
+    "PROT": "Code2",
+    "LIST": "Code3",
+    "FORM": "Code3",
+    "FLOW": "Code3",
+    "CL": "Code3",
+    "QMH": "Code1"
+}
+
+class QMDocument(Document):       
+    def autoname(self):       
+        if cint(self.version) < 2:
+            # new document number
+            # auto name function
+            pattern = "{p}".format(
+                p=naming_patterns[naming_code[self.document_type]]['base']
+            )
+            base_name = pattern.format(
+                document_type=self.document_type,
+                process_number = self.process_number,
+                subprocess_number = self.subprocess_number,
+                chapter = self.chapter or "00",
+                date = datetime.today().strftime("%Y%m%d")
+            )
+            # find document number
+            docs = frappe.db.sql("""
+                SELECT `name` 
+                FROM `tabQM Document`
+                WHERE `name` LIKE "{0}%"
+                ORDER BY `name` DESC
+                LIMIT 1;
+                """.format(base_name), as_dict=True)
             
-        self.name = "{base}{doc:03d}".format(base=base_name, doc=doc)
-        
+            if len(docs) == 0:
+                self.document_number = 1
+            else:
+                self.document_number = cint((docs[0]['name'][len(base_name):]).split("-")[0]) + 1
+            
+            # check revision
+            version = self.version or 1
+                
+
+        # generate name
+        pattern = "{p}{d}-{v}".format(
+            p=naming_patterns[naming_code[self.document_type]]['base'],
+            d=naming_patterns[naming_code[self.document_type]]['document_number'],
+            v="{version:02d}")
+        self.name = pattern.format(
+            document_type=self.document_type,
+            process_number = self.process_number,
+            subprocess_number = self.subprocess_number,
+            chapter = self.chapter or "00",
+            date = datetime.today().strftime("%Y%m%d"),
+            doc = cint(self.document_number),
+            version = cint(self.version)
+        )
+            
         return
             
+@frappe.whitelist()
+def create_new_version(doc):
+    new_doc = frappe.get_doc(frappe.get_doc("QM Document", doc).as_dict())
+    new_doc.docstatus = 0                               # new doc is draft
+    new_doc.version = cint(new_doc.version) + 1         # go to next version
+    if new_doc.version > 99:
+        frappe.throw( "Sorry, you have lost the lottery.", "Document version too high")
+    new_doc.insert()
+    frappe.db.commit()
+    return {'name': new_doc.name, 'url': get_url_to_form("QM Document", new_doc.name)}

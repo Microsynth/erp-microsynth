@@ -8,6 +8,11 @@ frappe.ui.form.on('QM Document', {
                 request_review(frm);
             });
         }
+        if (frm.doc.docstatus > 0) {
+            frm.add_custom_button(__("New version"), function() {
+                create_new_version(frm);
+            });
+        }
     }
 });
 
@@ -36,4 +41,16 @@ function request_review() {
     __('Please choose a reviewer'),
     __('Request review')
     )
+}
+
+function create_new_version(frm) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_document.qm_document.create_new_version',
+        'args': {
+            'doc': frm.doc.name
+        },
+        'callback': function (r) {
+            frappe.set_route("Form", "QM Document", r.message.name);
+        }
+    });
 }
