@@ -21,6 +21,7 @@
    "in_list_view": 1,
    "label": "Reviewer",
    "options": "User",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -29,6 +30,7 @@
    "in_list_view": 1,
    "label": "Document Type",
    "options": "DocType",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -37,6 +39,7 @@
    "in_list_view": 1,
    "label": "Document Name",
    "options": "document_type",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -59,7 +62,8 @@
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "label": "Due Date"
+   "label": "Due Date",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -72,8 +76,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-27 22:30:24.458350",
- "modified_by": "Administrator",
+ "modified": "2024-01-30 09:33:02.685254",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Review",
  "owner": "Administrator",
