@@ -38,15 +38,6 @@ naming_code = {
 
 class QMDocument(Document):
 
-    # def on_submit(self):
-    #     # update review section
-    #     self.released_by = frappe.session.user  # voted over self.modified_by
-    #     self.released_on = datetime.now()       # self.modified_on
-    #     #TODO: Not allowed to change Released on after submission
-    #     self.save(ignore_permissions=True)
-    #     frappe.db.commit()
-
-
     def autoname(self):       
         if cint(self.version) < 2:
             # new document number

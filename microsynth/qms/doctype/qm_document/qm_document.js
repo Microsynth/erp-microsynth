@@ -72,12 +72,12 @@ function create_new_version(frm) {
 
 function release() {
     frappe.call({
-        'method': 'microsynth.qms.signing.sign',
+        'method': 'microsynth.qms.doctype.qm_document.qm_document.set_released',
         'args': {
             'doc': cur_frm.doc.name,
             'user': frappe.session.user
         }
-    }); // TODO: Why does this not work?
+    });
 
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
