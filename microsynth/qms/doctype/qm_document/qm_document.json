@@ -10,14 +10,16 @@
   "process_number",
   "subprocess_number",
   "chapter",
+  "document_identification_column_break",
   "title",
   "amended_from",
   "meta_data_section",
   "created_on",
   "created_by",
   "reviewed_on",
-  "reviewed_by",
+  "meta_data_column_break",
   "released_on",
+  "reviewed_by",
   "released_by",
   "documents_section",
   "print_document",
@@ -130,11 +132,19 @@
    "fieldname": "raw_document",
    "fieldtype": "Attach",
    "label": "Raw Document"
+  },
+  {
+   "fieldname": "meta_data_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "document_identification_column_break",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-27 22:22:34.450102",
- "modified_by": "Administrator",
+ "modified": "2024-01-30 07:42:38.374803",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
