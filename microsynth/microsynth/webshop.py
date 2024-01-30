@@ -704,7 +704,7 @@ def apply_discount(quotation, sales_order):
     elif sales_order.total == quotation.total:
         sales_order.discount_amount = quotation.discount_amount
     else:
-        frappe.log_error(f"Unable to apply discount on { sales_order.name }. Mismatch between quotation and sales order.", "webshop.apply_discount")
+        frappe.log_error(f"Unable to apply discount on {sales_order.name}. Mismatch between quotation and sales order: {sales_order.total=} != {quotation.total=}", "webshop.apply_discount")
     return sales_order
 
 

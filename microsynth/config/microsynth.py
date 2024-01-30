@@ -380,6 +380,13 @@ def get_data():
                     },
                     {
                         "type": "report",
+                        "name": "Invoice Summary",
+                        "label": _("Invoice Summary"),
+                        "doctype": "Sales Invoice",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
                         "name": "Commission Calculator",
                         "label": _("Commission Calculator"),
                         "doctype": "Sales Invoice",

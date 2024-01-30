@@ -7,6 +7,7 @@
 
 import requests
 import frappe
+from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
 from frappe.utils import cint
@@ -14,6 +15,7 @@ import json
 from datetime import datetime
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import validate_sales_order
+
 
 def set_status(status, labels):
     """
@@ -52,6 +54,7 @@ def set_status(status, labels):
     except Exception as err:
         return {'success': False, 'message': err }
 
+
 @frappe.whitelist(allow_guest=True)
 def set_unused(content):
     """
@@ -62,6 +65,7 @@ def set_unused(content):
         content = json.loads(content)
     return set_status("unused", content.get("labels"))
 
+
 @frappe.whitelist(allow_guest=True)
 def lock_labels(content):
     """
@@ -71,10 +75,10 @@ def lock_labels(content):
     if type(content) == str:
         content = json.loads(content)
     return set_status("locked", content.get("labels"))
-    
+
+
 @frappe.whitelist(allow_guest=True)
 def received_labels(content):
-
     """
     Set label status to 'received'. Labels must be a list of dictionaries 
     (see `set_status` function).
@@ -82,6 +86,7 @@ def received_labels(content):
     if type(content) == str:
         content = json.loads(content)
     return set_status("received", content.get("labels"))
+
 
 @frappe.whitelist(allow_guest=True)
 def processed_labels(content):
@@ -92,6 +97,7 @@ def processed_labels(content):
     if type(content) == str:
         content = json.loads(content)
     return set_status("processed", content.get("labels"))
+
 
 #@frappe.whitelist(allow_guest=True)
 #def unlock_labels(content):
@@ -210,11 +216,32 @@ def check_submit_delivery_note(delivery_note):
         # Check that the Delivery Note does not contain a Sample with a Barcode Label associated with more than one Sample
         for sample in delivery_note.samples:
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
-            samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]])
+            samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
-                msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples: {samples=}"
-                print(msg)
-                frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
+                if 'GOE' in delivery_note.name:
+                    recipient = 'karla.busch@microsynth.seqlab.de'
+                    person = 'Karla'
+                elif 'LYO' in delivery_note.name:
+                    recipient = 'agnes.nguyen@microsynth.fr'
+                    person = 'Agnes'
+                else:
+                    recipient = 'katja.laengle@microsynth.ch'
+                    person = 'Katja'
+                subject = f"Barcode label {barcode_label} used multiple times"
+                message = f"Dear {person},<br><br>this is an automatic email to inform you that Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:<br>"
+                for s in samples:
+                    message += f"Sample '{s['name']}' with Web ID '{s['web_id']}', created {s['creation']}<br>"
+                message += f"<br>Please check these samples. If you are sure that there is no problem, please submit '{delivery_note.name}' manually in the ERP.<br><br>Best regards,<br>Jens"
+                non_html_message = message.replace("<br>","\n")
+                print(non_html_message)
+                frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
+                make(
+                    recipients = recipient,
+                    sender = "jens.petermann@microsynth.ch",
+                    subject = subject,
+                    content = message,
+                    send_email = True
+                    )
                 return
 
         delivery_note.submit()
@@ -230,7 +257,6 @@ def submit_delivery_notes():
     run
     bench execute microsynth.microsynth.seqblatt.submit_delivery_notes
     """
-
     delivery_notes = frappe.db.get_all("Delivery Note",
         filters = {'docstatus': 0, 'product_type': 'Sequencing' },
         fields = ['name'])

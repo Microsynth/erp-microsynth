@@ -157,7 +157,6 @@ def async_create_invoices(mode, company, customer):
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
-
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
@@ -169,10 +168,10 @@ def async_create_invoices(mode, company, customer):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
-
         all_invoiceable = get_data(filters={'company': company, 'customer': customer})
-
         count = 0
+        insufficient_credit_warnings = {}
+
         for dn in all_invoiceable:
             try:
                 # # TODO: implement for other export categories
@@ -219,27 +218,13 @@ def async_create_invoices(mode, company, customer):
                     delivery_note =  dn.get('delivery_note')
                     total = frappe.get_value("Delivery Note", delivery_note, "total")
                     if total > credit:
-                        subject = "Delivery Note {0}: Insufficient credit".format(delivery_note)
-                        message = "Delivery Note '{delivery_note}': Insufficient credit balance<br>Customer ID: {customer}<br>Customer Name: {customer_name}<br>Total: {total} {currency}<br>Credit: {credit} {currency}".format(
-                            delivery_note = delivery_note,
-                            customer = dn.get('customer'),
-                            customer_name = dn.get('customer_name'),
-                            total = total,
-                            credit = round(credit, 2),
-                            currency = dn.get('currency'))
-                        
-                        frappe.log_error(message.replace("<br>","\n"), "invocing.async_create_invoices")
-                        print(message)
-                        # make(
-                        #     recipients = "info@microsynth.ch",
-                        #     sender = "erp@microsynth.ch",
-                        #     cc = "rolf.suter@microsynth.ch",
-                        #     subject = subject,
-                        #     content = message,
-                        #     doctype = "Delivery Note",
-                        #     name = delivery_note,
-                        #     send_email = True
-                        # )
+                        dn_customer = dn.get('customer')                
+                        if not dn_customer in insufficient_credit_warnings:
+                            insufficient_credit_warnings[dn_customer] = {}
+                        insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
+                                                                                 'currency': dn.get('currency'),
+                                                                                 'credit': round(credit, 2),
+                                                                                 'customer_name': dn.get('customer_name')}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
@@ -271,7 +256,37 @@ def async_create_invoices(mode, company, customer):
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
             except Exception as err:
-                frappe.log_error("Cannot invoice {0}: \n{1}".format(dn.get('delivery_note'), err), "invoicing.async_create_invoices")
+                message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}"
+                frappe.log_error(message, "invoicing.async_create_invoices")
+                #print(message)
+
+        for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
+            if len(warnings) < 1:
+                continue
+            subject = f"Insufficient credit: Customer {dn_customer}"
+            dn_details = ""
+
+            for delivery_note, values in warnings.items():
+                currency = values['currency']
+                dn_details += f"{delivery_note}: {values['total']} {currency}<br>"
+                customer_name = values['customer_name']
+                credit = values['credit']
+
+            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{dn_customer}' ({customer_name}) "
+            message += f"has a credit balance of {credit} {currency} at {company} and therefore not enough to invoice the following Delivery Note(s):<br><br>"
+            message += dn_details
+            message += f"<br>Please request the Customer to recharge the credit account or close it.<br><br>Best regards,<br>Jens"
+            non_html_message = message.replace("<br>","\n")
+            frappe.log_error(non_html_message, subject)
+            #print(non_html_message)
+            make(
+                recipients = "info@microsynth.ch",
+                sender = "jens.petermann@microsynth.ch",
+                #cc = "rolf.suter@microsynth.ch",
+                subject = "[ERP] " + subject,
+                content = message,
+                send_email = True
+            )
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)
@@ -1085,18 +1100,25 @@ def escape_chars_for_xml(text):
 
 
 @frappe.whitelist()
-def transmit_sales_invoice(sales_invoice):
+def transmit_sales_invoice(sales_invoice_id):
     """
     Check the invoicing method of the customer and punchout shop and transmit the invoice accordingly.
 
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice':'SI-BAL-23001808'}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_id':'SI-BAL-23001808'}"
     """
 
     try:
-        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_id)
         customer = frappe.get_doc("Customer", sales_invoice.customer)
         settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+
+        if not sales_invoice:
+            frappe.log_error(f"Sales Invoice '{sales_invoice_id}' not found", "invoicing.transmit_sales_invoice")
+            return
+        if not customer:
+            frappe.log_error(f"Customer '{sales_invoice.customer}' not found", "invoicing.transmit_sales_invoice")
+            return
 
         if sales_invoice.is_punchout:
             punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
@@ -1156,7 +1178,18 @@ def transmit_sales_invoice(sales_invoice):
 
             recipient = invoice_contact.email_id
             if not recipient:
-                frappe.log_error( "Unable to send {0}: no email address found.".format(sales_invoice.name), "Sending invoice email failed")
+                subject = f"[ERP] Unable to send {sales_invoice.name} to Contact {invoice_contact.name}: no email address found."
+                frappe.log_error(subject, "Sending invoice email failed")
+                message = f"Dear Administration,<br><br>this is an automatic email to inform you that the ERP did not found an email address " \
+                            f"to send '{sales_invoice.name}' to Contact '{invoice_contact.name}'.<br>" \
+                            f"Please try to determine the email address and enter it at the appropriate place. <br><br>Best regards,<br>Jens"
+                make(
+                    recipients = "info@microsynth.ch",
+                    sender = "jens.petermann@microsynth.ch",
+                    subject = subject,
+                    content = message,
+                    send_email = True
+                    )
                 return
 
             if sales_invoice.company == "Microsynth AG":
@@ -1290,7 +1323,7 @@ Your administration team<br><br>{footer}"
                 is_private=True
             )
             '''
-        
+
         elif mode == "GEP":
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)
             cxml = frappe.render_template("microsynth/templates/includes/ariba_cxml.html", cxml_data)
@@ -1300,11 +1333,11 @@ Your administration team<br><br>{footer}"
                 file.write(cxml)
             '''
             # TODO: comment in after development to save gep file to filesystem
-        
+
             # attach to sales invoice
             folder = create_folder("ariba", "Home")
             # store EDI File
-            
+
             f = save_file(
                 "{0}.txt".format(sales_invoice.name), 
                 cxml, 
@@ -1317,7 +1350,7 @@ Your administration team<br><br>{footer}"
 
         else:
             return
-        
+
         # sales_invoice.invoice_sent_on = datetime.now()
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
@@ -1326,7 +1359,7 @@ Your administration team<br><br>{footer}"
 
     except Exception as err:
         frappe.log_error("Cannot transmit sales invoice {0}: \n{1}\n{2}".format(
-            sales_invoice.name, 
+            sales_invoice_id, 
             err,
             traceback.format_exc()), "invoicing.transmit_sales_invoice")
 

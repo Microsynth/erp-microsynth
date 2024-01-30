@@ -8,6 +8,7 @@ import frappe
 import json
 from datetime import datetime
 from frappe.utils import flt, rounded
+from frappe.core.doctype.communication.email import make
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 
@@ -28,7 +29,19 @@ def get_customer(contact):
             customer_id = l.link_name
 
     if not customer_id:
-        frappe.log_error("Contact '{0}' is not linked to a Customer".format(contact.name), "utils.get_customer")
+        subject = f"Contact '{contact.name}' is not linked to a Customer"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that Contact '{contact.name}' (created by {contact.owner}) "
+        message += f"is not linked to any Customer in the ERP.<br>Please clean up this Contact.<br><br>Best regards,<br>Jens"
+        non_html_message = message.replace("<br>","\n")
+        frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
+        #print(subject + '\n\n' + non_html_message)
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = "[ERP] " + subject,
+            content = message,
+            send_email = True
+            )
 
     return customer_id
 
@@ -1269,7 +1282,18 @@ def configure_territory(customer_id):
     if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
-            frappe.log_error(f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory.", "utils.configure_territory")
+            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory."
+            frappe.log_error(subject, "utils.configure_territory")
+            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
+                f"Therefore the ERP is unable to determine the Territory of this Customer.<br>" \
+                f"Please add a shipping address, Territory and Sales Manager.<br><br>Best regards,<br>Jens"
+            make(
+                recipients = "info@microsynth.ch",
+                sender = "jens.petermann@microsynth.ch",
+                subject = "[ERP] " + subject,
+                content = message,
+                send_email = True
+                )
             return
         territory = determine_territory(shipping_address)
         if territory: 
