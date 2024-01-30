@@ -23,6 +23,8 @@
   "created_by",
   "reviewed_by",
   "released_by",
+  "comments_section",
+  "signature",
   "documents_section",
   "print_document",
   "raw_document"
@@ -161,11 +163,22 @@
    "fieldtype": "Int",
    "label": "Document number",
    "read_only": 1
+  },
+  {
+   "fieldname": "comments_section",
+   "fieldtype": "Section Break",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "label": "Signature",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-30 11:53:26.077574",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-01-30 13:54:25.734794",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
