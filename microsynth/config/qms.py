@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from frappe import _
 
 def get_data():
-    return[
+    return [
         {
             "label": _("Document Management"),
             "icon": "octicon octicon-file-submodule",
@@ -15,7 +15,7 @@ def get_data():
                     }
             ]
         },
-                {
+        {
             "label": _("Complaints"),
             "icon": "octicon octicon-file-submodule",
             "items": [
