@@ -6,6 +6,7 @@ import frappe
 from frappe.utils.password import get_decrypted_password
 import hashlib
 from datetime import datetime
+from frappe import _
 
 @frappe.whitelist()
 def sign(dt, dn, user, password):
@@ -19,6 +20,7 @@ def sign(dt, dn, user, password):
         return True
     else:
         # wrong password
+        frappe.throw( _("Invalid approval password!"), _("Authentication failed") )
         return False
         
 def get_signature(user):
