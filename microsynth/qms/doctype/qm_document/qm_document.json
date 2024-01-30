@@ -12,6 +12,7 @@
   "chapter",
   "document_identification_column_break",
   "title",
+  "version",
   "amended_from",
   "meta_data_section",
   "created_on",
@@ -140,10 +141,16 @@
   {
    "fieldname": "document_identification_column_break",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-30 09:50:35.824890",
+ "modified": "2024-01-30 10:08:45.033045",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
