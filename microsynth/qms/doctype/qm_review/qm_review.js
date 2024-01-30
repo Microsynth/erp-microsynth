@@ -1,5 +1,6 @@
-// Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
+
 
 frappe.ui.form.on('QM Review', {
     refresh: function(frm) {
@@ -16,12 +17,13 @@ frappe.ui.form.on('QM Review', {
     }
 });
 
+
 function sign() {
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
         function(values){
-            console.log(values.password);
+            //console.log(values.password);
             // check password and if correct, submit
             frappe.call({
                 'method': 'microsynth.qms.signing.sign',

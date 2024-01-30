@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from datetime import datetime
 from frappe.desk.form.assign_to import add, clear
 
+
 class QMReview(Document):
     def on_submit(self):
         # for QM document: update review section
@@ -20,8 +21,8 @@ class QMReview(Document):
             
         # clear any assignments
         clear("Qm Review", self.name)
-        
         return
+
 
 @frappe.whitelist()
 def create_review(reviewer, dt, dn, due_date):

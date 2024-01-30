@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, get_url_to_form
 from datetime import datetime
+
 
 naming_patterns = {
     "Code1": {
@@ -22,6 +23,8 @@ naming_patterns = {
         "document_number": "{doc:04d}"
     }
 }
+
+
 naming_code = {
     "SOP": "Code1",
     "PROT": "Code2",
@@ -32,7 +35,18 @@ naming_code = {
     "QMH": "Code1"
 }
 
-class QMDocument(Document):       
+
+class QMDocument(Document):
+
+    # def on_submit(self):
+    #     # update review section
+    #     self.released_by = frappe.session.user  # voted over self.modified_by
+    #     self.released_on = datetime.now()       # self.modified_on
+    #     #TODO: Not allowed to change Released on after submission
+    #     self.save(ignore_permissions=True)
+    #     frappe.db.commit()
+
+
     def autoname(self):       
         if cint(self.version) < 2:
             # new document number
@@ -63,7 +77,6 @@ class QMDocument(Document):
             
             # check revision
             version = self.version or 1
-                
 
         # generate name
         pattern = "{p}{d}-{v}".format(
@@ -79,9 +92,9 @@ class QMDocument(Document):
             doc = cint(self.document_number),
             version = cint(self.version)
         )
-            
         return
-            
+
+
 @frappe.whitelist()
 def create_new_version(doc):
     new_doc = frappe.get_doc(frappe.get_doc("QM Document", doc).as_dict())
@@ -89,6 +102,10 @@ def create_new_version(doc):
     new_doc.version = cint(new_doc.version) + 1         # go to next version
     if new_doc.version > 99:
         frappe.throw( "Sorry, you have lost the lottery.", "Document version too high")
+    new_doc.reviewed_on = None
+    new_doc.reviewed_by = None
+    new_doc.released_on = None
+    new_doc.released_by = None
     new_doc.insert()
     frappe.db.commit()
     return {'name': new_doc.name, 'url': get_url_to_form("QM Document", new_doc.name)}

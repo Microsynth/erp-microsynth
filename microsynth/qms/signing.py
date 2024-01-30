@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 import frappe
@@ -7,6 +7,7 @@ from frappe.utils.password import get_decrypted_password
 import hashlib
 from datetime import datetime
 from frappe import _
+
 
 @frappe.whitelist()
 def sign(dt, dn, user, password):
@@ -22,7 +23,8 @@ def sign(dt, dn, user, password):
         # wrong password
         frappe.throw( _("Invalid approval password!"), _("Authentication failed") )
         return False
-        
+
+
 def get_signature(user):
     s = "{d}/{u}".format(d=datetime.now(), u=user)
     signature = "{s} ({h})".format(s=s, h=abs(hash(s)))

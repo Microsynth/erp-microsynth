@@ -1,5 +1,6 @@
-// Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
+
 
 frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
@@ -12,6 +13,18 @@ frappe.ui.form.on('QM Document', {
             frm.add_custom_button(__("New version"), function() {
                 create_new_version(frm);
             });
+        }
+        if (!frm.doc.__islocal) {
+            cur_frm.page.clear_primary_action();
+        }
+        if (frm.doc.docstatus < 1 && frm.doc.reviewed_on && frm.doc.reviewed_by) {
+            // add release button
+            cur_frm.page.set_primary_action(
+                __("Release"),
+                function() {
+                    release();
+                }
+            );
         }
     }
 });
@@ -43,6 +56,7 @@ function request_review() {
     )
 }
 
+
 function create_new_version(frm) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_document.qm_document.create_new_version',
@@ -53,4 +67,29 @@ function create_new_version(frm) {
             frappe.set_route("Form", "QM Document", r.message.name);
         }
     });
+}
+
+
+function release() {
+    frappe.prompt([
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+        ],
+        function(values){
+            // check password and if correct, submit
+            frappe.call({
+                'method': 'microsynth.qms.signing.sign',
+                'args': {
+                    'dt': "QM Document",
+                    'dn': cur_frm.doc.name,
+                    'user': frappe.session.user,
+                    'password': values.password
+                },
+                "callback": function(response) {
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        __('Please enter your approval password'),
+        __('Sign')
+    );
 }
