@@ -3,21 +3,67 @@
 
 
 frappe.ui.form.on('QM Document', {
+    onload: function(frm) {
+        setTimeout(function () {
+            // Select the node that will be observed for mutations
+            const targetNodes = document.getElementsByClassName("form-attachments");
+            if (targetNodes.length > 0) {
+                const targetNode = targetNodes[0];
+                
+                // Options for the observer (which mutations to observe)
+                const config = { attributes: true, childList: true, subtree: true };
+                
+                // Callback function to execute when mutations are observed
+                const callback = (mutationList, observer) => {
+                  for (const mutation of mutationList) {
+                    if (mutation.type === "childList") {
+                      console.log("An attachment added or removed.");
+                      cur_frm.reload_doc();
+                    }
+                  }
+                };
+
+                // Create an observer instance linked to the callback function
+                const observer = new MutationObserver(callback);
+
+                // Start observing the target node for configured mutations
+                observer.observe(targetNode, config);
+            } else {
+                console.log("no node found!!!!");
+            }
+            
+            
+        }, 1000);
+    },
     refresh: function(frm) {
-        if (true) {
+        // fresh document: add creation tags
+        if (frm.doc.__islocal) {
+            cur_frm.set_value("created_by", frappe.session.user);
+            cur_frm.set_value("created_on", frappe.datetime.get_today());
+        }
+        
+        // allow review when document is on draft with an attachment
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (cur_frm.attachments.get_attachments().length > 0))  {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             });
         }
+        // allow to create new versions from valid documents
         if (frm.doc.docstatus > 0) {
             frm.add_custom_button(__("New version"), function() {
                 create_new_version(frm);
             });
         }
+        
+        // sign & release control
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
         }
-        if (frm.doc.docstatus < 1 && frm.doc.reviewed_on && frm.doc.reviewed_by) {
+        if ((!frm.doc.__islocal)
+            && (frm.doc.docstatus < 1) 
+            && (frm.doc.reviewed_on) 
+            && (frm.doc.reviewed_by)
+            && (cur_frm.attachments.get_attachments().length > 0)) {
             // add release button
             cur_frm.page.set_primary_action(
                 __("Release"),
@@ -28,9 +74,18 @@ frappe.ui.form.on('QM Document', {
         }
         
         // access protection: only owner and system manager can remove attachments
-        if ((frm.doc.docstatus > 0) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager"))) {
+        if ((frm.doc.docstatus > 0) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
             access_protection();
         }
+        
+        // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
+        if ((frm.doc.docstatus === 0) && (frm.doc.reviewed_on) && (cur_frm.attachments.get_attachments().length === 0)) {
+            cur_frm.set_value("reviewed_on", null);
+            cur_frm.set_value("reviewed_by", null);
+            cur_frm.save();
+            frappe.msgprint( __("Warning: the review has been cleared because the attachment was removed. Please add an attachment and requerst a new review."), __("Validation") ); 
+        }
+        
     }
 });
 
@@ -106,3 +161,4 @@ function release() {
         __('Sign')
     );
 }
+
