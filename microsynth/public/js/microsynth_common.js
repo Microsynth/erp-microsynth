@@ -260,3 +260,11 @@ function hide_in_words() {
     // this all does not work on base_in_words :-( last resort
     $("[data-fieldname='base_in_words']").hide();
 }
+
+// access protection: disable removing attachments
+function access_protection() {
+    // disable all attachments
+    var styleSheet = document.createElement("style");
+    styleSheet.innerText = ".attachment-row .close { display: none !important; }";
+    document.head.appendChild(styleSheet);
+}

@@ -26,6 +26,11 @@ frappe.ui.form.on('QM Document', {
                 }
             );
         }
+        
+        // access protection: only owner and system manager can remove attachments
+        if ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager"))) {
+            access_protection();
+        }
     }
 });
 
