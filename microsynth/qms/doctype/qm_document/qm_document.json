@@ -52,7 +52,6 @@
   {
    "fieldname": "process_number",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Process Number",
    "options": "1\n2\n3\n4\n5",
    "reqd": 1
@@ -60,7 +59,6 @@
   {
    "fieldname": "subprocess_number",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Subprocess Number",
    "options": "1\n2\n3\n4\n5\n6\n7\n37",
    "reqd": 1
@@ -68,7 +66,6 @@
   {
    "fieldname": "chapter",
    "fieldtype": "Int",
-   "in_list_view": 1,
    "label": "Chapter",
    "reqd": 1
   },
@@ -182,6 +179,7 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nIn Review\nReviewed\nReleased\nValid\nInvalid",
@@ -195,8 +193,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-01 09:12:12.740191",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-02-01 09:33:45.226211",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
