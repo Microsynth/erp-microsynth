@@ -26,10 +26,7 @@
   "reviewed_by",
   "released_by",
   "comments_section",
-  "signature",
-  "documents_section",
-  "print_document",
-  "raw_document"
+  "signature"
  ],
  "fields": [
   {
@@ -134,21 +131,6 @@
    "label": "Document Identification"
   },
   {
-   "fieldname": "documents_section",
-   "fieldtype": "Section Break",
-   "label": "Documents"
-  },
-  {
-   "fieldname": "print_document",
-   "fieldtype": "Attach",
-   "label": "Print Document"
-  },
-  {
-   "fieldname": "raw_document",
-   "fieldtype": "Attach",
-   "label": "Raw Document"
-  },
-  {
    "fieldname": "meta_data_column_break",
    "fieldtype": "Column Break"
   },
@@ -200,7 +182,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-01 10:22:16.863954",
+ "modified": "2024-02-01 10:49:10.274110",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
