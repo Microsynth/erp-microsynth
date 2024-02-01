@@ -51,4 +51,11 @@ def create_review(reviewer, dt, dn, due_date):
         'assign_to': reviewer
     })
     
+    # submit qm document
+    if dt == "QM Document":
+        qm_doc = frappe.get_doc("QM Document", dn)
+        if qm_doc.docstatus == 0:
+            qm_doc.submit()
+            frappe.db.commit()
+            
     return review.name

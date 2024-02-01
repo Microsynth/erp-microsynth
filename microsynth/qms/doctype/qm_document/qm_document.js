@@ -40,6 +40,12 @@ frappe.ui.form.on('QM Document', {
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
+            cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
+        }
+        
+        // allow to set title in specific conditions
+        if (["In Review", "Reviewed"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('title', 'read_only', false);
         }
         
         // allow review when document is on draft with an attachment
@@ -58,11 +64,14 @@ frappe.ui.form.on('QM Document', {
         // sign & release control
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
+            cur_frm.page.clear_secondary_action();
         }
         if ((!frm.doc.__islocal)
-            && (frm.doc.docstatus < 1) 
+            && (frm.doc.docstatus === 1) 
             && (frm.doc.reviewed_on) 
             && (frm.doc.reviewed_by)
+            && (!frm.doc.released_on)
+            && (!frm.doc.released_by)
             && (cur_frm.attachments.get_attachments().length > 0)) {
             // add release button
             cur_frm.page.set_primary_action(
@@ -74,15 +83,16 @@ frappe.ui.form.on('QM Document', {
         }
         
         // access protection: only owner and system manager can remove attachments
-        if ((frm.doc.docstatus > 0) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
+        if ((["Released", "Valid", "Invalid"].includes(frm.doc.status)) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
             access_protection();
         }
         
         // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
-        if ((frm.doc.docstatus === 0) && (frm.doc.reviewed_on) && (cur_frm.attachments.get_attachments().length === 0)) {
+        if ((frm.doc.reviewed_on) && (cur_frm.attachments.get_attachments().length === 0)) {
             cur_frm.set_value("reviewed_on", null);
             cur_frm.set_value("reviewed_by", null);
-            cur_frm.save();
+            cur_frm.set_value("status", "In Review");
+            cur_frm.save_or_update();
             frappe.msgprint( __("Warning: the review has been cleared because the attachment was removed. Please add an attachment and requerst a new review."), __("Validation") ); 
         }
         
