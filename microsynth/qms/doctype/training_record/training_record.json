@@ -1,0 +1,118 @@
+{
+ "autoname": "QMTR-.######",
+ "creation": "2024-02-01 11:01:11.844785",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "trainee",
+  "document_type",
+  "document_name",
+  "due_date",
+  "comments_section",
+  "comments",
+  "signature",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "trainee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Trainee",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "DocType",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Document Name",
+   "options": "document_type",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comments_section",
+   "fieldtype": "Section Break",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "description": "user, date, time\nhash\n\nStatisches Feld der Signature (DocType instance) e.g. Signature.creation",
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "label": "Signature",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Training Record",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-02-01 11:17:13.587119",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "Training Record",
+ "owner": "rolf.suter@microsynth.ch",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
