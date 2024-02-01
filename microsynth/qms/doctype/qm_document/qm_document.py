@@ -110,3 +110,13 @@ def set_released(doc, user):
     qm_doc.released_on = datetime.now()
     qm_doc.save()
     frappe.db.commit()
+
+    update_status(qm_doc.name, "Released")
+
+
+@frappe.whitelist()
+def update_status(qm_document, status):
+    qm_doc = frappe.get_doc("QM Document", qm_document)
+    qm_doc.status = status
+    qm_doc.save()
+    frappe.db.commit()

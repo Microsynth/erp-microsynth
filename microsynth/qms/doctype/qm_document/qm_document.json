@@ -14,11 +14,13 @@
   "title",
   "document_number",
   "version",
+  "status",
   "amended_from",
   "meta_data_section",
   "created_on",
   "reviewed_on",
   "released_on",
+  "valid_from",
   "meta_data_column_break",
   "created_by",
   "reviewed_by",
@@ -174,11 +176,27 @@
    "fieldtype": "Data",
    "label": "Signature",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nIn Review\nReviewed\nReleased\nValid\nInvalid",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Valid from"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-30 13:54:25.734794",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-02-01 09:12:12.740191",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
@@ -193,6 +211,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

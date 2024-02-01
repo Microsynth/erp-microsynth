@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from datetime import datetime
 from frappe.desk.form.assign_to import add, clear
+from microsynth.qms.doctype.qm_document.qm_document import update_status
 
 
 class QMReview(Document):
@@ -18,7 +19,9 @@ class QMReview(Document):
             ref_doc.reviewed_on = datetime.now()            # self.modified_on
             ref_doc.save(ignore_permissions=True)
             frappe.db.commit()
-            
+
+            update_status(ref_doc.name, "Reviewed")
+
         # clear any assignments
         clear("Qm Review", self.name)
         return
@@ -37,6 +40,9 @@ def create_review(reviewer, dt, dn, due_date):
 
     review.save(ignore_permissions = True)
     frappe.db.commit()
+
+    if dt == "QM Document":
+        update_status(dn, "In Review")
 
     # create assignment to user
     add({
