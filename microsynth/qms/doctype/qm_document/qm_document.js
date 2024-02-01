@@ -96,6 +96,16 @@ frappe.ui.form.on('QM Document', {
             frappe.msgprint( __("Warning: the review has been cleared because the attachment was removed. Please add an attachment and requerst a new review."), __("Validation") ); 
         }
         
+        // fetch document overview
+        if (!frm.doc.__islocal) {
+            frappe.call({
+                'method': 'get_overview',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
     }
 });
 

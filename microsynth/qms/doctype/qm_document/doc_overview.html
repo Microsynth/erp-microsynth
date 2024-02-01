@@ -1,0 +1,12 @@
+{% if files %}
+    {% for f in files %}
+        <a href="{{ f.file_url }}">
+            {% if f.file_name[-3:] in ["pdf", "PDF"] %}
+                <i class="fa fa-file-pdf-o"></i>
+            {% else %}
+                <i class="fa fa-file-text"></i>
+            {% endif %}
+            {{ f.file_name }}
+        </a><br>
+    {% endfor %}
+{% endif %}
