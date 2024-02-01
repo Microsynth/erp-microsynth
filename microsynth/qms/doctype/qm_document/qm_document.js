@@ -82,6 +82,16 @@ frappe.ui.form.on('QM Document', {
             );
         }
         
+        // Training request
+        if ((cur_frm.attachments.get_attachments().length > 0)
+            && ["Released", "Valid" ].includes(frm.doc.status)
+            && (frm.doc.released_on)
+            && (frm.doc.released_by))  {
+            frm.add_custom_button(__("Training request"), function() {
+                request_training(frm);
+            });
+        }
+
         // access protection: only owner and system manager can remove attachments
         if ((["Released", "Valid", "Invalid"].includes(frm.doc.status)) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
             access_protection();
@@ -182,3 +192,47 @@ function release() {
     );
 }
 
+function request_training() {
+    frappe.prompt([
+        {'fieldname': 'trainees', 
+         'fieldtype': 'Table',
+         'label': 'Trainees',
+         'reqd': 1,
+         'fields': [ 
+            {'fieldname': 'trainee', 
+             'fieldtype': 'Link', 
+             'label': __('Trainee'), 
+             'options':'User', 
+             'in_list_view': 1,
+             'reqd': 1} ],
+
+         'data': [],
+         'get_data': () => { return [];}
+        },
+        { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
+    ],
+    function(values){
+        console.log(values.trainees)
+        for (var i = 0; i < values.trainees.length; i++)  {
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.create_training_record',
+                           
+                'args': {
+                    'trainee': values.trainees[i].trainee,
+                    'dt': cur_frm.doc.doctype,
+                    'dn': cur_frm.doc.name,
+                    'due_date': values.due_date
+                },
+                "callback": function(response) {
+                    console.log("created training record request for " + values.trainee[i].trainee)
+                }
+            })
+        }
+
+
+
+    },
+    __('Please choose a trainee'),
+    __('Request training')
+    )
+}
