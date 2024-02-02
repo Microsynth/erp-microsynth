@@ -8,13 +8,14 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("QM Training Record"), "fieldname": "name", "fieldtype": "Link", "options": "QM Training Record", "width": 150 },
-        {"label": _("Trainee"), "fieldname": "trainee", "fieldtype": "Link", "options": "User", "width": 250 },
-        {"label": _("Document Type"), "fieldname": "document_type", "fieldtype": "Link", "options": "DocType", "width": 125 },
+        {"label": _("QM Training Record"), "fieldname": "name", "fieldtype": "Link", "options": "QM Training Record", "width": 130 },
+        {"label": _("Trainee"), "fieldname": "trainee", "fieldtype": "Link", "options": "User", "width": 200 },
+        {"label": _("Document Type"), "fieldname": "document_type", "fieldtype": "Data", "options": "DocType", "width": 105 },
         {"label": _("Document Name"), "fieldname": "document_name", "fieldtype": "Dynamic Link", "options": "document_type", "width": 150 },
-        {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 200 },
-        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 100 },
-        {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 100 }
+        {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 235 },
+        {"label": _("Document Status"), "fieldname": "status", "fieldtype": "Data", "width": 125 },
+        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 75 },
+        {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 75 }
     ]
 
 
@@ -27,6 +28,8 @@ def get_data(filters):
             filter_conditions += f"AND `tabQM Training Record`.`trainee` = '{filters.get('user')}'"
         if filters.get('qm_document'):
             filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
+        if filters.get('limit_to_valid'):
+            filter_conditions += f"AND `tabQM Document`.`status` = 'Valid'"
     
         query = """
             SELECT `tabQM Training Record`.`name`,
@@ -34,6 +37,7 @@ def get_data(filters):
                 `tabQM Training Record`.`document_type`,
                 `tabQM Training Record`.`document_name`,
                 `tabQM Document`.`title`,
+                `tabQM Document`.`status`,
                 `tabQM Training Record`.`due_date`,
                 `tabQM Training Record`.`signed_on`
             FROM `tabQM Training Record`
