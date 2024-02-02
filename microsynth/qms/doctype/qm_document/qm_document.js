@@ -7,6 +7,13 @@ frappe.ui.form.on('QM Document', {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', null);
         
+        // set information bar for missing file
+        cur_frm.dashboard.clear_comment();
+        if ((!cur_frm.attachments) 
+            || (cur_frm.attachments.get_attachments().length === 0)) {
+                cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
+        }
+        
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
         
