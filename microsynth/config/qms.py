@@ -17,7 +17,20 @@ def get_data():
                        "type": "doctype",
                        "name": "QM Review",
                        "label": _("Review"),
-                       "description": _("REview")
+                       "description": _("Review")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "QM Training Record",
+                       "label": _("Training Record"),
+                       "description": _("Training Record")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Training Confirmations",
+                        "label": _("Training Confirmations"),
+                        "doctype": "QM Training Record",
+                        "is_query_report": True
                     }
             ]
         },
