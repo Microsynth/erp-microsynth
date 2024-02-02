@@ -95,7 +95,7 @@
    "allow_on_submit": 1,
    "fieldname": "released_on",
    "fieldtype": "Date",
-   "label": "Released on",
+   "label": "Approved and released on",
    "read_only": 1
   },
   {
@@ -117,7 +117,7 @@
    "allow_on_submit": 1,
    "fieldname": "released_by",
    "fieldtype": "Link",
-   "label": "Released by",
+   "label": "Approved and released by",
    "options": "User",
    "read_only": 1
   },
@@ -182,7 +182,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-01 10:49:10.274110",
+ "modified": "2024-02-02 11:43:31.963968",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
