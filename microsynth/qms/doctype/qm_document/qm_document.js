@@ -3,39 +3,13 @@
 
 
 frappe.ui.form.on('QM Document', {
-    onload: function(frm) {
-        setTimeout(function () {
-            // Select the node that will be observed for mutations
-            const targetNodes = document.getElementsByClassName("form-attachments");
-            if (targetNodes.length > 0) {
-                const targetNode = targetNodes[0];
-                
-                // Options for the observer (which mutations to observe)
-                const config = { attributes: true, childList: true, subtree: true };
-                
-                // Callback function to execute when mutations are observed
-                const callback = (mutationList, observer) => {
-                  for (const mutation of mutationList) {
-                    if (mutation.type === "childList") {
-                      console.log("An attachment added or removed.");
-                      cur_frm.reload_doc();
-                    }
-                  }
-                };
-
-                // Create an observer instance linked to the callback function
-                const observer = new MutationObserver(callback);
-
-                // Start observing the target node for configured mutations
-                observer.observe(targetNode, config);
-            } else {
-                console.log("no node found!!!!");
-            }
-            
-            
-        }, 1000);
-    },
     refresh: function(frm) {
+        // reset overview html
+        cur_frm.set_df_property('overview', 'options', null);
+        
+        // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
+        setup_attachment_watcher(frm);
+        
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
@@ -49,7 +23,7 @@ frappe.ui.form.on('QM Document', {
         }
         
         // allow review when document is on draft with an attachment
-        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (cur_frm.attachments.get_attachments().length > 0))  {
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0)))  {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             });
@@ -72,7 +46,7 @@ frappe.ui.form.on('QM Document', {
             && (frm.doc.reviewed_by)
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
-            && (cur_frm.attachments.get_attachments().length > 0)) {
+            && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))) {
             // add release button
             cur_frm.page.set_primary_action(
                 __("Release"),
@@ -83,7 +57,7 @@ frappe.ui.form.on('QM Document', {
         }
         
         // Training request
-        if ((cur_frm.attachments.get_attachments().length > 0)
+        if (((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))
             && ["Released", "Valid" ].includes(frm.doc.status)
             && (frm.doc.released_on)
             && (frm.doc.released_by))  {
@@ -98,7 +72,7 @@ frappe.ui.form.on('QM Document', {
         }
         
         // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
-        if ((frm.doc.reviewed_on) && (cur_frm.attachments.get_attachments().length === 0)) {
+        if ((frm.doc.reviewed_on) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
             cur_frm.set_value("reviewed_on", null);
             cur_frm.set_value("reviewed_by", null);
             cur_frm.set_value("status", "In Review");
@@ -235,4 +209,45 @@ function request_training() {
     __('Please choose a trainee'),
     __('Request training')
     )
+}
+
+function setup_attachment_watcher(frm) {
+    // if (!locals.attachment_node) {
+        setTimeout(function () {
+            // Select the node that will be observed for mutations
+            const targetNodes = document.getElementsByClassName("form-attachments");
+            if (targetNodes.length > 0) {
+                const targetNode = targetNodes[0];
+                
+                // Options for the observer (which mutations to observe)
+                const config = { attributes: true, childList: true, subtree: true };
+                
+                // Callback function to execute when mutations are observed
+                const callback = (mutationList, observer) => {
+                    for (const mutation of mutationList) {
+                        if (mutation.type === "childList") {
+                            console.log("An attachment added or removed.");
+                            cur_frm.reload_doc();
+                        }
+                    }
+                };
+
+                // Create an observer instance linked to the callback function
+                const observer = new MutationObserver(callback);
+
+                // Start observing the target node for configured mutations
+                observer.observe(targetNode, config);
+                
+                locals.attachment_node = targetNode;
+            } else {
+                console.log("no node found!!!!");
+            }
+            
+            // change the upload callback action
+            /*cur_frm.attachments.attachment_uploaded = function() {
+                cur_frm.reload_doc();
+            }*/
+            
+        }, 1000);
+    //}
 }
