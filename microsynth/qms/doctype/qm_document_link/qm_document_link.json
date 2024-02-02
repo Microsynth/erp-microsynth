@@ -1,0 +1,30 @@
+{
+ "creation": "2024-02-02 13:28:50.969422",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "qm_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "qm_document",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "QM Document",
+   "options": "QM Document",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-02-02 13:28:50.969422",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Document Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

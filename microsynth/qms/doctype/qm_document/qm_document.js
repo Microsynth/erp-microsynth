@@ -25,9 +25,10 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
         }
         
-        // allow to set title in specific conditions
+        // allow to set title, linked documents in specific conditions
         if (["In Review", "Reviewed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
+            cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
         
         // allow review when document is on draft with an attachment
