@@ -37,10 +37,8 @@ def get_data(filters):
                 `tabQM Training Record`.`due_date`,
                 `tabQM Training Record`.`signed_on`
             FROM `tabQM Training Record`
-            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabQM Training Record`.`name` 
-                                                AND `tDLA`.`parenttype`  = "QM Training Record" 
-                                                AND `tDLA`.`link_doctype` = "QM Document"
-            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tDLA`.`link_name`
+            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tabQM Training Record`.`document_name` 
+                AND `tabQM Training Record`.`document_type` = "QM Document"
             WHERE TRUE
                 {filter_conditions}
         """.format(filter_conditions=filter_conditions)
