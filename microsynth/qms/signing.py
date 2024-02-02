@@ -11,6 +11,9 @@ from frappe import _
 
 @frappe.whitelist()
 def sign(dt, dn, user, password):
+    if user != frappe.session.user:
+        frappe.throw( _("Invalid approval user!"), _("Authentication failed") )
+        return False
     # check password 
     if password == get_decrypted_password("Signature", user, "approval_password", False):
         # password correct
