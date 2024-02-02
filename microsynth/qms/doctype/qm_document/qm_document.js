@@ -23,7 +23,11 @@ frappe.ui.form.on('QM Document', {
         }
         
         // allow review when document is on draft with an attachment
-        if ((!frm.doc.__islocal) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0)))  {
+        if ((!frm.doc.__islocal) 
+            && (!frm.doc.reviewed_on) 
+            && (!frm.doc.reviewed_by)
+            && ((cur_frm.attachments) 
+            && (cur_frm.attachments.get_attachments().length > 0)))  {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             });
