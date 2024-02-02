@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
+from datetime import datetime
 
 
 class QMTrainingRecord(Document):
@@ -31,3 +32,11 @@ def create_training_record(trainee, dt, dn, due_date):
         'name': record.name,
         'assign_to': trainee
     })
+
+
+@frappe.whitelist()
+def set_signed_on(doc):
+    record = frappe.get_doc("QM Training Record", doc)
+    record.signed_on = datetime.today()
+    record.save(ignore_permissions = True)
+    frappe.db.commit()    

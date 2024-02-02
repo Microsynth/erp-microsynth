@@ -8,10 +8,13 @@ from frappe import _
 
 def get_columns(filters):
     return [
+        {"label": _("QM Training Record"), "fieldname": "name", "fieldtype": "Link", "options": "QM Training Record", "width": 150 },
         {"label": _("Trainee"), "fieldname": "trainee", "fieldtype": "Link", "options": "User", "width": 250 },
         {"label": _("Document Type"), "fieldname": "document_type", "fieldtype": "Link", "options": "DocType", "width": 125 },
-        {"label": _("Document Name"), "fieldname": "document_name", "fieldtype": "Data", "options": "document_type", "width": 150 },
-        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 100 }
+        {"label": _("Document Name"), "fieldname": "document_name", "fieldtype": "Dynamic Link", "options": "document_type", "width": 150 },
+        {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 200 },
+        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 100 },
+        {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 100 }
     ]
 
 
@@ -26,11 +29,18 @@ def get_data(filters):
             filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
     
         query = """
-            SELECT `tabQM Training Record`.`trainee`,
+            SELECT `tabQM Training Record`.`name`,
+                `tabQM Training Record`.`trainee`,
                 `tabQM Training Record`.`document_type`,
                 `tabQM Training Record`.`document_name`,
-                `tabQM Training Record`.`due_date`
+                `tabQM Document`.`title`,
+                `tabQM Training Record`.`due_date`,
+                `tabQM Training Record`.`signed_on`
             FROM `tabQM Training Record`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabQM Training Record`.`name` 
+                                                AND `tDLA`.`parenttype`  = "QM Training Record" 
+                                                AND `tDLA`.`link_doctype` = "QM Document"
+            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tDLA`.`link_name`
             WHERE TRUE
                 {filter_conditions}
         """.format(filter_conditions=filter_conditions)

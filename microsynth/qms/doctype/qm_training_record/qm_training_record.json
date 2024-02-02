@@ -12,7 +12,7 @@
   "comments_section",
   "comments",
   "signature",
-  "amended_from",
+  "signed_on",
   "amended_from"
  ],
  "fields": [
@@ -67,11 +67,11 @@
    "read_only": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
+   "fieldname": "signed_on",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Signed on",
    "no_copy": 1,
-   "options": "QM Training Record",
    "print_hide": 1,
    "read_only": 1
   },
@@ -86,8 +86,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-01 12:02:21.401987",
- "modified_by": "Administrator",
+ "modified": "2024-02-02 10:26:27.085379",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Training Record",
  "owner": "Administrator",
