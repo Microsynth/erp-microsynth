@@ -1,0 +1,59 @@
+{
+ "creation": "2024-02-02 10:54:28.413941",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_number",
+  "subprocess_number",
+  "all_chapters",
+  "chapter"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "process_number",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Process Number",
+   "options": "\n1\n2\n3\n4\n5",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "subprocess_number",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Subprocess Number",
+   "options": "\n1\n2\n3\n4\n5\n6\n7\n37",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "chapter",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Chapter"
+  },
+  {
+   "columns": 2,
+   "default": "1",
+   "fieldname": "all_chapters",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "All Chapters",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-02-02 11:12:57.589032",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM User Process Assignment",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
