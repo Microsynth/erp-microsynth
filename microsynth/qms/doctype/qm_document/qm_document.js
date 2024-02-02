@@ -23,7 +23,7 @@ frappe.ui.form.on('QM Document', {
         }
         
         // allow review when document is on draft with an attachment
-        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0)))  {
+        if ((!frm.doc.__islocal) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0)))  {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             });
@@ -101,19 +101,23 @@ function request_review() {
     ],
     function(values){
         console.log(values.reviewer);
-        frappe.call({
-            'method': 'microsynth.qms.doctype.qm_review.qm_review.create_review',
-            'args': {
-                'reviewer': values.reviewer,
-                'dt': cur_frm.doc.doctype,
-                'dn': cur_frm.doc.name,
-                'due_date': values.due_date
-            },
-            "callback": function(response) {
-                console.log("created review request...")
-                cur_frm.reload_doc();
-            }
-        })
+        if (values.reviewer === cur_frm.doc.created_by) {
+            frappe.msgprint( __("Please select a different reviewer than the creator."), __("Validation") );
+        } else {
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_review.qm_review.create_review',
+                'args': {
+                    'reviewer': values.reviewer,
+                    'dt': cur_frm.doc.doctype,
+                    'dn': cur_frm.doc.name,
+                    'due_date': values.due_date
+                },
+                "callback": function(response) {
+                    console.log("created review request...")
+                    cur_frm.reload_doc();
+                }
+            });
+        }
     },
     __('Please choose a reviewer'),
     __('Request review')
