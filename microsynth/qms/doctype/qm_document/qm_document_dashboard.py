@@ -13,7 +13,7 @@ def get_data():
          },
          {
             'label': _("Training"),
-            'items': ['QM Training']
+            'items': ['QM Training Record']
          }
       ]
    }
