@@ -10,7 +10,8 @@ frappe.ui.form.on('QM Document', {
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
         if ((!cur_frm.attachments) 
-            || (cur_frm.attachments.get_attachments().length === 0)) {
+            || (!cur_frm.attachments.get_attachments())
+            || ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
                 cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
         }
         
@@ -34,6 +35,7 @@ frappe.ui.form.on('QM Document', {
             && (!frm.doc.reviewed_on) 
             && (!frm.doc.reviewed_by)
             && ((cur_frm.attachments)
+            && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
             && ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)) {
             frm.add_custom_button(__("Review request"), function() {
@@ -55,7 +57,9 @@ frappe.ui.form.on('QM Document', {
         if ((!frm.doc.__islocal)
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
-            && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))
+            && ((cur_frm.attachments) 
+            && (cur_frm.attachments.get_attachments())
+            && (cur_frm.attachments.get_attachments().length > 0))
             && (!['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)
                 || ((frm.doc.docstatus === 1) 
                     && (frm.doc.reviewed_on) 
@@ -70,7 +74,9 @@ frappe.ui.form.on('QM Document', {
         }
         
         // Training request
-        if (((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))
+        if (((cur_frm.attachments) 
+            && (cur_frm.attachments.get_attachments())
+            && (cur_frm.attachments.get_attachments().length > 0))
             && ["Released", "Valid" ].includes(frm.doc.status)
             && (frm.doc.released_on)
             && (frm.doc.released_by))  {
