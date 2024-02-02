@@ -47,6 +47,8 @@ def get_data(filters, short=False):
             `raw`.`customer` AS `customer`,
             `raw`.`customer_name` AS `customer_name`,
             `raw`.`sales_invoice` AS `sales_invoice`,
+            `raw`.`contact_person` AS `contact_person`,
+            `raw`.`contact` AS `contact_name`,
             `raw`.`net_amount` AS `net_amount`,
             `raw`.`product_type` AS `product_type`,
             `raw`.`status` AS `status`,
@@ -62,6 +64,8 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
+                `tabSales Invoice`.`contact_person` AS `contact_person`,
+                `tabSales Invoice`.`contact_display` AS `contact`,
                 SUM(`tabSales Invoice Item`.`net_amount`) AS `net_amount`,
                 `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
@@ -85,6 +89,8 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
+                `tabSales Invoice`.`contact_person` AS `contact_person`,
+                `tabSales Invoice`.`contact_display` AS `contact`,
                 ( IF (`tabSales Invoice`.`is_return` = 1, 1, -1) * `tabSales Invoice Customer Credit`.`allocated_amount`) AS `net_amount`,
                 `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
@@ -130,6 +136,16 @@ def get_data(filters, short=False):
                 if d['type'] == "Credit" and d['outstanding'] > 0:
                     output.append(d)
             data = output
+        
+        # add data required in the print format
+        print_format = {}
+        letter_head = frappe.get_doc("Letter Head", filters.get('company'))
+        customer = frappe.get_doc("Customer", filters.get('customer'))
+        address = frappe.get_value("Contact", customer.invoice_to, 'address')
+        print_format['header'] = letter_head.content
+        print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
+        print_format['footer'] = letter_head.footer
+        data.append(print_format)
     else:
         # overview, group by customer
         sql_query = """
@@ -182,4 +198,8 @@ def get_data(filters, short=False):
 
         data = frappe.db.sql(sql_query, as_dict=True)
 
-    return data 
+    # Debugging:
+    #pf = data[(len(data) - 1)]
+    #frappe.log_error(f"{pf=}\n\n{pf['header']=}\n\n{pf['customer_address']=}")
+
+    return data
