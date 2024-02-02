@@ -9,6 +9,7 @@ from frappe.utils import cint, get_url_to_form
 from datetime import datetime
 from frappe.desk.form.load import get_attachments
 
+
 naming_patterns = {
     "Code1": {
         "base": "{document_type} {process_number}.{subprocess_number}.{chapter}.",
@@ -90,6 +91,7 @@ class QMDocument(Document):
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
         return html
 
+
 @frappe.whitelist()
 def create_new_version(doc):
     new_doc = frappe.get_doc(frappe.get_doc("QM Document", doc).as_dict())
@@ -114,7 +116,6 @@ def set_released(doc, user):
     qm_doc.released_on = datetime.now()
     qm_doc.save()
     frappe.db.commit()
-
     update_status(qm_doc.name, "Released")
 
 

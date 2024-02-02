@@ -30,11 +30,12 @@ frappe.ui.form.on('QM Document', {
         }
         
         // allow review when document is on draft with an attachment
-        if ((!frm.doc.__islocal) 
+        if ((!frm.doc.__islocal)
             && (!frm.doc.reviewed_on) 
             && (!frm.doc.reviewed_by)
-            && ((cur_frm.attachments) 
-            && (cur_frm.attachments.get_attachments().length > 0)))  {
+            && ((cur_frm.attachments)
+            && (cur_frm.attachments.get_attachments().length > 0))
+            && ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)) {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             });
@@ -52,12 +53,13 @@ frappe.ui.form.on('QM Document', {
             cur_frm.page.clear_secondary_action();
         }
         if ((!frm.doc.__islocal)
-            && (frm.doc.docstatus === 1) 
-            && (frm.doc.reviewed_on) 
-            && (frm.doc.reviewed_by)
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
-            && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))) {
+            && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length > 0))
+            && (!['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)
+                || ((frm.doc.docstatus === 1) 
+                    && (frm.doc.reviewed_on) 
+                    && (frm.doc.reviewed_by)))) {
             // add release button
             cur_frm.page.set_primary_action(
                 __("Release"),
