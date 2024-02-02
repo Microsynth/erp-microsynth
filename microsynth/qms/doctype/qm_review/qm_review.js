@@ -34,7 +34,11 @@ function sign() {
                     'password': values.password
                 },
                 "callback": function(response) {
-                    cur_frm.reload_doc();
+                    // cur_frm.reload_doc();
+                    if (response.message) {
+                        // positive response: signature correct, open document
+                        frappe.set_route("Form", cur_frm.doc.document_type, cur_frm.doc.document_name); 
+                    }
                 }
             });
         },
