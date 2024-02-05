@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 #
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/wiki/Webshop-API
@@ -12,6 +12,7 @@ from microsynth.microsynth.utils import get_customer, create_oligo, create_sampl
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.invoicing import set_income_accounts
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
@@ -1127,6 +1128,10 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     })
     try:
         sinv.insert(ignore_permissions=True)
+        # update income accounts
+        set_income_accounts(sinv)           # this function will save the updated doc
+        frappe.db.commit()                  # make sure the latest version is loaded
+        sinv = frappe.get_doc("Sales Invoice", sinv.name)   
         sinv.submit()
     except Exception as err:
         return {'success': False, 'message': "Failed to create invoice: {0}".format(err)}

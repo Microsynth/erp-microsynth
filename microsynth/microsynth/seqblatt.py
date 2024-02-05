@@ -188,7 +188,7 @@ def check_submit_delivery_note(delivery_note):
 
         sales_orders = []
         for i in delivery_note.items:
-            if i.item_code not in [ '0901', '0904', '3235', '3237', '3252', '3254', '0968', '0969', '0975', '3264', '3265','3266' ]:
+            if i.item_code not in [ '0901', '0904', '3235', '3237', '3252', '3254', '0968', '0969', '0975', '3264', '3265', '3266', '3270' ]:
                 print("Delivery Note '{0}': Item '{1}' is not allowed for autocompletion".format(delivery_note.name, i.item_code))
                 return
             if i.against_sales_order not in sales_orders:

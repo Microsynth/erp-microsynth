@@ -1204,7 +1204,7 @@ def determine_territory(address_id):
             pc_prefix = int(numeric_postal_code[:2])
             if pc_prefix == 69:
                 return frappe.get_doc("Territory", "Lyon")
-            elif pc_prefix == 75 or pc_prefix == 78 or 91 <= pc_prefix <= 94:
+            elif pc_prefix == 75 or pc_prefix == 77 or pc_prefix == 78 or 91 <= pc_prefix <= 95:
                 return frappe.get_doc("Territory", "Paris")
             else:
                 return frappe.get_doc("Territory", "France (without Paris and Lyon)")

@@ -263,7 +263,7 @@ def async_create_invoices(mode, company, customer):
         for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
             if len(warnings) < 1:
                 continue
-            subject = f"Insufficient credit: Customer {dn_customer}"
+            subject = f"Insufficient credit: Customer {dn_customer} at {company}"
             dn_details = ""
 
             for delivery_note, values in warnings.items():

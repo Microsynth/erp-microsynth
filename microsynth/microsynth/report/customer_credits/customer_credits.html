@@ -1,0 +1,63 @@
+{% var pf = data[((data.length) - 1)] %}
+
+<div id="header-html" class="hidden-pdf">
+    {%= pf.header %}
+</div>
+
+<table style="width: 100%; height: 215px !important;">
+    <tr>
+        <td style="width: 54%; padding: 0px !important; padding-top:22px !important;"></td>
+        <td style="width: 46%; padding: 0px !important; padding-top:22px !important;">
+            <p style="font-size: 12px !important; line-height: 15px !important;">{%= pf.customer_address %}</p>
+        </td>
+    </tr>
+</table>
+
+<h4>{%= __("Customer ID") %}: {%= filters.customer %}</h4>
+
+<!-- TODO: Remaining Credit with Currency, Company location, current date (e.g. Balgach, 02.02.2024)-->
+
+<h2>{%= __("Remaining credit") %}: TODO</h2><br>
+
+<table style="width: 100%; font-size: 11px; ">
+    <tr>
+        <th style="padding: 1px !important; width: 10%; text-align: left;">{%= __("Date") %}</th>
+        <th style="padding: 1px !important; width: 17%; text-align: left;">{%= __("Sales Invoice") %}</th>
+        <th style="padding: 1px !important; width: 28%; text-align: left;">{%= __("Contact Person") %}</th>
+        <th style="padding: 1px !important; width: 13%; text-align: right;">{%= __("Debit") %}</th>
+        <th style="padding: 1px !important; width: 13%; text-align: right;">{%= __("Credit") %}</th>
+        <th style="padding: 1px !important; width:  2%; text-align: right;"></th>
+        <th style="padding: 1px !important; width: 17%; text-align: left;">{%= __("Against") %}</th>
+    </tr>
+{% for (var i = 0; i < data.length - 2; i++ ) { %}
+    <tr>
+        <td style="padding: 1px !important; text-align: left">{%= frappe.datetime.str_to_user(data[i].date) %}</td>
+        <td style="padding: 1px !important; ">{%= (data[i].sales_invoice) %}</td>
+        <td style="padding: 1px !important; ">{%= (data[i].contact_name) %} ({%= (data[i].contact_person) %})</td>
+        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].net_amount > 0) { %}
+                                                                    {%= data[i].net_amount %}
+                                                                {% } %}</td>
+        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].net_amount < 0) { %}
+                                                                    {%= data[i].net_amount %}
+                                                                {% } %}</td>
+        <td style="padding: 1px !important; "></td>
+        <td style="padding: 1px !important; ">{% if (data[i].net_amount < 0) { %}
+                                                {%= (data[i].reference) %}
+                                            {% } %}</td>
+    </tr>
+{% } %}
+</table>
+
+<div id="footer-html" class="visible-pdf">
+    {%= pf.footer %}
+</div>
+
+
+
+<!-- Does not work:
+{% if (filters.customer) { %}
+
+
+{% } else { %}
+    <p><b style='color:red;'>Overview printing not supported, please enter a Customer ID in the report.</b></p>
+{% } %} -->
