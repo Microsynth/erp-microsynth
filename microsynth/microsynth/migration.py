@@ -2641,6 +2641,18 @@ def reopen_sales_order(sales_order):
     so.update_status("Draft")
 
 
+def close_delivery_note(delivery_note):
+    """
+    run
+    bench execute.microsynth.microsynth.migration.close_delivery_note --kwargs "{'delivery_note':''}"
+    """
+    delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+    if delivery_note.docstatus > 1 or delivery_note.status == 'Closed':
+        return
+
+    delivery_note.update_status("Closed")
+
+
 def close_draft_delivery_note_and_sales_order(delivery_note):
     """
     run
@@ -2723,6 +2735,38 @@ def close_sales_order_of_delivery_note(delivery_note):
         so = frappe.get_doc("Sales Order", so)
         if so.status != "Closed":
             so.update_status("Closed")
+
+
+def close_tagged_delivery_notes(status, tag):
+    """
+    run
+    bench execute microsynth.microsynth.migration.close_tagged_delivery_notes --kwargs "{'status': 'To Bill', 'tag':'invoiced'}"
+    """
+    import traceback
+    
+    query = f"""
+        SELECT `name`, `docstatus`, `status`, `_user_tags`
+        FROM `tabDelivery Note`
+        WHERE `_user_tags` like "%{tag}%"
+        and `status` = "{status}"
+    """
+
+    delivery_notes = frappe.db.sql(query, as_dict=True)
+    
+    i = 0
+    length = len(delivery_notes)
+    
+    for dn in delivery_notes:
+        try:
+            print(f"{int(100 * i / length)}% - process '{dn['name']}': {dn['status']}; Tags: '{dn['_user_tags']}'")
+            close_delivery_note(dn['name'])
+
+        except Exception as err:
+            msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
+            print(msg)
+            frappe.log_error(msg, "close_tagged_delivery_notes")
+        i += 1
+    print(f"Deliver Notes count: {length}")
 
 
 def close_orders_of_closed_delivery_notes():
