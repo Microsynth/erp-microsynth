@@ -3595,7 +3595,7 @@ def import_user_process_assignments(filepath):
                 continue
             email = line[1]
             if not email:
-                print(f"No email given for '{line[0]}'. Unable to create User and User Settings.")
+                print(f"No email given for '{line[0]}'. Unable to create User Settings.")
                 continue
             if not email in assignments:
                 assignments[email] = []
@@ -3616,6 +3616,9 @@ def import_user_process_assignments(filepath):
         user_settings = frappe.get_doc('User Settings', email)
         user_settings.qm_process_assignments = []  # reset qm_process_assignments
         for proc in processes:
+            if not proc[0] or not proc[1]:
+                print(f"Please specify at least process and subprocess for '{email}' in '{filepath}'.")
+                continue
             process = {
                 'process_number': proc[0],
                 'subprocess_number': proc[1],
