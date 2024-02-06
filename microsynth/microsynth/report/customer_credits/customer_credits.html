@@ -1,5 +1,5 @@
-{% var pf = data[((data.length) - 1)] %}
-
+{% var pf = data[0].print_format %}
+{% if (pf) { %}
 <div id="header-html" class="hidden-pdf">
     {%= pf.header %}
 </div>
@@ -51,13 +51,6 @@
 <div id="footer-html" class="visible-pdf">
     {%= pf.footer %}
 </div>
-
-
-
-<!-- Does not work:
-{% if (filters.customer) { %}
-
-
 {% } else { %}
-    <p><b style='color:red;'>Overview printing not supported, please enter a Customer ID in the report.</b></p>
-{% } %} -->
+    <p><b style="color:red;">Overview printing not supported, please enter a Customer ID in the report.</b></p>
+{% } %}
