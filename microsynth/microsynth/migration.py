@@ -3616,14 +3616,12 @@ def import_user_process_assignments(filepath):
         user_settings = frappe.get_doc('User Settings', email)
         user_settings.qm_process_assignments = []  # reset qm_process_assignments
         for proc in processes:
-            process = frappe.get_doc({
-                'doctype': 'QM User Process Assignment',
+            process = {
                 'process_number': proc[0],
                 'subprocess_number': proc[1],
-                'all_chapters': proc[2] or 0,
-                'chapter': proc[3]
-            })
-            user_settings.qm_process_assignments.append(process)
-        user_settings.save()  # TODO: Why does this not work?
-        #print(f"{user_settings.qm_process_assignments[0].as_dict()}")  #{len(user_settings.qm_process_assignments)=};
+                'all_chapters': proc[3] or 0,
+                'chapter': proc[2]
+            }
+            user_settings.append('qm_process_assignments', process)
+        user_settings.save()
     frappe.db.commit()
