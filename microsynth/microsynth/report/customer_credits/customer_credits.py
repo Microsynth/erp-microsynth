@@ -146,7 +146,8 @@ def get_data(filters, short=False):
         print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
         print_format['footer'] = letter_head.footer
         # data.append(print_format)             # attach to first record instead of a separate line
-        data[0]['print_format'] = print_format
+        if len(data) > 0:                       # prevent crash if there are no entries
+            data[0]['print_format'] = print_format
     else:
         # overview, group by customer
         sql_query = """

@@ -1,4 +1,4 @@
-{% var pf = data[0].print_format %}
+{% if (data.length > 0) { var pf = data[0].print_format; } %}
 {% if (pf) { %}
 <div id="header-html" class="hidden-pdf">
     {%= pf.header %}
