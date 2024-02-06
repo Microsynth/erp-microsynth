@@ -3574,3 +3574,56 @@ def import_oligo_scales(directory_path):
         oligo.save()
     print(f"{datetime.now()} Finished: processed {counter}/{len(oligo_dict)} Oligos (Number of Web IDs occured more than once in the BOS export: {multiple_counter}; Number of distinct Web IDs from BOS export not found in the ERP: {none_counter}).")
     frappe.db.commit()
+
+
+def import_user_process_assignments(filepath):
+    """
+    Imports the User Process Assignments from the given CSV with the format:
+
+    Full Name; Email;Process;Subprocess;Chapter;All Chapters
+    Rolf Suter;rolf.suter@microsynth.ch;5;3;2;
+
+    bench execute microsynth.microsynth.migration.import_user_process_assignments --kwargs "{'filepath': '/mnt/erp_share/JPe/user_process_assignments.csv'}"
+    """
+    assignments = {}
+    with open(filepath, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 6:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            email = line[1]
+            if not email:
+                print(f"No email given for '{line[0]}'. Unable to create User and User Settings.")
+                continue
+            if not email in assignments:
+                assignments[email] = []
+            assignments[email].append((line[2], line[3], line[4], line[5]))
+    
+    for email, processes in assignments.items():
+        if not frappe.db.exists('User', email):
+            print(f"User '{email}' does not exist in the ERP. Please create and configure this User manually.")
+            continue
+        if not frappe.db.exists('User Settings', email):
+            new_user_settings = frappe.get_doc({
+                'doctype': 'User Settings',
+                'user': email
+            })
+            new_user_settings.insert(ignore_permissions=True)
+            frappe.db.commit()
+        
+        user_settings = frappe.get_doc('User Settings', email)
+        user_settings.qm_process_assignments = []  # reset qm_process_assignments
+        for proc in processes:
+            process = frappe.get_doc({
+                'doctype': 'QM User Process Assignment',
+                'process_number': proc[0],
+                'subprocess_number': proc[1],
+                'all_chapters': proc[2] or 0,
+                'chapter': proc[3]
+            })
+            user_settings.qm_process_assignments.append(process)
+        user_settings.save()  # TODO: Why does this not work?
+        #print(f"{user_settings.qm_process_assignments[0].as_dict()}")  #{len(user_settings.qm_process_assignments)=};
+    frappe.db.commit()
