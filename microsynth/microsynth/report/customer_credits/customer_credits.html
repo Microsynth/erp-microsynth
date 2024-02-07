@@ -13,11 +13,11 @@
     </tr>
 </table>
 
-<h4>{%= __("Customer ID") %}: {%= filters.customer %}</h4>
+<!-- TODO: Company location, current date (e.g. Balgach, 02.02.2024)-->
 
-<!-- TODO: Remaining Credit with Currency, Company location, current date (e.g. Balgach, 02.02.2024)-->
+<h5>{%= __("Customer ID") %}: {%= filters.customer %}</h5>
 
-<h2>{%= __("Remaining credit") %}: TODO</h2><br>
+<h3>{%= __("Remaining credit") %}: {%= pf.remaining_credit.toFixed(2) %} {%= pf.currency %}</h3><br> <!-- TODO: How to access total row of report to get Remaining Credit?-->
 
 <table style="width: 100%; font-size: 11px; ">
     <tr>
@@ -29,28 +29,29 @@
         <th style="padding: 1px !important; width:  2%; text-align: right;"></th>
         <th style="padding: 1px !important; width: 17%; text-align: left;">{%= __("Against") %}</th>
     </tr>
-{% for (var i = 0; i < data.length - 2; i++ ) { %}
+{% for (var i = 0; i < data.length - 1; i++ ) { %}
     <tr>
         <td style="padding: 1px !important; text-align: left">{%= frappe.datetime.str_to_user(data[i].date) %}</td>
         <td style="padding: 1px !important; ">{%= (data[i].sales_invoice) %}</td>
         <td style="padding: 1px !important; ">{%= (data[i].contact_name) %} ({%= (data[i].contact_person) %})</td>
-        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].net_amount > 0) { %}
-                                                                    {%= data[i].net_amount %}
+        <td style="padding: 1px !important; text-align: right; ">{% if (!(data[i].reference.indexOf("-") > -1)) { %}
+                                                                    {%= data[i].net_amount.toFixed(2) %}
                                                                 {% } %}</td>
-        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].net_amount < 0) { %}
-                                                                    {%= data[i].net_amount %}
+        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].reference.indexOf("-") > -1) { %}
+                                                                    {%= data[i].net_amount.toFixed(2) %}
                                                                 {% } %}</td>
         <td style="padding: 1px !important; "></td>
-        <td style="padding: 1px !important; ">{% if (data[i].net_amount < 0) { %}
+        <td style="padding: 1px !important; ">{% if (data[i].reference.indexOf("-") > -1) { %}
                                                 {%= (data[i].reference) %}
                                             {% } %}</td>
     </tr>
 {% } %}
 </table>
-
-<div id="footer-html" class="visible-pdf">
-    {%= pf.footer %}
+<br>
+<div id="footer-html" class="hidden-pdf">
+    <br>{%= pf.footer %}
 </div>
+
 {% } else { %}
-    <p><b style="color:red;">Overview printing not supported, please enter a Customer ID in the report.</b></p>
+    <p><h3 style="color:red;">Overview printing not supported, please enter a Customer ID in the report.</h3></p>
 {% } %}
