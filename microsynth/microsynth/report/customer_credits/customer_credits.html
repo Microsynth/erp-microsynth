@@ -1,5 +1,7 @@
 {% if (data.length > 0) { var pf = data[0].print_format; } %}
+
 {% if (pf) { %}
+<!-- TODO: Prettify header (Why does it look different compared to Sales Invoice even though the code is the same?) -->
 <div id="header-html" class="hidden-pdf">
     {%= pf.header %}
 </div>
@@ -13,11 +15,11 @@
     </tr>
 </table>
 
-<!-- TODO: Company location, current date (e.g. Balgach, 02.02.2024)-->
+<!-- TODO: Add Company location and current date to the right (e.g. Balgach, 02.02.2024) -->
 
 <h5>{%= __("Customer ID") %}: {%= filters.customer %}</h5>
 
-<h3>{%= __("Remaining credit") %}: {%= pf.remaining_credit.toFixed(2) %} {%= pf.currency %}</h3><br> <!-- TODO: How to access total row of report to get Remaining Credit?-->
+<h3>{%= __("Remaining credit") %}: {%= pf.remaining_credit.toFixed(2) %} {%= pf.currency %}</h3><br>
 
 <table style="width: 100%; font-size: 11px; ">
     <tr>
@@ -34,14 +36,14 @@
         <td style="padding: 1px !important; text-align: left">{%= frappe.datetime.str_to_user(data[i].date) %}</td>
         <td style="padding: 1px !important; ">{%= (data[i].sales_invoice) %}</td>
         <td style="padding: 1px !important; ">{%= (data[i].contact_name) %} ({%= (data[i].contact_person) %})</td>
-        <td style="padding: 1px !important; text-align: right; ">{% if (!(data[i].reference.indexOf("-") > -1)) { %}
+        <td style="padding: 1px !important; text-align: right; ">{% if (!(data[i].reference.indexOf("-") > -1) || (data[i].net_amount > 0)) { %}
                                                                     {%= data[i].net_amount.toFixed(2) %}
                                                                 {% } %}</td>
-        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].reference.indexOf("-") > -1) { %}
+        <td style="padding: 1px !important; text-align: right; ">{% if (data[i].reference.indexOf("-") > -1 && (data[i].net_amount < 0)) { %}
                                                                     {%= data[i].net_amount.toFixed(2) %}
                                                                 {% } %}</td>
         <td style="padding: 1px !important; "></td>
-        <td style="padding: 1px !important; ">{% if (data[i].reference.indexOf("-") > -1) { %}
+        <td style="padding: 1px !important; ">{% if (data[i].reference.indexOf("-") > -1 && (data[i].net_amount < 0)) { %}
                                                 {%= (data[i].reference) %}
                                             {% } %}</td>
     </tr>
@@ -50,6 +52,7 @@
 <br>
 <div id="footer-html" class="hidden-pdf">
     <br>{%= pf.footer %}
+    <!-- TODO: Why is the footer not necessarily at the bottom of the page? -->
 </div>
 
 {% } else { %}
