@@ -49,7 +49,7 @@ def oligo_status_changed(content=None):
         """.format(web_id=oligo['web_id']), as_dict=True)
         
         if len(oligos) > 0:
-            # get sales order
+            # get oligo to update the status
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
                 oligo_doc.status = oligo['status']
@@ -145,7 +145,7 @@ def check_sales_order_completion(sales_orders):
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
                 frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
                 close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
-                return            
+                continue
 
             dn.items = keep_items
             # insert record
