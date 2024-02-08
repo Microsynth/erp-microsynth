@@ -74,10 +74,12 @@ def oligo_status_changed(content=None):
         )
     }
 
+
 def get_customer_from_sales_order(sales_order):
     customer_name = frappe.get_value("Sales Order", sales_order, 'customer')
     customer = frappe.get_doc("Customer", customer_name)
     return customer
+
 
 def check_sales_order_completion(sales_orders):
     """
@@ -86,9 +88,10 @@ def check_sales_order_completion(sales_orders):
     Run
     bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23000051']}"
     """
-
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
+        #print(f"Processing '{sales_order}' ...")
+
         if not validate_sales_order(sales_order):
             continue
         
@@ -106,10 +109,16 @@ def check_sales_order_completion(sales_orders):
 
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
-            
+
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             dn_content = make_delivery_note(sales_order)
             dn = frappe.get_doc(dn_content)
+            if not dn:
+                #print(f"Delivery Note for '{sales_order}' is None.")
+                continue
+            if not dn.get('oligos'):
+                #print(f"Delivery Note for '{sales_order}' has no Oligos.")
+                continue
             company = frappe.get_value("Sales Order", sales_order, "company")
             dn.naming_series = get_naming_series("Delivery Note", company)
             # set export code
@@ -129,7 +138,7 @@ def check_sales_order_completion(sales_orders):
                             cancelled_oligo_item_qtys[item.item_code] = cancelled_oligo_item_qtys[item.item_code] + item.qty
                         else:
                             cancelled_oligo_item_qtys[item.item_code] = item.qty
-                    
+
             dn.oligos = cleaned_oligos
             # subtract cancelled items from oligo items
             for item in dn.items:
@@ -140,7 +149,7 @@ def check_sales_order_completion(sales_orders):
             for item in dn.items:
                 if item.qty > 0:
                     keep_items.append(item)
-            
+
             # if there are no items left or only the shipping item, close the order and exit with an error trace.
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
                 frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
@@ -152,7 +161,7 @@ def check_sales_order_completion(sales_orders):
             dn.flags.ignore_missing = True
             dn.insert(ignore_permissions=True)
             frappe.db.commit()
-            
+
             # create PDF for delivery note
             try:
                 pdf = frappe.get_print(
@@ -171,6 +180,7 @@ def check_sales_order_completion(sales_orders):
                 frappe.log_error( "Error on pdf creation of {0}: {1}".format(dn.name, err),
                     "PDF creation failed (production API)" )
     return
+
 
 @frappe.whitelist()
 def get_orders_for_packaging(destination="CH"):
@@ -195,6 +205,7 @@ def get_orders_for_packaging(destination="CH"):
         
     return {'success': True, 'message': 'OK', 'orders': deliveries}
 
+
 @frappe.whitelist()
 def count_orders_for_packaging(destination="CH"):
     """
@@ -203,8 +214,9 @@ def count_orders_for_packaging(destination="CH"):
     Destination: CH, EU, ROW (see Country:Export Code)
     """
     deliveries = get_orders_for_packaging(destination)['orders']
-        
+
     return {'success': True, 'message': 'OK', 'order_count': len(deliveries)}
+
 
 @frappe.whitelist()
 def get_next_order_for_packaging(destination="CH"):
@@ -305,7 +317,6 @@ def process_internal_order(sales_order):
     check_sales_order_completion( [sales_order.name] )
     oligo_order_packaged(sales_order.web_order_id)
     frappe.db.commit()
-
     return
 
 
