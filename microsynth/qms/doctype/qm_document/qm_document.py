@@ -124,7 +124,7 @@ def set_released(doc, user):
     frappe.db.commit()
     # if valid_from date is today or in the past -> set directly to valid
     if qm_doc.valid_from and qm_doc.valid_from <= datetime.today().date():
-        # TODO: set_valid_document(qm_doc.name)
+        set_valid_document(qm_doc.name)
     else:
         update_status(qm_doc.name, "Released")
     return
@@ -146,4 +146,20 @@ def assign_after_review(qm_document):
         'name': qm_document,
         'assign_to': frappe.get_value("QM Document", qm_document, "created_by")
     })
+    return
+
+@frappe.whitelist()
+def set_valid_document(qm_document):
+    doc = frappe.get_doc("QM Document", qm_document)
+    # TODO
+
+    # check date, proceed if valid_from and valid_till conditions are met
+
+    # get all other versions for this document
+
+    # set other versions to invalid
+
+    # set document valid
+    doc.status = "Valid"
+
     return
