@@ -10,6 +10,7 @@
   "process_number",
   "subprocess_number",
   "chapter",
+  "company",
   "document_identification_column_break",
   "title",
   "document_number",
@@ -218,10 +219,16 @@
    "fieldname": "valid_till",
    "fieldtype": "Date",
    "label": "Valid till"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-08 11:37:30.647059",
+ "modified": "2024-02-08 12:33:36.344868",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
