@@ -23,7 +23,7 @@ class QMReview(Document):
             update_status(ref_doc.name, "Reviewed")
 
         # clear any assignments
-        clear("Qm Review", self.name)
+        clear("QM Review", self.name)
         return
 
 

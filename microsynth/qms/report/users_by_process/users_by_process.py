@@ -9,7 +9,7 @@ from frappe import _
 def get_columns(filters):
     return [
         #{"label": _("User"), "fieldname": "user", "fieldtype": "Data", "width": 200},
-        {"label": _("User"), "fieldname": "name", "fieldtype": "Link", "options": "User Settings", "width": 250}
+        {"label": _("User"), "fieldname": "user_name", "fieldtype": "Link", "options": "User Settings", "width": 250}
     ]
 
 
@@ -20,8 +20,9 @@ def get_data(filters):
             chapter_condition = f"AND (`tabQM User Process Assignment`.`chapter` = '{filters.get('chapter')}' OR `tabQM User Process Assignment`.`all_chapters` = 1)"
 
         query = f"""
-            SELECT `tabUser Settings`.`user`,
-                `tabUser Settings`.`name`
+            SELECT DISTINCT 
+                `tabUser Settings`.`name`,
+                `tabUser Settings`.`name` as `user_name`
             FROM `tabUser Settings`
             LEFT JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
             WHERE `tabQM User Process Assignment`.`process_number` = '{filters.get('process_number')}'
@@ -38,6 +39,7 @@ def execute(filters=None):
     return columns, data
 
 
+@frappe.whitelist()
 def get_users(process, subprocess, chapter=None):
     filters = {
         'process_number': process,

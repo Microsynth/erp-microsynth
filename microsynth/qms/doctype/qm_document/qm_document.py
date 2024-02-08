@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, get_url_to_form
 from datetime import datetime
 from frappe.desk.form.load import get_attachments
+from frappe.desk.form.assign_to import add, clear
 
 
 naming_patterns = {
@@ -125,3 +126,12 @@ def update_status(qm_document, status):
     qm_doc.status = status
     qm_doc.save()
     frappe.db.commit()
+
+
+@frappe.whitelist()
+def assign_after_review(qm_document):
+    add({
+        'doctype': "QM Document",
+        'name': qm_document,
+        'assign_to': frappe.get_value("QM Document", qm_document, "created_by")
+    })

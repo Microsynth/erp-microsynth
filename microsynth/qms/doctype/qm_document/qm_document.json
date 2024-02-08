@@ -25,6 +25,7 @@
   "created_by",
   "reviewed_by",
   "released_by",
+  "valid_till",
   "linked_documents_section",
   "linked_documents",
   "customers_section",
@@ -211,11 +212,17 @@
    "fieldname": "linked_documents_section",
    "fieldtype": "Section Break",
    "label": "Linked Documents"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "valid_till",
+   "fieldtype": "Date",
+   "label": "Valid till"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-02 13:48:14.487819",
- "modified_by": "Administrator",
+ "modified": "2024-02-08 11:37:30.647059",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
