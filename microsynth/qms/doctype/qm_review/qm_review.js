@@ -36,6 +36,16 @@ function sign() {
                 "callback": function(response) {
                     // cur_frm.reload_doc();
                     if (response.message) {
+                        // Send notification to creator
+                        if (cur_frm.doc.document_type == "QM Document") {
+                            frappe.call({
+                                'method': 'microsynth.qms.doctype.qm_document.qm_document.assign_after_review',
+                                'args': {
+                                    'qm_document': cur_frm.doc.document_name
+                                },
+                                "async": false
+                            });
+                        }
                         // positive response: signature correct, open document
                         frappe.set_route("Form", cur_frm.doc.document_type, cur_frm.doc.document_name); 
                     }
