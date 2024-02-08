@@ -57,8 +57,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         var requires_qau_release = 
-            ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type) 
-            && ['3'].includes(frm.doc.process_number);
+            ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type);
 
         if ((!frm.doc.__islocal)
             && (!frm.doc.released_on)
