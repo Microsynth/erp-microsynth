@@ -86,7 +86,7 @@ class QMDocument(Document):
         )
         return
     
-    def get_overview(self):
+    def get_overview(self, files):
         files = get_attachments("QM Document", self.name)
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
         return html

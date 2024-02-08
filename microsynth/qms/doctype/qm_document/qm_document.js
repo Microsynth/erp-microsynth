@@ -5,7 +5,7 @@
 frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
         // reset overview html
-        cur_frm.set_df_property('overview', 'options', null);
+        cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
         
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
@@ -102,6 +102,7 @@ frappe.ui.form.on('QM Document', {
         
         // fetch document overview
         if (!frm.doc.__islocal) {
+            var files = cur_frm.attachments.get_attachments();
             frappe.call({
                 'method': 'get_overview',
                 'doc': frm.doc,
