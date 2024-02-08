@@ -20,7 +20,8 @@ def get_data(filters):
             chapter_condition = f"AND (`tabQM User Process Assignment`.`chapter` = '{filters.get('chapter')}' OR `tabQM User Process Assignment`.`all_chapters` = 1)"
 
         query = f"""
-            SELECT DISTINCT `tabUser Settings`.`user`,
+            SELECT DISTINCT 
+                `tabUser Settings`.`name`,
                 `tabUser Settings`.`name` as `user_name`
             FROM `tabUser Settings`
             LEFT JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
