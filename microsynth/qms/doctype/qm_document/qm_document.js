@@ -187,53 +187,70 @@ function release() {
         },
         __('Please enter your approval password'),
         __('Sign')
-    );
+        );
+    }
+  
+function create_training_request(user_name, due_date) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.create_training_record',
+        'args': {
+            'trainee': user_name,
+            'dt': cur_frm.doc.doctype,
+            'dn': cur_frm.doc.name,
+            'due_date': due_date
+        },
+        "callback": function(response) {
+            console.log("created training record request for " + user_name)
+        }
+    })
 }
 
-function request_training() {
+function request_training_prompt(trainees) {
     frappe.prompt([
         {'fieldname': 'trainees', 
          'fieldtype': 'Table',
          'label': 'Trainees',
          'reqd': 1,
          'fields': [ 
-            {'fieldname': 'trainee', 
+            {'fieldname': 'user_name', 
              'fieldtype': 'Link', 
              'label': __('Trainee'), 
              'options':'User', 
              'in_list_view': 1,
              'reqd': 1} ],
 
-         'data': [],
-         'get_data': () => { return [];}
+         'data': trainees,
+         'get_data': () => { return trainees;}
         },
         { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
     ],
     function(values){
         console.log(values.trainees)
         for (var i = 0; i < values.trainees.length; i++)  {
-            frappe.call({
-                'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.create_training_record',
-                           
-                'args': {
-                    'trainee': values.trainees[i].trainee,
-                    'dt': cur_frm.doc.doctype,
-                    'dn': cur_frm.doc.name,
-                    'due_date': values.due_date
-                },
-                "callback": function(response) {
-                    console.log("created training record request for " + values.trainee[i].trainee)
-                }
-            })
+            create_training_request(values.trainees[i].user_name, values.due_date);
         }
-
-
-
     },
     __('Please choose a trainee'),
     __('Request training')
     )
 }
+
+function request_training() {
+    frappe.call({
+        'method': 'microsynth.qms.report.users_by_process.users_by_process.get_users',
+        'args': {
+            'process': cur_frm.doc.process_number,
+            'subprocess': cur_frm.doc.subprocess_number, 
+            'chapter': cur_frm.doc.chapter
+        },
+        'callback': function(response) {
+            console.log(response.message)
+            // var trainees =  ['rolf.suter@microsynth.ch']
+            request_training_prompt(response.message);
+        }
+    })
+}
+
 
 function setup_attachment_watcher(frm) {
     // if (!locals.attachment_node) {
