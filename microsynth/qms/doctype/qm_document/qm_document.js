@@ -55,12 +55,18 @@ frappe.ui.form.on('QM Document', {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
         }
+
+        var requires_qau_release = 
+            ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type) 
+            && ['3'].includes(frm.doc.process_number);
+
         if ((!frm.doc.__islocal)
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
             && ((cur_frm.attachments) 
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
+            && (!requires_qau_release || frappe.user.has_role('QAU'))
             && (!['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)
                 || ((frm.doc.docstatus === 1) 
                     && (frm.doc.reviewed_on) 
