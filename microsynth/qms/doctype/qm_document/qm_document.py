@@ -57,19 +57,10 @@ class QMDocument(Document):
                 chapter = self.chapter or "00",
                 date = datetime.today().strftime("%Y%m%d")
             )
-            # find document number
-            docs = frappe.db.sql("""
-                SELECT `name` 
-                FROM `tabQM Document`
-                WHERE `name` LIKE "{0}%"
-                ORDER BY `name` DESC
-                LIMIT 1;
-                """.format(base_name), as_dict=True)
             
-            if len(docs) == 0:
-                self.document_number = 1
-            else:
-                self.document_number = cint((docs[0]['name'][len(base_name):]).split("-")[0]) + 1
+            self.document_number = find_first_number_gap(
+                base_name=base_name, 
+                length=naming_patterns[naming_code[self.document_type]]['number_length'])
             
             # check revision
             version = self.version or 1
@@ -125,6 +116,7 @@ def set_released(doc, user):
     # if valid_from date is today or in the past -> set directly to valid
     if qm_doc.valid_from and qm_doc.valid_from <= datetime.today().date():
         # TODO: set_valid_document(qm_doc.name)
+        pass
     else:
         update_status(qm_doc.name, "Released")
     return
@@ -147,3 +139,29 @@ def assign_after_review(qm_document):
         'assign_to': frappe.get_value("QM Document", qm_document, "created_by")
     })
     return
+
+
+def find_first_number_gap(base_name, length):
+    numbers = frappe.db.sql("""
+        SELECT SUBSTRING(`name`, {start}, {length})  AS `number`, `name`
+        FROM `tabQM Document`
+        WHERE `name` LIKE "{base_name}%"
+        ORDER BY `name` ASC
+        ;
+        """.format(base_name=base_name, start=(len(base_name) + 1), length=length), as_dict=True)
+    
+    last_number = 0
+    gap = None
+    for n in numbers:
+        if cint(n['number']) > (last_number + 1):
+            gap = (last_number + 1)
+            break
+        else:
+            last_number = cint(n['number'])
+    
+    # if no gap was found, use next number
+    if not gap:
+        gap = last_number + 1
+    
+    return gap
+    
