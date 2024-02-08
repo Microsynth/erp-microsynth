@@ -14,15 +14,18 @@ from frappe.desk.form.assign_to import add, clear
 naming_patterns = {
     "Code1": {
         "base": "{document_type} {process_number}.{subprocess_number}.{chapter}.",
-        "document_number": "{doc:03d}"
+        "document_number": "{doc:03d}",
+        "number_length": 3
     },
     "Code2": {
         "base": "{document_type} {process_number}.{subprocess_number}.{date}.",
-        "document_number": "{doc:02d}"
+        "document_number": "{doc:02d}",
+        "number_length": 2
     },
     "Code3": {
         "base": "{document_type} {process_number}.{subprocess_number}.",
-        "document_number": "{doc:04d}"
+        "document_number": "{doc:04d}",
+        "number_length": 4
     }
 }
 
@@ -112,12 +115,19 @@ def create_new_version(doc):
 
 @frappe.whitelist()
 def set_released(doc, user):
+    # pull selected document
     qm_doc = frappe.get_doc(frappe.get_doc("QM Document", doc))
+    # set release user and (current) date
     qm_doc.released_by = user
     qm_doc.released_on = datetime.now()
     qm_doc.save()
     frappe.db.commit()
-    update_status(qm_doc.name, "Released")
+    # if valid_from date is today or in the past -> set directly to valid
+    if qm_doc.valid_from and qm_doc.valid_from <= datetime.today().date():
+        # TODO: set_valid_document(qm_doc.name)
+    else:
+        update_status(qm_doc.name, "Released")
+    return
 
 
 @frappe.whitelist()
@@ -126,6 +136,7 @@ def update_status(qm_document, status):
     qm_doc.status = status
     qm_doc.save()
     frappe.db.commit()
+    return
 
 
 @frappe.whitelist()
@@ -135,3 +146,4 @@ def assign_after_review(qm_document):
         'name': qm_document,
         'assign_to': frappe.get_value("QM Document", qm_document, "created_by")
     })
+    return

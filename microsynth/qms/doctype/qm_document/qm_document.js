@@ -165,14 +165,6 @@ function create_new_version(frm) {
 
 
 function release() {
-    frappe.call({
-        'method': 'microsynth.qms.doctype.qm_document.qm_document.set_released',
-        'args': {
-            'doc': cur_frm.doc.name,
-            'user': frappe.session.user
-        }
-    });
-
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
@@ -187,6 +179,17 @@ function release() {
                     'password': values.password
                 },
                 "callback": function(response) {
+                    if (response.message) {
+                        // set release date and user and set status to "Released" (if password was correct)
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_document.qm_document.set_released',
+                            'args': {
+                                'doc': cur_frm.doc.name,
+                                'user': frappe.session.user
+                            },
+                            'async': false
+                        });
+                    }
                     cur_frm.reload_doc();
                 }
             });
