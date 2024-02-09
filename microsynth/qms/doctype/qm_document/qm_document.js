@@ -18,7 +18,7 @@ frappe.ui.form.on('QM Document', {
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
-        // set valid_from to read_only if it is set, not in the future and QM Document is not a Draft (TODO: dependence on status?)
+        // set valid_from to read_only if it is set, not in the future and QM Document is not a Draft
         if (frm.doc.valid_from && frm.doc.docstatus > 0) {
             var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
             var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
@@ -73,6 +73,14 @@ frappe.ui.form.on('QM Document', {
                 request_review(frm);
             });
         }
+
+        // Invalidate
+        if (["Valid"].includes(frm.doc.status)) {
+            frm.add_custom_button(__("Invalidate"), function() {
+                invalidate(frm);
+            }).addClass("btn-danger");
+        }
+
         // allow to create new versions from valid documents
         if (frm.doc.docstatus > 0) {
             frm.add_custom_button(__("New version"), function() {
@@ -178,6 +186,20 @@ function request_review() {
     __('Please choose a reviewer'),
     __('Request review')
     )
+}
+
+
+function invalidate(frm) {
+    frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?<br>There will be <b>no other valid version.</b>",
+    () => {
+        cur_frm.set_value("status", "Invalid");
+        setTimeout(() => {
+            cur_frm.save_or_update();
+            frappe.show_alert( __("Status changed to Invalid.") );
+        }, "150");
+    }, () => {
+        frappe.show_alert('No changes');
+    });
 }
 
 
