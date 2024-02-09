@@ -125,6 +125,8 @@ def set_released(doc, user):
 @frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
+    if qm_doc.status == status:
+        return
     qm_doc.status = status
     qm_doc.save()
     frappe.db.commit()
@@ -180,10 +182,10 @@ def set_valid_document(qm_docname):
     today = date.today()
     if not qm_doc.valid_from or today < qm_doc.valid_from:
         update_status(qm_doc.name, "Released")
-        return
+        return False
     if qm_doc.valid_till and today > qm_doc.valid_till:
         update_status(qm_doc.name, "Released")
-        return
+        return False
 
     # get all other valid versions for this document
     valid_versions = frappe.db.sql(f"""
@@ -211,6 +213,7 @@ def set_valid_document(qm_docname):
 
     # set document valid
     update_status(qm_doc.name, "Valid")
+    return True
 
 
 def invalidate_qm_docs():

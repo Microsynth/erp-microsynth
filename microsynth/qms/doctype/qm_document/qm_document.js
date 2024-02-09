@@ -20,11 +20,11 @@ frappe.ui.form.on('QM Document', {
 
         // set valid_from to read_only if it is set, not in the future and QM Document is not a Draft (TODO: dependence on status?)
         if (frm.doc.valid_from && frm.doc.docstatus > 0) {
-            var valid_from_date = new Date(frm.doc.valid_from);
+            var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
             var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
             if (valid_from_date <= today) {
                 cur_frm.set_df_property('valid_from', 'read_only', true);
-            }            
+            }
         }
 
         // fresh document: add creation tags
@@ -38,6 +38,27 @@ frappe.ui.form.on('QM Document', {
         if (["In Review", "Reviewed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('linked_documents', 'read_only', false);
+        }
+
+        // update QM Document.status if valid_from <= today and status is Released
+        if (frm.doc.valid_from && ["Released"].includes(frm.doc.status)) {
+            var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
+            var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
+            if (valid_from_date < today) {
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_document.qm_document.set_valid_document',
+                    'args': {
+                        'qm_docname': cur_frm.doc.name
+                    },
+                    "callback": function(response) {
+                        //cur_frm.reload_doc();
+                        if (response.message) {
+                            cur_frm.reload_doc();
+                            frappe.show_alert( __("Status changed to Valid.") );
+                        }                        
+                    }
+                });
+            } 
         }
 
         // allow review when document is on draft with an attachment
