@@ -6,7 +6,7 @@ frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
-        
+
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
         if ((!cur_frm.attachments) 
@@ -14,7 +14,7 @@ frappe.ui.form.on('QM Document', {
             || ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
                 cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
         }
-        
+
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
@@ -26,20 +26,20 @@ frappe.ui.form.on('QM Document', {
                 cur_frm.set_df_property('valid_from', 'read_only', true);
             }            
         }
-        
+
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
         }
-        
+
         // allow to set title, linked documents in specific conditions
         if (["In Review", "Reviewed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
-        
+
         // allow review when document is on draft with an attachment
         if ((!frm.doc.__islocal)
             && (!frm.doc.reviewed_on) 
@@ -58,7 +58,7 @@ frappe.ui.form.on('QM Document', {
                 create_new_version(frm);
             });
         }
-        
+
         // sign & release control
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
@@ -87,7 +87,7 @@ frappe.ui.form.on('QM Document', {
                 }
             );
         }
-        
+
         // Training request
         if (((cur_frm.attachments) 
             && (cur_frm.attachments.get_attachments())
@@ -104,7 +104,7 @@ frappe.ui.form.on('QM Document', {
         if ((["Released", "Valid", "Invalid"].includes(frm.doc.status)) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
             access_protection();
         }
-        
+
         // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
         if ((frm.doc.reviewed_on) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
             cur_frm.set_value("reviewed_on", null);
@@ -113,7 +113,7 @@ frappe.ui.form.on('QM Document', {
             cur_frm.save_or_update();
             frappe.msgprint( __("Warning: the review has been cleared because the attachment was removed. Please add an attachment and requerst a new review."), __("Validation") ); 
         }
-        
+
         // fetch document overview
         if (!frm.doc.__islocal) {
             var files = cur_frm.attachments.get_attachments();
@@ -207,7 +207,8 @@ function release() {
         __('Sign')
         );
     }
-  
+
+
 function create_training_request(user_name, due_date) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.create_training_record',
@@ -222,6 +223,7 @@ function create_training_request(user_name, due_date) {
         }
     })
 }
+
 
 function request_training_prompt(trainees) {
     frappe.prompt([
@@ -252,6 +254,7 @@ function request_training_prompt(trainees) {
     __('Request training')
     )
 }
+
 
 function request_training() {
     frappe.call({
@@ -301,12 +304,12 @@ function setup_attachment_watcher(frm) {
             } else {
                 console.log("no node found!!!!");
             }
-            
+
             // change the upload callback action
             /*cur_frm.attachments.attachment_uploaded = function() {
                 cur_frm.reload_doc();
             }*/
-            
+
         }, 1000);
     //}
 }

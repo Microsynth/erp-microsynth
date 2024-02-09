@@ -136,7 +136,8 @@ def assign_after_review(qm_document):
     add({
         'doctype': "QM Document",
         'name': qm_document,
-        'assign_to': frappe.get_value("QM Document", qm_document, "created_by")
+        'assign_to': frappe.get_value("QM Document", qm_document, "created_by"),
+        'description': f"Your QM Document '{qm_document}' has been reviewed."
     })
     return
 
@@ -177,7 +178,11 @@ def set_valid_document(qm_document):
 
     # check date, proceed if valid_from and valid_till conditions are met
     today = date.today()
-    if today < qm_doc.valid_from or today > qm_doc.valid_till:
+    if not qm_doc.valid_from or today < qm_doc.valid_from:
+        update_status(qm_doc.name, "Released")
+        return
+    if qm_doc.valid_till and today > qm_doc.valid_till:
+        update_status(qm_doc.name, "Released")
         return
 
     # get all other valid versions for this document
@@ -205,5 +210,4 @@ def set_valid_document(qm_document):
         frappe.db.commit()
 
     # set document valid
-    qm_doc.status = "Valid"
-    return
+    update_status(qm_doc.name, "Valid")
