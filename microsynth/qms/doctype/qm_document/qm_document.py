@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, get_url_to_form
-from datetime import datetime
+from datetime import datetime, date
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 
@@ -57,11 +57,11 @@ class QMDocument(Document):
                 chapter = self.chapter or "00",
                 date = datetime.today().strftime("%Y%m%d")
             )
-            
+
             self.document_number = find_first_number_gap(
                 base_name=base_name, 
                 length=naming_patterns[naming_code[self.document_type]]['number_length'])
-            
+
             # check revision
             version = self.version or 1
 
@@ -80,7 +80,8 @@ class QMDocument(Document):
             version = cint(self.version)
         )
         return
-    
+
+
     def get_overview(self, files):
         files = get_attachments("QM Document", self.name)
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
@@ -148,7 +149,7 @@ def find_first_number_gap(base_name, length):
         ORDER BY `name` ASC
         ;
         """.format(base_name=base_name, start=(len(base_name) + 1), length=length), as_dict=True)
-    
+
     last_number = 0
     gap = None
     for n in numbers:
@@ -157,26 +158,52 @@ def find_first_number_gap(base_name, length):
             break
         else:
             last_number = cint(n['number'])
-    
+
     # if no gap was found, use next number
     if not gap:
+        # TODO: If there are no QM Documents with base_name, gap is None and last_number is 0.
+        # last_number will be increased to 1 and 0 will never be used. Is this intended?
         gap = last_number + 1
-    
+
     return gap
     
 
 @frappe.whitelist()
 def set_valid_document(qm_document):
-    doc = frappe.get_doc("QM Document", qm_document)
-    # TODO
+    """
+    Check valid_from and valid_till dates, invalidate all other valid version, set status to valid.
+    """
+    qm_doc = frappe.get_doc("QM Document", qm_document)
 
     # check date, proceed if valid_from and valid_till conditions are met
+    today = date.today()
+    if today < qm_doc.valid_from or today > qm_doc.valid_till:
+        return
 
-    # get all other versions for this document
+    # get all other valid versions for this document
+    valid_versions = frappe.db.sql(f"""
+        SELECT `name`, `version`
+        FROM `tabQM Document`
+        WHERE `version` != '{qm_doc.version}'
+            AND `document_type` = '{qm_doc.document_type}'
+            AND `process_number` = '{qm_doc.process_number}'
+            AND `subprocess_number` = '{qm_doc.subprocess_number}'
+            AND `chapter` = '{qm_doc.chapter}'
+            AND `document_number` = '{qm_doc.document_number}'
+            AND `status` = 'Valid'
+            AND `docstatus` = 1
+        ;""", as_dict=True)
 
     # set other versions to invalid
+    for version in valid_versions:
+        #if cint(version['version']) > cint(qm_doc.version):
+            # TODO?
+            #pass
+        qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
+        qm_doc_other_version.status = 'Invalid'
+        qm_doc_other_version.save()
+        frappe.db.commit()
 
     # set document valid
-    doc.status = "Valid"
-
+    qm_doc.status = "Valid"
     return
