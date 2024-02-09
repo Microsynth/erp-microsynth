@@ -17,6 +17,15 @@ frappe.ui.form.on('QM Document', {
         
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
+
+        // set valid_from to read_only if it is set, not in the future and QM Document is not a Draft (TODO: dependence on status?)
+        if (frm.doc.valid_from && frm.doc.docstatus > 0) {
+            var valid_from_date = new Date(frm.doc.valid_from);
+            var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
+            if (valid_from_date <= today) {
+                cur_frm.set_df_property('valid_from', 'read_only', true);
+            }            
+        }
         
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
