@@ -170,11 +170,11 @@ def find_first_number_gap(base_name, length):
     
 
 @frappe.whitelist()
-def set_valid_document(qm_document):
+def set_valid_document(qm_docname):
     """
     Check valid_from and valid_till dates, invalidate all other valid version, set status to valid.
     """
-    qm_doc = frappe.get_doc("QM Document", qm_document)
+    qm_doc = frappe.get_doc("QM Document", qm_docname)
 
     # check date, proceed if valid_from and valid_till conditions are met
     today = date.today()
@@ -211,3 +211,55 @@ def set_valid_document(qm_document):
 
     # set document valid
     update_status(qm_doc.name, "Valid")
+
+
+def invalidate_qm_docs():
+    """
+    Set Valid QM Documents to Invalid if valid_till < today.
+    """
+    valid_qm_docs = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Document`
+        WHERE `valid_till` < DATE({date.today()})
+            AND `status` = 'Valid'
+            AND `docstatus` = 1
+        ;""", as_dict=True)
+    
+    for valid_qm_doc in valid_qm_docs:
+        qm_doc = frappe.get_doc("QM Document", valid_qm_doc['name'])
+        update_status(qm_doc.name, "Invalid")
+        # send a notification to the creator
+        add({
+            'doctype': "QM Document",
+            'name': qm_doc.name,
+            'assign_to': frappe.get_value("QM Document", qm_doc.name, "created_by"),
+            'description': f"Your QM Document '{qm_doc.name}' exceeded its Valid till date and has been automatically set to Invalid."
+        })
+
+
+def validate_released_qm_docs():
+    """
+    Call set_valid_document function for all Released QM Documents with valid_from <= today.
+    """
+    released_qm_docs = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Document`
+        WHERE `valid_from` <= DATE({date.today()})
+            AND `status` = 'Released'
+            AND `docstatus` = 1
+        ;""", as_dict=True)
+
+    for doc in released_qm_docs:
+        set_valid_document(doc['name'])
+
+
+def check_update_validity():
+    """
+    Set Valid QM Documents to Invalid if valid_till < today.
+    Call set_valid_document function for all Released QM Documents with valid_from <= today.
+
+    Should be run by a cron job every day a few minutes after midnight:
+    bench execute microsynth.qms.doctype.qm_document.qm_document.check_update_validity
+    """
+    invalidate_qm_docs()
+    validate_released_qm_docs()
