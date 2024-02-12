@@ -373,7 +373,7 @@ def get_express_shipping_item(customer_name, country_name):
     country is returned.
 
     run
-    bench execute microsynth.microsynth.webshop.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
+    bench execute microsynth.microsynth.utils.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
     """
 
     customer_express_item = get_customer_express_shipping_item(customer_name)
@@ -385,9 +385,38 @@ def get_express_shipping_item(customer_name, country_name):
 
 
 def get_export_category(address_name):
+    """
+    Return the export_code of the Country of the given Address, except Canary Islands (ROW).
+
+    run
+    bench execute microsynth.microsynth.utils.get_export_category --kwargs "{'address_name': '817145'}"
+    """
     country = frappe.get_value('Address', address_name, 'country')
     if country == "Austria":
         export_category = "AT"
+    elif country == "Spain":
+        postal_code = frappe.get_value('Address', address_name, 'pincode')
+        if not postal_code:
+            frappe.log_error(f"Empty postal_code for {address_name=} in Spain.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        try:
+            # delete non-numeric characters
+            numeric_postal_code = re.sub('\D', '', postal_code)
+        except Exception as err:
+            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_name=} in Spain:\n{err}", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        if not numeric_postal_code:
+            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain any numbers.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        if len(numeric_postal_code) != 5:
+            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain five digits.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        pc_prefix = int(numeric_postal_code[:2])
+        if pc_prefix == 35 or pc_prefix == 38:
+            # "Kanarische Inseln nicht auf EU-Verzollung"
+            return 'ROW'
+        else:
+            return frappe.get_value('Country', country, 'export_code')
     else:
         export_category = frappe.get_value('Country', country, 'export_code')
     return export_category
