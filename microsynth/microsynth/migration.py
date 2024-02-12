@@ -3574,3 +3574,33 @@ def import_oligo_scales(directory_path):
         oligo.save()
     print(f"{datetime.now()} Finished: processed {counter}/{len(oligo_dict)} Oligos (Number of Web IDs occured more than once in the BOS export: {multiple_counter}; Number of distinct Web IDs from BOS export not found in the ERP: {none_counter}).")
     frappe.db.commit()
+
+
+def check_weborderids_of_deleted_sos():
+    """
+    Search for deleted Sales Orders with a Web Order ID and
+    search this Web Order on non-deleted Sales Orders, Delivery Notes and Sales Invoices.
+    
+    bench execute microsynth.microsynth.migration.check_weborderids_of_deleted_sos
+    """
+    deleted_orders = frappe.get_all('Deleted Document',
+                                    filters=[['deleted_doctype', '=', 'Sales Order'], ['data', 'LIKE', '%"web_order_id": "%']],
+                                    fields=['name', 'deleted_name', 'data', 'owner'])
+
+    for do in deleted_orders:
+        content = json.loads(do['data'])
+        web_order_id = content['web_order_id']
+        product_type = content['product_type']
+        sales_orders = frappe.get_all('Sales Order', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        delivery_notes = frappe.get_all('Delivery Note', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        sales_invoices = frappe.get_all('Sales Invoice', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        if len(delivery_notes) > 0 or len(sales_invoices) > 0:
+            print(f"\nFound Sales Order '{do['deleted_name']}' with Product Type '{product_type}' deleted by {do['owner']} with Web Order ID '{web_order_id}' that appears on the following non-deleted documents:")
+            if len(delivery_notes) != len(sales_invoices):
+                print(f"Attention: Number of Delivery Notes and Sales Invoices does not match.")
+            for so in sales_orders:
+                print(f"Sales Order '{so['name']}' with Product Type '{so['product_type']}' and docstatus {so['docstatus']}")
+            for dn in delivery_notes:
+                print(f"Delivery Note '{dn['name']}' with Product Type '{dn['product_type']}' and docstatus {dn['docstatus']}")
+            for si in sales_invoices:
+                print(f"Sales Invoice '{si['name']}' with Product Type '{si['product_type']}' and docstatus {si['docstatus']}")
