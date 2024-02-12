@@ -203,7 +203,7 @@ def check_submit_delivery_note(delivery_note):
         # Check that the delivery note was created at least 7 days ago
         time_between_insertion = datetime.today() - delivery_note.creation
         if time_between_insertion.days <= 7:
-            print("Delivery Note '{0}' was created on {1}".format(delivery_note.name, delivery_note.creation))
+            print("Delivery Note '{0}' is not older than 7 days and was created on {1}".format(delivery_note.name, delivery_note.creation))
             return
 
         # # Check that the sales order was created at least 7 days ago
@@ -268,3 +268,25 @@ def submit_delivery_notes():
         check_submit_delivery_note(dn.name)
         frappe.db.commit()
         i += 1
+
+
+def submit_seq_primer_dns():
+    """
+    Check all Delivery Note Drafts of Product Type Oligos and with Item Code 0975 and submit them if eligible.
+
+    bench execute microsynth.microsynth.seqblatt.submit_seq_primer_dns
+    """    
+    delivery_notes = frappe.db.sql("""
+        SELECT `tabDelivery Note`.`name`
+        FROM `tabDelivery Note`
+        JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name` 
+                AND `tabDelivery Note Item`.`item_code` IN ('0975'))
+        WHERE
+            `tabDelivery Note`.`product_type` = 'Oligos'
+            AND `tabDelivery Note`.`docstatus` = 0;
+        """, as_dict=True)
+    
+    for dn in delivery_notes:
+        print(f"Processing '{dn['name']}' ...")
+        check_submit_delivery_note(dn['name'])
+        frappe.db.commit()
