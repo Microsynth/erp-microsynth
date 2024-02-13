@@ -44,7 +44,7 @@ frappe.ui.form.on('QM Document', {
         if (frm.doc.valid_from && ["Released"].includes(frm.doc.status)) {
             var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
             var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
-            if (valid_from_date < today) {
+            if (valid_from_date <= today) {
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_document.qm_document.set_valid_document',
                     'args': {
