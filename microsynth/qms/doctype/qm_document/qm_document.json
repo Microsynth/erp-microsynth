@@ -221,6 +221,7 @@
    "label": "Valid till"
   },
   {
+   "description": "Leave empty if the QM Document applies for all companies.",
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
@@ -228,7 +229,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-08 12:33:36.344868",
+ "modified": "2024-02-13 08:16:06.015005",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
