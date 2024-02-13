@@ -11,7 +11,9 @@
   "due_date",
   "comments_section",
   "comments",
+  "sec_signature",
   "signature",
+  "col_signature",
   "signed_on",
   "amended_from"
  ],
@@ -67,9 +69,9 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "signed_on",
    "fieldtype": "Date",
-   "hidden": 1,
    "label": "Signed on",
    "no_copy": 1,
    "print_hide": 1,
@@ -83,11 +85,20 @@
    "options": "QM Training Record",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "sec_signature",
+   "fieldtype": "Section Break",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "col_signature",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-02 10:26:27.085379",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-02-13 09:41:22.339060",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Training Record",
  "owner": "Administrator",
