@@ -18,13 +18,6 @@ frappe.ui.form.on('QM Training Record', {
 
 
 function sign() {
-	frappe.call({
-        'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.set_signed_on',
-        'args': {
-            'doc': cur_frm.doc.name
-        }
-    });
-
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
@@ -39,6 +32,18 @@ function sign() {
                     'password': values.password
                 },
                 "callback": function(response) {
+                    if (response.message) {
+                        // signed, set signing date
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.set_signed_on',
+                            'args': {
+                                'doc': cur_frm.doc.name
+                            },
+                            'async': false
+                        });
+                    }
+                    
+                    // refresh UI
                     cur_frm.reload_doc();
                 }
             });
