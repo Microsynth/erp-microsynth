@@ -76,7 +76,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-01-30 09:33:02.685254",
+ "modified": "2024-02-13 11:55:00.737077",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Review",
@@ -99,13 +99,20 @@
   },
   {
    "create": 1,
+   "read": 1,
+   "role": "Microsynth User",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
    "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Projects User",
+   "role": "QAU",
    "share": 1,
    "submit": 1,
    "write": 1
