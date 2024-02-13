@@ -3,9 +3,13 @@
 
 frappe.ui.form.on('Signature', {
     refresh: function(frm) {
-        frm.add_custom_button(__("Change Approval Password"), function() {
-            change_approval_password(frm);
-        });
+        if ((frappe.session.user === frm.doc.user) 
+            || (frappe.user.has_role("System Manager")) 
+            || (frappe.user.has_role("QAU"))) {
+            frm.add_custom_button(__("Change Approval Password"), function() {
+                change_approval_password(frm);
+            });
+        }
     }
 });
 
