@@ -162,14 +162,23 @@ def find_first_number_gap(base_name, length):
         else:
             last_number = cint(n['number'])
 
-    # if no gap was found, use next number
+    # If no gap was found, use next number. Numbering starts with 1.
     if not gap:
-        # TODO: If there are no QM Documents with base_name, gap is None and last_number is 0.
-        # last_number will be increased to 1 and 0 will never be used. Is this intended?
         gap = last_number + 1
 
     return gap
-    
+
+
+def invalidate_document(qm_document):
+    update_status(qm_document.name, "Invalid")
+    # send a notification to the creator
+    add({
+        'doctype': "QM Document",
+        'name': qm_document.name,
+        'assign_to': frappe.get_value("QM Document", qm_document.name, "created_by"),
+        'description': f"Your QM Document '{qm_document.name}' exceeded its Valid till date and has been automatically set to Invalid."
+    })
+
 
 @frappe.whitelist()
 def set_valid_document(qm_docname):
@@ -184,7 +193,7 @@ def set_valid_document(qm_docname):
         update_status(qm_doc.name, "Released")
         return False
     if qm_doc.valid_till and today > qm_doc.valid_till:
-        update_status(qm_doc.name, "Released")
+        invalidate_document(qm_doc)
         return False
 
     # get all other valid versions for this document
@@ -203,13 +212,11 @@ def set_valid_document(qm_docname):
 
     # set other versions to invalid
     for version in valid_versions:
-        #if cint(version['version']) > cint(qm_doc.version):
-            # TODO?
-            #pass
+        if cint(version['version']) > cint(qm_doc.version):
+            frappe.log_error(f"Invalidated a later version of the document {qm_doc.name}", "qm_document.set_valid_document")
         qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
-        qm_doc_other_version.status = 'Invalid'
-        qm_doc_other_version.save()
-        frappe.db.commit()
+        invalidate_document(qm_doc_other_version)
+
 
     # set document valid
     update_status(qm_doc.name, "Valid")
@@ -230,14 +237,7 @@ def invalidate_qm_docs():
     
     for valid_qm_doc in valid_qm_docs:
         qm_doc = frappe.get_doc("QM Document", valid_qm_doc['name'])
-        update_status(qm_doc.name, "Invalid")
-        # send a notification to the creator
-        add({
-            'doctype': "QM Document",
-            'name': qm_doc.name,
-            'assign_to': frappe.get_value("QM Document", qm_doc.name, "created_by"),
-            'description': f"Your QM Document '{qm_doc.name}' exceeded its Valid till date and has been automatically set to Invalid."
-        })
+        invalidate_document(qm_doc)
 
 
 def validate_released_qm_docs():
