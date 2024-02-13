@@ -7,22 +7,57 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.password import check_password
 from frappe import _
+from frappe.core.doctype.user.user import test_password_strength
+from frappe.utils.password import get_decrypted_password
 
 class Signature(Document):
-    def validate(self):
-        # if the password has not been updated, skip check
-        if self.approval_password.startswith("***"):
-            return
+    def change_approval_password(self, new_pw, retype_new_pw, old_pw=None):
+        # compare new PWs
+        if new_pw != retype_new_pw:
+            return {'error': _("The new passwords differ. Please try again.")}
         
+        # surpass old password check for system managers and QMS
+        if not user_has_role(frappe.session.user, "System Manager") and not user_has_role(frappe.session.user, "QAU"):
+            # verify old password
+            db_old_pw = get_decrypted_password("Signature", self.name, "approval_password", False)
+            if db_old_pw and db_old_pw != old_pw:
+                return {'error': _("The old passwords is not correct. Please try again.")}
+        
+        # check that approval password does not match login password
         password_match_with_login_pw = True
         try:
-            check_password(self.user, self.approval_password)
+            check_password(self.user, new_pw)
         except Exception as err:
             # password failed - this is good, the passwords are different
             password_match_with_login_pw = False
-            
         if password_match_with_login_pw:
-            frappe.throw( _("Your approval password must be different from the login password"), _("Validation") )
+            return {'error': _("Your approval password must be different from the login password")}
+        
+        # check strength
+        strength = test_password_strength(new_password=new_pw, old_password=old_pw)
+        if not strength['feedback']['password_policy_validation_passed']:
+            return {'error': _("The new password does not match the security policy. Please try again.") + " " + (strength['feedback']['warning'] or "")}
+        
+        # set new password
+        self.approval_password = new_pw
+        self.save()
+        
+        return {'success': True}
 
-        return
 
+def user_has_role(user, role):
+    """
+    Check if a user has a role
+    """
+    role_matches = frappe.db.sql("""
+        SELECT `parent`, `role`
+        FROM `tabHas Role`
+        WHERE `parent` = "{user}"
+          AND `role` = "{role}"
+          AND `parenttype` = "User";
+        """.format(user=user, role=role), as_dict=True)
+    
+    if len(role_matches) > 0:
+        return True
+    else:
+        return False
