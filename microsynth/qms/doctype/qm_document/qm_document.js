@@ -32,6 +32,10 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
+            // hack: take out the default company value
+            setTimeout(function () {
+                cur_frm.set_value("company", null);
+            }, 500);
         }
 
         // allow to set title, linked documents in specific conditions
