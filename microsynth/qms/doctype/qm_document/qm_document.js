@@ -75,7 +75,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         // Invalidate
-        if (["Valid"].includes(frm.doc.status)) {
+        if (["Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             frm.add_custom_button(__("Invalidate"), function() {
                 invalidate(frm);
             }).addClass("btn-danger");
