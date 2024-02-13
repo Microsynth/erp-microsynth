@@ -45,5 +45,23 @@ def get_data():
                        "description": _("Contact Note")
                     }
             ]
+        },
+        {
+            "label": _("Settings"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                {
+                   "type": "doctype",
+                   "name": "Signature",
+                   "label": _("Signature"),
+                   "description": _("Signature")
+                },
+                {
+                   "type": "doctype",
+                   "name": "User Settings",
+                   "label": _("User Settings"),
+                   "description": _("User Settings")
+                }
+            ]
         }
     ]

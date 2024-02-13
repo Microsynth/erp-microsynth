@@ -8,6 +8,7 @@
   "user",
   "full_name",
   "signature",
+  "col_main",
   "approval_password"
  ],
  "fields": [
@@ -35,10 +36,15 @@
   {
    "fieldname": "approval_password",
    "fieldtype": "Password",
-   "label": "Approval Password"
+   "label": "Approval Password",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_main",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2024-01-25 10:40:00.837696",
+ "modified": "2024-02-13 10:14:06.187340",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Signature",
