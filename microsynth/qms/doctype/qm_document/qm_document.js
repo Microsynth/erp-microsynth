@@ -32,10 +32,8 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
-            // hack: take out the default company value
-            setTimeout(function () {
-                cur_frm.set_value("company", null);
-            }, 500);
+            // on fresh documents, hide company field (will be clean on insert to prevent default)
+            cur_frm.set_df_property('company', 'hidden', true);
         }
 
         // allow to set title, linked documents in specific conditions
@@ -157,6 +155,9 @@ frappe.ui.form.on('QM Document', {
                     cur_frm.set_df_property('overview', 'options', r.message);
                 }
             });
+            
+            // assure company field is visible (after insert of a frehs document it would be still hidden)
+            cur_frm.set_df_property('company', 'hidden', false);
         }
     }
 });

@@ -42,7 +42,6 @@ naming_code = {
 
 
 class QMDocument(Document):
-
     def autoname(self):       
         if cint(self.version) < 2:
             # new document number
@@ -82,6 +81,12 @@ class QMDocument(Document):
         return
 
 
+    def after_insert(self):
+        # frappe will insert the default company on insert -> after insert remove this again
+        self.company = None
+        self.save()
+        return
+        
     def get_overview(self, files):
         files = get_attachments("QM Document", self.name)
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
