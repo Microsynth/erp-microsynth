@@ -435,13 +435,13 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 
-def validate_sales_order(sales_order):
+def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
-    status, has the tax template set and there are no delivery notes in status draft, submitted.
+    status and has the tax template set.
 
     run 
-    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    bench execute microsynth.microsynth.utils.validate_sales_order_status --kwargs "{'sales_order': ''}"
     """
     customer = get_customer_from_sales_order(sales_order)
 
@@ -463,12 +463,29 @@ def validate_sales_order(sales_order):
         frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
 
+    return True
+
+
+def validate_sales_order(sales_order):
+    """
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status, has the tax template set and there are no delivery notes in status draft, submitted.
+
+    run 
+    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    """
+
+    if not validate_sales_order_status(sales_order):
+        return False
+
+
     # Check if delivery notes exists. consider also deliver notes with the same web_order_id
-    if so.web_order_id:
-        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {so.web_order_id}"
+    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
+    if web_order_id:
+        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {web_order_id}"
     else:
         web_order_id_condition = ""
-        
+
     delivery_notes = frappe.db.sql(f"""
         SELECT `tabDelivery Note Item`.`parent`
         FROM `tabDelivery Note Item`
