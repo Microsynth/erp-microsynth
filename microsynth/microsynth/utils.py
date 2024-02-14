@@ -437,7 +437,8 @@ def get_customer_from_sales_order(sales_order):
 
 def validate_sales_order(sales_order):
     """
-    Checks if the customer is enabled, the sales order submitted and there are no delivery notes in status draft, submitted.
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status, has the tax template set and there are no delivery notes in status draft, submitted.
 
     run 
     bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
@@ -448,14 +449,23 @@ def validate_sales_order(sales_order):
         frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "utils.validate_sales_order")
         return False
 
-    sales_order_status = frappe.get_value("Sales Order", sales_order, "docstatus")
-    if sales_order_status != 1:
-        frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+    so = frappe.get_doc("Sales Order", sales_order)
+
+    if so.docstatus != 1:
+        frappe.log_error(f"Sales Order {so.name} is not submitted. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
-    
-    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
-    if web_order_id:
-        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {web_order_id}"
+
+    if so.status in ['Completed', 'Canceled', 'Closed']:
+        frappe.log_error(f"Sales Order {so.name} is in status '{so.Status}'. Cannot create a delivery note.", "utils.validate_sales_order")
+        return False
+
+    if not so.taxes_and_charges or so.taxes_and_charges == "":
+        frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order")
+        return False
+
+    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
+    if so.web_order_id:
+        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {so.web_order_id}"
     else:
         web_order_id_condition = ""
         
@@ -463,7 +473,7 @@ def validate_sales_order(sales_order):
         SELECT `tabDelivery Note Item`.`parent`
         FROM `tabDelivery Note Item`
         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
+        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{so.name}'
             AND `tabDelivery Note Item`.`docstatus` < 2)
             {web_order_id_condition};
         """, as_dict=True)
