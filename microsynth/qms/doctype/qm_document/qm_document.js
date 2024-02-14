@@ -2,7 +2,25 @@
 // For license information, please see license.txt
 
 
+// TODO: Move this to a new file qm_document_link.js
+// TODO: How to call the function clear_review from there
+frappe.ui.form.on('QM Document Link', {
+    achild_add: function(frm) {
+        // adding a row ... or on btn add row
+        clear_review(frm);
+    },
+    achild_remove: function(frm) {
+        // removing a row ... or on btn delete
+        clear_review(frm);
+    }
+});
+
+
 frappe.ui.form.on('QM Document', {
+
+    title: function(frm) { if (frm.doc.reviewed_on) {clear_review(frm)} },  // Will be triggered by just changing the field content (no update or save necessary).
+    linked_documents: function(frm) { if (frm.doc.reviewed_on) {clear_review(frm)} },
+
     refresh: function(frm) {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
@@ -138,11 +156,7 @@ frappe.ui.form.on('QM Document', {
 
         // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
         if ((frm.doc.reviewed_on) && ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
-            cur_frm.set_value("reviewed_on", null);
-            cur_frm.set_value("reviewed_by", null);
-            cur_frm.set_value("status", "In Review");
-            cur_frm.save_or_update();
-            frappe.msgprint( __("Warning: the review has been cleared because the attachment was removed. Please add an attachment and requerst a new review."), __("Validation") ); 
+            clear_review(frm);
         }
 
         // fetch document overview
@@ -161,6 +175,18 @@ frappe.ui.form.on('QM Document', {
         }
     }
 });
+
+
+// clear review if reviewed_on or reviewed_by is set (either both or none should be set)
+function clear_review(frm) {
+    if ((frm.doc.reviewed_on) || (frm.doc.reviewed_by)) {
+        cur_frm.set_value("reviewed_on", null);
+        cur_frm.set_value("reviewed_by", null);
+        cur_frm.set_value("status", "In Review");  // TODO: Is this really the correct status? A new review does not have to be requested yet.
+        cur_frm.save_or_update();
+        frappe.msgprint( __("Warning: the review has been cleared because the document was changed. Please add an attachment and request a new review."), __("Validation") ); 
+    }
+}
 
 
 function request_review() {
