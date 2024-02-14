@@ -490,7 +490,7 @@ def validate_sales_order(sales_order):
         SELECT `tabDelivery Note Item`.`parent`
         FROM `tabDelivery Note Item`
         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{so.name}'
+        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
             AND `tabDelivery Note Item`.`docstatus` < 2)
             {web_order_id_condition};
         """, as_dict=True)
