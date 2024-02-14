@@ -456,7 +456,7 @@ def validate_sales_order(sales_order):
         return False
 
     if so.status in ['Completed', 'Canceled', 'Closed']:
-        frappe.log_error(f"Sales Order {so.name} is in status '{so.Status}'. Cannot create a delivery note.", "utils.validate_sales_order")
+        frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
 
     if not so.taxes_and_charges or so.taxes_and_charges == "":
