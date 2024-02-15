@@ -3576,6 +3576,98 @@ def import_oligo_scales(directory_path):
     frappe.db.commit()
 
 
+def check_weborderids_of_deleted_sos():
+    """
+    Search for deleted Sales Orders with a Web Order ID and
+    search this Web Order on non-deleted Sales Orders, Delivery Notes and Sales Invoices.
+
+    bench execute microsynth.microsynth.migration.check_weborderids_of_deleted_sos
+    """
+    deleted_orders = frappe.get_all('Deleted Document',
+                                    filters=[['deleted_doctype', '=', 'Sales Order'], ['data', 'LIKE', '%"web_order_id": "%']],
+                                    fields=['name', 'deleted_name', 'data', 'owner'])
+
+    for do in deleted_orders:
+        content = json.loads(do['data'])
+        web_order_id = content['web_order_id']
+        product_type = content['product_type']
+        sales_orders = frappe.get_all('Sales Order', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        delivery_notes = frappe.get_all('Delivery Note', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        sales_invoices = frappe.get_all('Sales Invoice', filters=[['web_order_id', '=', web_order_id]], fields=['name', 'status', 'docstatus', 'product_type'])
+        if len(delivery_notes) > 0 or len(sales_invoices) > 0:
+            print(f"\nFound Sales Order '{do['deleted_name']}' with Product Type '{product_type}' deleted by {do['owner']} with Web Order ID '{web_order_id}' that appears on the following non-deleted documents:")
+            if len(delivery_notes) != len(sales_invoices):
+                print(f"Attention: Number of Delivery Notes and Sales Invoices does not match.")
+            for so in sales_orders:
+                print(f"Sales Order '{so['name']}' with Product Type '{so['product_type']}' and docstatus {so['docstatus']}")
+            for dn in delivery_notes:
+                print(f"Delivery Note '{dn['name']}' with Product Type '{dn['product_type']}' and docstatus {dn['docstatus']}")
+            for si in sales_invoices:
+                print(f"Sales Invoice '{si['name']}' with Product Type '{si['product_type']}' and docstatus {si['docstatus']}")
+
+
+def calculate_prices_from_so(filepath):
+    """
+    Used to compute the total rate of labels sold at one Microsynth company and
+    used at another Microsynth company (quick and dirty script version).
+    This computation is done yearly in Q1.
+
+    bench execute microsynth.microsynth.migration.calculate_prices_from_so  --kwargs "{'filepath': '/mnt/erp_share/JPe/labels/Rest.csv'}"
+    """
+    results = []
+    with open(filepath, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 4:
+                print(f"Expected line of length 4, but got {len(line)=}; {line=}; skipping")
+                continue
+            order = line[0]
+            qty = cint(line[1])
+            item_code = line[2]
+            contact = line[3]
+            found = missing = False
+            if '-' in order:
+                # assume it is a Sales Order ID
+                so = frappe.get_doc("Sales Order", order)
+                for item in so.items:
+                    if item.item_code == item_code:
+                        rate = item.rate
+                        total = qty * rate
+                        found = True
+                        if qty > item.qty:
+                            print(f"WARNING: Item quantity in the input ({qty}) is larger than on the order '{order}' ({item.qty}).")
+            else:
+                # assume it is a Web Order ID
+                sales_orders = frappe.get_all("Sales Order", filters={'web_order_id': order, 'docstatus': 1}, fields=['name'])
+                if len(sales_orders) == 1:
+                    so = frappe.get_doc("Sales Order", sales_orders[0]['name'])
+                    for item in so.items:
+                        if item.item_code == item_code:
+                            rate = item.rate
+                            total = qty * rate
+                            found = True
+                            if qty > item.qty:
+                                print(f"WARNING: Item quantity in the input ({qty}) is larger than on the order '{order}' ({item.qty}).")
+                elif len(sales_orders) == 0:
+                    print(f"There is no Sales Order with Web Order ID '{order}' in the ERP.")
+                    missing = True
+                else:  # len > 1
+                    print(f"There is more than one Sales Order with the Web Order ID '{order}' in the ERP.")
+            if not found:
+                if not missing:
+                    print(f"Did not found the Item Code {item_code} on the order '{order}'.")
+                results.append([order, qty, '-', '-', item_code, contact])
+            else:
+                results.append([order, qty, rate, total, item_code, contact])
+
+        with open(filepath + '_results.csv', 'w') as outfile:
+            writer = csv.writer(outfile, delimiter=';')
+            writer.writerow(['order', 'qty', 'rate', 'rate*qty', 'item_code', 'contact'])
+            for res in results:
+                writer.writerow(res)
+
+
 def import_user_process_assignments(filepath):
     """
     Imports the User Process Assignments from the given CSV with the format:

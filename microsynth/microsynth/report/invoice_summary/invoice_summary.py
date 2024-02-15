@@ -27,7 +27,7 @@ def get_data(filters):
     if filters.get('customer'):
         conditions += f"AND `customer` = '{filters.get('customer')}'"
     if filters.get('po_no'):
-        conditions += f"AND `po_no` = '{filters.get('po_no')}'"
+        conditions += f"AND `po_no` LIKE '%{filters.get('po_no')}%'"
     if filters.get('company'):
         conditions += f"AND `company` = '{filters.get('company')}'"
     if filters.get('currency'):

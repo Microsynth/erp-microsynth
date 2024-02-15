@@ -373,7 +373,7 @@ def get_express_shipping_item(customer_name, country_name):
     country is returned.
 
     run
-    bench execute microsynth.microsynth.webshop.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
+    bench execute microsynth.microsynth.utils.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
     """
 
     customer_express_item = get_customer_express_shipping_item(customer_name)
@@ -385,9 +385,38 @@ def get_express_shipping_item(customer_name, country_name):
 
 
 def get_export_category(address_name):
+    """
+    Return the export_code of the Country of the given Address, except Canary Islands (ROW).
+
+    run
+    bench execute microsynth.microsynth.utils.get_export_category --kwargs "{'address_name': '817145'}"
+    """
     country = frappe.get_value('Address', address_name, 'country')
     if country == "Austria":
         export_category = "AT"
+    elif country == "Spain":
+        postal_code = frappe.get_value('Address', address_name, 'pincode')
+        if not postal_code:
+            frappe.log_error(f"Empty postal_code for {address_name=} in Spain.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        try:
+            # delete non-numeric characters
+            numeric_postal_code = re.sub('\D', '', postal_code)
+        except Exception as err:
+            frappe.log_error(f"Got the following error when trying to delete non-numeric characters from postal code '{postal_code}' of {address_name=} in Spain:\n{err}", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        if not numeric_postal_code:
+            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain any numbers.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        if len(numeric_postal_code) != 5:
+            frappe.log_error(f"Postal code '{postal_code}' for {address_name=} in Spain does not contain five digits.", "utils.get_export_category")
+            return frappe.get_value('Country', country, 'export_code')
+        pc_prefix = int(numeric_postal_code[:2])
+        if pc_prefix == 35 or pc_prefix == 38:
+            # "Kanarische Inseln nicht auf EU-Verzollung"
+            return 'ROW'
+        else:
+            return frappe.get_value('Country', country, 'export_code')
     else:
         export_category = frappe.get_value('Country', country, 'export_code')
     return export_category
@@ -406,12 +435,13 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 
-def validate_sales_order(sales_order):
+def validate_sales_order_status(sales_order):
     """
-    Checks if the customer is enabled, the sales order submitted and there are no delivery notes in status draft, submitted.
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status and has the tax template set.
 
     run 
-    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    bench execute microsynth.microsynth.utils.validate_sales_order_status --kwargs "{'sales_order': ''}"
     """
     customer = get_customer_from_sales_order(sales_order)
 
@@ -419,17 +449,43 @@ def validate_sales_order(sales_order):
         frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "utils.validate_sales_order")
         return False
 
-    sales_order_status = frappe.get_value("Sales Order", sales_order, "docstatus")
-    if sales_order_status != 1:
-        frappe.log_error("Order '{0}' is not submitted. Cannot create a delivery note.".format(sales_order), "utils.validate_sales_order")
+    so = frappe.get_doc("Sales Order", sales_order)
+
+    if so.docstatus != 1:
+        frappe.log_error(f"Sales Order {so.name} is not submitted. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
-    
+
+    if so.status in ['Completed', 'Canceled', 'Closed']:
+        frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order")
+        return False
+
+    if not so.taxes_and_charges or so.taxes_and_charges == "":
+        frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order")
+        return False
+
+    return True
+
+
+def validate_sales_order(sales_order):
+    """
+    Checks if the customer is enabled, the sales order is submitted, has an allowed
+    status, has the tax template set and there are no delivery notes in status draft, submitted.
+
+    run 
+    bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
+    """
+
+    if not validate_sales_order_status(sales_order):
+        return False
+
+
+    # Check if delivery notes exists. consider also deliver notes with the same web_order_id
     web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
     if web_order_id:
         web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {web_order_id}"
     else:
         web_order_id_condition = ""
-        
+
     delivery_notes = frappe.db.sql(f"""
         SELECT `tabDelivery Note Item`.`parent`
         FROM `tabDelivery Note Item`

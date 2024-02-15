@@ -157,6 +157,7 @@ def async_create_invoices(mode, company, customer):
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
+    import traceback
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
@@ -256,7 +257,7 @@ def async_create_invoices(mode, company, customer):
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
             except Exception as err:
-                message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}"
+                message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}\n{traceback.format_exc()}"
                 frappe.log_error(message, "invoicing.async_create_invoices")
                 #print(message)
 
