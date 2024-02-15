@@ -35,6 +35,18 @@ def get_data():
             ]
         },
         {
+            "label": _("Training Courses"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Training Course",
+                       "label": _("Training Course"),
+                       "description": _("Training Course")
+                    }
+            ]
+        },
+        {
             "label": _("Complaints"),
             "icon": "octicon octicon-file-submodule",
             "items": [

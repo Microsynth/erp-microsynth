@@ -1,0 +1,120 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2024-02-15 10:28:11.114779",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "scope",
+  "trainer",
+  "col_header",
+  "topic",
+  "sec_date_location",
+  "date",
+  "col_date_location",
+  "end_date",
+  "int_ext",
+  "sec_participants",
+  "participants",
+  "sec_content",
+  "training_content"
+ ],
+ "fields": [
+  {
+   "default": "QMTC-.YYYY.-.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "QMTC-.YYYY.-.####"
+  },
+  {
+   "fieldname": "topic",
+   "fieldtype": "Data",
+   "label": "Topic"
+  },
+  {
+   "fieldname": "scope",
+   "fieldtype": "Link",
+   "label": "Scope",
+   "options": "QM Training Scope"
+  },
+  {
+   "fieldname": "participants",
+   "fieldtype": "Table",
+   "label": "Participants",
+   "options": "QM Training Course Participant"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "sec_participants",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "col_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "trainer",
+   "fieldtype": "Data",
+   "label": "Trainer"
+  },
+  {
+   "fieldname": "sec_content",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "training_content",
+   "fieldtype": "Text Editor",
+   "label": "Training Content"
+  },
+  {
+   "fieldname": "sec_date_location",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "col_date_location",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "int_ext",
+   "fieldtype": "Select",
+   "label": "Internal / External",
+   "options": "Internal\nExternal"
+  }
+ ],
+ "modified": "2024-02-15 11:18:39.115446",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Training Course",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "topic",
+ "track_changes": 1
+}

@@ -1,0 +1,37 @@
+{
+ "creation": "2024-02-15 10:47:39.665265",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "outcome"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Outcome",
+   "options": "\nPassed\nFailed"
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-02-15 10:49:38.393015",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Training Course Participant",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
