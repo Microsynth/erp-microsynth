@@ -88,7 +88,7 @@ frappe.ui.form.on('QM Document', {
             && ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)) {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
-            });
+            }).addClass("btn-primary");
         }
 
         // Invalidate
