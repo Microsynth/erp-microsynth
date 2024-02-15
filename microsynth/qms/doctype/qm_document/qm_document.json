@@ -7,6 +7,7 @@
   "overview",
   "document_identification_section",
   "document_type",
+  "qm_process",
   "process_number",
   "subprocess_number",
   "chapter",
@@ -54,20 +55,25 @@
    "read_only": 1
   },
   {
+   "fetch_from": "qm_process.process_number",
    "fieldname": "process_number",
    "fieldtype": "Select",
    "label": "Process Number",
    "options": "1\n2\n3\n4\n5",
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "fetch_from": "qm_process.subprocess_number",
    "fieldname": "subprocess_number",
    "fieldtype": "Select",
    "label": "Subprocess Number",
    "options": "1\n2\n3\n4\n5\n6\n7\n37",
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "fetch_from": "qm_process.chapter",
    "fieldname": "chapter",
    "fieldtype": "Int",
    "label": "Chapter",
@@ -232,10 +238,17 @@
    "fieldname": "show_links",
    "fieldtype": "HTML",
    "options": "<p class=\"text-muted\">Link related documents here</p>"
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "label": "Process",
+   "options": "QM Process",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-15 12:29:27.907070",
+ "modified": "2024-02-15 12:37:46.643314",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
