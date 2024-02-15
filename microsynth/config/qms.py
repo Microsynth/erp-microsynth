@@ -73,6 +73,12 @@ def get_data():
                    "name": "User Settings",
                    "label": _("User Settings"),
                    "description": _("User Settings")
+                },
+                {
+                   "type": "doctype",
+                   "name": "QM Process",
+                   "label": _("QM Process"),
+                   "description": _("QM Process")
                 }
             ]
         }

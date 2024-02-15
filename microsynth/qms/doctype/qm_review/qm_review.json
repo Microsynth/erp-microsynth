@@ -76,8 +76,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-13 11:55:00.737077",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-02-15 16:01:33.017918",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Review",
  "owner": "Administrator",
@@ -101,6 +101,7 @@
    "create": 1,
    "read": 1,
    "role": "Microsynth User",
+   "share": 1,
    "submit": 1,
    "write": 1
   },
