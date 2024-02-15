@@ -4,6 +4,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "qm_process",
   "process_number",
   "subprocess_number",
   "all_chapters",
@@ -12,24 +13,25 @@
  "fields": [
   {
    "columns": 2,
+   "fetch_from": "qm_process.process_number",
    "fieldname": "process_number",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Process Number",
    "options": "\n1\n2\n3\n4\n5",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "columns": 2,
+   "fetch_from": "qm_process.subprocess_number",
    "fieldname": "subprocess_number",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Subprocess Number",
    "options": "\n1\n2\n3\n4\n5\n6\n7\n37",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "columns": 2,
+   "fetch_from": "qm_process.chapter",
    "fieldname": "chapter",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -38,15 +40,24 @@
   {
    "columns": 2,
    "default": "1",
+   "fetch_from": "qm_process.all_chapters",
    "fieldname": "all_chapters",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "All Chapters",
    "reqd": 1
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process",
+   "options": "QM Process",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2024-02-02 11:12:57.589032",
+ "modified": "2024-02-15 12:45:15.600707",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM User Process Assignment",
