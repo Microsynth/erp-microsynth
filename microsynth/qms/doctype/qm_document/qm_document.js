@@ -2,14 +2,12 @@
 // For license information, please see license.txt
 
 
-// TODO: Move this to a new file qm_document_link.js
-// TODO: How to call the function clear_review from there
 frappe.ui.form.on('QM Document Link', {
-    achild_add: function(frm) {
+    linked_documents_add: function(frm) {
         // adding a row ... or on btn add row
         clear_review(frm);
     },
-    achild_remove: function(frm) {
+    linked_documents_remove: function(frm) {
         // removing a row ... or on btn delete
         clear_review(frm);
     }
@@ -19,7 +17,6 @@ frappe.ui.form.on('QM Document Link', {
 frappe.ui.form.on('QM Document', {
 
     title: function(frm) { if (frm.doc.reviewed_on) {clear_review(frm)} },  // Will be triggered by just changing the field content (no update or save necessary).
-    linked_documents: function(frm) { if (frm.doc.reviewed_on) {clear_review(frm)} },
 
     refresh: function(frm) {
         // reset overview html
@@ -55,7 +52,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         // allow to set title, linked documents in specific conditions
-        if (["In Review", "Reviewed"].includes(frm.doc.status)) {
+        if (["Draft", "In Review", "Reviewed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
