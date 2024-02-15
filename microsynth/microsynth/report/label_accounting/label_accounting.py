@@ -166,7 +166,7 @@ def get_data(filters):
         )  AS `raw`
         {company_condition}
         GROUP BY CONCAT(`raw`.`company`, ":", `raw`.`item_code`, ":", `raw`.`rate`, ":", `raw`.`territory`)
-    """
+    """  # TODO: Exclude labels sold more than 7 years ago.
 
     raw_data = frappe.db.sql(sql_query, as_dict=True)
     average_selling_prices = calculate_average_selling_prices(raw_data)

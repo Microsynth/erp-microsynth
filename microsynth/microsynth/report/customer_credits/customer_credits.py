@@ -136,17 +136,24 @@ def get_data(filters, short=False):
                 if d['type'] == "Credit" and d['outstanding'] > 0:
                     output.append(d)
             data = output
-        
-        # add data required in the print format
-        print_format = {}
-        letter_head = frappe.get_doc("Letter Head", filters.get('company'))
-        customer = frappe.get_doc("Customer", filters.get('customer'))
-        address = frappe.get_value("Contact", customer.invoice_to, 'address')
-        print_format['header'] = letter_head.content
-        print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
-        print_format['footer'] = letter_head.footer
-        # data.append(print_format)             # attach to first record instead of a separate line
-        if len(data) > 0:                       # prevent crash if there are no entries
+                    
+        if len(data) > 0:  # prevent crash if there are no entries
+            # add data required in the print format
+            print_format = {}
+            letter_head = frappe.get_doc("Letter Head", filters.get('company'))
+            customer = frappe.get_doc("Customer", filters.get('customer'))
+            address = frappe.get_value("Contact", customer.invoice_to, 'address')
+            print_format['header'] = letter_head.content
+            print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
+            print_format['footer'] = letter_head.footer
+            #frappe.log_error(print_format['footer'], "print_format['footer']")
+            print_format['currency'] = filters.get('currency') or customer.default_currency or data[0]['currency']
+            remaining_credit = 0
+            for row in data:
+                if 'outstanding' in row:
+                    remaining_credit += row['outstanding']
+            print_format['remaining_credit'] = remaining_credit
+            # attach to first record instead of a separate line
             data[0]['print_format'] = print_format
     else:
         # overview, group by customer
