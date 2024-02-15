@@ -23,7 +23,6 @@ function sign() {
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
         function(values){
-            //console.log(values.password);
             // check password and if correct, submit
             frappe.call({
                 'method': 'microsynth.qms.signing.sign',
@@ -47,7 +46,9 @@ function sign() {
                             });
                         }
                         // positive response: signature correct, open document
-                        frappe.set_route("Form", cur_frm.doc.document_type, cur_frm.doc.document_name); 
+                        window.open("/" 
+                            + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
+                            /* + "?dt=" + (new Date()).getTime()*/, "_self");
                     }
                 }
             });

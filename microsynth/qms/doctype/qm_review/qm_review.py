@@ -20,7 +20,7 @@ class QMReview(Document):
             ref_doc.save(ignore_permissions=True)
             frappe.db.commit()
 
-            update_status(ref_doc.name, "Reviewed")
+            update_status(self.document_name, "Reviewed")
 
         # clear any assignments
         clear("QM Review", self.name)
