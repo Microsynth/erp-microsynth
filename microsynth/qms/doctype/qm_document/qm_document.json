@@ -28,6 +28,7 @@
   "released_by",
   "valid_till",
   "linked_documents_section",
+  "show_links",
   "linked_documents",
   "customers_section",
   "customers",
@@ -226,11 +227,16 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "show_links",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted\">Link related documents here</p>"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-13 11:55:02.444635",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-02-15 12:29:27.907070",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
