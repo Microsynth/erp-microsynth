@@ -1,0 +1,82 @@
+{
+ "allow_rename": 1,
+ "autoname": "field:full_name",
+ "creation": "2024-02-15 11:27:29.289215",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_name",
+  "process_number",
+  "subprocess_number",
+  "all_chapters",
+  "chapter",
+  "full_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Process Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "process_number",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Process Number",
+   "options": "1\n2\n3\n4\n5",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subprocess_number",
+   "fieldtype": "Select",
+   "label": "Subprocess Number",
+   "options": "1\n2\n3\n4\n5\n6\n7\n37",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "all_chapters",
+   "fieldtype": "Check",
+   "label": "All Chapters"
+  },
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Int",
+   "label": "Chapter"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Full Name",
+   "read_only": 1,
+   "unique": 1
+  }
+ ],
+ "modified": "2024-02-15 12:00:39.656081",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Process",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "full_name",
+ "track_changes": 1
+}
