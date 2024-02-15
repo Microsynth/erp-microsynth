@@ -16,6 +16,7 @@
    "fetch_from": "qm_process.process_number",
    "fieldname": "process_number",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Process Number",
    "options": "\n1\n2\n3\n4\n5",
    "read_only": 1
@@ -25,6 +26,7 @@
    "fetch_from": "qm_process.subprocess_number",
    "fieldname": "subprocess_number",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Subprocess Number",
    "options": "\n1\n2\n3\n4\n5\n6\n7\n37",
    "read_only": 1
@@ -57,7 +59,7 @@
   }
  ],
  "istable": 1,
- "modified": "2024-02-15 12:45:15.600707",
+ "modified": "2024-02-15 19:12:26.425597",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM User Process Assignment",
