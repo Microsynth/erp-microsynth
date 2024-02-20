@@ -52,7 +52,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         // allow to set title, linked documents in specific conditions
-        if (["Draft", "In Review", "Reviewed"].includes(frm.doc.status)) {
+        if (["Draft", "Created", "In Review", "Reviewed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
@@ -169,6 +169,20 @@ frappe.ui.form.on('QM Document', {
             
             // assure company field is visible (after insert of a frehs document it would be still hidden)
             cur_frm.set_df_property('company', 'hidden', false);
+        }
+        
+        // remove dashboard doc (+) buttons
+        var new_btns = document.getElementsByClassName("btn-new");
+        for (var i = 0; i < new_btns.length; i++) {
+            new_btns[i].style.visibility = "hidden";
+        }
+        
+        // remove attach file depending on status
+        if (!["Draft", "Created", "In Review", "Reviewed"].includes(frm.doc.status)) {
+            var attach_btns = document.getElementsByClassName("add-attachment");
+            for (var i = 0; i < attach_btns.length; i++) {
+                attach_btns[i].style.visibility = "hidden";
+            }
         }
     }
 });
