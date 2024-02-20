@@ -33,6 +33,8 @@ class QMReview(Document):
         # set review to cancelled (fast-track)
         frappe.db.set_value(self.doctype, self.name, "docstatus", 2)
         frappe.db.commit()
+        # clear any assignments
+        clear("QM Review", self.name)
         return 
 
 
