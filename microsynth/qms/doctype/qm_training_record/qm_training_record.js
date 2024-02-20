@@ -19,14 +19,16 @@ frappe.ui.form.on('QM Training Record', {
         });
 
         if (frm.doc.docstatus < 1) {
-            // add sign button
             cur_frm.page.clear_primary_action();
-            cur_frm.page.set_primary_action(
-                __("Read & understood"),
-                function() {
-                    sign();
-                }
-            );
+            if (frappe.session.user === frm.doc.trainee) {
+                // add sign button
+                cur_frm.page.set_primary_action(
+                    __("Read & understood"),
+                    function() {
+                        sign();
+                    }
+                );
+            }
         }
     }
 });
