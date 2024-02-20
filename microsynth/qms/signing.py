@@ -10,7 +10,7 @@ from frappe import _
 
 
 @frappe.whitelist()
-def sign(dt, dn, user, password):
+def sign(dt, dn, user, password, target_field=None):
     if user != frappe.session.user:
         frappe.throw( _("Invalid approval user!"), _("Authentication failed") )
         return False
@@ -25,7 +25,12 @@ def sign(dt, dn, user, password):
     if password == approval_password:
         # password correct
         doc = frappe.get_doc(dt, dn)
-        doc.signature = get_signature(user)
+        if target_field and target_field in doc.as_dict():
+            signature = {}
+            signature[target_field] = get_signature(user)
+            doc.update(signature)
+        else:
+            doc.signature = get_signature(user)
         doc.save()
         doc.submit()
         return True

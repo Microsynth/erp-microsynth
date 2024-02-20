@@ -33,8 +33,10 @@
   "linked_documents",
   "customers_section",
   "customers",
-  "comments_section",
-  "signature"
+  "sec_signatures",
+  "signature",
+  "col_signature",
+  "release_signature"
  ],
  "fields": [
   {
@@ -166,15 +168,10 @@
    "read_only": 1
   },
   {
-   "fieldname": "comments_section",
-   "fieldtype": "Section Break",
-   "label": "Comments"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "signature",
    "fieldtype": "Data",
-   "label": "Signature",
+   "label": "Creation Signature",
    "read_only": 1
   },
   {
@@ -245,11 +242,27 @@
    "label": "Process",
    "options": "QM Process",
    "reqd": 1
+  },
+  {
+   "fieldname": "sec_signatures",
+   "fieldtype": "Section Break",
+   "label": "Signatures"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "release_signature",
+   "fieldtype": "Data",
+   "label": "Release Signature",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_signature",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-20 08:51:22.882327",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-02-20 11:12:18.451031",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",

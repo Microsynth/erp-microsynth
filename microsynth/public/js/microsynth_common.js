@@ -268,3 +268,8 @@ function access_protection() {
     styleSheet.innerText = ".attachment-row .close { display: none !important; }";
     document.head.appendChild(styleSheet);
 }
+
+// this function voids the above access protection
+function remove_access_protection() {
+    $('style').remove();
+}

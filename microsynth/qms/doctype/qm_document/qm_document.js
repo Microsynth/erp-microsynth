@@ -52,7 +52,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         // allow to set title, linked documents in specific conditions
-        if (["Draft", "Created", "In Review", "Reviewed"].includes(frm.doc.status)) {
+        if (["Draft"].includes(frm.doc.status)) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
@@ -77,9 +77,9 @@ frappe.ui.form.on('QM Document', {
                 });
             } 
         }
-
-        // allow review when document is on draft with an attachment
-        if ((!frm.doc.__islocal)
+        
+        // allow review when document is on created with an attachment
+        if ((["Created"].includes(frm.doc.status))
             && (!frm.doc.reviewed_on) 
             && (!frm.doc.reviewed_by)
             && ((cur_frm.attachments)
@@ -111,6 +111,25 @@ frappe.ui.form.on('QM Document', {
             cur_frm.page.clear_secondary_action();
         }
 
+        // allow the creator to sign a document (after pingpong review)
+        if ((!frm.doc.__islocal)
+            && (["Draft"].includes(frm.doc.status))
+            && (frappe.session.user === frm.doc.created_by)
+            && (!frm.doc.released_on)
+            && (!frm.doc.released_by)
+            && ((cur_frm.attachments) 
+            && (cur_frm.attachments.get_attachments())
+            && (cur_frm.attachments.get_attachments().length > 0))
+            ) {
+            // add release button
+            cur_frm.page.set_primary_action(
+                __("Sign"),
+                function() {
+                    sign_creation();
+                }
+            );
+        }
+        
         var requires_qau_release = 
             ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type);
 
@@ -147,8 +166,11 @@ frappe.ui.form.on('QM Document', {
         }
 
         // access protection: only owner and system manager can remove attachments
-        if ((["Released", "Valid", "Invalid"].includes(frm.doc.status)) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
+        //if ((["Released", "Valid", "Invalid"].includes(frm.doc.status)) || ((frappe.session.user !== frm.doc.owner) && (!frappe.user.has_role("System Manager")))) {
+        if (!["Draft"].includes(frm.doc.status)) {
             access_protection();
+        } else {
+            remove_access_protection();
         }
 
         // attachment monitoring: if the review is available but no attachment -> drop review because attachment has been removed
@@ -178,7 +200,7 @@ frappe.ui.form.on('QM Document', {
         }
         
         // remove attach file depending on status
-        if (!["Draft", "Created", "In Review", "Reviewed"].includes(frm.doc.status)) {
+        if (!["Draft"].includes(frm.doc.status)) {
             var attach_btns = document.getElementsByClassName("add-attachment");
             for (var i = 0; i < attach_btns.length; i++) {
                 attach_btns[i].style.visibility = "hidden";
@@ -258,6 +280,43 @@ function create_new_version(frm) {
 }
 
 
+function sign_creation() {
+    frappe.prompt([
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+        ],
+        function(values){
+            // check password and if correct, submit
+            frappe.call({
+                'method': 'microsynth.qms.signing.sign',
+                'args': {
+                    'dt': "QM Document",
+                    'dn': cur_frm.doc.name,
+                    'user': frappe.session.user,
+                    'password': values.password,
+                    'target_field': 'signature'
+                },
+                "callback": function(response) {
+                    if (response.message) {
+                        // set release date and user and set status to "Released" (if password was correct)
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_document.qm_document.update_status',
+                            'args': {
+                                'qm_document': cur_frm.doc.name,
+                                'status': "Created"
+                            },
+                            'async': false
+                        });
+                    }
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        __('Please enter your approval password'),
+        __('Sign')
+    );
+}
+
+
 function release() {
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
@@ -270,7 +329,8 @@ function release() {
                     'dt': "QM Document",
                     'dn': cur_frm.doc.name,
                     'user': frappe.session.user,
-                    'password': values.password
+                    'password': values.password,
+                    'target_field': 'release_signature'
                 },
                 "callback": function(response) {
                     if (response.message) {
@@ -290,8 +350,8 @@ function release() {
         },
         __('Please enter your approval password'),
         __('Sign')
-        );
-    }
+    );
+}
 
 
 function create_training_request(user_name, due_date) {

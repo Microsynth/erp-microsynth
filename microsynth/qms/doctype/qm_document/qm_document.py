@@ -133,7 +133,6 @@ def set_released(doc, user):
 
 
 # ToDo: Validate status changes  --> frappe.throw if not allowed
-# ToDo: do we need to whitelist the function?
 @frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
