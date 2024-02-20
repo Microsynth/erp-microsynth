@@ -185,7 +185,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nIn Review\nReviewed\nReleased\nValid\nInvalid",
+   "options": "Draft\nCreated\nIn Review\nReviewed\nReleased\nValid\nInvalid",
    "read_only": 1
   },
   {
@@ -248,8 +248,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-15 19:06:49.276137",
- "modified_by": "Administrator",
+ "modified": "2024-02-20 08:51:22.882327",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
