@@ -107,6 +107,7 @@ def create_new_version(doc):
     new_doc.reviewed_by = None
     new_doc.released_on = None
     new_doc.released_by = None
+    new_doc.release_signature = None
     new_doc.signature = None
     new_doc.valid_from = None
     new_doc.valid_till = None
