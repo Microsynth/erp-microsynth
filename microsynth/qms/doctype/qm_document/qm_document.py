@@ -107,6 +107,8 @@ def create_new_version(doc):
     new_doc.released_on = None
     new_doc.released_by = None
     new_doc.signature = None
+    new_doc.valid_from = None
+    new_doc.valid_till = None
     new_doc.status = "Draft"
     new_doc.insert()
     frappe.db.commit()
