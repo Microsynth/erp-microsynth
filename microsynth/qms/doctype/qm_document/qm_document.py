@@ -146,12 +146,12 @@ def update_status(qm_document, status):
 
 
 @frappe.whitelist()
-def assign_after_review(qm_document):
+def assign_after_review(qm_document, description=None):
     add({
         'doctype': "QM Document",
         'name': qm_document,
         'assign_to': frappe.get_value("QM Document", qm_document, "created_by"),
-        'description': f"Your QM Document '{qm_document}' has been reviewed."
+        'description': description or f"Your QM Document '{qm_document}' has been reviewed."
     })
     return
 

@@ -9,12 +9,14 @@ frappe.ui.form.on('QM Review', {
         
         // load document overview content
         frappe.call({
-            'method': 'get_overview',
-            'doc': frm.doc,
+            'method': 'microsynth.qms.doctype.qm_review.qm_review.get_overview',
+            'args': {
+                'qm_review': frm.doc.name
+            },
             'callback': function (r) {
                 cur_frm.set_df_property('overview', 'options', r.message);
             }
-        });
+        }); 
             
         // show sign button
         if (frm.doc.docstatus < 1) {
@@ -26,6 +28,18 @@ frappe.ui.form.on('QM Review', {
                     sign();
                 }
             );
+            
+            // add reject button
+            cur_frm.page.clear_secondary_action();
+            cur_frm.page.set_secondary_action(
+                __("Reject"), 
+                function() { 
+                    reject(); 
+                }
+            );
+        } else {
+            // disable cancelation
+            cur_frm.page.clear_secondary_action();
         }
     }
 });
@@ -46,7 +60,6 @@ function sign() {
                     'password': values.password
                 },
                 "callback": function(response) {
-                    // cur_frm.reload_doc();
                     if (response.message) {
                         // Send notification to creator
                         if (cur_frm.doc.document_type == "QM Document") {
@@ -69,4 +82,38 @@ function sign() {
         __('Please enter your approval password'),
         __('Sign')
     );
+}
+
+
+function reject() {
+    frappe.confirm(
+        __("Are you sure to reject this review? This will invalidate the document and require a new version."),
+        function() {
+            // on yes
+            frappe.call({
+                'method': 'reject',
+                'doc': cur_frm.doc,
+                "callback": function(response) {
+                    // Send notification to creator
+                    if (cur_frm.doc.document_type == "QM Document") {
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_document.qm_document.assign_after_review',
+                            'args': {
+                                'qm_document': cur_frm.doc.document_name,
+                                'description': "Your document " + cur_frm.doc.document_name + " has been rejected."
+                            },
+                            "async": false
+                        });
+                    }
+                    // positive response: signature correct, open document
+                    window.open("/" 
+                        + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
+                        /* + "?dt=" + (new Date()).getTime()*/, "_self");
+                }
+            });
+        },
+        function() {
+            // on no
+        }
+    )
 }

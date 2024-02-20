@@ -27,13 +27,25 @@ class QMReview(Document):
         return
 
 
-    def get_overview(self):
-        if self.document_type == "QM Document":
-            files = get_attachments(self.document_type, self.document_name)
-            html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
-        else:
-            html = "<p>No data</p>"
-        return html
+    def reject(self):
+        # invalidate document
+        update_status(self.document_name, "Invalid")
+        # set review to cancelled (fast-track)
+        frappe.db.set_value(self.doctype, self.name, "docstatus", 2)
+        frappe.db.commit()
+        return 
+
+
+@frappe.whitelist()
+def get_overview(qm_review):
+    doc = frappe.get_doc("QM Review", qm_review)
+    if doc.document_type == "QM Document":
+        files = get_attachments(doc.document_type, doc.document_name)
+        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': doc})
+    else:
+        html = "<p>No data</p>"
+    return html
+
 
 @frappe.whitelist()
 def create_review(reviewer, dt, dn, due_date):
