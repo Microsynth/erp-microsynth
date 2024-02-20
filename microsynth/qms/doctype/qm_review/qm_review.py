@@ -8,7 +8,7 @@ from frappe.model.document import Document
 from datetime import datetime
 from frappe.desk.form.assign_to import add, clear
 from microsynth.qms.doctype.qm_document.qm_document import update_status
-
+from frappe.desk.form.load import get_attachments
 
 class QMReview(Document):
     def on_submit(self):
@@ -26,6 +26,14 @@ class QMReview(Document):
         clear("QM Review", self.name)
         return
 
+
+    def get_overview(self):
+        if self.document_type == "QM Document":
+            files = get_attachments(self.document_type, self.document_name)
+            html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
+        else:
+            html = "<p>No data</p>"
+        return html
 
 @frappe.whitelist()
 def create_review(reviewer, dt, dn, due_date):

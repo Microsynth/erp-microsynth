@@ -180,7 +180,6 @@ frappe.ui.form.on('QM Document', {
 
         // fetch document overview
         if (!frm.doc.__islocal) {
-            var files = cur_frm.attachments.get_attachments();
             frappe.call({
                 'method': 'get_overview',
                 'doc': frm.doc,

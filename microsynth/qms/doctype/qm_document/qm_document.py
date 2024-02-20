@@ -87,9 +87,10 @@ class QMDocument(Document):
         self.save()
         return
         
-    def get_overview(self, files):
+    def get_overview(self):
         files = get_attachments("QM Document", self.name)
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
+        # TODO: add training section (number of people to be trained, actual trained, ...)
         return html
 
 

@@ -4,6 +4,19 @@
 
 frappe.ui.form.on('QM Review', {
     refresh: function(frm) {
+        // reset overview html
+        cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
+        
+        // load document overview content
+        frappe.call({
+            'method': 'get_overview',
+            'doc': frm.doc,
+            'callback': function (r) {
+                cur_frm.set_df_property('overview', 'options', r.message);
+            }
+        });
+            
+        // show sign button
         if (frm.doc.docstatus < 1) {
             // add sign button
             cur_frm.page.clear_primary_action();
