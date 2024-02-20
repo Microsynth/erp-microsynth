@@ -100,11 +100,14 @@ def create_new_version(doc):
     new_doc.version = cint(new_doc.version) + 1         # go to next version
     if new_doc.version > 99:
         frappe.throw( "Sorry, you have lost the lottery.", "Document version too high")
+    new_doc.created_on = None
+    new_doc.created_by = None
     new_doc.reviewed_on = None
     new_doc.reviewed_by = None
     new_doc.released_on = None
     new_doc.released_by = None
     new_doc.signature = None
+    new_doc.status = "Draft"
     new_doc.insert()
     frappe.db.commit()
     return {'name': new_doc.name, 'url': get_url_to_form("QM Document", new_doc.name)}

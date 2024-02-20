@@ -170,6 +170,12 @@ frappe.ui.form.on('QM Document', {
             // assure company field is visible (after insert of a frehs document it would be still hidden)
             cur_frm.set_df_property('company', 'hidden', false);
         }
+        
+        // remove dashboard doc (+) buttons
+        var new_btns = document.getElementsByClassName("btn-new");
+        for (var i = 0; i < new_btns.length; i++) {
+            new_btns[i].style.visibility = "hidden";
+        }
     }
 });
 
