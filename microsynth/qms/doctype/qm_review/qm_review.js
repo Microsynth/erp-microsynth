@@ -20,14 +20,16 @@ frappe.ui.form.on('QM Review', {
 
         // show sign button
         if (frm.doc.docstatus < 1) {
-            // add sign button
             cur_frm.page.clear_primary_action();
-            cur_frm.page.set_primary_action(
-                __("Sign"),
-                function() {
-                    sign();
-                }
-            );
+            if (frappe.session.user === frm.doc.reviewer || frappe.user.has_role("System Manager")) {
+                // add sign button
+                cur_frm.page.set_primary_action(
+                    __("Sign"),
+                    function() {
+                        sign();
+                    }
+                );
+            }
 
             // add reject button
             cur_frm.page.clear_secondary_action();
