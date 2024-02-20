@@ -127,6 +127,8 @@ def set_released(doc, user):
     return
 
 
+# ToDo: Validate status changes  --> frappe.throw if not allowed
+# ToDo: do we need to whitelist the function?
 @frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
@@ -221,7 +223,6 @@ def set_valid_document(qm_docname):
             frappe.log_error(f"Invalidated a later version of the document {qm_doc.name}", "qm_document.set_valid_document")
         qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
         invalidate_document(qm_doc_other_version)
-
 
     # set document valid
     update_status(qm_doc.name, "Valid")
