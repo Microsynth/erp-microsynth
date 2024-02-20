@@ -6,7 +6,7 @@ frappe.ui.form.on('QM Review', {
     refresh: function(frm) {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
-        
+
         // load document overview content
         frappe.call({
             'method': 'microsynth.qms.doctype.qm_review.qm_review.get_overview',
@@ -16,8 +16,8 @@ frappe.ui.form.on('QM Review', {
             'callback': function (r) {
                 cur_frm.set_df_property('overview', 'options', r.message);
             }
-        }); 
-            
+        });
+
         // show sign button
         if (frm.doc.docstatus < 1) {
             // add sign button
@@ -28,7 +28,7 @@ frappe.ui.form.on('QM Review', {
                     sign();
                 }
             );
-            
+
             // add reject button
             cur_frm.page.clear_secondary_action();
             cur_frm.page.set_secondary_action(

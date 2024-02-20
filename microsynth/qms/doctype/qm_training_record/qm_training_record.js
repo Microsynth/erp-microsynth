@@ -1,8 +1,23 @@
 // Copyright (c) 2024, Microsynth, libracore and contributors and contributors
 // For license information, please see license.txt
 
+
 frappe.ui.form.on('QM Training Record', {
     refresh: function(frm) {
+        // reset overview html
+        cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
+
+        // load document overview content
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_training_record.qm_training_record.get_overview',
+            'args': {
+                'qm_training_record': frm.doc.name
+            },
+            'callback': function (r) {
+                cur_frm.set_df_property('overview', 'options', r.message);
+            }
+        });
+
         if (frm.doc.docstatus < 1) {
             // add sign button
             cur_frm.page.clear_primary_action();
@@ -42,7 +57,6 @@ function sign() {
                             'async': false
                         });
                     }
-                    
                     // refresh UI
                     cur_frm.reload_doc();
                 }

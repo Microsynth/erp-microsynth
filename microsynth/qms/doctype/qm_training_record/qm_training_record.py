@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
+from frappe.desk.form.load import get_attachments
 from datetime import datetime
 
 
@@ -32,6 +33,17 @@ def create_training_record(trainee, dt, dn, due_date):
         'name': record.name,
         'assign_to': trainee
     })
+
+
+@frappe.whitelist()
+def get_overview(qm_training_record):
+    doc = frappe.get_doc("QM Training Record", qm_training_record)
+    if doc.document_type == "QM Document":
+        files = get_attachments(doc.document_type, doc.document_name)
+        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': doc})
+    else:
+        html = "<p>No data</p>"
+    return html
 
 
 @frappe.whitelist()
