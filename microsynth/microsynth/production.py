@@ -373,12 +373,15 @@ def process_internal_oligos(file):
 def create_delivery_note_for_lost_oligos(sales_orders):
     """
     run
-    bench execute microsynth.microsynth.production.draft_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23000051']}"
+    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23060743']}"
     """
+    from frappe.desk.tags import add_tag
 
-    settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
-    for sales_order in sales_orders:
-        print(f"Processing '{sales_order}' ...")
+    total = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
+    dn_list = []
+
+    for i, sales_order in enumerate(sales_orders):
+        print(f"{i+1}/{len(sales_orders)}: Processing '{sales_order}' ...")
 
         if not validate_sales_order_status(sales_order):
             continue
@@ -393,70 +396,120 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 `tabOligo Link`.`parent` = "{sales_order}"
                 AND `tabOligo Link`.`parenttype` = "Sales Order"
                 AND `tabOligo`.`status` = "Open";
-        """.format(sales_order=sales_order), as_dict=True)
+            """.format(sales_order=sales_order), as_dict=True)
 
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
 
             ## create delivery note (leave on draft: submitted by flushbox after processing)
-            dn_content = make_delivery_note(sales_order)
-            dn = frappe.get_doc(dn_content)
-            if not dn:
-                #print(f"Delivery Note for '{sales_order}' is None.")
-                continue
-            if not dn.get('oligos'):
-                #print(f"Delivery Note for '{sales_order}' has no Oligos.")
-                continue
-            company = frappe.get_value("Sales Order", sales_order, "company")
-            dn.naming_series = get_naming_series("Delivery Note", company)
-            # set export code
-            dn.export_category = get_export_category(dn.shipping_address_name)
+            try:
+                dn_content = make_delivery_note(sales_order)
+                dn = frappe.get_doc(dn_content)
+                if not dn:
+                    print(f"Delivery Note for '{sales_order}' is None.")
+                    continue
+                if not dn.get('oligos'):
+                    print(f"Delivery Note for '{sales_order}' has no Oligos.")
+                    continue
+                company = frappe.get_value("Sales Order", sales_order, "company")
+                dn.naming_series = get_naming_series("Delivery Note", company)
+                # set export code
+                dn.export_category = get_export_category(dn.shipping_address_name)
 
-            # remove oligos that are canceled
-            cleaned_oligos = []
-            cancelled_oligo_item_qtys = {}
-            for oligo in dn.oligos:
+                # remove oligos that are canceled
+                oligos_to_deliver = []
+                oligos_to_exclude_item_qtys = {}
 
-                #TODO: SQL query to test that the Oligo is not on a Delivery Note
+                for oligo in dn.oligos:
+                    # SQL query to test that the Oligo is not on a Delivery Note
+                    oligos_on_dns = frappe.db.sql(f"""
+                        SELECT `tabOligo`.`name` AS `oligo_name`,
+                            `tabDelivery Note`.`name` AS `delivery_note`
+                        FROM `tabDelivery Note`
+                        LEFT JOIN `tabOligo Link` AS `tOL` ON `tabDelivery Note`.`name` = `tOL`.`parent`
+                                                            AND `tOL`.`parenttype` = "Delivery Note"
+                        LEFT JOIN `tabOligo` ON `tabOligo`.`name` = `tOL`.`oligo`
+                        WHERE `tabDelivery Note`.`docstatus` < 2
+                            AND `tabDelivery Note`.`status` != 'Closed'
+                            AND `tabOligo`.`name` = '{oligo.oligo}'
+                        """, as_dict=True)
 
-                oligo_doc = frappe.get_doc("Oligo", oligo.oligo)
+                    oligo_doc = frappe.get_doc("Oligo", oligo.oligo)
 
-                # TODO: check that the Oligo is not already on a delivery note (SQL above). Include in condition below
-                if oligo_doc.status != "Canceled":
-                    cleaned_oligos.append(oligo)
-                else:
-                    # append items
-                    for item in oligo_doc.items:
-                        if item.item_code in cancelled_oligo_item_qtys:
-                            cancelled_oligo_item_qtys[item.item_code] = cancelled_oligo_item_qtys[item.item_code] + item.qty
-                        else:
-                            cancelled_oligo_item_qtys[item.item_code] = item.qty
+                    # Check that the Oligo is not Canceled and not already on a Delivery Note
+                    if oligo_doc.status != "Canceled" and len(oligos_on_dns) == 0:
+                        oligos_to_deliver.append(oligo)
+                    else:
+                        # append items
+                        for item in oligo_doc.items:
+                            if item.item_code in oligos_to_exclude_item_qtys:
+                                oligos_to_exclude_item_qtys[item.item_code] = oligos_to_exclude_item_qtys[item.item_code] + item.qty
+                            else:
+                                oligos_to_exclude_item_qtys[item.item_code] = item.qty
 
-            dn.oligos = cleaned_oligos
-            # subtract cancelled items from oligo items
-            for item in dn.items:
-                if item.item_code in cancelled_oligo_item_qtys:
-                    item.qty -= cancelled_oligo_item_qtys[item.item_code]
-            # remove items with qty == 0
-            keep_items = []
-            for item in dn.items:
-                if item.qty > 0:
-                    keep_items.append(item)
+                dn.oligos = oligos_to_deliver
+                # subtract cancelled items from oligo items
+                for item in dn.items:
+                    if item.item_code in oligos_to_exclude_item_qtys:
+                        item.qty -= oligos_to_exclude_item_qtys[item.item_code]
+                # remove items with qty == 0
+                keep_items = []
+                for item in dn.items:
+                    if item.qty > 0:
+                        keep_items.append(item)
 
-            # TODO: consider not closing the SO
-            # if there are no items left or only the shipping item, close the order and exit with an error trace.
-            if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
-                frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-                close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
-                continue
+                # if there are no items left or only the shipping item, continue
+                if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
+                    #print(f"--- No items left in {sales_order}. Cannot create a delivery note.")
+                    #frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+                    #close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
+                    continue
 
-            dn.items = keep_items
-            # TODO Tag the Delivery Note
-            # TODO Tag the Sales Order
+                dn.items = keep_items
 
-            # insert record
-            dn.flags.ignore_missing = True
-            dn.insert(ignore_permissions=True)
-            frappe.db.commit()
+                # Tag the Sales Order
+                add_tag(tag="processed_lost_oligos", dt="Sales Order", dn=sales_order)
 
+                # insert record
+                dn.flags.ignore_missing = True
+                dn.insert(ignore_permissions=True)
+
+                # Tag the Delivery Note
+                add_tag(tag="lost_oligos", dt="Delivery Note", dn=dn.name)
+
+                print(f"Created Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
+                total[dn.currency] += dn.total
+                dn_list.append(dn.name)
+                frappe.db.commit()
+
+            except Exception as err:
+                print(f"########## Got the following error when processing Sales Order {sales_order}:\n{err}")
+
+    print(f"Overall total per currency: {total}")
+    print(f"Created {len(dn_list)} Delivery Notes: {dn_list}")
     return
+
+
+def find_lost_oligos_create_dns():
+    """
+    Finds Sales Orders with potentially "lost" Oligos and calls the function 
+    create_delivery_note_for_lost_oligos to create Delivery Notes for them.
+    
+    bench execute microsynth.microsynth.production.find_lost_oligos_create_dns
+    """
+    orders = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabSales Order`
+        WHERE `product_type` = 'Oligos'
+            AND `per_delivered` < 100
+            AND `status` NOT IN ('Closed', 'Cancelled')
+            AND `transaction_date` < DATE('2024-02-12')
+        ORDER BY `transaction_date`
+        """, as_dict=True)
+
+    orders_to_process = []
+
+    for order in orders:
+        orders_to_process.append(order['name'])
+
+    create_delivery_note_for_lost_oligos(orders_to_process)
