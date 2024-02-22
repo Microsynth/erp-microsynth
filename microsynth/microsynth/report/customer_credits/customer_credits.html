@@ -13,6 +13,11 @@
             <p style="font-size: 12px !important; line-height: 15px !important;">{%= pf.customer_address %}</p>
         </td>
     </tr>
+    <tr></tr>
+    <tr>
+        <td></td>
+        <td>Balgach, {%= frappe.datetime.obj_to_user(frappe.datetime.now_date()) %}</td>
+    </tr>
 </table>
 
 <!-- TODO: Add Company location and current date to the right (e.g. Balgach, 02.02.2024) -->
@@ -21,7 +26,7 @@
 
 <h3>{%= __("Remaining credit") %}: {%= pf.remaining_credit.toFixed(2) %} {%= pf.currency %}</h3><br>
 
-<table style="width: 100%; font-size: 11px; ">
+<table class="table" style="width: 100%; font-size: 11px; ">
     <tr>
         <th style="padding: 1px !important; width: 10%; text-align: left;">{%= __("Date") %}</th>
         <th style="padding: 1px !important; width: 17%; text-align: left;">{%= __("Sales Invoice") %}</th>
