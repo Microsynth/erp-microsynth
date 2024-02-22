@@ -487,7 +487,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                 # insert record
                 dn.flags.ignore_missing = True
-                dn.insert(ignore_permissions=True)  # frappe.exceptions.MandatoryError: [Delivery Note, DN-BAL-24008633]: taxes_and_charges
+                dn.insert(ignore_permissions=True)
 
                 # Tag the Delivery Note
                 add_tag(tag="lost_oligos", dt="Delivery Note", dn=dn.name)
@@ -518,7 +518,8 @@ def find_lost_oligos_create_dns():
         WHERE `product_type` = 'Oligos'
             AND `per_delivered` < 100
             AND `docstatus` = 1
-            AND `transaction_date` < DATE('2024-02-13')
+            AND `status` NOT IN ('Closed', 'Cancelled', 'Completed')
+            AND `transaction_date` < DATE('2024-02-10')
         ORDER BY `creation` DESC
         ;""", as_dict=True)
 
