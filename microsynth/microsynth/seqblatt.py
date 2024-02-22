@@ -290,3 +290,103 @@ def submit_seq_primer_dns():
         print(f"Processing '{dn['name']}' ...")
         check_submit_delivery_note(dn['name'])
         frappe.db.commit()
+
+
+def close_partly_delivered_orders():
+    """
+    Find Sequencing Sales Orders that are at least partly delivered and invoiced. Close these Sales Orders.
+
+    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders
+    """
+    from frappe.desk.tags import add_tag
+
+    counter = 0
+    diffs = []
+    sales_orders = frappe.db.sql("""
+        SELECT * FROM
+            (SELECT `tabSales Order`.`name`,
+                `tabSales Order`.`transaction_date`,
+                ROUND(`tabSales Order`.`total`, 2) AS `total`,
+                `tabSales Order`.`currency`,
+                `tabSales Order`.`customer`,
+                `tabSales Order`.`customer_name`,
+                `tabSales Order`.`web_order_id`,
+                `tabSales Order`.`product_type`,
+                `tabSales Order`.`company`,
+                `tabSales Order`.`owner`,
+                (SELECT COUNT(`tabSales Invoice Item`.`name`) 
+                    FROM `tabSales Invoice Item`
+                    WHERE `tabSales Invoice Item`.`docstatus` = 1
+                        AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
+                ) AS `si_items`,
+                (SELECT COUNT(`tabDelivery Note Item`.`name`) 
+                    FROM `tabDelivery Note Item`
+                    WHERE `tabDelivery Note Item`.`docstatus` = 1
+                        AND `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                ) AS `dn_items`
+            FROM `tabSales Order`
+            WHERE   `tabSales Order`.`product_type` = 'Sequencing'
+                AND `tabSales Order`.`per_delivered` > 0
+                AND `tabSales Order`.`per_delivered` < 100
+                AND `tabSales Order`.`docstatus` = 1
+                AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+                AND `tabSales Order`.`billing_status` NOT IN ('Closed', 'Not Billed')
+                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -14 DAY)
+            ) AS `raw`
+        WHERE `raw`.`si_items` > 0
+            AND `raw`.`dn_items` > 0
+        ORDER BY `raw`.`transaction_date`
+        ;""", as_dict=True)
+    
+    for so in sales_orders:
+        so_doc = frappe.get_doc("Sales Order", so['name'])
+
+        if so_doc.web_order_id:
+            dn_web_order_id = f"AND `tabDelivery Note`.`web_order_id` = {so_doc.web_order_id}"
+            si_web_order_id = f"AND `tabSales Invoice`.`web_order_id` = {so_doc.web_order_id}"
+        else:
+            print(f"Sales Order {so_doc.name} has no Web Order ID.")
+        
+        delivery_notes = frappe.db.sql(f"""
+            SELECT DISTINCT `tabDelivery Note Item`.`parent` AS `name`,
+                `tabDelivery Note`.`total`
+            FROM `tabDelivery Note Item`
+            LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+            WHERE (`tabDelivery Note Item`.`against_sales_order` = '{so_doc.name}'
+                AND `tabDelivery Note Item`.`docstatus` = 1)
+                {dn_web_order_id};
+            """, as_dict=True)
+
+        sales_invoices = frappe.db.sql(f"""
+            SELECT DISTINCT `tabSales Invoice Item`.`parent` AS `name`,
+                `tabSales Invoice`.`total`
+            FROM `tabSales Invoice Item`
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
+            WHERE (`tabSales Invoice Item`.`sales_order` = '{so_doc.name}'
+                AND `tabSales Invoice Item`.`docstatus` = 1)
+                {si_web_order_id};
+            """, as_dict=True)
+        
+        if len(delivery_notes) > 0:
+            if len(delivery_notes) == 1:
+                dn_total = delivery_notes[0]['total']
+                so_total = so_doc.total
+                diff = round(so_total-dn_total,2)
+                diffs.append((diff, so_doc.currency, so_doc.name))
+                print(f"{diff} {so_doc.currency}: Would close {so_doc.name} created {so_doc.creation}") 
+                #add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
+                # set Sales Order status to Closed
+                #so_doc.status = 'Closed'
+                #so_doc.save()
+                counter += 1
+            else:
+                print(f"--- Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Note: {delivery_notes}")
+        else:
+            print(f"##### Found no Delivery Note for Sales Order {so_doc.name} with Web Order ID '{so_doc.web_order_id}'.")
+    
+    diffs.sort()  # sorted by the first element of contained triples by default
+
+    for diff in diffs:
+        print(f"{diff[0]} {diff[1]}: {diff[2]}")
+
+    print(f"\nWould have closed {counter} Sales Orders.")
