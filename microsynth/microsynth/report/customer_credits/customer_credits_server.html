@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Customer Credit Overview
+  </title>
+  <meta content="frappe" name="generator"/>
+  <link href="/assets/css/printview.css" rel="stylesheet" type="text/css"/>
+  <link href="/assets/microsynth/css/microsynth_report.css" rel="stylesheet" type="text/css"/>
+ </head>
+ <body>
+  <div class="print-format-gutter">
+   <div class="print-format">
+       
+{% if data|len > 0 %}
+    <!-- header and footer -->
+    {% set pf = data[0].print_format %}
+    <div id="header-html" class="hidden-pdf">
+        {{ pf.header }}
+    </div>
+
+
+    <div id="footer-html" class="hidden-pdf">
+        <br>{{ pf.footer }}
+    </div>
+
+    <table style="width: 100%; height: 215px !important;">
+        <tr>
+            <td style="width: 54%; padding: 0px !important; padding-top:22px !important;"></td>
+            <td style="width: 46%; padding: 0px !important; padding-top:22px !important;">
+                <p style="font-size: 12px !important; line-height: 15px !important;">{{ pf.customer_address }}</p>
+            </td>
+        </tr>
+        <tr></tr>
+        <tr>
+            <td></td>
+            <td>Balgach, {{ frappe.format_value(frappe.utils.now(), {'fieldtype': 'Date'}) }}</td>
+        </tr>
+    </table>
+{% endif %}
+
+<h5>{{ _("Customer ID") }}: {{ filters.customer }}</h5>
+
+<h3>{{ _("Remaining credit") }}: {{ pf.remaining_credit }} {{ pf.currency }}</h3><br>
+
+<table class="table" style="width: 100%; font-size: 11px; ">
+    <tr>
+        <th style="padding: 1px !important; width: 10%; text-align: left;">{{ _("Date") }}</th>
+        <th style="padding: 1px !important; width: 17%; text-align: left;">{{ _("Sales Invoice") }}</th>
+        <th style="padding: 1px !important; width: 28%; text-align: left;">{{ _("Contact Person") }}</th>
+        <th style="padding: 1px !important; width: 13%; text-align: right;">{{ _("Debit") }}</th>
+        <th style="padding: 1px !important; width: 13%; text-align: right;">{{ _("Credit") }}</th>
+        <th style="padding: 1px !important; width:  2%; text-align: right;"></th>
+        <th style="padding: 1px !important; width: 17%; text-align: left;">{{ _("Against") }}</th>
+    </tr>
+{% for d in data %}
+    <tr>
+        <td style="padding: 1px !important; text-align: left">{{ d.date }}</td>
+        <td style="padding: 1px !important; ">{{ d.sales_invoice }}</td>
+        <td style="padding: 1px !important; ">{{ d.contact_name }} ({{ d.contact_person }})</td>
+        <td style="padding: 1px !important; text-align: right; ">{% if not "-" in d.reference or d.net_amount > 0  %}
+                                                                    {{ d.net_amount }}
+                                                                {% endif %}</td>
+        <td style="padding: 1px !important; text-align: right; ">{% if "-" in d.reference and d.net_amount < 0 %}
+                                                                    {{ d.net_amount }}
+                                                                {% endif %}</td>
+        <td style="padding: 1px !important; "></td>
+        <td style="padding: 1px !important; ">{% if "-" in d.reference and d.net_amount < 0 %}
+                                                {{ d.reference }}
+                                            {% endif %}</td>
+    </tr>
+{% endfor %}
+</table>
+<br>
+
+   </div>
+  </div>
+ </body>
+</html>

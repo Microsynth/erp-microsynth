@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-
+from frappe.utils.pdf import get_pdf
 
 def execute(filters=None):
     columns = get_columns()
@@ -212,3 +212,22 @@ def get_data(filters, short=False):
     #frappe.log_error(f"{pf=}\n\n{pf['header']=}\n\n{pf['customer_address']=}")
 
     return data
+
+@frappe.whitelist()
+def download_pdf(company, customer):
+    filters={'customer': customer, 'company': company}
+    content = frappe.render_template(
+        "microsynth/microsynth/report/customer_credits/customer_credits_server.html", 
+        {
+            'data': get_data(filters),
+            'filters': filters
+        }
+    )
+    
+    pdf = get_pdf(content)
+    
+    frappe.local.response.filename = "Customer_Credits_{0}.pdf".format(customer)
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
+    
+    return
