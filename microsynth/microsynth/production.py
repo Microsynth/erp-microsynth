@@ -373,9 +373,10 @@ def process_internal_oligos(file):
 def create_delivery_note_for_lost_oligos(sales_orders):
     """
     run
-    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23060743']}"
+    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-24003138']}"
     """
     from frappe.desk.tags import add_tag
+    from microsynth.microsynth.taxes import find_dated_tax_template
 
     total = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
     dn_list = []
@@ -383,8 +384,8 @@ def create_delivery_note_for_lost_oligos(sales_orders):
     for i, sales_order in enumerate(sales_orders):
         print(f"{i+1}/{len(sales_orders)}: Processing '{sales_order}' ...")
 
-        if not validate_sales_order_status(sales_order):
-            continue
+        #if not validate_sales_order_status(sales_order):
+            #continue
         
         # get open items
         so_open_items = frappe.db.sql("""
@@ -403,6 +404,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             try:
+                so = frappe.get_doc("Sales Order", sales_order)
                 dn_content = make_delivery_note(sales_order)
                 dn = frappe.get_doc(dn_content)
                 if not dn:
@@ -411,8 +413,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 if not dn.get('oligos'):
                     print(f"Delivery Note for '{sales_order}' has no Oligos.")
                     continue
-                company = frappe.get_value("Sales Order", sales_order, "company")
-                dn.naming_series = get_naming_series("Delivery Note", company)
+                dn.naming_series = get_naming_series("Delivery Note", so.company)
                 # set export code
                 dn.export_category = get_export_category(dn.shipping_address_name)
 
@@ -470,9 +471,23 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 # Tag the Sales Order
                 add_tag(tag="processed_lost_oligos", dt="Sales Order", dn=sales_order)
 
+                if so.status == 'Closed':
+                    # re-open Sales Order
+                    so.update_status('To Deliver and Bill')
+
+                if dn.product_type == "Oligos" or dn.product_type == "Material":
+                    category = "Material"
+                else:
+                    category = "Service"
+                if dn.oligos is not None and len(dn.oligos) > 0:
+                    category = "Material"
+
+                tax_template = find_dated_tax_template(dn.company, dn.customer, dn.shipping_address_name, category, dn.posting_date)
+                dn.taxes_and_charges = tax_template
+
                 # insert record
                 dn.flags.ignore_missing = True
-                dn.insert(ignore_permissions=True)
+                dn.insert(ignore_permissions=True)  # frappe.exceptions.MandatoryError: [Delivery Note, DN-BAL-24008633]: taxes_and_charges
 
                 # Tag the Delivery Note
                 add_tag(tag="lost_oligos", dt="Delivery Note", dn=dn.name)
@@ -502,10 +517,10 @@ def find_lost_oligos_create_dns():
         FROM `tabSales Order`
         WHERE `product_type` = 'Oligos'
             AND `per_delivered` < 100
-            AND `status` NOT IN ('Closed', 'Cancelled')
-            AND `transaction_date` < DATE('2024-02-12')
-        ORDER BY `transaction_date`
-        """, as_dict=True)
+            AND `docstatus` = 1
+            AND `transaction_date` < DATE('2024-02-13')
+        ORDER BY `creation` DESC
+        ;""", as_dict=True)
 
     orders_to_process = []
 
