@@ -382,6 +382,8 @@ def create_delivery_note_for_lost_oligos(sales_orders):
     dn_list = []
 
     for i, sales_order in enumerate(sales_orders):
+        if i % 100 == 0:
+            print(f"\nCurrent total per currency: {total}")
         print(f"{i+1}/{len(sales_orders)}: Processing '{sales_order}' ...")
 
         #if not validate_sales_order_status(sales_order):
@@ -474,6 +476,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 if so.status == 'Closed':
                     # re-open Sales Order
                     so.update_status('To Deliver and Bill')
+                    print(f"Re-opened previously closed Sales Order {so.name}.")
 
                 if dn.product_type == "Oligos" or dn.product_type == "Material":
                     category = "Material"
@@ -513,19 +516,55 @@ def find_lost_oligos_create_dns():
     bench execute microsynth.microsynth.production.find_lost_oligos_create_dns
     """
     orders = frappe.db.sql(f"""
-        SELECT `name`
+        SELECT `tabSales Order`.`name`,
+            `tabSales Order`.`transaction_date`,
+            ROUND(`tabSales Order`.`total`, 2) AS `total`,
+            `tabSales Order`.`currency`,
+            `tabSales Order`.`customer`,
+            `tabSales Order`.`customer_name`,
+            `tabSales Order`.`web_order_id`,
+            `tabSales Order`.`product_type`,
+            `tabSales Order`.`company`,
+            `tabSales Order`.`status`,
+            `tabSales Order`.`_user_tags`
         FROM `tabSales Order`
-        WHERE `product_type` = 'Oligos'
-            AND `per_delivered` < 100
-            AND `docstatus` = 1
-            AND `status` NOT IN ('Closed', 'Cancelled', 'Completed')
-            AND `transaction_date` < DATE('2024-02-10')
-        ORDER BY `creation` DESC
+        WHERE `tabSales Order`.`product_type` = 'Oligos'
+            AND `tabSales Order`.`per_delivered` < 100
+            AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`status` NOT IN ('Completed')
+            AND `tabSales Order`.`transaction_date` < DATE('2024-02-10')
         ;""", as_dict=True)
 
     orders_to_process = []
+    reduced_no_counter = no_counter = multiple_counter = 0
+    total_diff = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
 
-    for order in orders:
-        orders_to_process.append(order['name'])
+    for i, sales_order in enumerate(orders):
+        delivery_notes = frappe.get_all("Delivery Note", filters=[['web_order_id', '=', sales_order['web_order_id']],
+                                                                  ['docstatus', '=', '1'],
+                                                                  ['status', '!=', 'Closed']],
+                                                         fields=['name', 'total'])
+        if len(delivery_notes) == 0:
+            no_counter += 1
+            if not 'SO-BAL-22' in sales_order['name']:  # and sales_order['status'] != 'Closed':
+                print(f"{sales_order['name']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
+                reduced_no_counter += 1
+                #orders_to_process.append(sales_order['name'])
+        elif len(delivery_notes) > 1:
+            multiple_counter += 1
+            print(f"{sales_order['name']}: Found more than one valid Delivery Note with Web Order ID '{sales_order['web_order_id']}': {delivery_notes}")
+        else:
+            dn_total = float(delivery_notes[0]['total'])
+            so_total = float(sales_order['total'])
+            diff = so_total - dn_total
+            if diff > 0.1:
+                total_diff[sales_order['currency']] += diff
+                orders_to_process.append(sales_order['name'])
+            elif diff < -0.1:
+                print(f"########## {sales_order['name']}: Delivery Note Total ({dn_total}) is higher than Sales Order Total ({so_total})")
+        if (i+1) % 100 == 0:
+            print(f"Already checked {i+1}/{len(orders)} submitted Oligo Sales Orders. Already found {len(orders_to_process)} Sales Orders to process. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}")
 
+    print(f"Going to process {len(orders_to_process)} Sales Orders. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}\n{orders_to_process=}")
+    return
     create_delivery_note_for_lost_oligos(orders_to_process)
