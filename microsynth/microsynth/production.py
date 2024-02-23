@@ -370,10 +370,44 @@ def process_internal_oligos(file):
             continue
 
 
+def alternative_validate_sales_order_status(sales_order):
+    """
+    Checks if the customer is enabled, the sales order is submitted and does not have an invoiced tag
+
+    run 
+    bench execute microsynth.microsynth.utils.validate_sales_order_status --kwargs "{'sales_order': ''}"
+    """
+    customer = get_customer_from_sales_order(sales_order)
+
+    if customer.disabled:
+        print(f"Customer '{customer.name}' of Sales Order '{sales_order}' is disabled. Cannot create a delivery note.")
+        return False
+
+    so = frappe.get_doc("Sales Order", sales_order)
+
+    if so.docstatus != 1:
+        print(f"Sales Order {so.name} is not submitted. Cannot create a Delivery Note.")
+        return False
+    
+    if so.selling_price_list and not frappe.get_value('Price List', so.selling_price_list, 'enabled'):
+        print(f"Price List '{so.selling_price_list}' on Sales Order {so.name} is disabled. Cannot create a Delivery Note.")
+        return False
+
+    if so._user_tags and 'invoiced' in so._user_tags:
+        print(f"Sales Order {so.name} has an invoiced tag, going to skip.")
+        return False
+    
+    if customer == '8003':
+        print(f"Sales Order {so.name} has Customer 8003, going to skip.")
+        return False
+
+    return True
+
+
 def create_delivery_note_for_lost_oligos(sales_orders):
     """
     run
-    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-24003138']}"
+    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23002794']}"
     """
     from frappe.desk.tags import add_tag
     from microsynth.microsynth.taxes import find_dated_tax_template
@@ -382,12 +416,12 @@ def create_delivery_note_for_lost_oligos(sales_orders):
     dn_list = []
 
     for i, sales_order in enumerate(sales_orders):
-        if i % 100 == 0:
-            print(f"\nCurrent total per currency: {total}")
+        if i % 50 == 0:
+            print(f"Current total per currency: {total}")
         print(f"{i+1}/{len(sales_orders)}: Processing '{sales_order}' ...")
 
-        #if not validate_sales_order_status(sales_order):
-            #continue
+        if not alternative_validate_sales_order_status(sales_order):
+            continue
         
         # get open items
         so_open_items = frappe.db.sql("""
@@ -505,7 +539,6 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
     print(f"Overall total per currency: {total}")
     print(f"Created {len(dn_list)} Delivery Notes: {dn_list}")
-    return
 
 
 def find_lost_oligos_create_dns():
@@ -533,7 +566,8 @@ def find_lost_oligos_create_dns():
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` NOT IN ('Completed')
             AND `tabSales Order`.`transaction_date` < DATE('2024-02-10')
-        ;""", as_dict=True)
+            AND `tabSales Order`.`customer` != '8003'
+        ;""", as_dict=True)  # TODO: The following criteria seems not to work as intended: AND `tabSales Order`.`_user_tags` NOT LIKE '%invoiced%'
 
     orders_to_process = []
     reduced_no_counter = no_counter = multiple_counter = 0
@@ -549,7 +583,7 @@ def find_lost_oligos_create_dns():
             if not 'SO-BAL-22' in sales_order['name']:  # and sales_order['status'] != 'Closed':
                 print(f"{sales_order['name']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
                 reduced_no_counter += 1
-                #orders_to_process.append(sales_order['name'])
+                orders_to_process.append(sales_order['name'])
         elif len(delivery_notes) > 1:
             multiple_counter += 1
             print(f"{sales_order['name']}: Found more than one valid Delivery Note with Web Order ID '{sales_order['web_order_id']}': {delivery_notes}")
@@ -566,5 +600,5 @@ def find_lost_oligos_create_dns():
             print(f"Already checked {i+1}/{len(orders)} submitted Oligo Sales Orders. Already found {len(orders_to_process)} Sales Orders to process. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}")
 
     print(f"Going to process {len(orders_to_process)} Sales Orders. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}\n{orders_to_process=}")
-    return
+
     create_delivery_note_for_lost_oligos(orders_to_process)
