@@ -414,6 +414,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
     total = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
     dn_list = []
+    so_list = []
 
     for i, sales_order in enumerate(sales_orders):
         if i % 50 == 0:
@@ -529,15 +530,17 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 # Tag the Delivery Note
                 add_tag(tag="lost_oligos", dt="Delivery Note", dn=dn.name)
 
-                print(f"Created Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
+                print(f"{sales_order}: Created Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
                 total[dn.currency] += dn.total
                 dn_list.append(dn.name)
+                so_list.append(sales_order)
                 frappe.db.commit()
 
             except Exception as err:
                 print(f"########## Got the following error when processing Sales Order {sales_order}:\n{err}")
 
     print(f"Overall total per currency: {total}")
+    print(f"Created Delivery Notes for the following {len(so_list)} Sales Orders: {so_list}")
     print(f"Created {len(dn_list)} Delivery Notes: {dn_list}")
 
 
@@ -570,10 +573,16 @@ def find_lost_oligos_create_dns():
         ;""", as_dict=True)  # TODO: The following criteria seems not to work as intended: AND `tabSales Order`.`_user_tags` NOT LIKE '%invoiced%'
 
     orders_to_process = []
+    # count number of Sales Orders for which no or multiple Delivery Notes are found based on the Web Order ID
     reduced_no_counter = no_counter = multiple_counter = 0
-    total_diff = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
+    # Sum up differnce of total between Sales Order and Delivery Note for each currency
+    total_diff_existing = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
+    total_diff_missing = {'EUR': 0.0, 'CHF': 0.0, 'USD': 0.0, 'SEK': 0.0}
+    # Record Sales Orders without a Delivery Note
+    so_without_dn = []
 
     for i, sales_order in enumerate(orders):
+        # Get valid Delivery Note(s) based on Web Order ID
         delivery_notes = frappe.get_all("Delivery Note", filters=[['web_order_id', '=', sales_order['web_order_id']],
                                                                   ['docstatus', '=', '1'],
                                                                   ['status', '!=', 'Closed']],
@@ -581,24 +590,27 @@ def find_lost_oligos_create_dns():
         if len(delivery_notes) == 0:
             no_counter += 1
             if not 'SO-BAL-22' in sales_order['name']:  # and sales_order['status'] != 'Closed':
-                print(f"{sales_order['name']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
+                print(f"{sales_order['name']} with status {sales_order['status']} from Customer {sales_order['customer']} ({sales_order['customer_name']}) with a total of {sales_order['total']} {sales_order['currency']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
                 reduced_no_counter += 1
-                orders_to_process.append(sales_order['name'])
+                so_without_dn.append(sales_order['name'])
+                total_diff_missing[sales_order['currency']] += float(sales_order['total'])
+                #orders_to_process.append(sales_order['name'])
         elif len(delivery_notes) > 1:
             multiple_counter += 1
             print(f"{sales_order['name']}: Found more than one valid Delivery Note with Web Order ID '{sales_order['web_order_id']}': {delivery_notes}")
         else:
+            # found exactly one Delivery Note based on the Web Order ID of the Sales Order
             dn_total = float(delivery_notes[0]['total'])
             so_total = float(sales_order['total'])
             diff = so_total - dn_total
             if diff > 0.1:
-                total_diff[sales_order['currency']] += diff
+                total_diff_existing[sales_order['currency']] += diff
                 orders_to_process.append(sales_order['name'])
             elif diff < -0.1:
                 print(f"########## {sales_order['name']}: Delivery Note Total ({dn_total}) is higher than Sales Order Total ({so_total})")
         if (i+1) % 100 == 0:
-            print(f"Already checked {i+1}/{len(orders)} submitted Oligo Sales Orders. Already found {len(orders_to_process)} Sales Orders to process. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}")
+            print(f"Already checked {i+1}/{len(orders)} submitted Oligo Sales Orders. Already found {len(orders_to_process)} Sales Orders to process. {total_diff_existing=}, {total_diff_missing=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}")
 
-    print(f"Going to process {len(orders_to_process)} Sales Orders. {total_diff=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}\n{orders_to_process=}")
+    print(f"Going to process {len(orders_to_process)} Sales Orders. {total_diff_existing=}, {total_diff_missing=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}\n{orders_to_process=}\n{so_without_dn=}")
 
     create_delivery_note_for_lost_oligos(orders_to_process)
