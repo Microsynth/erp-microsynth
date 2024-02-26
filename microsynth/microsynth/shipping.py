@@ -109,7 +109,7 @@ def create_receiver_address_lines(customer_name, contact, address):
         if address_doc.address_line2: rec_adr_lines.append(address_doc.address_line2)
     
         if address_doc.city and address_doc.pincode:
-            if address_doc.country in ['United Kingdom']:
+            if address_doc.country and address_doc.country in ['United Kingdom']:
                 rec_adr_lines.append(address_doc.city + " " + address_doc.pincode)
             else:
                 rec_adr_lines.append(address_doc.pincode + " " + address_doc.city)
