@@ -498,9 +498,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                 # if there are no items left or only the shipping item, continue
                 if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
-                    #print(f"--- No items left in {sales_order}. Cannot create a delivery note.")
-                    #frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
-                    #close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
+                    print(f"No items left in {sales_order}. Cannot create a delivery note.")
                     continue
 
                 dn.items = keep_items
@@ -528,7 +526,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 dn.insert(ignore_permissions=True)
 
                 # Tag the Delivery Note
-                add_tag(tag="lost_oligos", dt="Delivery Note", dn=dn.name)
+                add_tag(tag="contains_lost_oligos", dt="Delivery Note", dn=dn.name)
 
                 print(f"{sales_order}: Created Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
                 total[dn.currency] += dn.total
@@ -538,6 +536,9 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
             except Exception as err:
                 print(f"########## Got the following error when processing Sales Order {sales_order}:\n{err}")
+
+        else:
+            print(f"{sales_order} contains the following open Oligos: {so_open_items}")
 
     print(f"Overall total per currency: {total}")
     print(f"Created Delivery Notes for the following {len(so_list)} Sales Orders: {so_list}")
