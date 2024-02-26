@@ -538,7 +538,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 print(f"########## Got the following error when processing Sales Order {sales_order}:\n{err}")
 
         else:
-            print(f"{sales_order} contains the following open Oligos: {so_open_items}")
+            print(f"{sales_order} contains at least one open Oligo.")
 
     print(f"Overall total per currency: {total}")
     print(f"Created Delivery Notes for the following {len(so_list)} Sales Orders: {so_list}")
