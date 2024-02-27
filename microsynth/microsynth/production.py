@@ -407,7 +407,7 @@ def alternative_validate_sales_order_status(sales_order):
 def create_delivery_note_for_lost_oligos(sales_orders):
     """
     run
-    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23002794']}"
+    bench execute microsynth.microsynth.production.create_delivery_note_for_lost_oligos --kwargs "{'sales_orders':['SO-BAL-23000223']}"
     """
     from frappe.desk.tags import add_tag
     from microsynth.microsynth.taxes import find_dated_tax_template
@@ -456,7 +456,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                 # remove oligos that are canceled
                 oligos_to_deliver = []
-                oligos_to_exclude_item_qtys = {}
+                cancelled_oligo_item_qtys = {}
 
                 for oligo in dn.oligos:
                     # SQL query to test that the Oligo is not on a Delivery Note
@@ -474,22 +474,35 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                     oligo_doc = frappe.get_doc("Oligo", oligo.oligo)
 
-                    # Check that the Oligo is not Canceled and not already on a Delivery Note
+                    # Add oligo to the DN only if it is not Canceled and not already on a Delivery Note
+                    # Do not consider the items in this step.
                     if oligo_doc.status != "Canceled" and len(oligos_on_dns) == 0:
                         oligos_to_deliver.append(oligo)
-                    else:
+                    
+                    # Collect items that will be subtracted from the Delivery Note item quantities.
+                    # Do not consider for subtraction the delivered oligos from above (oligos_on_dns)                     
+                    # since the Delivery Note contains only items that were not yet delivered.
+                    # Thus the condition "len(oligos_on_dns) == 0" is not used.                                        
+                    if oligo_doc.status == "Canceled":
                         # append items
                         for item in oligo_doc.items:
-                            if item.item_code in oligos_to_exclude_item_qtys:
-                                oligos_to_exclude_item_qtys[item.item_code] = oligos_to_exclude_item_qtys[item.item_code] + item.qty
+                            if item.item_code in cancelled_oligo_item_qtys:
+                                cancelled_oligo_item_qtys[item.item_code] = cancelled_oligo_item_qtys[item.item_code] + item.qty
                             else:
-                                oligos_to_exclude_item_qtys[item.item_code] = item.qty
+                                cancelled_oligo_item_qtys[item.item_code] = item.qty
+                
+                if len(oligos_to_deliver) == 0:
+                    msg = f"It seems that all Oligos from {sales_order} are already delivered, but not all Items. Please check for manual changes from Sales Order to Delivery Note. Please create a Delivery Note with the missing Items manually or close the Sales Order."
+                    print(msg)
+                    frappe.log_error(msg, 'create_delivery_note_for_lost_oligos')
+                    continue
 
                 dn.oligos = oligos_to_deliver
+                                
                 # subtract cancelled items from oligo items
                 for item in dn.items:
-                    if item.item_code in oligos_to_exclude_item_qtys:
-                        item.qty -= oligos_to_exclude_item_qtys[item.item_code]
+                    if item.item_code in cancelled_oligo_item_qtys:
+                        item.qty -= cancelled_oligo_item_qtys[item.item_code]
                 # remove items with qty == 0
                 keep_items = []
                 for item in dn.items:
@@ -502,6 +515,26 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                     continue
 
                 dn.items = keep_items
+
+                # Check that Items on Oligos on Delivery Note match with Items on Delivery Note
+                oligo_item_qty = {}
+                for oligo_link in dn.oligos:
+                    oligo = frappe.get_doc('Oligo', oligo_link.oligo)
+                    for item in oligo.items:
+                        if item.item_code in oligo_item_qty:
+                            oligo_item_qty[item.item_code] += item.qty
+                        else:
+                            oligo_item_qty[item.item_code] = item.qty
+                for item in dn.items:
+                    if item.item_code not in oligo_item_qty:
+                        print(f"SANITY CHECK 1: {sales_order}: Item {item.item_code} appears {item.qty} x on the new Delivery Note but 0 x on all Oligos on the new Delivery Note.")
+                        continue
+                    if item.qty != oligo_item_qty[item.item_code]:
+                        print(f"SANITY CHECK 2: {sales_order}: Item {item.item_code} appears {item.qty} x on the new Delivery Note but {oligo_item_qty[item.item_code]} x on all Oligos on the new Delivery Note.")
+                    oligo_item_qty[item.item_code] = -1
+                for item_code, qty in oligo_item_qty.items():
+                    if qty != -1:
+                        print(f"SANITY CHECK 3: {sales_order}: Item {item_code} appears 0 x on the new Delivery Note but {qty} x on all Oligos on the new Delivery Note.")
 
                 # Tag the Sales Order
                 add_tag(tag="processed_lost_oligos", dt="Sales Order", dn=sales_order)
@@ -590,8 +623,9 @@ def find_lost_oligos_create_dns():
                                                          fields=['name', 'total'])
         if len(delivery_notes) == 0:
             no_counter += 1
-            if not 'SO-BAL-22' in sales_order['name']:  # and sales_order['status'] != 'Closed':
-                print(f"{sales_order['name']} with status {sales_order['status']} from Customer {sales_order['customer']} ({sales_order['customer_name']}) with a total of {sales_order['total']} {sales_order['currency']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
+            if not 'SO-BAL-22' in sales_order['name']:
+                if sales_order['status'] != 'Closed':
+                    print(f"{sales_order['name']} with status {sales_order['status']} from Customer {sales_order['customer']} ({sales_order['customer_name']}) with a total of {sales_order['total']} {sales_order['currency']}: Found no valid Delivery Note with Web Order ID '{sales_order['web_order_id']}'")
                 reduced_no_counter += 1
                 so_without_dn.append(sales_order['name'])
                 total_diff_missing[sales_order['currency']] += float(sales_order['total'])
