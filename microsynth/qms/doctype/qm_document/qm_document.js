@@ -121,7 +121,7 @@ frappe.ui.form.on('QM Document', {
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
             ) {
-            // add release button
+            // add sign button
             cur_frm.page.set_primary_action(
                 __("Sign"),
                 function() {
@@ -130,10 +130,13 @@ frappe.ui.form.on('QM Document', {
             );
         }
         
+        // allow to release the document if it is reviewed (SOP, FLOW, QMH) or 
+        // does not need a review (PROT, LIST, FORM, CL)
         var requires_qau_release = 
             ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type);
 
         if ((!frm.doc.__islocal)
+            && (["Created", "Reviewed"].includes(frm.doc.status))
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
             && ((cur_frm.attachments) 
@@ -141,7 +144,8 @@ frappe.ui.form.on('QM Document', {
             && (cur_frm.attachments.get_attachments().length > 0))
             && (!requires_qau_release || frappe.user.has_role('QAU'))
             && (!['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)
-                || ((frm.doc.docstatus === 1) 
+                || ((frm.doc.docstatus === 1)
+                    && (["Reviewed"].includes(frm.doc.status)) 
                     && (frm.doc.reviewed_on) 
                     && (frm.doc.reviewed_by)))) {
             // add release button
