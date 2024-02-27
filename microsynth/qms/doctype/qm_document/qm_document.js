@@ -209,6 +209,17 @@ frappe.ui.form.on('QM Document', {
                 attach_btns[i].style.visibility = "hidden";
             }
         }
+    },
+    document_type: function(frm) {
+        if (["PROT"].includes(frm.doc.document_type)){
+            cur_frm.set_value("valid_from", frappe.datetime.get_today());
+        }
+        else {
+            if (frm.doc.valid_from) { 
+                cur_frm.set_value("valid_from", null);
+                frappe.show_alert("valid from date cleared")
+            }
+        }
     }
 });
 
