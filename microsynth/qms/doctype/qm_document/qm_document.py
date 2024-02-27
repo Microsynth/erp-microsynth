@@ -134,15 +134,26 @@ def set_released(doc, user):
     return
 
 
-# ToDo: Validate status changes  --> frappe.throw if not allowed
 @frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
     if qm_doc.status == status:
         return
-    qm_doc.status = status
-    qm_doc.save()
-    frappe.db.commit()
+    
+    if ((qm_doc.status == "Draft" and status == "Created") or 
+        (qm_doc.status == "Created" and status == "In Review") or
+        (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type in ["PROT", "LIST", "FORM", "CL"]) or
+        (qm_doc.status == "In Review" and status == "Reviewed") or
+        (qm_doc.status == "In Review" and status == "Invalid") or
+        (qm_doc.status == "Reviewed" and status == "Released") or
+        (qm_doc.status == "Released" and status == "Valid") or
+        (qm_doc.status == "Valid" and status == "Invalid") ):
+
+            qm_doc.status = status
+            qm_doc.save()
+            frappe.db.commit()
+    else: 
+        frappe.throw(f"Update QM Document Status: Status transition is not allowed {qm_doc.status} --> {status}")
     return
 
 
