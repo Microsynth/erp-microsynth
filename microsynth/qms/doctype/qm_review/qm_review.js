@@ -21,15 +21,26 @@ frappe.ui.form.on('QM Review', {
         // show sign button
         if (frm.doc.docstatus < 1) {
             cur_frm.page.clear_primary_action();
-            if (frappe.session.user === frm.doc.reviewer || frappe.user.has_role("System Manager")) {
-                // add sign button
-                cur_frm.page.set_primary_action(
-                    __("Sign"),
-                    function() {
-                        sign();
+            // verify that current user is not owner of the document (or: System Manager can do it all)
+            frappe.call({
+                'method': 'frappe.client.get',
+                'args': {
+                    'doctype': frm.doc.document_type,
+                    'name': frm.doc.document_name
+                },
+                'callback': function (r) {
+                    var doc = r.message;
+                    if (((doc.created_by || doc.owner) !== frappe.session.user) || frappe.user.has_role("System Manager")) {
+                        // add sign button
+                        cur_frm.page.set_primary_action(
+                            __("Sign"),
+                            function() {
+                                sign();
+                            }
+                        );
                     }
-                );
-            }
+                }
+            });
 
             // add reject button
             cur_frm.page.clear_secondary_action();
