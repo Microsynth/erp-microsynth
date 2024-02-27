@@ -33,6 +33,7 @@ def sign(dt, dn, user, password, target_field=None):
             doc.signature = get_signature(user)
         doc.save()
         doc.submit()
+        frappe.db.commit()
         return True
     else:
         # wrong password

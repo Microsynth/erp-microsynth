@@ -140,6 +140,14 @@ def update_status(qm_document, status):
     if qm_doc.status == status:
         return
     
+    # validate signatures
+    if status == "Created" and not qm_doc.signature:
+        frappe.throw(f"Cannot create QM Document {qm_doc.name} because the creation signature is missing.")
+    
+    if status == "Released" and not qm_doc.release_signature:
+        frappe.throw(f"Cannot release QM Document {qm_doc.name} because the release signature is missing.")
+
+    # validate status transitions
     if ((qm_doc.status == "Draft" and status == "Created") or 
         (qm_doc.status == "Created" and status == "In Review") or
         (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type in ["PROT", "LIST", "FORM", "CL"]) or
