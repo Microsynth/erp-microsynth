@@ -241,6 +241,8 @@ def set_valid_document(qm_docname):
         qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
         invalidate_document(qm_doc_other_version)
 
+    # set document released
+    update_status(qm_doc.name, "Released")
     # set document valid
     update_status(qm_doc.name, "Valid")
     return True
