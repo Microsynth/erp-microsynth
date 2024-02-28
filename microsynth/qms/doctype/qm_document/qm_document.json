@@ -29,7 +29,6 @@
   "released_by",
   "valid_till",
   "linked_documents_section",
-  "show_links",
   "linked_documents",
   "customers_section",
   "customers",
@@ -83,11 +82,9 @@
   },
   {
    "allow_in_quick_entry": 1,
-   "allow_on_submit": 1,
    "fieldname": "title",
    "fieldtype": "Data",
    "label": "Title",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -205,12 +202,10 @@
    "label": "Customers"
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "linked_documents",
    "fieldtype": "Table",
    "label": "Linked Documents",
-   "options": "QM Document Link",
-   "read_only": 1
+   "options": "QM Document Link"
   },
   {
    "collapsible": 1,
@@ -230,11 +225,6 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
-  },
-  {
-   "fieldname": "show_links",
-   "fieldtype": "HTML",
-   "options": "<p class=\"text-muted\">Link related documents here</p>"
   },
   {
    "fieldname": "qm_process",
@@ -261,7 +251,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-20 11:12:18.451031",
+ "modified": "2024-02-28 11:06:56.819091",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",

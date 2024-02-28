@@ -2,22 +2,7 @@
 // For license information, please see license.txt
 
 
-frappe.ui.form.on('QM Document Link', {
-    linked_documents_add: function(frm) {
-        // adding a row ... or on btn add row
-        clear_review(frm);
-    },
-    linked_documents_remove: function(frm) {
-        // removing a row ... or on btn delete
-        clear_review(frm);
-    }
-});
-
-
 frappe.ui.form.on('QM Document', {
-
-    title: function(frm) { if (frm.doc.reviewed_on) {clear_review(frm)} },  // Will be triggered by just changing the field content (no update or save necessary).
-
     refresh: function(frm) {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
@@ -46,15 +31,8 @@ frappe.ui.form.on('QM Document', {
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
-            cur_frm.set_df_property('title', 'read_only', false);       // allow to set title for a fresh document
             // on fresh documents, hide company field (will be clean on insert to prevent default)
             cur_frm.set_df_property('company', 'hidden', true);
-        }
-
-        // allow to set title, linked documents in specific conditions
-        if (["Draft"].includes(frm.doc.status)) {
-            cur_frm.set_df_property('title', 'read_only', false);
-            cur_frm.set_df_property('linked_documents', 'read_only', false);
         }
 
         // update QM Document.status if valid_from <= today and status is Released
@@ -109,6 +87,11 @@ frappe.ui.form.on('QM Document', {
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
+            
+            // prevent document type changes after the document number has been assigned
+            cur_frm.set_df_property('document_type', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('chapter', 'read_only', true);
         }
 
         // allow the creator to sign a document (after pingpong review)
