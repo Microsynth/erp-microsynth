@@ -43,41 +43,45 @@ naming_code = {
 
 class QMDocument(Document):
     def autoname(self):       
-        if cint(self.version) < 2:
-            # new document number
-            # auto name function
-            pattern = "{p}".format(
-                p=naming_patterns[naming_code[self.document_type]]['base']
-            )
-            base_name = pattern.format(
+        if self.import_name:
+            # in the case of an import, override naming generator by import name
+            self.name = self.import_name
+        else:
+            if cint(self.version) < 2:
+                # new document number
+                # auto name function
+                pattern = "{p}".format(
+                    p=naming_patterns[naming_code[self.document_type]]['base']
+                )
+                base_name = pattern.format(
+                    document_type=self.document_type,
+                    process_number = self.process_number,
+                    subprocess_number = self.subprocess_number,
+                    chapter = self.chapter or "00",
+                    date = datetime.today().strftime("%Y%m%d")
+                )
+
+                self.document_number = find_first_number_gap(
+                    base_name=base_name,
+                    length=naming_patterns[naming_code[self.document_type]]['number_length'])
+
+                # check revision
+                version = self.version or 1
+
+            # generate name
+            pattern = "{p}{d}-{v}".format(
+                p=naming_patterns[naming_code[self.document_type]]['base'],
+                d=naming_patterns[naming_code[self.document_type]]['document_number'],
+                v="{version:02d}")
+            self.name = pattern.format(
                 document_type=self.document_type,
                 process_number = self.process_number,
                 subprocess_number = self.subprocess_number,
                 chapter = self.chapter or "00",
-                date = datetime.today().strftime("%Y%m%d")
+                date = datetime.today().strftime("%Y%m%d"),
+                doc = cint(self.document_number),
+                version = cint(self.version)
             )
-
-            self.document_number = find_first_number_gap(
-                base_name=base_name, 
-                length=naming_patterns[naming_code[self.document_type]]['number_length'])
-
-            # check revision
-            version = self.version or 1
-
-        # generate name
-        pattern = "{p}{d}-{v}".format(
-            p=naming_patterns[naming_code[self.document_type]]['base'],
-            d=naming_patterns[naming_code[self.document_type]]['document_number'],
-            v="{version:02d}")
-        self.name = pattern.format(
-            document_type=self.document_type,
-            process_number = self.process_number,
-            subprocess_number = self.subprocess_number,
-            chapter = self.chapter or "00",
-            date = datetime.today().strftime("%Y%m%d"),
-            doc = cint(self.document_number),
-            version = cint(self.version)
-        )
         return
 
 

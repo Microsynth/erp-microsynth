@@ -35,7 +35,8 @@
   "sec_signatures",
   "signature",
   "col_signature",
-  "release_signature"
+  "release_signature",
+  "import_name"
  ],
  "fields": [
   {
@@ -248,10 +249,16 @@
   {
    "fieldname": "col_signature",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "import_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Import name"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-28 11:06:56.819091",
+ "modified": "2024-02-28 11:22:00.806638",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
