@@ -59,42 +59,45 @@ frappe.ui.form.on('QM Review', {
 
 
 function sign() {
-    frappe.prompt([
-            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
-        ],
-        function(values){
-            // check password and if correct, submit
-            frappe.call({
-                'method': 'microsynth.qms.signing.sign',
-                'args': {
-                    'dt': "QM Review",
-                    'dn': cur_frm.doc.name,
-                    'user': frappe.session.user,
-                    'password': values.password
-                },
-                "callback": function(response) {
-                    if (response.message) {
-                        // Send notification to creator
-                        if (cur_frm.doc.document_type == "QM Document") {
-                            frappe.call({
-                                'method': 'microsynth.qms.doctype.qm_document.qm_document.assign_after_review',
-                                'args': {
-                                    'qm_document': cur_frm.doc.document_name
-                                },
-                                "async": false
-                            });
+    cur_frm.set_value("reviewer", frappe.session.user);
+    cur_frm.save().then(function() {
+        frappe.prompt([
+                {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+            ],
+            function(values){
+                // check password and if correct, submit
+                frappe.call({
+                    'method': 'microsynth.qms.signing.sign',
+                    'args': {
+                        'dt': "QM Review",
+                        'dn': cur_frm.doc.name,
+                        'user': frappe.session.user,
+                        'password': values.password
+                    },
+                    "callback": function(response) {
+                        if (response.message) {
+                            // Send notification to creator
+                            if (cur_frm.doc.document_type == "QM Document") {
+                                frappe.call({
+                                    'method': 'microsynth.qms.doctype.qm_document.qm_document.assign_after_review',
+                                    'args': {
+                                        'qm_document': cur_frm.doc.document_name
+                                    },
+                                    "async": false
+                                });
+                            }
+                            // positive response: signature correct, open document
+                            window.open("/" 
+                                + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
+                                /* + "?dt=" + (new Date()).getTime()*/, "_self");
                         }
-                        // positive response: signature correct, open document
-                        window.open("/" 
-                            + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
-                            /* + "?dt=" + (new Date()).getTime()*/, "_self");
                     }
-                }
-            });
-        },
-        __('Please enter your approval password'),
-        __('Sign')
-    );
+                });
+            },
+            __('Please enter your approval password'),
+            __('Sign')
+        );
+    });
 }
 
 
