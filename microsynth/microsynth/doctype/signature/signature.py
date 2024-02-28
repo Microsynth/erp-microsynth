@@ -61,3 +61,12 @@ def user_has_role(user, role):
         return True
     else:
         return False
+
+@frappe.whitelist()
+def is_password_approval_password(user, password):
+    approval_pw = get_decrypted_password("Signature", user, "approval_password", False)
+    if password == approval_pw:
+        return True
+    else:
+        return False
+    

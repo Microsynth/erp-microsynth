@@ -29,17 +29,18 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {
-    "Customer" : "public/js/customer.js",
-    "Contact" : "public/js/contact.js",
-    "Address" : "public/js/address.js",
-    "Price List" : "public/js/price_list.js",
-    "Quotation": "public/js/quotation.js",
-    "Sales Order": "public/js/sales_order.js",
-    "Delivery Note": "public/js/delivery_note.js",
-    "Sales Invoice": "public/js/sales_invoice.js",
-    "Payment Entry": "public/js/payment_entry.js",
+    "Customer" :        "public/js/customer.js",
+    "Contact" :         "public/js/contact.js",
+    "Address" :         "public/js/address.js",
+    "Price List" :      "public/js/price_list.js",
+    "Quotation":        "public/js/quotation.js",
+    "Sales Order":      "public/js/sales_order.js",
+    "Delivery Note":    "public/js/delivery_note.js",
+    "Sales Invoice":    "public/js/sales_invoice.js",
+    "Payment Entry":    "public/js/payment_entry.js",
     "Payment Reminder": "public/js/payment_reminder.js",
-    "Item Price": "public/js/item_price.js"
+    "Item Price":       "public/js/item_price.js",
+    "User":             "public/js/user.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
