@@ -218,12 +218,13 @@ def check_submit_delivery_note(delivery_note):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
+                # TODO: Do not hardcode recipients or messages here
                 if 'GOE' in delivery_note.name:
                     recipient = 'karla.busch@microsynth.seqlab.de'
                     person = 'Karla'
                 elif 'LYO' in delivery_note.name:
-                    recipient = 'agnes.nguyen@microsynth.fr'
-                    person = 'Agnes'
+                    recipient = 'sanger.support@microsynth.fr'
+                    person = 'Sanger Support France'
                 else:
                     recipient = 'katja.laengle@microsynth.ch'
                     person = 'Katja'
