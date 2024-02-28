@@ -379,24 +379,24 @@ def alternative_validate_sales_order_status(sales_order):
     """
     customer = get_customer_from_sales_order(sales_order)
 
-    if customer.disabled:
-        print(f"Customer '{customer.name}' of Sales Order '{sales_order}' is disabled. Cannot create a delivery note.")
-        return False
-
     so = frappe.get_doc("Sales Order", sales_order)
-
-    if so.docstatus != 1:
-        print(f"Sales Order {so.name} is not submitted. Cannot create a Delivery Note.")
-        return False
-    
-    if so.selling_price_list and not frappe.get_value('Price List', so.selling_price_list, 'enabled'):
-        print(f"Price List '{so.selling_price_list}' on Sales Order {so.name} is disabled. Cannot create a Delivery Note.")
-        return False
 
     if so._user_tags and 'invoiced' in so._user_tags:
         print(f"Sales Order {so.name} has an invoiced tag, going to skip.")
         return False
     
+    if so.docstatus != 1:
+        print(f"Sales Order {so.name} is not submitted. Cannot create a Delivery Note.")
+        return False
+
+    if customer.disabled:
+        print(f"Customer '{customer.name}' of Sales Order '{sales_order}' is disabled. Cannot create a delivery note.")
+        return False
+
+    if so.selling_price_list and not frappe.get_value('Price List', so.selling_price_list, 'enabled'):
+        print(f"Price List '{so.selling_price_list}' on Sales Order {so.name} is disabled. Cannot create a Delivery Note.")
+        return False
+
     if customer == '8003':
         print(f"Sales Order {so.name} has Customer 8003, going to skip.")
         return False
@@ -492,9 +492,9 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                                 cancelled_oligo_item_qtys[item.item_code] = item.qty
                 
                 if len(oligos_to_deliver) == 0:
-                    msg = f"It seems that all Oligos from {sales_order} are already delivered, but not all Items. Please check for manual changes from Sales Order to Delivery Note. Please create a Delivery Note with the missing Items manually or close the Sales Order."
+                    msg = f"It seems that all Oligos from {sales_order} are either canceled or already delivered, but not all Items (Sales Order has Status Overdue). Please create a Delivery Note with the missing Items manually or close the Sales Order."
                     print(msg)
-                    frappe.log_error(msg, 'create_delivery_note_for_lost_oligos')
+                    #frappe.log_error(msg, 'create_delivery_note_for_lost_oligos')
                     continue
 
                 dn.oligos = oligos_to_deliver
@@ -518,6 +518,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                 # Check that Items on Oligos on Delivery Note match with Items on Delivery Note
                 oligo_item_qty = {}
+                check_manually = False
                 for oligo_link in dn.oligos:
                     oligo = frappe.get_doc('Oligo', oligo_link.oligo)
                     for item in oligo.items:
@@ -528,13 +529,19 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                 for item in dn.items:
                     if item.item_code not in oligo_item_qty:
                         print(f"SANITY CHECK 1: {sales_order}: Item {item.item_code} appears {item.qty} x on the new Delivery Note but 0 x on all Oligos on the new Delivery Note.")
+                        check_manually = True
                         continue
                     if item.qty != oligo_item_qty[item.item_code]:
                         print(f"SANITY CHECK 2: {sales_order}: Item {item.item_code} appears {item.qty} x on the new Delivery Note but {oligo_item_qty[item.item_code]} x on all Oligos on the new Delivery Note.")
+                        check_manually = True
                     oligo_item_qty[item.item_code] = -1
                 for item_code, qty in oligo_item_qty.items():
                     if qty != -1:
                         print(f"SANITY CHECK 3: {sales_order}: Item {item_code} appears 0 x on the new Delivery Note but {qty} x on all Oligos on the new Delivery Note.")
+                        check_manually = True
+                if check_manually:
+                    print(f"Won't create a Delivery Note for Sales Order {sales_order} because SANITY CHECK failed. Please process manually.")
+                    continue
 
                 # Tag the Sales Order
                 add_tag(tag="processed_lost_oligos", dt="Sales Order", dn=sales_order)
@@ -560,8 +567,9 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
                 # Tag the Delivery Note
                 add_tag(tag="contains_lost_oligos", dt="Delivery Note", dn=dn.name)
+                dn.submit()
 
-                print(f"{sales_order}: Created Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
+                print(f"{sales_order}: Created and submitted Delivery Note '{dn.name}' with a total of {dn.total} {dn.currency} for Customer '{dn.customer}' ('{dn.customer_name}').")
                 total[dn.currency] += dn.total
                 dn_list.append(dn.name)
                 so_list.append(sales_order)
@@ -601,7 +609,6 @@ def find_lost_oligos_create_dns():
         WHERE `tabSales Order`.`product_type` = 'Oligos'
             AND `tabSales Order`.`per_delivered` < 100
             AND `tabSales Order`.`docstatus` = 1
-            AND `tabSales Order`.`status` NOT IN ('Completed')
             AND `tabSales Order`.`transaction_date` < DATE('2024-02-10')
             AND `tabSales Order`.`customer` != '8003'
         ;""", as_dict=True)  # TODO: The following criteria seems not to work as intended: AND `tabSales Order`.`_user_tags` NOT LIKE '%invoiced%'
@@ -616,6 +623,10 @@ def find_lost_oligos_create_dns():
     so_without_dn = []
 
     for i, sales_order in enumerate(orders):
+        if sales_order['_user_tags'] and 'invoiced' in sales_order['_user_tags']:
+            continue
+        #orders_to_process.append(sales_order['name'])
+        #continue
         # Get valid Delivery Note(s) based on Web Order ID
         delivery_notes = frappe.get_all("Delivery Note", filters=[['web_order_id', '=', sales_order['web_order_id']],
                                                                   ['docstatus', '=', '1'],
