@@ -42,7 +42,7 @@ frappe.ui.form.on('QM Review', {
                 }
             });
 
-            // add reject button
+            // add reject button (the owner can also reject when he/she wants to retract a review)
             cur_frm.page.clear_secondary_action();
             cur_frm.page.set_secondary_action(
                 __("Reject"), 
