@@ -159,7 +159,19 @@ function change_reviewer(frm) {
                     var doc = r.message;
                     if (((doc.created_by || doc.owner) !== frappe.session.user) || frappe.user.has_role("System Manager")) {
                         cur_frm.set_value("reviewer", locals.new_reviewer);
-                        cur_frm.save();
+                        cur_frm.save().then(function() {
+                            // assign
+                            frappe.call({
+                                'method': 'microsynth.qms.doctype.qm_review.qm_review.assign',
+                                'args': {
+                                    'doc': cur_frm.doc.namee,
+                                    'reviewer': locals.new_reviewer
+                                },
+                                'callback': function(response) {
+                                    cur_frm.reload_doc();
+                                }
+                            });
+                        });
                     }
                 }
             });

@@ -67,11 +67,7 @@ def create_review(reviewer, dt, dn, due_date):
         update_status(dn, "In Review")
 
     # create assignment to user
-    add({
-        'doctype': "QM Review",
-        'name': review.name,
-        'assign_to': reviewer
-    })
+    assign(review.name, reviewer)
     
     # submit qm document
     if dt == "QM Document":
@@ -81,3 +77,14 @@ def create_review(reviewer, dt, dn, due_date):
             frappe.db.commit()
             
     return review.name
+
+
+@frappe.whitelist()
+def assign(doc, reviewer):
+    clear("QM Review", doc)
+    add({
+        'doctype': "QM Review",
+        'name': doc,
+        'assign_to': reviewer
+    })
+    return
