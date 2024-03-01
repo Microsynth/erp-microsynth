@@ -1,12 +1,17 @@
 // Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
+const document_types_with_review = ['SOP', 'FLOW', 'QMH', 'APPX'];
+
 
 frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
 
+        // check if document requires review
+        var requires_review = document_types_with_review.includes(frm.doc.document_type);
+        
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
         if ((!cur_frm.attachments) 
@@ -63,7 +68,7 @@ frappe.ui.form.on('QM Document', {
             && ((cur_frm.attachments)
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
-            && ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)) {
+            && (requires_review)) {
             frm.add_custom_button(__("Review request"), function() {
                 request_review(frm);
             }).addClass("btn-primary");
@@ -126,12 +131,8 @@ frappe.ui.form.on('QM Document', {
                 }
             );
         }
-        
-        // allow to release the document if it is reviewed (SOP, FLOW, QMH, APPX) or 
-        // does not need a review (PROT, LIST, FORM, CL)
-        var requires_qau_release = 
-            ['SOP', 'FLOW', 'QMH', 'APPX'].includes(frm.doc.document_type);
 
+        // add release/reject buttons if applicable
         if ((!frm.doc.__islocal)
             && (["Created", "Reviewed"].includes(frm.doc.status))
             && (!frm.doc.released_on)
@@ -139,10 +140,10 @@ frappe.ui.form.on('QM Document', {
             && ((cur_frm.attachments) 
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
-            && (!requires_qau_release || frappe.user.has_role('QAU'))
-            && (!['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type)
-                || ((frm.doc.docstatus === 1)
-                    && (["Reviewed"].includes(frm.doc.status)) 
+            && (frappe.user.has_role('QAU'))
+            && (!requires_review                                // needs no review (short process)
+                || ((frm.doc.docstatus === 1)                   // or is reviewed
+                    && (["Reviewed"].includes(frm.doc.status))  // long process needs to be reviewed
                     && (frm.doc.reviewed_on) 
                     && (frm.doc.reviewed_by)))) {
             // add release button
