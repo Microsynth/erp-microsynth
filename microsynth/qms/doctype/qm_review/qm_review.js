@@ -4,6 +4,10 @@
 
 frappe.ui.form.on('QM Review', {
     refresh: function(frm) {
+        // reset buttons
+        cur_frm.page.clear_primary_action();
+        cur_frm.page.clear_secondary_action();
+        
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
 
@@ -18,41 +22,38 @@ frappe.ui.form.on('QM Review', {
             }
         });
 
-        // show sign button
-        if (frm.doc.docstatus < 1) {
-            cur_frm.page.clear_primary_action();
-            // verify that current user is not owner of the document (or: System Manager can do it all)
-            frappe.call({
-                'method': 'frappe.client.get',
-                'args': {
-                    'doctype': frm.doc.document_type,
-                    'name': frm.doc.document_name
-                },
-                'callback': function (r) {
-                    var doc = r.message;
-                    if (((doc.created_by || doc.owner) !== frappe.session.user) || frappe.user.has_role("System Manager")) {
-                        // add sign button
-                        cur_frm.page.set_primary_action(
-                            __("Sign"),
-                            function() {
-                                sign();
-                            }
-                        );
-                    }
+        // show sign button (only by reviewer!)
+        if ((frm.doc.docstatus < 1)
+            && (frappe.session.user === frm.doc.reviewer)) {
+            // add sign button
+            cur_frm.page.set_primary_action(
+                __("Sign"),
+                function() {
+                    sign();
                 }
-            });
+            );
 
             // add reject button (the owner can also reject when he/she wants to retract a review)
-            cur_frm.page.clear_secondary_action();
             cur_frm.page.set_secondary_action(
                 __("Reject"), 
                 function() { 
                     reject(); 
                 }
             );
-        } else {
-            // disable cancelation
-            cur_frm.page.clear_secondary_action();
+        }
+        
+        // allow the creator or QAU to change reviewer (transfer document)
+        if ((!frm.doc.__islocal)
+            && (frm.doc.docstatus === 0)
+            && ((frappe.session.user === frm.doc.reviewer) || (frappe.user.has_role('QAU')))
+            ) {
+            // add change creator button
+            cur_frm.add_custom_button(
+                __("Change Reviewer"),
+                function() {
+                    change_reviewer(frm);
+                }
+            );
         }
     }
 });
@@ -132,4 +133,39 @@ function reject() {
             // on no
         }
     )
+}
+
+
+function change_reviewer(frm) {
+    frappe.prompt(
+        [
+            {'fieldname': 'new_reviewer', 
+             'fieldtype': 'Link',
+             'label': __('New Reviewer'),
+             'reqd': 1,
+             'options': 'User'
+            }
+        ],
+        function(values){
+            locals.new_reviewer = values.new_reviewer;
+            // verify that current user is not owner of the document (or: System Manager can do it all)
+            frappe.call({
+                'method': 'frappe.client.get',
+                'args': {
+                    'doctype': frm.doc.document_type,
+                    'name': frm.doc.document_name
+                },
+                'callback': function (r) {
+                    var doc = r.message;
+                    if (((doc.created_by || doc.owner) !== frappe.session.user) || frappe.user.has_role("System Manager")) {
+                        cur_frm.set_value("reviewer", locals.new_reviewer);
+                        cur_frm.save();
+                    }
+                }
+            });
+
+        },
+        __('Set new reviewer'),
+        __('Set')
+    );
 }
