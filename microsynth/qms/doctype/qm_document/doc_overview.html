@@ -31,7 +31,7 @@
         {% if doc.linked_documents %}
             <h6>{{ _("Related documents") }}</h6>
             {% for d in doc.linked_documents %}
-                <a href="/desk#Form/QM Document/{{ d.document }}">
+                <a href="/desk#Form/QM Document/{{ d.qm_document }}">
                     <i class="fa fa-chain"></i>
                     {{ d.qm_document }}
                 </a><br>
