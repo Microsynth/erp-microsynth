@@ -37,7 +37,8 @@ naming_code = {
     "FORM": "Code3",
     "FLOW": "Code3",
     "CL": "Code3",
-    "QMH": "Code1"
+    "QMH": "Code1",
+    "APPX": "Code1"
 }
 
 

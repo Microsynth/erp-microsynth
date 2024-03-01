@@ -44,7 +44,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Document Type",
-   "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH",
+   "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX",
    "reqd": 1
   },
   {
@@ -258,7 +258,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-02-28 11:22:00.806638",
+ "modified": "2024-03-01 09:49:40.575621",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Document",
