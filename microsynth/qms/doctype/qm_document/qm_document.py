@@ -94,7 +94,14 @@ class QMDocument(Document):
         
     def get_overview(self):
         files = get_attachments("QM Document", self.name)
-        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", {'files': files, 'doc': self})
+        docs_linking_to_this = frappe.db.sql("""
+            SELECT `parent` AS `document`
+            FROM `tabQM Document Link`
+            WHERE `qm_document` = "{doc}";
+            """.format(doc=self.name), as_dict=True)
+            
+        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", 
+            {'files': files, 'doc': self, 'docs_linking_to_this': docs_linking_to_this})
         # TODO: add training section (number of people to be trained, actual trained, ...)
         return html
 
