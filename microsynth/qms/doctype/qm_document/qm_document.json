@@ -216,6 +216,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.document_type!=\"PROT\"",
    "fieldname": "valid_till",
    "fieldtype": "Date",
    "label": "Valid till"
@@ -258,8 +259,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-01 09:49:40.575621",
- "modified_by": "Administrator",
+ "modified": "2024-03-01 11:58:01.879695",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
