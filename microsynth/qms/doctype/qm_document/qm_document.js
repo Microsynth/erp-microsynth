@@ -113,6 +113,20 @@ frappe.ui.form.on('QM Document', {
             );
         }
         
+        // allow the creator or QAU to change creator (transfer document)
+        if ((!frm.doc.__islocal)
+            && (["Draft"].includes(frm.doc.status))
+            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
+            ) {
+            // add change creator button
+            cur_frm.add_custom_button(
+                __("Change Creator"),
+                function() {
+                    change_creator();
+                }
+            );
+        }
+        
         // allow to release the document if it is reviewed (SOP, FLOW, QMH) or 
         // does not need a review (PROT, LIST, FORM, CL)
         var requires_qau_release = 
@@ -423,7 +437,7 @@ function request_training_prompt(trainees) {
     },
     __('Please choose a trainee'),
     __('Request training')
-    )
+    );
 }
 
 
@@ -483,4 +497,24 @@ function setup_attachment_watcher(frm) {
 
         }, 1000);
     //}
+}
+
+
+function change_creator() {
+    frappe.prompt(
+        [
+            {'fieldname': 'new_creator', 
+             'fieldtype': 'Link',
+             'label': __('New Creator'),
+             'reqd': 1,
+             'options': 'User'
+            }
+        ],
+        function(values){
+            cur_frm.set_value("created_by", values.new_creator);
+            cur_frm.save();
+        },
+        __('Set new creator'),
+        __('Set')
+    );
 }
