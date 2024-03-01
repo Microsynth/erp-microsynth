@@ -138,6 +138,13 @@ frappe.ui.form.on('QM Document', {
                     release();
                 }
             );
+            // add reject button
+            cur_frm.page.set_secondary_action(
+                __("Reject"),
+                function() {
+                    reject();
+                }
+            );
         }
 
         // Training request
@@ -347,6 +354,28 @@ function release() {
         },
         __('Please enter your approval password'),
         __('Sign')
+    );
+}
+
+
+function reject() {
+    frappe.confirm(
+        __('Are you sure you want to reject this document? This will require a new version.'),
+        function (){
+            // on yes
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_document.qm_document.set_rejected',
+                'args': {
+                    'doc': cur_frm.doc.name
+                },
+                'callback': function(response) {
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        function (){
+            // on no: do nothing
+        }
     );
 }
 

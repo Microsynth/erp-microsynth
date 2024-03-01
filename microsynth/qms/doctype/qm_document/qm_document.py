@@ -139,6 +139,12 @@ def set_released(doc, user):
 
 
 @frappe.whitelist()
+def set_rejected(doc):
+    update_status(doc, "Invalid")
+    return
+
+
+@frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
     if qm_doc.status == status:
@@ -159,7 +165,7 @@ def update_status(qm_document, status):
         (qm_doc.status == "In Review" and status == "Invalid") or
         (qm_doc.status == "Reviewed" and status == "Released") or
         (qm_doc.status == "Released" and status == "Valid") or
-        (qm_doc.status == "Valid" and status == "Invalid") ):
+        (qm_doc.status in ["Valid", "Reviewed"] and status == "Invalid") ):
 
             qm_doc.status = status
             qm_doc.save()
