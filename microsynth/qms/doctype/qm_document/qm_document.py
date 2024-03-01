@@ -10,6 +10,7 @@ from datetime import datetime, date
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 
+document_types_with_review = ['SOP', 'FLOW', 'QMH', 'APPX']
 
 naming_patterns = {
     "Code1": {
@@ -185,12 +186,14 @@ def update_status(qm_document, status):
     # validate status transitions
     if ((qm_doc.status == "Draft" and status == "Created") or 
         (qm_doc.status == "Created" and status == "In Review") or
-        (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type in ["PROT", "LIST", "FORM", "CL"]) or
+        (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type not in document_types_with_review) or
         (qm_doc.status == "In Review" and status == "Reviewed") or
         (qm_doc.status == "In Review" and status == "Invalid") or
         (qm_doc.status == "Reviewed" and status == "Released") or
+        (qm_doc.status == "Reviewed" and status == "Invalid") or
         (qm_doc.status == "Released" and status == "Valid") or
-        (qm_doc.status in ["Valid", "Reviewed"] and status == "Invalid") ):
+        (qm_doc.status == "Valid" and status == "Invalid")
+        ):
 
             qm_doc.status = status
             qm_doc.save()
