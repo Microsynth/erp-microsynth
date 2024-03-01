@@ -164,7 +164,7 @@ function change_reviewer(frm) {
                             frappe.call({
                                 'method': 'microsynth.qms.doctype.qm_review.qm_review.assign',
                                 'args': {
-                                    'doc': cur_frm.doc.namee,
+                                    'doc': cur_frm.doc.name,
                                     'reviewer': locals.new_reviewer
                                 },
                                 'callback': function(response) {
