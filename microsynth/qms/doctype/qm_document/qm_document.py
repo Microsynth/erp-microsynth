@@ -99,10 +99,27 @@ class QMDocument(Document):
             FROM `tabQM Document Link`
             WHERE `qm_document` = "{doc}";
             """.format(doc=self.name), as_dict=True)
+        
+        trained = frappe.db.sql("""
+            SELECT 
+                `tabQM Training Record`.`trainee` AS `trainee`,
+                `tabUser`.`full_name` AS `full_name`
+            FROM `tabQM Training Record`
+            LEFT JOIN `tabUser` ON `tabUser`.`name` = `tabQM Training Record`.`trainee`
+            WHERE 
+                `tabQM Training Record`.`document_type` = "QM Document"
+                AND `tabQM Training Record`.`document_name` = "{doc}"
+                AND `tabQM Training Record`.`signature` IS NOT NULL;
+            """.format(doc=self.name), as_dict=True)
             
         html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", 
-            {'files': files, 'doc': self, 'docs_linking_to_this': docs_linking_to_this})
-        # TODO: add training section (number of people to be trained, actual trained, ...)
+            {
+                'files': files, 
+                'doc': self, 
+                'docs_linking_to_this': docs_linking_to_this,
+                'trained': trained
+            })
+            
         return html
 
 

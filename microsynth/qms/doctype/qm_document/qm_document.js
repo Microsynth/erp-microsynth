@@ -127,10 +127,10 @@ frappe.ui.form.on('QM Document', {
             );
         }
         
-        // allow to release the document if it is reviewed (SOP, FLOW, QMH) or 
+        // allow to release the document if it is reviewed (SOP, FLOW, QMH, APPX) or 
         // does not need a review (PROT, LIST, FORM, CL)
         var requires_qau_release = 
-            ['SOP', 'FLOW', 'QMH'].includes(frm.doc.document_type);
+            ['SOP', 'FLOW', 'QMH', 'APPX'].includes(frm.doc.document_type);
 
         if ((!frm.doc.__islocal)
             && (["Created", "Reviewed"].includes(frm.doc.status))
