@@ -32,7 +32,8 @@ frappe.ui.form.on('Contact', {
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
-
+        frappe.ui.keys.off("ctrl+e");                                   // and disable keyboard shortcut
+        
         // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
