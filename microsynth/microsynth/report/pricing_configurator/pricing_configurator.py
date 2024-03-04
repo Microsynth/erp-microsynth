@@ -51,6 +51,7 @@ def get_item_prices(price_list):
         FROM `tabItem Price`        
         JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
         WHERE `price_list` = "{price_list}"
+            AND `tabItem`.`disabled` = 0
     """.format(price_list=price_list)
     data = frappe.db.sql(simple_sql_query, as_dict=True)
     return data
