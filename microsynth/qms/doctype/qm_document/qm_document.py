@@ -166,7 +166,7 @@ def set_released(doc, user):
 
 @frappe.whitelist()
 def set_rejected(doc):
-    update_status(doc, "Invalid")
+    invalidate_document(doc)
     return
 
 
@@ -246,7 +246,7 @@ def invalidate_document(qm_document):
         'doctype': "QM Document",
         'name': qm_document.name,
         'assign_to': frappe.get_value("QM Document", qm_document.name, "created_by"),
-        'description': f"Your QM Document '{qm_document.name}' exceeded its Valid till date and has been automatically set to Invalid."
+        'description': f"Your QM Document '{qm_document.name}' has been set to Invalid."
     })
 
 
