@@ -35,6 +35,7 @@ frappe.ui.form.on('QM Document', {
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
+            // TODO: The created_on date should only be set when signing the QM Document
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             // on fresh documents, hide company field (will be clean on insert to prevent default)
             cur_frm.set_df_property('company', 'hidden', true);
@@ -304,6 +305,8 @@ function sign_creation() {
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
         function(values){
+            // TODO: set the created_on date to the current date
+
             // check password and if correct, submit
             frappe.call({
                 'method': 'microsynth.qms.signing.sign',
@@ -316,12 +319,12 @@ function sign_creation() {
                 },
                 "callback": function(response) {
                     if (response.message) {
-                        // set release date and user and set status to "Released" (if password was correct)
+                        // set creation date and user and set status to "Created" (if password was correct)
                         frappe.call({
-                            'method': 'microsynth.qms.doctype.qm_document.qm_document.update_status',
+                            'method': 'microsynth.qms.doctype.qm_document.qm_document.set_created',
                             'args': {
-                                'qm_document': cur_frm.doc.name,
-                                'status': "Created"
+                                'doc': cur_frm.doc.name,
+                                'user': frappe.session.user
                             },
                             'async': false
                         });

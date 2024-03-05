@@ -148,6 +148,21 @@ def create_new_version(doc):
 
 
 @frappe.whitelist()
+def set_created(doc, user):
+    # pull selected document
+    qm_doc = frappe.get_doc(frappe.get_doc("QM Document", doc))
+
+    if user != qm_doc.created_by:
+        frappe.throw(f"Error signing the QM Document Status: Only {qm_doc.created_by} is allowed to sign the QM Document {qm_doc.name}. Current login user is {user}.")
+
+    qm_doc.save()
+    frappe.db.commit()
+
+    update_status(qm_doc.name, "Created")
+    return
+
+
+@frappe.whitelist()
 def set_released(doc, user):
     # pull selected document
     qm_doc = frappe.get_doc(frappe.get_doc("QM Document", doc))
