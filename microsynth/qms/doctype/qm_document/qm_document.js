@@ -14,9 +14,10 @@ frappe.ui.form.on('QM Document', {
         
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
-        if ((!cur_frm.attachments) 
+        if ((!frm.doc.__islocal)
+            && ((!cur_frm.attachments) 
             || (!cur_frm.attachments.get_attachments())
-            || ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0))) {
+            || ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0)))) {
                 cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
         }
 
@@ -35,7 +36,6 @@ frappe.ui.form.on('QM Document', {
         // fresh document: add creation tags
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
-            // TODO: The created_on date should only be set when signing the QM Document
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             // on fresh documents, hide company field (will be clean on insert to prevent default)
             cur_frm.set_df_property('company', 'hidden', true);
@@ -305,32 +305,34 @@ function sign_creation() {
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
         function(values){
-            // TODO: set the created_on date to the current date
-
-            // check password and if correct, submit
-            frappe.call({
-                'method': 'microsynth.qms.signing.sign',
-                'args': {
-                    'dt': "QM Document",
-                    'dn': cur_frm.doc.name,
-                    'user': frappe.session.user,
-                    'password': values.password,
-                    'target_field': 'signature'
-                },
-                "callback": function(response) {
-                    if (response.message) {
-                        // set creation date and user and set status to "Created" (if password was correct)
-                        frappe.call({
-                            'method': 'microsynth.qms.doctype.qm_document.qm_document.set_created',
-                            'args': {
-                                'doc': cur_frm.doc.name,
-                                'user': frappe.session.user
-                            },
-                            'async': false
-                        });
+            // set the created_on date to the current date
+            cur_frm.set_value("created_on", frappe.datetime.get_today());
+            cur_frm.save().then(function() {
+                // check password and if correct, submit
+                frappe.call({
+                    'method': 'microsynth.qms.signing.sign',
+                    'args': {
+                        'dt': "QM Document",
+                        'dn': cur_frm.doc.name,
+                        'user': frappe.session.user,
+                        'password': values.password,
+                        'target_field': 'signature'
+                    },
+                    "callback": function(response) {
+                        if (response.message) {
+                            // set creation date and user and set status to "Created" (if password was correct)
+                            frappe.call({
+                                'method': 'microsynth.qms.doctype.qm_document.qm_document.set_created',
+                                'args': {
+                                    'doc': cur_frm.doc.name,
+                                    'user': frappe.session.user
+                                },
+                                'async': false
+                            });
+                        }
+                        cur_frm.reload_doc();
                     }
-                    cur_frm.reload_doc();
-                }
+                });
             });
         },
         __('Please enter your approval password'),
