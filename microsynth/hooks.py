@@ -158,6 +158,9 @@ scheduler_events = {
     "hourly": [
         "microsynth.microsynth.slims.sync",
         # "microsynth.microsynth.seqblatt.check_sales_order_completion"
+    ],
+    "daily": [
+        "microsynth.qms.doctype.qm_document.qm_document.check_update_validity"
     ]
 }
 
