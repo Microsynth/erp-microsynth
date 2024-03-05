@@ -148,7 +148,7 @@ function change_reviewer(frm) {
         ],
         function(values){
             locals.new_reviewer = values.new_reviewer;
-            // verify that current user is not owner of the document (or: System Manager can do it all)
+            // verify that current user is not owner of the document
             frappe.call({
                 'method': 'frappe.client.get',
                 'args': {
@@ -157,7 +157,7 @@ function change_reviewer(frm) {
                 },
                 'callback': function (r) {
                     var doc = r.message;
-                    if (((doc.created_by || doc.owner) !== frappe.session.user) || frappe.user.has_role("System Manager")) {
+                    if (((doc.created_by || doc.owner) !== locals.new_reviewer)) {
                         cur_frm.set_value("reviewer", locals.new_reviewer);
                         cur_frm.save().then(function() {
                             // assign
@@ -172,6 +172,8 @@ function change_reviewer(frm) {
                                 }
                             });
                         });
+                    } else {
+                        frappe.msgprint( __("Invalid assignment: the selected reviewer is the creator of the document. Please chose someone else."), __("Validation"));
                     }
                 }
             });
