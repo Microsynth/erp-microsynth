@@ -4,6 +4,17 @@
 
 frappe.query_reports["Releasable Documents"] = {
 	"filters": [
-
+		{
+            "fieldname": "document_type",
+            "label": __("Document Type"),
+            "fieldtype": "Select",
+            "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
+        },
+		{
+            "fieldname": "created_by",
+            "label": __("Creator"),
+            "fieldtype": "Link",
+            "options": "User"
+        }
 	]
 };
