@@ -68,10 +68,9 @@ function sign() {
             function(values){
                 // check password and if correct, submit
                 frappe.call({
-                    'method': 'microsynth.qms.signing.sign',
+                    'method': 'microsynth.qms.doctype.qm_review.qm_review.sign_review',
                     'args': {
-                        'dt': "QM Review",
-                        'dn': cur_frm.doc.name,
+                        'doc': cur_frm.doc.name,
                         'user': frappe.session.user,
                         'password': values.password
                     },

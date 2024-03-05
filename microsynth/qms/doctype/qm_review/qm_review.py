@@ -9,6 +9,9 @@ from datetime import datetime
 from frappe.desk.form.assign_to import add, clear
 from microsynth.qms.doctype.qm_document.qm_document import update_status
 from frappe.desk.form.load import get_attachments
+from microsynth.qms.signing import sign
+from frappe import _
+
 
 class QMReview(Document):
     def on_submit(self):
@@ -88,3 +91,18 @@ def assign(doc, reviewer):
         'assign_to': reviewer
     })
     return
+
+
+@frappe.whitelist()
+def sign_review(doc, user, password):
+    # get document
+    if type(doc) == str:
+        doc = frappe.get_doc("QM Review", doc)
+        
+    # verify user is the creator of the QM document
+    review_doc = frappe.get_doc(doc.get("document_type"), doc.get("document_name"))
+    if (review_doc.created_by or review_doc.owner) == user:
+        frappe.throw( _("Invalid reviewer. Please select a reviewer different from the document creator."), _("Review failed") )
+        return False
+    else:
+        return sign("QM Review", doc.get("name"), user, password)
