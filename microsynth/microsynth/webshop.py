@@ -1011,6 +1011,50 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
 
 
 @frappe.whitelist()
+def get_contact_shipping_items(person_id):
+    """
+    Return all available shipping items for a contact
+
+    bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'person_id': 221845}"
+    """
+    if not person_id or not frappe.db.exists("Contact", person_id):
+        return {'success': False, 'message': 'A valid and existing person_id is required', 'shipping_items': []}
+    customer_id = get_customer(person_id)
+    # find by customer id
+    if customer_id:
+        shipping_items = frappe.db.sql(
+            f"""SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
+                FROM `tabShipping Item`
+                WHERE `parent` = "{customer_id}" 
+                    AND `parenttype` = "Customer"
+                ORDER BY `idx` ASC;""", as_dict=True)
+        if len(shipping_items) > 0:
+            return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
+        else:
+            # find country for fallback
+            address = frappe.get_value("Contact", person_id, "address")
+            if address:
+                country = frappe.get_value("Address", address, "country")
+            else:
+                return {'success': False, 'message': f'Contact {person_id} has no address', 'shipping_items': []}
+
+    # find by country (fallback from the customer)
+    if not country:
+        country = frappe.defaults.get_global_default('country')
+    country = robust_get_country(country)
+    shipping_items = frappe.db.sql(
+        f"""SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
+            FROM `tabShipping Item`
+            WHERE `parent` = "{country}" 
+                AND `parenttype` = "Country"
+            ORDER BY `idx` ASC;""", as_dict=True)
+    if len(shipping_items) > 0:
+        return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
+    else:
+        return {'success': False, 'message': 'No data', 'shipping_items': []}
+
+
+@frappe.whitelist()
 def update_newsletter_state(person_id, newsletter_state, client="webshop"):
     """
     Update newsletter state
