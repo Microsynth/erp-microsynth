@@ -3,9 +3,7 @@
 # For license information, please see license.txt
 
 import frappe
-import socket
-import sys
-from datetime import datetime
+
 
 TRACKING_URLS = {
     '1010': "https://www.post.at/sv/sendungssuche?snr=",
@@ -24,7 +22,7 @@ TRACKING_URLS = {
 }
 
 
-def get_shipping_service(item_code, ship_adr,cstm_ID):
+def get_shipping_service(item_code, ship_adr, cstm_ID):
     
     SHIPPING_SERVICES = {
         '1100': "P.P.A",
@@ -42,6 +40,7 @@ def get_shipping_service(item_code, ship_adr,cstm_ID):
         '1114': "DHL",
         '1115': "Germany",
         '1117': "DHL",
+        '1119': "DHL Economy",  # only for EU
         '1120': "DHL CH",  # not for EU
         '1122': "DHL",
         '1123': "DHL/CH", # for countries out of EU
