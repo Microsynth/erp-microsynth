@@ -298,6 +298,7 @@ def submit_seq_primer_dns():
 def close_partly_delivered_orders():
     """
     Find Sequencing Sales Orders that are at least partly delivered and invoiced. Close these Sales Orders.
+    TODO: Currently only a dry run
 
     bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders
     """
@@ -334,7 +335,8 @@ def close_partly_delivered_orders():
                 AND `tabSales Order`.`docstatus` = 1
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
                 AND `tabSales Order`.`billing_status` NOT IN ('Closed', 'Not Billed')
-                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -14 DAY)
+                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -30 DAY)
+                AND `tabSales Order`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -30 DAY)
             ) AS `raw`
         WHERE `raw`.`si_items` > 0
             AND `raw`.`dn_items` > 0
@@ -374,7 +376,7 @@ def close_partly_delivered_orders():
             if len(delivery_notes) == 1:
                 dn_total = delivery_notes[0]['total']
                 so_total = so_doc.total
-                diff = round(so_total-dn_total,2)
+                diff = round(dn_total-so_total,2)
                 diffs.append((diff, so_doc.currency, so_doc.name))
                 print(f"{diff} {so_doc.currency}: Would close {so_doc.name} created {so_doc.creation}") 
                 #add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
