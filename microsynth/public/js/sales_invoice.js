@@ -12,12 +12,13 @@ cur_frm.dashboard.add_transactions([
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
         locals.prevdoc_checked = false;
-        prepare_naming_series(frm);             // common function
+        prepare_naming_series(frm);  // common function
 
         // remove Menu > Email if document is not valid
         if (frm.doc.docstatus != 1) {
             var target ="span[data-label='" + __("Email") + "']";
             $(target).parent().parent().remove();
+            frappe.ui.keys.off("ctrl+e");  // disable keyboard shortcut
         }
 
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
