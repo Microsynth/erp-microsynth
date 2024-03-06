@@ -439,7 +439,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
 
-            ## create delivery note (leave on draft: submitted by flushbox after processing)
+            ## create and submit delivery note
             try:
                 so = frappe.get_doc("Sales Order", sales_order)
                 dn_content = make_delivery_note(sales_order)

@@ -393,7 +393,14 @@ def get_export_category(address_name):
     run
     bench execute microsynth.microsynth.utils.get_export_category --kwargs "{'address_name': '817145'}"
     """
-    country = frappe.get_value('Address', address_name, 'country')
+    address_doc = frappe.get_doc("Address", address_name)
+    for link in address_doc.links:
+        if link.link_doctype == "Customer":
+            customer = link.link_name
+            if frappe.get_value("Customer", customer, "customer_type") == "Individual":
+                # do not put private Customers on EU customs declaration
+                return 'ROW'
+    country = address_doc.country  #frappe.get_value('Address', address_name, 'country')
     if country == "Austria":
         export_category = "AT"
     elif country == "Spain":
