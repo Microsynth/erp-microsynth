@@ -141,7 +141,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Open\nCompleted\nCanceled",
+   "options": "Open\nOffered\nCompleted\nCanceled",
    "read_only": 1
   },
   {
@@ -150,8 +150,8 @@
    "label": "Specification"
   }
  ],
- "modified": "2023-09-07 08:52:47.510633",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-03-06 10:07:19.148814",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
  "owner": "Administrator",

@@ -522,6 +522,7 @@ def request_quote(content, client="webshop"):
     oligo_items_consolidated = dict()
     # create oligos
     for o in content['oligos']:
+        o['status'] = 'Offered'
         # create or update oligo
         oligo_name = create_oligo(o)
         # insert positions
