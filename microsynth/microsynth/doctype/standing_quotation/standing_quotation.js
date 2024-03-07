@@ -3,6 +3,14 @@
 
 frappe.ui.form.on('Standing Quotation', {
     refresh(frm) {
+        cur_frm.fields_dict['customer'].get_query = function(doc) {
+            return {
+                filters: {
+                    'disabled': 0
+                }
+            }
+        }
+
         cur_frm.fields_dict['address'].get_query = function(doc) {
             return {
                 filters: {
@@ -13,10 +21,11 @@ frappe.ui.form.on('Standing Quotation', {
         }
         cur_frm.fields_dict['contact'].get_query = function(doc) {
             return {
-                filters: {
-                    'link_doctype': 'Customer',
-                    'link_name': frm.doc.customer
-                }
+                filters: [
+                    [ 'link_doctype', '=', 'Customer' ],
+                    [ 'link_name', '=', frm.doc.customer ],
+                    [ 'status', '!=', "Disabled" ]
+                ]
             }
         }
     
