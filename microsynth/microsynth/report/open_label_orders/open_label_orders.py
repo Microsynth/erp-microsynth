@@ -81,7 +81,9 @@ def write_assignment_file(data):
     path = frappe.get_value("Sequencing Settings", "Sequencing Settings", "label_export_path")
     assignment_file = "{path}/{sales_order}.tab".format(path = path, sales_order=data["sales_order"])
     if os.path.exists(assignment_file):
-        frappe.throw("<b>Sequencing label assignment file already exists:</b><br>" + assignment_file)
+        message = "<b>Sequencing label assignment file already exists:</b><br>" + assignment_file
+        frappe.log_error(message, "Open label orders.write_assignment_file")
+        frappe.throw(message)
     else:
         file = open(assignment_file, "w")
         file.write(ASSIGNMENT_HEADER)
@@ -129,6 +131,11 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     
     # create delivery note
     dn_content = make_delivery_note(sales_order)
+
+    ## TODO: Consider moving this test before creating the Sequencing Labels
+    if len(dn_content.items) == 0:
+        frappe.throw(f"Cannot create Delivery Note for {sales_order}. There are no Items left to deliver.")
+    
     dn = frappe.get_doc(dn_content)
     dn.naming_series = get_naming_series("Delivery Note", company)
     dn.insert()
