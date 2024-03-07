@@ -47,6 +47,11 @@ frappe.ui.form.on('Standing Quotation', {
                 });
             });
         }
+
+        // Initialize the terms
+        if ((frm.doc.__islocal) && (frm.doc.terms_template)) {
+            set_terms(frm);
+        }
     },
     on_submit(frm) {
         setTimeout(function () {cur_frm.reload_doc();}, 5000);
@@ -67,5 +72,27 @@ frappe.ui.form.on('Standing Quotation', {
                }
             });
         }
+    },
+    terms_template(frm) {
+        set_terms(frm);
     }
 });
+
+
+function set_terms(frm) {
+    if (frm.doc.terms_template) {
+        frappe.call({
+            'method': "frappe.client.get",
+            'args': {
+                 "doctype": "Terms and Conditions",
+                 "name": frm.doc.terms_template
+            },
+            'callback': function(response) {
+                 var terms_and_conditions = response.message;
+                 if (terms_and_conditions) {
+                    cur_frm.set_value("terms", terms_and_conditions.terms);
+                 }
+            }
+         });
+    }
+}
