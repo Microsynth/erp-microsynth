@@ -764,6 +764,22 @@ def add_webshop_service(customer, service):
     return
 
 
+def add_easy_run_for_italy(customer_id):
+    """
+    Add Webshop service EasyRun to the Customer if its first shipping address is in Italy.
+
+    bench execute microsynth.microsynth.utils.add_easy_run_for_italy --kwargs "{'customer_id': '20043'}"
+    """
+    shipping_address = get_first_shipping_address(customer_id)
+    if shipping_address is None:
+        frappe.log_error(f"Customer '{customer_id}' has no shipping address.", "utils.add_easy_run_for_italy")
+        return
+
+    country = frappe.get_value("Address", shipping_address, "Country")
+    if country == "Italy":
+        add_webshop_service(customer_id, 'EasyRun')
+
+
 def get_child_territories(territory):
     """
     Returns all child territories for the given territory recursively. Includes the given parent directory and all nodes as well.
@@ -997,6 +1013,7 @@ def configure_new_customer(customer):
     configure_customer(customer)
     set_default_distributor(customer)
     set_default_company(customer)
+    add_easy_run_for_italy(customer)
 
 
 def get_alternative_account(account, currency):
