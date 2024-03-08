@@ -30,9 +30,11 @@ frappe.ui.form.on('Sales Invoice', {
         // });
 
         // Custom email dialog
-        frm.add_custom_button(__("Email"), function() {
-            open_mail_dialog(frm);
-        }, __("Create"));
+        if (frm.doc.docstatus == 1) {
+            frm.add_custom_button(__("Email"), function() {
+                open_mail_dialog(frm);
+            }, __("Create"));
+        }
 
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
