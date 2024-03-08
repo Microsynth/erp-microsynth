@@ -256,7 +256,6 @@ def get_name(contact):
     Assembles the first name and last name of a contact 
     to a single name string.
     """
-
     name_elements = []
     if contact.first_name != "-":
         name_elements.append(contact.first_name)
@@ -273,7 +272,6 @@ def get_name_line(contact):
     Assembles the first name, last name and designation of a contact 
     to a single name line string.
     """
-
     name_elements = []
     if contact.designation:
         name_elements.append(contact.designation)
@@ -285,6 +283,18 @@ def get_name_line(contact):
     name_line = " ".join(name_elements)
     
     return name_line
+
+
+@frappe.whitelist()
+def get_email_ids(contact):
+    """
+    Return a list of all email_ids of the given contact.
+    """
+    contact_doc = frappe.get_doc("Contact", contact)
+    email_ids = []
+    for line in contact_doc.email_ids:
+        email_ids.append(line.email_id)
+    return email_ids
 
 
 @frappe.whitelist()

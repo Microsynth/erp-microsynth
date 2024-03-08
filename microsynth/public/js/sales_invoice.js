@@ -14,12 +14,25 @@ frappe.ui.form.on('Sales Invoice', {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);  // common function
 
-        // remove Menu > Email if document is not valid
-        if (frm.doc.docstatus != 1) {
-            var target ="span[data-label='" + __("Email") + "']";
-            $(target).parent().parent().remove();
-            frappe.ui.keys.off("ctrl+e");  // disable keyboard shortcut
-        }
+        // remove Menu > Email
+        var target ="span[data-label='" + __("Email") + "']";
+        $(target).parent().parent().remove();
+
+        // disable keyboard shortcut CTRL + E if document is not valid
+        //if (frm.doc.docstatus != 1) {  // TODO: comment in as soon as setting custom shortcut works (see below)
+            frappe.ui.keys.off("ctrl+e");
+        //}
+
+        // frappe.ui.keys.add_shortcut({
+        //     shortcut: 'ctrl+e',
+        //     action: open_mail_dialog(frm),
+        //     description: __('Custom Email shortcut')
+        // });
+
+        // Custom email dialog
+        frm.add_custom_button(__("Email"), function() {
+            open_mail_dialog(frm);
+        }, __("Create"));
 
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
@@ -306,5 +319,36 @@ function check_prevdoc_rates(frm) {
         });
     } else {
         locals.prevdoc_checked = true;
+    }
+}
+
+
+function open_mail_dialog(frm){
+    if (frm.doc.invoice_to) {
+        frappe.call({
+            'method': 'microsynth.microsynth.utils.get_email_ids',
+            'args': {
+                'contact': frm.doc.invoice_to
+            },
+            'callback': function(response) {
+                if (response.message){
+                    new frappe.erpnextswiss.MailComposer({
+                        doc: cur_frm.doc,
+                        frm: cur_frm,
+                        subject: "Sales Invoice " + cur_frm.doc.name,
+                        recipients: response.message,
+                        cc: "info@microsynth.ch",
+                        attach_document_print: true,
+                        txt: "Dear Customer,",
+                        check_all_attachments: false
+                    });
+                    //cur_frm.set_value("invoice_sent_on", new Date(Date.now()) );
+                } else {
+                    frappe.show_alert('Contact ' + frm.doc.invoice_to + ' has no email IDs. Please go to this Contact and add at least one email address.');
+                }
+            }
+        });
+    } else {
+        frappe.show_alert('Please enter an Invoice To Contact with a valid email address before opening the mail dialog.');
     }
 }
