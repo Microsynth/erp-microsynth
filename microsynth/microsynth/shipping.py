@@ -12,6 +12,7 @@ TRACKING_URLS = {
     '1108': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1114': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1117': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1119': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",  # TODO: Check if this is really the correct URL for DHL Economy Select
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
     '1126': "https://www.fedex.com/fedextrack/?trknbr=",
@@ -40,7 +41,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1114': "DHL",
         '1115': "Germany",
         '1117': "DHL",
-        '1119': "DHL Economy",  # only for EU
+        '1119': "DHL Economy Select",  # only for EU
         '1120': "DHL CH",  # not for EU
         '1122': "DHL",
         '1123': "DHL/CH", # for countries out of EU
