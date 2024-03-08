@@ -341,7 +341,7 @@ function open_mail_dialog(frm){
                         recipients: response.message,
                         cc: "info@microsynth.ch",
                         attach_document_print: true,
-                        txt: "Dear Customer,",
+                        txt: "",
                         check_all_attachments: false
                     });
                     //cur_frm.set_value("invoice_sent_on", new Date(Date.now()) );
