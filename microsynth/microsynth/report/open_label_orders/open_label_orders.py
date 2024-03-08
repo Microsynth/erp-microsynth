@@ -100,6 +100,24 @@ def write_assignment_file(data):
     return
 
 
+# @frappe.whitelist()
+# def pick_labels_without_timeout(sales_order, from_barcode, to_barcode):
+#     """
+#     Wrapper to call function pick_labels with a timeout > 120 seconds (here 600 seconds = 10 minutes) if at least 5000 Labels need to be processed.
+#     """
+#     number_of_labels = int(to_barcode) - int(from_barcode)
+#     if number_of_labels >= 5000:
+#         timeout = int(number_of_labels // 10)  # Assume that mare than ten Labels can be processed per second
+#         frappe.enqueue(method=pick_labels, queue='long', timeout=timeout, is_async=True, job_name='pick_labels',
+#                     sales_order=sales_order,
+#                     from_barcode=from_barcode,
+#                     to_barcode=to_barcode)
+#         return f"Need to process {number_of_labels} Labels. Please wait a few minutes, go to the Sales Order {sales_order}, open the Delivery Note and print it."
+#     else:
+#         dn_name = pick_labels(sales_order, from_barcode, to_barcode)
+#         return dn_name
+
+
 @frappe.whitelist()
 def pick_labels(sales_order, from_barcode, to_barcode):
     # create sequencing labels
@@ -156,6 +174,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     
     # return print format
     return dn.name
+
 
 @frappe.whitelist()
 def are_labels_available(item_code, from_barcode, to_barcode):
