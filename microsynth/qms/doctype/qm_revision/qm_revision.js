@@ -23,7 +23,8 @@ frappe.ui.form.on('QM Revision', {
 
         // show sign button (only for revisor!)
         if ((frm.doc.docstatus < 1)
-            && (frappe.session.user === frm.doc.revisor)) {
+            && (frappe.user === frm.doc.revisor)
+			&& frappe.user.has_role('QAU')) {
             // add sign button
             cur_frm.page.set_primary_action(
                 __("Sign"),
