@@ -75,6 +75,13 @@ frappe.ui.form.on('QM Document', {
             }).addClass("btn-primary");
         }
 
+        // allow revision when document is valid
+        if ((["Valid"].includes(frm.doc.status))) {
+            frm.add_custom_button(__("Revision request"), function() {
+                request_revision(frm);
+            }).addClass("btn-primary");
+        }
+
         // Invalidate
         if (["Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             frm.add_custom_button(__("Invalidate"), function() {
@@ -269,6 +276,32 @@ function request_review() {
     },
     __('Please choose a reviewer'),
     __('Request review')
+    )
+}
+
+
+function request_revision() {
+    frappe.prompt([
+        {'fieldname': 'revisor', 'fieldtype': 'Link', 'label': __('Revisor'), 'options':'User', 'reqd': 1},
+        {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1}
+    ],
+    function(values){
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_revision.qm_revision.create_revision',
+            'args': {
+                'revisor': values.revisor,
+                'dt': cur_frm.doc.doctype,
+                'dn': cur_frm.doc.name,
+                'due_date': values.due_date
+            },
+            "callback": function(response) {
+                console.log("created revision request...")
+                cur_frm.reload_doc();
+            }
+        });
+    },
+    __('Please choose a revisor'),
+    __('Request revision')
     )
 }
 

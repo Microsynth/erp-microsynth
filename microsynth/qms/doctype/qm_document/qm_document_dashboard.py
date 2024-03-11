@@ -14,6 +14,10 @@ def get_data():
          {
             'label': _("Training"),
             'items': ['QM Training Record']
+         },
+         {
+            'label': _("Revision"),
+            'items': ['QM Revision']
          }
       ]
    }
