@@ -10,10 +10,12 @@ frappe.ui.form.on('Payment Entry', {
         check_display_unallocated_warning(frm);
     },
     validate: function(frm) {
-        for (var i= 0; i < frm.doc.references.length; i++) {
-            if (frm.doc.references[i].outstanding_amount > frm.doc.references[i].allocated_amount) {
-                frappe.msgprint( __("Warning, Outstanding > Allocated in row " + (i+1) + ".", __("Validation") ));
-                break;
+        if (frm.doc.references) {
+            for (var i= 0; i < frm.doc.references.length; i++) {
+                if (frm.doc.references[i].outstanding_amount > frm.doc.references[i].allocated_amount) {
+                    frappe.msgprint( __("Warning, Outstanding > Allocated in row " + (i+1) + ".", __("Validation") ));
+                    break;
+                }
             }
         }
     },
