@@ -1050,11 +1050,18 @@ def get_contact_shipping_items(person_id):
         country = frappe.defaults.get_global_default('country')
     country = robust_get_country(country)
     shipping_items = frappe.db.sql(
-        f"""SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
+        f"""SELECT `tabShipping Item`.`item`,
+                `tabShipping Item`.`item_name`,
+                `tabShipping Item`.`qty`,
+                `tabShipping Item`.`rate`,
+                `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
-            WHERE `parent` = "{country}" 
-                AND `parenttype` = "Country"
-            ORDER BY `idx` ASC;""", as_dict=True)
+            LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
+            WHERE `tabShipping Item`.`parent` = "{country}" 
+                AND `tabShipping Item`.`parenttype` = "Country"
+                AND `tabItem`.`disabled` = 0
+            ORDER BY `tabShipping Item`.`idx` ASC;""", as_dict=True)
     if len(shipping_items) > 0:
         return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
     else:
