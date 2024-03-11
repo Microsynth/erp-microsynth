@@ -1022,12 +1022,19 @@ def get_contact_shipping_items(person_id):
     customer_id = get_customer(person_id)
     # find by customer id
     if customer_id:
-        shipping_items = frappe.db.sql(
-            f"""SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
-                FROM `tabShipping Item`
-                WHERE `parent` = "{customer_id}" 
-                    AND `parenttype` = "Customer"
-                ORDER BY `idx` ASC;""", as_dict=True)
+        shipping_items = frappe.db.sql(f"""            
+            SELECT `tabShipping Item`.`item`,
+                `tabShipping Item`.`item_name`,
+                `tabShipping Item`.`qty`,
+                `tabShipping Item`.`rate`,
+                `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`preferred_express`
+            FROM `tabShipping Item`
+            LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
+            WHERE `tabShipping Item`.`parent` = "{customer_id}"
+                AND `tabShipping Item`.`parenttype` = "Customer"
+                AND `tabItem`.`disabled` = 0
+            ORDER BY `tabShipping Item`.`idx` ASC;""", as_dict=True)
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
