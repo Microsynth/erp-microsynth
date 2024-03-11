@@ -248,7 +248,7 @@ def get_price_list_rates(item_code, price_list, qty):
 @frappe.whitelist()
 def populate_from_reference(price_list, user, item_group=None):
     """
-    This will fill up the missing rates from the reference
+    This will fill up the missing Item Prices from the reference Price List if the reference rate is not 0.
     """
     filters = {
         'price_list': price_list,
@@ -259,33 +259,48 @@ def populate_from_reference(price_list, user, item_group=None):
     data = get_data(filters)
     print("Number of data sets: {0}".format(len(data)))
     reference_price_list = get_reference_price_list(filters['price_list'])
+    if not reference_price_list:
+        frappe.log_error(f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate from reference'.", "pricing_configurator.populate_from_reference")
+        return
     general_discount = frappe.get_value("Price List", price_list, "general_discount")
+    changes = "item_code;min_qty;old_rate;new_rate"
     # set new prices
     for d in data:
-        #frappe.throw("{0} - {1}".format(d['reference_rate'], d['price_list_rate']))
-        if d['reference_rate'] and not d['price_list_rate']:
-            #frappe.throw("code: {code}, quantity: {qty}".format(code=d['item_code'], qty=d['qty']))
+        if d['reference_rate'] and d['price_list_rate'] is None:  # Do NOT populate a reference rate of 0 to the customers price list.
             # create new price
-            rate = get_rate(d['item_code'], reference_price_list, d['qty'])
-            # frappe.throw("code: {item}, quantity: {qty}, rate: {rate}".format(item = d['item_code'], qty = d['qty'], rate=rate))
-
+            new_rate = get_rate_or_none(d['item_code'], reference_price_list, d['qty'])
+            if new_rate is None:
+                changes += f"\nThere is no Item Price on reference Price List '{reference_price_list}' for Item {d['item_code']} with minimum quantity <= {d['qty']}. Going to continue."
+                continue
             # rate based on general discount for item groups 3.1 & 3.2
             group = frappe.get_value("Item", d['item_code'], "item_group")
             if "3.1 " in group or "3.2" in group:
-                rate = ((100 - general_discount) / 100) * rate
-            new_rate = frappe.get_doc({
+                new_rate = ((100 - general_discount) / 100) * new_rate
+            new_item_price = frappe.get_doc({
                 'doctype': 'Item Price',
                 'item_code': d['item_code'],
                 'price_list': price_list,
-                'price_list_rate': rate,
+                'price_list_rate': new_rate,
                 'min_qty': d['qty']
             })
             try:
-                new_rate.insert()
+                new_item_price.insert()
             except Exception as err:
-                # frappe.throw("Cannot insert code {code}, qty {qty}, reference {refrate}, rate {rate} in {price_list}:<br>{error}".format(code=d['item_code'], qty=d['qty'], refrate = d['reference_rate'], rate=rate, price_list = price_list, error = err))
-                print("Cannot insert {0} in {1}: {2}".format(d['item_code'], price_list, err))
+                changes += f"\nCannot insert {d['item_code']} in {price_list}: {err}"
+            else:
+                changes += f"\n{d['item_code']};{d['qty']};{d['price_list_rate']};{new_rate}"
     frappe.db.commit()
+
+    if '\n' in changes:
+        changes += f"\n\nChanges made by function pricing_configurator.populate_from_reference."
+        # Log changes using Item Price Log
+        item_price_log = frappe.get_doc({
+            'doctype': 'Item Price Log',
+            'price_list': price_list,
+            'user': user,
+            'changes': changes
+        })
+        item_price_log.insert()
 
     clean_price_list(price_list, user)
 
@@ -305,6 +320,9 @@ def populate_with_factor(price_list, user, item_group=None, factor=1.0):
     # get base data
     data = get_data(filters)
     reference_price_list = get_reference_price_list(filters['price_list'])
+    if not reference_price_list:
+        frappe.log_error(f"Price List '{price_list}' has no reference Price List. Unable to apply 'Populate with factor'.", "pricing_configurator.populate_with_factor")
+        return
     changes = "item_code;min_qty;old_rate;new_rate"
     # set new prices
     for d in data:
