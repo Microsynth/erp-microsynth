@@ -31,6 +31,20 @@ def get_data():
                         "label": _("Training Confirmations"),
                         "doctype": "QM Training Record",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Releasable Documents",
+                        "label": _("Releasable Documents"),
+                        "doctype": "QM Document",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Revision Required",
+                        "label": _("Revision Required"),
+                        "doctype": "QM Document",
+                        "is_query_report": True
                     }
             ]
         },
