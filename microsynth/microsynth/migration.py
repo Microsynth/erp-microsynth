@@ -1830,6 +1830,45 @@ def set_distributor_amplikon():
         i += 1
 
 
+def activate_easyrun_italy():
+    """
+    bench execute microsynth.microsynth.migration.activate_easyrun_italy
+    """
+    from microsynth.microsynth.utils import add_webshop_service
+
+    query = """
+        SELECT DISTINCT
+            `tDLA`.`link_name` AS `name`
+        FROM `tabAddress`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                             AND `tDLA`.`parenttype` = "Address"
+                                             AND `tDLA`.`link_doctype` = "Customer"
+        WHERE `tabAddress`.`country` = "Italy"
+        AND `tDLA`.`link_name` IS NOT NULL;"""
+    
+    customers = frappe.db.sql(query, as_dict=True)
+
+    for i, customer in enumerate(customers):
+        query = f"""
+            SELECT DISTINCT `tabAddress`.`country`
+            FROM `tabAddress`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                                AND `tDLA`.`parenttype` = "Address"
+                                                AND `tDLA`.`link_doctype` = "Customer"
+            WHERE `tDLA`.`link_name` = "{customer.name}";"""
+        
+        countries = frappe.db.sql(query, as_dict=True)
+        only_italy = True
+        for country in countries:
+            if country['country'] != "Italy":
+                print(f"Customer {customer.name} has an address in Italy but also an address in {country['country']}.")
+                only_italy = False
+                break
+        if only_italy:
+            add_webshop_service(customer.name, "EasyRun")
+    frappe.db.commit()
+
+
 def activate_fullplasmidseq_dach():
     """
     run
