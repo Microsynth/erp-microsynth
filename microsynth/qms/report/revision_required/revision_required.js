@@ -4,6 +4,11 @@
 
 frappe.query_reports["Revision Required"] = {
 	"filters": [
-
+		{
+            "fieldname": "document_type",
+            "label": __("Document Type"),
+            "fieldtype": "Select",
+            "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
+        }
 	]
 };
