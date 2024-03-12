@@ -20,12 +20,14 @@ frappe.ui.form.on('Sales Invoice', {
 
         // disable keyboard shortcut CTRL + E if document is not valid
         //if (frm.doc.docstatus != 1) {  // TODO: comment in as soon as setting custom shortcut works (see below)
-            frappe.ui.keys.off("ctrl+e");
+        frappe.ui.keys.off("ctrl+e");
         //}
 
         // frappe.ui.keys.add_shortcut({
         //     shortcut: 'ctrl+e',
-        //     action: open_mail_dialog(frm),
+        //     action: function() { 
+        //         open_mail_dialog(frm)
+        //     },
         //     description: __('Custom Email shortcut')
         // });
 
@@ -326,7 +328,11 @@ function check_prevdoc_rates(frm) {
 
 
 function open_mail_dialog(frm){
-    if (frm.doc.invoice_to) {
+    if (frm.doc.docstatus != 1) {
+        frappe.show_alert('Cannot email invoice because it is not submitted.');
+    } else if (!frm.doc.invoice_to){
+        frappe.show_alert('Please enter an Invoice To Contact with a valid email address before opening the mail dialog.');
+    } else {
         frappe.call({
             'method': 'microsynth.microsynth.utils.get_email_ids',
             'args': {
@@ -350,7 +356,5 @@ function open_mail_dialog(frm){
                 }
             }
         });
-    } else {
-        frappe.show_alert('Please enter an Invoice To Contact with a valid email address before opening the mail dialog.');
     }
 }
