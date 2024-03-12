@@ -44,7 +44,7 @@ naming_code = {
 
 
 class QMDocument(Document):
-    def autoname(self):       
+    def autoname(self):
         if self.import_name:
             # in the case of an import, override naming generator by import name
             self.name = self.import_name
@@ -352,3 +352,86 @@ def check_update_validity():
     """
     invalidate_qm_docs()
     validate_released_qm_docs()
+
+
+def parse_fm_export(file_path):
+    """
+    bench execute microsynth.qms.doctype.qm_document.qm_document.parse_fm_export --kwargs "{'file_path': '/mnt/erp_share/JPe/tabExportQ-documents_incl_steering.tab'}"
+    """
+    import csv
+    expected_line_length = 3
+    counter = 0
+
+    with open(file_path) as tsv:
+        print(f"Parsing Q Documents from '{file_path}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in tsv), delimiter="\t")  # replace NULL bytes (throwing an error)
+        #next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
+                continue
+            title = line[0]
+            doc_id = line[1]
+            space_separated_parts = doc_id.split(' ')
+            if len(space_separated_parts) != 2:
+                print(f"'{doc_id}' contains more or less than one space, but according to QMH only one space is allowed between type of document and the rest of the document ID.")
+                continue
+            doc_type = space_separated_parts[0]
+            numbers = space_separated_parts[1].split('.')
+            chapter = None
+            if doc_type in ['VERF', 'OFF', 'BER', 'VERS']:
+                print(f"Q Document '{doc_id}' has a valid type of document according to QMH, but {doc_type} is not supported anymore.")
+                continue
+            if doc_type in ['AV', 'SOP', 'QMH', 'APPX']:  # Code 1
+                if len(numbers) == 4:
+                    process_number = numbers[0]
+                    subprocess_number = numbers[1]
+                    chapter = numbers[2]
+                    document_number = numbers[3].replace('*','')
+                else:
+                    print(f"Expected {doc_type} to have four numbers separated by a dot, but second part is '{space_separated_parts[1]}' and whole Document ID is '{doc_id}'.")
+                    continue
+            elif doc_type in ['PROT']:  # Code 2
+                if len(numbers) == 4:
+                    process_number = numbers[0]
+                    subprocess_number = numbers[1]
+                    date = numbers[2]
+                    document_number = numbers[3].replace('*','')
+                else:
+                    print(f"Expected {doc_type} to have four numbers separated by a dot, but second part is '{space_separated_parts[1]}' and whole Document ID is '{doc_id}'.")
+                    continue
+            elif doc_type in ['LIST', 'FORM', 'FLOW', 'CL', 'VERF', 'OFF']:  # Code 3
+                if len(numbers) == 3:
+                    process_number = numbers[0]
+                    subprocess_number = numbers[1]
+                    document_number = numbers[2].replace('*','')
+                else:
+                    print(f"Expected {doc_type} to have three numbers separated by a dot, but second part is '{space_separated_parts[1]}' and whole Document ID is '{doc_id}'.")
+                    continue
+            else:
+                print(f"First part of Document ID '{doc_id}' is '{doc_type}' and not valid due to the QMH.")
+                continue
+            # Replace AV by SOP
+            if doc_type == 'AV':
+                doc_type = 'SOP'
+            # TODO: Get fitting QM Process via SQL
+            if chapter:
+                pass
+            # Create QM Document to check name
+            # qm_doc = frappe.get_doc({
+            #     'doctype': "QM Document",
+            #     'document_type': doc_type,
+            #     'qm_process': None,
+            #     'document_number': document_number,
+            #     'title': title
+            # })
+            # qm_doc.insert()
+            # if '*' in doc_id:
+            #     name_to_compare = qm_doc.name + '*'
+            # else:
+            #     name_to_compare = qm_doc.name
+            # if name_to_compare != doc_id and doc_type != 'PROT':  # PROT gets current date into its name
+            #     print(f"{name_to_compare=} unequals {doc_id=}")
+            #     continue
+            counter += 1
+    print(f"Could successfully import {counter} Q Documents.")
