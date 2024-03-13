@@ -4,6 +4,34 @@
 
 frappe.query_reports["Product Ideas"] = {
 	"filters": [
-
+		{
+			"fieldname": "item_group",
+			"fieldtype": "Link",
+			"label": "Item Group",
+			"options": "Item Group"
+		},
+		{
+            "fieldname": "territory",
+            "label": __("Territory"),
+            "fieldtype": "Link",
+            "options": "Territory"
+        },
+		{
+			"fieldname": "product",
+			"fieldtype": "Data",
+			"label": "Product"
+		},
+		{
+			"fieldname": "item",
+			"fieldtype": "Link",
+			"label": "Item",
+			"options": "Item"
+		},
+		{
+			"fieldname": "rating",
+			"fieldtype": "Select",
+			"label": "Rating",
+			"options": "\n0\n1\n2\n3\n4\n5"
+		}
 	]
 };
