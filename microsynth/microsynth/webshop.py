@@ -979,12 +979,19 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
         return {'success': False, 'message': 'Either customer_id or country is required', 'shipping_items': []}
     if customer_id:
         # find by customer id
-        shipping_items = frappe.db.sql(
-        """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
-           FROM `tabShipping Item`
-           WHERE `parent` = "{0}" 
-             AND `parenttype` = "Customer"
-           ORDER BY `idx` ASC;""".format(str(customer_id)), as_dict=True)
+        shipping_items = frappe.db.sql("""
+            SELECT `tabShipping Item`.`item`,
+                `tabShipping Item`.`item_name`,
+                `tabShipping Item`.`qty`,
+                `tabShipping Item`.`rate`,
+                `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`preferred_express`
+            FROM `tabShipping Item`
+            LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
+            WHERE `tabShipping Item`.`parent` = "{0}"
+                AND `tabShipping Item`.`parenttype` = "Customer"
+                AND `tabItem`.`disabled` = 0
+            ORDER BY `tabShipping Item`.`idx` ASC;""".format(str(customer_id)), as_dict=True)
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
@@ -1000,12 +1007,19 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
         country = frappe.defaults.get_global_default('country')
     else:
         country = robust_get_country(country)
-    shipping_items = frappe.db.sql(
-    """SELECT `item`, `item_name`, `qty`, `rate`, `threshold`, `preferred_express`
-       FROM `tabShipping Item`
-       WHERE `parent` = "{0}" 
-         AND `parenttype` = "Country"
-       ORDER BY `idx` ASC;""".format(country), as_dict=True)
+    shipping_items = frappe.db.sql("""
+        SELECT `tabShipping Item`.`item`,
+                `tabShipping Item`.`item_name`,
+                `tabShipping Item`.`qty`,
+                `tabShipping Item`.`rate`,
+                `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`preferred_express`
+        FROM `tabShipping Item`
+        LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
+        WHERE `tabShipping Item`.`parent` = "{0}" 
+            AND `tabShipping Item`.`parenttype` = "Country"
+            AND `tabItem`.`disabled` = 0
+        ORDER BY `tabShipping Item`.`idx` ASC;""".format(country), as_dict=True)
            
     return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
