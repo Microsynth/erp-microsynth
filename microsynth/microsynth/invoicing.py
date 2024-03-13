@@ -386,7 +386,8 @@ def make_invoice(delivery_note):
     if not sales_invoice.invoice_to:
         sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
     #sales_invoice.set_advances()    # get advances (customer credit)
-    sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
+    if sales_invoice.total > 0:
+        sales_invoice = allocate_credits(sales_invoice)  # check and allocate open customer credits
     
     # force-set tax_id (intrastat!)
     if not sales_invoice.tax_id:
@@ -524,7 +525,8 @@ def make_collective_invoice(delivery_notes):
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
         
     # sales_invoice.set_advances()    # get advances (customer credit)
-    sales_invoice = allocate_credits(sales_invoice)         # check and allocated open customer credits
+    if sales_invoice.total > 0:
+        sales_invoice = allocate_credits(sales_invoice)  # check and allocate open customer credits
 
     # force-set tax_id (intrastat!)
     if not sales_invoice.tax_id:

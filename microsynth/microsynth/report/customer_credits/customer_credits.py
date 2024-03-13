@@ -28,7 +28,7 @@ def get_columns():
     return columns
 
 
-def get_data(filters, short=False, filter_out_projects=True):
+def get_data(filters, short=False, filter_out_projects=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
 
     if filter_out_projects:
