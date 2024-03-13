@@ -34,11 +34,18 @@ def has_credits(customer, product_type=None):
 def get_total_credit(customer, company, product_type):
     """
     Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
+    Exclude Project Credits if product_type is None.
+    Need to bypass function get_available_credits because get_available_credits is called by has_credits and
+    has_credits always wants all credits even if product_type is None.
 
     Run
     bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG', 'product_type': 'Project' }"
     """
-    credits = get_available_credits(customer, company, product_type)
+    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
+    if product_type:
+        credits = get_data({'customer': customer, 'company': company, 'product_type': product_type})
+    else:
+        credits = get_data({'customer': customer, 'company': company, 'product_type': product_type}, filter_out_projects=True)
 
     if len(credits) == 0:
         return None
@@ -51,27 +58,27 @@ def get_total_credit(customer, company, product_type):
     return total
 
 
-def get_total_credit_without_project(customer, company):
-    """
-    Return the total credit amount available to a customer for the specified company excluding credits with product type project.
-    Returns None if there is no credit account.
+# def get_total_credit_without_project(customer, company):
+#     """
+#     Return the total credit amount available to a customer for the specified company excluding credits with product type project.
+#     Returns None if there is no credit account.
 
-    Run
-    bench execute microsynth.microsynth.credits.get_total_credit_without_project --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
-    """
-    credits = get_available_credits(customer, company, None)
+#     Run
+#     bench execute microsynth.microsynth.credits.get_total_credit_without_project --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
+#     """
+#     credits = get_available_credits(customer, company, None)
 
-    if len(credits) == 0:
-        return None
+#     if len(credits) == 0:
+#         return None
 
-    total = 0
-    for credit in credits:
-        if credit['product_type'] == "Project":
-            continue
-        if not 'outstanding' in credit: 
-            continue
-        total = total + credit['outstanding']
-    return total
+#     total = 0
+#     for credit in credits:
+#         if credit['product_type'] == "Project":
+#             continue
+#         if not 'outstanding' in credit: 
+#             continue
+#         total = total + credit['outstanding']
+#     return total
 
 
 def allocate_credits(sales_invoice_doc):

@@ -19,7 +19,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
-from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit, get_total_credit_without_project
+from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -113,7 +113,7 @@ def make_collective_invoices(delivery_notes):
                         if product_type == 'Project':
                             credit = get_total_credit(customer, company, product_type)
                         else:
-                            credit = get_total_credit_without_project(customer, company)
+                            credit = get_total_credit(customer, company, None)
                         customer_credits = frappe.get_value("Customer", customer, "customer_credits")
                         if credit is not None and customer_credits == 'Credit Account':
                             # there is some credit - check if it is sufficient
@@ -213,7 +213,7 @@ def async_create_invoices(mode, company, customer):
                 if dn.get('product_type') == 'Project':
                     credit = get_total_credit(dn.get('customer'), company, dn.get('product_type'))
                 else:
-                    credit = get_total_credit_without_project(dn.get('customer'), company)
+                    credit = get_total_credit(dn.get('customer'), company, None)
                 customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
                 if credit is not None and customer_credits == 'Credit Account':
                     delivery_note =  dn.get('delivery_note')
