@@ -25,6 +25,9 @@ frappe.ui.form.on('Delivery Note', {
     company(frm) {
         set_naming_series(frm);                 // common function
     },
+    before_save(frm) {
+        set_export_category(frm);
+    },
     validate(frm) {
         if (!locals.prevdoc_checked && frm.doc.__islocal) {
             frappe.msgprint( __("Please be patient, prices are being checked..."), __("Validation") );
@@ -39,6 +42,24 @@ frappe.ui.form.on('Delivery Note Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function set_export_category(frm) {
+    frappe.call({
+        'method': "microsynth.microsynth.utils.get_export_category",
+        'args': { 
+            'address_name': frm.doc.shipping_address_name
+        },
+        'async': false,
+        'callback': function(response)
+        {
+            if(!frm.doc.export_category) {  // only set export_category if field is empty
+                cur_frm.set_value("export_category", response.message);
+                frappe.show_alert("Set Export Category to " + response.message);
+            }
+        }
+    });
+}
 
 
 function check_prevdoc_rates(frm) {

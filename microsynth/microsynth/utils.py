@@ -396,6 +396,7 @@ def get_express_shipping_item(customer_name, country_name):
         return country_express_item
 
 
+@frappe.whitelist()
 def get_export_category(address_name):
     """
     Return the export_code of the Country of the given Address, except Canary Islands (ROW).
