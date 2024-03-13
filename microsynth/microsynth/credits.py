@@ -276,7 +276,7 @@ def close_invoice_against_expense(sales_invoice, account):
     return jv.name
 
 
-def get_customer_credit_transactions(currency, date):
+def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     """
     Debug function to find customer credit transactions per day
 
@@ -312,7 +312,7 @@ def get_customer_credit_transactions(currency, date):
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "6100"
-                AND `tabSales Invoice`.`company` = 'Microsynth AG'
+                AND `tabSales Invoice`.`company` = '{company}'
                 AND `tabSales Invoice`.`posting_date` = "{date}"
                 AND `tabSales Invoice`.`currency` = '{currency}'
             GROUP BY `tabSales Invoice`.`name`
@@ -332,12 +332,12 @@ def get_customer_credit_transactions(currency, date):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`company` = 'Microsynth AG'
+                AND `tabSales Invoice`.`company` = '{company}'
                 AND `tabSales Invoice`.`posting_date` = "{date}"
                 AND `tabSales Invoice`.`currency` = '{currency}'
         ) AS `raw`
         WHERE `raw`.`net_amount` != 0
-        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date), as_dict=True):
+        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date, company=company), as_dict=True):
         print("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
             d['date'],
             d['customer'],
