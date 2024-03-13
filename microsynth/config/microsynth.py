@@ -394,6 +394,26 @@ def get_data():
                     }
             ]
         },
+                {
+            "label": _("Product Management"),
+            "icon": "fa fa-users",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Benchmarking Information",
+                        "label": _("Benchmarking Information"),
+                        "doctype": "Benchmark",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Product Ideas",
+                        "label": _("Product Ideas"),
+                        "doctype": "Product Idea",
+                        "is_query_report": True
+                    }
+            ]
+        },
         {
             "label": _("Human Resources"),
             "icon": "fa fa-users",
