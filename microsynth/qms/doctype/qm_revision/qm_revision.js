@@ -22,16 +22,21 @@ frappe.ui.form.on('QM Revision', {
         });
 
         // show sign button (only for revisor!)
-        if ((frm.doc.docstatus < 1)
-            && (frappe.session.user === frm.doc.revisor)
-            && (frappe.user.has_role('QAU'))) {
-            // add sign button
-            cur_frm.page.set_primary_action(
-                __("Sign"),
-                function() {
-                    sign();
-                }
-            );
+        if (frm.doc.docstatus < 1) {
+            cur_frm.dashboard.clear_comment();
+            if (frappe.session.user !== frm.doc.revisor) {
+                cur_frm.dashboard.add_comment(__('Only the assigned revisor can sign this revision.'), 'yellow', true);
+            } else if (!frappe.user.has_role('QAU')) {
+                cur_frm.dashboard.add_comment(__('You need the QAU role to sign this revision.'), 'yellow', true);
+            } else {
+                // add sign button
+                cur_frm.page.set_primary_action(
+                    __("Sign"),
+                    function() {
+                        sign();
+                    }
+                );
+            }
         }
     }
 });
