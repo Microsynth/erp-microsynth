@@ -23,6 +23,7 @@
    "in_list_view": 1,
    "label": "Revisor",
    "options": "User",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -31,6 +32,7 @@
    "in_list_view": 1,
    "label": "Document Type",
    "options": "DocType",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -39,12 +41,14 @@
    "in_list_view": 1,
    "label": "Document Name",
    "options": "document_type",
+   "read_only": 1,
    "reqd": 1
   },
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "label": "Due Date"
+   "label": "Due Date",
+   "read_only": 1
   },
   {
    "fieldname": "col_main",
@@ -68,7 +72,8 @@
   {
    "fieldname": "signature",
    "fieldtype": "Data",
-   "label": "Signature"
+   "label": "Signature",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -81,7 +86,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-11 12:23:22.107305",
+ "modified": "2024-03-14 14:48:58.835488",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Revision",
