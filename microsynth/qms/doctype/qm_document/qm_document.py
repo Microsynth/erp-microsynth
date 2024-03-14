@@ -131,6 +131,7 @@ def create_new_version(doc):
     new_doc.version = cint(new_doc.version) + 1         # go to next version
     if new_doc.version > 99:
         frappe.throw( "Sorry, you have lost the lottery.", "Document version too high")
+    new_doc.import_name = None
     new_doc.created_on = None
     new_doc.created_by = None
     new_doc.reviewed_on = None
