@@ -1986,7 +1986,7 @@ def set_territory_for_customers():
 
 def update_territories_and_sales_managers():
     """
-    Update the territories and sales managers for all Customers whose current territory is in France or Switzerland
+    Update the territories and sales managers for all Customers whose current territory is Rest of the World
 
     run 
     bench execute microsynth.microsynth.migration.update_territories_and_sales_managers
@@ -1994,7 +1994,7 @@ def update_territories_and_sales_managers():
     from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
     
     customers = frappe.db.get_all("Customer",
-        filters = {'disabled': 0 },
+        filters = [['disabled', '=', 0], ['territory', '=', 'Rest of the World']],
         fields = ['name'])
 
     for i, cust in enumerate(customers):
@@ -2002,15 +2002,15 @@ def update_territories_and_sales_managers():
             if i % 100 == 0:
                 print(f"Already processed {i}/{len(customers)} Customers.")
                 frappe.db.commit()
-            c = frappe.get_doc("Customer", cust)
-            if not ('France' in c.territory or 'Paris' in c.territory or 'Lyon' in c.territory or 'Switzerland' in c.territory):  # TODO: Move conditions to frappe.db.get_all call above
-                continue
+            c = frappe.get_doc("Customer", cust['name'])
             address_id = get_first_shipping_address(c.name)
             if not address_id:
+                print(f"Found no shipping address for Customer '{cust['name']}'. Going to continue.")
                 continue
             country = frappe.get_value("Address", address_id, "country")
-            if (country == "Switzerland" and not 'Switzerland' in c.territory) or (country == "France" and not ('France' in c.territory or 'Lyon' in c.territory or 'Paris' in c.territory)):
-                print(f"Customer '{c.customer_name}' ({c.name}) has Territory {c.territory} but the country of the first shipping address is {country}.")
+            if not country:
+                print(f"Found no country in shipping address '{address_id}' of Customer '{cust['name']}'. Going to continue.")
+                continue
             territory = determine_territory(address_id)
             c.territory = territory.name
             c.account_manager = frappe.get_value("Territory", territory.name, "sales_manager")
