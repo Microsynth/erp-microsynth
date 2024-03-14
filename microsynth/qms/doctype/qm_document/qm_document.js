@@ -222,6 +222,12 @@ frappe.ui.form.on('QM Document', {
                 attach_btns[i].style.visibility = "hidden";
             }
         }
+        
+        // only allow creator or QAU to set/change valid till date
+        if ((frm.doc.docstatus == 1)
+            && !((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role("QAU")))) {
+            cur_frm.set_df_property('valid_till', 'read_only', true);
+        }
     },
     document_type: function(frm) {
         if (["PROT"].includes(frm.doc.document_type)){
