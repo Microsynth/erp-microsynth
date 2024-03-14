@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('QM Revision', {
-	refresh: function(frm) {
+    refresh: function(frm) {
         // reset buttons
         cur_frm.page.clear_primary_action();
         cur_frm.page.clear_secondary_action();
@@ -23,8 +23,8 @@ frappe.ui.form.on('QM Revision', {
 
         // show sign button (only for revisor!)
         if ((frm.doc.docstatus < 1)
-            && (frappe.user === frm.doc.revisor)
-			&& frappe.user.has_role('QAU')) {
+            && (frappe.session.user === frm.doc.revisor)
+            && (frappe.user.has_role('QAU'))) {
             // add sign button
             cur_frm.page.set_primary_action(
                 __("Sign"),
@@ -33,7 +33,7 @@ frappe.ui.form.on('QM Revision', {
                 }
             );
         }
-	}
+    }
 });
 
 
