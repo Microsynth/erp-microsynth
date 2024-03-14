@@ -362,50 +362,50 @@ def parse_doc_id(doc_id, title, steering):
     """
     space_separated_parts = doc_id.split(' ')
     if len(space_separated_parts) != 2:
-        print(f"{title};{doc_id};{steering};contains more or less than one space, but expected exactly one space between type of document and the rest of the document ID according to the QMH.")
+        print(f"{doc_id};{title};{steering};contains more or less than one space, but expected exactly one space between type of document and the rest of the document ID according to the QMH.")
         return None
     doc_type = space_separated_parts[0]
     numbers = space_separated_parts[-1].split('.')
     chapter = date = None
     if doc_type in ['VERF', 'OFF', 'BER', 'VERS']:
-        print(f"{title};{doc_id};{steering};has a valid type of document according to QMH, but {doc_type} is not supported anymore.")
+        print(f"{doc_id};{title};{steering};has a valid type of document according to QMH, but {doc_type} is not supported anymore.")
         return None
     if doc_type in ['AV', 'SOP', 'QMH', 'APPX']:  # Code 1
         if len(numbers) == 4:
             chapter = numbers[2]
             document_number = numbers[3].replace('*','')
         else:
-            print(f"{title};{doc_id};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
             return None
     elif doc_type in ['PROT']:  # Code 2
         if len(numbers) == 4:
             date = numbers[2]
             document_number = numbers[3].replace('*','')
         else:
-            print(f"{title};{doc_id};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
             return None
     elif doc_type in ['LIST', 'FORM', 'FLOW', 'FLUDI', 'CL', 'VERF', 'OFF']:  # Code 3
         if len(numbers) == 3:
             document_number = numbers[2].replace('*','')
         else:
-            print(f"{title};{doc_id};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have three numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};{steering};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have three numbers separated by a dot according to QMH.")
             return None
     else:
-        print(f"{title};{doc_id};{steering};First part of Document ID is '{doc_type}' and not a valid type of document according to the QMH.")
+        print(f"{doc_id};{title};{steering};First part of Document ID is '{doc_type}' and not a valid type of document according to the QMH.")
         return None
     # try to convert process_number and subprocess_number to int
     try:
         process_number = int(numbers[0])
         subprocess_number = int(numbers[1])
     except Exception as err:
-        print(f"{title};{doc_id};{steering};Unable to convert process number '{process_number}' or subprocess_number '{subprocess_number}' to an integer. Going to continue. Error = '{err}'")
+        print(f"{doc_id};{title};{steering};Unable to convert process number '{process_number}' or subprocess_number '{subprocess_number}' to an integer. Going to continue. Error = '{err}'")
         return None
     if chapter:
         # try to convert chapter to int
         try:
             chapter = int(chapter)
         except Exception as err:
-            print(f"{title};{doc_id};{steering};Unable to convert chapter '{chapter}' to an integer. Going to continue. Error = '{err}'")
+            print(f"{doc_id};{title};{steering};Unable to convert chapter '{chapter}' to an integer. Going to continue. Error = '{err}'")
             return None
     # Replace AV by SOP
     if doc_type == 'AV':
@@ -452,7 +452,7 @@ def import_qm_documents(file_path, expected_line_length=3):
                 qm_processes = frappe.get_all("QM Process", filters=[
                     ['process_number', '=', parts['process_number']],
                     ['subprocess_number', '=', parts['subprocess_number']],
-                    #['chapter', '=', parts['chapter']]
+                    #['chapter', '=', parts['chapter']]  # Only Process 5.3 has a chapter (5.3.1 or 5.3.2)
                     ], fields=['name'])
             else:
                 qm_processes = frappe.get_all("QM Process", filters=[
@@ -460,35 +460,39 @@ def import_qm_documents(file_path, expected_line_length=3):
                     ['subprocess_number', '=', parts['subprocess_number']],
                     ['all_chapters', '=', 1]],
                     fields=['name'])
-                parts['chapter'] = 'all'
 
             if len(qm_processes) == 0:
                 process_name = f"{parts['process_number']}.{parts['subprocess_number']}"
                 qm_processes.append({'name': process_name})
-                print(f"{title};{doc_id};{steering};Found no QM Process with process_number={parts['process_number']} and subprocess_number={parts['subprocess_number']}. "
+                print(f"{doc_id};{title};{steering};Found no QM Process with process_number={parts['process_number']} and subprocess_number={parts['subprocess_number']}. "
                       f"Going to set Process of QM Document to '{process_name}'.")
             elif len(qm_processes) > 1:
-                print(f"{title};{doc_id};{steering};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
+                print(f"{doc_id};{title};{steering};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
                       f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to take the first QM Process.")
             # Create QM Document
             qm_doc = frappe.get_doc({
                 'doctype': "QM Document",
                 'document_type': parts['doc_type'],
                 'qm_process': qm_processes[0]['name'],
-                'chapter': parts['chapter'],
+                'chapter': parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
                 'import_name': doc_id,
                 'title': title
             })
             try:
+                #qm_doc.chapter = parts['chapter']
                 qm_doc.insert()
+                #qm_doc.chapter = parts['chapter']
+                #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
+                #qm_doc.save()  # TODO: How to avoid overwriting chapter?
+                #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
                 inserted_docs.append(qm_doc.name)
             except Exception as err:
-                print(f"{title};{doc_id};{steering};Unable to insert: {err}")
+                print(f"{doc_id};{title};{steering};Unable to insert: {err}")
                 continue
             if qm_doc.name != doc_id:  # currently useless
-                print(f"{title};{doc_id};{steering};unequals {qm_doc.name=}.")
+                print(f"{doc_id};{title};{steering};unequals {qm_doc.name=}.")
                 continue
             imported_counter += 1
     print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
