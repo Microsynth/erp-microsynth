@@ -3763,3 +3763,18 @@ def import_user_process_assignments(filepath):
             user_settings.append('qm_process_assignments', process)
         user_settings.save()
     frappe.db.commit()
+    
+"""
+Find all invoice sent on with milliseconds and remove the millisecond part
+
+Fixes the invoice not saved on open bug
+"""
+def patch_invoice_sent_on_dates():
+	print("Executing cleanup query...")
+	frappe.db.sql("""
+		UPDATE `tabSales Invoice`
+		SET `invoice_sent_on` = SUBSTRING(`invoice_sent_on`, 1, 19) 
+		WHERE LENGTH(`invoice_sent_on`) > 19;""")
+	print("done ;-)")
+	return
+	
