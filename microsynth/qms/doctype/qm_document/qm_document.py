@@ -10,7 +10,7 @@ from datetime import datetime, date
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 
-document_types_with_review = ['SOP', 'FLOW', 'QMH', 'APPX']
+document_types_with_review = ['SOP', 'FLOW', 'QMH']
 
 naming_patterns = {
     "Code1": {

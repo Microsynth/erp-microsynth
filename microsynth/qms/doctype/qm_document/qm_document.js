@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
-const document_types_with_review = ['SOP', 'FLOW', 'QMH', 'APPX'];
+const document_types_with_review = ['SOP', 'FLOW', 'QMH'];
 
 
 frappe.ui.form.on('QM Document', {
