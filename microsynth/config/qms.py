@@ -14,6 +14,27 @@ def get_data():
                        "description": _("Document")
                     },
                     {
+                        "type": "report",
+                        "name": "Releasable Documents",
+                        "label": _("Releasable Documents"),
+                        "doctype": "QM Document",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Training Confirmations",
+                        "label": _("Training Confirmations"),
+                        "doctype": "QM Training Record",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Revision Required",
+                        "label": _("Revision Required"),
+                        "doctype": "QM Document",
+                        "is_query_report": True
+                    },
+                    {
                        "type": "doctype",
                        "name": "QM Review",
                        "label": _("Review"),
@@ -26,25 +47,10 @@ def get_data():
                        "description": _("Training Record")
                     },
                     {
-                        "type": "report",
-                        "name": "Training Confirmations",
-                        "label": _("Training Confirmations"),
-                        "doctype": "QM Training Record",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Releasable Documents",
-                        "label": _("Releasable Documents"),
-                        "doctype": "QM Document",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Revision Required",
-                        "label": _("Revision Required"),
-                        "doctype": "QM Document",
-                        "is_query_report": True
+                       "type": "doctype",
+                       "name": "QM Revision",
+                       "label": _("Revision"),
+                       "description": _("Revision")
                     }
             ]
         },
