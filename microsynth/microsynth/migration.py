@@ -3768,6 +3768,9 @@ def import_user_process_assignments(filepath):
 Find all invoice sent on with milliseconds and remove the millisecond part
 
 Fixes the invoice not saved on open bug
+
+Run as
+ $ bench execute microsynth.microsynth.migration.patch_invoice_sent_on_dates
 """
 def patch_invoice_sent_on_dates():
 	print("Executing cleanup query...")
