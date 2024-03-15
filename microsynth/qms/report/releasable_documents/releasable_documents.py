@@ -8,12 +8,12 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Document Name"), "fieldname": "name", "fieldtype": "Dynamic Link", "options": "QM Document", "width": 150 },
+        {"label": _("Document Name"), "fieldname": "name", "fieldtype": "Dynamic Link", "options": "QM Document", "width": 160 },
         {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 300 },
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100 },
-        {"label": _("Valid from"), "fieldname": "valid_from", "fieldtype": "Date", "width": 75 },
-        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 75 },
-        {"label": _("Created"), "fieldname": "created_on", "fieldtype": "Date", "width": 75 },
+        {"label": _("Valid from"), "fieldname": "valid_from", "fieldtype": "Date", "width": 100 },
+        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 100 },
+        {"label": _("Created"), "fieldname": "created_on", "fieldtype": "Date", "width": 100 },
         {"label": _("Creator"), "fieldname": "created_by", "fieldtype": "Link", "options":"User", "width": 200 }
     ]
 

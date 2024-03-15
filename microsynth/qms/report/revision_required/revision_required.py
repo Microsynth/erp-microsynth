@@ -10,10 +10,10 @@ def get_columns(filters):
     return [
         {"label": _("Document Name"), "fieldname": "name", "fieldtype": "Dynamic Link", "options": "QM Document", "width": 150 },
         {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 300 },
-        {"label": _("Released"), "fieldname": "released_on", "fieldtype": "Date", "width": 75 },
-        {"label": _("Valid from"), "fieldname": "valid_from", "fieldtype": "Date", "width": 75 },
-        {"label": _("Last Revision"), "fieldname": "last_revision", "fieldtype": "Date", "width": 95 },
-        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 75 },
+        {"label": _("Released"), "fieldname": "released_on", "fieldtype": "Date", "width": 100 },
+        {"label": _("Valid from"), "fieldname": "valid_from", "fieldtype": "Date", "width": 100 },
+        {"label": _("Last Revision"), "fieldname": "last_revision_on", "fieldtype": "Date", "width": 100 },
+        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 100 },
         {"label": _("Creator"), "fieldname": "created_by", "fieldtype": "Link", "options":"User", "width": 200 }
     ]
 
@@ -34,28 +34,19 @@ def get_data(filters):
             `tabQM Document`.`title`,
             `tabQM Document`.`released_on`,
             `tabQM Document`.`valid_from`,
+            `tabQM Document`.`last_revision_on`,
             `tabQM Document`.`valid_till`,
             `tabQM Document`.`created_by`
         FROM `tabQM Document`
         WHERE `tabQM Document`.`status` = 'Valid'
-            AND `tabQM Document`.`released_on` < DATE_ADD(NOW(), INTERVAL -33 MONTH)
+            AND `tabQM Document`.`released_on` <= DATE_ADD(NOW(), INTERVAL -34 MONTH)
+            AND `tabQM Document`.`last_revision_on` <= DATE_ADD(NOW(), INTERVAL -34 MONTH)
             {filter_conditions}
     """.format(filter_conditions=filter_conditions)
 
-    raw_data = frappe.db.sql(query, as_dict=True)
-    refined_data = []
+    data = frappe.db.sql(query, as_dict=True)
 
-    for doc in raw_data:
-        # TODO: Replace modified by date of signature
-        revisions = frappe.get_all("QM Revision", filters=[['document_name', '=', doc['name']]], fields=['name', 'modified'], order_by='modified desc')
-        if len(revisions) == 0:
-            refined_data.append(doc)
-            continue
-        else:
-            doc['last_revision'] = revisions[0]['modified']
-            refined_data.append(doc)
-
-    return refined_data
+    return data
 
 
 def execute(filters=None):
