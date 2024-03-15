@@ -1354,9 +1354,9 @@ Your administration team<br><br>{footer}"
         else:
             return
 
-        # sales_invoice.invoice_sent_on = datetime.now()
+        # sales_invoice.invoice_sent_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # sales_invoice.save()
-        frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now(), update_modified = False)
+        frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = False)
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoicing_method", mode, update_modified = False)
         frappe.db.commit()
 
@@ -1620,7 +1620,7 @@ def transmit_carlo_erba_invoices(sales_invoices):
     file.close()
 
     for invoice_name in sales_invoices:
-        frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now(), update_modified = True)
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = True)
 
     return
 
