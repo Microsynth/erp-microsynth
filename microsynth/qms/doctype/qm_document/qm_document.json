@@ -44,6 +44,7 @@
    "fieldname": "document_type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Document Type",
    "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX",
    "reqd": 1
@@ -268,7 +269,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-15 07:38:55.515917",
+ "modified": "2024-03-15 10:15:18.960738",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
