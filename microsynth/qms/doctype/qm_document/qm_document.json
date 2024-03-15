@@ -23,11 +23,13 @@
   "created_on",
   "reviewed_on",
   "released_on",
+  "last_revision_on",
   "valid_from",
   "meta_data_column_break",
   "created_by",
   "reviewed_by",
   "released_by",
+  "last_revision_by",
   "valid_till",
   "linked_documents_section",
   "linked_documents",
@@ -266,11 +268,24 @@
    "fieldtype": "Select",
    "label": "Classification Level",
    "options": "Secret\nConfidential\nOfficial"
+  },
+  {
+   "fieldname": "last_revision_on",
+   "fieldtype": "Date",
+   "label": "Last revision on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_revision_by",
+   "fieldtype": "Link",
+   "label": "Last revision by",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-15 12:10:10.206191",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-03-15 15:06:49.165445",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
