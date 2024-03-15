@@ -17,6 +17,7 @@
   "document_number",
   "version",
   "status",
+  "classification_level",
   "amended_from",
   "meta_data_section",
   "created_on",
@@ -257,10 +258,17 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Import name"
+  },
+  {
+   "default": "Confidential",
+   "fieldname": "classification_level",
+   "fieldtype": "Select",
+   "label": "Classification Level",
+   "options": "Secret\nConfidential\nOfficial"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-14 15:32:34.312138",
+ "modified": "2024-03-15 07:38:55.515917",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
