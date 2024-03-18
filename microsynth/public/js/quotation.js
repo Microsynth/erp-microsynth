@@ -24,6 +24,12 @@ frappe.ui.form.on('Quotation', {
                 }
             } 
         },500);
+
+        setTimeout(function(){
+            if (frm.doc.__islocal) {
+                assert_customer_fields(frm);
+            }
+        },500);
         
         hide_in_words();
 
