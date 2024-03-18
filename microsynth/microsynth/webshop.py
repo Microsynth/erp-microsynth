@@ -1025,18 +1025,18 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
 
 
 @frappe.whitelist()
-def get_contact_shipping_items(person_id):
+def get_contact_shipping_items(contact, client="webshop"):
     """
-    Return all available shipping items for a contact
+    Return all available shipping items for a contact specified by its Contact ID (Person ID)
 
-    bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'person_id': 221845}"
+    bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'contact': 221845}"
     """
-    if not person_id or not frappe.db.exists("Contact", person_id):
-        return {'success': False, 'message': 'A valid and existing person_id is required', 'shipping_items': []}
-    customer_id = get_customer(person_id)
+    if not contact or not frappe.db.exists("Contact", contact):
+        return {'success': False, 'message': 'A valid and existing contact is required', 'shipping_items': []}
+    customer_id = get_customer(contact)
     # find by customer id
     if customer_id:
-        shipping_items = frappe.db.sql(f"""            
+        shipping_items = frappe.db.sql(f"""
             SELECT `tabShipping Item`.`item`,
                 `tabShipping Item`.`item_name`,
                 `tabShipping Item`.`qty`,
@@ -1053,11 +1053,11 @@ def get_contact_shipping_items(person_id):
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
             # find country for fallback
-            address = frappe.get_value("Contact", person_id, "address")
+            address = frappe.get_value("Contact", contact, "address")
             if address:
                 country = frappe.get_value("Address", address, "country")
             else:
-                return {'success': False, 'message': f'Contact {person_id} has no address', 'shipping_items': []}
+                return {'success': False, 'message': f'Contact {contact} has no address', 'shipping_items': []}
 
     # find by country (fallback from the customer)
     if not country:
