@@ -295,12 +295,11 @@ def submit_seq_primer_dns():
         frappe.db.commit()
 
 
-def close_partly_delivered_orders():
+def close_partly_delivered_orders(dry_run=True):
     """
     Find Sequencing Sales Orders that are at least partly delivered and invoiced. Close these Sales Orders.
-    TODO: Currently only a dry run
 
-    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders
+    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders --kwargs "{'dry_run': True}"
     """
     from frappe.desk.tags import add_tag
 
@@ -348,7 +347,7 @@ def close_partly_delivered_orders():
 
         if so_doc.web_order_id:
             dn_web_order_id = f"AND `tabDelivery Note`.`web_order_id` = {so_doc.web_order_id}"
-            si_web_order_id = f"AND `tabSales Invoice`.`web_order_id` = {so_doc.web_order_id}"
+            #si_web_order_id = f"AND `tabSales Invoice`.`web_order_id` = {so_doc.web_order_id}"
         else:
             print(f"Sales Order {so_doc.name} has no Web Order ID.")
         
@@ -362,15 +361,15 @@ def close_partly_delivered_orders():
                 {dn_web_order_id};
             """, as_dict=True)
 
-        sales_invoices = frappe.db.sql(f"""
-            SELECT DISTINCT `tabSales Invoice Item`.`parent` AS `name`,
-                `tabSales Invoice`.`total`
-            FROM `tabSales Invoice Item`
-            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
-            WHERE (`tabSales Invoice Item`.`sales_order` = '{so_doc.name}'
-                AND `tabSales Invoice Item`.`docstatus` = 1)
-                {si_web_order_id};
-            """, as_dict=True)
+        # sales_invoices = frappe.db.sql(f"""
+        #     SELECT DISTINCT `tabSales Invoice Item`.`parent` AS `name`,
+        #         `tabSales Invoice`.`total`
+        #     FROM `tabSales Invoice Item`
+        #     LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
+        #     WHERE (`tabSales Invoice Item`.`sales_order` = '{so_doc.name}'
+        #         AND `tabSales Invoice Item`.`docstatus` = 1)
+        #         {si_web_order_id};
+        #     """, as_dict=True)
         
         if len(delivery_notes) > 0:
             if len(delivery_notes) == 1:
@@ -378,20 +377,26 @@ def close_partly_delivered_orders():
                 so_total = so_doc.total
                 diff = round(dn_total-so_total,2)
                 diffs.append((diff, so_doc.currency, so_doc.name))
-                print(f"{diff} {so_doc.currency}: Would close {so_doc.name} created {so_doc.creation}") 
-                #add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
-                # set Sales Order status to Closed
-                #so_doc.status = 'Closed'
-                #so_doc.save()
+                if dry_run:
+                    print(f"Would close {so_doc.name} created {so_doc.creation}")
+                else:
+                    add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
+                    # set Sales Order status to Closed
+                    so_doc.status = 'Closed'
+                    # TODO: frappe.exceptions.UpdateAfterSubmitError: Not allowed to change Status after submission
+                    so_doc.save()
+                    print(f"Closed {so_doc.name} created {so_doc.creation}")
                 counter += 1
             else:
-                print(f"--- Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Note: {delivery_notes}")
+                print(f"--- Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Notes: {delivery_notes}")
         else:
             print(f"##### Found no Delivery Note for Sales Order {so_doc.name} with Web Order ID '{so_doc.web_order_id}'.")
     
     diffs.sort()  # sorted by the first element of contained triples by default
-
     for diff in diffs:
         print(f"{diff[0]} {diff[1]}: {diff[2]}")
 
-    print(f"\nWould have closed {counter} Sales Orders.")
+    if dry_run:
+        print(f"\nWould have closed {counter} Sales Orders.")
+    else:
+        print(f"\nClosed {counter} Sales Orders.")
