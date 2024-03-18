@@ -295,17 +295,18 @@ def submit_seq_primer_dns():
         frappe.db.commit()
 
 
-def close_partly_delivered_orders(dry_run=True):
+def close_partly_delivered_orders(days=60, dry_run=True):
     """
-    Find Sequencing Sales Orders that are at least partly delivered and invoiced. Close these Sales Orders.
+    Find Sequencing Sales Orders that are at least partly delivered and invoiced
+    and created more than :param days ago. Close these Sales Orders.
 
-    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders --kwargs "{'dry_run': True}"
+    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders --kwargs "{'days': 60, 'dry_run': True}"
     """
     from frappe.desk.tags import add_tag
 
     counter = 0
     diffs = []
-    sales_orders = frappe.db.sql("""
+    sales_orders = frappe.db.sql(f"""
         SELECT * FROM
             (SELECT `tabSales Order`.`name`,
                 `tabSales Order`.`transaction_date`,
@@ -334,15 +335,17 @@ def close_partly_delivered_orders(dry_run=True):
                 AND `tabSales Order`.`docstatus` = 1
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
                 AND `tabSales Order`.`billing_status` NOT IN ('Closed', 'Not Billed')
-                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -30 DAY)
-                AND `tabSales Order`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -30 DAY)
+                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -{days} DAY)
+                AND `tabSales Order`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -{days} DAY)
             ) AS `raw`
         WHERE `raw`.`si_items` > 0
             AND `raw`.`dn_items` > 0
         ORDER BY `raw`.`transaction_date`
         ;""", as_dict=True)
     
-    for so in sales_orders:
+    print(f"Going to process {len(sales_orders)} Sales Orders.")
+    
+    for i, so in enumerate(sales_orders):
         so_doc = frappe.get_doc("Sales Order", so['name'])
 
         if so_doc.web_order_id:
@@ -382,10 +385,9 @@ def close_partly_delivered_orders(dry_run=True):
                 else:
                     add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
                     # set Sales Order status to Closed
-                    so_doc.status = 'Closed'
-                    # TODO: frappe.exceptions.UpdateAfterSubmitError: Not allowed to change Status after submission
+                    so_doc.update_status('Closed')
                     so_doc.save()
-                    print(f"Closed {so_doc.name} created {so_doc.creation}")
+                    print(f"{i}/{len(sales_orders)}: Tagged and closed {so_doc.name} created {so_doc.creation}")
                 counter += 1
             else:
                 print(f"--- Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Notes: {delivery_notes}")
