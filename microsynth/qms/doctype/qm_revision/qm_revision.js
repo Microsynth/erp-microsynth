@@ -38,6 +38,20 @@ frappe.ui.form.on('QM Revision', {
                 );
             }
         }
+
+        // allow the creator or QAU to change revisor (transfer document)
+        if ((!frm.doc.__islocal)
+            && (frm.doc.docstatus === 0)
+            && ((frappe.session.user === frm.doc.revisor) || (frappe.user.has_role('QAU')))
+            ) {
+            // add change revisor button
+            cur_frm.add_custom_button(
+                __("Change Revisor"),
+                function() {
+                    change_revisor(frm);
+                }
+            );
+        }
     }
 });
 
@@ -71,4 +85,36 @@ function sign() {
             __('Sign')
         );
     });
+}
+
+
+function change_revisor(frm) {
+    frappe.prompt(
+        [
+            {'fieldname': 'new_revisor', 
+             'fieldtype': 'Link',
+             'label': __('New Revisor'),
+             'reqd': 1,
+             'options': 'User'
+            }
+        ],
+        function(values){
+            cur_frm.set_value("revisor", values.new_revisor);
+            cur_frm.save().then(function() {
+                // assign QM Revision to new revisor
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_revision.qm_revision.assign',
+                    'args': {
+                        'doc': cur_frm.doc.name,
+                        'revisor': values.new_revisor
+                    },
+                    'callback': function(response) {
+                        cur_frm.reload_doc();
+                    }
+                });
+            });
+        },
+        __('Set new revisor'),
+        __('Set')
+    );
 }
