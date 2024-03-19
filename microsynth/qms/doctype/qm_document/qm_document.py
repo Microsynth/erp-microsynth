@@ -89,8 +89,7 @@ class QMDocument(Document):
 
     def after_insert(self):
         # frappe will insert the default company on insert -> after insert remove this again
-        self.company = None
-        self.save()
+        frappe.db.set_value("QM Document", self.name, "company", None, update_modified = False)
         return
 
 

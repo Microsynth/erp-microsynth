@@ -6,6 +6,18 @@ const document_types_with_review = ['SOP', 'FLOW', 'QMH'];
 
 frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
+        // company reset-controller
+        if (frm.doc.__islocal) {
+            // set flag that this is a new document
+            locals.initial_save = true;
+        } else {
+            if (locals.initial_save) {
+                // this is the first refresh after the initial save: reset flag and reload to load company from DB
+                locals.initial_save = false;
+                cur_frm.set_value("company", null);
+            }
+        }
+
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
 
