@@ -393,7 +393,7 @@ def parse_doc_id(doc_id, title):
     doc_type = space_separated_parts[0]
     numbers = space_separated_parts[-1].split('.')
     chapter = date = None
-    if doc_type in ['VERF', 'OFF', 'BER', 'VERS']:
+    if doc_type in ['OFF', 'BER', 'VERS']:
         print(f"{doc_id};{title};has a valid type of document according to QMH, but {doc_type} is not supported anymore.")
         return None
     if doc_type in ['AV', 'SOP', 'QMH', 'APPX']:  # Code 1
@@ -439,6 +439,9 @@ def parse_doc_id(doc_id, title):
     # Replace FLUDI by FLOW
     if doc_type == 'FLUDI':
         doc_type = 'FLOW'
+    # Replace VERF by FLOW
+    if doc_type == 'VERF':
+        doc_type = 'FLOW'
     return {'doc_type': doc_type,
             'process_number': process_number,
             'subprocess_number': subprocess_number,
@@ -474,7 +477,7 @@ def import_qm_documents(file_path, expected_line_length=9):
             last_revision = line[6]
             valid_from = line[7]
             doc_file_path = line[8]
-            doc_id = doc_id.replace('AV', 'SOP').replace('FLUDI', 'FLOW')  # rename AV and FLUDI
+            doc_id = doc_id.replace('AV', 'SOP').replace('FLUDI', 'FLOW').replace('VERF', 'FLOW')  # rename AV, VERF and FLUDI
             parts = parse_doc_id(doc_id, title)
             if not parts:  # error occurred during parsing
                 continue
