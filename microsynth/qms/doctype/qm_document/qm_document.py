@@ -168,13 +168,16 @@ def set_created(doc, user):
 def set_released(doc, user):
     # pull selected document
     qm_doc = frappe.get_doc(frappe.get_doc("QM Document", doc))
+    # if valid from is in the past, pull to today
+    if qm_doc.valid_from and qm_doc.valid_from < date.today():
+        qm_doc.valid_from = date.today()
     # set release user and (current) date
     qm_doc.released_by = user
-    qm_doc.released_on = datetime.now()
+    qm_doc.released_on = date.today()
     qm_doc.save()
     frappe.db.commit()
     # if valid_from date is today or in the past -> set directly to valid
-    if qm_doc.valid_from and qm_doc.valid_from <= datetime.today().date():
+    if qm_doc.valid_from and qm_doc.valid_from <= date.today():
         set_valid_document(qm_doc.name)
     else:
         update_status(qm_doc.name, "Released")
@@ -315,10 +318,10 @@ def invalidate_qm_docs():
     """
     Set Valid QM Documents to Invalid if valid_till < today.
     """
-    valid_qm_docs = frappe.db.sql(f"""
+    valid_qm_docs = frappe.db.sql("""
         SELECT `name`
         FROM `tabQM Document`
-        WHERE `valid_till` < DATE({date.today()})
+        WHERE `valid_till` < CURDATE()
             AND `status` = 'Valid'
             AND `docstatus` = 1
         ;""", as_dict=True)

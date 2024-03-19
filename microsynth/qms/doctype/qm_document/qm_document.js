@@ -44,9 +44,7 @@ frappe.ui.form.on('QM Document', {
 
         // update QM Document.status if valid_from <= today and status is Released
         if (frm.doc.valid_from && ["Released"].includes(frm.doc.status)) {
-            var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
-            var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
-            if (valid_from_date <= today) {
+            if (frm.doc.valid_from <= frappe.datetime.get_today()) {
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_document.qm_document.set_valid_document',
                     'args': {
@@ -240,6 +238,12 @@ frappe.ui.form.on('QM Document', {
                 frappe.show_alert("valid from date cleared")
             }
         }
+    },
+    valid_till: function(frm) {
+        if ((frm.doc.valid_from) && (frm.doc.valid_till) && (frm.doc.valid_till < frm.doc.valid_from)) {
+            cur_frm.set_value("valid_till", null);
+            frappe.msgprint( __("Valid till date cannot be before the valid from date."), __("Validation") );
+        }
     }
 });
 
@@ -382,7 +386,6 @@ function sign_creation() {
 
 
 function release() {
-    // TODO: before release, make sure valid_from is not in the past
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],
