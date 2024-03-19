@@ -359,12 +359,30 @@ def check_update_validity():
     validate_released_qm_docs()
 
 
-def validate_values(doc_id, title, version, status, company, approved_released, last_revision, valid_from, doc_file_path):
+
+def is_date_valid(date, format):
+    """
+    Checks if the given date matches the given format string.
+    """
+    try:
+        if date:
+            datetime.strptime(date, format)
+    except Exception as err:
+        return False
+    else:
+        return True
+
+
+def validate_values(doc_id, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
+        released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path):
     allowed_companies = ('', 'Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH' )
     try:
         version = int(version)
     except Exception as err:
         print(f"{doc_id};{title};Unable to convert version '{version}' to an integer. Going to continue. Error = '{err}'")
+        return None
+    if not 0 < version < 100:
+        print(f"{doc_id};{title};Version needs to be > 0 and < 100, but is {version}. Going to continue.")
         return None
     if status not in ('Valid', 'Invalid'):
         print(f"{doc_id};{title};Status = '{status}', but only status 'Valid' and 'Invalid' are supported. Going to continue.")
@@ -372,16 +390,16 @@ def validate_values(doc_id, title, version, status, company, approved_released, 
     if company and company not in allowed_companies:
         print(f"{doc_id};{title};Company = '{company}', but only {allowed_companies} are supported. Going to continue.")
         return None
-    try:
-        format = "%d.%m.%Y"
-        datetime.strptime(approved_released, format)
-        if last_revision:
-            datetime.strptime(last_revision, format)
-        datetime.strptime(valid_from, format)
-    except Exception as err:
-        print(f"{doc_id};{title};At least one of the dates '{approved_released}', '{last_revision}' and '{valid_from}' has an incorrect format. Going to continue. Error = '{err}'")
-        return None
-    # TODO: validate doc_file_path
+    format = "%d.%m.%Y"
+    for date in [created_on, reviewed_on, released_on, last_revision_on, valid_from]:
+        if not is_date_valid(date, format):
+            print(f"{doc_id};{title};The date '{date}' has an incorrect format unequals dd.mm.yyyy. Going to continue.")
+            return None
+    for user in [created_by, reviewed_by, released_by, last_revision_by]:
+        if user and not frappe.db.exists("User", user):
+            print(f"{doc_id};{title};The user '{user}' does not exist in the ERP. Going to continue.")
+            return None
+    # TODO: validate file paths
     return version
 
 
@@ -454,11 +472,11 @@ def parse_doc_id(doc_id, title):
             'document_number': document_number}
 
 
-def import_qm_documents(file_path, expected_line_length=9):
+def import_qm_documents(file_path, expected_line_length=16):
     """
     Import Title and Document ID from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/q_documents.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/q_documents_v2.csv'}"
     """
     import csv
     imported_counter = line_counter = 0
@@ -472,20 +490,31 @@ def import_qm_documents(file_path, expected_line_length=9):
             if len(line) != expected_line_length:
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
+
             doc_id = line[0].strip().replace('*', '')  # remove leading and trailing whitespaces and *
             title = line[1].strip()  # remove leading and trailing whitespaces
             version = line[2]
             status = line[3]
             company = line[4]
-            approved_released = line[5]
-            last_revision = line[6]
-            valid_from = line[7]
-            doc_file_path = line[8]
+            created_on = line[5]
+            created_by = line[6]
+            reviewed_on = line[7]
+            reviewed_by = line[8]
+            released_on = line[9]
+            released_by = line[10]
+            last_revision_on = line[11]
+            last_revision_by = line[12]
+            valid_from = line[13]
+            first_file_path = line[14]
+            second_file_path = line[15]
+
             doc_id = doc_id.replace('AV', 'SOP').replace('FLUDI', 'FLOW').replace('VERF', 'FLOW')  # rename AV, VERF and FLUDI
             parts = parse_doc_id(doc_id, title)
-            if not parts:  # error occurred during parsing
+            if not parts:  # error occurred during parsing document ID
                 continue
-            version = validate_values(doc_id, title, version, status, company, approved_released, last_revision, valid_from, doc_file_path)
+
+            version = validate_values(doc_id, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
+                                      released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path)
             if not version:
                 continue
             secret = line[0].strip()[-1] == '*'
@@ -511,7 +540,12 @@ def import_qm_documents(file_path, expected_line_length=9):
             elif len(qm_processes) > 1:
                 print(f"{doc_id};{title};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
                       f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to take the first QM Process.")
-            date_format = "%d.%m.%Y"
+
+            # reformat date from dd.mm.yyyy to yyyy-mm-dd
+            given_date_format = "%d.%m.%Y"
+            target_date_format = "%Y-%m-%d"
+            released_on_formatted = datetime.strptime(released_on, given_date_format).strftime(target_date_format)
+
             # Create QM Document
             qm_doc = frappe.get_doc({
                 'doctype': "QM Document",
@@ -526,9 +560,15 @@ def import_qm_documents(file_path, expected_line_length=9):
                 'status': status,
                 'classification_level': 'Secret' if secret else 'Confidential',
                 'company': company,
-                'released_on': datetime.strptime(approved_released, date_format).strftime("%Y-%m-%d"),  # reformat date from dd.mm.yyyy to yyyy-mm-dd
-                'last_revision_on': datetime.strptime(last_revision, date_format).strftime("%Y-%m-%d") if last_revision else None,
-                'valid_from': datetime.strptime(valid_from, date_format).strftime("%Y-%m-%d")
+                'created_on': datetime.strptime(created_on, given_date_format).strftime(target_date_format) if created_on else None,
+                'created_by': created_by or None,
+                'reviewed_on': datetime.strptime(reviewed_on, given_date_format).strftime(target_date_format) if reviewed_on else None,
+                'reviewed_by': reviewed_by or None,
+                'released_on': released_on_formatted,
+                'released_by': released_by or None,
+                'last_revision_on': datetime.strptime(last_revision_on, given_date_format).strftime(target_date_format) if last_revision_on else released_on_formatted,
+                'last_revision_by': last_revision_by or None,
+                'valid_from': datetime.strptime(valid_from, given_date_format).strftime(target_date_format)
             })
             try:
                 #qm_doc.chapter = parts['chapter']
@@ -547,6 +587,7 @@ def import_qm_documents(file_path, expected_line_length=9):
                 print(f"{doc_id};{title};name/ID unequals {qm_doc.name=}.")
                 continue
             imported_counter += 1
+
     print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
 
     # Delete inserted documents to be able to test again without deleting them manually or replace the whole database.
