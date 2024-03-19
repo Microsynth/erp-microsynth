@@ -24,13 +24,14 @@ frappe.ui.form.on('QM Document', {
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
-        // set valid_from to read_only if it is set, not in the future and QM Document is not a Draft
-        if (frm.doc.valid_from && frm.doc.docstatus > 0) {
-            var valid_from_date = (new Date(frm.doc.valid_from)).setHours(0,0,0,0);
-            var today = (new Date()).setHours(0,0,0,0);  // call setHours to take the time out
-            if (valid_from_date <= today) {
-                cur_frm.set_df_property('valid_from', 'read_only', true);
-            }
+        // when a document is valid or invalid, the valid_from field must be read-only
+        if (["Valid", "Invalid"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('valid_from', 'read_only', true);
+        }
+
+        // when a document is invalid, the valid_till field must be read-only
+        if (["Invalid"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('valid_till', 'read_only', true);
         }
 
         // fresh document: add creation tags
@@ -381,6 +382,7 @@ function sign_creation() {
 
 
 function release() {
+    // TODO: before release, make sure valid_from is not in the past
     frappe.prompt([
             {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
         ],

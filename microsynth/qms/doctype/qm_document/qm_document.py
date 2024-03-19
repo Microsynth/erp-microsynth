@@ -92,7 +92,8 @@ class QMDocument(Document):
         self.company = None
         self.save()
         return
-        
+
+
     def get_overview(self):
         files = get_attachments("QM Document", self.name)
         docs_linking_to_this = frappe.db.sql("""
