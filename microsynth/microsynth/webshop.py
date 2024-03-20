@@ -958,6 +958,36 @@ def place_order(content, client="webshop"):
 
 
 @frappe.whitelist()
+def order_quote(quotation_id, client="webshop"):
+    """
+    Create a Sales Order based on the given Quotation ID.
+
+    bench execute "microsynth.microsynth.webshop.order_quote" --kwargs "{'quotation_id': 'QTN-2401003'}"
+    """
+    from erpnext.selling.doctype.quotation.quotation import make_sales_order
+    if not quotation_id or not frappe.db.exists("Quotation", quotation_id):
+        return {'success': False, 'message': f"There is no Quotation with ID '{quotation_id}' in the ERP.", 'reference': None}
+    quotation = frappe.get_doc("Quotation", quotation_id)
+    if quotation.has_sales_order():
+        return {'success': False, 'message': f"There is already a submitted Sales Order against {quotation_id}.", 'reference': None}
+    try:
+        quotation = frappe.get_doc("Quotation", quotation_id)
+        sales_order = make_sales_order(quotation_id)
+        sales_order.delivery_date = date.today() + timedelta(days=3)
+        sales_order.insert()
+        sales_order.delivery_date = date.today() + timedelta(days=3)
+        sales_order.product_type = quotation.quotation_type if quotation.quotation_type in ["", "Oligos", "Labels", "Sequencing", "NGS", "FLA", "Project", "Material", "Service"] else ""
+        # TODO: How to map Quotation Type "Synthesis", "Genetic Analysis" and "Sanger Sequencing"?
+        sales_order.save()
+        #sales_order.submit()
+    except Exception as err:
+        frappe.log_error(f"Unable to create a Sales Order for Quotation {quotation_id}:\n{err}", "webshop.order_quote")
+        return {'success': False, 'message': err, 'reference': None}
+    else:
+        return {'success': True, 'message': None, 'reference': sales_order.name}
+
+
+@frappe.whitelist()
 def get_countries(client="webshop"):
     """
     Returns all available countries
