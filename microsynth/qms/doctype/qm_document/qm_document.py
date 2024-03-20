@@ -372,34 +372,43 @@ def is_date_valid(date, format):
         return True
 
 
-def validate_values(doc_id, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
+def validate_values(doc_id, chapter, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
         released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path):
     allowed_companies = ('', 'Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH' )
+    if chapter:
+        try:
+            chapter = int(chapter)
+        except Exception as err:
+            print(f"{doc_id};{title};Unable to convert chapter '{chapter}' to an integer. Going to continue. Error = '{err}'")
+            return None, None
+        if chapter > 99:
+            print(f"{doc_id};{title};Chapter needs to be < 100, but is {chapter}. Going to continue.")
+            return None, None
     try:
         version = int(version)
     except Exception as err:
         print(f"{doc_id};{title};Unable to convert version '{version}' to an integer. Going to continue. Error = '{err}'")
-        return None
+        return None, None
     if not 0 < version < 100:
         print(f"{doc_id};{title};Version needs to be > 0 and < 100, but is {version}. Going to continue.")
-        return None
+        return None, None
     if status not in ('Valid', 'Invalid'):
         print(f"{doc_id};{title};Status = '{status}', but only status 'Valid' and 'Invalid' are supported. Going to continue.")
-        return None
+        return None, None
     if company and company not in allowed_companies:
         print(f"{doc_id};{title};Company = '{company}', but only {allowed_companies} are supported. Going to continue.")
-        return None
+        return None, None
     format = "%d.%m.%Y"
     for date in [created_on, reviewed_on, released_on, last_revision_on, valid_from]:
         if not is_date_valid(date, format):
             print(f"{doc_id};{title};The date '{date}' has an incorrect format unequals dd.mm.yyyy. Going to continue.")
-            return None
+            return None, None
     for user in [created_by, reviewed_by, released_by, last_revision_by]:
         if user and not frappe.db.exists("User", user):
             print(f"{doc_id};{title};The user '{user}' does not exist in the ERP. Going to continue.")
-            return None
+            return None, None
     # TODO: validate file paths
-    return version
+    return chapter, version
 
 
 def parse_doc_id(doc_id, title):
@@ -471,11 +480,11 @@ def parse_doc_id(doc_id, title):
             'document_number': document_number}
 
 
-def import_qm_documents(file_path, expected_line_length=16):
+def import_qm_documents(file_path, expected_line_length=24):
     """
     Import Title and Document ID from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/q_documents_v2.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240320_TestData_ERP_Migration.csv'}"
     """
     import csv
     imported_counter = line_counter = 0
@@ -490,33 +499,38 @@ def import_qm_documents(file_path, expected_line_length=16):
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
 
-            doc_id = line[0].strip().replace('*', '')  # remove leading and trailing whitespaces and *
-            title = line[1].strip()  # remove leading and trailing whitespaces
-            version = line[2]
-            status = line[3]
-            company = line[4]
-            created_on = line[5]
-            created_by = line[6]
-            reviewed_on = line[7]
-            reviewed_by = line[8]
-            released_on = line[9]
-            released_by = line[10]
-            last_revision_on = line[11]
-            last_revision_by = line[12]
-            valid_from = line[13]
-            first_file_path = line[14]
-            second_file_path = line[15]
+            doc_id_old = line[5].strip().replace('*', '')  # remove leading and trailing whitespaces and *
+            doc_id_new = line[6]
+            chapter = None if line[7] == 'NA' else line[7]
+            title = line[8].strip()  # remove leading and trailing whitespaces
+            version = line[9]
+            status = line[10]
+            company = None if line[11] == 'NA' else line[11]
+            created_on = None if line[12] == 'NA' else line[12]
+            created_by = None if line[13] == 'NA' else line[13].lower()
+            reviewed_on = None if line[14] == 'NA' else line[14]
+            reviewed_by = None if line[15] == 'NA' else line[15].lower()
+            released_on = None if line[16] == 'NA' else line[16]  # was specified as mandatory
+            if not released_on:
+                print(f"{doc_id_new};{title};Released on is mandatory. Going to continue.")
+                continue
+            released_by = None if line[17] == 'NA' else line[17].lower()
+            last_revision_on = None if line[18] == 'NA' else line[18]
+            last_revision_by = None if line[19] == 'NA' else line[19].lower()
+            valid_from = line[20]
+            first_file_path = line[21]
+            second_file_path = line[22]
 
-            doc_id = doc_id.replace('AV', 'SOP').replace('FLUDI', 'FLOW').replace('VERF', 'FLOW')  # rename AV, VERF and FLUDI
-            parts = parse_doc_id(doc_id, title)
+            doc_id_new = doc_id_new.replace('AV', 'SOP').replace('FLUDI', 'FLOW').replace('VERF', 'FLOW')  # rename AV, VERF and FLUDI
+            parts = parse_doc_id(doc_id_new, title)
             if not parts:  # error occurred during parsing document ID
                 continue
 
-            version = validate_values(doc_id, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
+            chapter, version = validate_values(doc_id_new, chapter, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
                                       released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path)
             if not version:
                 continue
-            secret = line[0].strip()[-1] == '*'
+            secret = doc_id_old[-1] == '*'
             # Get fitting QM Process
             if parts['chapter'] and parts['chapter'] != '00':  #process_number == 5 and subprocess_number == 3:
                 qm_processes = frappe.get_all("QM Process", filters=[
@@ -534,10 +548,10 @@ def import_qm_documents(file_path, expected_line_length=16):
             if len(qm_processes) == 0:
                 process_name = f"{parts['process_number']}.{parts['subprocess_number']}"
                 qm_processes.append({'name': process_name})
-                print(f"{doc_id};{title};Found no QM Process with process_number={parts['process_number']} and subprocess_number={parts['subprocess_number']}. "
+                print(f"{doc_id_new};{title};Found no QM Process with process_number={parts['process_number']} and subprocess_number={parts['subprocess_number']}. "
                       f"Going to set Process of QM Document to '{process_name}'.")
             elif len(qm_processes) > 1:
-                print(f"{doc_id};{title};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
+                print(f"{doc_id_new};{title};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
                       f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to take the first QM Process.")
 
             # reformat date from dd.mm.yyyy to yyyy-mm-dd
@@ -550,10 +564,10 @@ def import_qm_documents(file_path, expected_line_length=16):
                 'doctype': "QM Document",
                 'document_type': parts['doc_type'],
                 'qm_process': qm_processes[0]['name'],
-                'chapter': parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
+                'chapter': chapter,  #parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
-                'import_name': doc_id,
+                'import_name': doc_id_new,
                 'title': title,
                 'version': version,
                 'status': status,
@@ -576,14 +590,25 @@ def import_qm_documents(file_path, expected_line_length=16):
                 #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
                 #qm_doc.save()  # TODO: How to avoid overwriting chapter?
                 #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
-                # TODO: Attach document file
+                # TODO: Attach document file(s)
                 qm_doc.submit()
                 inserted_docs.append(qm_doc.name)
+                if line[5].strip() != line[6].strip():
+                    new_comment = frappe.get_doc({
+                        'doctype': 'Communication',
+                        'comment_type': "Comment",
+                        'subject': qm_doc.name,
+                        'content': f"The old ID of this document in FileMaker was '{doc_id_old}'",
+                        'reference_doctype': "QM Document",
+                        'status': "Linked",
+                        'reference_name': qm_doc.name
+                    })
+                    new_comment.insert()
             except Exception as err:
-                print(f"{doc_id};{title};Unable to insert and submit: {err}")
+                print(f"{doc_id_new};{title};Unable to insert and submit: {err}")
                 continue
-            if qm_doc.name != doc_id:  # currently useless
-                print(f"{doc_id};{title};name/ID unequals {qm_doc.name=}.")
+            if qm_doc.name != doc_id_new:  # currently useless
+                print(f"{doc_id_new};{title};name/ID unequals {qm_doc.name=}.")
                 continue
             imported_counter += 1
 
