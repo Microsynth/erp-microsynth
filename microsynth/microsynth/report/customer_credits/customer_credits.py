@@ -28,10 +28,10 @@ def get_columns():
     return columns
 
 
-def get_data(filters, short=False, filter_out_projects=False):
+def get_data(filters, short=False, exclude_project_credits=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
 
-    if filter_out_projects:
+    if exclude_project_credits:
         conditions += f"AND `tabSales Invoice`.`product_type` != 'Project'"
     elif filters.get('product_type'):
         conditions += f"AND `tabSales Invoice`.`product_type` = '{filters.get('product_type')}'"

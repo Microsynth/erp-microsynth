@@ -45,7 +45,7 @@ def get_total_credit(customer, company, product_type):
     if product_type:
         credits = get_data({'customer': customer, 'company': company, 'product_type': product_type})
     else:
-        credits = get_data({'customer': customer, 'company': company, 'product_type': product_type}, filter_out_projects=True)
+        credits = get_data({'customer': customer, 'company': company, 'product_type': None}, exclude_project_credits=True)
 
     if len(credits) == 0:
         return None
