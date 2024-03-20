@@ -12,6 +12,7 @@ def get_columns(filters):
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 180 },
         {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 200 },
+        {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 100, 'options': 'currency'},
         {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 65 },
         {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 150 },
         {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 250 },
@@ -42,6 +43,8 @@ def get_data(filters):
                 `tabBenchmark`.`item_group`,
                 `tabCustomer`.`territory`,
                 `tabBenchmark`.`product`,
+                `tabBenchmark`.`rate`,
+                `tabBenchmark`.`currency`,
                 `tabBenchmark`.`item`,
                 `tabBenchmark`.`competitor`,
                 `tabBenchmark`.`notes`
