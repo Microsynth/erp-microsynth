@@ -1185,7 +1185,7 @@ def transmit_sales_invoice(sales_invoice_id):
                 message = f"Dear Administration,<br><br>this is an automatic email to inform you that the ERP did not found an email address " \
                             f"to send '{sales_invoice.name}' to Contact '{invoice_contact.name}'.<br>" \
                             f"Please try to determine the email address and enter it at the appropriate place. <br><br>Best regards,<br>Jens"
-                frappe.log_error(message, "Sending invoice email failed")
+                frappe.log_error(message.replace("<br>","\n"), "Sending invoice email failed")
                 make(
                     recipients = "info@microsynth.ch",
                     sender = "jens.petermann@microsynth.ch",
