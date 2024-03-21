@@ -484,7 +484,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Import Title and Document ID from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240320_TestData_ERP_Migration.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240321_TestData_ERP_Migration.csv'}"
     """
     import csv
     imported_counter = line_counter = 0
@@ -499,7 +499,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
 
-            doc_id_old = line[5].strip().replace('*', '')  # remove leading and trailing whitespaces and *
+            doc_id_old = line[5].strip()  # remove leading and trailing whitespaces
             doc_id_new = line[6]
             chapter = None if line[7] == 'NA' else line[7]
             title = line[8].strip()  # remove leading and trailing whitespaces
@@ -593,7 +593,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 # TODO: Attach document file(s)
                 qm_doc.submit()
                 inserted_docs.append(qm_doc.name)
-                if line[5].strip() != line[6].strip():
+                if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
                     new_comment = frappe.get_doc({
                         'doctype': 'Communication',
                         'comment_type': "Comment",
@@ -613,7 +613,3 @@ def import_qm_documents(file_path, expected_line_length=24):
             imported_counter += 1
 
     print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
-
-    # Delete inserted documents to be able to test again without deleting them manually or replace the whole database.
-    # for doc_name in inserted_docs:
-    #     frappe.db.delete("QM Document", {"name": doc_name})
