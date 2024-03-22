@@ -275,6 +275,11 @@ function fetch_chapter(frm) {
         'callback': function (r) {
             var qm_process = r.message;
             cur_frm.set_value("chapter", qm_process.chapter);
+            if (qm_process.chapter > 0) {
+                cur_frm.set_df_property('chapter', 'read_only', true);
+            } else {
+                cur_frm.set_df_property('chapter', 'read_only', false);
+            }
         }
     });
 }
