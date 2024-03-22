@@ -487,6 +487,9 @@ def import_qm_documents(file_path, expected_line_length=24):
     bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240321_TestData_ERP_Migration.csv'}"
     """
     import csv
+    import os.path
+    from pathlib import PureWindowsPath, PurePosixPath, Path
+
     imported_counter = line_counter = 0
     inserted_docs = []
     with open(file_path) as file:
@@ -494,6 +497,18 @@ def import_qm_documents(file_path, expected_line_length=24):
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
+            file_path = line[21]
+
+            path = PureWindowsPath(file_path)       # see: https://stackoverflow.com/questions/60291545/converting-windows-path-to-linux
+            posix_path = (PurePosixPath('/mnt/files', *path.parts[1:]))
+            new_path = Path(posix_path)
+            is_file = new_path.is_file()
+            if not is_file:
+                print(f"This file does not exist: {file_path}")
+                continue
+            # print(posix_path)
+            # print(f"{posix_path} {is_file}")
+
             line_counter += 1
             if len(line) != expected_line_length:
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
@@ -564,7 +579,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 'doctype': "QM Document",
                 'document_type': parts['doc_type'],
                 'qm_process': qm_processes[0]['name'],
-                'chapter': chapter,  #parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
+                'chapter': chapter if chapter is not None else 0,  #parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
                 'import_name': doc_id_new,
@@ -612,4 +627,4 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
             imported_counter += 1
 
-    print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
+    # print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
