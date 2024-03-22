@@ -251,6 +251,11 @@ frappe.ui.form.on('QM Document', {
             }
         }
     },
+    qm_process: function(frm) {
+        if (frm.doc.__islocal) {
+            fetch_chapter(frm);
+        }
+    },
     valid_till: function(frm) {
         if ((frm.doc.valid_from) && (frm.doc.valid_till) && (frm.doc.valid_till < frm.doc.valid_from)) {
             cur_frm.set_value("valid_till", null);
@@ -258,6 +263,21 @@ frappe.ui.form.on('QM Document', {
         }
     }
 });
+
+
+function fetch_chapter(frm) {
+    frappe.call({
+        'method': 'frappe.client.get',
+        'args': {
+            'doctype': "QM Process",
+            'name': frm.doc.qm_process
+        },
+        'callback': function (r) {
+            var qm_process = r.message;
+            cur_frm.set_value("chapter", qm_process.chapter);
+        }
+    });
+}
 
 
 // clear review if reviewed_on or reviewed_by is set (either both or none should be set)
