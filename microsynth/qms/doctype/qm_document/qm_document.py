@@ -597,7 +597,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 'doctype': "QM Document",
                 'document_type': parts['doc_type'],
                 'qm_process': qm_processes[0]['name'],
-                'chapter': chapter if chapter is not None else 0,  #parts['chapter'],  # Useless, chapter will always be fetched from QM Process. If QM Process has no chapter, chapter is set to 0.
+                'chapter': chapter if chapter is not None else 0,
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
                 'import_name': doc_id_new,
@@ -617,12 +617,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 'valid_from': datetime.strptime(valid_from, given_date_format).strftime(target_date_format)
             })
             try:
-                #qm_doc.chapter = parts['chapter']
                 qm_doc.insert()
-                #qm_doc.chapter = parts['chapter']
-                #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
-                #qm_doc.save()  # TODO: How to avoid overwriting chapter?
-                #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
                 qm_doc.submit()
                 inserted_docs.append(qm_doc.name)
                 if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
