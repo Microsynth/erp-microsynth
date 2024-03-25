@@ -373,7 +373,7 @@ def is_date_valid(date, format):
 
 
 def validate_values(doc_id, chapter, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
-        released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path):
+        released_on, released_by, last_revision_on, last_revision_by, valid_from, file_path, file_path_2):
     allowed_companies = ('', 'Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH' )
     if chapter:
         try:
@@ -407,7 +407,15 @@ def validate_values(doc_id, chapter, title, version, status, company, created_on
         if user and not frappe.db.exists("User", user):
             print(f"{doc_id};{title};The user '{user}' does not exist in the ERP. Going to continue.")
             return None, None
-    # TODO: validate file paths
+
+    if not (file_path and file_path.is_file()):
+        print(f"{doc_id};{title};Cannot find file: \"{file_path}\"" )
+        return None, None
+
+    if file_path_2 and not file_path_2.is_file():
+        print(f"{doc_id};{title};Cannot find file 2: \"{file_path_2}\"" )
+        return None, None
+
     return chapter, version
 
 
@@ -480,6 +488,30 @@ def parse_doc_id(doc_id, title):
             'document_number': document_number}
 
 
+def create_file_attachment(qm_document, file_path):
+    from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+
+    with open(file_path, mode='rb') as file:
+        folder = create_folder("QM Document", "Home")
+
+        save_and_attach(
+            content = file.read(), 
+            to_doctype = "QM Document", 
+            to_name = qm_document,  
+            folder = folder,
+            hashname = None,
+            is_private = True )
+    return
+
+
+def rewrite_posix_path(windows_path): 
+    from pathlib import PureWindowsPath, PurePosixPath, Path
+
+    path = PureWindowsPath(windows_path)       # see: https://stackoverflow.com/questions/60291545/converting-windows-path-to-linux
+    posix_path = (PurePosixPath('/mnt/files', *path.parts[1:]))
+    return Path(posix_path)
+
+
 def import_qm_documents(file_path, expected_line_length=24):
     """
     Import Title and Document ID from a FileMaker export tsv.
@@ -487,8 +519,6 @@ def import_qm_documents(file_path, expected_line_length=24):
     bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240321_TestData_ERP_Migration.csv'}"
     """
     import csv
-    import os.path
-    from pathlib import PureWindowsPath, PurePosixPath, Path
 
     imported_counter = line_counter = 0
     inserted_docs = []
@@ -497,18 +527,6 @@ def import_qm_documents(file_path, expected_line_length=24):
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
-            file_path = line[21]
-
-            path = PureWindowsPath(file_path)       # see: https://stackoverflow.com/questions/60291545/converting-windows-path-to-linux
-            posix_path = (PurePosixPath('/mnt/files', *path.parts[1:]))
-            new_path = Path(posix_path)
-            is_file = new_path.is_file()
-            if not is_file:
-                print(f"This file does not exist: {file_path}")
-                continue
-            # print(posix_path)
-            # print(f"{posix_path} {is_file}")
-
             line_counter += 1
             if len(line) != expected_line_length:
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
@@ -533,8 +551,8 @@ def import_qm_documents(file_path, expected_line_length=24):
             last_revision_on = None if line[18] == 'NA' else line[18]
             last_revision_by = None if line[19] == 'NA' else line[19].lower()
             valid_from = line[20]
-            first_file_path = line[21]
-            second_file_path = line[22]
+            file_path = rewrite_posix_path(line[21])
+            file_path_2 = rewrite_posix_path(line[22]) if line[22] != 'NA' else None
 
             doc_id_new = doc_id_new.replace('AV', 'SOP').replace('FLUDI', 'FLOW').replace('VERF', 'FLOW')  # rename AV, VERF and FLUDI
             parts = parse_doc_id(doc_id_new, title)
@@ -542,7 +560,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
 
             chapter, version = validate_values(doc_id_new, chapter, title, version, status, company, created_on, created_by, reviewed_on, reviewed_by,
-                                      released_on, released_by, last_revision_on, last_revision_by, valid_from, first_file_path, second_file_path)
+                                      released_on, released_by, last_revision_on, last_revision_by, valid_from, file_path, file_path_2)
             if not version:
                 continue
             secret = doc_id_old[-1] == '*'
@@ -605,7 +623,6 @@ def import_qm_documents(file_path, expected_line_length=24):
                 #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
                 #qm_doc.save()  # TODO: How to avoid overwriting chapter?
                 #print(f"{qm_doc.chapter=}; {parts['chapter']=}")
-                # TODO: Attach document file(s)
                 qm_doc.submit()
                 inserted_docs.append(qm_doc.name)
                 if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
@@ -619,12 +636,18 @@ def import_qm_documents(file_path, expected_line_length=24):
                         'reference_name': qm_doc.name
                     })
                     new_comment.insert()
+
+                    create_file_attachment(qm_doc.name, file_path)
+                    if file_path_2:
+                        create_file_attachment(qm_doc.name, file_path_2)
+
+                    imported_counter += 1
             except Exception as err:
                 print(f"{doc_id_new};{title};Unable to insert and submit: {err}")
                 continue
+
             if qm_doc.name != doc_id_new:  # currently useless
                 print(f"{doc_id_new};{title};name/ID unequals {qm_doc.name=}.")
                 continue
-            imported_counter += 1
 
-    # print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
+    print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
