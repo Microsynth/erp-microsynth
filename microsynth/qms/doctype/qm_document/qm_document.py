@@ -619,6 +619,11 @@ def import_qm_documents(file_path, expected_line_length=24):
             try:
                 qm_doc.insert()
                 qm_doc.submit()
+
+                create_file_attachment(qm_doc.name, file_path)
+                if file_path_2:
+                    create_file_attachment(qm_doc.name, file_path_2)
+
                 inserted_docs.append(qm_doc.name)
                 if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
                     new_comment = frappe.get_doc({
@@ -632,11 +637,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                     })
                     new_comment.insert()
 
-                    create_file_attachment(qm_doc.name, file_path)
-                    if file_path_2:
-                        create_file_attachment(qm_doc.name, file_path_2)
-
-                    imported_counter += 1
+                imported_counter += 1
             except Exception as err:
                 print(f"{doc_id_new};{title};Unable to insert and submit: {err}")
                 continue
