@@ -32,7 +32,7 @@ def get_data(filters, short=False, exclude_project_credits=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
 
     if exclude_project_credits:
-        conditions += f"AND `tabSales Invoice`.`product_type` != 'Project'"
+        conditions += f"AND (`tabSales Invoice`.`product_type` is null or `tabSales Invoice`.`product_type` != 'Project')"
     elif filters.get('product_type'):
         conditions += f"AND `tabSales Invoice`.`product_type` = '{filters.get('product_type')}'"
 
