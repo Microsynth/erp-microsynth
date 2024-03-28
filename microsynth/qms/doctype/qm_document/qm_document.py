@@ -491,6 +491,8 @@ def parse_doc_id(doc_id, title):
 def create_file_attachment(qm_document, file_path):
     from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 
+    # print(f"attach to {qm_document}: {file_path}")
+
     with open(file_path, mode='rb') as file:
         folder = create_folder("QM Document", "Home")
 
@@ -499,6 +501,7 @@ def create_file_attachment(qm_document, file_path):
             to_doctype = "QM Document", 
             to_name = qm_document,  
             folder = folder,
+            file_name = file_path.name, 
             hashname = None,
             is_private = True )
     return
