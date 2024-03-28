@@ -89,6 +89,20 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.__islocal && frm.doc.amended_from == null && frm.doc.total_customer_credit != 0) {
             clear_credits(frm);
         }
+        
+        // prevent credit notes if a customer credit has been applied 
+        // Note: use cancel - amend instead, otherwise the return is not included in the customer credit ledger
+        if ((frm.doc.docstatus === 1) && (frm.doc.is_return === 0) && (frm.doc.total_customer_credit > 0)) {
+            setTimeout(function() {
+                cur_frm.remove_custom_button(__("Return / Credit Note"), __("Create"));
+            }, 500);
+        }
+        // clean up the create menu (obsolete functions in the current process landscape)
+        setTimeout(function() {
+            cur_frm.remove_custom_button(__("Delivery"), __("Create"));
+            cur_frm.remove_custom_button(__("Maintenance Schedule"), __("Create"));
+            cur_frm.remove_custom_button(__("Subscription"), __("Create"));
+        }, 500);
     },
     company(frm) {
         set_naming_series(frm);                 // common function
