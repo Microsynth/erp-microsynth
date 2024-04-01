@@ -1482,7 +1482,7 @@ def check_default_companies():
 @frappe.whitelist()
 def exact_copy_sales_invoice(sales_invoice):
     """
-    Clone a sales invoice including the no-copy fields. Set the new document to 
+    Clone a sales invoice including the no-copy fields (sales_invoice.json: field "no_copy": 1). Set the new document to 
     Draft status. Change the owner to the current user ('created this').
     Set the creation time to now.
 
