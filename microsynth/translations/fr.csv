@@ -7,12 +7,14 @@ DocType: Sales Invoice,Customer ID,ID client
 DocType: Sales Invoice,Total,Total
 DocType: Sales Invoice,Total amount,Montant total
 DocType: Sales Invoice,Debit from credit account,Débit du compte de crédit
+DocType: Sales Invoice,Debit from projects credit account,Débit du compte de crédit des projets
 DocType: Sales Invoice,Our bank account,Notre compte bancaire
 DocType: Sales Invoice,Production ID,ID de production
 DocType: Sales Invoice,Amount,Montant
 DocType: Sales Invoice,Terms of payment,Conditions de paiement
 DocType: Sales Invoice,Payable until,Payable jusqu'au
 DocType: Sales Invoice,Your credit balance,Votre solde de crédit
+DocType: Sales Invoice,Your projects credit balance,Votre solde de crédit pour les projets
 DocType: Sales Invoice,30 days net,30 jours net
 DocType: Sales Invoice,45 days net,45 jours net
 DocType: Sales Invoice,60 days net,60 jours net

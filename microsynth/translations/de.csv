@@ -7,12 +7,14 @@ DocType: Sales Invoice,Customer ID,Kunden-ID
 DocType: Sales Invoice,Total,Total
 DocType: Sales Invoice,Total amount,Gesamtbetrag
 DocType: Sales Invoice,Debit from credit account,Abbuchung vom Guthaben
+DocType: Sales Invoice,Debit from projects credit account,Abbuchung vom Projekt-Guthaben
 DocType: Sales Invoice,Our bank account,Unsere Bankverbindung
 DocType: Sales Invoice,Production ID,Produktions-ID
 DocType: Sales Invoice,Amount,Betrag
 DocType: Sales Invoice,Terms of payment,Zahlungskonditionen
 DocType: Sales Invoice,Payable until,Zahlbar bis
 DocType: Sales Invoice,Your credit balance,Saldo Ihres Guthabenkontos
+DocType: Sales Invoice,Your projects credit balance,Saldo Ihres Projekt-Guthabenkontos
 DocType: Sales Invoice,30 days net,30 Tage netto
 DocType: Sales Invoice,45 days net,45 Tage netto
 DocType: Sales Invoice,60 days net,60 Tage netto
