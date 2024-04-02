@@ -175,6 +175,6 @@ def print_oligo_order_labels(sales_orders):
             sales_order.save()    
             frappe.db.commit()
         except Exception as err:
-            if err != '[Errno 111] Connection refused':
+            if str(err) != '[Errno 111] Connection refused':
                 frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")
     return
