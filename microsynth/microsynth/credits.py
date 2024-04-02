@@ -9,15 +9,15 @@ from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
 
-def get_available_credits(customer, company, product_type):
+def get_available_credits(customer, company, credit_type):
     from microsynth.microsynth.report.customer_credits.customer_credits import \
         get_data
-    customer_credits = get_data({'customer': customer, 'company': company, 'product_type': product_type})
+    customer_credits = get_data({'customer': customer, 'company': company, 'credit_type': credit_type})
     return customer_credits
 
 
 @frappe.whitelist()
-def has_credits(customer, product_type=None):
+def has_credits(customer, credit_type=None):
     """
     Called in customer.js
     """
@@ -25,27 +25,20 @@ def has_credits(customer, product_type=None):
     companies = frappe.get_all("Company", fields=['name'])
     # loop through the companies and call get_available_credits
     for company in companies:
-        credits = get_available_credits(customer, company['name'], product_type)
+        credits = get_available_credits(customer, company['name'], credit_type)
         if len(credits) > 0:
             return True
     return False
 
 
-def get_total_credit(customer, company, product_type):
+def get_total_credit(customer, company, credit_type):
     """
-    Return the total credit amount available to a customer for the specified company. Returns None if there is no credit account.
-    Exclude Project Credits if product_type is None.
-    Need to bypass function get_available_credits because get_available_credits is called by has_credits and
-    has_credits always wants all credits even if product_type is None.
+    Return the total credit amount available to a customer for the specified company and credit_type. Returns None if there is no credit account.
 
     Run
-    bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG', 'product_type': 'Project' }"
+    bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG', 'credit_type': 'Project' }"
     """
-    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
-    if product_type:
-        credits = get_data({'customer': customer, 'company': company, 'product_type': product_type})
-    else:
-        credits = get_data({'customer': customer, 'company': company, 'product_type': None}, exclude_project_credits=True)
+    credits = get_available_credits(customer, company, credit_type)
 
     if len(credits) == 0:
         return None
@@ -73,7 +66,7 @@ def get_total_credit(customer, company, product_type):
 
 #     total = 0
 #     for credit in credits:
-#         if credit['product_type'] == "Project":
+#         if credit['credit_type'] == "Project":
 #             continue
 #         if not 'outstanding' in credit: 
 #             continue
@@ -87,9 +80,14 @@ def allocate_credits(sales_invoice_doc):
     """
     if frappe.get_value("Customer", sales_invoice_doc.customer, "customer_credits") == 'blocked':
         return sales_invoice_doc
-    product_type = sales_invoice_doc.product_type if sales_invoice_doc.product_type == "Project" else None
-    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
-    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, product_type)
+    
+    if sales_invoice_doc.product_type and sales_invoice_doc.product_type == "Project":
+        credit_type = "Project"
+    else:
+        credit_type = "Standard"
+
+    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
+    total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     if len(customer_credits) > 0:
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
@@ -99,12 +97,12 @@ def allocate_credits(sales_invoice_doc):
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
             if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
                 continue
-            if sales_invoice_doc.product_type != "Project" and credit['product_type'] == "Project":
-                # don't pay non-Project invoice with Project credits
-                continue
-            if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
-                # don't pay Project invoice with non-Project credits
-                continue
+            # if sales_invoice_doc.product_type != "Project" and credit['product_type'] == "Project":
+            #     # don't pay non-Project invoice with Project credits
+            #     continue
+            # if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
+            #     # don't pay Project invoice with non-Project credits
+            #     continue
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
                 sales_invoice_doc.append('customer_credits', {

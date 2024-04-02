@@ -111,9 +111,9 @@ def make_collective_invoices(delivery_notes):
                     if taxes_and_charges == tax and prod_type_fit:
                         total = frappe.get_value("Delivery Note", d, "total")
                         if product_type == 'Project':
-                            credit = get_total_credit(customer, company, product_type)
+                            credit = get_total_credit(customer, company, 'Project')
                         else:
-                            credit = get_total_credit(customer, company, None)
+                            credit = get_total_credit(customer, company, 'Standard')
                         customer_credits = frappe.get_value("Customer", customer, "customer_credits")
                         if credit is not None and customer_credits == 'Credit Account':
                             # there is some credit - check if it is sufficient
@@ -211,9 +211,9 @@ def async_create_invoices(mode, company, customer):
 
                 # check credit
                 if dn.get('product_type') == 'Project':
-                    credit = get_total_credit(dn.get('customer'), company, dn.get('product_type'))
+                    credit = get_total_credit(dn.get('customer'), company, 'Project')
                 else:
-                    credit = get_total_credit(dn.get('customer'), company, None)
+                    credit = get_total_credit(dn.get('customer'), company, 'Standard')
                 customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
                 if credit is not None and customer_credits == 'Credit Account':
                     delivery_note =  dn.get('delivery_note')

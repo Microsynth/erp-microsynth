@@ -19,10 +19,10 @@ frappe.query_reports["Customer Credits"] = {
             "default": frappe.defaults.get_user_default("company") || frappe.defaults.get_global_default("company")
         },
         {
-            "fieldname": "product_type",
-            "label": __("Product Type"),
+            "fieldname": "credit_type",
+            "label": __("Credit Type"),
             "fieldtype": "Select",
-            "options": "\nProject"
+            "options": "\nStandard\nProject"
         },
         {
             "fieldname": "to_date",
