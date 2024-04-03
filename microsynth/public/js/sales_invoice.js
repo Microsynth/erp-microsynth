@@ -60,6 +60,8 @@ frappe.ui.form.on('Sales Invoice', {
         };
         if (frm.doc.__islocal) {
             get_exchange_rate(frm);
+            
+            cur_frm.set_value("invoice_sent_on", null );        // fresh document cannot be sent out (in case duplicate, ... reset)
         }
         if ((frm.doc.docstatus === 1) && (!frm.doc.is_return) && (!frm.doc.invoice_sent_on)) {
             frm.add_custom_button(__("Transmit"), function() {
@@ -354,6 +356,7 @@ function open_mail_dialog(frm){
             },
             'callback': function(response) {
                 if (response.message){
+                    
                     new frappe.erpnextswiss.MailComposer({
                         doc: cur_frm.doc,
                         frm: cur_frm,
@@ -364,7 +367,7 @@ function open_mail_dialog(frm){
                         txt: "",
                         check_all_attachments: false
                     });
-                    //cur_frm.set_value("invoice_sent_on", new Date(Date.now()) );
+                    // note: once the mail is sent, a communication record is created and this will trigger setting the invoice_sent_on (see hooks.py, doc_events Communication on_insert)
                 } else {
                     frappe.show_alert('Contact ' + frm.doc.invoice_to + ' has no email IDs. Please go to this Contact and add at least one email address.');
                 }

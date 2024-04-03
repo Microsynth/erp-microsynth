@@ -131,7 +131,11 @@ doc_events = {
     },
     "Sales Invoice": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+    },
+    "Communication": {
+        "after_insert": "microsynth.microsynth.email_handler.communication_on_insert"
     }
+
  }
 
 # Scheduled Tasks
