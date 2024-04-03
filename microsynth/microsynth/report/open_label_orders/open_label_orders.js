@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Microsynth, libracore and contributors
+// Copyright (c) 2022-2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -77,6 +77,9 @@ function process_queue() {
             locals.label_queue.shift();
             process_queue();
         }
+    } else {
+        // queue is empty, all done ;-) refresh view to prevent duplicate pick
+        frappe.query_report.refresh();
     }
 }
 
