@@ -85,11 +85,12 @@ frappe.ui.form.on('Sales Invoice', {
                 check_prevdoc_rates(cur_frm);
             }, time_out);
         }
-        // Clear Customer Credits on this invoice if it has just been duplicated from another invoice
-        if (frm.doc.__islocal && frm.doc.amended_from == null && frm.doc.total_customer_credit != 0) {
+        // Clear Customer Credits on this invoice if it has been duplicated from another invoice
+        if ((frm.doc.__islocal) && (!frm.doc.is_return) && (!frm.doc.amended_from) && (frm.doc.total_customer_credit != 0)) {
             clear_credits(frm);
         }
         
+        /* not required with exclusion above
         // prevent credit notes if a customer credit has been applied 
         // Note: use cancel - amend instead, otherwise the return is not included in the customer credit ledger
         if ((frm.doc.docstatus === 1) && (frm.doc.is_return === 0) && (frm.doc.total_customer_credit > 0)) {
@@ -97,6 +98,7 @@ frappe.ui.form.on('Sales Invoice', {
                 cur_frm.remove_custom_button(__("Return / Credit Note"), __("Create"));
             }, 500);
         }
+        */
         // clean up the create menu (obsolete functions in the current process landscape)
         setTimeout(function() {
             cur_frm.remove_custom_button(__("Delivery"), __("Create"));
