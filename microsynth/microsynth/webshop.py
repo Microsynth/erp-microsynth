@@ -912,6 +912,11 @@ def place_order(content, client="webshop"):
                 item.item_code = express_shipping.item
                 item.item_name = express_shipping.item_name
                 item.description = "express shipping" 
+
+    # prepayment: hold order
+    if "Prepayment" in (customer.invoicing_method or ""):
+        so_doc.hold_order = 1
+
     # quotation rate override: if an item has a rate in the quotation, always take this 
     #    (note: has to be post insert, otherwise frappe will override 0 rates)
     if quotation:
@@ -919,15 +924,10 @@ def place_order(content, client="webshop"):
             if item.item_code in quotation_rate:                    # check if this item had a quotation rate
                 item.rate = quotation_rate[item.item_code]
                 item.price_list_rate = quotation_rate[item.item_code]
-
+        so_doc.save()
         so_doc = apply_discount(qtn_doc, so_doc)
 
-    # prepayment: hold order
-    if "Prepayment" in (customer.invoicing_method or ""):
-        so_doc.hold_order = 1
-    
     so_doc.save()
-
     try:        
         so_doc.submit()
         
