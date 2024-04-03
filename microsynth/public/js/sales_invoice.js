@@ -136,6 +136,7 @@ frappe.ui.form.on('Sales Invoice', {
             frappe.msgprint( __("Please be patient, prices are being checked..."), __("Validation") );
             frappe.validated=false;
         }
+        validate_credit_item_not_using_credits(frm);
     }
 });
 
@@ -171,17 +172,21 @@ function clone(frm) {
 
 
 function allocate_credits(frm) {
-    frappe.call({
-        'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
-        'args': {
-            'sales_invoice': frm.doc.name
-        },
-        'callback': function(r)
-        {
-            cur_frm.reload_doc();
-            frappe.show_alert( __("allocated credits") );
-        }
-    });
+    if (!contains_credit_item(frm)) {
+        frappe.call({
+            'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
+            'args': {
+                'sales_invoice': frm.doc.name
+            },
+            'callback': function(r)
+            {
+                cur_frm.reload_doc();
+                frappe.show_alert( __("allocated credits") );
+            }
+        });
+    } else {
+        frappe.msgprint( __("Please do not apply a customer credit to create a new customer credit"), __("Allocate credits") );
+    }
 }
 
 
@@ -374,4 +379,25 @@ function open_mail_dialog(frm){
             }
         });
     }
+}
+
+function validate_credit_item_not_using_credits(frm) {
+    // this function checks that the customer credit item is not paid using a credit
+    if ((!frm.doc.is_return) && (frm.doc.total_customer_credit > 0)) {
+        // document is not a return and has a customer credit applied
+        if (contains_credit_item(frm)) {
+            // found a customer credit: not allowed!
+            frappe.msgprint( __("Please do not apply a customer credit to create a new customer credit"), __("Validaton") );
+            frappe.validated = false;
+        }
+    }
+}
+
+function contains_credit_item(frm) {
+    for (var i = 0; i < (frm.doc.items || []).length; i++) {
+        if (frm.doc.items[i].item_code === "6100") {
+            return true;
+        }
+    }
+    return false;
 }
