@@ -149,7 +149,7 @@ def print_shipping_label(sales_order_id):
 
     #print(content)
     print_raw(printer.ip, printer.port, content)
-    sales_order.label_printed_on = datetime.now()
+    sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sales_order.save()
     frappe.db.commit()
 
@@ -171,7 +171,7 @@ def print_oligo_order_labels(sales_orders):
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
             
             print_raw(settings.label_printer_ip, settings.label_printer_port, content)
-            sales_order.label_printed_on = datetime.now()
+            sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sales_order.save()    
             frappe.db.commit()
         except Exception as err:

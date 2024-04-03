@@ -327,7 +327,7 @@ def set_order_label_printed(sales_orders):
     for o in sales_orders:
         if frappe.db.exists("Sales Order", o):
             sales_order = frappe.get_doc("Sales Order", o)
-            sales_order.label_printed_on = datetime.now()
+            sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sales_order.save()
     frappe.db.commit()
     return

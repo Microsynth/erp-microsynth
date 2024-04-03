@@ -1555,8 +1555,8 @@ def import_sequencing_labels(filename, skip_rows = 0):
       ,[Purchaser_Id]
       ,[RegisteredTo_Id]
       ,[RegisteredToGroup_Id]
-	  ,p.IdPerson as purchaser_person_id
-	  ,r.IdPerson as registered_to_person_id
+      ,p.IdPerson as purchaser_person_id
+      ,r.IdPerson as registered_to_person_id
     FROM [Webshop].[dbo].[Barcodes] b
     LEFT JOIN AspNetUsers p on p.id = b.Purchaser_Id
     LEFT JOIN AspNetUsers r on r.id = b.RegisteredTo_Id
@@ -2266,7 +2266,7 @@ def refactor_date(date_str):
 def import_lead_notes(notes_file, contact_note_type):
     """
     This function reads every line as a contact note.
-	notes_file: name of the TSV file exported from FM/Gecko
+    notes_file: name of the TSV file exported from FM/Gecko
     contact_note_type: type that is set for all imported contact notes (e.g. 'Other', 'Marketing', 'Email')
     See commit 5ec21ed24c11f999c41479c17a54a8345f3448b2 and previous for former version used for non-leads import.
 
@@ -3764,20 +3764,35 @@ def import_user_process_assignments(filepath):
         user_settings.save()
     frappe.db.commit()
     
-"""
-Find all invoice sent on with milliseconds and remove the millisecond part
 
-Fixes the invoice not saved on open bug
-
-Run as
- $ bench execute microsynth.microsynth.migration.patch_invoice_sent_on_dates
-"""
 def patch_invoice_sent_on_dates():
-	print("Executing cleanup query...")
-	frappe.db.sql("""
-		UPDATE `tabSales Invoice`
-		SET `invoice_sent_on` = SUBSTRING(`invoice_sent_on`, 1, 19) 
-		WHERE LENGTH(`invoice_sent_on`) > 19;""")
-	print("done ;-)")
-	return
-	
+    """
+    Find all invoice sent on with milliseconds and remove the millisecond part
+
+    Fixes the invoice not saved on open bug
+
+    Run as
+    bench execute microsynth.microsynth.migration.patch_invoice_sent_on_dates
+    """
+    print("Executing cleanup query...")
+    frappe.db.sql("""
+        UPDATE `tabSales Invoice`
+        SET `invoice_sent_on` = SUBSTRING(`invoice_sent_on`, 1, 19) 
+        WHERE LENGTH(`invoice_sent_on`) > 19;""")
+    print("done ;-)")
+    return
+
+
+def patch_label_printed_on_dates():
+    """
+    Find all Sales Orders with milliseconds in the field Shipping Label printed on and remove the millisecond part.
+    Fixes the Sales Order not saved on open bug
+
+    bench execute microsynth.microsynth.migration.patch_label_printed_on_dates
+    """
+    print("Executing cleanup query...")
+    frappe.db.sql("""
+        UPDATE `tabSales Order`
+        SET `label_printed_on` = SUBSTRING(`label_printed_on`, 1, 19) 
+        WHERE LENGTH(`label_printed_on`) > 19;""")
+    print("Done :-)")
