@@ -89,9 +89,17 @@ def allocate_credits(sales_invoice_doc):
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     if len(customer_credits) > 0:
+        for credit_entry in sales_invoice_doc.customer_credits:
+            # Substract allocated amount of credit_entry from Additional Discount Amount before deleting already existing credit entries
+            sales_invoice_doc.discount_amount -= credit_entry.allocated_amount
+            if sales_invoice_doc.discount_amount < 0:
+                frappe.log_error(f"Negative Additional Discount Amount on Sales Invoice '{sales_invoice_doc.name}'", "credits.allocate_credits")
+        if len(sales_invoice_doc.customer_credits) > 0:
+            # Delete already existing customer credit entries on the Sales Invoice
+            sales_invoice_doc.customer_credits = []
+            sales_invoice_doc.save()
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
-        sales_invoice_doc.customer_credits = []
         for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
