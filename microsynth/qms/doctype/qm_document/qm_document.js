@@ -164,7 +164,8 @@ frappe.ui.form.on('QM Document', {
                 || ((frm.doc.docstatus === 1)                   // or is reviewed
                     && (["Reviewed"].includes(frm.doc.status))  // long process needs to be reviewed
                     && (frm.doc.reviewed_on) 
-                    && (frm.doc.reviewed_by)))) {
+                    && (frm.doc.reviewed_by)
+                    && (frappe.session.user != frm.doc.reviewed_by)))) {  // releaser needs to be different from reviewer
             // add release button
             cur_frm.page.set_primary_action(
                 __("Release"),
