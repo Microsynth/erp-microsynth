@@ -1068,7 +1068,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     if customer_id:
         shipping_items = frappe.db.sql(f"""
             SELECT `tabShipping Item`.`item`,
-                `tabShipping Item`.`item_name`,
+                `tabItem`.`item_name`,
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
@@ -1095,7 +1095,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     country = robust_get_country(country)
     shipping_items = frappe.db.sql(
         f"""SELECT `tabShipping Item`.`item`,
-                `tabShipping Item`.`item_name`,
+                `tabItem`.`item_name`,
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
