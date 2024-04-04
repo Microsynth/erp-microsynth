@@ -58,7 +58,7 @@ frappe.ui.form.on('QM Document', {
         if (["Valid", "Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_from', 'read_only', true);
         } else {
-            if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
+            if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU') || (frm.doc.reviewed_by && frappe.session.user === frm.doc.reviewed_by)) {
                 cur_frm.set_df_property('valid_from', 'read_only', false);
             }
         }
