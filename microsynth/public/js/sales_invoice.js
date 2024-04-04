@@ -23,13 +23,13 @@ frappe.ui.form.on('Sales Invoice', {
         frappe.ui.keys.off("ctrl+e");
         //}
 
-        // frappe.ui.keys.add_shortcut({
-        //     shortcut: 'ctrl+e',
-        //     action: function() { 
-        //         open_mail_dialog(frm)
-        //     },
-        //     description: __('Custom Email shortcut')
-        // });
+        frappe.ui.keys.add_shortcut({
+            'shortcut': 'ctrl+e',
+            'action': function() { 
+                open_mail_dialog(frm)
+            },
+            'description': __('Custom Email shortcut')
+        });
 
         // Custom email dialog
         if (frm.doc.docstatus == 1) {
