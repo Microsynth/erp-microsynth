@@ -238,7 +238,6 @@ frappe.ui.form.on('QM Document', {
         // only allow creator, reviewer or QAU to set/change valid till date
         if ((frm.doc.docstatus == 1)
             && !((frappe.session.user === frm.doc.created_by)
-                  || (frappe.session.user === frm.doc.reviewed_by)
                   || (frappe.user.has_role("QAU")))) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
         }
