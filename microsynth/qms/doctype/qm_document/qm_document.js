@@ -6,6 +6,14 @@ const document_types_with_review = ['SOP', 'FLOW', 'QMH'];
 
 frappe.ui.form.on('QM Document', {
     refresh: function(frm) {
+        // fresh document: add creation tags
+        if (frm.doc.__islocal) {
+            cur_frm.set_value("created_by", frappe.session.user);
+            cur_frm.set_value("created_on", frappe.datetime.get_today());
+            // on fresh documents, hide company field (will be clean on insert to prevent default)
+            cur_frm.set_df_property('company', 'hidden', true);
+        }
+
         // company reset-controller
         if (frm.doc.__islocal) {
             // set flag that this is a new document
@@ -36,22 +44,32 @@ frappe.ui.form.on('QM Document', {
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
+        // Only creator and QAU can change these fields in Draft status: Title, Company, Classification Level, linked Documents
+        if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('classification_level', 'read_only', true);
+            cur_frm.set_df_property('linked_documents', 'read_only', true);
+            cur_frm.set_df_property('valid_from', 'read_only', true);
+            cur_frm.set_df_property('valid_till', 'read_only', true);
+        }
+
         // when a document is valid or invalid, the valid_from field must be read-only
         if (["Valid", "Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_from', 'read_only', true);
+        } else {
+            if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('valid_from', 'read_only', false);
+            }
         }
 
         // when a document is invalid, the valid_till field must be read-only
         if (["Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
-        }
-
-        // fresh document: add creation tags
-        if (frm.doc.__islocal) {
-            cur_frm.set_value("created_by", frappe.session.user);
-            cur_frm.set_value("created_on", frappe.datetime.get_today());
-            // on fresh documents, hide company field (will be clean on insert to prevent default)
-            cur_frm.set_df_property('company', 'hidden', true);
+        } else {
+            if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('valid_till', 'read_only', false);
+            }
         }
 
         // update QM Document.status if valid_from <= today and status is Released
@@ -234,8 +252,8 @@ frappe.ui.form.on('QM Document', {
                 attach_btns[i].style.visibility = "hidden";
             }
         }
-        
-        // only allow creator, reviewer or QAU to set/change valid till date
+
+        // only allow creator and QAU to set/change valid till date
         if ((frm.doc.docstatus == 1)
             && !((frappe.session.user === frm.doc.created_by)
                   || (frappe.user.has_role("QAU")))) {
@@ -247,7 +265,7 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_value("valid_from", frappe.datetime.get_today());
         }
         else {
-            if (frm.doc.valid_from) { 
+            if (frm.doc.valid_from) {
                 cur_frm.set_value("valid_from", null);
                 frappe.show_alert("valid from date cleared")
             }
