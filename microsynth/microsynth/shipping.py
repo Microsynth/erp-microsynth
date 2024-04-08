@@ -7,7 +7,7 @@ import frappe
 
 TRACKING_URLS = {
     '1010': "https://www.post.at/sv/sendungssuche?snr=",
-    '1103': "https://www.post.at/sv/sendungssuche?snr=",
+    #'1103': "https://www.post.at/sv/sendungssuche?snr=",  # has no tracking anymore
     '1105': "https://www.post.at/sv/sendungssuche?snr=",
     '1108': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1114': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
