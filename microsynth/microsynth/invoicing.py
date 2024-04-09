@@ -1361,11 +1361,20 @@ Your administration team<br><br>{footer}"
         frappe.db.commit()
 
     except Exception as err:
-        frappe.log_error("Cannot transmit sales invoice {0}: \n{1}\n{2}".format(
-            sales_invoice_id, 
-            err,
-            traceback.format_exc()), "invoicing.transmit_sales_invoice")
-
+        subject = f"[ERP] Unable to send {sales_invoice_id}"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Sales Invoice {sales_invoice_id} " \
+                    f"could not be transmitted due to the following error:<br>{err}<br>" \
+                    f"Please try to solve this issue and transmit the Sales Invoice again.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = subject,
+            content = message,
+            send_email = True
+            )
+        msg = message.replace('<br>','\n')
+        frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{msg}",
+                         "invoicing.transmit_sales_invoice")
     return
 
 
