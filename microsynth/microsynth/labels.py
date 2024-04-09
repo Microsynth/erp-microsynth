@@ -140,6 +140,8 @@ def get_label_data(sales_order):
 def print_shipping_label(sales_order_id):
     """
     function calls respective template for creating a transport label
+
+    bench execute "microsynth.microsynth.labels.print_shipping_label" --kwargs "{'sales_order_id': 'SO-BAL-24016620'}"
     """
     sales_order = frappe.get_doc("Sales Order", sales_order_id)    
     label_data = get_label_data(sales_order)

@@ -2,6 +2,7 @@
 ;### load Microsynth logo ###
 ;M l IMG;01_MIC_Logo_Swiss_black
 M l IMG;00_MIC_Logo_black
+M l IMG;02_AT_Priority_black
 {# config the printer #}
 m m
 J 
@@ -29,10 +30,10 @@ T 26,49,90,3,pt 20;P.P. A
 T 29,49,90,3,pt 10;CH-9436 Balgach
 T 33,49,90,3,pt 10;POST CH AG
 G 20,50,90;R:30,15,0.3,0.3
-{%- else -%}
-    {% if shipping_service != destination_country and shipping_service != "" %}
+{%- elif shipping_service == "Austria" %}
+I 10,50,90,2,2;02_AT_Priority_black
+{%- elif shipping_service != destination_country and shipping_service != "" %}
 T 29,49,90,3,pt 20;{{shipping_service}}
-    {%- endif -%}
 {%- endif -%}
 
 {# barcodes #}
