@@ -23,10 +23,10 @@
 #T75#J54#YN101/3U/45///CH-9436 Balgach#G
 #T71#J54#YN101/3U/45///POST CH AG#G
 #T69#J22#YR0/0/0.5/15/33
-{%- else -%}
-    {%- if shipping_service != destination_country %}
+{%- elif shipping_service == "Austria" -%}
+#T73#J60#YG/3///C:\Logos\02_AT_Priority_black.bmp#G
+{%- elif shipping_service != destination_country -%}
 #T75#J53#YN101/3U/85///{{shipping_service}}#G
-    {%- endif -%}
 {%- endif -%}
 
 {# additional line break #}
