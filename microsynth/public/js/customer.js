@@ -62,6 +62,11 @@ frappe.ui.form.on('Customer', {
                 message: __("Please select an <strong>invoice to</strong> contact with an email address.")
             });
         }
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("Payment Reminder"), function() {
+                create_payment_reminder(frm);
+            }, __("Create") );
+        }
     },
     validate(frm) {
         if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to) && (!frm.doc.disabled)) {
@@ -102,3 +107,43 @@ function fetch_primary_contact(frm) {
         }
     });
 }
+
+
+function create_payment_reminder(frm) {
+    // ask for which company relation
+    frappe.prompt([
+            {
+                'fieldname': 'company', 
+                'fieldtype': 'Link', 
+                'label': __('Company'), 
+                'options': 'Company', 
+                'default': frappe.defaults.get_user_default("Company"),
+                'reqd': 1}  
+        ],
+        function(values) {
+            frappe.call({
+                'method': 'erpnextswiss.erpnextswiss.doctype.payment_reminder.payment_reminder.create_reminder_for_customer',
+                'args': {
+                    'customer': frm.doc.name,
+                    'company': values.company,
+                    'auto_submit': 0,
+                    'max_level': 4
+                },
+                'callback': function(response) {
+                    if (response.message) {
+                        frappe.show_alert( __("Reminder created") + 
+                            ": <a href='/desk#Form/Payment Reminder/" + 
+                            response.message + "'>" + response.message + 
+                            "</a>"
+                        );
+                    } else {
+                        frappe.show_alert( __("No overdue invoices (or error)") )
+                    }
+                }
+            });
+        },
+        __('Select Company'),
+        __('OK')
+    );
+}
+
