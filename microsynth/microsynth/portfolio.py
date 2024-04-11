@@ -1,5 +1,7 @@
 import frappe
 from frappe.utils.data import today, get_first_day, get_last_day, add_months
+from datetime import datetime
+
 
 def get_sales_volume(contact):
     if not contact:
@@ -38,7 +40,42 @@ def get_sales_volume(contact):
     })
     # ~ print(data)
     return data
-    
+
+
+def get_yearly_order_sum(contact_id):
+    """
+    Returns the total amount of all Sales Orders of the given contact_id from the current year
+    and the total amount from last year.
+
+    bench execute microsynth.microsynth.portfolio.get_yearly_order_sum --kwargs "{'contact_id': '220951'}"
+    """
+    if not contact_id or not frappe.db.exists("Contact", contact_id):
+        frappe.throw("Please provide a valid Contact ID.")
+    # get current year as int
+    current_year = datetime.now().year
+    yearly_order_sum = []
+    for year in range(current_year, current_year-2, -1):
+        data = frappe.db.sql(f"""
+                        SELECT SUM(`base_net_total`) AS `total`, `currency`
+                        FROM `tabSales Order`
+                        WHERE `contact_person` = '{contact_id}'
+                        AND `docstatus` = 1
+                        AND `transaction_date` BETWEEN DATE('{year}-01-01') AND DATE('{year}-12-31')
+                        GROUP BY `currency`
+                    """, as_dict=True)
+        if len(data) > 1:
+            frappe.log_error(f"There seem to be {len(data)} different currencies on Sales Orders of Contact '{contact_id}' from {year}.", "portfolio.get_yearly_order_sum")
+            yearly_order_sum.append({
+                'amount': sum((entry.total or 0) for entry in data),
+                'currency': 'different'
+            })
+        yearly_order_sum.append({
+            'amount': data[0].total or 0,
+            'currency': data[0].currency
+        })
+    return yearly_order_sum
+
+
 def get_sales_qty(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
@@ -76,7 +113,8 @@ def get_sales_qty(contact):
     })
     # ~ print(data)
     return data
-    
+
+
 def get_product_type(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
@@ -88,7 +126,7 @@ def get_product_type(contact):
     last_day = get_last_day(last_day_help)
     yearly_volume = 0
     sql_query = """
-                    SELECT SUM(`base_net_total`) AS `total`,`product_type`, COUNT(`name`) AS `qty`
+                    SELECT SUM(`base_net_total`) AS `total`,`product_type`, COUNT(`name`) AS `qty`, `currency`
                     FROM `tabSales Order`
                     WHERE `contact_person` = '{contact}'
                     AND `docstatus` = 1
@@ -103,9 +141,11 @@ def get_product_type(contact):
         total_volume += volume.total
         total_qty += volume.qty
         data.append({
+            'period': "{0} - {1}".format(first_day.strftime("%d.%m.%Y"), last_day.strftime("%d.%m.%Y")),
             'volume': volume.total,
             'type': volume.product_type,
-            'qty': volume.qty
+            'qty': volume.qty,
+            'currency': volume.currency
         })
     percent_volume = (100 / total_volume) if total_volume > 0 else 1
     percent_qty = (100 / total_qty) if total_qty > 0 else 1
