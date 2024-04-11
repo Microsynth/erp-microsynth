@@ -165,7 +165,7 @@ scheduler_events = {
         # "microsynth.microsynth.seqblatt.check_sales_order_completion"
     ],
     "daily": [
-        "microsynth.qms.doctype.qm_document.qm_document.check_update_validity"
+        # "microsynth.qms.doctype.qm_document.qm_document.check_update_validity"
     ]
 }
 

@@ -337,7 +337,7 @@ def validate_released_qm_docs():
     released_qm_docs = frappe.db.sql(f"""
         SELECT `name`
         FROM `tabQM Document`
-        WHERE `valid_from` <= DATE({date.today()})
+        WHERE `valid_from` <= DATE('{date.today()}')
             AND `status` = 'Released'
             AND `docstatus` = 1
         ;""", as_dict=True)
