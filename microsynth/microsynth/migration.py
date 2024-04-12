@@ -3796,3 +3796,25 @@ def patch_label_printed_on_dates():
         SET `label_printed_on` = SUBSTRING(`label_printed_on`, 1, 19) 
         WHERE LENGTH(`label_printed_on`) > 19;""")
     print("Done :-)")
+
+
+def check_tax_ids():
+    """
+    Loop over all enabled Customers and check their non-empty Tax IDs.
+
+    bench execute microsynth.microsynth.migration.check_tax_ids
+    """
+    from erpnextaustria.erpnextaustria.utils import check_uid
+
+    customers = frappe.db.get_all("Customer",
+        filters = {'disabled': 0 },
+        fields = ['name', 'customer_name', 'tax_id'])
+    
+    print("Invalid Tax IDs:")
+    for i, customer in enumerate(customers):
+        try:
+            if customer['tax_id'] and not check_uid(customer['tax_id']):
+                print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
+        except Exception as err:
+            print(f"{i}/{len(customers)}: Unable to validate Tax ID '{customer['tax_id']}' of Customer '{customer['name']}' ('{customer['customer_name']}'): {err}")
+

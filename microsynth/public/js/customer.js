@@ -77,6 +77,9 @@ frappe.ui.form.on('Customer', {
             });
             frappe.validated=false;
         }
+        if (frm.doc.tax_id) {
+            verify_tax_id(frm.doc.tax_id);
+        }
     },
     after_save(frm) {
         if (!frm.doc.disabled) {
@@ -90,6 +93,9 @@ frappe.ui.form.on('Customer', {
                 }
             });
         }
+    },
+    tax_id: function(frm) {
+        verify_tax_id(frm.doc.tax_id)
     }
 });
 
@@ -147,3 +153,21 @@ function create_payment_reminder(frm) {
     );
 }
 
+
+function verify_tax_id(tax_id) {
+    frappe.call({
+        method: 'erpnextaustria.erpnextaustria.utils.check_uid',
+        args: {
+            uid: tax_id
+        },
+        async: false,
+        callback: function(r) {
+            if (r.message != true) {
+                frappe.msgprint( __("Invalid Tax ID") );
+                frappe.validated = false;
+            } else {
+                frappe.show_alert( __("Tax ID valid") );
+            }
+        }
+    });
+}
