@@ -77,7 +77,7 @@ frappe.ui.form.on('Customer', {
             });
             frappe.validated=false;
         }
-        if (frm.doc.tax_id) {
+        if (frm.doc.tax_id && !frm.doc.tax_id.startsWith('CH')) {
             verify_tax_id(frm.doc.tax_id);
         }
     },
@@ -95,7 +95,9 @@ frappe.ui.form.on('Customer', {
         }
     },
     tax_id: function(frm) {
-        verify_tax_id(frm.doc.tax_id)
+        if (!frm.doc.tax_id.startsWith('CH')) {
+            verify_tax_id(frm.doc.tax_id)
+        }
     }
 });
 
