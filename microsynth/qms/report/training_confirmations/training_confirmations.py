@@ -55,10 +55,3 @@ def get_data(filters):
 def execute(filters=None):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
-
-
-def get_training_records(qm_document):
-    """
-    Wrapper for get_data
-    """
-    return get_data({'qm_document': qm_document})

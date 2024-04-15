@@ -52,3 +52,12 @@ def set_signed_on(doc):
     record.signed_on = datetime.today()
     record.save(ignore_permissions = True)
     frappe.db.commit()    
+
+
+def get_training_records(qm_document):
+    """
+    Return a list of all submitted QM Training Records for the given QM Document 
+    """
+    return frappe.get_all("QM Training Record",
+            filters = [['document_name', '=', qm_document], ['docstatus', '=', 1]],
+            fields = ['name', 'trainee', 'signed_on', 'signature'])
