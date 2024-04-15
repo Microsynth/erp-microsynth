@@ -69,10 +69,16 @@ def get_yearly_order_sum(contact_id):
                 'amount': sum((entry.total or 0) for entry in data),
                 'currency': 'different'
             })
-        yearly_order_sum.append({
-            'amount': data[0].total or 0,
-            'currency': data[0].currency
-        })
+        elif len(data) > 0:
+            yearly_order_sum.append({
+                'amount': data[0].total or 0,
+                'currency': data[0].currency
+            })
+        else:
+            yearly_order_sum.append({
+                'amount': 0,
+                'currency': 'CHF'  # if there are no data, the currency should not matter
+            })
     return yearly_order_sum
 
 
