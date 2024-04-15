@@ -106,3 +106,12 @@ def sign_review(doc, user, password):
         return False
     else:
         return sign("QM Review", doc.get("name"), user, password)
+
+
+def get_qm_reviews(qm_document):
+    """
+    Return a list of all submitted QM Reviews for the given QM Document 
+    """
+    return frappe.get_all("QM Review",
+            filters = [['document_name', '=', qm_document], ['docstatus', '=', 1]],
+            fields = ['name', 'reviewer', 'signature'])
