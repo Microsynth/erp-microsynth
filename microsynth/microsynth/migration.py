@@ -3852,3 +3852,123 @@ def update_shipping_item_name(item_codes, dry_run=True):
                     SET `item_name` = '{item.item_name}'
                     WHERE `name` = '{shipping_item['name']}';""")
     print("Done")
+
+
+def is_workday_before_10am(date):
+    """
+    Returns true if the given date is a workday (Monday to Friday and no holiday), otherwise false.
+    Currently adapted to public holidays of St. Gallen 2023-2024.
+    Source: https://www.sg.ch/verkehr/strassenverkehr/formulare_merkblaetter/feiertage-und-spezielle-oeffnungszeiten.html
+    """
+    holidays_st_gallen = [datetime(2023, 1, 1), datetime(2023, 1, 2), datetime(2023, 4, 7), datetime(2023, 4, 10),
+                            datetime(2023, 5, 18), datetime(2023, 5, 29), datetime(2023, 8, 1),
+                            datetime(2023, 11, 1), datetime(2023, 12, 25), datetime(2023, 12, 26),
+                            datetime(2024, 1, 1), datetime(2024, 1, 2), datetime(2024, 3, 29),
+                            datetime(2024, 4, 1), datetime(2024, 5, 9), datetime(2024, 5, 20),
+                            datetime(2024, 8, 1), datetime(2024, 11, 1), datetime(2024, 12, 24),
+                            datetime(2024, 12, 25), datetime(2024, 12, 26), datetime(2024, 12, 27),
+                            datetime(2024, 12, 31)]
+    # 27. Dezember 2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
+    if date.weekday() < 5 and date not in holidays_st_gallen:  # https://docs.python.org/3/library/datetime.html#datetime.date.weekday
+        if date.hour < 10:  # before 10 am
+            return True
+    return False
+
+
+def evaluate_same_day_oligos(export_file, start_date='2023-10-01', end_date='2024-03-31'):
+    """
+    Determine Oligo Sales Orders that fulfill the advertised same day delivery conditions
+    and compute the proportion of Sales Orders that were shipped in-time (on the same day).
+
+    Run from bench
+    bench execute microsynth.microsynth.migration.evaluate_same_day_oligos --kwargs "{'export_file':'/mnt/erp_share/JPe/same_day_oligos_2023-10-01_2024-03-31.csv'}"
+    """
+    try:
+        is_valid = bool(datetime.strptime(start_date, "%Y-%m-%d"))
+        is_valid = is_valid and bool(datetime.strptime(end_date, "%Y-%m-%d"))
+    except ValueError:
+        is_valid = False
+
+    if not is_valid:
+        print("Please provide both start and end date in the format YYYY-MM-DD.")
+        return
+    
+    sql_query = f"""SELECT
+            `tabSales Order`.`name`,
+            `tabSales Order`.`customer_name`,
+            `tabSales Order`.`transaction_date`,
+            `tabSales Order`.`label_printed_on`,
+            `tabSales Order`.`status`
+        FROM `tabSales Order`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`customer_address`
+        WHERE
+        `tabSales Order`.`docstatus` = 1
+        AND `tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'On Hold', 'Closed')
+        AND `tabSales Order`.`product_type` = 'Oligos'
+        -- AND `tabSales Order`.`customer_name` LIKE '%Microsynth%'
+        -- AND `tabAddress`.`city` LIKE '%Balgach%'
+        AND `tabSales Order`.`transaction_date` >= DATE('{start_date}')
+        AND `tabSales Order`.`transaction_date` <= DATE('{end_date}')
+        ORDER BY `tabSales Order`.`transaction_date`;
+    """
+    query_results = frappe.db.sql(sql_query, as_dict=True)
+    print(f"There are {len(query_results)} SQL query results.")
+    should_be_same_day = is_same_day = 0
+
+    with open(export_file, "w") as file:
+        writer = csv.writer(file)
+        writer.writerow(['sales_order.name', 'sales_order.customer', 'sales_order.customer_name', 'sales_order.creation',
+                         'sales_order.label_printed_on', 'sales_order.status', 'same_day_fulfilled'])
+
+        for result in query_results:
+            sales_order = frappe.get_doc("Sales Order", result['name'])
+            if len(sales_order.oligos) >= 20:  # the same day criteria only applies to Sales Orders with less than 20 Oligos
+                continue
+            unallowed_items = False
+            for i in sales_order.items:
+                if i.item_code not in ('0010', '0050', '0100', '1100', '1101', '1102'):
+                    unallowed_items = True
+                    break
+            if not unallowed_items:
+                for oligo_link in sales_order.oligos:
+                    oligo = frappe.get_doc("Oligo", oligo_link.oligo)
+                    if len(oligo.items) != 1:  # exclude Oligos with modifications (more than one item) and Oligos without any items
+                        if len(oligo.items) == 0:
+                            #print(f"WARNING: {len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to take sequence length instead")
+                            if not oligo.sequence:
+                                print(f"Oligo {oligo.name} from Sales Order {sales_order.name} has no items and no sequence. Going to skip this Sales Order.")
+                                oligo_too_complicated = True
+                                break
+                            if len(oligo.sequence) <= 25:  # check if oligo is longer than 25 nt
+                                continue
+                            else:
+                                oligo_too_complicated = True
+                                break
+                        else:
+                            print(f"{len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}")
+                            oligo_too_complicated = True
+                            break
+                    oligo_too_complicated = False
+                    if oligo.items[0].qty > 25:  # check if oligo is longer than 25 nt
+                        oligo_too_complicated = True
+                        break
+                if not oligo_too_complicated:
+                    creation_time = sales_order.creation
+                    creation_date = str(creation_time).split(' ')[0]
+                    if creation_date != str(sales_order.transaction_date):
+                        print(f"creation_date != sales_order.transaction_date for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
+                        continue
+                    if is_workday_before_10am(sales_order.creation):
+                        if not sales_order.label_printed_on:
+                            print(f"There is no Label printed on date on {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
+                            continue
+                        should_be_same_day += 1
+                        same_day_fulfilled = (sales_order.creation.day == sales_order.label_printed_on.day) and (sales_order.label_printed_on.hour < 18)
+                        if same_day_fulfilled:
+                            is_same_day += 1
+                        writer.writerow([sales_order.name, sales_order.customer, sales_order.customer_name, sales_order.creation,
+                                         sales_order.label_printed_on, sales_order.status, same_day_fulfilled])
+
+    print(f"There are {should_be_same_day} Sales Orders that meet the same day criteria and are written to {export_file}.")
+    print(f"Of these {should_be_same_day} Sales Orders, {is_same_day} were actually shipped on the same day before 6 pm, "
+          f"which corresponds to a proportion of {((is_same_day/should_be_same_day)*100):.2f} percent.")
