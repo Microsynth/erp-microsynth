@@ -9,6 +9,15 @@ frappe.ui.form.on('Payment Reminder', {
                 });
             }
         }
+    },
+    validate(frm) {
+        // check if invoices have been transmitted
+        for (var i = 0; i < frm.doc.sales_invoices.length; i++) {
+            if (!frm.doc.sales_invoices[i].invoice_sent_on) {
+                frappe.msgprint( __("Invoice {0} seems to be not transmitted. Please check.").replace("{0}", frm.doc.sales_invoices[i].sales_invoice), __("Validation") );
+                frappe.validated=false;
+            }
+        }
     }
 });
 
