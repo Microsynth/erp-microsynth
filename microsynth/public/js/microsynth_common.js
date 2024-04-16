@@ -39,6 +39,16 @@ window.onload = async function () {
     }
 }
 
+// access protection of the file manager
+$(document).ready(function() {
+    // access protection: user shall not go to the file manager
+    if (!frappe.user.has_role("System Manager")) {
+        if ((window.location.href.includes("/desk#List/File/")) || (window.location.href.includes("/desk#Form/File/"))) {
+            window.location.replace("/desk");
+        }
+    }
+});
+
 function sleep(milliseconds) {
    return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
