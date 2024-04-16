@@ -8,6 +8,7 @@ from frappe import _
 import json
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from microsynth.microsynth.naming_series import get_naming_series
+from datetime import datetime
 
 def execute(filters=None):
     columns = get_columns()
@@ -120,6 +121,9 @@ def write_assignment_file(data):
 
 @frappe.whitelist()
 def pick_labels(sales_order, from_barcode, to_barcode):
+    # set flag to prevent running duplicate
+    frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", datetime.now().strftime("%Y-%m-%d %H:%M:%S"));
+    frappe.db.commit()
     # create sequencing labels
     item = frappe.db.sql("""SELECT `item_code`
         FROM `tabSales Order Item`
@@ -172,6 +176,10 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     # print address label
     # TODO: see labels.py, take data from delivery note and pass to printer
     
+    # reset flag to prevent running duplicate
+    frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", None)
+    frappe.db.commit()
+    
     # return print format
     return dn.name
 
@@ -190,4 +198,17 @@ def are_labels_available(item_code, from_barcode, to_barcode):
         return 1
     else:
         return 0
+
+
+@frappe.whitelist()
+def picking_ready():
+    # Check if the picking labels flag is set (a process is still picking labels)
+    flag = frappe.db.get_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels")
+    if not flag:
+        return True
+    if type(flag) == str:
+        flag = datetime.strptime(flag, "%Y-%m-%d %H:%M:%S")
+    if (datetime.now() - flag).total_seconds() > 300:
+        return True
+    return False 
     

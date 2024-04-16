@@ -25,23 +25,36 @@ frappe.query_reports["Open Label Orders"] = {
 
 function queue_builder(filters) {
     frappe.call({
-        'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.get_data",
-        'args': {
-            'filters': {
-                'company': filters.company 
-            }
-        },
+        'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.picking_ready",
         'callback': function(r) {
-            // reset queue
-            locals.label_queue = r.message;
-            // add status flags to each entry
-            for (var i = 0; i < locals.label_queue.length; i++) {
-                locals.label_queue[i].status = 0;
+            if (r.message) {
+                frappe.call({
+                    'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.get_data",
+                    'args': {
+                        'filters': {
+                            'company': filters.company 
+                        }
+                    },
+                    'callback': function(r) {
+                        // reset queue
+                        locals.label_queue = r.message;
+                        // add status flags to each entry
+                        for (var i = 0; i < locals.label_queue.length; i++) {
+                            locals.label_queue[i].status = 0;
+                        }
+                        // start queue processing
+                        process_queue()
+                    }
+                });
+            } else {
+                warn_process_running();
             }
-            // start queue processing
-            process_queue()
         }
     });
+}
+
+function warn_process_running() {
+    frappe.msgprint( __("Another picking process is still in progress, please wait."), __("Picking in progress") );
 }
 
 function process_queue() {
@@ -247,38 +260,47 @@ function are_labels_available(item_code, from_barcode, to_barcode) {
 }
 
 function prio_pick(report_data) {
-    // collect all sales orders
-    var orders = [];
-    for (var i = 0; i < frappe.query_report.data.length; i++) {
-        orders.push(frappe.query_report.data[i].sales_order);
-    }
-    // show order selection dialog
-    frappe.prompt([
-            {
-                'fieldname': 'sales_order', 
-                'fieldtype': 'Select', 
-                'label': 'Sales Order', 
-                'reqd': 1,
-                'options': orders.join("\n"),
-                'default': orders[0]
-            }  
-        ],
-        function(values){
-            // reset and prepare queue
-            locals.label_queue = [];
-            // find order details
-            order_details = null;
-            for (var i = 0; i < frappe.query_report.data.length; i++) {
-                if (frappe.query_report.data[i].sales_order === values.sales_order) {
-                    locals.label_queue.push(frappe.query_report.data[i]);
-                    locals.label_queue[0].status = 0;
-                    break;
+    frappe.call({
+        'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.picking_ready",
+        'callback': function(r) {
+            if (r.message) {
+                // collect all sales orders
+                var orders = [];
+                for (var i = 0; i < frappe.query_report.data.length; i++) {
+                    orders.push(frappe.query_report.data[i].sales_order);
                 }
+                // show order selection dialog
+                frappe.prompt([
+                        {
+                            'fieldname': 'sales_order', 
+                            'fieldtype': 'Select', 
+                            'label': 'Sales Order', 
+                            'reqd': 1,
+                            'options': orders.join("\n"),
+                            'default': orders[0]
+                        }  
+                    ],
+                    function(values){
+                        // reset and prepare queue
+                        locals.label_queue = [];
+                        // find order details
+                        order_details = null;
+                        for (var i = 0; i < frappe.query_report.data.length; i++) {
+                            if (frappe.query_report.data[i].sales_order === values.sales_order) {
+                                locals.label_queue.push(frappe.query_report.data[i]);
+                                locals.label_queue[0].status = 0;
+                                break;
+                            }
+                        }
+                        // start queue
+                        process_queue();
+                    },
+                    'Select Sales Order',
+                    'OK'
+                );
+            } else {
+                warn_process_running();
             }
-            // start queue
-            process_queue();
-        },
-        'Select Sales Order',
-        'OK'
-    );
+        }
+    });
 }

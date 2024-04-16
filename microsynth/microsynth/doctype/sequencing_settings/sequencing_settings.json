@@ -5,7 +5,9 @@
  "engine": "InnoDB",
  "field_order": [
   "label_printers",
-  "label_export_path"
+  "label_export_path",
+  "sec_flags",
+  "flag_picking_labels"
  ],
  "fields": [
   {
@@ -19,10 +21,22 @@
    "fieldname": "label_export_path",
    "fieldtype": "Data",
    "label": "Barcode Label Export Path"
+  },
+  {
+   "fieldname": "sec_flags",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Flags"
+  },
+  {
+   "fieldname": "flag_picking_labels",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Label Picking in Progress"
   }
  ],
  "issingle": 1,
- "modified": "2023-01-12 07:32:39.006351",
+ "modified": "2024-04-16 10:25:20.073744",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sequencing Settings",
