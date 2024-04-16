@@ -52,6 +52,10 @@ frappe.ui.form.on('QM Revision', {
                 }
             );
         }
+        
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
     }
 });
 

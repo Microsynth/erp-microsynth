@@ -55,6 +55,10 @@ frappe.ui.form.on('QM Review', {
                 }
             );
         }
+        
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
     }
 });
 

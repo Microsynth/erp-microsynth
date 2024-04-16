@@ -259,6 +259,11 @@ frappe.ui.form.on('QM Document', {
                   || (frappe.user.has_role("QAU")))) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
         }
+        
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+        
     },
     document_type: function(frm) {
         if (["PROT"].includes(frm.doc.document_type)){
