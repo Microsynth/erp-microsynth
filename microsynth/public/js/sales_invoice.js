@@ -368,14 +368,15 @@ function open_mail_dialog(frm){
                 if (response.message){
                     
                     new frappe.erpnextswiss.MailComposer({
-                        doc: cur_frm.doc,
-                        frm: cur_frm,
-                        subject: "Sales Invoice " + cur_frm.doc.name,
-                        recipients: response.message,
-                        cc: "info@microsynth.ch",
-                        attach_document_print: true,
-                        txt: "",
-                        check_all_attachments: false
+                        'doc': cur_frm.doc,
+                        'frm': cur_frm,
+                        'subject': "Sales Invoice " + cur_frm.doc.name,
+                        'recipients': response.message,
+                        'cc': "info@microsynth.ch",
+                        'attach_document_print': true,
+                        'txt': "",
+                        'check_all_attachments': false,
+                        'replace_template': true
                     });
                     // note: once the mail is sent, a communication record is created and this will trigger setting the invoice_sent_on (see hooks.py, doc_events Communication on_insert)
                 } else {
