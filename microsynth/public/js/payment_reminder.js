@@ -1,15 +1,15 @@
 frappe.ui.form.on('Payment Reminder', {
-	refresh(frm) {
-		$("span[data-label='Email']").parent().parent().remove();   // remove Menu > Email
-		
-		if (frm.doc.docstatus === 1) {
-		    if ((frm.doc.docstatus === 1) && (document.getElementsByClassName("fa-envelope-o").length === 0)) {
+    refresh(frm) {
+        $("span[data-label='Email']").parent().parent().remove();   // remove Menu > Email
+        
+        if (frm.doc.docstatus === 1) {
+            if ((frm.doc.docstatus === 1) && (document.getElementsByClassName("fa-envelope-o").length === 0)) {
                 cur_frm.page.add_action_icon(__("fa fa-envelope-o"), function() {
                     custom_mail_dialog(frm);
                 });
             }
-		}
-	}
+        }
+    }
 });
 
 function custom_mail_dialog(frm) {
@@ -17,16 +17,16 @@ function custom_mail_dialog(frm) {
     var cc = "";
 
     new frappe.views.CommunicationComposer({
-		doc: {
-		    doctype: frm.doc.doctype,
-		    name: frm.doc.name
-		},
-		subject: get_email_subject(frm),
-		cc:  cc,
-		recipients: recipient,
-		attach_document_print: true,
-		message: get_email_body(frm)
-	});
+        doc: {
+            doctype: frm.doc.doctype,
+            name: frm.doc.name
+        },
+        subject: get_email_subject(frm),
+        cc:  cc,
+        recipients: recipient,
+        attach_document_print: true,
+        message: get_email_body(frm)
+    });
 }
 
 function get_email_subject(frm) {
