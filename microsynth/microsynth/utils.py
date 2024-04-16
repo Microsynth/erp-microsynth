@@ -1744,3 +1744,47 @@ def add_deduction(doc, account, cost_center, amount):
         'amount': amount
     })
     return
+
+
+def is_valid_tax_id(tax_id):
+    """
+    Takes a Tax ID as string.
+    Returns whether the given Tax ID is valid.
+    Currently only applicable to the European Union (VIES).
+    """
+    from erpnextaustria.erpnextaustria.utils import check_uid
+    try:
+        valid = check_uid(tax_id)
+    except Exception as err:
+        try:  # a second time
+            valid = check_uid(tax_id)
+        except Exception as err:
+            print(f"Unable to validate Tax ID '{tax_id}'.")
+            return False
+    return valid
+
+
+def check_tax_id(tax_id, customer_id, customer_name):
+    """
+    Takes a Tax ID with its Customer ID and Customer name and
+    sends an email to the administration if the given Tax ID can be classified as invalid.
+    It is NOT checked if the Tax ID belongs to the given Customer name.
+    """
+    if not tax_id:
+        return
+    if tax_id[:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in tax_id:
+        # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+        return
+    if not is_valid_tax_id(tax_id):
+        subject = f"[ERP] Invalid Tax ID '{tax_id}'"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Tax ID '{tax_id}' " \
+                    f"of Customer '{customer_id}' ('{customer_name}') seems to be invalid.<br>" \
+                    f"Please check the Tax ID and correct it if necessary.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = subject,
+            content = message,
+            send_email = True
+            )
+    

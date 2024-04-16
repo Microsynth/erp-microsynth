@@ -16,6 +16,7 @@ from microsynth.microsynth.invoicing import set_income_accounts
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+from microsynth.microsynth.utils import check_tax_id
 
 
 @frappe.whitelist(allow_guest=True)
@@ -145,6 +146,7 @@ def register_user(user_data, client="webshop"):
 
     if 'tax_id' in user_data['customer']:
         customer.tax_id = user_data['customer']['tax_id']
+        check_tax_id(customer.tax_id, customer.name, customer.customer_name)
 
     if 'siret' in user_data['customer']:
         customer.siret = user_data['customer']['siret']
@@ -220,6 +222,7 @@ def update_customer(customer, client="webshop"):
 
     if 'tax_id' in customer:
         doc.tax_id = customer['tax_id']
+        check_tax_id(doc.tax_id, doc.name, doc.customer_name)
 
     if 'siret' in customer:
         doc.siret = customer['siret']
