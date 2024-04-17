@@ -27,12 +27,8 @@ frappe.ui.form.on('Contact', {
 
         // clear routes (to prevent jumping to customer)
         frappe.route_history = [];
-    },
-    validate(frm) {
-        if (!frm.doc.email_id && frm.doc.email_ids.length > 0) {
-            frappe.msgprint( __("Please tick exactly one Email ID as 'Is Primary'"), __("Validation") );
-            frappe.validated=false;
-        }
+
+        check_email_id(frm);
     },
     refresh(frm) {
         // remove Menu > Email
@@ -121,6 +117,23 @@ function update_address_links(frm) {
                 "links": (frm.doc.links || [] )
             }
         })
+    }
+}
+
+
+function check_email_id(frm) {
+    if (!frm.doc.email_id && frm.doc.email_ids.length > 0) {
+        var is_primary = false;
+        for (var i = 0; i < frm.doc.email_ids.length; i++) {
+            is_primary = (frm.doc.email_ids[i].is_primary == 1) || is_primary;
+        }
+        if (!is_primary){
+            frappe.msgprint({
+                title: __('Missing Email Address'),
+                indicator: 'orange',
+                message: "Please tick exactly one Email ID as 'Is Primary'."
+            });
+        }
     }
 }
 
