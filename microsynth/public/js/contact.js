@@ -26,7 +26,13 @@ frappe.ui.form.on('Contact', {
         cur_frm.set_value("full_name", (first_name + spacer + last_name));
 
         // clear routes (to prevent jumping to customer)
-        frappe.route_history = []; 
+        frappe.route_history = [];
+    },
+    validate(frm) {
+        if (!frm.doc.email_id && frm.doc.email_ids.length > 0) {
+            frappe.msgprint( __("Please tick exactly one Email ID as 'Is Primary'"), __("Validation") );
+            frappe.validated=false;
+        }
     },
     refresh(frm) {
         // remove Menu > Email
