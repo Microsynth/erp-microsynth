@@ -1461,6 +1461,7 @@ def set_default_distributor(customer_id):
         distributor = '35914214'
         set_distributor(customer_id, distributor, 'Sequencing')
         set_distributor(customer_id, distributor, 'Labels')
+        set_distributor(customer_id, distributor, 'FLA')
     elif country == "Hungary":
         distributor = '832700'
         set_distributor(customer_id, distributor, 'Oligos')
@@ -1787,4 +1788,3 @@ def check_tax_id(tax_id, customer_id, customer_name):
             content = message,
             send_email = True
             )
-    
