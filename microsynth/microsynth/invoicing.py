@@ -1657,3 +1657,35 @@ def process_collective_invoices_monthly():
     return
     # for company in frappe.db.get_all('Company', fields=['name']):
     #     async_create_invoices("Collective", company['name'], None)
+
+
+def check_invoice_sent_on(days=7):
+    """
+    Find Unpaid Sales Invoices without an Invoice sent on date that are older than :param days
+    and send an automatic email to the Administration. Status "Unpaid" implies docstatus 1 (Submitted).
+    Should be run daily or weekly by a Cronjob.
+
+    bench execute microsynth.microsynth.invoicing.check_invoice_sent_on
+    """
+    sql_query = f"""
+        SELECT `name`, `title`, `posting_date`, `grand_total`, `currency`
+        FROM `tabSales Invoice`
+        WHERE `status` = 'Unpaid'
+            AND (`invoice_sent_on` IS NULL OR `invoice_sent_on` = '')
+            AND `posting_date` < DATE_ADD(NOW(), INTERVAL -{days} DAY)
+        """
+    invoices = frappe.db.sql(sql_query, as_dict=True)    
+    message = f"Dear Administration,<br><br>the following Unpaid Sales Invoices have no Invoice sent on date " \
+                f"and are dated more than {days} days in the past:<br><br>"
+    
+    for si in invoices:
+        message += f"{si['name']} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
+
+    message += f"<br>Please ensure that they are transmitted and enter the Invoice sent on date.<br><br>Best regards,<br>Jens"
+    make(
+        recipients = "info@microsynth.ch",
+        sender = "jens.petermann@microsynth.ch",
+        subject = "[ERP] Unpaid Sales Invoice: Missing Invoice sent on date",
+        content = message,
+        send_email = True
+        )
