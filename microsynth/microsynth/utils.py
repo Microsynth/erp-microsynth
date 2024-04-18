@@ -1788,3 +1788,43 @@ def check_tax_id(tax_id, customer_id, customer_name):
             content = message,
             send_email = True
             )
+
+
+def get_yearly_order_volume(customer_id):
+    """
+    Returns the total volume of all Sales Orders of the given customer_id from the current year
+    and the total volume from last year. Used in the Customer print format.
+
+    bench execute microsynth.microsynth.utils.get_yearly_order_volume --kwargs "{'customer_id': '37765217'}"
+    """
+    if not customer_id or not frappe.db.exists("Customer", customer_id):
+        frappe.throw("Please provide a valid Customer ID.")
+    # get current year as int
+    current_year = datetime.now().year
+    yearly_order_volume = []
+    for year in range(current_year, current_year-2, -1):
+        data = frappe.db.sql(f"""
+                        SELECT SUM(`base_net_total`) AS `total`, `currency`
+                        FROM `tabSales Order`
+                        WHERE `customer` = '{customer_id}'
+                        AND `docstatus` = 1
+                        AND `transaction_date` BETWEEN DATE('{year}-01-01') AND DATE('{year}-12-31')
+                        GROUP BY `currency`
+                    """, as_dict=True)
+        if len(data) > 1:
+            frappe.log_error(f"There seem to be {len(data)} different currencies on Sales Orders of Customer '{customer_id}' from {year}.", "utils.get_yearly_order_volume")
+            yearly_order_volume.append({
+                'volume': sum((entry.total or 0) for entry in data),
+                'currency': 'different'
+            })
+        elif len(data) > 0:
+            yearly_order_volume.append({
+                'volume': data[0].total or 0,
+                'currency': data[0].currency
+            })
+        else:
+            yearly_order_volume.append({
+                'volume': 0,
+                'currency': 'CHF'  # if there are no data, the currency should not matter
+            })
+    return yearly_order_volume

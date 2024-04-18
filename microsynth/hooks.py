@@ -58,7 +58,8 @@ jenv = {
         "get_sales_qty:microsynth.microsynth.portfolio.get_sales_qty",
         "get_product_type:microsynth.microsynth.portfolio.get_product_type",
         "get_training_records:microsynth.qms.doctype.qm_training_record.qm_training_record.get_training_records",
-        "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews"
+        "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews",
+        "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
     ]
 }
 
