@@ -23,6 +23,11 @@ frappe.query_reports["Invoiceable Services"] = {
             "label": __("Exclude Punchout"),
             "fieldtype": "Check",
             "hidden": 1
+        },
+        {
+            "fieldname":"show_remaining_credits",
+            "label": __("Show remaining credits"),
+            "fieldtype": "Check"
         }
     ],
     "onload": (report) => {
