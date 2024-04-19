@@ -11,6 +11,7 @@ from microsynth.microsynth.labels import print_raw
 from microsynth.microsynth.utils import get_export_category, validate_sales_order_status, validate_sales_order
 from microsynth.microsynth.naming_series import get_naming_series
 
+
 @frappe.whitelist()
 def oligo_status_changed(content=None):
     """
@@ -49,6 +50,8 @@ def oligo_status_changed(content=None):
         """.format(web_id=oligo['web_id']), as_dict=True)
         
         if len(oligos) > 0:
+            if len(oligos) > 1:
+                frappe.log_error(f"There are {len(oligos)} Oligos with Web ID {oligo['web_id']} in the ERP. Going to update the first one.")
             # get oligo to update the status
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
@@ -61,12 +64,13 @@ def oligo_status_changed(content=None):
             if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
                 affected_sales_orders.append(oligos[0]['sales_order'])
         else:
-            frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
+            #frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
             error_oligos.append(oligo['web_id'])
     frappe.db.commit()
     # check and process sales order (in case all is complete)
     if len(affected_sales_orders) > 0:
         check_sales_order_completion(affected_sales_orders)
+    frappe.log_error(f"Oligo status update: The following oligos are not found: {error_oligos}", "Production: oligo status update error")
     return {
         'success': len(error_oligos) == 0, 
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
