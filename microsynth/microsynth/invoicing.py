@@ -169,7 +169,11 @@ def async_create_invoices(mode, company, customer):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
-        all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        if mode == "Electronic":
+            all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        else:
+            # exclude punchout invoices, because punchout invoices must be send electronically
+            all_invoiceable = get_data(filters={'company': company, 'customer': customer, 'exclude_punchout': 1})
         count = 0
         insufficient_credit_warnings = {}
 
@@ -183,7 +187,7 @@ def async_create_invoices(mode, company, customer):
                 # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
                 #     continue
 
-                if cint(dn.get('is_punchout') == 1) and mode != "Electronic":
+                if cint(dn.get('is_punchout') == 1) and mode != "Electronic":  # should never be true anymore due to filtering out punchout Delivery Notes above
                     # All punchout invoices must be send electronically
                     frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(dn.get('delivery_note')), "invoicing.async_create_invoices")
                     continue

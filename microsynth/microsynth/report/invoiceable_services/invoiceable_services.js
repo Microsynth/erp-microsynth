@@ -17,6 +17,12 @@ frappe.query_reports["Invoiceable Services"] = {
             "options": "Company",
             "reqd": 1,
             "default": frappe.defaults.get_user_default("company") || frappe.defaults.get_global_default("company")
+        },
+        {
+            "fieldname":"exclude_punchout",
+            "label": __("Exclude Punchout"),
+            "fieldtype": "Check",
+            "hidden": 1
         }
     ],
     "onload": (report) => {

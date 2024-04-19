@@ -20,11 +20,11 @@ def get_columns():
         {"label": _("Customer Credits"), "fieldname": "customer_credits", "fieldtype": "Data", "width": 65},
         {"label": _("Collective billing"), "fieldname": "collective_billing", "fieldtype": "Check", "width": 65},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
-        {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 80},
+        {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 120},
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
-        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 60},
+        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 130},
         # {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80},
-        {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Data", "width": 120},
+        {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Data", "width": 95},
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
         {"label": _("Product"), "fieldname": "product_type", "fieldtype": "Data", "width": 80}
     ]
@@ -35,6 +35,11 @@ def get_data(filters=None):
         customer_condition = "AND `tabCustomer`.`name` = {0}".format(filters.get("customer"))
     else: 
         customer_condition = ""
+    
+    if filters.get("exclude_punchout"):
+        punchout_condition = "AND `tabDelivery Note`.`is_punchout` != 1"
+    else:
+        punchout_condition = ""
 
     invoiceable_services = frappe.db.sql("""
         SELECT * 
@@ -83,10 +88,11 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`status` != "Closed"
                 AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
                 {customer_condition}
+                {punchout_condition}
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
         ORDER BY `raw`.`region`, `raw`.`customer` ASC;
-    """.format(company=company, customer_condition=customer_condition), as_dict=True)
+    """.format(company=company, customer_condition=customer_condition, punchout_condition=punchout_condition), as_dict=True)
     
     return invoiceable_services
