@@ -122,7 +122,7 @@ def write_assignment_file(data):
 @frappe.whitelist()
 def pick_labels(sales_order, from_barcode, to_barcode):
     # set flag to prevent running duplicate
-    frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", datetime.now().strftime("%Y-%m-%d %H:%M:%S"));
+    frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     frappe.db.commit()
     # create sequencing labels
     item = frappe.db.sql("""SELECT `item_code`
