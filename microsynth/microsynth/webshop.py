@@ -146,7 +146,6 @@ def register_user(user_data, client="webshop"):
 
     if 'tax_id' in user_data['customer']:
         customer.tax_id = user_data['customer']['tax_id']
-        check_tax_id(customer.tax_id, customer.name, customer.customer_name)
 
     if 'siret' in user_data['customer']:
         customer.siret = user_data['customer']['siret']
@@ -170,6 +169,9 @@ def register_user(user_data, client="webshop"):
 
     # some more administration
     configure_new_customer(customer.name)
+
+    if 'tax_id' in user_data['customer']:
+        check_tax_id(customer.tax_id, customer.name, customer.customer_name)
 
     if not error:
         return {'success': True, 'message': "OK"}
@@ -222,7 +224,6 @@ def update_customer(customer, client="webshop"):
 
     if 'tax_id' in customer:
         doc.tax_id = customer['tax_id']
-        check_tax_id(doc.tax_id, doc.name, doc.customer_name)
 
     if 'siret' in customer:
         doc.siret = customer['siret']
@@ -231,6 +232,10 @@ def update_customer(customer, client="webshop"):
         doc.invoicing_method = customer['invoicing_method']
 
     doc.save()
+
+    if 'tax_id' in customer:
+        check_tax_id(doc.tax_id, doc.name, doc.customer_name)
+
     return {'success': True, 'message': f"Updated customer '{ customer['customer_id'] }'" }
 
 

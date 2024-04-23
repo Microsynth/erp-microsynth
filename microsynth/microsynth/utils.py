@@ -1756,6 +1756,7 @@ def is_valid_tax_id(tax_id):
     from erpnextaustria.erpnextaustria.utils import check_uid
     try:
         valid = check_uid(tax_id)
+        # TODO: Consider to call check_uid with a timeout: https://stackoverflow.com/questions/492519/timeout-on-a-function-call
     except Exception as err:
         try:  # a second time
             valid = check_uid(tax_id)
