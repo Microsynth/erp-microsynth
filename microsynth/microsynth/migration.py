@@ -3828,39 +3828,6 @@ def check_tax_ids():
             print(f"{i}/{len(customers)}: Unable to validate Tax ID '{customer['tax_id']}' of Customer '{customer['name']}' ('{customer['customer_name']}'): {err}")
 
 
-def update_shipping_item_name(item_codes, dry_run=True):
-    """
-    Takes a list of item codes.
-    Check that each of them has Item Group 'Shipping'.
-    Search those Shipping Items with item_name != Item.item_name.
-    Set Shipping Item.item_name to Item.item_name.
-
-    bench execute microsynth.microsynth.migration.update_shipping_item_name --kwargs "{'item_codes': ['1103'], 'dry_run': True}"
-    """
-    for item_code in item_codes:
-        if not frappe.db.exists("Item", item_code):
-            print(f"Item '{item_code}' does not exist. Going to continue.")
-            continue
-        item = frappe.get_doc("Item", item_code)
-        if item.item_group != 'Shipping':
-            print(f"Item {item_code}: {item.item_name} has Item Group {item.item_group} and is not a Shipping Item. Going to continue.")
-            continue
-        shipping_items = frappe.db.get_all("Shipping Item",
-            filters = [['item', '=', item_code], ['item_name', '!=', item.item_name]],
-            fields = ['name', 'item_name', 'parent'])
-        for shipping_item in shipping_items:
-            if dry_run:
-                print(f"Would change Item Name of {item_code} on {shipping_item['parent']} from '{shipping_item['item_name']}' to '{item.item_name}'.")
-                continue
-            else:
-                print(f"Going to change Item Name of {item_code} on {shipping_item['parent']} from '{shipping_item['item_name']}' to '{item.item_name}'.")
-                frappe.db.sql(f"""
-                    UPDATE `tabShipping Item`
-                    SET `item_name` = '{item.item_name}'
-                    WHERE `name` = '{shipping_item['name']}';""")
-    print("Done")
-
-
 def is_workday_before_10am(date):
     """
     Returns true if the given date is a workday (Monday to Friday and no holiday), otherwise false.
