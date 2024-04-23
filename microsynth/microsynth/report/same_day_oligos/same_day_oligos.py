@@ -21,22 +21,28 @@ def get_columns():
 
 
 def get_holidays():
+    """
+    Returns a list of public holidays in Balgach from 01.01.2023 till today.
+    """
     from erpnextswiss.erpnextswiss.calendar import parse_holidays
     holidays_balgach = []
     for y in range(2023, int(datetime.now().year)+1):
         holidays_balgach += parse_holidays("1903", str(y))
-    holidays_balgach += [datetime(2024, 12, 24).strftime('%d.%m.%Y'), datetime(2024, 12, 27).strftime('%d.%m.%Y'), datetime(2024, 12, 31).strftime('%d.%m.%Y')]
+    # Add halfday holidays for 2024 and
     # 27. Dezember 2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
+    holidays_balgach += [datetime(2024, 12, 24).strftime('%d.%m.%Y'),
+                         datetime(2024, 12, 27).strftime('%d.%m.%Y'),
+                         datetime(2024, 12, 31).strftime('%d.%m.%Y')]
     return holidays_balgach
 
 
-def is_workday_before_10am(date, holidays):
+def is_workday_before_10am(date_time, holidays):
     """
-    Returns true if the given date is a workday (Monday to Friday and no holiday), otherwise false.
-    Currently adapted to public holidays of St. Gallen 2023-2024.
+    Returns true if the given date_time is a workday before 10 am (Monday to Friday and no holiday), otherwise false.
     """
-    if date.weekday() < 5 and date.strftime('%d.%m.%Y') not in holidays:  # https://docs.python.org/3/library/datetime.html#datetime.date.weekday
-        if date.hour < 10:  # before 10 am
+    # https://docs.python.org/3/library/datetime.html#datetime.date.weekday
+    if date_time.weekday() < 5 and date_time.strftime('%d.%m.%Y') not in holidays:
+        if date_time.hour < 10:  # before 10 am
             return True
     return False
 
@@ -92,7 +98,8 @@ def get_data(filters=None):
 
     for result in query_results:
         sales_order = frappe.get_doc("Sales Order", result['name'])
-        if len(sales_order.oligos) >= 20:  # the same day criteria only applies to Sales Orders with less than 20 Oligos
+        # the same day criteria only applies to Sales Orders with less than 20 Oligos
+        if len(sales_order.oligos) >= 20:
             #frappe.log_error(f"This should never happen: Sales Order {result['name']}", "oh no")
             continue
         unallowed_items = False
