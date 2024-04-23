@@ -281,8 +281,8 @@ def async_create_invoices(mode, company, customer):
             message += f"has a credit balance of {credit} {currency} at {company} and therefore not enough to invoice the following Delivery Note(s):<br><br>"
             message += dn_details
             message += f"<br>Please request the Customer to recharge the credit account or close it.<br><br>Best regards,<br>Jens"
-            non_html_message = message.replace("<br>","\n")
-            frappe.log_error(non_html_message, subject)
+            #non_html_message = message.replace("<br>", "\n")
+            #frappe.log_error(non_html_message, subject)
             #print(non_html_message)
             make(
                 recipients = "info@microsynth.ch",

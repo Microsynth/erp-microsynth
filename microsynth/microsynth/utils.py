@@ -32,8 +32,8 @@ def get_customer(contact):
         subject = f"Contact '{contact.name}' is not linked to a Customer"
         message = f"Dear Administration,<br><br>this is an automatic email to inform you that Contact '{contact.name}' (created by {contact.owner}) "
         message += f"is not linked to any Customer in the ERP.<br>Please clean up this Contact.<br><br>Best regards,<br>Jens"
-        non_html_message = message.replace("<br>","\n")
-        frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
+        # non_html_message = message.replace("<br>","\n")
+        # frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
         #print(subject + '\n\n' + non_html_message)
         make(
             recipients = "info@microsynth.ch",
