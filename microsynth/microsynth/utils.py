@@ -6,7 +6,7 @@ import os
 import re
 import frappe
 import json
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from frappe.utils import flt, rounded
 from frappe.core.doctype.communication.email import make
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -1789,6 +1789,50 @@ def check_tax_id(tax_id, customer_id, customer_name):
             content = message,
             send_email = True
             )
+
+
+def check_new_customers_taxid(delta_days=7):
+    """
+    Check the Tax ID of all new Customers and send one email
+    to the administration if there are invalid Tax IDs.
+    Should be run daily by a Cronjob.
+
+    bench execute microsynth.microsynth.utils.check_new_customers_taxid --kwargs "{'delta_days': 10}"
+    """
+    invalid_tax_ids = []
+    start_day = date.today() - timedelta(days = delta_days)
+    new_customers = frappe.db.get_all("Customer",
+                                      filters=[['creation', '>=', start_day.strftime("%Y-%m-%d")],
+                                               ['disabled', '=', '0']],
+                                      fields=['name', 'customer_name', 'tax_id'])
+    print(f"Going to check {len(new_customers)} new Customers ...")
+    for nc in new_customers:
+        if not nc['tax_id']:
+            continue
+        if nc['tax_id'][:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in nc['tax_id']:
+            # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+            continue
+        if not is_valid_tax_id(nc['tax_id']):
+            invalid_tax_ids.append({'customer_id': nc['name'],
+                                    'customer_name': nc['customer_name'],
+                                    'tax_id': nc['tax_id']})
+    if len(invalid_tax_ids) > 0:
+        subject = f"[ERP] Invalid Tax IDs of new Customers"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the following " \
+                  f"new Customers that are created in the last {delta_days} days seem to have invalid Tax IDs:<br><br>"
+
+        for iti in invalid_tax_ids:
+            message += f"Customer {iti['customer_id']} ({iti['customer_name']}): Tax ID '{iti['tax_id']}'<br>"
+        
+        message += f"<br>Please check the Tax IDs and correct them if necessary.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = subject,
+            content = message,
+            send_email = True
+            )
+        print(message.replace('<br>','\n'))
 
 
 def get_yearly_order_volume(customer_id):
