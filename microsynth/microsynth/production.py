@@ -70,7 +70,8 @@ def oligo_status_changed(content=None):
     # check and process sales order (in case all is complete)
     if len(affected_sales_orders) > 0:
         check_sales_order_completion(affected_sales_orders)
-    frappe.log_error(f"Oligo status update: The following oligos are not found: {error_oligos}", "Production: oligo status update error")
+    if len(error_oligos) > 0:
+        frappe.log_error(f"Oligo status update: The following oligos are not found: {error_oligos}", "Production: oligo status update error")
     return {
         'success': len(error_oligos) == 0, 
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
