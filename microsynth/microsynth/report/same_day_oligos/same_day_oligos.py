@@ -146,11 +146,14 @@ def get_data(filters=None):
                         is_same_day += 1
                         result['fulfilled'] = '1'
                     same_day_orders.append(result)
-    summary_line = {
-        'web_order_id': "Summary",
-        'customer_name': f"{is_same_day}/{should_be_same_day} fulfilled ({((is_same_day/should_be_same_day)*100):.2f} %)"
-    }
-    same_day_orders.append(summary_line)
+
+    if should_be_same_day > 0:  # avoid dividing by zero
+        summary_line = {
+            'web_order_id': "Summary",
+            'customer_name': f"{is_same_day}/{should_be_same_day} fulfilled ({((is_same_day/should_be_same_day)*100):.2f} %)"
+        }
+        same_day_orders.append(summary_line)
+
     return same_day_orders
 
 
