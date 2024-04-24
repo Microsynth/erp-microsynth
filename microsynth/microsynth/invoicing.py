@@ -1634,6 +1634,7 @@ def transmit_carlo_erba_invoices(sales_invoices):
 
     for invoice_name in sales_invoices:
         frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = True)
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoicing_method", "Carlo ERBA", update_modified = False)
 
     return
 
