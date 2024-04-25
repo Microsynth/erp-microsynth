@@ -39,7 +39,7 @@ def get_data(filters):
             `tabQM Document`.`created_by`
         FROM `tabQM Document`
         WHERE (`tabQM Document`.`status` = 'Reviewed'
-            OR (`tabQM Document`.`document_type` IN ('PROT', 'LIST', 'FORM', 'CL')
+            OR (`tabQM Document`.`document_type` IN ('LIST', 'FORM', 'CL', 'APPX')
                 AND `tabQM Document`.`status` = 'Created'))
             {filter_conditions}
     """.format(filter_conditions=filter_conditions)

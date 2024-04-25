@@ -8,7 +8,7 @@ frappe.query_reports["Releasable Documents"] = {
             "fieldname": "document_type",
             "label": __("Document Type"),
             "fieldtype": "Select",
-            "options": "\nSOP\nPROT\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
+            "options": "\nSOP\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
         },
 		{
             "fieldname": "created_by",
