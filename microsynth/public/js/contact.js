@@ -122,7 +122,7 @@ function update_address_links(frm) {
 
 
 function check_email_id(frm) {
-    if (!frm.doc.email_id && frm.doc.email_ids.length > 0) {
+    if (!frm.doc.email_id && frm.doc.email_ids && frm.doc.email_ids.length > 0) {
         var is_primary = false;
         for (var i = 0; i < frm.doc.email_ids.length; i++) {
             is_primary = (frm.doc.email_ids[i].is_primary == 1) || is_primary;
