@@ -1805,7 +1805,7 @@ def check_new_customers_taxid(delta_days=7):
                                       filters=[['creation', '>=', start_day.strftime("%Y-%m-%d")],
                                                ['disabled', '=', '0']],
                                       fields=['name', 'customer_name', 'tax_id'])
-    print(f"Going to check {len(new_customers)} new Customers ...")
+    #print(f"Going to check {len(new_customers)} new Customers ...")
     for nc in new_customers:
         if not nc['tax_id']:
             continue
@@ -1832,7 +1832,7 @@ def check_new_customers_taxid(delta_days=7):
             content = message,
             send_email = True
             )
-        print(message.replace('<br>','\n'))
+        #print(message.replace('<br>','\n'))
 
 
 def get_yearly_order_volume(customer_id):
