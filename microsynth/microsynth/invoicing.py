@@ -169,7 +169,11 @@ def async_create_invoices(mode, company, customer):
     # Standard processing
     if (mode in ["Post", "Electronic"]):
         # individual invoices
-        all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        if mode == "Electronic":
+            all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        else:
+            # exclude punchout invoices, because punchout invoices must be send electronically
+            all_invoiceable = get_data(filters={'company': company, 'customer': customer, 'exclude_punchout': 1})
         count = 0
         insufficient_credit_warnings = {}
 
@@ -183,7 +187,7 @@ def async_create_invoices(mode, company, customer):
                 # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
                 #     continue
 
-                if cint(dn.get('is_punchout') == 1) and mode != "Electronic":
+                if cint(dn.get('is_punchout') == 1) and mode != "Electronic":  # should never be true anymore due to filtering out punchout Delivery Notes above
                     # All punchout invoices must be send electronically
                     frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(dn.get('delivery_note')), "invoicing.async_create_invoices")
                     continue
@@ -277,8 +281,8 @@ def async_create_invoices(mode, company, customer):
             message += f"has a credit balance of {credit} {currency} at {company} and therefore not enough to invoice the following Delivery Note(s):<br><br>"
             message += dn_details
             message += f"<br>Please request the Customer to recharge the credit account or close it.<br><br>Best regards,<br>Jens"
-            non_html_message = message.replace("<br>","\n")
-            frappe.log_error(non_html_message, subject)
+            #non_html_message = message.replace("<br>", "\n")
+            #frappe.log_error(non_html_message, subject)
             #print(non_html_message)
             make(
                 recipients = "info@microsynth.ch",
@@ -1630,6 +1634,7 @@ def transmit_carlo_erba_invoices(sales_invoices):
 
     for invoice_name in sales_invoices:
         frappe.db.set_value("Sales Invoice", invoice_name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = True)
+        frappe.db.set_value("Sales Invoice", invoice_name, "invoicing_method", "Carlo ERBA", update_modified = False)
 
     return
 
@@ -1657,3 +1662,37 @@ def process_collective_invoices_monthly():
     return
     # for company in frappe.db.get_all('Company', fields=['name']):
     #     async_create_invoices("Collective", company['name'], None)
+
+
+def check_invoice_sent_on(days=0):
+    """
+    Find Unpaid Sales Invoices without an Invoice sent on date that are older than :param days
+    and send an automatic email to the Administration. Status "Unpaid" implies docstatus 1 (Submitted).
+    Should be run daily after 2:40 by a Cronjob.
+
+    bench execute microsynth.microsynth.invoicing.check_invoice_sent_on
+    """
+    sql_query = f"""
+        SELECT `name`, `title`, `posting_date`, `grand_total`, `currency`
+        FROM `tabSales Invoice`
+        WHERE `status` IN ("Unpaid", "Overdue")
+            AND (`invoice_sent_on` IS NULL OR `invoice_sent_on` = "")
+            {f"AND `posting_date` < DATE_ADD(NOW(), INTERVAL -{days} DAY)" if days > 0 else ""}
+        """
+    invoices = frappe.db.sql(sql_query, as_dict=True)
+    if len(invoices) > 0:
+        message = f"Dear Administration,<br><br>the following Unpaid Sales Invoices have no Invoice sent on date"\
+                f"{ f'and are dated more than {days} days in the past' if days > 0 else ''}:<br><br>"
+        
+        for si in invoices:
+            message += f"{si['name']} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
+
+        message += f"<br>Please ensure that they are transmitted and enter the Invoice sent on date.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = "[ERP] Unpaid Sales Invoice: Missing Invoice sent on date",
+            content = message,
+            send_email = True
+            )
+        #print(message.replace('<br>', '\n'))

@@ -228,6 +228,7 @@ def update_customer(customer, client="webshop"):
         doc.invoicing_method = customer['invoicing_method']
 
     doc.save()
+
     return {'success': True, 'message': f"Updated customer '{ customer['customer_id'] }'" }
 
 

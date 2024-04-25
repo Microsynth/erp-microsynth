@@ -1775,32 +1775,30 @@ def import_credit_accounts(filename):
             #     break
 
 
-def set_distributor_carlo_erba():
+def set_distributor_carlo_erba(product_type):
     """
-    Adds to all customers of the distributor 'Carlo Erba' the distributor settings 
-    for 'Sequencing' and 'Labels' 
+    Adds to all enabled Customers of the distributor 'Carlo Erba'
+    the distributor settings for the given Product Type
 
     run 
-    bench execute "microsynth.microsynth.migration.set_distributor_carlo_erba" 
+    bench execute "microsynth.microsynth.migration.set_distributor_carlo_erba" --kwargs "{'product_type': 'FLA'}"
     """    
     from microsynth.microsynth.utils import set_distributor
 
+    # if product_type not in ['Oligos', 'Labels', 'Sequencing', 'NGS', 'FLA', 'Project', 'Material', 'Service']:
+    #     print(f"Product Type '{product_type}' does not exist.")
+    #     return
+
     customers = frappe.db.get_all("Customer",
-        filters = {'account_manager': 'servizioclienticer@dgroup.it' },
+        filters = [['disabled', '=', 0], ['account_manager', '=', 'servizioclienticer@dgroup.it']],
         fields = ['name'])
 
-    i = 0
     length = len(customers)
 
-    for c in customers:
-        print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
-        set_distributor(c.name, 35914214, "Sequencing" )
-        set_distributor(c.name, 35914214, "Labels" )
+    for i, c in enumerate(customers):
+        print(f"{int(100 * i / length)} % - process Customer '{c['name']}'")
+        set_distributor(c['name'], 35914214, product_type)
         frappe.db.commit()
-
-        i += 1
-
-    return
 
 
 def set_distributor_amplikon():
@@ -3805,53 +3803,29 @@ def check_tax_ids():
     bench execute microsynth.microsynth.migration.check_tax_ids
     """
     from erpnextaustria.erpnextaustria.utils import check_uid
+    from erpnextswiss.erpnextswiss.zefix import get_company
 
     customers = frappe.db.get_all("Customer",
-        filters = {'disabled': 0 },
+        filters = { 'disabled': 0 },
         fields = ['name', 'customer_name', 'tax_id'])
     
     print("Invalid Tax IDs:")
     for i, customer in enumerate(customers):
         try:
-            if customer['tax_id'] and customer['tax_id'][:2] in ['CH', 'GB', 'NO', 'TR'] and not 'NOT' in customer['tax_id']:
+            if not customer['tax_id']:
                 continue
-            if customer['tax_id'] and not check_uid(customer['tax_id']):
+            elif customer['tax_id'][:2] in ['CH']:
+                continue  # currently unable to check Swiss UID
+                company = get_company(customer['tax_id'], debug=True)  # does not yet work
+                if 'error' in company:
+                    print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
+            elif customer['tax_id'][:2] in ['GB', 'IS', 'NO', 'TR'] and not 'NOT' in customer['tax_id']:
+                # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+                continue
+            elif not check_uid(customer['tax_id']):
                 print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
         except Exception as err:
             print(f"{i}/{len(customers)}: Unable to validate Tax ID '{customer['tax_id']}' of Customer '{customer['name']}' ('{customer['customer_name']}'): {err}")
-
-
-def update_shipping_item_name(item_codes, dry_run=True):
-    """
-    Takes a list of item codes.
-    Check that each of them has Item Group 'Shipping'.
-    Search those Shipping Items with item_name != Item.item_name.
-    Set Shipping Item.item_name to Item.item_name.
-
-    bench execute microsynth.microsynth.migration.update_shipping_item_name --kwargs "{'item_codes': ['1103'], 'dry_run': True}"
-    """
-    for item_code in item_codes:
-        if not frappe.db.exists("Item", item_code):
-            print(f"Item '{item_code}' does not exist. Going to continue.")
-            continue
-        item = frappe.get_doc("Item", item_code)
-        if item.item_group != 'Shipping':
-            print(f"Item {item_code}: {item.item_name} has Item Group {item.item_group} and is not a Shipping Item. Going to continue.")
-            continue
-        shipping_items = frappe.db.get_all("Shipping Item",
-            filters = [['item', '=', item_code], ['item_name', '!=', item.item_name]],
-            fields = ['name', 'item_name', 'parent'])
-        for shipping_item in shipping_items:
-            if dry_run:
-                print(f"Would change Item Name of {item_code} on {shipping_item['parent']} from '{shipping_item['item_name']}' to '{item.item_name}'.")
-                continue
-            else:
-                print(f"Going to change Item Name of {item_code} on {shipping_item['parent']} from '{shipping_item['item_name']}' to '{item.item_name}'.")
-                frappe.db.sql(f"""
-                    UPDATE `tabShipping Item`
-                    SET `item_name` = '{item.item_name}'
-                    WHERE `name` = '{shipping_item['name']}';""")
-    print("Done")
 
 
 def is_workday_before_10am(date):

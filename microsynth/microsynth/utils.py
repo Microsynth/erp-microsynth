@@ -6,7 +6,7 @@ import os
 import re
 import frappe
 import json
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from frappe.utils import flt, rounded
 from frappe.core.doctype.communication.email import make
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -32,8 +32,8 @@ def get_customer(contact):
         subject = f"Contact '{contact.name}' is not linked to a Customer"
         message = f"Dear Administration,<br><br>this is an automatic email to inform you that Contact '{contact.name}' (created by {contact.owner}) "
         message += f"is not linked to any Customer in the ERP.<br>Please clean up this Contact.<br><br>Best regards,<br>Jens"
-        non_html_message = message.replace("<br>","\n")
-        frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
+        # non_html_message = message.replace("<br>","\n")
+        # frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
         #print(subject + '\n\n' + non_html_message)
         make(
             recipients = "info@microsynth.ch",
@@ -1461,6 +1461,7 @@ def set_default_distributor(customer_id):
         distributor = '35914214'
         set_distributor(customer_id, distributor, 'Sequencing')
         set_distributor(customer_id, distributor, 'Labels')
+        set_distributor(customer_id, distributor, 'FLA')
     elif country == "Hungary":
         distributor = '832700'
         set_distributor(customer_id, distributor, 'Oligos')
@@ -1744,3 +1745,131 @@ def add_deduction(doc, account, cost_center, amount):
         'amount': amount
     })
     return
+
+
+def is_valid_tax_id(tax_id):
+    """
+    Takes a Tax ID as string.
+    Returns whether the given Tax ID is valid.
+    Currently only applicable to the European Union (VIES).
+    """
+    from erpnextaustria.erpnextaustria.utils import check_uid
+    try:
+        valid = check_uid(tax_id)
+        # TODO: Consider to call check_uid with a timeout: https://stackoverflow.com/questions/492519/timeout-on-a-function-call
+    except Exception as err:
+        try:  # a second time
+            valid = check_uid(tax_id)
+        except Exception as err:
+            print(f"Unable to validate Tax ID '{tax_id}'.")
+            return False
+    return valid
+
+
+def check_tax_id(tax_id, customer_id, customer_name):
+    """
+    Takes a Tax ID with its Customer ID and Customer name and
+    sends an email to the administration if the given Tax ID can be classified as invalid.
+    It is NOT checked if the Tax ID belongs to the given Customer name.
+    """
+    if not tax_id:
+        return
+    if tax_id[:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in tax_id:
+        # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+        return
+    if not is_valid_tax_id(tax_id):
+        subject = f"[ERP] Invalid Tax ID '{tax_id}'"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Tax ID '{tax_id}' " \
+                    f"of Customer '{customer_id}' ('{customer_name}') seems to be invalid.<br>" \
+                    f"Please check the Tax ID and correct it if necessary.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = subject,
+            content = message,
+            send_email = True
+            )
+
+
+def check_new_customers_taxid(delta_days=7):
+    """
+    Check the Tax ID of all new Customers and send one email
+    to the administration if there are invalid Tax IDs.
+    Should be run daily by a Cronjob.
+
+    bench execute microsynth.microsynth.utils.check_new_customers_taxid --kwargs "{'delta_days': 10}"
+    """
+    invalid_tax_ids = []
+    start_day = date.today() - timedelta(days = delta_days)
+    new_customers = frappe.db.get_all("Customer",
+                                      filters=[['creation', '>=', start_day.strftime("%Y-%m-%d")],
+                                               ['disabled', '=', '0']],
+                                      fields=['name', 'customer_name', 'tax_id'])
+    #print(f"Going to check {len(new_customers)} new Customers ...")
+    for nc in new_customers:
+        if not nc['tax_id']:
+            continue
+        if nc['tax_id'][:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in nc['tax_id']:
+            # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+            continue
+        if not is_valid_tax_id(nc['tax_id']):
+            invalid_tax_ids.append({'customer_id': nc['name'],
+                                    'customer_name': nc['customer_name'],
+                                    'tax_id': nc['tax_id']})
+    if len(invalid_tax_ids) > 0:
+        subject = f"[ERP] Invalid Tax IDs of new Customers"
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the following " \
+                  f"new Customers that are created in the last {delta_days} days seem to have invalid Tax IDs:<br><br>"
+
+        for iti in invalid_tax_ids:
+            message += f"Customer {iti['customer_id']} ({iti['customer_name']}): Tax ID '{iti['tax_id']}'<br>"
+        
+        message += f"<br>Please check the Tax IDs and correct them if necessary.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = subject,
+            content = message,
+            send_email = True
+            )
+        #print(message.replace('<br>','\n'))
+
+
+def get_yearly_order_volume(customer_id):
+    """
+    Returns the total volume of all Sales Orders of the given customer_id from the current year
+    and the total volume from last year. Used in the Customer print format.
+
+    bench execute microsynth.microsynth.utils.get_yearly_order_volume --kwargs "{'customer_id': '37765217'}"
+    """
+    if not customer_id or not frappe.db.exists("Customer", customer_id):
+        frappe.throw("Please provide a valid Customer ID.")
+    # get current year as int
+    current_year = datetime.now().year
+    yearly_order_volume = []
+    for year in range(current_year, current_year-2, -1):
+        data = frappe.db.sql(f"""
+                        SELECT SUM(`base_net_total`) AS `total`, `currency`
+                        FROM `tabSales Order`
+                        WHERE `customer` = '{customer_id}'
+                        AND `docstatus` = 1
+                        AND `transaction_date` BETWEEN DATE('{year}-01-01') AND DATE('{year}-12-31')
+                        GROUP BY `currency`
+                    """, as_dict=True)
+        if len(data) > 1:
+            frappe.log_error(f"There seem to be {len(data)} different currencies on Sales Orders of Customer '{customer_id}' from {year}.", "utils.get_yearly_order_volume")
+            yearly_order_volume.append({
+                'volume': sum((entry.total or 0) for entry in data),
+                'currency': 'different'
+            })
+        elif len(data) > 0:
+            yearly_order_volume.append({
+                'volume': data[0].total or 0,
+                'currency': data[0].currency
+            })
+        else:
+            yearly_order_volume.append({
+                'volume': 0,
+                'currency': 'CHF'  # if there are no data, the currency should not matter
+            })
+    return yearly_order_volume

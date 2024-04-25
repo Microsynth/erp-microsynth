@@ -20,12 +20,13 @@ def get_columns():
         {"label": _("Customer Credits"), "fieldname": "customer_credits", "fieldtype": "Data", "width": 65},
         {"label": _("Collective billing"), "fieldname": "collective_billing", "fieldtype": "Check", "width": 65},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
-        {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 80},
+        {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 120},
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
-        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 60},
+        {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 130},
         # {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80},
-        {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Data", "width": 120},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
+        {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Currency", "options": "currency", "width": 95},
+        # {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
+        {"label": _("Remaining credit amount"), "fieldname": "remaining_credits", "fieldtype": "Currency", "options": "currency", "width": 120},
         {"label": _("Product"), "fieldname": "product_type", "fieldtype": "Data", "width": 80}
     ]
 
@@ -35,6 +36,11 @@ def get_data(filters=None):
         customer_condition = "AND `tabCustomer`.`name` = {0}".format(filters.get("customer"))
     else: 
         customer_condition = ""
+    
+    if filters.get("exclude_punchout"):
+        punchout_condition = "AND `tabDelivery Note`.`is_punchout` != 1"
+    else:
+        punchout_condition = ""
 
     invoiceable_services = frappe.db.sql("""
         SELECT * 
@@ -83,10 +89,25 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`status` != "Closed"
                 AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
                 {customer_condition}
+                {punchout_condition}
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
         ORDER BY `raw`.`region`, `raw`.`customer` ASC;
-    """.format(company=company, customer_condition=customer_condition), as_dict=True)
+    """.format(company=company, customer_condition=customer_condition, punchout_condition=punchout_condition), as_dict=True)
     
+    if filters.get("show_remaining_credits"):
+        from microsynth.microsynth.credits import get_total_credit
+        # store remaining credits in a dictionary because there might be Delivery Notes
+        # with the same combination of Customer, Company and credit_type
+        remaining_credits = {}
+        for dn in invoiceable_services:
+            credit_type = 'Project' if 'product_type' in dn and dn['product_type'] == 'Project' else 'Standard'
+            if (dn['customer'], company, credit_type) in remaining_credits:
+                dn['remaining_credits'] = remaining_credits[(dn['customer'], company, credit_type)]
+            else:
+                total_credits = get_total_credit(dn['customer'], company, credit_type)
+                dn['remaining_credits'] = total_credits
+                remaining_credits[(dn['customer'], company, credit_type)] = total_credits
+
     return invoiceable_services
