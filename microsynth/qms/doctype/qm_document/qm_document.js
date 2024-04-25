@@ -281,7 +281,21 @@ frappe.ui.form.on('QM Document', {
             fetch_chapter(frm);
         }
     },
+    valid_from: function(frm) {
+        if (frm.doc.valid_from < frappe.datetime.get_today()) {
+            cur_frm.set_value("valid_from", frappe.datetime.get_today());
+            frappe.msgprint( __("Valid from date is not allowed to be in the past. The Valid from date was set to today."), __("Validation") );
+        }
+        if ((frm.doc.valid_from) && (frm.doc.valid_till) && (frm.doc.valid_till < frm.doc.valid_from)) {
+            cur_frm.set_value("valid_from", null);
+            frappe.msgprint( __("Valid from date cannot be after the valid till date."), __("Validation") );
+        }
+    },
     valid_till: function(frm) {
+        if (frm.doc.valid_till < frappe.datetime.get_today()) {
+            cur_frm.set_value("valid_till", null);
+            frappe.msgprint( __("Valid till date is not allowed to be in the past. Please set the Valid till date to today or to the future."), __("Validation") );
+        }
         if ((frm.doc.valid_from) && (frm.doc.valid_till) && (frm.doc.valid_till < frm.doc.valid_from)) {
             cur_frm.set_value("valid_till", null);
             frappe.msgprint( __("Valid till date cannot be before the valid from date."), __("Validation") );
