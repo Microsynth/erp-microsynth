@@ -51,7 +51,12 @@ def oligo_status_changed(content=None):
         
         if len(oligos) > 0:
             if len(oligos) > 1:
-                frappe.log_error(f"There are {len(oligos)} Oligos with Web ID {oligo['web_id']} in the ERP. Going to update the first one.")
+                first_oligo_name = oligos[0]['name']
+                for oligo in oligos[1:]:
+                    if oligo['name'] != first_oligo_name:
+                        frappe.log_error(f"There are {len(oligos)} Oligos with Web ID {oligo['web_id']} in the ERP. " \
+                                         f"At least Oligo '{first_oligo_name}' and Oligo '{oligo['name']}' have the same Web ID {oligo['web_id']}. " \
+                                         f"Going to update the first one.", "Oligo duplicates in production.oligo_status_changed")
             # get oligo to update the status
             oligo_doc = frappe.get_doc("Oligo", oligos[0]['name'])
             if oligo_doc.status != oligo['status']:
