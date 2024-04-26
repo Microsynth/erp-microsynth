@@ -1221,7 +1221,7 @@ def transmit_sales_invoice(sales_invoice_id):
                 subject = f"Ihre Rechnung {sales_invoice.name}"
                 message = f"Sehr geehrte Microsynth Kundin, sehr geehrter Microsynth Kunde,<br><br>\
 wir bedanken uns herzlich für Ihren Auftrag und Ihr Vertrauen in unsere Produkte und Dienstleistungen.<br>\
-Beiliegend erhalten Sie die Rechnung mit der Nummer '{sales_invoice.name}' für die erbrachten Leistungen.\
+Beiliegend erhalten Sie die Rechnung mit der Nummer '{sales_invoice.name}' für die erbrachten Leistungen.<br>\
 Sollten Sie weitere Fragen oder Unklarheiten haben, stehen wir Ihnen selbstverständlich gerne zur Verfügung.<br><br>\
 Mit Freundlichen Grüssen<br>\
 Ihr Administrations Team<br><br>{footer}"
@@ -1229,7 +1229,7 @@ Ihr Administrations Team<br><br>{footer}"
                 subject = f"Votre Facture {sales_invoice.name}"
                 message = f"Mesdames et Messieurs<br><br>\
 Nous vous remercions vivement de votre commande et de votre confiance dans nos produits et services.<br><br>\
-Vous trouverez ci-joint la facture avec le numéro '{sales_invoice.name}' pour les prestations fournies.\
+Vous trouverez ci-joint la facture avec le numéro '{sales_invoice.name}' pour les prestations fournies.<br>\
 Si vous avez d'autres questions ou si vous avez des doutes, nous sommes bien sûr à votre disposition.<br><br>\
 Avec nos meilleures salutations<br>\
 Votre équipe d'administration<br><br>{footer}"
@@ -1237,7 +1237,7 @@ Votre équipe d'administration<br><br>{footer}"
                 subject = f"Your Invoice {sales_invoice.name}"
                 message = f"Dear Microsynth customer,<br><br>\
 Thank you very much for your order and your confidence in our products and services.<br><br>\
-Enclosed you will find the invoice with the number '{sales_invoice.name}' for the services provided.\
+Enclosed you will find the invoice with the number '{sales_invoice.name}' for the services provided.<br>\
 Should you have any further questions or uncertainties, please do not hesitate to contact us.<br><br>\
 Kind regards<br>\
 Your administration team<br><br>{footer}"
