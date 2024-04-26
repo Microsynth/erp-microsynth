@@ -47,26 +47,33 @@ NAMING_SERIES_MAP = {
         'Microsynth France SAS': 'CN-LYO-.YY.######',
         'Ecogenics GmbH': 'CN-ECO-.YY.######'
     },
+    'Material Request': {
+        'Microsynth AG': 'MR-.YY.#####',
+        'Microsynth Seqlab GmbH': 'MR-.YY.#####',
+        'Microsynth Austria GmbH': 'MR-.YY.#####',
+        'Microsynth France SAS': 'MR-.YY.#####',
+        'Ecogenics GmbH': 'MR-.YY.######'
+    },
     'Purchase Order': {
-        'Microsynth AG': 'PO-BAL-.YY.######',
-        'Microsynth Seqlab GmbH': 'PO-GOE-.YY.######',
-        'Microsynth Austria GmbH': 'PO-WIE-.YY.######',
-        'Microsynth France SAS': 'PO-LYO-.YY.######',
-        'Ecogenics GmbH': 'PO-ECO-.YY.######'
+        'Microsynth AG': 'PO-.YY.#####',
+        'Microsynth Seqlab GmbH': 'PO-.YY.#####',
+        'Microsynth Austria GmbH': 'PO-.YY.#####',
+        'Microsynth France SAS': 'PO-.YY.#####',
+        'Ecogenics GmbH': 'PO-ECO-.YY.#####'
     },
     'Purchase Receipt': {
-        'Microsynth AG': 'PR-BAL-.YY.######',
-        'Microsynth Seqlab GmbH': 'PR-GOE-.YY.######',
-        'Microsynth Austria GmbH': 'PR-WIE-.YY.######',
-        'Microsynth France SAS': 'PR-LYO-.YY.######',
-        'Ecogenics GmbH': 'PR-ECO-.YY.######'
+        'Microsynth AG': 'PR-.YY.#####',
+        'Microsynth Seqlab GmbH': 'PR-.YY.#####',
+        'Microsynth Austria GmbH': 'PR-.YY.#####',
+        'Microsynth France SAS': 'PR-.YY.#####',
+        'Ecogenics GmbH': 'PR-.YY.#####'
     },
     'Purchase Invoice': {
-        'Microsynth AG': 'PI-BAL-.YY.######',
-        'Microsynth Seqlab GmbH': 'PI-GOE-.YY.######',
-        'Microsynth Austria GmbH': 'PI-WIE-.YY.######',
-        'Microsynth France SAS': 'PI-LYO-.YY.######',
-        'Ecogenics GmbH': 'PI-ECO-.YY.######'
+        'Microsynth AG': 'PI-.YY.#####',
+        'Microsynth Seqlab GmbH': 'PI-.YY.#####',
+        'Microsynth Austria GmbH': 'PI-.YY.#####',
+        'Microsynth France SAS': 'PI-.YY.#####',
+        'Ecogenics GmbH': 'PI-.YY.#####'
     }
 }
 
