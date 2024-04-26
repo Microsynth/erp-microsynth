@@ -8,9 +8,18 @@ from frappe.model.document import Document
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 from microsynth.qms.signing import sign
+from datetime import datetime
+
 
 class QMRevision(Document):
-	pass
+    def on_submit(self):
+        # for QM document: update review section
+        if self.document_type == "QM Document":
+            ref_doc = frappe.get_doc(self.document_type, self.document_name)
+            ref_doc.last_revision_by = frappe.session.user
+            ref_doc.last_revision_on = datetime.today()
+            ref_doc.save(ignore_permissions=True)
+            frappe.db.commit()
 
 
 @frappe.whitelist()

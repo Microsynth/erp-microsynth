@@ -269,12 +269,14 @@
    "options": "Secret\nConfidential\nOfficial"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "last_revision_on",
    "fieldtype": "Date",
    "label": "Last revision on",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "last_revision_by",
    "fieldtype": "Link",
    "label": "Last revision by",
@@ -283,8 +285,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-22 16:15:38.880657",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-04-26 11:05:31.132456",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
