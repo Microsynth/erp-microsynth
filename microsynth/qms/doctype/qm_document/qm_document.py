@@ -262,7 +262,11 @@ def find_first_number_gap(base_name, length):
 
 
 def invalidate_document(qm_document):
+    if type(qm_document) == str:
+        qm_document = frappe.get_doc("QM Document", qm_document)
     update_status(qm_document.name, "Invalid")
+    # clear any assignments
+    clear("QM Document", qm_document.name)
     # send a notification to the creator
     add({
         'doctype': "QM Document",
