@@ -411,7 +411,8 @@ function create_new_version(frm) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_document.qm_document.create_new_version',
         'args': {
-            'doc': frm.doc.name
+            'doc': frm.doc.name,
+            'user': frappe.session.user
         },
         'callback': function (r) {
             frappe.set_route("Form", "QM Document", r.message.name);

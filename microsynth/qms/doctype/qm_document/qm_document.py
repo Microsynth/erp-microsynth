@@ -125,19 +125,22 @@ class QMDocument(Document):
 
 
 @frappe.whitelist()
-def create_new_version(doc):
+def create_new_version(doc, user):
     new_doc = frappe.get_doc(frappe.get_doc("QM Document", doc).as_dict())
     new_doc.docstatus = 0                               # new doc is draft
     new_doc.version = cint(new_doc.version) + 1         # go to next version
     if new_doc.version > 99:
         frappe.throw( "Sorry, you have lost the lottery.", "Document version too high")
     new_doc.import_name = None
-    new_doc.created_on = None
-    new_doc.created_by = None
+    new_doc.creation = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_doc.created_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    new_doc.created_by = user
     new_doc.reviewed_on = None
     new_doc.reviewed_by = None
     new_doc.released_on = None
     new_doc.released_by = None
+    new_doc.last_revision_on = None
+    new_doc.last_revision_by = None
     new_doc.release_signature = None
     new_doc.signature = None
     new_doc.valid_from = None
