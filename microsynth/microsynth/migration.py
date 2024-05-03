@@ -2050,6 +2050,39 @@ def remove_item_account_settings():
     return
 
 
+def overwrite_item_defaults():
+    """
+    Delete Item.item_defaults and copy item_group_defaults from Item Group to item_defaults of Item.
+
+    bench execute microsynth.microsynth.migration.overwrite_item_defaults
+    """
+    items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name'])
+    item_groups = {}
+
+    for i, item_name in enumerate(items):
+        item = frappe.get_doc("Item", item_name)
+        if item.item_code == "6100":
+            # not sure why, copied from above
+            continue
+        print(f"{int(100 * i / len(items))} % Overwriting Item Defaults for Item '{item.item_code}'")
+        item.item_defaults = None
+        if not item.item_group in item_groups:
+            item_groups[item.item_group] = frappe.get_doc("Item Group", item.item_group)
+        for group_defaults in item_groups[item.item_group].item_group_defaults:
+            # Add a row to item.item_defaults according to group_defaults
+            item.append('item_defaults', {
+                'company': group_defaults.company,
+                'default_warehouse': group_defaults.default_warehouse,
+                'expense_account': group_defaults.expense_account,
+                'income_account': group_defaults.income_account,
+                'selling_cost_center': group_defaults.selling_cost_center,
+                'buying_cost_center': group_defaults.buying_cost_center,
+                'default_supplier': group_defaults.default_supplier,
+                'default_price_list': group_defaults.default_price_list
+            })
+        item.save()
+
+
 def check_sales_order_samples(sales_order):
     """
 
@@ -3798,18 +3831,18 @@ def patch_label_printed_on_dates():
 
 def check_tax_ids():
     """
-    Loop over all enabled Customers and check their non-empty Tax ID if it does not start with CH, GB or TR.
+    Loop over all enabled Customers and check their non-empty Tax ID if it does not start with CH, GB, IS, NO or TR.
 
     bench execute microsynth.microsynth.migration.check_tax_ids
     """
     from erpnextaustria.erpnextaustria.utils import check_uid
-    from erpnextswiss.erpnextswiss.zefix import get_company
+    #from erpnextswiss.erpnextswiss.zefix import get_company
 
     customers = frappe.db.get_all("Customer",
         filters = { 'disabled': 0 },
         fields = ['name', 'customer_name', 'tax_id'])
-    
-    print("Invalid Tax IDs:")
+    print(f"Going to check {len(customers)} enabled Customers ...")
+    print("i;Customer;Customer Name;Invalid Tax ID")
     for i, customer in enumerate(customers):
         try:
             if not customer['tax_id']:
@@ -3823,9 +3856,9 @@ def check_tax_ids():
                 # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
                 continue
             elif not check_uid(customer['tax_id']):
-                print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
+                print(f"{i};{customer['name']};{customer['customer_name']};{customer['tax_id']}")
         except Exception as err:
-            print(f"{i}/{len(customers)}: Unable to validate Tax ID '{customer['tax_id']}' of Customer '{customer['name']}' ('{customer['customer_name']}'): {err}")
+            print(f"unable to check {i};{customer['name']};{customer['customer_name']};{customer['tax_id']}")
 
 
 def is_workday_before_10am(date):
