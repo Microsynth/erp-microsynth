@@ -1304,6 +1304,19 @@ def determine_territory(address_id):
         
         elif address.country == "Réunion" or address.country == "French Guiana":
             return frappe.get_doc("Territory", "France (without Paris and Lyon)")
+        
+        # elif address.country == "Poland":
+        #     return frappe.get_doc("Territory", "Rest of Europe (PL)")
+        
+        # elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
+        #                          "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands",
+        #                          "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
+        #     return frappe.get_doc("Territory", "Rest of Europe (West)")
+        
+        # elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
+        #                          "Estonia", "Georgia", "Greece", "Hungary", "Kosovo", "Latvia", "Lithuania", "Macedonia", "Malta", "Moldova, Republic of",
+        #                          "Montenegro", "Romania", "Serbia", "Slovakia", "Slovenia", "Turkey", "Ukraine"):
+        #     return frappe.get_doc("Territory", "Rest of Europe (East)")
 
         elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
                                 "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",

@@ -1982,17 +1982,22 @@ def set_territory_for_customers():
     return
 
 
-def update_territories_and_sales_managers():
+def update_territories_and_sales_managers(current_territory):
     """
-    Update the territories and sales managers for all Customers whose current territory is Rest of the World
+    Update the territories and sales managers for all enabled Customers whose current territory is the given current_territory.
 
     run 
-    bench execute microsynth.microsynth.migration.update_territories_and_sales_managers
+    bench execute microsynth.microsynth.migration.update_territories_and_sales_managers --kwargs "{'current_territory': 'Rest of Europe'}"
     """    
     from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
-    
+
+    if not frappe.db.exists("Territory", current_territory):
+        print(f"The given Territory '{current_territory}' does not exist.")
+        return
+
     customers = frappe.db.get_all("Customer",
-        filters = [['disabled', '=', 0], ['territory', '=', 'Rest of the World']],
+        filters = [['disabled', '=', 0], ['territory', '=', current_territory],
+                   ['account_manager', '=', 'andrea.sinatra@microsynth.ch']],  # TODO: Remove this condition once completed for Rest of Europe
         fields = ['name'])
 
     for i, cust in enumerate(customers):
