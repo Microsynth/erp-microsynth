@@ -23,16 +23,22 @@ def get_columns():
 def get_holidays():
     """
     Returns a list of public holidays in Balgach from 01.01.2023 till today.
+
+    bench execute microsynth.microsynth.report.same_day_oligos.same_day_oligos.get_holidays
     """
     from erpnextswiss.erpnextswiss.calendar import parse_holidays
     holidays_balgach = []
+    parsed_holidays = []
     for y in range(2023, int(datetime.now().year)+1):
-        holidays_balgach += parse_holidays("1903", str(y))
-    # Add halfday holidays for 2024 and
-    # 27. Dezember 2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
-    holidays_balgach += [datetime(2024, 12, 24).strftime('%d.%m.%Y'),
-                         datetime(2024, 12, 27).strftime('%d.%m.%Y'),
-                         datetime(2024, 12, 31).strftime('%d.%m.%Y')]
+        parsed_holidays += parse_holidays("1903", str(y))
+        holidays_balgach += [datetime(y, 11, 1).strftime('%d.%m.%Y'),  # unclear why it is missing
+                             datetime(y, 12, 24).strftime('%d.%m.%Y'),  # half-day holiday
+                             datetime(y, 12, 31).strftime('%d.%m.%Y')]  # half-day holiday
+    # Add 27.12.2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
+    holidays_balgach.append(datetime(2024, 12, 27).strftime('%d.%m.%Y'))
+    for parsed_holiday in parsed_holidays:
+        holidays_balgach.append(parsed_holiday['date'])
+    #print(holidays_balgach)
     return holidays_balgach
 
 
@@ -48,6 +54,9 @@ def is_workday_before_10am(date_time, holidays):
 
 
 def get_data(filters=None):
+    """
+    bench execute microsynth.microsynth.report.same_day_oligos.same_day_oligos.get_data --kwargs "{'filters': {'from_date': '2024-01-01', 'to_date': '2024-02-29'}}"
+    """
     conditions = ""
     
     if filters.get('customer'):
@@ -60,35 +69,35 @@ def get_data(filters=None):
     sql_query = f"""
         SELECT *
         FROM (
-            SELECT DISTINCT
-                `tabSales Order`.`name`,
-                `tabSales Order`.`status`,
-                `tabSales Order`.`web_order_id`,
-                `tabSales Order`.`customer`,
-                `tabSales Order`.`customer_name`,
-                `tabSales Order`.`creation`,
-                `tabSales Order`.`transaction_date`,
-                `tabSales Order`.`label_printed_on`,
-                (SELECT COUNT(`tabOligo`.`name`)
-                 FROM `tabOligo`
-                 WHERE `tabOligo`.`parent` = `tabSales Order`.`name`
-                ) AS `oligo_number`
-            FROM `tabSales Order`
+            SELECT `tabSales Order`.`name`,
+                    `tabSales Order`.`status`,
+                    `tabSales Order`.`web_order_id`,
+                    `tabSales Order`.`customer`,
+                    `tabSales Order`.`customer_name`,
+                    `tabSales Order`.`creation`,
+                    `tabSales Order`.`transaction_date`,
+                    `tabSales Order`.`label_printed_on`,
+                    (SELECT COUNT(`tabOligo`.`name`)
+                    FROM `tabOligo`
+                    WHERE `tabOligo`.`parent` = `tabSales Order`.`name`
+                    ) AS `oligo_number`,
+                    `tabSales Order Item`.`item_code`
+            FROM `tabSales Order Item`
+            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Item`.`parent`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`customer_address`
-            LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
-            LEFT JOIN `tabOligo` ON `tabOligo`.`parent` = `tabSales Order`.`name`
-            WHERE
-            `tabSales Order`.`docstatus` = 1
+            -- LEFT JOIN `tabOligo` ON `tabOligo`.`parent` = `tabSales Order`.`name`
+            WHERE `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'Closed')
             AND `tabSales Order`.`product_type` = 'Oligos'
             AND `tabSales Order`.`customer` != '8003'
-            AND `tabSales Order`.`transaction_date` >= DATE('{filters.get('from_date')}')
-            AND `tabSales Order`.`transaction_date` <= DATE('{filters.get('to_date')}')
+            AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
             AND `tabSales Order Item`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
             {conditions}
-            ORDER BY `tabSales Order`.`transaction_date`
+            GROUP BY `tabSales Order Item`.`parent`
+            HAVING COUNT(`tabSales Order Item`.`name`) = 1
         ) AS `raw`
         WHERE `raw`.`oligo_number` < 20
+        ORDER BY `raw`.`transaction_date`
         """
     query_results = frappe.db.sql(sql_query, as_dict=True)
     same_day_orders = []
@@ -96,17 +105,18 @@ def get_data(filters=None):
     holidays = get_holidays()
     should_be_same_day = is_same_day = 0
 
-    for result in query_results:
+    for i, result in enumerate(query_results):
+        #print(f"{int(100 * i / len(query_results))} % Checking Sales Order {result['name']} ...")
         sales_order = frappe.get_doc("Sales Order", result['name'])
         # the same day criteria only applies to Sales Orders with less than 20 Oligos
         if len(sales_order.oligos) >= 20:
             #frappe.log_error(f"This should never happen: Sales Order {result['name']}", "oh no")
             continue
         unallowed_items = False
-        for i in sales_order.items:
-            if i.item_code not in ('0010', '0050', '0100', '1100', '1101', '1102'):
-                unallowed_items = True
-                break
+        # for i in sales_order.items:
+        #     if i.item_code not in ('0010', '0050', '0100', '1100', '1101', '1102'):
+        #         unallowed_items = True
+        #         break
         if not unallowed_items:
             oligo_too_complicated = False
             for oligo_link in sales_order.oligos:
@@ -131,8 +141,7 @@ def get_data(filters=None):
                     oligo_too_complicated = True
                     break
             if not oligo_too_complicated:
-                creation_time = sales_order.creation
-                creation_date = str(creation_time).split(' ')[0]
+                creation_date = str(sales_order.creation).split(' ')[0]
                 if creation_date != str(sales_order.transaction_date):
                     #print(f"creation_date != sales_order.transaction_date for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
                     continue
@@ -153,7 +162,7 @@ def get_data(filters=None):
             'customer_name': f"{is_same_day}/{should_be_same_day} fulfilled ({((is_same_day/should_be_same_day)*100):.2f} %)"
         }
         same_day_orders.append(summary_line)
-
+    #print(f"{len(same_day_orders)=}")
     return same_day_orders
 
 
