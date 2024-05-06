@@ -1305,37 +1305,33 @@ def determine_territory(address_id):
         elif address.country == "Réunion" or address.country == "French Guiana":
             return frappe.get_doc("Territory", "France (without Paris and Lyon)")
         
-        # elif address.country == "Poland":
-        #     return frappe.get_doc("Territory", "Rest of Europe (PL)")
+        elif address.country == "Poland":
+            return frappe.get_doc("Territory", "Rest of Europe (PL)")
         
-        # elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
-        #                          "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands",
-        #                          "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
-        #     return frappe.get_doc("Territory", "Rest of Europe (West)")
+        elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
+                                 "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands",
+                                 "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
+            return frappe.get_doc("Territory", "Rest of Europe (West)")
         
-        # elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
-        #                          "Estonia", "Georgia", "Greece", "Hungary", "Kosovo", "Latvia", "Lithuania", "Macedonia", "Malta", "Moldova, Republic of",
-        #                          "Montenegro", "Romania", "Serbia", "Slovakia", "Slovenia", "Turkey", "Ukraine"):
-        #     return frappe.get_doc("Territory", "Rest of Europe (East)")
-
-        elif address.country in ("Åland Islands", "Albania", "Andorra", "Armenia", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria",
-                                "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Faroe Islands", "Finland", "Georgia",
-                                "Gibraltar", "Greece", "Greenland", "Guernsey", "Hungary", "Iceland", "Ireland", "Isle of Man", "Italy",
-                                "Jersey", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Malta", "Moldova, Republic of",
-                                "Monaco", "Montenegro", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia",
-                                "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "Ukraine", "United Kingdom"):
-            return frappe.get_doc("Territory", "Rest of Europe")
+        elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
+                                 "Estonia", "Georgia", "Greece", "Hungary", "Kosovo", "Latvia", "Lithuania", "Macedonia", "Malta", "Moldova, Republic of",
+                                 "Montenegro", "Romania", "Serbia", "Slovakia", "Slovenia", "Turkey", "Ukraine"):
+            return frappe.get_doc("Territory", "Rest of Europe (East)")
         
         elif address.country in ("Anguilla", "Antigua and Barbuda", "Argentina", "Aruba", "Bahamas", "Barbados", "Belize", "Brazil", "Canada",
                                  "Cayman Islands", "Chile", "Colombia", "Costa Rica", "Cuba", "Dominica", "Dominican Republic", "Ecuador", "El Salvador",
                                  "Grenada", "Guadeloupe", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Martinique", "Mexico", "Montserrat",
                                  "Nicaragua", "Panama", "Paraguay", "Peru", "Puerto Rico", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines",
                                  "Suriname", "Trinidad and Tobago", "United States", "Uruguay"):
-            #return frappe.get_doc("Territory", "Rest of the World")
-            return frappe.get_doc("Territory", "America")
+            if frappe.db.exists("Territory", "Rest of World (Americas)"):
+                return frappe.get_doc("Territory", "Rest of World (Americas)")
+            else:
+                return frappe.get_doc("Territory", "America")
         else:
-            #return frappe.get_doc("Territory", "Rest of the World")
-            return frappe.get_doc("Territory", "Asia, Africa, Australia")            
+            if frappe.db.exists("Territory", "Rest of World (Asia, Africa, Australia)"):
+                return frappe.get_doc("Territory", "Rest of World (Asia, Africa, Australia)")
+            else:
+                return frappe.get_doc("Territory", "Asia, Africa, Australia")         
     
     except Exception as err:
         frappe.log_error(f"Could not determine territory from address '{address_id}'\n{err}", "utils.determine_territory")
