@@ -1,0 +1,12 @@
+{
+    "python.analysis.extraPaths": [
+        "../frappe",
+        "../erpnext",
+        "../erpnextswiss",
+        "../erpnextaustria" ],
+    "python.autoComplete.extraPaths": [
+        "../frappe",
+        "../erpnext",
+        "../erpnextswiss",
+        "../erpnextaustria" ]
+}
