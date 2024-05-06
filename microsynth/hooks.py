@@ -44,6 +44,7 @@ doctype_js = {
     "Payment Entry":    "public/js/payment_entry.js",
     "Payment Reminder": "public/js/payment_reminder.js",
     "Item":             "public/js/item.js",
+    "Item Group":       "public/js/item_group.js",
     "Item Price":       "public/js/item_price.js",
     "User":             "public/js/user.js",
     "File":             "public/js/file.js"

@@ -1886,3 +1886,57 @@ def get_yearly_order_volume(customer_id):
                 'currency': 'CHF'  # if there are no data, the currency should not matter
             })
     return yearly_order_volume
+
+
+@frappe.whitelist()
+def apply_item_group_defaults(item_group):
+    """
+    Apply the item_group_defaults of the given Item Group to all Items of this Item Group.
+    It is more efficient to not use the function overwrite_item_defaults from below,
+    because it would look up the Item Group at each call.
+
+    bench execute microsynth.microsynth.utils.apply_item_group_defaults --kwargs "{'item_group': '3.6 Library Prep'}"
+    """
+    item_group = frappe.get_doc("Item Group", item_group)
+    items = frappe.db.get_all("Item", filters={'item_group': item_group.name}, fields=['name'])
+    for item in items:
+        item_doc = frappe.get_doc("Item", item)
+        item_doc.item_defaults = None
+        for group_default in item_group.item_group_defaults:
+            # Add a row to item.item_defaults according to group_defaults
+            item_doc.append('item_defaults', {
+                'company': group_default.company,
+                'default_warehouse': group_default.default_warehouse,
+                'expense_account': group_default.expense_account,
+                'income_account': group_default.income_account,
+                'selling_cost_center': group_default.selling_cost_center,
+                'buying_cost_center': group_default.buying_cost_center,
+                'default_supplier': group_default.default_supplier,
+                'default_price_list': group_default.default_price_list
+            })
+        item_doc.save()
+
+
+@frappe.whitelist()
+def overwrite_item_defaults(item):
+    """
+    Delete item.item_defaults and copy item_group_defaults from Item Group to item_defaults of Item.
+
+    bench execute microsynth.microsynth.utils.overwrite_item_defaults --kwargs "{'item': '3100'}"
+    """
+    item = frappe.get_doc("Item", item)
+    item_group = frappe.get_doc("Item Group", item.item_group)
+    item.item_defaults = None
+    for group_default in item_group.item_group_defaults:
+        # Add a row to item.item_defaults according to group_defaults
+        item.append('item_defaults', {
+            'company': group_default.company,
+            'default_warehouse': group_default.default_warehouse,
+            'expense_account': group_default.expense_account,
+            'income_account': group_default.income_account,
+            'selling_cost_center': group_default.selling_cost_center,
+            'buying_cost_center': group_default.buying_cost_center,
+            'default_supplier': group_default.default_supplier,
+            'default_price_list': group_default.default_price_list
+        })
+    item.save()
