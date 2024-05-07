@@ -2055,37 +2055,19 @@ def remove_item_account_settings():
     return
 
 
-def overwrite_item_defaults():
+def overwrite_all_item_defaults():
     """
-    Delete Item.item_defaults and copy item_group_defaults from Item Group to item_defaults of Item.
+    Take item_group_defaults from Item Group to item_defaults of Item.
 
-    bench execute microsynth.microsynth.migration.overwrite_item_defaults
+    bench execute microsynth.microsynth.migration.overwrite_all_item_defaults
     """
+    from microsynth.microsynth.utils import overwrite_item_defaults
     items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name'])
-    item_groups = {}
 
-    for i, item_name in enumerate(items):
-        item = frappe.get_doc("Item", item_name)
-        if item.item_code == "6100":
-            # not sure why, copied from above
-            continue
-        print(f"{int(100 * i / len(items))} % Overwriting Item Defaults for Item '{item.item_code}'")
-        item.item_defaults = None
-        if not item.item_group in item_groups:
-            item_groups[item.item_group] = frappe.get_doc("Item Group", item.item_group)
-        for group_defaults in item_groups[item.item_group].item_group_defaults:
-            # Add a row to item.item_defaults according to group_defaults
-            item.append('item_defaults', {
-                'company': group_defaults.company,
-                'default_warehouse': group_defaults.default_warehouse,
-                'expense_account': group_defaults.expense_account,
-                'income_account': group_defaults.income_account,
-                'selling_cost_center': group_defaults.selling_cost_center,
-                'buying_cost_center': group_defaults.buying_cost_center,
-                'default_supplier': group_defaults.default_supplier,
-                'default_price_list': group_defaults.default_price_list
-            })
-        item.save()
+    for i, item in enumerate(items):
+        print(f"{int(100 * i / len(items))} % Overwriting Item Defaults for Item '{item['name']}'")
+        overwrite_item_defaults(item['name'])
+        
 
 
 def check_sales_order_samples(sales_order):
