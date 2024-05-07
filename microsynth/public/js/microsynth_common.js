@@ -1,6 +1,5 @@
 /* common functions */
 
-
 // naming series automation
 function prepare_naming_series(frm) {
     locals.naming_series_map = null;
@@ -282,4 +281,14 @@ function access_protection() {
 // this function voids the above access protection
 function remove_access_protection() {
     $('style').remove();
+}
+
+// QM Documents: remove action button for list and report to prevent illegal actions
+if (window.location.href.includes("/desk#List/QM%20Document/")) {
+    var css = ".btn-primary.dropdown-toggle { display: none; }";
+    var head = document.head || document.getElementsByTagName('head')[0];
+    var style = document.createElement('style');
+    head.appendChild(style);
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode(css));
 }
