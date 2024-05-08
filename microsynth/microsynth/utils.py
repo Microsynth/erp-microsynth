@@ -1326,15 +1326,9 @@ def determine_territory(address_id):
                                  "Grenada", "Guadeloupe", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Martinique", "Mexico", "Montserrat",
                                  "Nicaragua", "Panama", "Paraguay", "Peru", "Puerto Rico", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines",
                                  "Suriname", "Trinidad and Tobago", "United States", "Uruguay"):
-            if frappe.db.exists("Territory", "Rest of World (Americas)"):
-                return frappe.get_doc("Territory", "Rest of World (Americas)")
-            else:
-                return frappe.get_doc("Territory", "America")
+            return frappe.get_doc("Territory", "Rest of World (Americas)")
         else:
-            if frappe.db.exists("Territory", "Rest of World (Asia, Africa, Australia)"):
-                return frappe.get_doc("Territory", "Rest of World (Asia, Africa, Australia)")
-            else:
-                return frappe.get_doc("Territory", "Asia, Africa, Australia")         
+            return frappe.get_doc("Territory", "Rest of World (Asia, Africa, Australia)")
     
     except Exception as err:
         frappe.log_error(f"Could not determine territory from address '{address_id}'\n{err}", "utils.determine_territory")

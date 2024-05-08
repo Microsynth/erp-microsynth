@@ -1996,8 +1996,7 @@ def update_territories_and_sales_managers(current_territory):
         return
 
     customers = frappe.db.get_all("Customer",
-        filters = [['disabled', '=', 0], ['territory', '=', current_territory],
-                   ['account_manager', '=', 'andrea.sinatra@microsynth.ch']],  # TODO: Remove this condition once completed for Rest of Europe
+        filters = [['disabled', '=', 0], ['territory', '=', current_territory]],
         fields = ['name'])
 
     for i, cust in enumerate(customers):
