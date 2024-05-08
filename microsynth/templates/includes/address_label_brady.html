@@ -2,7 +2,7 @@
 ;### load Microsynth logo ###
 ;M l IMG;01_MIC_Logo_Swiss_black
 M l IMG;00_MIC_Logo_black
-{%- if shipping_service == "Austria" %}M l IMG;02_AT_Priority_black{endif}
+{% if shipping_service == "Austria" %}M l IMG;02_AT_Priority_black{% endif %}
 {# config the printer #}
 m m
 J 
