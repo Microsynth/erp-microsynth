@@ -3966,3 +3966,30 @@ def evaluate_same_day_oligos(export_file, start_date='2023-10-01', end_date='202
     print(f"There are {should_be_same_day} Sales Orders that meet the same day criteria and are written to {export_file}.")
     print(f"Of these {should_be_same_day} Sales Orders, {is_same_day} were actually shipped on the same day before 6 pm, "
           f"which corresponds to a proportion of {((is_same_day/should_be_same_day)*100):.2f} percent.")
+
+
+def find_oligo_orders_without_shipping_item(from_date):
+    """
+    bench execute microsynth.microsynth.migration.find_oligo_orders_without_shipping_item --kwargs "{'from_date': '2023-12-31'}"
+    """
+    orders = frappe.db.get_all("Sales Order",
+                               filters=[['docstatus', '=', 1],
+                                        ['product_type', '=', 'Oligos'],
+                                        ['transaction_date', '=>', from_date]],
+                               fields=['name'])
+    print(f"Sales Order;Is Punchout;Date;Web Order ID;Status;Customer;Customer Name;Grand Total;Currency;Creator")
+    for i, order in enumerate(orders):
+        if i % 100 == 0:
+            print(f"{i}/{len(orders)} ...")
+        so = frappe.get_doc("Sales Order", order['name'])
+        shipping = False
+        unwanted_item = False
+        for item in reversed(so.items):
+            if item.item_group == "Shipping":
+                shipping = True
+                break
+            if item.item_code == '0975' or item.item_code == '6100':
+                unwanted_item = True
+                break
+        if not shipping and not unwanted_item:
+            print(f"{so.name};{so.is_punchout};{so.transaction_date};{so.web_order_id};{so.status};{so.customer};{so.customer_name};{so.grand_total};{so.currency};{so.owner}")
