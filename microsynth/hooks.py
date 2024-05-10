@@ -128,7 +128,8 @@ doc_events = {
         "after_insert": "microsynth.microsynth.marketing.lock_contact"
     },
     "Payment Reminder": {
-        "after_insert": "microsynth.microsynth.payment_reminder.extend_values"
+        "after_insert": "microsynth.microsynth.payment_reminder.extend_values",
+        "on_submit": "microsynth.microsynth.payment_reminder.check_and_print"
     },
     "Quotation": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
