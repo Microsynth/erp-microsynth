@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022-2023, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 import os
@@ -1930,3 +1930,31 @@ def overwrite_item_defaults(item):
                 'default_price_list': group_default.default_price_list
             })
     item.save()
+
+
+@frappe.whitelist()
+def force_cancel(dt, dn):
+	"""
+	This function allows to move a document from draft directly to cancelled
+	
+	Parameters:
+		dt		Doctype Name, e.g. "Quotation"
+		dn		Record Name, e.g. "QTN-01234"
+		
+	It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
+	"""
+	try:
+		frappe.db.sql("""
+			UPDATE `tab{dt}`
+			SET 
+				`docstatus` = 2,
+				`status` = "Cancelled"
+			WHERE
+				`name` = "{dn}"
+				AND `docstatus` = 0;
+		""".format(dt=dt, dn=dn))
+		frappe.db.commit()
+	except Exception as err:
+		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
+	
+	return

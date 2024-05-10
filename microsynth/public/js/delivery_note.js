@@ -21,6 +21,13 @@ frappe.ui.form.on('Delivery Note', {
             var target ="span[data-label='" + __("Email") + "']";
             $(target).parent().parent().remove();
         }
+        
+        // allow force cancel
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
+			frm.add_custom_button(__("Force Cancel"), function() {
+				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+			});
+		}
     },
     company(frm) {
         set_naming_series(frm);                 // common function

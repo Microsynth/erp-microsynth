@@ -292,3 +292,25 @@ if (window.location.href.includes("/desk#List/QM%20Document/")) {
     style.type = 'text/css';
     style.appendChild(document.createTextNode(css));
 }
+
+function force_cancel(dt, dn) {
+	frappe.confirm(
+		__("Are you sure that you want to set this draft directly to the cancelled state?"),
+		function () {
+			// yes
+			frappe.call({
+				'method': 'microsynth.microsynth.utils.force_cancel',
+				'args': {
+					'dt': dt,
+					'dn': dn
+				},
+				callback: function(r){
+					cur_frm.reload_doc();
+				}
+			});
+		},
+		function () {
+			// no: do nothing
+		}
+	);
+}

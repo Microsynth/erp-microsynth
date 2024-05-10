@@ -49,6 +49,13 @@ frappe.ui.form.on('Quotation', {
                 }
             });
         }
+        
+        // allow force cancel
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
+			frm.add_custom_button(__("Force Cancel"), function() {
+				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+			});
+		}
     },
     
     before_save(frm) {

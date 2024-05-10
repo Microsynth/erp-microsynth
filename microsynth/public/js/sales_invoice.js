@@ -110,6 +110,13 @@ frappe.ui.form.on('Sales Invoice', {
             cur_frm.remove_custom_button(__("Maintenance Schedule"), __("Create"));
             cur_frm.remove_custom_button(__("Subscription"), __("Create"));
         }, 500);
+        
+        // allow force cancel
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
+			frm.add_custom_button(__("Force Cancel"), function() {
+				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+			});
+		}
     },
     company(frm) {
         set_naming_series(frm);                 // common function
