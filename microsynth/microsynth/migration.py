@@ -3992,3 +3992,42 @@ def find_oligo_orders_without_shipping_item(from_date):
                 break
         if not shipping and not unwanted_item:
             print(f"{so.name};{so.is_punchout};{so.transaction_date};{so.web_order_id};{so.status};{so.customer};{so.customer_name};{so.grand_total};{so.currency};{so.owner}")
+
+
+def find_contacts_without_address():
+    """
+    Search for Contacts without an Address.
+    Check if there is an Address with the same ID as the Contact and if both belong to the same Customer.
+    
+    bench execute microsynth.microsynth.migration.find_contacts_without_address
+    """
+    sql_query = f"""
+        SELECT `tabContact`.`name`,
+            `tabContact`.`full_name`,
+            `tabContact`.`owner`,
+            `tabContact`.`creation`,
+            `tabCustomer`.`name` AS `customer`,
+            `tabCustomer`.`customer_name`,
+            `tabContact`.`customer_status`,
+            `tabContact`.`contact_classification`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                            AND `tDLA`.`parenttype` = "Contact" 
+                                            AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+        WHERE `tabContact`.`address` IS NULL
+            AND `tabContact`.`status` = 'Passive'
+        """
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+
+    print(f"{len(contacts)=}")
+    for contact in contacts:
+        if frappe.db.exists("Address", contact['name']):
+            address = frappe.get_doc("Address", contact['name'])
+            for reference in address.links:
+                if reference.link_doctype == "Customer":
+                    if reference.link_name == contact['customer']:
+                        print(f"Found a matching address with the same ID for Contact {contact['name']} belonging both to Customer {contact['customer']}.")
+                    else:
+                        print(f"Contact {contact['name']} belongs to Customer {contact['customer']} but Address {address.name} belongs to Customer {reference.link_name}.")
+
