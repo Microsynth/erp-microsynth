@@ -1608,7 +1608,7 @@ def transmit_carlo_erba_invoices(sales_invoices):
                 "0",                                                                        # discount_percent(17)
                 str(item.amount),                                                           # kit_price(17)
                 "",                                                                         # serial_number(24)
-                item.description,                                                           # description1(24)
+                item.item_name,                                                             # description1(24)
                 ""                                                                          # description2(24)
             ]
             lines.append(position)
