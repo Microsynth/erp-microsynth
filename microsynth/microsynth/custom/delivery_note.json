@@ -346,7 +346,7 @@
    "modified_by": "Administrator",
    "name": "Delivery Note-product_type",
    "no_copy": 0,
-   "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService",
+   "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,

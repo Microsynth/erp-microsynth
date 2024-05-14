@@ -39,7 +39,7 @@ frappe.query_reports["Commission Calculator"] = {
             "fieldname": "product_type",
             "label": __("Product Type"),
             "fieldtype": "Select",
-            "options": "\nOligos\nLabels\nSequencing\nNGS\nFLA\nProject\nMaterial\nService"
+            "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
         }
 	],
     "onload": (report) => {
