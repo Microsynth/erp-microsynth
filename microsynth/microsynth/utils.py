@@ -1916,7 +1916,6 @@ def overwrite_item_defaults(item):
                 item_default.buying_cost_center = group_default.buying_cost_center
                 item_default.default_supplier = group_default.default_supplier
                 item_default.default_price_list = group_default.default_price_list
-                item_default.save()
                 break  # only from the inner for loop
         if not found_company:
             item.append('item_defaults', {

@@ -2066,7 +2066,7 @@ def overwrite_all_item_defaults():
     for i, item in enumerate(items):
         print(f"{int(100 * i / len(items))} % Overwriting Item Defaults for Item '{item['name']}'")
         overwrite_item_defaults(item['name'])
-        
+        frappe.db.commit()
 
 
 def check_sales_order_samples(sales_order):
