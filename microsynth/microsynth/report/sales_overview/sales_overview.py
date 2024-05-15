@@ -24,7 +24,7 @@ MONTHS = {
     12: _("December"),
 }
 # product type aggregation is currently not used in favour of the item groups
-PRODUCT_TYPES = ["Oligos", "Labels", "Sequencing", "NGS", "FLA", "Material", "Service"]
+PRODUCT_TYPES = ["Oligos", "Labels", "Sequencing", "Genetic Analysis", "NGS", "FLA", "Material", "Service"]
 PRODUCT_TYPE_MAP = {
     "Oligo Synthesis": ["Oligos", "Material"],
     "Sanger Sequencing": ["Labels", "Sequencing"],
