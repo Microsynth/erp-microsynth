@@ -26,11 +26,6 @@ frappe.query_reports["Same Day Oligos"] = {
             "fieldname":"customer_name",
             "label": __("Customer Name"),
             "fieldtype": "Data"
-        },
-		{
-            "fieldname": "city",
-            "label": __("City"),
-            "fieldtype": "Data"
         }
 	]
 };

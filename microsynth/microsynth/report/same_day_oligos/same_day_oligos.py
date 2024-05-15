@@ -63,41 +63,42 @@ def get_data(filters=None):
         conditions += f"AND `tabSales Order`.`customer` = '{filters.get('customer')}'"
     if filters.get('customer_name'):
         conditions += f"AND `tabSales Order`.`customer_name` LIKE '%{filters.get('customer_name')}%'"
-    if filters.get('city'):
-        conditions += f"AND `tabAddress`.`city` LIKE '{filters.get('city')}'"
 
     sql_query = f"""
         SELECT *
         FROM (
-            SELECT `tabSales Order`.`name`,
-                    `tabSales Order`.`status`,
-                    `tabSales Order`.`web_order_id`,
-                    `tabSales Order`.`customer`,
-                    `tabSales Order`.`customer_name`,
-                    `tabSales Order`.`creation`,
-                    `tabSales Order`.`transaction_date`,
-                    `tabSales Order`.`label_printed_on`,
-                    (SELECT COUNT(`tabOligo`.`name`)
-                    FROM `tabOligo`
-                    WHERE `tabOligo`.`parent` = `tabSales Order`.`name`
-                    ) AS `oligo_number`,
-                    `tabSales Order Item`.`item_code`
-            FROM `tabSales Order Item`
-            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSales Order Item`.`parent`
-            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`customer_address`
-            -- LEFT JOIN `tabOligo` ON `tabOligo`.`parent` = `tabSales Order`.`name`
+            SELECT 
+                `tabSales Order`.`name`,
+                `tabSales Order`.`status`,
+                `tabSales Order`.`web_order_id`,
+                `tabSales Order`.`customer`,
+                `tabSales Order`.`customer_name`,
+                `tabSales Order`.`creation`,
+                `tabSales Order`.`transaction_date`,
+                `tabSales Order`.`label_printed_on`,
+
+                (SELECT COUNT(`incl`.`name`) 
+                FROM `tabSales Order Item` AS `incl`
+                WHERE `incl`.`parent` = `tabSales Order`.`name`
+                AND `incl`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
+                ) AS `included`,
+
+                (SELECT COUNT(`excl`.`name`) 
+                FROM `tabSales Order Item` AS `excl`
+                WHERE `excl`.`parent` = `tabSales Order`.`name`
+                AND `excl`.`item_code` NOT IN ('0010', '0050', '0100', '1100', '1101', '1102')
+                ) AS `notincluded`
+
+            FROM `tabSales Order`
             WHERE `tabSales Order`.`docstatus` = 1
-            AND `tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'Closed')
-            AND `tabSales Order`.`product_type` = 'Oligos'
-            AND `tabSales Order`.`customer` != '8003'
-            AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
-            AND `tabSales Order Item`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
-            {conditions}
-            GROUP BY `tabSales Order Item`.`parent`
-            HAVING COUNT(`tabSales Order Item`.`name`) = 1
-        ) AS `raw`
-        WHERE `raw`.`oligo_number` < 20
-        ORDER BY `raw`.`transaction_date`
+                AND `tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'Closed')
+                AND `tabSales Order`.`product_type` = 'Oligos'
+                AND `tabSales Order`.`customer` != '8003'
+                AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
+        ) AS `order`
+        WHERE `order`.`included` > 0 
+            AND `order`.`notincluded` = 0
+        ORDER BY `order`.`transaction_date`
         """
     query_results = frappe.db.sql(sql_query, as_dict=True)
     same_day_orders = []
@@ -110,7 +111,6 @@ def get_data(filters=None):
         sales_order = frappe.get_doc("Sales Order", result['name'])
         # the same day criteria only applies to Sales Orders with less than 20 Oligos
         if len(sales_order.oligos) >= 20:
-            #frappe.log_error(f"This should never happen: Sales Order {result['name']}", "oh no")
             continue
         unallowed_items = False
         # for i in sales_order.items:
