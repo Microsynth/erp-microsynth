@@ -17,23 +17,23 @@
     
     <div class="col-xs-6">
         {% if docs_linking_to_this %}
-            <h6>{{ _("Document that link here") }}</h6>
+            <h6>{{ _("Valid documents that link here") }}</h6>
             {% for d in docs_linking_to_this %}
                 <a href="/desk#Form/QM Document/{{ d.document }}">
                     <i class="fa fa-chain"></i>
-                    {{ d.document }}
+                    {{ d.document.split("-")[0] }}
                 </a><br>
             {% endfor %}
         {% endif %}
     </div>
     
     <div class="col-xs-6">
-        {% if doc.linked_documents %}
+        {% if relating_docs %}
             <h6>{{ _("Related documents") }}</h6>
-            {% for d in doc.linked_documents %}
-                <a href="/desk#Form/QM Document/{{ d.qm_document }}">
+            {% for d in relating_docs %}
+                <a href="/desk#Form/QM Document/{{ d }}">
                     <i class="fa fa-chain"></i>
-                    {{ d.qm_document }}
+                    {{ d.split("-")[0] }}
                 </a><br>
             {% endfor %}
         {% endif %}

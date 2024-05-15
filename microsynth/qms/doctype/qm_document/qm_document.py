@@ -96,11 +96,47 @@ class QMDocument(Document):
     def get_overview(self):
         files = get_attachments("QM Document", self.name)
         docs_linking_to_this = frappe.db.sql("""
-            SELECT `parent` AS `document`
+            SELECT `tabQM Document Link`.`parent` AS `document`,
+                `tabQM Document`.`status`,
+                `tabQM Document`.`version`
             FROM `tabQM Document Link`
-            WHERE `qm_document` = "{doc}";
+            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tabQM Document Link`.`parent`
+            WHERE `tabQM Document Link`.`qm_document` = "{doc}"
+                AND `tabQM Document`.`status` = 'Valid';
             """.format(doc=self.name), as_dict=True)
         
+        relating_docs = []
+        for doc in self.linked_documents:
+            if frappe.get_value("QM Document", doc.qm_document, "status") == "Valid":
+                relating_docs.append(doc.qm_document)
+            else:
+                # try to find the valid version
+                without_version = doc.qm_document.split("-")[0]
+                valid_docs = frappe.db.sql(f"""
+                    SELECT `tabQM Document`.`name`
+                    FROM `tabQM Document`
+                    WHERE `tabQM Document`.`name` LIKE '{without_version}%'
+                        AND `tabQM Document`.`status` = 'Valid';
+                    """, as_dict=True)
+                if len(valid_docs) == 1:
+                    relating_docs.append(valid_docs[0]['name'])
+                elif len(valid_docs) > 1:
+                    frappe.log_error(f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", "qm_document.get_overview")
+                else:
+                    # no valid version -> take the highest version
+                    all_versions = frappe.db.sql(f"""
+                    SELECT `tabQM Document`.`name`
+                    FROM `tabQM Document`
+                    WHERE `tabQM Document`.`name` LIKE '{without_version}%'
+                        AND `tabQM Document`.`docstatus` = 1
+                    ORDER BY `tabQM Document`.`version` DESC;
+                    """, as_dict=True)
+                    if len(all_versions) > 0:
+                        relating_docs.append(all_versions[0]['name'])
+                    else:
+                        #frappe.log_error(f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", "qm_document.get_overview")
+                        continue
+
         trained = frappe.db.sql("""
             SELECT 
                 `tabQM Training Record`.`trainee` AS `trainee`,
@@ -118,6 +154,7 @@ class QMDocument(Document):
                 'files': files, 
                 'doc': self, 
                 'docs_linking_to_this': docs_linking_to_this,
+                'relating_docs': relating_docs,
                 'trained': trained
             })
             
@@ -526,7 +563,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Import Title and Document ID from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240321_TestData_ERP_Migration.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240514_TestData_ERP_Migration.csv'}"
     """
     import csv
 
