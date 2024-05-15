@@ -259,6 +259,15 @@ frappe.ui.form.on('QM Document', {
                   || (frappe.user.has_role("QAU")))) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
         }
+
+        /* Linked Documents filter: only show Valid QM Documents */
+        frm.fields_dict.linked_documents.grid.get_field('qm_document').get_query = function() {
+    	    return {
+                    filters: [
+                        ["status", "=", "Valid"]
+    	        ]
+    	    };
+        };
         
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
