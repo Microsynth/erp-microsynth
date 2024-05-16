@@ -464,8 +464,11 @@ def address_exists(address, client="webshop"):
             sql_query += """ AND `address_line2` is null """
     if 'customer_id' in address and address['customer_id'] is not None:
         sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(address['customer_id'])
-    if 'overwrite_company' in address and address['overwrite_company'] is not None:
-        sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])
+    if 'overwrite_company' in address:
+        if address['overwrite_company'] is not None:
+            sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])
+        else: 
+            sql_query += """ AND `overwrite_company` is null """
     if 'pincode' in address:
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
     if 'city' in address:
