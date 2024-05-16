@@ -673,6 +673,8 @@ def import_qm_documents(file_path, expected_line_length=24):
             })
             try:
                 qm_doc.insert()
+                if not company:
+                    qm_doc.company = None
                 qm_doc.submit()
 
                 create_file_attachment(qm_doc.name, file_path)

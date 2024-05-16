@@ -405,7 +405,7 @@ function request_revision() {
 function invalidate(frm) {
     frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?<br>There will be <b>no other valid version.</b>",
     () => {
-        cur_frm.set_value("status", "Invalid");
+        cur_frm.set_value("status", "Invalid");  // TODO: Use python function invalidate_document instead to ensure that the creator gets notified.
         setTimeout(() => {
             cur_frm.save_or_update();
             frappe.show_alert( __("Status changed to Invalid.") );
