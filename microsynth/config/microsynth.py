@@ -367,7 +367,7 @@ def get_data():
                     {
                         "type": "report",
                         "name": "Revenue Export",
-                        "label": _("Revenue Export"),
+                        "label": _("Revenue Export (Pivot)"),
                         "doctype": "Sales Invoice",
                         "is_query_report": True
                     },
@@ -396,6 +396,13 @@ def get_data():
                         "type": "report",
                         "name": "Open Sales Orders",
                         "label": _("Open Sales Orders"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Label Accounting",
+                        "label": _("Label Accounting"),
                         "doctype": "Sales Order",
                         "is_query_report": True
                     }
