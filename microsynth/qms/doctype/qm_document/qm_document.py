@@ -561,9 +561,9 @@ def rewrite_posix_path(windows_path):
 
 def import_qm_documents(file_path, expected_line_length=24):
     """
-    Import Title and Document ID from a FileMaker export tsv.
+    Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240514_TestData_ERP_Migration.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240515_TestData_ERP_Migration.csv'}"
     """
     import csv
 
@@ -639,6 +639,14 @@ def import_qm_documents(file_path, expected_line_length=24):
             target_date_format = "%Y-%m-%d"
             released_on_formatted = datetime.strptime(released_on, given_date_format).strftime(target_date_format)
 
+            # add version to import_name
+            if len(str(version)) == 1:
+                import_name = doc_id_new + "-0" + str(version)
+            elif len(str(version)) == 2:
+                import_name = doc_id_new + "-" + str(version)
+            else:
+                print(f"{doc_id_new};{title};Version '{version}' seems to be not between 1 and 99.")
+
             # Create QM Document
             qm_doc = frappe.get_doc({
                 'doctype': "QM Document",
@@ -647,7 +655,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 'chapter': chapter if chapter is not None else 0,
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
-                'import_name': doc_id_new,
+                'import_name': import_name,
                 'title': title,
                 'version': version,
                 'status': status,
@@ -689,7 +697,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 print(f"{doc_id_new};{title};Unable to insert and submit: {err}")
                 continue
 
-            if qm_doc.name != doc_id_new:  # currently useless
+            if qm_doc.name != import_name:  # currently useless
                 print(f"{doc_id_new};{title};name/ID unequals {qm_doc.name=}.")
                 continue
 
