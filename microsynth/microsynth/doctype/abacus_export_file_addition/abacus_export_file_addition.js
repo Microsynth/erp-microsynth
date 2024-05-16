@@ -35,6 +35,16 @@ frappe.ui.form.on('Abacus Export File Addition', {
             frappe.msgprint( __("Please select at least one account"), __("Validation") );
             frappe.validated=false;
         }
+    },
+    'from_date': function(frm) {
+        if ((frm.doc.from_date) && (frm.doc.to_date) && (frm.doc.from_date > frm.doc.to_date)) {
+            cur_frm.set_value('to_date', frm.doc.from_date);
+        }
+    },
+    'to_date': function(frm) {
+        if ((frm.doc.from_date) && (frm.doc.to_date) && (frm.doc.from_date > frm.doc.to_date)) {
+            cur_frm.set_value('from_date', frm.doc.to_date);
+        }
     }
 });
 
