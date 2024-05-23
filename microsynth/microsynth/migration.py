@@ -3823,26 +3823,39 @@ def check_tax_ids():
     """
     from erpnextaustria.erpnextaustria.utils import check_uid
     #from erpnextswiss.erpnextswiss.zefix import get_company
+    from microsynth.microsynth.utils import get_first_shipping_address
 
     customers = frappe.db.get_all("Customer",
         filters = { 'disabled': 0 },
         fields = ['name', 'customer_name', 'tax_id'])
     print(f"Going to check {len(customers)} enabled Customers ...")
-    print("i;Customer;Customer Name;Invalid Tax ID")
+    print("i;Customer;Customer Name;Country;Invalid Tax ID")
     for i, customer in enumerate(customers):
         try:
             if not customer['tax_id']:
                 continue
+            shipping_address = get_first_shipping_address(customer['name'])
+            if shipping_address is None:
+                msg = f"Customer '{customer['name']}' has no shipping address."
+                print(msg)
+                frappe.log_error(msg, "migration.check_tax_ids")
+                continue
+            country = frappe.get_value("Address", shipping_address, "Country")
+            if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
+                            'Spain', 'Finland', 'France', 'Croatia', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Latvia',
+                            'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia']:
+                continue
             elif customer['tax_id'][:2] in ['CH']:
                 continue  # currently unable to check Swiss UID
-                company = get_company(customer['tax_id'], debug=True)  # does not yet work
-                if 'error' in company:
-                    print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
-            elif customer['tax_id'][:2] in ['GB', 'IS', 'NO', 'TR'] and not 'NOT' in customer['tax_id']:
-                # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
-                continue
-            elif not check_uid(customer['tax_id']):
-                print(f"{i};{customer['name']};{customer['customer_name']};{customer['tax_id']}")
+            #     company = get_company(customer['tax_id'], debug=True)  # does not yet work
+            #     if 'error' in company:
+            #         print(f"{i}/{len(customers)}: Customer '{customer['name']}' ('{customer['customer_name']}'): '{customer['tax_id']}'")
+            # elif customer['tax_id'][:2] in ['GB', 'IS', 'NO', 'TR'] and not 'NOT' in customer['tax_id']:
+            #     # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+            #     continue
+            # el
+            if not check_uid(customer['tax_id']):
+                print(f"{i};{customer['name']};{customer['customer_name']};{country};{customer['tax_id']}")
         except Exception as err:
             print(f"unable to check {i};{customer['name']};{customer['customer_name']};{customer['tax_id']}")
 
