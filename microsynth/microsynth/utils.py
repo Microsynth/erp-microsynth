@@ -498,7 +498,6 @@ def validate_sales_order(sales_order):
     if not validate_sales_order_status(sales_order):
         return False
 
-
     # Check if delivery notes exists. consider also deliver notes with the same web_order_id
     web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
     if web_order_id:
@@ -1803,7 +1802,7 @@ def check_new_customers_taxid(delta_days=7):
     to the administration if there are invalid Tax IDs.
     Should be run daily by a Cronjob.
 
-    bench execute microsynth.microsynth.utils.check_new_customers_taxid --kwargs "{'delta_days': 10}"
+    bench execute microsynth.microsynth.utils.check_new_customers_taxid --kwargs "{'delta_days': 20}"
     """
     invalid_tax_ids = []
     start_day = date.today() - timedelta(days = delta_days)
@@ -1815,9 +1814,18 @@ def check_new_customers_taxid(delta_days=7):
     for nc in new_customers:
         if not nc['tax_id']:
             continue
-        if nc['tax_id'][:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in nc['tax_id']:
-            # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+        shipping_address = get_first_shipping_address(nc['name'])
+        if shipping_address is None:
+            frappe.log_error(f"Customer '{nc['name']}' has no shipping address.", "utils.check_new_customers_taxid")
             continue
+        country = frappe.get_value("Address", shipping_address, "Country")
+        if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
+                           'Spain', 'Finland', 'France', 'Croatia', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Latvia',
+                           'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia']:
+            continue
+        # if nc['tax_id'][:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in nc['tax_id']:
+        #     # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+        #     continue
         if not is_valid_tax_id(nc['tax_id']):
             invalid_tax_ids.append({'customer_id': nc['name'],
                                     'customer_name': nc['customer_name'],
