@@ -178,6 +178,13 @@ def get_data():
                        "is_query_report": True
                     },
                     {
+                        "type": "report",
+                        "name": "Open Sales Orders",
+                        "label": _("Open Sales Orders"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
                        "type": "report",
                        "name": "Customer Credits",
                        "label": _("Customer Credits"),
@@ -390,13 +397,6 @@ def get_data():
                         "name": "Commission Calculator",
                         "label": _("Commission Calculator"),
                         "doctype": "Sales Invoice",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Open Sales Orders",
-                        "label": _("Open Sales Orders"),
-                        "doctype": "Sales Order",
                         "is_query_report": True
                     },
                     {
