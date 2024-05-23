@@ -241,6 +241,13 @@ def get_data():
                        "label": _("Accounts Receivable Microsynth"),
                        "doctype": "Sales Invoice",
                        "is_query_report": True
+                   },
+                   {
+                       "type": "report",
+                       "name": "Customer Accounts Overview",
+                       "label": _("Customer Accounts Overview"),
+                       "doctype": "Sales Invoice",
+                       "is_query_report": True
                    }
             ]
         },
