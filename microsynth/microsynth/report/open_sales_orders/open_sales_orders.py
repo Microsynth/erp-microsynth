@@ -18,6 +18,7 @@ def get_columns():
         {"label": _("First unlinked DN"), "fieldname": "unlinked_dn_name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
         {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 50},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 95},
+        {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Integer", "width": 50},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
         {"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
@@ -81,6 +82,19 @@ def get_data(filters=None):
             if len(delivery_notes) > 0:
                 so['unlinked_dn_name'] = delivery_notes[0]['unlinked_dn_name']
             so['dns'] = len(delivery_notes)
+        if 'product_type' in so and so['product_type'] == 'Sequencing':
+            pending_samples = frappe.db.sql(f"""
+                SELECT 
+                    `tabSample`.`name`
+                FROM `tabSample Link`
+                LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
+                WHERE
+                    `tabSample Link`.`parent` = "{so['name']}"
+                    AND `tabSample Link`.`parenttype` = "Sales Order"
+                    AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
+                """, as_dict=True)
+            so['pending_samples'] = len(pending_samples)
 
     return data
 
