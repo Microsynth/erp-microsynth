@@ -216,7 +216,7 @@ function second_barcode_dialog() {
                 }
                 locals.label_queue[0].to_barcode = to_barcode;
                 
-                if (['3100', '3110', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code)) {
+                if (['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code)) {
                     // print shipping label
                     frappe.call({
                         "method": "microsynth.microsynth.labels.print_shipping_label",
