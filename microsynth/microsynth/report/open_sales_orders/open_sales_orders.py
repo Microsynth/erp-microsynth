@@ -12,9 +12,11 @@ def get_columns():
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
-        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 120},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
+        {"label": _("First unlinked DN"), "fieldname": "unlinked_dn_name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
+        {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 50},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 95},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
@@ -66,6 +68,20 @@ def get_data(filters=None):
             {filter_conditions}
         ORDER BY `raw`.`date`;
     """, as_dict=True)
+
+    for so in data:
+        if so['web_order_id']:
+            delivery_notes = frappe.db.sql(f"""
+                SELECT DISTINCT `tabDelivery Note Item`.`parent` AS `unlinked_dn_name`
+                FROM `tabDelivery Note Item`
+                LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+                WHERE `tabDelivery Note`.`web_order_id` = {so['web_order_id']};
+                """, as_dict=True)
+
+            if len(delivery_notes) > 0:
+                so['unlinked_dn_name'] = delivery_notes[0]['unlinked_dn_name']
+            so['dns'] = len(delivery_notes)
+
     return data
 
 
