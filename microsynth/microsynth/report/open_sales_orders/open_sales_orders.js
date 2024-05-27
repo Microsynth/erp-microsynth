@@ -9,7 +9,7 @@ frappe.query_reports["Open Sales Orders"] = {
             "label": __("From date"),
             "fieldtype": "Date",
             "reqd": 1,
-			"default": new Date().getFullYear() + "-01-01"
+			"default": ((new Date().getMonth()) == 0) ? (((new Date().getFullYear()) - 1) + "-01-01") : ((new Date().getFullYear()) + "-01-01")
         },
         {
             "fieldname": "to_date",
