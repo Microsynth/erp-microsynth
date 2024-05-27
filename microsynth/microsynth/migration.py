@@ -3826,7 +3826,7 @@ def check_tax_ids():
     from microsynth.microsynth.utils import get_first_shipping_address
 
     customers = frappe.db.get_all("Customer",
-        filters = { 'disabled': 0 },
+        filters = [['disabled', '=', 0], ['customer_type', '!=', 'Individual']],
         fields = ['name', 'customer_name', 'tax_id'])
     print(f"Going to check {len(customers)} enabled Customers ...")
     print("i;Customer;Customer Name;Country;Invalid Tax ID")
