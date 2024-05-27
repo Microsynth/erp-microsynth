@@ -64,7 +64,6 @@ frappe.ui.form.on('Quotation', {
         } else {
             var category = "Service";
         };
-        var category = "Service";
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
         }; 
