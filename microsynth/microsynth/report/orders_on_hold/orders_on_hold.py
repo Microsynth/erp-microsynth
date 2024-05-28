@@ -47,14 +47,10 @@ def get_data(filters=None):
             `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`hold_order` = 1
             AND `tabSales Order`.`transaction_date` > '2022-12-22'
+            AND ((NOT `tabCustomer`.`invoicing_method` = 'Stripe Prepayment')
+                 OR (`tabSales Order`.`comment` IS NOT NULL))
         ORDER BY
             `tabSales Order`.`transaction_date` DESC;
     """, as_dict=True)
-    filtered_orders = []
-    for order in open_oligo_orders:
-        if order['invoicing_method'] == 'Stripe Prepayment' and not order['comment']:
-            continue
-        else:
-            filtered_orders.append(order)
     
-    return filtered_orders
+    return open_oligo_orders
