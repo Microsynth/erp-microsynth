@@ -65,6 +65,7 @@ jenv = {
         "get_training_records:microsynth.qms.doctype.qm_training_record.qm_training_record.get_training_records",
         "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
+        "get_html_message:microsynth.microsynth.payment_reminder.get_html_message"
     ]
 }
 
@@ -129,7 +130,7 @@ doc_events = {
     },
     "Payment Reminder": {
         "after_insert": "microsynth.microsynth.payment_reminder.extend_values",
-        "on_submit": "microsynth.microsynth.payment_reminder.check_and_print"
+        "on_submit": "microsynth.microsynth.payment_reminder.transmit_payment_reminder"
     },
     "Quotation": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"

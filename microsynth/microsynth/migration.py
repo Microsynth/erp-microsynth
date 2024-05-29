@@ -2700,7 +2700,7 @@ def reopen_sales_order(sales_order):
 def close_delivery_note(delivery_note):
     """
     run
-    bench execute.microsynth.microsynth.migration.close_delivery_note --kwargs "{'delivery_note':''}"
+    bench execute microsynth.microsynth.migration.close_delivery_note --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
     if delivery_note.docstatus > 1 or delivery_note.status == 'Closed':
@@ -2712,7 +2712,7 @@ def close_delivery_note(delivery_note):
 def close_draft_delivery_note_and_sales_order(delivery_note):
     """
     run
-    bench execute.microsynth.microsynth.migration.close_draft_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
+    bench execute microsynth.microsynth.migration.close_draft_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
     
@@ -2772,7 +2772,7 @@ def close_invoiced_draft_delivery_notes():
 def close_sales_order_of_delivery_note(delivery_note):
     """
     run
-    bench execute.microsynth.microsynth.migration.close_sales_order_of_delivery_note --kwargs "{'delivery_note':''}"
+    bench execute microsynth.microsynth.migration.close_sales_order_of_delivery_note --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
     
