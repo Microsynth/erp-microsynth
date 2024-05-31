@@ -248,6 +248,13 @@ def get_data():
                        "label": _("Customer Accounts Overview"),
                        "doctype": "Sales Invoice",
                        "is_query_report": True
+                   },
+                   {
+                       "type": "report",
+                       "name": "Avis Control",
+                       "label": _("Avis Control"),
+                       "doctype": "Payment Entry",
+                       "is_query_report": True
                    }
             ]
         },
