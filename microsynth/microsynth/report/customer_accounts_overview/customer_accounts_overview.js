@@ -40,5 +40,6 @@ frappe.query_reports["Customer Accounts Overview"] = {
             "default": "Like",
             "reqd": 1
         }
-    ]
+    ],
+    "initial_depth": 0
 };

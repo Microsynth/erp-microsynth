@@ -14,7 +14,7 @@ def execute(filters=None):
 
 def get_columns():
     columns = [
-        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 80},
+        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 95},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Voucher Type"), "fieldname": "voucher_type", "fieldtype": "Data", "width": 125},
@@ -57,6 +57,7 @@ def get_data(filters, short=False):
     
     sql_query = """
         SELECT
+            0 AS `indent`,
             `tabSales Invoice`.`posting_date` AS `posting_date`,
             `tabSales Invoice`.`customer` AS `customer`,
             `tabSales Invoice`.`customer_name` AS `customer_name`,
@@ -101,7 +102,54 @@ def get_data(filters, short=False):
     
     data = frappe.db.sql(sql_query, as_dict=True)
     
+    enriched = []
+    
     for d in data:
         d['outstanding_amount'] = flt(d['invoiced_amount']) - flt(d['paid_amount']) - flt(d['credit_note'])
+        # insert receivable (sales invoice) node
+        enriched.append(d)
         
-    return data
+        # find against transactions
+        against_records = frappe.db.sql("""
+            SELECT
+                1 AS `indent`,
+                `against`.*
+            FROM
+                (
+                    SELECT
+                        `credit`.`voucher_type`,
+                        `credit`.`voucher_no`,
+                        `credit`.`posting_date` AS `posting_date`,
+                        SUM(`credit`.`credit_in_account_currency`) 
+                         - SUM(`credit`.`debit_in_account_currency`)  AS `paid_amount`,
+                        `credit`.`account_currency` AS `currency`
+                    FROM `tabGL Entry` AS `credit`
+                    WHERE 
+                        `credit`.`against_voucher` = "{sinv}" 
+                        AND `credit`.`voucher_type` != "Sales Invoice"
+                        AND `credit`.`account` {rec_filter}
+                    GROUP BY `credit`.`voucher_no`
+                    
+                    UNION SELECT
+                        `return`.`voucher_type`,
+                        `return`.`voucher_no`,
+                        `return`.`posting_date` AS `posting_date`,
+                        SUM(`return`.`credit_in_account_currency`) 
+                         - SUM(`return`.`debit_in_account_currency`)  AS `credit_note`,
+                        `return`.`account_currency` AS `currency`
+                    FROM `tabGL Entry` AS `return` 
+                    WHERE
+                        `return`.`against_voucher` = "{sinv}" 
+                        AND `return`.`voucher_no` != "{sinv}"
+                        AND `return`.`voucher_type` = "Sales Invoice"
+                        AND `return`.`account` {rec_filter}
+                    GROUP BY `return`.`voucher_no`
+                ) AS `against`
+            ORDER BY `against`.`posting_date` ASC;
+        """.format(sinv=d['voucher_no'], rec_filter=receivable_accounts_filter), as_dict=True)
+        
+        # extend resolving entries (PE, JV, SINV-RET)
+        for a in against_records:
+            enriched.append(a)
+            
+    return enriched
