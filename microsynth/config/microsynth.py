@@ -236,6 +236,12 @@ def get_data():
                        "description": _("Payment Reminder")
                    },
                    {
+                       "type": "doctype",
+                       "name": "Accounting Note",
+                       "label": _("Accounting Note"),
+                       "description": _("Accounting Note")
+                   },
+                   {
                        "type": "report",
                        "name": "Accounts Receivable Microsynth",
                        "label": _("Accounts Receivable Microsynth"),
