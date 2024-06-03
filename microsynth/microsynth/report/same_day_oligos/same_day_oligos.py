@@ -95,6 +95,7 @@ def get_data(filters=None):
                 AND `tabSales Order`.`product_type` = 'Oligos'
                 AND `tabSales Order`.`customer` != '8003'
                 AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
+                {conditions}
         ) AS `order`
         WHERE `order`.`included` > 0 
             AND `order`.`notincluded` = 0
