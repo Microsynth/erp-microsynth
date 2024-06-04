@@ -1,10 +1,10 @@
-# Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import flt
+
 
 def execute(filters=None):
     columns = get_columns()
@@ -14,14 +14,14 @@ def execute(filters=None):
 
 def get_columns():
     columns = [
-        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 95},
+        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": _("Payment Entry"), "fieldname": "payment_entry", "fieldtype": "Link", "options": "Payment Entry", "width": 125},
-        {"label": _("PE Amount"), "fieldname": "payment_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
+        {"label": _("PE Amount"), "fieldname": "payment_amount", "fieldtype": "Currency", "width": 100, 'options': 'currency'},
         {"label": _("Journal Entry"), "fieldname": "journal_entry", "fieldtype": "Link", "options": "Journal Entry", "width": 125},
-        {"label": _("JV Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
-        {"label": _("Account"), "fieldname": "account", "fieldtype": "Link", "options": "Account", "width": 125},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 75},
-        {"label": _("Difference"), "fieldname": "difference", "fieldtype": "Data", "width": 75}
+        {"label": _("JV Amount"), "fieldname": "allocated_amount", "fieldtype": "Currency", "width": 100, 'options': 'currency'},
+        {"label": _("Account"), "fieldname": "account", "fieldtype": "Link", "options": "Account", "width": 300},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 70},
+        {"label": _("Difference"), "fieldname": "difference", "fieldtype": "Data", "width": 85}
     ]
     return columns
 
@@ -30,7 +30,7 @@ def get_data(filters, short=False):
     conditions = ""
     if filters.account:
         conditions += """ AND `tabPayment Entry`.`paid_from` = "{a}" """.format(a=filters.account)
-        
+
     sql_query = """
         SELECT
             *,
@@ -63,9 +63,9 @@ def get_data(filters, short=False):
         ORDER BY `avis_pairs`.`posting_date`
         ;
     """.format(from_date=filters.from_date, to_date=filters.to_date, company=filters.company, conditions=conditions)
-    
+
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     # mark differences
     for d in data:
         difference = (d.get("payment_amount") or 0) + (d.get("allocated_amount") or 0)
@@ -74,5 +74,5 @@ def get_data(filters, short=False):
             d['difference'] = "<span style=\"color: red; \">{:.2f}</span>".format(difference)
         else:
             d['difference'] = "{:.2f}".format(difference)
-            
+
     return data

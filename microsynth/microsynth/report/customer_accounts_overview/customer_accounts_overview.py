@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
@@ -17,18 +18,18 @@ def get_columns():
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 95},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Voucher Type"), "fieldname": "voucher_type", "fieldtype": "Data", "width": 125},
+        {"label": _("Voucher Type"), "fieldname": "voucher_type", "fieldtype": "Data", "width": 100},
         {"label": _("Voucher no"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 125},
         {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 80},
-        {"label": _("Invoiced Amount"), "fieldname": "invoiced_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
+        {"label": _("Invoiced Amount"), "fieldname": "invoiced_amount", "fieldtype": "Currency", "width": 120, 'options': 'currency'},
         {"label": _("Paid Amount"), "fieldname": "paid_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
         {"label": _("Credit Note"), "fieldname": "credit_note", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
-        {"label": _("Outstanding Amount"), "fieldname": "outstanding_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 100},
-        {"label": _("Customer PO"), "fieldname": "customer_po", "fieldtype": "Data", "width": 100},
+        {"label": _("Outstanding Amount"), "fieldname": "outstanding_amount", "fieldtype": "Currency", "width": 135, 'options': 'currency'},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
+        {"label": _("Customer PO"), "fieldname": "customer_po", "fieldtype": "Data", "width": 150},
         #{"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 100},
         #{"label": _("Customer Group"), "fieldname": "customer_group", "fieldtype": "Link", "options": "Customer Group", "width": 100},
-        {"label": _("Invoice Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 100}
+        {"label": _("Invoice Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 115}
     ]
     return columns
 
@@ -42,7 +43,7 @@ def get_data(filters, short=False):
     elif filters.search_type == "Customer IDs":
         customer_ids = (filters.customer or "").replace(" ", "").split(",")
         customer_matching_query = """ AND `tabSales Invoice`.`customer` IN ("{s}") """.format(s='", "'.join(customer_ids))
-    
+
     receivable_accounts = []
     for a in frappe.get_all("Account", 
             filters={
@@ -54,7 +55,7 @@ def get_data(filters, short=False):
         ):
         receivable_accounts.append(a['name'])
     receivable_accounts_filter = """ IN ("{0}") """.format('", "'.join(receivable_accounts))
-    
+
     sql_query = """
         SELECT
             0 AS `indent`,
@@ -99,16 +100,16 @@ def get_data(filters, short=False):
         matching_query=customer_matching_query,
         rec_filter=receivable_accounts_filter
         )
-    
+
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     enriched = []
-    
+
     for d in data:
         d['outstanding_amount'] = flt(d['invoiced_amount']) - flt(d['paid_amount']) - flt(d['credit_note'])
         # insert receivable (sales invoice) node
         enriched.append(d)
-        
+
         # find against transactions
         against_records = frappe.db.sql("""
             SELECT
@@ -129,7 +130,7 @@ def get_data(filters, short=False):
                         AND `credit`.`voucher_type` != "Sales Invoice"
                         AND `credit`.`account` {rec_filter}
                     GROUP BY `credit`.`voucher_no`
-                    
+                
                     UNION SELECT
                         `return`.`voucher_type`,
                         `return`.`voucher_no`,
@@ -147,9 +148,9 @@ def get_data(filters, short=False):
                 ) AS `against`
             ORDER BY `against`.`posting_date` ASC;
         """.format(sinv=d['voucher_no'], rec_filter=receivable_accounts_filter), as_dict=True)
-        
+
         # extend resolving entries (PE, JV, SINV-RET)
         for a in against_records:
             enriched.append(a)
-            
+
     return enriched
