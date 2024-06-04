@@ -564,7 +564,7 @@ def request_quote(content, client="webshop"):
         'item_name': express_shipping.item_name,
         'qty': 1,
         'rate': express_shipping.rate
-    })    
+    })
     # append taxes
     category = "Service"
     if 'oligos' in content and len(content['oligos']) > 0:
@@ -575,6 +575,15 @@ def request_quote(content, client="webshop"):
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
         for t in taxes_template.taxes:
             qtn_doc.append("taxes", t)
+    # check for service specifications
+    service_specifications = []
+    for i in qtn_doc.items:
+        item_service_specification = frappe.get_value("Item", i.item_code, "service_specification")
+        if item_service_specification and item_service_specification not in service_specifications:
+            service_specifications.append(item_service_specification)
+    if len(service_specifications) > 0:
+        qtn_doc.service_specification = "<h3>Service Specification</h3>" + "".join(service_specifications)
+    # insert new quotation
     try:
         qtn_doc.insert(ignore_permissions=True)
         # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
