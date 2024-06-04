@@ -123,6 +123,13 @@ function first_barcode_dialog() {
                     'default': locals.label_queue[0].qty + "x " + locals.label_queue[0].item_code + ": " + locals.label_queue[0].item_name
                 },
                 {
+                    'fieldname': 'prefix', 
+                    'fieldtype': 'Data', 
+                    'label': 'Prefix',
+                    'read_only': 1, 
+                    'default': locals.label_queue[0].prefix
+                },
+                {
                     'fieldname': 'range', 
                     'fieldtype': 'Data', 
                     'label': 'Range', 
@@ -133,17 +140,21 @@ function first_barcode_dialog() {
             function (values) {
                 // validation: if it fails, leave status on 0 and continue, on success move to 1
                 var validated = false;
-                var from_barcode = Number(values.from_barcode.replace(/\s+/g, ''));
+                // delete spaces and numbers to get the prefix
+                var prefix = values.from_barcode.replace(/\s+/g, '').replace(/[0-9]/g, '');
+                // delete spaces and letters to get from_barcode as number
+                var from_barcode = Number(values.from_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, ''));
+                //frappe.show_alert("Prefix = " + prefix + "; from_barcode = " + from_barcode);
                 var to_barcode = from_barcode + Number(locals.label_queue[0].qty) - 1;
                 
-                validated = is_in_range(locals.label_queue[0].range, from_barcode);
+                validated = is_in_range(locals.label_queue[0].range, from_barcode)
+                            && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
                 
                 if (validated) {
                     locals.label_queue[0].status = 1;
                 }
-                else
-                {
-                    frappe.msgprint("invalid barcode range");
+                else {
+                    frappe.msgprint("invalid barcode range or invalid prefix");
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
                 
@@ -183,6 +194,13 @@ function second_barcode_dialog() {
                     'default': locals.label_queue[0].qty + "x " + locals.label_queue[0].item_code + ": " + locals.label_queue[0].item_name
                 },
                 {
+                    'fieldname': 'prefix', 
+                    'fieldtype': 'Data', 
+                    'label': 'Prefix',
+                    'read_only': 1, 
+                    'default': locals.label_queue[0].prefix
+                },
+                {
                     'fieldname': 'range', 
                     'fieldtype': 'Data', 
                     'label': 'Range', 
@@ -194,25 +212,28 @@ function second_barcode_dialog() {
                     'fieldtype': 'Data', 
                     'label': 'From barcode', 
                     'read_only': 1, 
-                    'default': locals.label_queue[0].from_barcode
+                    'default': locals.label_queue[0].prefix + locals.label_queue[0].from_barcode
                 }
             ],
             function (values) {
                 // validation: if it fails, leave status on 0 and continue, on success move to 1
                 var validated = false;
-                var to_barcode = Number(values.to_barcode.replace(/\s+/g, ''))
+                // delete spaces and numbers to get prefix
+                var prefix = values.to_barcode.replace(/\s+/g, '').replace(/[0-9]/g, '');
+                // delete spaces and letters to get to_barcode as number
+                var to_barcode = Number(values.to_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, ''));
                 
                 validated = 
                     is_in_range(locals.label_queue[0].range, to_barcode)
-                    && to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1;
+                    && to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1
+                    && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
                 
                 if (validated) {
                     frappe.show_alert("Barcodes OK");
                     locals.label_queue[0].status = 2;
                 }
-                else
-                {
-                    frappe.msgprint("invalid barcode range");
+                else {
+                    frappe.msgprint("invalid barcode range or invalid prefix");
                 }
                 locals.label_queue[0].to_barcode = to_barcode;
                 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -10,10 +10,12 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from microsynth.microsynth.naming_series import get_naming_series
 from datetime import datetime
 
+
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
+
 
 def get_columns():
     return [
@@ -28,8 +30,10 @@ def get_columns():
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Integer", "width": 50},
         # {"label": _("Range"), "fieldname": "range", "fieldtype": "Data", "width": 80},
+        # {"label": _("Prefix"), "fieldname": "prefix", "fieldtype": "Data", "width": 60},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
     ]
+
 
 @frappe.whitelist()
 def get_data(filters=None):
@@ -54,6 +58,7 @@ def get_data(filters=None):
             `tabSales Order Item`.`item_name` AS `item_name`,
             `tabSales Order Item`.`qty` AS `qty`,
             `tabLabel Range`.`range` AS `range`,
+            `tabLabel Range`.`prefix` AS `prefix`,
             `tabSales Order`.`comment` AS `comment`
         FROM `tabSales Order`
         LEFT JOIN `tabSales Order Item` ON
@@ -75,8 +80,10 @@ def get_data(filters=None):
     
     return open_label_orders
 
+
 ASSIGNMENT_HEADER = """Person_ID\tSales_Order\tWeb_Order_ID\tItem\tStart\tEnd\n"""
 ASSIGNMENT_FIELDS = """{person_id}\t{sales_order}\t{web_order_id}\t{item}\t{start}\t{end}\n"""
+
 
 def write_assignment_file(data):
     path = frappe.get_value("Sequencing Settings", "Sequencing Settings", "label_export_path")
@@ -108,7 +115,7 @@ def write_assignment_file(data):
 #     """
 #     number_of_labels = int(to_barcode) - int(from_barcode)
 #     if number_of_labels >= 5000:
-#         timeout = int(number_of_labels // 10)  # Assume that mare than ten Labels can be processed per second
+#         timeout = int(number_of_labels // 10)  # Assume that more than ten Labels can be processed per second
 #         frappe.enqueue(method=pick_labels, queue='long', timeout=timeout, is_async=True, job_name='pick_labels',
 #                     sales_order=sales_order,
 #                     from_barcode=from_barcode,
@@ -130,6 +137,15 @@ def pick_labels(sales_order, from_barcode, to_barcode):
         WHERE `parent` = "{sales_order}"
         ORDER BY `idx` ASC
         LIMIT 1;""".format(sales_order=sales_order), as_dict=True)[0]['item_code']
+    # get prefix from Label Range
+    prefixes = frappe.db.sql(f"""SELECT `prefix`
+        FROM `tabLabel Range`
+        WHERE `item_code` = "{item}";
+        """, as_dict=True)
+    if len(prefixes) > 0:
+        prefix = prefixes[0]['prefix']
+    else:
+        prefix = ''
     company = frappe.get_value("Sales Order", sales_order, "company")
     customer = frappe.get_value("Sales Order", sales_order, "customer")
     customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
@@ -141,7 +157,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
         new_label = frappe.get_doc({
             'doctype': 'Sequencing Label',
             'item': item,
-            'label_id': str(i),
+            'label_id': prefix + str(i),
             'sales_order': sales_order,
             'customer': customer,
             'customer_name': customer_name,
@@ -150,20 +166,20 @@ def pick_labels(sales_order, from_barcode, to_barcode):
             'registered_to': contact if register_labels else None
         }).insert()
     frappe.db.commit()
-    
+
     # create delivery note
     dn_content = make_delivery_note(sales_order)
 
     ## TODO: Consider moving this test before creating the Sequencing Labels
     if len(dn_content.items) == 0:
         frappe.throw(f"Cannot create Delivery Note for {sales_order}. There are no Items left to deliver.")
-    
+
     dn = frappe.get_doc(dn_content)
     dn.naming_series = get_naming_series("Delivery Note", company)
     dn.insert()
     dn.submit()
     frappe.db.commit()
-    
+
     assignment_data = {
             "person_id": contact,
             "sales_order": sales_order,
@@ -175,11 +191,11 @@ def pick_labels(sales_order, from_barcode, to_barcode):
     write_assignment_file(assignment_data)
     # print address label
     # TODO: see labels.py, take data from delivery note and pass to printer
-    
+
     # reset flag to prevent running duplicate
     frappe.db.set_value("Sequencing Settings", "Sequencing Settings", "flag_picking_labels", None)
     frappe.db.commit()
-    
+
     # return print format
     return dn.name
 
@@ -193,7 +209,7 @@ def are_labels_available(item_code, from_barcode, to_barcode):
           AND `label_id` BETWEEN "{from_barcode}" AND "{to_barcode}"
           AND LENGTH(`label_id`) = "{length}";
     """.format(item_code=item_code, from_barcode=from_barcode, to_barcode=to_barcode, length=len(from_barcode)), as_dict=True)
-    
+
     if len(conflicts) == 0:
         return 1
     else:
@@ -210,5 +226,4 @@ def picking_ready():
         flag = datetime.strptime(flag, "%Y-%m-%d %H:%M:%S")
     if (datetime.now() - flag).total_seconds() > 300:
         return True
-    return False 
-    
+    return False
