@@ -8,10 +8,10 @@
   "date",
   "account",
   "amount",
-  "currency",
   "col_main_1",
   "reference_doctype",
   "reference_name",
+  "currency",
   "col_main_2",
   "status",
   "naming_series",
@@ -76,6 +76,7 @@
   },
   {
    "bold": 1,
+   "description": "Short summary or observation",
    "fieldname": "note",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -84,6 +85,7 @@
    "reqd": 1
   },
   {
+   "description": "Optional, detailed description or proceedings",
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
@@ -92,6 +94,7 @@
    "default": "AN-.YY.####",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Naming Series",
    "options": "AN-.YY.####"
   },
@@ -121,7 +124,7 @@
    "options": "reference_doctype"
   }
  ],
- "modified": "2024-05-31 21:30:05.962897",
+ "modified": "2024-06-04 09:27:54.434734",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Accounting Note",
