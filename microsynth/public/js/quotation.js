@@ -1,6 +1,12 @@
 frappe.ui.form.on('Quotation Item', {
     qty(frm, cdt, cdn) {
         fetch_price_list_rate(frm, cdt, cdn);
+    },
+    item_code(frm, cdt, cdn) {
+        var row = locals[cdt][cdn];
+        if (row.item_code) {
+            pull_item_service_specification(row.item_code);
+        }
     }
 });
 
@@ -52,10 +58,10 @@ frappe.ui.form.on('Quotation', {
         
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
-			frm.add_custom_button(__("Force Cancel"), function() {
-				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
-			});
-		}
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
     },
     
     before_save(frm) {
@@ -98,6 +104,29 @@ function assert_customer_fields(frm) {
                 if (customer.territory) { cur_frm.set_value("territory", customer.territory); }
                 if (customer.default_currency) { cur_frm.set_value("currency", customer.default_currency); }
                 if (customer.default_price_list) {cur_frm.set_value("selling_price_list", customer.default_price_list); }
+            }
+        });
+    }
+}
+
+/* load the item and fetch its service specification if available */
+function pull_item_service_specification(item_code) {
+    if (item_code) {
+        frappe.call({
+            'method': "frappe.client.get",
+            'args': {
+                'doctype': "Item",
+                'name': item_code
+            },
+            'callback': function(r) {
+                var item = r.message;
+                if (item.service_specification) {
+                    if ((cur_frm.doc.service_specification) && (!cur_frm.doc.service_specification.includes(item.service_specification))) {
+                        cur_frm.set_value("service_specification", cur_frm.doc.service_specification /* + "<p>&nbsp;</p>" */ + item.service_specification);
+                    } else {
+                        cur_frm.set_value("service_specification", "<h3>Service Specification</h3>" + item.service_specification);
+                    }
+                }
             }
         });
     }
