@@ -162,6 +162,4 @@ def transmit_payment_reminder(self, event):
     if self.highest_level > 3 or frappe.get_value("Customer", self.customer, "invoicing_method") == "Post":
         print_payment_reminder(self)
     else:
-        frappe.log_error("going to sent email", "going to sent email")
         send_prm_email(self)
-        frappe.log_error("sent email", "sent email")
