@@ -563,7 +563,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240515_TestData_ERP_Migration.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240604_ERP_Migration_2.1_2.3_5.csv'}"
     """
     import csv
 
@@ -612,7 +612,14 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
             secret = doc_id_old[-1] == '*'
             # Get fitting QM Process
-            if parts['chapter'] and parts['chapter'] != '00':  #process_number == 5 and subprocess_number == 3:
+            if parts['process_number'] == 5 and parts['subprocess_number'] == 3 and chapter and chapter != 'NA':
+                # Only Process 5.3 has a chapter (5.3.1 or 5.3.2)
+                qm_processes = frappe.get_all("QM Process", filters=[
+                    ['process_number', '=', parts['process_number']],
+                    ['subprocess_number', '=', parts['subprocess_number']],
+                    ['chapter', '=', chapter]
+                    ], fields=['name'])
+            elif parts['chapter'] and parts['chapter'] != '00':
                 qm_processes = frappe.get_all("QM Process", filters=[
                     ['process_number', '=', parts['process_number']],
                     ['subprocess_number', '=', parts['subprocess_number']],
@@ -624,13 +631,6 @@ def import_qm_documents(file_path, expected_line_length=24):
                     ['subprocess_number', '=', parts['subprocess_number']],
                     ['all_chapters', '=', 1]],
                     fields=['name'])
-
-            if len(qm_processes) != 1 and parts['process_number'] == 5 and parts['subprocess_number'] == 3:  # Only Process 5.3 has a chapter (5.3.1 or 5.3.2)
-                qm_processes = frappe.get_all("QM Process", filters=[
-                    ['process_number', '=', parts['process_number']],
-                    ['subprocess_number', '=', parts['subprocess_number']],
-                    ['chapter', '=', parts['chapter']]
-                    ], fields=['name'])
 
             if len(qm_processes) == 0:
                 process_name = f"{parts['process_number']}.{parts['subprocess_number']}"
