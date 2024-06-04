@@ -184,13 +184,15 @@ frappe.ui.form.on('QM Document', {
                     && (frm.doc.reviewed_on) 
                     && (frm.doc.reviewed_by)
                     && (frappe.session.user != frm.doc.reviewed_by)))) {  // releaser needs to be different from reviewer
-            // add release button
-            cur_frm.page.set_primary_action(
-                __("Release"),
-                function() {
-                    release();
-                }
-            );
+            if (requires_review || frappe.session.user != frm.doc.created_by) {  // releaser needs to be different from creator if no review is required
+                // add release button
+                cur_frm.page.set_primary_action(
+                    __("Release"),
+                    function() {
+                        release();
+                    }
+                );
+            }            
             // add reject button
             cur_frm.page.set_secondary_action(
                 __("Reject"),
