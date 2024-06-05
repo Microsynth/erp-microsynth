@@ -470,7 +470,8 @@ def parse_doc_id(doc_id, title):
     """
     space_separated_parts = doc_id.split(' ')
     if len(space_separated_parts) != 2:
-        print(f"{doc_id};{title};contains more or less than one space, but expected exactly one space between type of document and the rest of the document ID according to the QMH.")
+        print(f"{doc_id};{title};contains more or less than one space, but expected exactly one space "
+              f"between type of document and the rest of the document ID according to the QMH.")
         return None
     doc_type = space_separated_parts[0]
     numbers = space_separated_parts[-1].split('.')
@@ -483,20 +484,23 @@ def parse_doc_id(doc_id, title):
             chapter = numbers[2]
             document_number = numbers[3].replace('*','')
         else:
-            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, "
+                  f"but expected {doc_type} to have four numbers separated by a dot according to QMH.")
             return None
     elif doc_type in ['PROT']:  # Code 2
         if len(numbers) == 4:
             date = numbers[2]
             document_number = numbers[3].replace('*','')
         else:
-            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have four numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, "
+                  f"but expected {doc_type} to have four numbers separated by a dot according to QMH.")
             return None
     elif doc_type in ['LIST', 'FORM', 'FLOW', 'FLUDI', 'CL', 'VERF', 'OFF']:  # Code 3
         if len(numbers) == 3:
             document_number = numbers[2].replace('*','')
         else:
-            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, but expected {doc_type} to have three numbers separated by a dot according to QMH.")
+            print(f"{doc_id};{title};has {len(numbers)} part(s) separated by a dot after the rightmost space, "
+                  f"but expected {doc_type} to have three numbers separated by a dot according to QMH.")
             return None
     else:
         print(f"{doc_id};{title};First part of Document ID is '{doc_type}' and not a valid type of document according to the QMH.")
@@ -506,7 +510,8 @@ def parse_doc_id(doc_id, title):
         process_number = int(numbers[0])
         subprocess_number = int(numbers[1])
     except Exception as err:
-        print(f"{doc_id};{title};Unable to convert process number '{process_number}' or subprocess_number '{subprocess_number}' to an integer. Going to continue. Error = '{err}'")
+        print(f"{doc_id};{title};Unable to convert process number '{process_number}' or subprocess_number "
+              f"'{subprocess_number}' to an integer. Going to continue. Error = '{err}'")
         return None
     if chapter:
         # try to convert chapter to int
@@ -563,7 +568,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240604_ERP_Migration_2.1_2.3_5.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240605_ERP_Migration_2.1_2.3_5.csv'}"
     """
     import csv
 
@@ -610,6 +615,10 @@ def import_qm_documents(file_path, expected_line_length=24):
                                       released_on, released_by, last_revision_on, last_revision_by, valid_from, file_path, file_path_2)
             if not version:
                 continue
+            if parts['chapter'] and parts['chapter'] != chapter:
+                print(f"{doc_id_new};{title};The chapter ({parts['chapter']}) parsed from the Document ID "
+                      f"is unequals the chapter ({chapter}) given in the column 'Chapter'. Going to continue.")
+                continue
             secret = doc_id_old[-1] == '*'
             # Get fitting QM Process
             if parts['process_number'] == 5 and parts['subprocess_number'] == 3 and chapter and chapter != 'NA':
@@ -635,8 +644,8 @@ def import_qm_documents(file_path, expected_line_length=24):
             if len(qm_processes) == 0:
                 process_name = f"{parts['process_number']}.{parts['subprocess_number']}"
                 qm_processes.append({'name': process_name})
-                print(f"{doc_id_new};{title};Found no QM Process with process_number={parts['process_number']} and subprocess_number={parts['subprocess_number']}. "
-                      f"Going to set Process of QM Document to '{process_name}'.")
+                print(f"{doc_id_new};{title};Found no QM Process with process_number={parts['process_number']} and "
+                      f"subprocess_number={parts['subprocess_number']}. Going to set Process of QM Document to '{process_name}'.")
             elif len(qm_processes) > 1:
                 print(f"{doc_id_new};{title};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
                       f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to take the first QM Process.")
