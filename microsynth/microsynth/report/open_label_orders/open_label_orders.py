@@ -143,7 +143,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
         WHERE `item_code` = "{item}";
         """, as_dict=True)
     if len(prefixes) > 0:
-        prefix = prefixes[0]['prefix']
+        prefix = prefixes[0]['prefix'] or ''
     else:
         prefix = ''
     company = frappe.get_value("Sales Order", sales_order, "company")
@@ -157,7 +157,7 @@ def pick_labels(sales_order, from_barcode, to_barcode):
         new_label = frappe.get_doc({
             'doctype': 'Sequencing Label',
             'item': item,
-            'label_id': prefix + str(i),
+            'label_id': prefix + str(i) if prefix else str(i),
             'sales_order': sales_order,
             'customer': customer,
             'customer_name': customer_name,
