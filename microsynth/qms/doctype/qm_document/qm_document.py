@@ -645,10 +645,12 @@ def import_qm_documents(file_path, expected_line_length=24):
                 process_name = f"{parts['process_number']}.{parts['subprocess_number']}"
                 qm_processes.append({'name': process_name})
                 print(f"{doc_id_new};{title};Found no QM Process with process_number={parts['process_number']} and "
-                      f"subprocess_number={parts['subprocess_number']}. Going to set Process of QM Document to '{process_name}'.")
+                      f"subprocess_number={parts['subprocess_number']}. Going to continue.")
+                continue
             elif len(qm_processes) > 1:
                 print(f"{doc_id_new};{title};Found the following {len(qm_processes)} QM Processes with process_number={parts['process_number']} and "
-                      f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to take the first QM Process.")
+                      f"subprocess_number={parts['subprocess_number']}: {qm_processes}. Going to continue.")
+                continue
 
             # reformat date from dd.mm.yyyy to yyyy-mm-dd
             given_date_format = "%d.%m.%Y"
@@ -663,6 +665,9 @@ def import_qm_documents(file_path, expected_line_length=24):
             else:
                 print(f"{doc_id_new};{title};Version '{version}' seems to be not between 1 and 99.")
 
+            if '*' in import_name:
+                print(f"{doc_id_new};{title};Column 'Document ID NEW' should not contain any '*', but import_name = '{import_name}'. Going to continue.")
+                continue
             # Create QM Document
             qm_doc = frappe.get_doc({
                 'doctype': "QM Document",
