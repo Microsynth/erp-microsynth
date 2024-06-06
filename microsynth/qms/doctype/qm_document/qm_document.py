@@ -725,3 +725,39 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
 
     print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
+
+
+def fix_chapters(file_path):
+    """
+    bench execute microsynth.qms.doctype.qm_document.qm_document.fix_chapters --kwargs "{'file_path': '/mnt/erp_share/JPe/240606_Chapters_to_fix_1.3_1.4.csv'}"
+    """
+    import csv
+    counter = 0
+    with open(file_path) as file:
+        print(f"Parsing Chapter fixes from '{file_path}' ...")
+        csv_reader = csv.reader(file, delimiter=";")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 4:
+                print(f"Line '{line}' has length {len(line)}, but expected length 4. Going to continue.")
+                continue
+            qm_doc_name = line[1]
+            try:
+                chapter = int(line[2])
+                version = int(line[3])
+            except Exception as err:
+                print(f"{qm_doc_name}: Unable to convert chapter '{line[2]}' or '{line[3]}' to an integer. Going to continue. {err=}")
+                continue
+            
+            if frappe.db.exists("QM Document", qm_doc_name):
+                doc_version = frappe.db.get_value("QM Document", qm_doc_name, "version")
+                if version != doc_version:
+                    print(f"{qm_doc_name}: Version in the parsed table ('{version}') is unequals the version on the QM Document in the ERP ('{doc_version}'). Going to continue.")
+                    continue
+                frappe.db.set_value("QM Document", qm_doc_name, "chapter", chapter, update_modified = False)
+                frappe.db.commit()
+                print(f"Successfully updated {qm_doc_name} to chapter {chapter}.")
+                counter += 1
+            else:
+                print(f"Unable to find '{qm_doc_name}' in the ERP. Going to continue.")
+    print(f"Updated {counter} QM Documents.")
