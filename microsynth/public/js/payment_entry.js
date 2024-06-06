@@ -4,7 +4,7 @@ frappe.ui.form.on('Payment Entry', {
     refresh(frm) {
         check_display_unallocated_warning(frm);
 
-        	    /* add auto deduction buttons */
+        /* add auto deduction buttons */
         if (frm.doc.docstatus === 0) {
 
             frm.add_custom_button(__("Aufwand"), function() {
@@ -23,7 +23,7 @@ frappe.ui.form.on('Payment Entry', {
             frm.add_custom_button(__("Löhne"), function() {
                 salaries(frm);
             }, __("Ausbuchen"));
-		    frm.add_custom_button(__("Aufwand"), function() {
+            frm.add_custom_button(__("Aufwand"), function() {
                 expense(frm);
             }, __("Ausbuchen"));
             frm.add_custom_button(__("Umsatzsteuerabzug"), function() {
@@ -52,14 +52,14 @@ frappe.ui.form.on('Payment Entry', {
         /* filter: only show invoices with outstanding amount (#14045) */
         frm.fields_dict.references.grid.get_field('reference_name').get_query =
           function() {
-    	    return {
+            return {
                     filters: [
                         ["outstanding_amount", "!=", "0"],
                         ["docstatus", "=", 1],
                         [frm.doc.party_type.toLowerCase(), "=", frm.doc.party],
                         ["company", "=", frm.doc.company]
-    	        ]
-    	    };
+                ]
+            };
           };
     },
     unallocated_amount(frm) {
@@ -90,12 +90,12 @@ frappe.ui.form.on('Payment Entry', {
             }
         }
     },
-	paid_amount: function(frm) {
-	    /* check and assert camt amount */
+    paid_amount: function(frm) {
+        /* check and assert camt amount */
         if ((frm.doc.camt_amount) && (frm.doc.ignore_camt === 0) && (frm.doc.paid_amount != frm.doc.camt_amount)) {
             frm.set_value("paid_amount", frm.doc.camt_amount);
         }
-	}
+    }
 });
 
 function check_display_unallocated_warning(frm) {
@@ -133,9 +133,9 @@ function quick_expense(frm) {
     frappe.call({
         'method':"microsynth.microsynth.utils.deduct_and_close",
         'args':{
-         	'payment_entry': frm.doc.name,
-         	'account': locals.account_matrix[frm.doc.company].expense,
-         	'cost_center': locals.cost_center_matrix[frm.doc.company]
+            'payment_entry': frm.doc.name,
+            'account': locals.account_matrix[frm.doc.company].expense,
+            'cost_center': locals.cost_center_matrix[frm.doc.company]
         },
         'callback': function(response) {
             window.close();
@@ -227,11 +227,11 @@ function get_exchange_rate(frm) {
     frappe.call({
         'method':"frappe.client.get_list",
         'args':{
-         	'doctype':"Currency Exchange",
-         	'filters': [
-         	    ["from_currency","=", frm.doc.paid_from_account_currency],
-         	    ["date", "<=", frm.doc.posting_date]
-         	],
+            'doctype':"Currency Exchange",
+            'filters': [
+                ["from_currency","=", frm.doc.paid_from_account_currency],
+                ["date", "<=", frm.doc.posting_date]
+            ],
             'fields': ["exchange_rate"]
         },
         'callback': function(response) {
