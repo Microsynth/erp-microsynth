@@ -1,7 +1,9 @@
+/* this script requires locals.account_matrix and locals.cost_center_matrix */
 /* Custom script extension for Sales Order */
 frappe.ui.form.on('Payment Entry', {
     refresh(frm) {
         check_display_unallocated_warning(frm);
+        
     },
     unallocated_amount(frm) {
         check_display_unallocated_warning(frm);

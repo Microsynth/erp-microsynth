@@ -8,5 +8,10 @@ frappe.ui.form.on('Address', {
                 }
             });
         }
+    },
+    refresh(frm) {
+        frm.add_custom_button(__("Fancy?"), function() {
+            alert(locals.my_fancy_variable);
+        });
     }
 });
