@@ -282,6 +282,22 @@ def close_invoice_against_expense(sales_invoice, account):
     return jv.name
 
 
+@frappe.whitelist()
+def create_full_return(sales_invoice):
+    from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+    from microsynth.microsynth.naming_series import get_naming_series
+
+    credit_note = frappe.get_doc(make_sales_return(sales_invoice)) 
+    credit_note.naming_series = get_naming_series("Credit Note", credit_note.company)
+    credit_note.remaining_customer_credit = None
+    credit_note.insert()
+    credit_note.submit()
+
+    frappe.db.commit()
+
+    return credit_note.name
+
+
 def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     """
     Debug function to find customer credit transactions per day

@@ -97,11 +97,13 @@ frappe.ui.form.on('Sales Invoice', {
             clear_credits(frm);
         }
         
-        // prevent credit notes if a customer credit has been applied 
-        // Note: use cancel - amend instead, otherwise the return is not included in the customer credit ledger
+        // Allow to create only full credit notes with custom function if a customer credit has been applied.
         if ((frm.doc.docstatus === 1) && (frm.doc.is_return === 0) && (frm.doc.total_customer_credit > 0)) {
             setTimeout(function() {
                 cur_frm.remove_custom_button(__("Return / Credit Note"), __("Create"));
+                cur_frm.add_custom_button(__("Full Return / Credit Note"), function() {
+                    full_return(cur_frm);
+                }, __("Create"))
             }, 500);
         }
         // clean up the create menu (obsolete functions in the current process landscape)
@@ -113,10 +115,10 @@ frappe.ui.form.on('Sales Invoice', {
         
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
-			frm.add_custom_button(__("Force Cancel"), function() {
-				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
-			});
-		}
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -179,6 +181,28 @@ function clone(frm) {
         {
             frappe.set_route("Form", "Sales Invoice", r.message)
         }
+    });
+}
+
+
+function full_return(frm) {
+    frappe.confirm('Are you sure you want to create a <b>submitted</b> Return / Credit Note against<br>' + frm.doc.name + '?',
+    () => {
+        frappe.call({
+            'method': "microsynth.microsynth.credits.create_full_return",
+            'args': {
+                'sales_invoice': frm.doc.name
+            },
+            'freeze': true,
+            'freeze_message': __("Creating full credit note..."), 
+            'callback': function(r)
+            {
+                cur_frm.reload_doc();
+                frappe.show_alert( __("A Return has been created. Please create a new Invoice.") );
+            } 
+        })
+    }, () => {
+        frappe.show_alert('Did not create a Return / Credit Note');
     });
 }
 
