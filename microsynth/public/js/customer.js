@@ -67,6 +67,15 @@ frappe.ui.form.on('Customer', {
                 create_payment_reminder(frm);
             }, __("Create") );
         }
+        if ((!frm.doc.__islocal)
+            && ['ARIBA', 'Paynet', 'GEP', 'Chorus', 'X-Rechnung', 'Scientist'].includes(frm.doc.invoicing_method)
+            && (!frm.doc.invoice_network_id)) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'orange',
+                message: __("Please set the Invoice Network ID or select an Invoicing Method that does not require an Invoice Network ID.")
+            });
+        }
     },
     validate(frm) {
         if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to) && (!frm.doc.disabled)) {
