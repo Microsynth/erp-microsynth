@@ -32,7 +32,7 @@ def create_training_record(trainee, dt, dn, due_date):
         'doctype': "QM Training Record",
         'name': record.name,
         'assign_to': trainee,
-        #'description': f"Dear User, you have been assigned to ... Please ...",
+        'description': "You are welcome to attend the document training.",
         'notify': True
     })
 

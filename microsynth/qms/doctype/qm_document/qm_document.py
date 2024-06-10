@@ -268,7 +268,8 @@ def assign_after_review(qm_document, description=None):
         'doctype': "QM Document",
         'name': qm_document,
         'assign_to': frappe.get_value("QM Document", qm_document, "created_by"),
-        'description': description or f"Your QM Document '{qm_document}' has been reviewed."
+        'description': description or f"Your QM Document '{qm_document}' has been reviewed.",
+        'notify': True
     })
     return
 
