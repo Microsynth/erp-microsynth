@@ -1849,6 +1849,130 @@ def check_new_customers_taxid(delta_days=7):
         #print(message.replace('<br>','\n'))
 
 
+def find_same_ext_dnr_diff_taxid():
+    """
+    For each External Debitor Number: If there are Customers with this External Debitor Number but different Tax IDs,
+    the Tax IDs get printed together with the Customer ID and Customer Name.
+
+    bench execute microsynth.microsynth.utils.find_same_ext_dnr_diff_taxid
+    """
+    sql_query = """
+        SELECT `tabCustomer`.`name`,
+            `tabCustomer`.`customer_name`,
+            `tabCustomer`.`ext_debitor_number`,
+            `tabCustomer`.`tax_id`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`default_company` IN ('Microsynth Seqlab GmbH', 'Microsynth Austria GmbH')
+            AND `tabCustomer`.`disabled` = 0;
+    """
+    customers = frappe.db.sql(sql_query, as_dict=True)
+    ext_debitor_numbers = set()
+    same_ext_dnr_diff_taxid = {}
+    chaos_counter = 0
+
+    for c in customers:
+        if c['ext_debitor_number']:
+            ext_debitor_numbers.add(c['ext_debitor_number'])
+    
+    print(f"There are {len(ext_debitor_numbers)} different External Debitor Numbers of enabled Customers "
+          f"with Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.")
+
+    for i, ext_debitor_number in enumerate(ext_debitor_numbers):
+        #print(i)
+        same_ext_debitor_number = frappe.db.get_all("Customer",
+                                                    filters=[['ext_debitor_number', '=', ext_debitor_number],
+                                                            ['disabled', '=', '0']],
+                                                    fields=['name', 'customer_name', 'tax_id', 'ext_debitor_number'])
+        if len(same_ext_debitor_number) == 0:
+            continue
+        first_tax_id = None
+        for c in same_ext_debitor_number:
+            if c['tax_id']:
+                first_tax_id = c['tax_id']
+        if not first_tax_id:
+            continue
+
+        for c in same_ext_debitor_number:
+            if c['tax_id'] and c['tax_id'] != first_tax_id:
+                if not ext_debitor_number in same_ext_dnr_diff_taxid:
+                    same_ext_dnr_diff_taxid[ext_debitor_number] = same_ext_debitor_number
+                    chaos_counter += 1
+                break
+
+    for ext_deb_nr, entry in same_ext_dnr_diff_taxid.items():
+        if not ext_deb_nr:
+            continue
+        print(f"\nExternal Debitor Number '{ext_deb_nr}':")
+        for cust in entry:
+            if cust['tax_id']:
+                print(f"Tax ID '{cust['tax_id']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
+    
+    print(f"\nThere are {chaos_counter}/{len(ext_debitor_numbers)} External Debitor Numbers "
+          f"({(chaos_counter / len(ext_debitor_numbers)) * 100:.2f} %) "
+          f"where the Customers have different Tax IDs.")
+
+
+def complement_ext_debitor_nr():
+    """
+    Should be run by a daily cron job.
+
+    bench execute microsynth.microsynth.utils.complement_ext_debitor_nr
+    """
+    sql_query = """SELECT `tabCustomer`.`name`,
+            `tabCustomer`.`customer_name`,
+            `tabCustomer`.`tax_id`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`default_company` IN ('Microsynth Seqlab GmbH', 'Microsynth Austria GmbH')
+            AND `tabCustomer`.`ext_debitor_number` IS NULL
+            AND `tabCustomer`.`disabled` = 0;
+    """
+    customers = frappe.db.sql(sql_query, as_dict=True)
+    same_tax_id_diff_ext_dnr = {}
+    counter = chaos_counter = 0
+    print(f"Found {len(customers)} enabled Customers with missing ext_debitor_number and "
+          f"Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.\n")
+    for customer in customers:
+        same_tax_id = frappe.db.get_all("Customer",
+                                filters=[['ext_debitor_number', '!=', 'NULL'],  # seems not to work
+                                         ['tax_id', '=', customer['tax_id']],
+                                         ['disabled', '=', '0']],
+                                fields=['name', 'customer_name', 'ext_debitor_number'])
+        if len(same_tax_id) == 0:
+            continue
+        first_ext_debitor_nr = None
+        for c in same_tax_id:
+            if c['ext_debitor_number']:
+                first_ext_debitor_nr = c['ext_debitor_number']
+        if not first_ext_debitor_nr:
+            continue
+        same_ext_debitor_number = True
+        for c in same_tax_id:
+            if c['ext_debitor_number'] and c['ext_debitor_number'] != first_ext_debitor_nr:
+                if not customer['tax_id'] in same_tax_id_diff_ext_dnr:
+                    same_tax_id_diff_ext_dnr[customer['tax_id']] = same_tax_id
+                same_ext_debitor_number = False
+                chaos_counter += 1
+                break
+        if same_ext_debitor_number and first_ext_debitor_nr:
+            print(f"Going to set External Debitor Number of Customer '{customer['name']}' ('{customer['customer_name']}') to '{first_ext_debitor_nr}' "
+                f"from Customer '{same_tax_id[0]['name']}' ('{same_tax_id[0]['customer_name']}') with the same Tax ID '{customer['tax_id']}'.")
+            # Set External Debitor Number of customer['name'] to first_ext_debitor_nr
+            customer_doc = frappe.get_doc("Customer", customer['name'])
+            customer_doc.ext_debitor_number = first_ext_debitor_nr
+            customer_doc.save()
+            counter += 1
+    print(f"\nSet the External Debitor Number of {counter} Customers.")
+    print(f"\nThe External Debitor Number of {chaos_counter} Customers was not set, because there are different External Debitor Numbers for the same Tax ID.")
+    print(f"\nThere are {len(same_tax_id_diff_ext_dnr)} Tax IDs where the Customers have different External Debitor Numbers:")
+    for tax_id, entry in same_tax_id_diff_ext_dnr.items():
+        if not tax_id:
+            continue
+        print(f"\nTax ID '{tax_id}':")
+        for cust in entry:
+            if cust['ext_debitor_number']:
+                print(f"External Debitor Number '{cust['ext_debitor_number']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
+
+
 def get_yearly_order_volume(customer_id):
     """
     Returns the total volume of all Sales Orders of the given customer_id from the current year
