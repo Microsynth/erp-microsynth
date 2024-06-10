@@ -49,6 +49,7 @@ class QMDocument(Document):
             # in the case of an import, override naming generator by import name
             self.name = self.import_name
         else:
+            chapter_formatted = '0' + str(self.chapter) if (self.chapter and self.chapter < 10) else (self.chapter or '00')
             if cint(self.version) < 2:
                 # new document number
                 # auto name function
@@ -59,7 +60,7 @@ class QMDocument(Document):
                     document_type=self.document_type,
                     process_number = self.process_number,
                     subprocess_number = self.subprocess_number,
-                    chapter = self.chapter or "00",
+                    chapter = chapter_formatted,
                     date = datetime.today().strftime("%Y%m%d")
                 )
 
@@ -79,7 +80,7 @@ class QMDocument(Document):
                 document_type=self.document_type,
                 process_number = self.process_number,
                 subprocess_number = self.subprocess_number,
-                chapter = self.chapter or "00",
+                chapter = chapter_formatted,
                 date = datetime.today().strftime("%Y%m%d"),
                 doc = cint(self.document_number),
                 version = cint(self.version)
