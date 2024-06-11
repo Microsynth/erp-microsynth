@@ -57,3 +57,23 @@ def get_data(filters, short=False):
     data = frappe.db.sql(sql_query, as_dict=True)
                 
     return data
+
+
+@frappe.whitelist()
+def create_accounting_note(date, note, reference_doctype, reference_name, account, amount, currency):
+    """
+    Use this function to pre-fill an accounting note and open it in the form view
+
+    See e.g. sales_invoice.js (Create > Accounting Note)
+    """
+    accounting_note = frappe.new_doc("Accounting Note")
+    accounting_note.update({
+        'date': date,
+        'note': note,
+        'reference_doctype': reference_doctype,
+        'reference_name': reference_name,
+        'account': account,
+        'amount': amount,
+        'currency': currency
+    })
+    return accounting_note.as_dict()

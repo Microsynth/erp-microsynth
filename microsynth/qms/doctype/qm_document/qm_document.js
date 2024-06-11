@@ -264,11 +264,11 @@ frappe.ui.form.on('QM Document', {
 
         /* Linked Documents filter: only show Valid QM Documents */
         frm.fields_dict.linked_documents.grid.get_field('qm_document').get_query = function() {
-    	    return {
+            return {
                     filters: [
                         ["status", "=", "Valid"]
-    	        ]
-    	    };
+                ]
+            };
         };
         
         // remove Menu > Duplicate
