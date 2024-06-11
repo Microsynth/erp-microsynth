@@ -18,6 +18,27 @@ frappe.ui.form.on('Quotation', {
             $(target).parent().parent().remove();
         }
 
+        // Display internal Item notes in a green banner if the Quotation is in Draft status
+        if (frm.doc.docstatus == 0 && frm.doc.items.length > 0) {
+            var dashboard_comment_color = 'green';
+            for (var i = 0; i < frm.doc.items.length; i++) {
+                frappe.call({
+                    'method': "frappe.client.get",
+                    'args': {
+                         "doctype": "Item",
+                         "name": frm.doc.items[i].item_code
+                    },
+                    'callback': function(response) {
+                         var item = response.message;
+                         if (item.internal_note) {
+                            cur_frm.dashboard.add_comment(item.internal_note, dashboard_comment_color, true);
+                            // cur_frm.dashboard.add_comment(item.name + ': ' + item.internal_note.replace(/(<([^>]+)>)/ig, ''), dashboard_comment_color, true);
+                         }
+                    }
+                 });
+            }            
+        }
+
         // run code with a delay because the core framework code is slower than the refresh trigger and would overwrite it
         setTimeout(function(){
             cur_frm.fields_dict['customer_address'].get_query = function(doc) {          //gets field you want to filter
@@ -29,13 +50,13 @@ frappe.ui.form.on('Quotation', {
                     }
                 }
             } 
-        },500);
+        }, 500);
 
         setTimeout(function(){
             if (frm.doc.__islocal) {
                 assert_customer_fields(frm);
             }
-        },500);
+        }, 500);
         
         hide_in_words();
 
