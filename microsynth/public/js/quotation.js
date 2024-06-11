@@ -33,7 +33,6 @@ frappe.ui.form.on('Quotation', {
                          var item = response.message;
                          if (item.internal_note) {
                             cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
-                            // cur_frm.dashboard.add_comment(item.name + ': ' + item.internal_note.replace(/(<([^>]+)>)/ig, ''), dashboard_comment_color, true);
                          }
                     }
                  });
