@@ -68,7 +68,7 @@ frappe.ui.form.on('Customer', {
             }, __("Create") );
         }
         if ((!frm.doc.__islocal)
-            && ['ARIBA', 'Paynet', 'GEP', 'Chorus', 'X-Rechnung', 'Scientist'].includes(frm.doc.invoicing_method)
+            && ['ARIBA', 'Paynet', 'GEP', 'Scientist'].includes(frm.doc.invoicing_method)
             && (!frm.doc.invoice_network_id)) {
             frappe.msgprint({
                 title: __('Validation'),
