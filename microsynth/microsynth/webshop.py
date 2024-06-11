@@ -1217,31 +1217,24 @@ def get_companies(client="webshop"):
 def create_payment(sales_order, stripe_reference, client="webshop"):
     """
     Create sales invoice and payment record
-    """
     
+    Test with
+    bench execute microsynth.microsynth.webshop.create_payment --kwargs "{'sales_order': 'SO-BAL-23058405', 'stripe_reference': 'ABCD1236'}"
+    """
+
     # check configuration
     if not frappe.db.exists("Mode of Payment", "stripe"):
         return {'success': False, 'message': "Mode of Payment stripe missing. Please correct ERP configuration."}
-        
+
     # fetch sales order
     if not frappe.db.exists("Sales Order", sales_order):
         return {'success': False, 'message': "Sales Order not found"}
     so_doc = frappe.get_doc("Sales Order", sales_order)
-    
-    # assure this sales order is against default company (no longer required with mode of payment)
-    #if so_doc.company != frappe.defaults.get_global_default("company"):
-    #    return {'success': False, 'message': "Only company {0} is allowed to process stripe".format(frappe.defaults.get_global_default("company"))}
-    
+
     # create sales invoice
     si_content = make_sales_invoice(so_doc.name)
     sinv = frappe.get_doc(si_content)
     sinv.flags.ignore_missing = True
-    sinv.is_pos = 1                     # enable included payment
-    sinv.append("payments", {
-        'default': 1,
-        'mode_of_payment': "stripe",
-        'amount': sinv.rounded_total or sinv.grand_total
-    })
     try:
         sinv.insert(ignore_permissions=True)
         # update income accounts
@@ -1252,7 +1245,27 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': "Failed to create invoice: {0}".format(err)}
     frappe.db.commit()
-    
+
+    # create the payment record
+    mode_of_payment = frappe.get_doc("Mode of Payment", "stripe")
+    stripe_account = None
+    for m in mode_of_payment.accounts:
+        if m.company == sinv.company:
+            stripe_account = m.default_account
+            break
+    from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+    pe = get_payment_entry("Sales Invoice", sinv.name, bank_account=stripe_account)
+    pe.reference_no = stripe_reference
+    pe.reference_date = date.today()
+    try:
+        pe.insert(ignore_permissions=True)
+        pe.remarks = "Stripe payment ({client})\n{others}".format(client=client, others=pe.remarks)
+        pe.save()
+        pe.submit()
+    except Exception as err:
+        return {'success': False, 'message': "Failed to create payment: {0}".format(err)}
+    frappe.db.commit()
+
     # remove hold flag
     so_doc = frappe.get_doc("Sales Order", sales_order)
     so_doc.hold_order = 0
@@ -1261,5 +1274,5 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     except Exception as err:
         return {'success': False, 'message': "Failed to update sales order {0}: {1}".format(sales_order, err)}
     frappe.db.commit()
-    
+
     return {'success': True, 'message': "OK", 'reference': sinv.name}
