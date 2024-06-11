@@ -22,6 +22,7 @@ frappe.ui.form.on('Quotation', {
         if (frm.doc.docstatus == 0 && frm.doc.items.length > 0) {
             var dashboard_comment_color = 'green';
             for (var i = 0; i < frm.doc.items.length; i++) {
+                cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, false)
                 frappe.call({
                     'method': "frappe.client.get",
                     'args': {
@@ -31,7 +32,7 @@ frappe.ui.form.on('Quotation', {
                     'callback': function(response) {
                          var item = response.message;
                          if (item.internal_note) {
-                            cur_frm.dashboard.add_comment(item.internal_note, dashboard_comment_color, true);
+                            cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
                             // cur_frm.dashboard.add_comment(item.name + ': ' + item.internal_note.replace(/(<([^>]+)>)/ig, ''), dashboard_comment_color, true);
                          }
                     }
