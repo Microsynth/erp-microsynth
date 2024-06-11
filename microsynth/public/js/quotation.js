@@ -31,8 +31,7 @@ frappe.ui.form.on('Quotation', {
                     'callback': function(response) {
                          var item = response.message;
                          if (item.internal_note) {
-                            cur_frm.dashboard.add_comment(item.internal_note, dashboard_comment_color, true);
-                            // cur_frm.dashboard.add_comment(item.name + ': ' + item.internal_note.replace(/(<([^>]+)>)/ig, ''), dashboard_comment_color, true);
+                            cur_frm.dashboard.add_comment(item.name + ': ' + item.internal_note, dashboard_comment_color, true);
                          }
                     }
                  });
