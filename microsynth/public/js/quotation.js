@@ -21,8 +21,8 @@ frappe.ui.form.on('Quotation', {
         // Display internal Item notes in a green banner if the Quotation is in Draft status
         if (frm.doc.docstatus == 0 && frm.doc.items.length > 0) {
             var dashboard_comment_color = 'green';
+            cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, true)
             for (var i = 0; i < frm.doc.items.length; i++) {
-                cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, false)
                 frappe.call({
                     'method': "frappe.client.get",
                     'args': {
