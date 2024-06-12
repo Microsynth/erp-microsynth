@@ -1975,12 +1975,12 @@ def complement_ext_debitor_nr():
                 print(f"External Debitor Number '{cust['ext_debitor_number']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
 
 
-def find_missing_tax_ids():
+def find_orders_with_missing_tax_id():
     """
     Find new Sales Orders to be delivered outside of Switzerland whose Customers have no Tax ID and notify DSc.
     Should be executed by a daily cronjob.
 
-    bench execute microsynth.microsynth.utils.find_missing_tax_ids
+    bench execute microsynth.microsynth.utils.find_orders_with_missing_tax_id
     """
     sql_query = f"""
         SELECT
@@ -1995,8 +1995,10 @@ def find_missing_tax_ids():
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
         WHERE `tabSales Order`.`docstatus` = 1
-            AND `tabSales Order`.`product_type` = 'Oligos'
-            AND `tabAddress`.`country` != 'Switzerland'
+            AND `tabSales Order`.`product_type` IN ('Oligos', 'Material')
+            AND `tabAddress`.`country` IN ('Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
+                                        'Spain', 'Finland', 'France', 'Croatia', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Latvia',
+                                        'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia')
             AND `tabCustomer`.`tax_id` IS NULL
             AND `tabSales Order`.`transaction_date` >= DATE_ADD(NOW(), INTERVAL -1 DAY)
         ORDER BY `tabSales Order`.`transaction_date` DESC;
@@ -2006,8 +2008,8 @@ def find_missing_tax_ids():
     if len(sales_orders) == 0:
         return  # early abort
     
-    message = f"Dear Denise,<br><br>the following new Sales Orders have a Shipping Address "\
-              f"outside Switzerland, but the Customer has no Tax ID in the ERP:<br><br>"
+    message = f"Dear Denise,<br><br>the following new Sales Order(s) with Product Type Oligos or Material "\
+              f"has/have a Shipping Address in the EU, but the Customer has no Tax ID in the ERP:<br><br>"
         
     for so in sales_orders:
         message += f"{so['sales_order']} from {so['transaction_date']} with Shipping Address in {so['country']}: Customer {so['customer']} ('{so['customer_name']}')<br>"
@@ -2016,12 +2018,11 @@ def find_missing_tax_ids():
     make(
         recipients = "d.schmidheini@microsynth.ch",
         sender = "jens.petermann@microsynth.ch",
-        subject = "[ERP] New Sales Orders from Customers with missing Tax ID",
+        subject = "[ERP] New Sales Order(s) from Customer(s) with missing Tax ID",
         content = message,
         send_email = True
         )
     #print(message.replace('<br>', '\n'))
-
 
 
 def get_yearly_order_volume(customer_id):
