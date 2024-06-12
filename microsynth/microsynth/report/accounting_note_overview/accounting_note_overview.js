@@ -45,7 +45,7 @@ frappe.query_reports["Accounting Note Overview"] = {
                 'primary_action_label': __("I know what I am doing"),
                 'title': __("Information")
             });
-            d.fields_dict.text.$wrapper.html(__("Please use either <i>Sales Invoice > Create > Accounting Note</i> or<br> <i>Payment Entry > Create Accounting Note</i> to create pre-filled records.")),
+            d.fields_dict.text.$wrapper.html(__("Please use either <i>Sales Invoice > Create > Accounting Note</i>, <br><i>Payment Entry > Create Accounting Note</i> or <br><i>Journal Entry > Create Accounting Note</i> to create pre-filled records.")),
             d.show();
         });
     }
