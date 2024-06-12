@@ -1914,6 +1914,8 @@ def find_same_ext_dnr_diff_taxid():
 
 def complement_ext_debitor_nr():
     """
+    Try to find unique External Debitor Numbers for Customers with default Company
+    Microsynth Seqlab GmbH or Microsynth Austria GmbH from Customers with the same Tax ID.
     Should be run by a daily cron job.
 
     bench execute microsynth.microsynth.utils.complement_ext_debitor_nr
@@ -1971,6 +1973,55 @@ def complement_ext_debitor_nr():
         for cust in entry:
             if cust['ext_debitor_number']:
                 print(f"External Debitor Number '{cust['ext_debitor_number']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
+
+
+def find_missing_tax_ids():
+    """
+    Find new Sales Orders to be delivered outside of Switzerland whose Customers have no Tax ID and notify DSc.
+    Should be executed by a daily cronjob.
+
+    bench execute microsynth.microsynth.utils.find_missing_tax_ids
+    """
+    sql_query = f"""
+        SELECT
+            `tabSales Order`.`name` AS `sales_order`,
+            `tabSales Order`.`customer`,
+            `tabSales Order`.`customer_name`,
+            `tabCustomer`.`tax_id`,
+            `tabAddress`.`country`,
+            `tabSales Order`.`transaction_date`,
+            `tabSales Order`.`status`
+        FROM `tabSales Order`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
+        WHERE `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`product_type` = 'Oligos'
+            AND `tabAddress`.`country` != 'Switzerland'
+            AND `tabCustomer`.`tax_id` IS NULL
+            AND `tabSales Order`.`transaction_date` >= DATE_ADD(NOW(), INTERVAL -1 DAY)
+        ORDER BY `tabSales Order`.`transaction_date` DESC;
+        """
+    sales_orders = frappe.db.sql(sql_query, as_dict=True)
+
+    if len(sales_orders) == 0:
+        return  # early abort
+    
+    message = f"Dear Denise,<br><br>the following new Sales Orders have a Shipping Address "\
+              f"outside Switzerland, but the Customer has no Tax ID in the ERP:<br><br>"
+        
+    for so in sales_orders:
+        message += f"{so['sales_order']} from {so['transaction_date']} with Shipping Address in {so['country']}: Customer {so['customer']} ('{so['customer_name']}')<br>"
+
+    message += f"<br>Please try to add the Tax ID to the Customer before the Sales Invoice is created.<br><br>Best regards,<br>Jens"
+    make(
+        recipients = "d.schmidheini@microsynth.ch",
+        sender = "jens.petermann@microsynth.ch",
+        subject = "[ERP] New Sales Orders from Customers with missing Tax ID",
+        content = message,
+        send_email = True
+        )
+    #print(message.replace('<br>', '\n'))
+
 
 
 def get_yearly_order_volume(customer_id):
