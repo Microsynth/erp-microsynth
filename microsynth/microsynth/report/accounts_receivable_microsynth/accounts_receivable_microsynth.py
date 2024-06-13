@@ -181,7 +181,7 @@ def execute(filters=None):
 
     # overall total
     output.append({
-        'party': "<b>Total {0}</b>".format(_("Total")),
+        'party': "<b>{0}</b>".format(_("Total")),
         'invoiced': overall_totals['invoiced'],
         'paid': overall_totals['paid'],
         'credit_note': overall_totals['credit_note'],
