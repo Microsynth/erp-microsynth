@@ -1652,6 +1652,9 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     base_total_debit = flt(amount) * current_exchange_rate
     base_total_credit = 0
     for invoice in invoices:
+        if not invoice.get('sales_invoice'):
+            # skip empty rows (see #14112)
+            continue
         debit_account = frappe.get_value("Sales Invoice", invoice.get('sales_invoice'), 'debit_to')
         exchange_rate = frappe.get_value("Sales Invoice", invoice.get('sales_invoice'), 'conversion_rate')
         jv.append('accounts', {
@@ -1663,9 +1666,9 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             'reference_type': 'Sales Invoice',
             'reference_name': invoice.get('sales_invoice'),
             'credit_in_account_currency': invoice.get('outstanding_amount'),
-            'credit': round(invoice.get('outstanding_amount') * exchange_rate, 2)
+            'credit': round((invoice.get('outstanding_amount') or 0) * (exchange_rate or 1), 2)
         })
-        base_total_credit += invoice.get('outstanding_amount') * exchange_rate
+        base_total_credit += (invoice.get('outstanding_amount') or 0) * (exchange_rate or 1)
 
     # other currencies: currency deviation
     jv.set_total_debit_credit()
