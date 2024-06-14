@@ -4044,3 +4044,83 @@ def find_contacts_without_address():
                     else:
                         print(f"Contact {contact['name']} belongs to Customer {contact['customer']} but Address {address.name} belongs to Customer {reference.link_name}.")
 
+
+def parse_abacus_account_sheet(account_sheet, export_file):
+    """
+    Parse the abacus account sheet. To that end, copy the data from Excel to a TAB-delimited text file.
+
+    Important Note:
+
+    The column 'C' is hidden in the Excel sheet. First expand the column before copying the data to the text file.
+
+    run
+    bench execute microsynth.microsynth.migration.parse_abacus_account_sheet --kwargs "{'account_sheet': '/mnt/erp_share/abacus_account_sheet.txt', 'export_file': '/mnt/erp_share/abacus_transactions.txt'}"
+    """
+
+    transactions = []
+
+    def append_without_duplicates(transactions, _tx):
+        if len(transactions) > 0 and transactions[-1]['reference'] == _tx['reference']:
+            transactions[-1]['gross'] += _tx.get('gross') or 0
+            transactions[-1]['tax'] += _tx.get('tax') or 0
+            transactions[-1]['net'] += _tx.get('net') or 0
+            transactions[-1]['debit'] += _tx.get('debit') or 0
+            transactions[-1]['credit'] += _tx.get('credit') or 0
+        else:
+            transactions.append(_tx)
+        return
+
+    _tx = None
+
+    with open(account_sheet) as file:
+        for l in file:
+        # for l in aba_txs.split("\n"):
+            # field definition 0:date|1:reference|2:account|3:??|4:code|5:doc_no|6:debit|7:credit|8:balance
+            fields = l.replace("\n","").split("\t")
+
+            if len(fields) != 9:
+                raise ValueError(f"The line does not have 8 fields:\n{fields}\nnumber of fields: {len(fields)}\n\nDid you include the hidden column C from the Excel sheet?")
+
+            debit = float(fields[6].replace("'", "").replace("’", "")) if fields[6] else 0
+            credit = float(fields[7].replace("'", "").replace("’", "")) if fields[7] else 0
+            if fields[0]:
+                if _tx:
+                    # check if this is the same reference as the row before
+                    append_without_duplicates(transactions, _tx)
+                _gross = debit - credit
+                _tx = {
+                    'date': fields[0],
+                    'reference': fields[1],
+                    'gross': _gross,
+                    'debit': debit,
+                    'credit': credit,
+                    'tax': 0,
+                    'net': 0
+                }
+            else:
+                if _tx:
+                    _tax = debit - credit
+                    _tx.update({
+                        'tax': _tax,
+                        'net': round((_tx['gross'] + _tax), 2),
+                        'debit': round((_tx['debit'] + debit), 2),
+                        'credit': round((_tx['credit'] + credit), 2)
+                    })
+        if _tx:         # append last transaction
+            append_without_duplicates(transactions, _tx)
+    file.close()
+
+    with open(export_file, "w") as export_file:
+        net_total = 0
+        for t in transactions:
+            export_line = ("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(
+                t.get('date'), t.get('reference'), t.get('gross'), t.get('tax') or 0, (t.get('net') or t.get('gross')), t.get('debit'), t.get('credit')))
+            export_file.write(export_line + "\n")
+            # print(export_line)
+            net_total += (t.get('net') or t.get('gross'))
+
+        summary_line=("Net total:\t{0}".format(round(net_total, 2)))
+        export_file.write(summary_line)
+        print(summary_line)
+
+    export_file.close()
