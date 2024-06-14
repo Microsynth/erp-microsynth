@@ -1,0 +1,159 @@
+{
+ "autoname": "AR-.YY.#####",
+ "creation": "2024-06-14 09:42:05.462643",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_order",
+  "web_order_id",
+  "amended_from",
+  "column_break_3",
+  "report_type",
+  "issue_date",
+  "approved_by",
+  "contact_details_section",
+  "customer",
+  "contact_person",
+  "address",
+  "column_break_11",
+  "customer_name",
+  "contact_display",
+  "data_section",
+  "sample_details",
+  "comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "label": "Sales Order",
+   "options": "Sales Order"
+  },
+  {
+   "fetch_from": "sales_order.web_order_id",
+   "fetch_if_empty": 1,
+   "fieldname": "web_order_id",
+   "fieldtype": "Data",
+   "label": "Web Order ID"
+  },
+  {
+   "fieldname": "contact_details_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Details"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact Person",
+   "options": "Contact"
+  },
+  {
+   "fetch_from": "contact_person.address",
+   "fetch_if_empty": 1,
+   "fieldname": "address",
+   "fieldtype": "Link",
+   "label": "Address",
+   "options": "Address"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Analysis Report",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Issue Date"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved by",
+   "options": "User"
+  },
+  {
+   "fieldname": "data_section",
+   "fieldtype": "Section Break",
+   "label": "Data"
+  },
+  {
+   "fieldname": "sample_details",
+   "fieldtype": "Table",
+   "label": "Sample Details",
+   "options": "Analysis Report Sample Detail"
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Text Editor",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "report_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Report Type",
+   "options": "Mycoplasma",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "contact_person.full_name",
+   "fieldname": "contact_display",
+   "fieldtype": "Small Text",
+   "label": "Contact Display",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-06-14 11:18:32.887847",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Analysis Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
