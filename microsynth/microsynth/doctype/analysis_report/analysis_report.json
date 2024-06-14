@@ -19,6 +19,7 @@
   "column_break_11",
   "customer_name",
   "contact_display",
+  "address_display",
   "data_section",
   "sample_details",
   "comment"
@@ -45,13 +46,13 @@
   {
    "fieldname": "customer",
    "fieldtype": "Link",
-   "label": "Customer",
+   "label": "Customer ID",
    "options": "Customer"
   },
   {
    "fieldname": "contact_person",
    "fieldtype": "Link",
-   "label": "Contact Person",
+   "label": "Contact Person ID",
    "options": "Contact"
   },
   {
@@ -59,7 +60,7 @@
    "fetch_if_empty": 1,
    "fieldname": "address",
    "fieldtype": "Link",
-   "label": "Address",
+   "label": "Address ID",
    "options": "Address"
   },
   {
@@ -118,20 +119,27 @@
    "fetch_from": "contact_person.full_name",
    "fieldname": "contact_display",
    "fieldtype": "Small Text",
-   "label": "Contact Display",
+   "label": "Contact Person",
    "read_only": 1
   },
   {
    "fetch_from": "customer.customer_name",
    "fieldname": "customer_name",
    "fieldtype": "Data",
-   "label": "Customer Name",
+   "label": "Customer",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "address_display",
+   "fieldtype": "Small Text",
+   "label": "Address",
    "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-14 11:18:32.887847",
- "modified_by": "Administrator",
+ "modified": "2024-06-14 16:09:38.234671",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report",
  "owner": "Administrator",
