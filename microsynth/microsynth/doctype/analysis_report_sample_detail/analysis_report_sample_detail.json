@@ -5,7 +5,7 @@
  "field_order": [
   "sample",
   "analysis_method",
-  "analyis_result",
+  "analysis_result",
   "comment"
  ],
  "fields": [
@@ -23,21 +23,21 @@
    "label": "Analysis Method"
   },
   {
-   "fieldname": "analyis_result",
-   "fieldtype": "Text Editor",
-   "in_list_view": 1,
-   "label": "Analyis Result"
-  },
-  {
    "fieldname": "comment",
    "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Comment"
+  },
+  {
+   "fieldname": "analysis_result",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Analysis Result"
   }
  ],
  "istable": 1,
- "modified": "2024-06-14 11:32:26.047550",
- "modified_by": "Administrator",
+ "modified": "2024-06-14 17:00:58.046197",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report Sample Detail",
  "owner": "Administrator",
