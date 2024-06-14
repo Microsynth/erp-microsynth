@@ -179,6 +179,12 @@ function second_barcode_dialog() {
                     'label': 'To barcode'
                 },
                 {
+                    'fieldname': 'print_shipping_label',
+                    'fieldtype': 'Check',
+                    'label': 'Print Shipping Label',
+                    'default': ['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code) ? 1 : 0
+                },
+                {
                     'fieldname': 'sales_order', 
                     'fieldtype': 'Link', 
                     'label': 'Sales Order', 
@@ -237,7 +243,7 @@ function second_barcode_dialog() {
                 }
                 locals.label_queue[0].to_barcode = to_barcode;
                 
-                if (['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code)) {
+                if (values.print_shipping_label) {
                     // print shipping label
                     frappe.call({
                         "method": "microsynth.microsynth.labels.print_shipping_label",
