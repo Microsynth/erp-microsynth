@@ -169,7 +169,7 @@ function pull_item_service_specification(item_code, quotation_group) {
                         if ((cur_frm.doc.service_specification) && (!cur_frm.doc.service_specification.includes(item.service_specification))) {
                             cur_frm.set_value("service_specification", cur_frm.doc.service_specification /* + "<p>&nbsp;</p>" */ + item.service_specification);
                         } else {
-                            cur_frm.set_value("service_specification", "<h3>Service Specification</h3>" + item.service_specification);
+                            cur_frm.set_value("service_specification", "<h3>Service Description</h3>" + item.service_specification);
                         }
                     }
                 }
