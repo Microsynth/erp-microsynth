@@ -582,7 +582,7 @@ def request_quote(content, client="webshop"):
         if item_service_specification and item_service_specification not in service_specifications:
             service_specifications.append(item_service_specification)
     if len(service_specifications) > 0:
-        qtn_doc.service_specification = "<h3>Service Specification</h3>" + "".join(service_specifications)
+        qtn_doc.service_specification = "<h3>Service Description</h3>" + "".join(service_specifications)
     # insert new quotation
     try:
         qtn_doc.insert(ignore_permissions=True)
