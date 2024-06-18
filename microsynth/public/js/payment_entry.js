@@ -454,7 +454,7 @@ function allocate_avis(frm) {
 function recalc_allocation(d) {
     var sum = 0;
     for (var i = 0; i < d.fields[4].data.length; i++) {
-        sum += d.fields[4].data[i].outstanding_amount;
+        sum += (d.fields[4].data[i].outstanding_amount || 0);
     }
     d.set_value("allocated", sum);
     return sum
