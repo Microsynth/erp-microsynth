@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2023-2024, Microsynth, libracore and contributors and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -69,7 +69,8 @@ frappe.query_reports["Accounts Receivable Microsynth"] = {
             "label": __("Cost Center"),
             "fieldtype": "Link",
             "options": "Cost Center",
-            get_query: () => {
+            "hidden": 1,
+            "get_query": () => {
                 var company = frappe.query_report.get_filter_value('company');
                 return {
                     filters: {
@@ -187,6 +188,21 @@ frappe.query_reports["Accounts Receivable Microsynth"] = {
             "label": __("Credit Limit"),
             "fieldtype": "Currency",
             "hidden": 1
+        },
+        {
+            "fieldname":"account",
+            "label": __("Account"),
+            "fieldtype": "Link",
+            "options": "Account",
+            "get_query": () => {
+                var company = frappe.query_report.get_filter_value('company');
+                return {
+                    filters: {
+                        'account_type': "Receivable",
+                        'company': company
+                    }
+                }
+            }
         }
     ]
 }

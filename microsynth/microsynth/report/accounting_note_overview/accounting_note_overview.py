@@ -15,13 +15,13 @@ def execute(filters=None):
 def get_columns():
     columns = [
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
+        {"label": _("ID"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 80},
         {"label": _("Reference"), "fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "width": 125},
-        {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 150, 'options': 'currency'},
+        {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 200, 'options': 'currency'},
         {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 75},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 60},
         {"label": _("Related"), "fieldname": "related", "fieldtype": "data", "width": 200},
-        {"label": _("Link"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 95},
-        {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 200}
+        {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 250}
     ]
     return columns
 
@@ -57,3 +57,23 @@ def get_data(filters, short=False):
     data = frappe.db.sql(sql_query, as_dict=True)
                 
     return data
+
+
+@frappe.whitelist()
+def create_accounting_note(date, note, reference_doctype, reference_name, account, amount, currency):
+    """
+    Use this function to pre-fill an accounting note and open it in the form view
+
+    See e.g. sales_invoice.js (Create > Accounting Note)
+    """
+    accounting_note = frappe.new_doc("Accounting Note")
+    accounting_note.update({
+        'date': date,
+        'note': note,
+        'reference_doctype': reference_doctype,
+        'reference_name': reference_name,
+        'account': account,
+        'amount': amount,
+        'currency': currency
+    })
+    return accounting_note.as_dict()

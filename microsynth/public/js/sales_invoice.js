@@ -37,6 +37,11 @@ frappe.ui.form.on('Sales Invoice', {
                 open_mail_dialog(frm);
             }, __("Create"));
         }
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("Accounting Note"), function() {
+                create_accounting_note(frm);
+            }, __("Create"));
+        }
 
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
@@ -437,4 +442,28 @@ function contains_credit_item(frm) {
         }
     }
     return false;
+}
+
+function create_accounting_note(frm) {
+    if (cur_frm.is_dirty()) {
+        frappe.msgprint( __("Please save your unsaved changes first."), __(Information) );
+    } else {
+        frappe.call({
+            'method': 'microsynth.microsynth.report.accounting_note_overview.accounting_note_overview.create_accounting_note',
+            'args': {
+                'date': frm.doc.posting_date,
+                'note': frm.doc.customer_name,
+                'reference_doctype': frm.doc.doctype,
+                'reference_name': frm.doc.name,
+                'amount': frm.doc.grand_total,
+                'account': frm.doc.debit_to,
+                'currency': frm.doc.currency
+            },
+            'callback': function (r) {
+                var doc = r.message;
+                frappe.model.sync(doc);
+                frappe.set_route("Form", doc.doctype, doc.name);
+            }
+        });
+    }
 }

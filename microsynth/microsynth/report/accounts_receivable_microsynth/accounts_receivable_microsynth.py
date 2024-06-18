@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2023-2024, Microsynth, libracore and contributors and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -51,7 +51,22 @@ def execute(filters=None):
             })
 
         new_columns.append(c)
-        
+    
+    # add document currency columns
+    #new_columns.append({
+    #    'fieldtype': 'Data',
+    #    'fieldname': 'doc_currency',
+    #    'label': "Doc Currency",
+    #    'width': 80
+    #})
+    new_columns.append({
+        'fieldtype': 'Currency',
+        'fieldname': 'doc_outstanding',
+        'label': "Outstanding",
+        'options': "doc_currency",
+        'width': 120
+    })
+    
     # extend data
     for d in data:
         d['ext_customer'] = frappe.get_cached_value("Customer", d['party'], 'ext_debitor_number')
@@ -66,7 +81,9 @@ def execute(filters=None):
         'invoiced': 0,
         'paid': 0,
         'credit_note': 0,
-        'outstanding': 0 
+        'outstanding': 0,
+        'doc_outstanding': 0,
+        'doc_currency': None
     }
 
     for d in data:
@@ -75,6 +92,12 @@ def execute(filters=None):
         
         if not(d['ext_customer']) and d['party'] not in individual_customers:
             individual_customers.append(d['party'])
+        
+        # in case of specific account, collect document outstanding amount
+        if filters.get("account") and d.get("voucher_no"):
+            doc = frappe.get_doc(d.get("voucher_type"), d.get("voucher_no"))
+            d['doc_currency'] = doc.get("currency")
+            d['doc_outstanding'] = doc.get("outstanding_amount")
 
     # group by external debtor number
     for c in sorted(external_debtors or []):
@@ -82,7 +105,9 @@ def execute(filters=None):
             'invoiced': 0,
             'paid': 0,
             'credit_note': 0,
-            'outstanding': 0
+            'outstanding': 0,
+            'doc_outstanding': 0,
+            'doc_currency': None
         }
 
         for d in data:
@@ -94,18 +119,24 @@ def execute(filters=None):
                 customer_totals['paid'] += d['paid']
                 customer_totals['credit_note'] += d['credit_note']
                 customer_totals['outstanding'] += d['outstanding']
+                customer_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
+                customer_totals['doc_currency'] = d.get("doc_currency")
 
                 overall_totals['invoiced'] += d['invoiced']
                 overall_totals['paid'] += d['paid']
                 overall_totals['credit_note'] += d['credit_note']
                 overall_totals['outstanding'] += d['outstanding']
+                overall_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
+                overall_totals['doc_currency'] = d.get('doc_currency')
 
         output.append({
-            'ext_customer': c,
+            'ext_customer': "<b>{0}</b>".format(c),
             'invoiced': customer_totals['invoiced'],
             'paid': customer_totals['paid'],
             'credit_note': customer_totals['credit_note'],
             'outstanding': customer_totals['outstanding'],
+            'doc_outstanding': customer_totals.get('doc_outstanding') if customer_totals.get('doc_currency') else None,
+            'doc_currency': customer_totals.get('doc_currency'),
             'currency': currency
         })
 
@@ -115,7 +146,9 @@ def execute(filters=None):
             'invoiced': 0,
             'paid': 0,
             'credit_note': 0,
-            'outstanding': 0 
+            'outstanding': 0,
+            'doc_outstanding': 0,
+            'doc_currency': None
         }
         for d in data:
             customer = d['party'] if 'party' in d else d['customer_name']
@@ -125,28 +158,36 @@ def execute(filters=None):
                 customer_totals['paid'] += d['paid']
                 customer_totals['credit_note'] += d['credit_note']
                 customer_totals['outstanding'] += d['outstanding']
-
+                customer_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
+                customer_totals['doc_currency'] = d.get('doc_currency')
+                
                 overall_totals['invoiced'] += d['invoiced']
                 overall_totals['paid'] += d['paid']
                 overall_totals['credit_note'] += d['credit_note']
                 overall_totals['outstanding'] += d['outstanding']
-
+                overall_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
+                overall_totals['doc_currency'] = d.get('doc_currency')
+                
         output.append({
-            'party': c,
+            'party': "<b>{0}</b>".format(c),
             'invoiced': customer_totals['invoiced'],
             'paid': customer_totals['paid'],
             'credit_note': customer_totals['credit_note'],
             'outstanding': customer_totals['outstanding'],
+            'doc_outstanding': customer_totals.get('doc_outstanding') if customer_totals.get('doc_currency') else None,
+            'doc_currency': customer_totals.get('doc_currency'),
             'currency': currency
         })
 
     # overall total
     output.append({
-        'party': _("Total"),
+        'party': "<b>{0}</b>".format(_("Total")),
         'invoiced': overall_totals['invoiced'],
         'paid': overall_totals['paid'],
         'credit_note': overall_totals['credit_note'],
         'outstanding': overall_totals['outstanding'],
+        'doc_outstanding': overall_totals['doc_outstanding'] if overall_totals.get('doc_currency') else None,
+        'doc_currency': overall_totals.get('doc_currency'),
         'currency': currency
     })
 

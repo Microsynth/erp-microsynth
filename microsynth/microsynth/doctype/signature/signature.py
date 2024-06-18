@@ -40,7 +40,7 @@ class Signature(Document):
         
         # set new password
         self.approval_password = new_pw
-        self.save()
+        self.save(ignore_permissions=True)
         
         return {'success': True}
 
@@ -61,6 +61,7 @@ def user_has_role(user, role):
         return True
     else:
         return False
+
 
 @frappe.whitelist()
 def is_password_approval_password(user, password):

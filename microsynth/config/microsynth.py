@@ -236,10 +236,11 @@ def get_data():
                        "description": _("Payment Reminder")
                    },
                    {
-                       "type": "doctype",
-                       "name": "Accounting Note",
-                       "label": _("Accounting Note"),
-                       "description": _("Accounting Note")
+                       "type": "report",
+                       "name": "Accounting Note Overview",
+                       "label": _("Accounting Note Overview"),
+                       "doctype": _("Accounting Note"),
+                       "is_query_report": True
                    },
                    {
                        "type": "report",
