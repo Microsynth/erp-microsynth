@@ -8,7 +8,9 @@
   "col_name",
   "title",
   "section_description",
-  "description"
+  "description",
+  "section_service",
+  "service_description"
  ],
  "fields": [
   {
@@ -38,11 +40,21 @@
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description"
+  },
+  {
+   "fieldname": "section_service",
+   "fieldtype": "Section Break",
+   "label": "Service Description"
+  },
+  {
+   "fieldname": "service_description",
+   "fieldtype": "Text Editor",
+   "label": "Service Description"
   }
  ],
  "istable": 1,
- "modified": "2022-07-05 13:40:52.619041",
- "modified_by": "Administrator",
+ "modified": "2024-06-18 15:23:23.041255",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Quotation Group",
  "owner": "Administrator",

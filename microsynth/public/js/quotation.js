@@ -5,7 +5,13 @@ frappe.ui.form.on('Quotation Item', {
     item_code(frm, cdt, cdn) {
         var row = locals[cdt][cdn];
         if (row.item_code) {
-            pull_item_service_specification(row.item_code);
+            pull_item_service_specification(row.item_code, row.quotation_group);
+        }
+    },
+    quotation_group(frm, cdt, cdn) {
+        var row = locals[cdt][cdn];
+        if (row.item_code) {
+            pull_item_service_specification(row.item_code, row.quotation_group);
         }
     }
 });
@@ -21,7 +27,7 @@ frappe.ui.form.on('Quotation', {
         // Display internal Item notes in a green banner if the Quotation is in Draft status
         if (frm.doc.docstatus == 0 && frm.doc.items.length > 0) {
             var dashboard_comment_color = 'green';
-            cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, true)
+            //cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, true)
             for (var i = 0; i < frm.doc.items.length; i++) {
                 frappe.call({
                     'method': "frappe.client.get",
@@ -131,7 +137,7 @@ function assert_customer_fields(frm) {
 }
 
 /* load the item and fetch its service specification if available */
-function pull_item_service_specification(item_code) {
+function pull_item_service_specification(item_code, quotation_group) {
     if (item_code) {
         frappe.call({
             'method': "frappe.client.get",
@@ -142,10 +148,29 @@ function pull_item_service_specification(item_code) {
             'callback': function(r) {
                 var item = r.message;
                 if (item.service_specification) {
-                    if ((cur_frm.doc.service_specification) && (!cur_frm.doc.service_specification.includes(item.service_specification))) {
-                        cur_frm.set_value("service_specification", cur_frm.doc.service_specification /* + "<p>&nbsp;</p>" */ + item.service_specification);
+                    if (quotation_group) {
+                        // find group
+                        for (var i = 0; i < cur_frm.doc.quotations_groups.length; i++) {
+                            if (quotation_group == cur_frm.doc.quotations_groups[i].group_name) {
+                                if (!cur_frm.doc.quotations_groups[i].service_description || !cur_frm.doc.quotations_groups[i].service_description.includes(item.service_description)) {
+                                    // add service description to item_group
+                                    frappe.model.set_value(cur_frm.doc.quotations_groups[i].doctype,
+                                                            cur_frm.doc.quotations_groups[i].name,
+                                                            "service_description",
+                                                            cur_frm.doc.quotations_groups[i].service_description ? cur_frm.doc.quotations_groups[i].service_description + item.service_specification : item.service_specification);
+                                    // remove service description from general service description
+                                    if (cur_frm.doc.service_specification && cur_frm.doc.service_specification.includes(item.service_specification)) {
+                                        cur_frm.set_value("service_specification", cur_frm.doc.service_specification.replace(item.service_specification, ""));
+                                    }
+                                }
+                            }
+                        }
                     } else {
-                        cur_frm.set_value("service_specification", "<h3>Service Specification</h3>" + item.service_specification);
+                        if ((cur_frm.doc.service_specification) && (!cur_frm.doc.service_specification.includes(item.service_specification))) {
+                            cur_frm.set_value("service_specification", cur_frm.doc.service_specification /* + "<p>&nbsp;</p>" */ + item.service_specification);
+                        } else {
+                            cur_frm.set_value("service_specification", "<h3>Service Specification</h3>" + item.service_specification);
+                        }
                     }
                 }
             }
