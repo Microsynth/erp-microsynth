@@ -10,7 +10,7 @@ import frappe
 from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, get_url_to_form
 import json
 from datetime import datetime
 from microsynth.microsynth.naming_series import get_naming_series
@@ -231,12 +231,13 @@ def check_submit_delivery_note(delivery_note):
                 subject = f"Barcode label {barcode_label} used multiple times"
                 message = f"Dear {person},<br><br>this is an automatic email to inform you that Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:<br>"
                 for s in samples:
-                    message += f"Sample '{s['name']}' with Web ID '{s['web_id']}', created {s['creation']}<br>"
+                    url = get_url_to_form("Sample", s['name'])
+                    message += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
                 message += f"<br>Please check these Samples. If you are sure that there is no problem, please submit '{delivery_note.name}' manually in the ERP.<br>"
                 message += f"If one of those Samples is on a Sales Order that was not processed and will not be processed, please comment and cancel this Sales Order."
                 message += f"<br><br>Best regards,<br>Jens"
                 non_html_message = message.replace("<br>","\n")
-                print(non_html_message)
+                #print(non_html_message)
                 frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
                 make(
                     recipients = recipient,
