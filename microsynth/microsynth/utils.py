@@ -2142,5 +2142,28 @@ def force_cancel(dt, dn):
 		frappe.db.commit()
 	except Exception as err:
 		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
-	
 	return
+
+
+@frappe.whitelist()
+def get_potential_contact_duplicates(contact_id):
+    """
+    """
+    contact = frappe.get_doc("Contact", contact_id)
+    address = frappe.get_doc("Address", contact.address)
+    contacts = frappe.db.sql(f"""
+        SELECT `tabContact`.`name`,
+            `tabContact`.`first_name`,
+            `tabContact`.`last_name`
+        FROM `tabContact`
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND (`tabContact`.`email_id` = '{contact.email_id}'
+                OR (`tabContact`.`first_name` = '{contact.first_name}'
+                    AND `tabContact`.`last_name` = '{contact.last_name}'             
+                )
+            )
+            AND `tabAddress`.`address_type` = '{address.address_type}'
+            AND `tabContact`.`name` != '{contact.name}'
+        """, as_dict=True)
+    return contacts
