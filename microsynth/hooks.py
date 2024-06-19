@@ -65,7 +65,7 @@ jenv = {
         "get_product_type:microsynth.microsynth.portfolio.get_product_type",
         "get_training_records:microsynth.qms.doctype.qm_training_record.qm_training_record.get_training_records",
         "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews",
-        "get_linking_valid_docs:microsynth.qms.doctype.qm_document.qm_document.get_linking_valid_docs",
+        "get_valid_appendices:microsynth.qms.doctype.qm_document.qm_document.get_valid_appendices",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message"
     ]

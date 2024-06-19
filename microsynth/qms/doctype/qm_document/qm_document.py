@@ -404,9 +404,9 @@ def check_update_validity():
     validate_released_qm_docs()
 
 
-def get_linking_valid_docs(qm_document):
+def get_valid_appendices(qm_document):
     """
-    Returns a dictionary of all valid QM Documents that link to the given qm_document.
+    Returns a dictionary of all valid QM Document with Document Type APPX that link to the given qm_document.
     """
     docs_linking_to_this = frappe.db.sql(f"""
         SELECT `tabQM Document`.`name`,
@@ -417,6 +417,7 @@ def get_linking_valid_docs(qm_document):
         LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tabQM Document Link`.`parent`
         WHERE `tabQM Document Link`.`qm_document` = "{qm_document}"
             AND `tabQM Document`.`status` = 'Valid'
+            AND `tabQM Document`.`document_type` = 'APPX'
         ORDER BY `tabQM Document`.`name`;
         """, as_dict=True)
     return docs_linking_to_this
