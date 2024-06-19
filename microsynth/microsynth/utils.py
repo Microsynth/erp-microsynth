@@ -2154,7 +2154,8 @@ def get_potential_contact_duplicates(contact_id):
     contacts = frappe.db.sql(f"""
         SELECT `tabContact`.`name`,
             `tabContact`.`first_name`,
-            `tabContact`.`last_name`
+            `tabContact`.`last_name`,
+            `tabContact`.`institute`
         FROM `tabContact`
         LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
         WHERE `tabContact`.`status` != 'Disabled'

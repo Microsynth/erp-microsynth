@@ -83,7 +83,7 @@ frappe.ui.form.on('Contact', {
                             frm.dashboard.add_comment('<br>Potential Duplicates:', 'red', true);
                             var contacts = response.message;
                             for (var i = 0; i < contacts.length; i++) {
-                                frm.dashboard.add_comment('<b>' + contacts[i].name + '</b>: ' + contacts[i].first_name + ' ' + contacts[i].last_name + ' (<a href="/desk#contact_merger?contact_1=' + frm.doc.name + '&contact_2=' + contacts[i].name + '">Open in Contact Merger</a>)', 'red', true);
+                                frm.dashboard.add_comment('<b>' + contacts[i].name + '</b>: ' + contacts[i].first_name + ' ' + contacts[i].last_name + ', Institute: ' + contacts[i].institute + ' (<a href="/desk#contact_merger?contact_1=' + frm.doc.name + '&contact_2=' + contacts[i].name + '">Open in Contact Merger</a>)', 'red', true);
                             }
                         }
                     }
