@@ -465,7 +465,7 @@ def validate_values(doc_id, chapter, title, version, status, company, created_on
     format = "%d.%m.%Y"
     for date in [created_on, reviewed_on, released_on, last_revision_on, valid_from]:
         if not is_date_valid(date, format):
-            print(f"{doc_id};{title};The date '{date}' has an incorrect format unequals dd.mm.yyyy. Going to continue.")
+            print(f"{doc_id};{title};The date '{date}' has an incorrect format unequal dd.mm.yyyy. Going to continue.")
             return None, None
     for user in [created_by, reviewed_by, released_by, last_revision_by]:
         if user and not frappe.db.exists("User", user):
@@ -490,7 +490,7 @@ def parse_doc_id(doc_id, title):
     """
     space_separated_parts = doc_id.split(' ')
     if len(space_separated_parts) != 2:
-        print(f"{doc_id};{title};contains more or less than one space, but expected exactly one space "
+        print(f"{doc_id};{title};contains more or less than one space but expected exactly one space "
               f"between type of document and the rest of the document ID according to the QMH.")
         return None
     doc_type = space_separated_parts[0]
@@ -588,7 +588,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240605_ERP_Migration_2.1_2.3_5.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240619_ERP_Migration_3.2.csv'}"
     """
     import csv
 
@@ -637,7 +637,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
             if parts['chapter'] and parts['chapter'] != chapter:
                 print(f"{doc_id_new};{title};The chapter ({parts['chapter']}) parsed from the Document ID "
-                      f"is unequals the chapter ({chapter}) given in the column 'Chapter'. Going to continue.")
+                      f"is unequal the chapter ({chapter}) given in the column 'Chapter'. Going to continue.")
                 continue
             secret = doc_id_old[-1] == '*'
             # Get fitting QM Process
@@ -741,7 +741,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 continue
 
             if qm_doc.name != import_name:  # currently useless
-                print(f"{doc_id_new};{title};name/ID unequals {qm_doc.name=}.")
+                print(f"{doc_id_new};{title};name/ID unequal {qm_doc.name=}.")
                 continue
 
     print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
@@ -772,7 +772,7 @@ def fix_chapters(file_path):
             if frappe.db.exists("QM Document", qm_doc_name):
                 doc_version = frappe.db.get_value("QM Document", qm_doc_name, "version")
                 if version != doc_version:
-                    print(f"{qm_doc_name}: Version in the parsed table ('{version}') is unequals the version on the QM Document in the ERP ('{doc_version}'). Going to continue.")
+                    print(f"{qm_doc_name}: Version in the parsed table ('{version}') is unequal the version on the QM Document in the ERP ('{doc_version}'). Going to continue.")
                     continue
                 frappe.db.set_value("QM Document", qm_doc_name, "chapter", chapter, update_modified = False)
                 frappe.db.commit()
