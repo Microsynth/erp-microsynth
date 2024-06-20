@@ -69,18 +69,6 @@ def approve(pinv, is_final, user):
         pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
         pinv_doc.submit()
         frappe.db.commit()
-    else:
-        # final approver
-        approvers = frappe.db.sql("""
-            SELECT `tabDepartment Approver`.`approver`
-            FROM `tabEmployee`
-            LEFT JOIN `tabDepartment` ON `tabDepartment`.`name` = `tabEmployee`.`department`
-            LEFT JOIN `tabDepartment Approver` ON `tabDepartment Approver`.`parent` = `tabDepartment`.`name`
-            WHERE 
-                `tabEmployee`.`user_id` = "{user}";
-            """.format(user=user), as_dict=True)
-        if len(approvers) > 0:
-            add({'doctype': 'Purchase Invoice', 'name': pinv, 'assign_to': approvers[0]['approver']})
 
 
 @frappe.whitelist()

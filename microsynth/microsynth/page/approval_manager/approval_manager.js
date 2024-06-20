@@ -1,11 +1,6 @@
 // Copyright (c) 2023, libracore (https://www.libracore.com) and contributors
 // For license information, please see license.txt
 
-const approval_levels = {
-    0: "-",
-    1: "Pre-approval",
-    2: "Final Approval"
-}
 
 frappe.pages['approval-manager'].on_page_load = function(wrapper) {
     var page = frappe.ui.make_app_page({
@@ -13,13 +8,13 @@ frappe.pages['approval-manager'].on_page_load = function(wrapper) {
         title: __('Approval Manager'),
         single_column: true
     });
-
     frappe.approval_manager.make(page);
     frappe.approval_manager.run();
 
     // add the application reference
     frappe.breadcrumbs.add("Microsynth");
 }
+
 
 frappe.approval_manager = {
     start: 0,
@@ -33,16 +28,6 @@ frappe.approval_manager = {
     run: function() { 
         // prepare user
         document.getElementById("user").value = frappe.session.user;
-        if (frappe.user.has_role("Purchase Master Manager")) {
-            document.getElementById("role").value = approval_levels[2];
-            locals.is_final = 1;
-        } else if (frappe.user.has_role("Purchase User")) {
-            document.getElementById("role").value = approval_levels[1];
-            locals.is_final = 0;
-        } else {
-            document.getElementById("role").value = approval_levels[0];
-            locals.is_final = 0;
-        }
         frappe.approval_manager.get_approvals();
     },
     get_approvals: function() {
@@ -64,7 +49,6 @@ frappe.approval_manager = {
         for (var i = 0; i < approvals.length; i++) {
             html += approvals[i].html;
         }
-
         // insert content
         document.getElementById("approvals_view").innerHTML = html;
 
