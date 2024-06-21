@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "status",
   "description",
   "amended_from",
   "classification_section",
@@ -167,11 +168,17 @@
    "label": "Risk Classification after Actions",
    "options": "no actions\ncheck for risk mitigation\nactions required",
    "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nCreated\nClassified\nInvestigation\nPlanning\nImplementation\nCompleted\nClosed"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-21 11:06:33.683503",
- "modified_by": "Administrator",
+ "modified": "2024-06-21 14:02:45.185556",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",
