@@ -1,0 +1,206 @@
+{
+ "autoname": "NC-.YY.####",
+ "creation": "2024-06-21 09:28:41.403906",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "description",
+  "amended_from",
+  "classification_section",
+  "criticality_classification",
+  "column_break_5",
+  "regulatory_classification",
+  "investigation_section",
+  "root_cause_analysis_section",
+  "root_cause",
+  "risk_analysis_section",
+  "occurrence_probability",
+  "column_break_9",
+  "impact",
+  "column_break_12",
+  "risk_classification",
+  "planning_section",
+  "implementation_section",
+  "effectiveness_section",
+  "risk_analysis_after_actions_section",
+  "occurrence_probability_after_actions",
+  "column_break_20",
+  "impact_after_actions",
+  "column_break_21",
+  "risk_classification_after_actions"
+ ],
+ "fields": [
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Nonconformity",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "classification_section",
+   "fieldtype": "Section Break",
+   "label": "Classification"
+  },
+  {
+   "fieldname": "criticality_classification",
+   "fieldtype": "Select",
+   "label": "Criticality Classification",
+   "options": "\ncritical\nnon-critical"
+  },
+  {
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "label": "Regulatory Classification",
+   "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "investigation_section",
+   "fieldtype": "Section Break",
+   "label": "Investigation"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "planning_section",
+   "fieldtype": "Section Break",
+   "label": "Planning"
+  },
+  {
+   "fieldname": "implementation_section",
+   "fieldtype": "Section Break",
+   "label": "Implementation"
+  },
+  {
+   "fieldname": "effectiveness_section",
+   "fieldtype": "Section Break",
+   "label": "Effectiveness"
+  },
+  {
+   "fieldname": "root_cause",
+   "fieldtype": "Text Editor",
+   "label": "Root Cause"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "root_cause_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "Root Cause Analysis"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "risk_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "Risk Analysis"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occurrence_probability",
+   "fieldtype": "Select",
+   "label": "Occurrence Probability",
+   "options": "small\nmedium\nhigh"
+  },
+  {
+   "fieldname": "impact",
+   "fieldtype": "Select",
+   "label": "Impact",
+   "options": "neglectable\nnoticable\nsevere"
+  },
+  {
+   "fieldname": "risk_classification",
+   "fieldtype": "Select",
+   "label": "Risk Classification",
+   "options": "no actions\ncheck for risk mitigation\nactions required",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "risk_analysis_after_actions_section",
+   "fieldtype": "Section Break",
+   "label": "Risk Analysis after Actions"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "occurrence_probability_after_actions",
+   "fieldtype": "Select",
+   "label": "Occurrence Probability after Actions",
+   "options": "small\nmedium\nhigh"
+  },
+  {
+   "fieldname": "impact_after_actions",
+   "fieldtype": "Select",
+   "label": "Impact after Actions",
+   "options": "neglectable\nnoticable\nsevere"
+  },
+  {
+   "fieldname": "risk_classification_after_actions",
+   "fieldtype": "Select",
+   "label": "Risk Classification after Actions",
+   "options": "no actions\ncheck for risk mitigation\nactions required",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-06-21 11:06:33.683503",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Nonconformity",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
