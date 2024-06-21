@@ -6,6 +6,9 @@ frappe.ui.form.on('QM Nonconformity', {
     // refresh: function(frm) {
 
     // },
+    on_submit(frm) {
+        cur_frm.set_value("status", "Created");
+    },
     occurrence_probability: function(frm) {
         if (frm.doc.occurrence_probability && frm.doc.impact) {
             cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact));

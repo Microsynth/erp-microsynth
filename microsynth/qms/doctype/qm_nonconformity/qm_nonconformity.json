@@ -172,12 +172,13 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
-   "options": "\nCreated\nClassified\nInvestigation\nPlanning\nImplementation\nCompleted\nClosed"
+   "options": "Draft\nCreated\nClassified\nInvestigation\nPlanning\nImplementation\nCompleted\nClosed"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-21 14:02:45.185556",
+ "modified": "2024-06-21 14:58:16.576790",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
@@ -193,6 +194,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
