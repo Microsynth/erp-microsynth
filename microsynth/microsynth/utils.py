@@ -1391,11 +1391,14 @@ def configure_territory(customer_id):
         if shipping_address is None:
             subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory."
             frappe.log_error(subject, "utils.configure_territory")
-            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
+            first_name = frappe.get_value("User", customer.owner, "first_name")
+            message = f"Dear {first_name},<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
                 f"Therefore the ERP is unable to determine the Territory of this Customer.<br>" \
-                f"Please add a shipping address, Territory and Sales Manager.<br><br>Best regards,<br>Jens"
+                f"Please add a shipping address, Territory and Sales Manager for Customer '{customer_id}' in the ERP.<br>" \
+                f"You are receiving this e-mail because you have created the Customer in the ERP.<br><br>Best regards,<br>Jens"
             make(
-                recipients = "info@microsynth.ch",
+                recipients = customer.owner,
+                cc = "info@microsynth.ch",
                 sender = "jens.petermann@microsynth.ch",
                 subject = "[ERP] " + subject,
                 content = message,
@@ -1408,7 +1411,6 @@ def configure_territory(customer_id):
             customer.save()
         else:
             return
-
         #print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
     #else:
         #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
