@@ -1915,13 +1915,13 @@ def find_same_ext_dnr_diff_taxid():
           f"where the Customers have different Tax IDs.")
 
 
-def complement_ext_debitor_nr():
+def complement_ext_debitor_nr(dry_run=True):
     """
     Try to find unique External Debitor Numbers for Customers with default Company
     Microsynth Seqlab GmbH or Microsynth Austria GmbH from Customers with the same Tax ID.
     Should be run by a daily cron job.
 
-    bench execute microsynth.microsynth.utils.complement_ext_debitor_nr
+    bench execute microsynth.microsynth.utils.complement_ext_debitor_nr --kwargs "{'dry_run': True}"
     """
     sql_query = """SELECT `tabCustomer`.`name`,
             `tabCustomer`.`customer_name`,
@@ -1933,7 +1933,7 @@ def complement_ext_debitor_nr():
     """
     customers = frappe.db.sql(sql_query, as_dict=True)
     same_tax_id_diff_ext_dnr = {}
-    counter = chaos_counter = 0
+    counter = chaos_counter = unique_tax_id = no_ext_deb_nr = 0
     print(f"Found {len(customers)} enabled Customers with missing ext_debitor_number and "
           f"Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.\n")
     for customer in customers:
@@ -1943,12 +1943,14 @@ def complement_ext_debitor_nr():
                                          ['disabled', '=', '0']],
                                 fields=['name', 'customer_name', 'ext_debitor_number'])
         if len(same_tax_id) == 0:
+            unique_tax_id += 1
             continue
         first_ext_debitor_nr = None
         for c in same_tax_id:
             if c['ext_debitor_number']:
                 first_ext_debitor_nr = c['ext_debitor_number']
         if not first_ext_debitor_nr:
+            no_ext_deb_nr += 1
             continue
         same_ext_debitor_number = True
         for c in same_tax_id:
@@ -1959,15 +1961,15 @@ def complement_ext_debitor_nr():
                 chaos_counter += 1
                 break
         if same_ext_debitor_number and first_ext_debitor_nr:
-            print(f"Going to set External Debitor Number of Customer '{customer['name']}' ('{customer['customer_name']}') to '{first_ext_debitor_nr}' "
-                f"from Customer '{same_tax_id[0]['name']}' ('{same_tax_id[0]['customer_name']}') with the same Tax ID '{customer['tax_id']}'.")
-            # Set External Debitor Number of customer['name'] to first_ext_debitor_nr
-            customer_doc = frappe.get_doc("Customer", customer['name'])
-            customer_doc.ext_debitor_number = first_ext_debitor_nr
-            customer_doc.save()
+            print(f"{'Could' if dry_run else 'Going to'} set External Debitor Number of Customer '{customer['name']}' "
+                  f"('{customer['customer_name']}') to '{first_ext_debitor_nr}' from Customer '{same_tax_id[0]['name']}' "
+                  f"('{same_tax_id[0]['customer_name']}') with the same Tax ID '{customer['tax_id']}'.")
+            if not dry_run:
+                # Set External Debitor Number of customer['name'] to first_ext_debitor_nr
+                customer_doc = frappe.get_doc("Customer", customer['name'])
+                customer_doc.ext_debitor_number = first_ext_debitor_nr
+                customer_doc.save()
             counter += 1
-    print(f"\nSet the External Debitor Number of {counter} Customers.")
-    print(f"\nThe External Debitor Number of {chaos_counter} Customers was not set, because there are different External Debitor Numbers for the same Tax ID.")
     print(f"\nThere are {len(same_tax_id_diff_ext_dnr)} Tax IDs where the Customers have different External Debitor Numbers:")
     for tax_id, entry in same_tax_id_diff_ext_dnr.items():
         if not tax_id:
@@ -1976,6 +1978,15 @@ def complement_ext_debitor_nr():
         for cust in entry:
             if cust['ext_debitor_number']:
                 print(f"External Debitor Number '{cust['ext_debitor_number']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
+    print(f"\n\nThere are {len(same_tax_id_diff_ext_dnr)} Tax IDs where the Customers have different External Debitor Numbers.\n")
+    print(f"\n{len(customers)} enabled Customers with missing ext_debitor_number and "
+          f"Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH break down as follows:")
+    print(f"\nCould have set the External Debitor Number of {counter} Customers. (There is at least one Customer with the same Tax ID "
+          f"and an External Debitor Number and all Customers with the same Tax ID have the same non-empty External Debitor Number.)")
+    print(f"\nThe External Debitor Number of {unique_tax_id + no_ext_deb_nr + chaos_counter} Customers was not set, because ...")
+    print(f"\n{unique_tax_id} Customers have a unique Tax ID (no other Customer with the same Tax ID).")
+    print(f"\nFor {no_ext_deb_nr} Customers, at least one other Customer with the same Tax ID was found but none of them has an External Debitor Number.")
+    print(f"\nThere are {chaos_counter} Customers where the Customers with the same Tax ID have different External Debitor Numbers.")
 
 
 def find_orders_with_missing_tax_id():
