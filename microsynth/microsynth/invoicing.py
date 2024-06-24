@@ -1467,8 +1467,8 @@ def transmit_carlo_erba_invoices(sales_invoices):
 
     pdf_export(sales_invoices, path)
 
-    for so in sales_invoices:
-        delivery_notes = get_delivery_notes(so)
+    for si in sales_invoices:
+        delivery_notes = get_delivery_notes(si)
         pdf_export_delivery_notes(delivery_notes, path)
 
     lines = []

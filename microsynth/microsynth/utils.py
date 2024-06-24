@@ -46,17 +46,30 @@ def get_customer(contact):
     return customer_id
 
 
-# TODO
-# Rename get_billing_address to find_billing_address
-# New function get_billing_address that pulls from the invoice_to contact of a customer. fall back on find_billing_address below
 def get_billing_address(customer_id):
+    """
+    Returns the Address of the Invoice To Contact of the Customer specified by its ID.
+
+    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    """
+    invoice_to_contact = frappe.get_value("Customer", customer_id, "invoice_to")
+    if not invoice_to_contact:
+        frappe.log_error(f"Customer '{customer_id}' has no Invoice To Contact.", "utils.get_billing_address")
+        return find_billing_address(customer_id)
+    billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
+    if not billing_address:
+        frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
+        return find_billing_address(customer_id)
+    return billing_address
+
+
+def find_billing_address(customer_id):
     """
     Returns the primary billing address of a customer specified by its id.
 
     run
-    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    bench execute "microsynth.microsynth.utils.find_billing_address" --kwargs "{'customer_id':8003}"
     """
-
     addresses = frappe.db.sql(
         """ SELECT 
                 `tabAddress`.`name`,
@@ -83,7 +96,7 @@ def get_billing_address(customer_id):
     if len(addresses) == 1:
         return addresses[0]
     else: 
-        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"get_billing_address")
+        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"find_billing_address")
 
 
 @frappe.whitelist()
