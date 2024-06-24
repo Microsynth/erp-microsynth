@@ -73,8 +73,9 @@ function process_queue() {
                     'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.pick_labels",
                     'args': {
                         'sales_order': locals.label_queue[0].sales_order,
-                        'from_barcode': locals.label_queue[0].from_barcode,
-                        'to_barcode': locals.label_queue[0].to_barcode
+                        'from_barcode': Number(locals.label_queue[0].from_barcode),
+                        'to_barcode': locals.label_queue[0].to_barcode,
+                        'number_length': locals.label_queue[0].from_barcode.length
                     },
                     'callback': function(r) {
                         // open print dialog & print
@@ -142,12 +143,11 @@ function first_barcode_dialog() {
                 var validated = false;
                 // delete spaces and numbers to get the prefix
                 var prefix = values.from_barcode.replace(/\s+/g, '').replace(/[0-9]/g, '');
-                // delete spaces and letters to get from_barcode as number
-                var from_barcode = Number(values.from_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, ''));
-                //frappe.show_alert("Prefix = " + prefix + "; from_barcode = " + from_barcode);
-                var to_barcode = from_barcode + Number(locals.label_queue[0].qty) - 1;
+                // delete spaces and letters
+                var from_barcode = values.from_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+                var to_barcode = Number(from_barcode) + Number(locals.label_queue[0].qty) - 1;
                 
-                validated = is_in_range(locals.label_queue[0].range, from_barcode)
+                validated = is_in_range(locals.label_queue[0].range, Number(from_barcode))
                             && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
                 
                 if (validated) {
@@ -158,9 +158,8 @@ function first_barcode_dialog() {
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
                 
-                
                 //process_queue(); // check availability, the proceed
-                are_labels_available(locals.label_queue[0].item_code, from_barcode, to_barcode);
+                are_labels_available(locals.label_queue[0].item_code, Number(from_barcode), to_barcode);
             },
             __("Pick first label"),
             __("OK")
@@ -218,7 +217,7 @@ function second_barcode_dialog() {
                     'fieldtype': 'Data', 
                     'label': 'From barcode', 
                     'read_only': 1, 
-                    'default': locals.label_queue[0].prefix + locals.label_queue[0].from_barcode
+                    'default': (locals.label_queue[0].prefix ? locals.label_queue[0].prefix : '') + locals.label_queue[0].from_barcode
                 }
             ],
             function (values) {
@@ -231,7 +230,7 @@ function second_barcode_dialog() {
                 
                 validated = 
                     is_in_range(locals.label_queue[0].range, to_barcode)
-                    && to_barcode == locals.label_queue[0].from_barcode + Number(locals.label_queue[0].qty) - 1
+                    && to_barcode == Number(locals.label_queue[0].from_barcode) + Number(locals.label_queue[0].qty) - 1
                     && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
                 
                 if (validated) {
@@ -281,7 +280,7 @@ function are_labels_available(item_code, from_barcode, to_barcode) {
         'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.are_labels_available",
         'args': {
             'item_code': item_code,
-            'from_barcode': from_barcode,
+            'from_barcode': Number(from_barcode),
             'to_barcode': to_barcode
         },
         'asyc': false,
