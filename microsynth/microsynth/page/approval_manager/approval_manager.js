@@ -65,7 +65,6 @@ frappe.approval_manager = {
             'method': 'microsynth.microsynth.page.approval_manager.approval_manager.approve',
             'args': {
                 'pinv': pinv,
-                'is_final': locals.is_final,
                 'user': frappe.session.user
             },
             'callback': function(r) {
