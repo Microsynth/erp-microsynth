@@ -63,6 +63,8 @@ frappe.approval_manager = {
     approve: function(pinv) {
         frappe.call({
             'method': 'microsynth.microsynth.page.approval_manager.approval_manager.approve',
+            'freeze': true,
+            'freeze_message': __("Approving..."),
             'args': {
                 'pinv': pinv,
                 'user': frappe.session.user
@@ -75,6 +77,8 @@ frappe.approval_manager = {
     reject: function(pinv) {
         frappe.call({
             'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reject',
+            'freeze': true,
+            'freeze_message': __("Rejecting..."),
             'args': {
                 'pinv': pinv,
                 'user': frappe.session.user
