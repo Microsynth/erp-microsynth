@@ -72,6 +72,24 @@ frappe.ui.form.on('Contact', {
                 var dashboard_comment_color = 'blue';
             }
 
+            if (frm.doc.status === 'Open') {
+                frappe.call({
+                    "method": "microsynth.microsynth.utils.get_potential_contact_duplicates",
+                    'args': {
+                        'contact_id': frm.doc.name
+                    },
+                    "callback": function(response) {
+                        if (response.message) {
+                            frm.dashboard.add_comment('<br>Potential Duplicates:', 'red', true);
+                            var contacts = response.message;
+                            for (var i = 0; i < contacts.length; i++) {
+                                frm.dashboard.add_comment('<b>' + contacts[i].name + '</b>: ' + contacts[i].first_name + ' ' + contacts[i].last_name + ', Institute: ' + contacts[i].institute + ' (<a href="/desk#contact_merger?contact_1=' + frm.doc.name + '&contact_2=' + contacts[i].name + '">Open in Contact Merger</a>)', 'red', true);
+                            }
+                        }
+                    }
+                });                
+            }
+
             frappe.call({
                 "method": "frappe.client.get",
                 "args": {

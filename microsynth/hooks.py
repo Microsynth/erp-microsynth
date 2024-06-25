@@ -17,7 +17,7 @@ app_license = "AGPL"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/microsynth/css/microsynth.css"
 app_include_js = [
-	"/assets/microsynth/js/microsynth_common.js"
+    "assets/js/microsynth_common.min.js"
 ]
 
 # include js, css files in header of web template
@@ -29,26 +29,27 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {
-    "Customer" :        "public/js/customer.js",
-    "Contact" :         "public/js/contact.js",
-    "Address" :         "public/js/address.js",
-    "Price List" :      "public/js/price_list.js",
-    "Quotation":        "public/js/quotation.js",
-    "Sales Order":      "public/js/sales_order.js",
-    "Delivery Note":    "public/js/delivery_note.js",
-    "Sales Invoice":    "public/js/sales_invoice.js",
-    "Material Request": "public/js/material_request.js",
-    "Purchase Order":   "public/js/purchase_order.js",
-    "Purchase Receipt": "public/js/purchase_receipt.js",
-    "Purchase Invoice": "public/js/purchase_invoice.js",
-    "Payment Entry":    "public/js/payment_entry.js",
-    "Payment Reminder": "public/js/payment_reminder.js",
-    "Item":             "public/js/item.js",
-    "Item Group":       "public/js/item_group.js",
-    "Item Price":       "public/js/item_price.js",
-    "User":             "public/js/user.js",
-    "File":             "public/js/file.js",
-    "Journal Entry":    "public/js/journal_entry.js"
+    "Address" :           "public/js/address.js",
+    "Contact" :           "public/js/contact.js",
+    "Customer" :          "public/js/customer.js",
+    "Delivery Note":      "public/js/delivery_note.js",
+    "File":               "public/js/file.js",
+    "Item Group":         "public/js/item_group.js",
+    "Item Price":         "public/js/item_price.js",
+    "Item":               "public/js/item.js",
+    "Journal Entry":      "public/js/journal_entry.js",
+    "Material Request":   "public/js/material_request.js",
+    "Payment Entry":      "public/js/payment_entry.js",
+    "Payment Reminder":   "public/js/payment_reminder.js",
+    "Price List" :        "public/js/price_list.js",
+    "Purchase Invoice":   "public/js/purchase_invoice.js",
+    "Purchase Order":     "public/js/purchase_order.js",
+    "Purchase Receipt":   "public/js/purchase_receipt.js",
+    "Quotation":          "public/js/quotation.js",
+    "Sales Invoice":      "public/js/sales_invoice.js",
+    "Sales Order":        "public/js/sales_order.js",
+    "Standing Quotation": "public/js/standing_quotation.js",
+    "User":               "public/js/user.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -65,6 +66,7 @@ jenv = {
         "get_product_type:microsynth.microsynth.portfolio.get_product_type",
         "get_training_records:microsynth.qms.doctype.qm_training_record.qm_training_record.get_training_records",
         "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews",
+        "get_valid_appendices:microsynth.qms.doctype.qm_document.qm_document.get_valid_appendices",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message"
     ]

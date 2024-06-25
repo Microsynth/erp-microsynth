@@ -46,17 +46,30 @@ def get_customer(contact):
     return customer_id
 
 
-# TODO
-# Rename get_billing_address to find_billing_address
-# New function get_billing_address that pulls from the invoice_to contact of a customer. fall back on find_billing_address below
 def get_billing_address(customer_id):
+    """
+    Returns the Address of the Invoice To Contact of the Customer specified by its ID.
+
+    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    """
+    invoice_to_contact = frappe.get_value("Customer", customer_id, "invoice_to")
+    if not invoice_to_contact:
+        frappe.log_error(f"Customer '{customer_id}' has no Invoice To Contact.", "utils.get_billing_address")
+        return find_billing_address(customer_id)
+    billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
+    if not billing_address:
+        frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
+        return find_billing_address(customer_id)
+    return billing_address
+
+
+def find_billing_address(customer_id):
     """
     Returns the primary billing address of a customer specified by its id.
 
     run
-    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    bench execute "microsynth.microsynth.utils.find_billing_address" --kwargs "{'customer_id':8003}"
     """
-
     addresses = frappe.db.sql(
         """ SELECT 
                 `tabAddress`.`name`,
@@ -83,7 +96,7 @@ def get_billing_address(customer_id):
     if len(addresses) == 1:
         return addresses[0]
     else: 
-        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"get_billing_address")
+        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"find_billing_address")
 
 
 @frappe.whitelist()
@@ -1383,19 +1396,29 @@ def configure_territory(customer_id):
     the shipping address if the territory is "All Territories" (default), empty or None.
 
     run
-    bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '832739'}"
+    bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '836496'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
     if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
-            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory."
-            frappe.log_error(subject, "utils.configure_territory")
-            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
+            if customer.owner == 'webshop@microsynth.ch' or customer.owner == 'Administrator':
+                first_name = 'Administration'
+                recipient = 'info@microsynth.ch'
+                reason = ''
+            else:
+                first_name = frappe.get_value("User", customer.owner, "first_name")
+                recipient = customer.owner
+                reason = 'You are receiving this e-mail because you have created the Customer in the ERP.<br>'
+            message = f"Dear {first_name},<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
                 f"Therefore the ERP is unable to determine the Territory of this Customer.<br>" \
-                f"Please add a shipping address, Territory and Sales Manager.<br><br>Best regards,<br>Jens"
+                f"Please add a shipping address, Territory and Sales Manager for Customer '{customer_id}' in the ERP.<br>" \
+                f"{reason}<br>Best regards,<br>Jens"
+            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory. Send an email to {recipient}."
+            frappe.log_error(subject, "utils.configure_territory")
             make(
-                recipients = "info@microsynth.ch",
+                recipients = recipient,
+                cc = "info@microsynth.ch" if recipient != "info@microsynth.ch" else '',
                 sender = "jens.petermann@microsynth.ch",
                 subject = "[ERP] " + subject,
                 content = message,
@@ -1408,7 +1431,6 @@ def configure_territory(customer_id):
             customer.save()
         else:
             return
-
         #print(f"Customer '{customer_id}' got assigned Territory '{territory.name}'.")
     #else:
         #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
@@ -1915,13 +1937,13 @@ def find_same_ext_dnr_diff_taxid():
           f"where the Customers have different Tax IDs.")
 
 
-def complement_ext_debitor_nr():
+def complement_ext_debitor_nr(dry_run=True):
     """
     Try to find unique External Debitor Numbers for Customers with default Company
     Microsynth Seqlab GmbH or Microsynth Austria GmbH from Customers with the same Tax ID.
     Should be run by a daily cron job.
 
-    bench execute microsynth.microsynth.utils.complement_ext_debitor_nr
+    bench execute microsynth.microsynth.utils.complement_ext_debitor_nr --kwargs "{'dry_run': True}"
     """
     sql_query = """SELECT `tabCustomer`.`name`,
             `tabCustomer`.`customer_name`,
@@ -1933,7 +1955,7 @@ def complement_ext_debitor_nr():
     """
     customers = frappe.db.sql(sql_query, as_dict=True)
     same_tax_id_diff_ext_dnr = {}
-    counter = chaos_counter = 0
+    counter = chaos_counter = unique_tax_id = no_ext_deb_nr = 0
     print(f"Found {len(customers)} enabled Customers with missing ext_debitor_number and "
           f"Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.\n")
     for customer in customers:
@@ -1943,12 +1965,14 @@ def complement_ext_debitor_nr():
                                          ['disabled', '=', '0']],
                                 fields=['name', 'customer_name', 'ext_debitor_number'])
         if len(same_tax_id) == 0:
+            unique_tax_id += 1
             continue
         first_ext_debitor_nr = None
         for c in same_tax_id:
             if c['ext_debitor_number']:
                 first_ext_debitor_nr = c['ext_debitor_number']
         if not first_ext_debitor_nr:
+            no_ext_deb_nr += 1
             continue
         same_ext_debitor_number = True
         for c in same_tax_id:
@@ -1959,15 +1983,15 @@ def complement_ext_debitor_nr():
                 chaos_counter += 1
                 break
         if same_ext_debitor_number and first_ext_debitor_nr:
-            print(f"Going to set External Debitor Number of Customer '{customer['name']}' ('{customer['customer_name']}') to '{first_ext_debitor_nr}' "
-                f"from Customer '{same_tax_id[0]['name']}' ('{same_tax_id[0]['customer_name']}') with the same Tax ID '{customer['tax_id']}'.")
-            # Set External Debitor Number of customer['name'] to first_ext_debitor_nr
-            customer_doc = frappe.get_doc("Customer", customer['name'])
-            customer_doc.ext_debitor_number = first_ext_debitor_nr
-            customer_doc.save()
+            print(f"{'Could' if dry_run else 'Going to'} set External Debitor Number of Customer '{customer['name']}' "
+                  f"('{customer['customer_name']}') to '{first_ext_debitor_nr}' from Customer '{same_tax_id[0]['name']}' "
+                  f"('{same_tax_id[0]['customer_name']}') with the same Tax ID '{customer['tax_id']}'.")
+            if not dry_run:
+                # Set External Debitor Number of customer['name'] to first_ext_debitor_nr
+                customer_doc = frappe.get_doc("Customer", customer['name'])
+                customer_doc.ext_debitor_number = first_ext_debitor_nr
+                customer_doc.save()
             counter += 1
-    print(f"\nSet the External Debitor Number of {counter} Customers.")
-    print(f"\nThe External Debitor Number of {chaos_counter} Customers was not set, because there are different External Debitor Numbers for the same Tax ID.")
     print(f"\nThere are {len(same_tax_id_diff_ext_dnr)} Tax IDs where the Customers have different External Debitor Numbers:")
     for tax_id, entry in same_tax_id_diff_ext_dnr.items():
         if not tax_id:
@@ -1976,6 +2000,15 @@ def complement_ext_debitor_nr():
         for cust in entry:
             if cust['ext_debitor_number']:
                 print(f"External Debitor Number '{cust['ext_debitor_number']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
+    print(f"\n\nThere are {len(same_tax_id_diff_ext_dnr)} Tax IDs where the Customers have different External Debitor Numbers.\n")
+    print(f"\n{len(customers)} enabled Customers with missing ext_debitor_number and "
+          f"Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH break down as follows:")
+    print(f"\nCould have set the External Debitor Number of {counter} Customers. (There is at least one Customer with the same Tax ID "
+          f"and an External Debitor Number and all Customers with the same Tax ID have the same non-empty External Debitor Number.)")
+    print(f"\nThe External Debitor Number of {unique_tax_id + no_ext_deb_nr + chaos_counter} Customers was not set, because ...")
+    print(f"\n{unique_tax_id} Customers have a unique Tax ID (no other Customer with the same Tax ID).")
+    print(f"\nFor {no_ext_deb_nr} Customers, at least one other Customer with the same Tax ID was found but none of them has an External Debitor Number.")
+    print(f"\nThere are {chaos_counter} Customers where the Customers with the same Tax ID have different External Debitor Numbers.")
 
 
 def find_orders_with_missing_tax_id():
@@ -2142,5 +2175,29 @@ def force_cancel(dt, dn):
 		frappe.db.commit()
 	except Exception as err:
 		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
-	
 	return
+
+
+@frappe.whitelist()
+def get_potential_contact_duplicates(contact_id):
+    """
+    """
+    contact = frappe.get_doc("Contact", contact_id)
+    address = frappe.get_doc("Address", contact.address)
+    contacts = frappe.db.sql(f"""
+        SELECT `tabContact`.`name`,
+            `tabContact`.`first_name`,
+            `tabContact`.`last_name`,
+            `tabContact`.`institute`
+        FROM `tabContact`
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND (`tabContact`.`email_id` = '{contact.email_id}'
+                OR (`tabContact`.`first_name` = '{contact.first_name}'
+                    AND `tabContact`.`last_name` = '{contact.last_name}'             
+                )
+            )
+            AND `tabAddress`.`address_type` = '{address.address_type}'
+            AND `tabContact`.`name` != '{contact.name}'
+        """, as_dict=True)
+    return contacts

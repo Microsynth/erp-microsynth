@@ -46,7 +46,8 @@ frappe.contact_merger = {
         });
     },
     run: function() {
-        
+        // read command line arguments
+        frappe.contact_merger.get_request_arguments();
     },
     display_contact_details: function() {
         frappe.call({
@@ -152,6 +153,32 @@ frappe.contact_merger = {
         var contact_2 = document.getElementById("contact_2").value;
         var target = "/desk" + frappe.utils.get_form_link("Contact", contact_2);
         window.open(target);
+    },
+    get_request_arguments: function() {
+        // get command line parameters
+        var arguments = window.location.toString().split("?");
+        if (!arguments[arguments.length - 1].startsWith("http")) {
+            var args_raw = arguments[arguments.length - 1].split("&");
+            var args = {};
+            args_raw.forEach(function (arg) {
+                var kv = arg.split("=");
+                if (kv.length > 1) {
+                    args[kv[0]] = kv[1];
+                }
+            });
+            var has_contacts = false;
+            if (args['contact_1']) {
+                document.getElementById('contact_1').value = args['contact_1'];
+                has_contacts = true;
+            }
+            if (args['contact_2']) {
+                document.getElementById('contact_2').value = args['contact_2'];
+                has_contacts = true;
+            }
+            if (has_contacts) {
+                frappe.contact_merger.display_contact_details();
+            }
+        }
     }
 }
 
