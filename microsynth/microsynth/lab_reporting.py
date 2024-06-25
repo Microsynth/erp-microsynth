@@ -3,13 +3,14 @@
 
 import frappe
 from frappe.contacts.doctype.address.address import get_address_display
+from microsynth.microsynth.utils import get_customer
 
 
 def create_analysis_report(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#create-analysis-report
 
-    bench execute "microsynth.microsynth.lab_reporting.create_analysis_report" --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma'}}"
+    bench execute "microsynth.microsynth.lab_reporting.create_analysis_report" --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma', 'contact_person': '215856'}}"
     """
     if not content:
         return {'success': False, 'message': "Please provide content", 'reference': None}
@@ -25,6 +26,22 @@ def create_analysis_report(content=None):
                 "comment": sample_detail['comment'] or ''
             })
     try:
+        if 'contact_person' in content and content['contact_person'] and (not 'address' in content or not content['address']):
+            # get Address from Contact
+            address = frappe.get_value("Contact", content['contact_person'], 'address')
+        elif content['address']:
+            address = content['address']
+        else:
+            address = ''
+        
+        if 'contact_person' in content and content['contact_person'] and (not 'customer' in content or not content['customer']):
+            # get Address from Contact
+            customer = get_customer(content['contact_person'])
+        elif content['customer']:
+            customer = content['customer']
+        else:
+            customer = ''
+
         ar = frappe.get_doc({
             'doctype': 'Analysis Report',
             'sales_order': content['sales_order'] if 'sales_order' in content else '',
@@ -32,10 +49,10 @@ def create_analysis_report(content=None):
             'report_type': content['report_type'] if 'report_type' in content else '',
             'issue_date': content['issue_date'] if 'issue_date' in content else '',
             'approved_by': content['approved_by'] if 'approved_by' in content else '',
-            'customer': content['customer'] if 'customer' in content else '',
+            'customer': customer,
             'contact_person': content['contact_person'] if 'contact_person' in content else '',
-            'address': content['address'] if 'address' in content else '',
-            'address_display': get_address_display(content['address']) if 'address' in content else '',
+            'address': address,
+            'address_display': get_address_display(address) if address else '',
             'sample_details': sample_details
         })
         ar.insert()
