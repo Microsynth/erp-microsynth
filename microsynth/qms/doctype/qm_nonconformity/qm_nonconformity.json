@@ -8,14 +8,19 @@
   "document_identification_section",
   "title",
   "qm_process",
+  "date",
   "web_order_id",
   "column_break_4",
   "nc_type",
   "status",
   "company",
+  "amended_from",
   "description_section",
   "description",
-  "amended_from",
+  "creation1_section",
+  "created_on",
+  "column_break_14",
+  "created_by",
   "classification_section",
   "criticality_classification",
   "column_break_5",
@@ -227,11 +232,37 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "creation1_section",
+   "fieldtype": "Section Break",
+   "label": "Creation"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-24 18:01:52.879939",
- "modified_by": "Administrator",
+ "modified": "2024-06-25 14:55:58.490132",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",
