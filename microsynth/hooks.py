@@ -29,26 +29,27 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {
-    "Customer" :        "public/js/customer.js",
-    "Contact" :         "public/js/contact.js",
-    "Address" :         "public/js/address.js",
-    "Price List" :      "public/js/price_list.js",
-    "Quotation":        "public/js/quotation.js",
-    "Sales Order":      "public/js/sales_order.js",
-    "Delivery Note":    "public/js/delivery_note.js",
-    "Sales Invoice":    "public/js/sales_invoice.js",
-    "Material Request": "public/js/material_request.js",
-    "Purchase Order":   "public/js/purchase_order.js",
-    "Purchase Receipt": "public/js/purchase_receipt.js",
-    "Purchase Invoice": "public/js/purchase_invoice.js",
-    "Payment Entry":    "public/js/payment_entry.js",
-    "Payment Reminder": "public/js/payment_reminder.js",
-    "Item":             "public/js/item.js",
-    "Item Group":       "public/js/item_group.js",
-    "Item Price":       "public/js/item_price.js",
-    "User":             "public/js/user.js",
-    "File":             "public/js/file.js",
-    "Journal Entry":    "public/js/journal_entry.js"
+    "Address" :           "public/js/address.js",
+    "Contact" :           "public/js/contact.js",
+    "Customer" :          "public/js/customer.js",
+    "Delivery Note":      "public/js/delivery_note.js",
+    "File":               "public/js/file.js",
+    "Item Group":         "public/js/item_group.js",
+    "Item Price":         "public/js/item_price.js",
+    "Item":               "public/js/item.js",
+    "Journal Entry":      "public/js/journal_entry.js",
+    "Material Request":   "public/js/material_request.js",
+    "Payment Entry":      "public/js/payment_entry.js",
+    "Payment Reminder":   "public/js/payment_reminder.js",
+    "Price List" :        "public/js/price_list.js",
+    "Purchase Invoice":   "public/js/purchase_invoice.js",
+    "Purchase Order":     "public/js/purchase_order.js",
+    "Purchase Receipt":   "public/js/purchase_receipt.js",
+    "Quotation":          "public/js/quotation.js",
+    "Sales Invoice":      "public/js/sales_invoice.js",
+    "Sales Order":        "public/js/sales_order.js",
+    "Standing Quotation": "public/js/standing_quotation.js",
+    "User":               "public/js/user.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
