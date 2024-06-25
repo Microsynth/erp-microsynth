@@ -29,20 +29,22 @@ frappe.ui.form.on('Quotation', {
             var dashboard_comment_color = 'green';
             //cur_frm.dashboard.add_comment("<br>", dashboard_comment_color, true)
             for (var i = 0; i < frm.doc.items.length; i++) {
-                frappe.call({
-                    'method': "frappe.client.get",
-                    'args': {
-                         "doctype": "Item",
-                         "name": frm.doc.items[i].item_code
-                    },
-                    'callback': function(response) {
-                         var item = response.message;
-                         if (item.internal_note) {
-                            cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
-                         }
-                    }
-                 });
-            }            
+                if (frm.doc.items[i].item_code) {
+                    frappe.call({
+                        'method': "frappe.client.get",
+                        'args': {
+                            "doctype": "Item",
+                            "name": frm.doc.items[i].item_code
+                        },
+                        'callback': function(response) {
+                            var item = response.message;
+                            if (item.internal_note) {
+                                cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         // run code with a delay because the core framework code is slower than the refresh trigger and would overwrite it
