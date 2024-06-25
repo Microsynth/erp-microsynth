@@ -17,7 +17,7 @@ app_license = "AGPL"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/microsynth/css/microsynth.css"
 app_include_js = [
-	"/assets/microsynth/js/microsynth_common.js"
+    "assets/js/microsynth_common.min.js"
 ]
 
 # include js, css files in header of web template
