@@ -46,20 +46,23 @@ def get_customer(contact):
     return customer_id
 
 
-def get_billing_address(customer_id):
+def get_billing_address(customer):
     """
     Returns a dictionary of the Address of the Invoice To Contact of the Customer specified by its ID.
 
     bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id': 8003}"
     """
-    invoice_to_contact = frappe.get_value("Customer", customer_id, "invoice_to")
+    if type(customer) == str:
+        invoice_to_contact = frappe.get_value("Customer", customer, "invoice_to")
+    else:
+        invoice_to_contact = customer.invoice_to
     if not invoice_to_contact:
-        frappe.log_error(f"Customer '{customer_id}' has no Invoice To Contact.", "utils.get_billing_address")
-        return find_billing_address(customer_id)
+        frappe.log_error(f"Customer '{customer.name}' has no Invoice To Contact.", "utils.get_billing_address")
+        return find_billing_address(customer.name)
     billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
     if not billing_address:
         frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
-        return find_billing_address(customer_id)
+        return find_billing_address(customer.name)
     addresses = frappe.db.sql(f"""
             SELECT 
                 `tabAddress`.`name`,
@@ -81,7 +84,7 @@ def get_billing_address(customer_id):
     if len(addresses) == 1:
         return addresses[0]
     else: 
-        return find_billing_address(customer_id)
+        return find_billing_address(customer.name)
 
 
 def find_billing_address(customer_id):
