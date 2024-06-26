@@ -3,9 +3,11 @@
 
 
 frappe.ui.form.on('QM Nonconformity', {
-    // refresh: function(frm) {
-
-    // },
+    refresh: function(frm) {
+        if (frm.doc.docstatus == 0 && !frm.doc.nc_type && !frappe.user.has_role('QAU')) {
+            determine_nc_type();
+        }
+    },
     on_submit(frm) {
         cur_frm.set_value("status", "Created");
     },
@@ -30,6 +32,11 @@ frappe.ui.form.on('QM Nonconformity', {
         }
     }
 });
+
+
+function determine_nc_type() {
+    // TODO: Discuss with Lars how to best implement the decision tree? (ideas: frappe.prompt, new frappe.ui.Dialog)
+}
 
 
 function calculate_risk_classification(occ_prob, impact) {
