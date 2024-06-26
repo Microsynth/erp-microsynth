@@ -39,9 +39,9 @@ def get_data(filters):
         if filters.get('contact'):
             filter_conditions += f"AND `tabContact Note`.`contact_person` = '{filters.get('contact')}'"
         if filters.get('first_name'):
-            filter_conditions += f"AND `tabContact Note`.`first_name` = '{filters.get('first_name')}'"
+            filter_conditions += f"AND `tabContact Note`.`first_name` LIKE '{filters.get('first_name')}'"
         if filters.get('last_name'):
-            filter_conditions += f"AND `tabContact Note`.`last_name` = '{filters.get('last_name')}'"
+            filter_conditions += f"AND `tabContact Note`.`last_name` LIKE '{filters.get('last_name')}'"
         if filters.get('customer_name'):
             filter_conditions += f"AND `tabCustomer`.`customer_name` LIKE '%{filters.get('customer_name')}%'"
         if filters.get('sales_manager'):
@@ -52,6 +52,10 @@ def get_data(filters):
             filter_conditions += f"AND `tabAddress`.`country` LIKE '%{filters.get('country')}%'"
         if filters.get('city'):
             filter_conditions += f"AND `tabAddress`.`city` LIKE '%{filters.get('city')}%'"
+        if filters.get('pincode'):
+            filter_conditions += f"AND `tabAddress`.`pincode` = '{filters.get('pincode')}'"
+        if filters.get('street'):
+            filter_conditions += f"AND `tabAddress`.`address_line1` LIKE '%{filters.get('street')}%'"
         #if filters.get('institute'):
         #    filter_conditions += f"AND `tabContact`.`institute` LIKE '%{filters.get('institute')}%'"
         if filters.get('institute_key'):

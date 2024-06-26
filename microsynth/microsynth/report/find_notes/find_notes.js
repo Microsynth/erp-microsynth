@@ -47,6 +47,16 @@ frappe.query_reports["Find Notes"] = {
             "fieldtype": "Data"
         },
         {
+            "fieldname": "pincode",
+            "label": __("Postal Code"),
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "street",
+            "label": __("Street"),
+            "fieldtype": "Data"
+        },
+        {
             "fieldname": "institute_key",
             "label": __("Institute Key"),
             "fieldtype": "Data"
