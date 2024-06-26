@@ -1,6 +1,8 @@
 {
     "js/microsynth_common.min.js": [
-        "public/js/microsynth_common.js",
+        "public/js/microsynth_common.js"
+    ],
+    "js/microsynth_templates.min.js": [
         "public/js/templates/contact_list.html"
     ]
 }
