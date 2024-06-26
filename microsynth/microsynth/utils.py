@@ -2223,3 +2223,35 @@ def get_potential_contact_duplicates(contact_id):
             AND `tabContact`.`name` != '{contact.name}'
         """, as_dict=True)
     return contacts
+
+
+def set_module_for_one_user(module, user):
+    """
+    bench execute microsynth.microsynth.utils.set_module_for_one_user --kwargs "{'module': 'QMS', 'user': 'firstname.lastname@microsynth.ch'}"
+    """
+    home_settings = frappe.cache().hget('home_settings', user)
+    if not home_settings:
+        print(f"Found no home_settings for user '{user}'.")
+        return
+    modules = home_settings['modules_by_category']['Modules']
+    inserted = False
+    if not module in modules and 'Microsynth' in modules:
+        for i in range(len(modules)):
+            if modules[i] == 'Microsynth':
+                modules.insert(i+1, module)
+                inserted = True
+                break
+    if inserted:
+        home_settings['modules_by_category']['Modules'] = modules
+        s = frappe.parse_json(home_settings)
+        frappe.cache().hset('home_settings', user, s)
+        print(f"Added module '{module}' to home_settings of user '{user}'.")
+
+
+def set_module_for_all_users(module):
+    """
+    bench execute microsynth.microsynth.utils.set_module_for_all_users --kwargs "{'module': 'QMS'}"
+    """
+    users = frappe.get_all("User", fields=['name'])
+    for user in users:
+        set_module_for_one_user(module, user['name'])
