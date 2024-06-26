@@ -994,6 +994,11 @@ def set_default_language(customer):
     run
     bench execute microsynth.microsynth.utils.set_default_language --kwargs "{'customer':'8003'}"
     """
+    customer = frappe.get_doc("Customer", customer)
+    if customer.language:
+        # early abort if language is already set
+        return
+
     a = get_billing_address(customer)
 
     if a.country == "Switzerland":
@@ -1007,19 +1012,15 @@ def set_default_language(customer):
             l = "de"
     elif a.country in ("Germany", "Austria"):
         l = "de"
-    elif a.country == "France":
+    elif a.country in ("France", "Réunion", "French Guiana"):
         l = "fr"
     else:
         l = "en"
 
-    customer = frappe.get_doc("Customer", customer)
-    
     if customer.language is None:
         customer.language = l
         customer.save()
         # frappe.db.commit()
-
-    return
 
 
 def set_invoice_to(customer):
