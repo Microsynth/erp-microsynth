@@ -48,9 +48,9 @@ def get_customer(contact):
 
 def get_billing_address(customer_id):
     """
-    Returns the Address of the Invoice To Contact of the Customer specified by its ID.
+    Returns a dictionary of the Address of the Invoice To Contact of the Customer specified by its ID.
 
-    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id':8003}"
+    bench execute "microsynth.microsynth.utils.get_billing_address" --kwargs "{'customer_id': 8003}"
     """
     invoice_to_contact = frappe.get_value("Customer", customer_id, "invoice_to")
     if not invoice_to_contact:
@@ -60,7 +60,28 @@ def get_billing_address(customer_id):
     if not billing_address:
         frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
         return find_billing_address(customer_id)
-    return billing_address
+    addresses = frappe.db.sql(f"""
+            SELECT 
+                `tabAddress`.`name`,
+                `tabAddress`.`address_type`,
+                `tabAddress`.`overwrite_company`,
+                `tabAddress`.`address_line1`,
+                `tabAddress`.`address_line2`,
+                `tabAddress`.`pincode`,
+                `tabAddress`.`city`,
+                `tabAddress`.`country`,
+                `tabAddress`.`is_shipping_address`,
+                `tabAddress`.`is_primary_address`,
+                `tabAddress`.`geo_lat`,
+                `tabAddress`.`geo_long`,
+                `tabAddress`.`customer_address_id`
+            FROM `tabAddress`
+            WHERE `tabAddress`.`name` = "{billing_address}"
+            ;""", as_dict=True)
+    if len(addresses) == 1:
+        return addresses[0]
+    else: 
+        return find_billing_address(customer_id)
 
 
 def find_billing_address(customer_id):
@@ -2181,6 +2202,7 @@ def force_cancel(dt, dn):
 @frappe.whitelist()
 def get_potential_contact_duplicates(contact_id):
     """
+    bench execute microsynth.microsynth.utils.get_potential_contact_duplicates --kwargs "{'contact_id': '215856'}"
     """
     contact = frappe.get_doc("Contact", contact_id)
     address = frappe.get_doc("Address", contact.address)
