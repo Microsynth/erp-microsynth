@@ -4,8 +4,54 @@
 
 frappe.ui.form.on('QM Nonconformity', {
     refresh: function(frm) {
+
+        if (frm.doc.__islocal) {
+            cur_frm.set_value("created_by", frappe.session.user);
+            cur_frm.set_value("created_on", frappe.datetime.get_today());
+        }
+
+        if (!frm.doc.__islocal) {
+            cur_frm.page.clear_primary_action();
+            cur_frm.page.clear_secondary_action();
+        }
+
         if (frm.doc.docstatus == 0 && !frm.doc.nc_type && !frappe.user.has_role('QAU')) {
             determine_nc_type(frm);
+        }
+
+        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company
+        if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('nc_type', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('date', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+        } else {
+            cur_frm.set_df_property('title', 'read_only', false);
+            cur_frm.set_df_property('nc_type', 'read_only', false);
+            cur_frm.set_df_property('qm_process', 'read_only', false);
+            cur_frm.set_df_property('date', 'read_only', false);
+            cur_frm.set_df_property('company', 'read_only', false);
+        }
+
+        if (frm.doc.title && frm.doc.nc_type && frm.doc.description && frm.doc.qm_process) {
+            // add create button
+            cur_frm.page.set_primary_action(
+                __("Create"),
+                function() {
+                    create();
+                }
+            );
+        }
+
+        // set information bar for missing infos
+        cur_frm.dashboard.clear_comment();
+        if ((!frm.doc.__islocal)
+            && (!frm.doc.title 
+            || !frm.doc.nc_type
+            || !frm.doc.description
+            || !frm.doc.qm_process)) {
+                cur_frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
         }
 
         // Create Correction
@@ -78,6 +124,21 @@ function request_correction(frm) {
 
 function determine_nc_type(frm) {
     // TODO: Discuss with Lars how to best implement the decision tree? (ideas: frappe.prompt, new frappe.ui.Dialog)
+}
+
+
+function create(frm) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_created',
+        'args': {
+            'doc': cur_frm.doc.name,
+            'user': frappe.session.user
+        },
+        'async': false,
+        'callback': function(response) {
+            cur_frm.reload_doc();
+        }
+    });
 }
 
 
