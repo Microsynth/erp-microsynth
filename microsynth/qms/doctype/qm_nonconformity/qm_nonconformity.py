@@ -28,6 +28,12 @@ def set_created(doc, user):
 
 
 @frappe.whitelist()
+def set_classified(doc, user):
+    if not user_has_role(user, "QAU"):
+        frappe.throw(f"Only QAU is allowed to classify a QM Nonconformity.")
+    update_status(doc, "Classified")
+
+
 def update_status(nc, status):
     nc = frappe.get_doc("QM Document", nc)
     if nc.status == status:
@@ -40,3 +46,21 @@ def update_status(nc, status):
         frappe.db.commit()
     else: 
         frappe.throw(f"Update QM Nonconformity: Status transition is not allowed {nc.status} --> {status}")
+
+
+def user_has_role(user, role):
+    """
+    Check if a user has a role
+    """
+    role_matches = frappe.db.sql(f"""
+        SELECT `parent`, `role`
+        FROM `tabHas Role`
+        WHERE `parent` = "{user}"
+          AND `role` = "{role}"
+          AND `parenttype` = "User";
+        """, as_dict=True)
+    
+    if len(role_matches) > 0:
+        return True
+    else:
+        return False

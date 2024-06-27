@@ -34,12 +34,39 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('company', 'read_only', false);
         }
 
-        if (frm.doc.title && frm.doc.nc_type && frm.doc.description && frm.doc.qm_process) {
+        // Only QAU can change the classification
+        if (frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('criticality_classification', 'read_only', false);
+            cur_frm.set_df_property('regulatory_classification', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('criticality_classification', 'read_only', true);
+            cur_frm.set_df_property('regulatory_classification', 'read_only', true);
+        }
+
+        if (frm.doc.status == 'Draft'
+            && frm.doc.title
+            && frm.doc.nc_type
+            && frm.doc.description
+            && frm.doc.qm_process
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             // add create button
             cur_frm.page.set_primary_action(
                 __("Create"),
                 function() {
                     create();
+                }
+            );
+        }
+
+        if (frm.doc.status == 'Created'
+            && frm.doc.criticality_classification
+            && frm.doc.regulatory_classification
+            && (frappe.user.has_role('PV') || frappe.user.has_role('QAU'))) {
+            // add classify button
+            cur_frm.page.set_primary_action(
+                __("Classify"),
+                function() {
+                    classify();
                 }
             );
         }
@@ -130,6 +157,21 @@ function determine_nc_type(frm) {
 function create(frm) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_created',
+        'args': {
+            'doc': cur_frm.doc.name,
+            'user': frappe.session.user
+        },
+        'async': false,
+        'callback': function(response) {
+            cur_frm.reload_doc();
+        }
+    });
+}
+
+
+function classify(frm) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_classified',
         'args': {
             'doc': cur_frm.doc.name,
             'user': frappe.session.user
