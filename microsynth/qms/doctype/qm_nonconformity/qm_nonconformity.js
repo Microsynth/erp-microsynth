@@ -92,6 +92,16 @@ frappe.ui.form.on('QM Nonconformity', {
                 request_qm_action(frm, "Corrective Action");
             });
         }
+
+        // Add button to create a Change Request
+        if (["Planning"].includes(frm.doc.status)
+            && frm.doc.criticality_classification == "critical"
+            && !["OOS", "Track & Trend", "Event"].includes(frm.doc.nc_type)
+            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
+            frm.add_custom_button(__("Create Preventive Action (Change Control)"), function() {
+                create_change(frm);
+            });
+        }
     },
     on_submit(frm) {
         cur_frm.set_value("status", "Created");
@@ -207,5 +217,32 @@ function request_qm_action(frm, type) {
     },
     __('Please choose a Responsible Person and a Due Date'),
     __('Request ' + type)
+    )
+}
+
+
+function create_change(frm) {
+    frappe.prompt([
+        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description')}
+    ],
+    function(values){
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_change.qm_change.create_change',
+            'args': {
+                'dt': cur_frm.doc.doctype,
+                'dn': cur_frm.doc.name,
+                'description': values.description
+            },
+            "callback": function(response) {
+                frappe.show_alert( __("QM Change created") +
+                            ": <a href='/desk#Form/QM Change/" +
+                            response.message + "'>" + response.message +
+                            "</a>"
+                        );
+            }
+        });
+    },
+    __('Please enter a title'),
+    __('Create')
     )
 }
