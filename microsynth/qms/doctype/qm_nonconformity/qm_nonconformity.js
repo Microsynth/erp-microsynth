@@ -34,6 +34,20 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('company', 'read_only', false);
         }
 
+        // allow the creator or QAU to change the creator (transfer document)
+        if ((!frm.doc.__islocal)
+            && (["Draft"].includes(frm.doc.status))
+            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
+            ) {
+            // add change creator button
+            cur_frm.add_custom_button(
+                __("Change Creator"),
+                function() {
+                    change_creator();
+                }
+            );
+        }
+
         // Only QAU can change the classification
         if (frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
@@ -131,6 +145,26 @@ frappe.ui.form.on('QM Nonconformity', {
 
 function determine_nc_type(frm) {
     // TODO: Discuss with Lars how to best implement the decision tree? (ideas: frappe.prompt, new frappe.ui.Dialog)
+}
+
+
+function change_creator() {
+    frappe.prompt(
+        [
+            {'fieldname': 'new_creator', 
+             'fieldtype': 'Link',
+             'label': __('New Creator'),
+             'reqd': 1,
+             'options': 'User'
+            }
+        ],
+        function(values){
+            cur_frm.set_value("created_by", values.new_creator);
+            cur_frm.save();
+        },
+        __('Set new creator'),
+        __('Set')
+    );
 }
 
 
