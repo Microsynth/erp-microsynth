@@ -81,12 +81,15 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
         }
 
-        // Create Correction
+        // Add buttons to request Correction or Corrective Action
         if (["Planning"].includes(frm.doc.status)
             && !["OOS", "Track & Trend"].includes(frm.doc.nc_type)
-            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.owner)) {  // TODO: change owner to created_by
+            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
             frm.add_custom_button(__("Request Correction"), function() {
-                request_correction(frm);
+                request_qm_action(frm, "Correction");
+            });
+            frm.add_custom_button(__("Request Corrective Action"), function() {
+                request_qm_action(frm, "Corrective Action");
             });
         }
     },
@@ -114,39 +117,6 @@ frappe.ui.form.on('QM Nonconformity', {
         }
     }
 });
-
-
-function request_correction(frm) {
-    frappe.prompt([
-        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
-        {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
-        {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
-    ],
-    function(values){
-        frappe.call({
-            'method': 'microsynth.qms.doctype.qm_action.qm_action.create_action',
-            'args': {
-                'title': values.title,
-                'responsible_person': values.responsible_person,
-                'dt': cur_frm.doc.doctype,
-                'dn': cur_frm.doc.name,
-                'due_date': values.due_date,
-                'type': "Correction"
-            },
-            "callback": function(response) {
-                console.log("created revision request...")
-                frappe.show_alert( __("Correction created") + 
-                            ": <a href='/desk#Form/QM Action/" + 
-                            response.message + "'>" + response.message + 
-                            "</a>"
-                        );
-            }
-        });
-    },
-    __('Please choose a Responsible Person and a Due Date'),
-    __('Request Correction')
-    )
-}
 
 
 function determine_nc_type(frm) {
@@ -204,4 +174,38 @@ function calculate_risk_classification(occ_prob, impact) {
         console.log(res);
         return "";
     }
+}
+
+
+function request_qm_action(frm, type) {
+    frappe.prompt([
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
+        {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
+        {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
+        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description')}
+    ],
+    function(values){
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_action.qm_action.create_action',
+            'args': {
+                'title': values.title,
+                'responsible_person': values.responsible_person,
+                'dt': cur_frm.doc.doctype,
+                'dn': cur_frm.doc.name,
+                'due_date': values.due_date,
+                'type': type,
+                'description': values.description
+            },
+            "callback": function(response) {
+                frappe.show_alert( __(type + " created") +
+                            ": <a href='/desk#Form/QM Action/" +
+                            response.message + "'>" + response.message +
+                            "</a>"
+                        );
+            }
+        });
+    },
+    __('Please choose a Responsible Person and a Due Date'),
+    __('Request ' + type)
+    )
 }

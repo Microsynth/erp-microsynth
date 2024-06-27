@@ -88,7 +88,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nClosed"
+   "options": "\nCreated\nWork in Progress\nClosed"
   },
   {
    "fieldname": "due_date",
@@ -106,7 +106,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-26 15:41:11.313130",
+ "modified": "2024-06-27 14:54:39.687239",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",
