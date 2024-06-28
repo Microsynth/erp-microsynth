@@ -2234,11 +2234,17 @@ def set_module_for_one_user(module, user):
     bench execute microsynth.microsynth.utils.set_module_for_one_user --kwargs "{'module': 'QMS', 'user': 'firstname.lastname@microsynth.ch'}"
     """
     home_settings = frappe.cache().hget('home_settings', user)
-    if not home_settings:
-        print(f"Found no home_settings for user '{user}'.")
-        return
-    modules = home_settings['modules_by_category']['Modules']
     inserted = False
+    if not home_settings:
+        print(f"Found no home_settings for user '{user}'. Going to take those from the Administrator.")
+        home_settings = frappe.cache().hget('home_settings', 'Administrator')
+        if not home_settings:
+            print("Found no home_settings for Administrator. Going to return.")
+            return
+        modules = home_settings['modules_by_category']['Modules']
+        if module in modules:
+            inserted = True
+    modules = home_settings['modules_by_category']['Modules']
     if not module in modules and 'Microsynth' in modules:
         for i in range(len(modules)):
             if modules[i] == 'Microsynth':
@@ -2250,6 +2256,8 @@ def set_module_for_one_user(module, user):
         s = frappe.parse_json(home_settings)
         frappe.cache().hset('home_settings', user, s)
         print(f"Added module '{module}' to home_settings of user '{user}'.")
+    else:
+        print(f"Module '{module}' is already in home_settings of user '{user}'.")
 
 
 def set_module_for_all_users(module):
