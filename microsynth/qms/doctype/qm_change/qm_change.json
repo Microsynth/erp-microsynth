@@ -5,14 +5,23 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "description",
-  "amended_from"
+  "document_identification_section",
+  "cc_type",
+  "qm_process",
+  "document_type",
+  "column_break_3",
+  "title",
+  "company",
+  "source_document_name",
+  "amended_from",
+  "section_break_2",
+  "description"
  ],
  "fields": [
   {
    "fieldname": "description",
    "fieldtype": "Text Editor",
-   "label": "Description"
+   "label": "Description Change"
   },
   {
    "fieldname": "amended_from",
@@ -22,10 +31,58 @@
    "options": "QM Change",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "document_identification_section",
+   "fieldtype": "Section Break",
+   "label": "Document Identification"
+  },
+  {
+   "fieldname": "cc_type",
+   "fieldtype": "Select",
+   "label": "CC Type"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process",
+   "options": "QM Process"
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Source Document Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "source_document_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document Name",
+   "options": "document_type"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-21 09:42:49.954710",
+ "modified": "2024-06-28 10:54:06.269219",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Change",

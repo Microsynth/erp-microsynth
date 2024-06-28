@@ -257,7 +257,10 @@ function request_qm_action(frm, type) {
 
 function create_change(frm) {
     frappe.prompt([
-        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description')}
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
+        {'fieldname': 'process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process')},
+        {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company')},
+        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description Change')}
     ],
     function(values){
         frappe.call({
@@ -265,6 +268,9 @@ function create_change(frm) {
             'args': {
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
+                'process': values.process,
+                'company': values.company,
+                'title': values.title,
                 'description': values.description
             },
             "callback": function(response) {
@@ -276,7 +282,7 @@ function create_change(frm) {
             }
         });
     },
-    __('Please enter a title'),
+    __('Please create a QM Change'),
     __('Create')
     )
 }

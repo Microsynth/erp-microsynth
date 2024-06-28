@@ -11,10 +11,15 @@ class QMChange(Document):
 
 
 @frappe.whitelist()
-def create_change(dt, dn, description):
+def create_change(dt, dn, title, process, company, description):
     change = frappe.get_doc(
         {
             'doctype': 'QM Change',
+            'document_type': dt,
+            'document_name': dn,
+            'title': title,
+            'process': process,
+            'company': company,
             'description': description
         })
 
