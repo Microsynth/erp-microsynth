@@ -29,9 +29,17 @@ def set_created(doc, user):
 
 @frappe.whitelist()
 def set_classified(doc, user):
-    if not user_has_role(user, "QAU"):
-        frappe.throw(f"Only QAU is allowed to classify a QM Nonconformity.")
+    if not (user_has_role(user, "QAU") or user_has_role(user, "PV")):
+        frappe.throw(f"Only QAU or PV is allowed to classify a QM Nonconformity.")
     update_status(doc, "Classified")
+
+
+@frappe.whitelist()
+def set_status(doc, user, status):
+    created_by = frappe.get_doc(frappe.get_doc("QM Nonconformity", doc, "created_by"))
+    if not (user == created_by or user_has_role(user, "QAU")):
+        frappe.throw(f"Only Creator or QAU is allowed to set a QM Nonconformity to Status '{status}'.")
+    update_status(doc, status)
 
 
 def update_status(nc, status):
@@ -40,7 +48,14 @@ def update_status(nc, status):
         return
 
     # validate status transitions
-    if (1 == 1):
+    if ((nc.status == 'Draft' and status == 'Created') or
+        (nc.status == 'Created' and status == 'Classified') or
+        (nc.status == 'Classified' and status == 'Investigation') or
+        (nc.status == 'Investigation' and status == 'Planning') or
+        (nc.status == 'Planning' and status == 'Implementation') or
+        (nc.status == 'Implementation' and status == 'Completed') or
+        (nc.status == 'Completed' and status == 'Closed')
+       ):
         nc.status = status
         nc.save()
         frappe.db.commit()

@@ -85,6 +85,82 @@ frappe.ui.form.on('QM Nonconformity', {
             );
         }
 
+        if (frm.doc.status == 'Classified'
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)) {
+                // add close button
+                cur_frm.page.set_primary_action(
+                    __("Close"),
+                    function() {
+                        set_status('Closed');
+                    }
+                );
+            } else {
+                // add investigate button
+                cur_frm.page.set_primary_action(
+                    __("Investigate"),
+                    function() {
+                        set_status('Investigation');
+                    }
+                );
+            }
+        }
+
+        if (frm.doc.status == 'Investigation'
+            // Check, that the required investigation is documented
+            // if critical, risk analysis is required
+            && (frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
+            // root cause analysis is mandatory for Internal Audit, Deviation and Event
+            && (!['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type) || frm.doc.root_cause)
+            // root cause analysis is mandatory for some ISO Authorities Audits
+            && (!(frm.doc.nc_type == 'Authorities Audit' && ['ISO 9001', 'ISO 13485', 'ISO 17025'].includes(frm.doc.regulatory_classification)) || frm.doc.root_cause)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            // add button to finish investigation and start planning
+            cur_frm.page.set_primary_action(
+                __("Finish Investigation"),
+                function() {
+                    set_status('Planning');
+                }
+            );
+        }
+
+        if (frm.doc.status == 'Planning'
+            // TODO: Check, that the required actions exist
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            // add button to finish planning and start implementation
+            cur_frm.page.set_primary_action(
+                __("Finish Planning"),
+                function() {
+                    set_status('Implementation');
+                }
+            );
+        }
+
+        if (frm.doc.status == 'Implementation'
+            // TODO: Check, that all actions are finished
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            // add button to finish implementation and complete
+            cur_frm.page.set_primary_action(
+                __("Finish Implementation"),
+                function() {
+                    set_status('Complete');
+                }
+            );
+        }
+
+        if (frm.doc.status == 'Completed'
+            // TODO: Check that there exists at least one QM Change if Preventive Actions are required
+            && (frappe.user.has_role('QAU') ||
+                (['Event', "OOS", "Track & Trend"].includes(frm.doc.nc_type) && frappe.session.user === frm.doc.created_by))) {
+            // add close button
+            cur_frm.page.set_primary_action(
+                __("Close"),
+                function() {
+                    set_status('Closed');
+                }
+            );
+        }
+
         // set information bar for missing infos
         cur_frm.dashboard.clear_comment();
         if ((!frm.doc.__islocal)
@@ -189,6 +265,22 @@ function classify(frm) {
         'args': {
             'doc': cur_frm.doc.name,
             'user': frappe.session.user
+        },
+        'async': false,
+        'callback': function(response) {
+            cur_frm.reload_doc();
+        }
+    });
+}
+
+
+function set_status(frm, status) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_status',
+        'args': {
+            'doc': cur_frm.doc.name,
+            'user': frappe.session.user,
+            'status': status
         },
         'async': false,
         'callback': function(response) {
