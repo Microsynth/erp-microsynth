@@ -12,7 +12,7 @@
   "column_break_3",
   "title",
   "company",
-  "source_document_name",
+  "document_name",
   "amended_from",
   "section_break_2",
   "description"
@@ -52,12 +52,6 @@
    "label": "Title"
   },
   {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "label": "Company",
-   "options": "Company"
-  },
-  {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
@@ -75,15 +69,21 @@
    "options": "DocType"
   },
   {
-   "fieldname": "source_document_name",
+   "fieldname": "document_name",
    "fieldtype": "Dynamic Link",
    "label": "Source Document Name",
    "options": "document_type"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-28 10:54:06.269219",
- "modified_by": "Administrator",
+ "modified": "2024-06-28 12:42:40.336917",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",

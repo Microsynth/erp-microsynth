@@ -171,6 +171,12 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
         }
 
+        // remove dashboard doc (+) buttons
+        var new_btns = document.getElementsByClassName("btn-new");
+        for (var i = 0; i < new_btns.length; i++) {
+            new_btns[i].style.visibility = "hidden";
+        }
+
         // Add buttons to request Correction or Corrective Action
         if (["Planning"].includes(frm.doc.status)
             && !["OOS", "Track & Trend"].includes(frm.doc.nc_type)
