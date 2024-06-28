@@ -5,7 +5,7 @@ import frappe
 from frappe.contacts.doctype.address.address import get_address_display
 from microsynth.microsynth.utils import get_customer
 
-
+@frappe.whitelist()
 def create_analysis_report(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#create-analysis-report
