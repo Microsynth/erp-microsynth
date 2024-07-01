@@ -4,14 +4,17 @@
 import frappe
 from frappe.contacts.doctype.address.address import get_address_display
 from microsynth.microsynth.utils import get_customer
+from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+from frappe.desk.form.load import get_attachments
 from frappe.core.doctype.communication.email import make
+
 
 @frappe.whitelist()
 def create_analysis_report(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#create-analysis-report
 
-    bench execute "microsynth.microsynth.lab_reporting.create_analysis_report" --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma', 'contact_person': '215856'}}"
+    bench execute microsynth.microsynth.lab_reporting.create_analysis_report --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma', 'contact_person': '215856'}}"
     """
     if not content:
         return {'success': False, 'message': "Please provide content", 'reference': None}
@@ -73,23 +76,56 @@ def create_analysis_report(content=None):
         return {'success': False, 'message': err, 'reference': None}
 
 
+def create_pdf_attachment(analysis_report):
+    """
+    Creates the PDF file for a given Analysis Report name and attaches the file to the record in the ERP.
+    """
+    doctype = format = "Analysis Report"
+    name = analysis_report
+    #frappe.local.lang = frappe.db.get_value("Analysis Report", name, "language") or 'en'
+    title = frappe.db.get_value(doctype, name, "name")
+    doctype_folder = create_folder(doctype, "Home")
+    title_folder = create_folder(title, doctype_folder)
+    filecontent = frappe.get_print(doctype, name, format, doc=None, as_pdf=True, no_letterhead=False)
+
+    save_and_attach(
+        content = filecontent,
+        to_doctype = doctype,
+        to_name = name,
+        folder = title_folder,
+        hashname = None,
+        is_private = True)
+
+
 def send_reports(recipient, cc_mails, analysis_reports):
     """
-    bench execute "microsynth.microsynth.lab_reporting.transmit_analysis_reports" --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001', 'AR-2400002']}"
+    bench execute microsynth.microsynth.lab_reporting.send_reports --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001-1', 'AR-2400002']}"
     """
     if not recipient:
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
     try:
-        # TODO: Create Attachements for the given analysis_reports
+        # Create attachements for the given analysis_reports
+        all_attachements = []
+        for analysis_report in analysis_reports:
+            create_pdf_attachment(analysis_report)
+            attachments = get_attachments("Analysis Report", analysis_report)
+            fid = None
+            for a in attachments:
+                fid = a['name']
+            all_attachements.append({'fid': fid})
+            frappe.db.commit()
         make(
                 recipients = recipient,
                 sender = "info@microsynth.ch",  # TODO: What should be the sender email address?
-                cc = cc_mails,
-                subject = "Your Analysis Reports",  # TODO: Better subject
-                content = "Dear Microsynth Customer,<br><br>please find attached your analysis reports.<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
-                send_email = True
-                # TODO: Attach PDFs
+                cc = cc_mails,  # TODO: How to send an email to more than one cc recipient? One cc_recipient can be passed as a string, but a list of strings does not work.
+                # -> "Document for field "cc" must be a dict or BaseDocument, not class 'str' (me@mail.com)"
+                subject = f"Your Microsynth analysis {'reports' if len(all_attachements) > 1 else 'report'}",  # TODO: Better subject?
+                content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachements) > 1 else 'report'}."
+                            f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
+                send_email = True,
+                attachments = all_attachements
             )
+        #print(f"Send an email with the following attachment to '{recipient}': {all_attachements=}")
     except Exception as err:
         return {'success': False, 'message': f"Got the following error: {err}"}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
@@ -100,7 +136,8 @@ def transmit_analysis_reports(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#transmit-analysis-reports
 
-    bench execute "microsynth.microsynth.lab_reporting.transmit_analysis_reports" --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'web_order_id': '4103829', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001', 'AR-2400002']}}"
+    bench execute microsynth.microsynth.lab_reporting.transmit_analysis_reports --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'web_order_id': '4103829', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001-1', 'AR-2400002']}}"
+    bench execute microsynth.microsynth.lab_reporting.transmit_analysis_reports --kwargs "{'content': {'analysis_reports': ['AR-2400003', 'AR-2400002']}}"
     """
     if not content:
         return {'success': False, 'message': 'Please provide content'}
@@ -115,9 +152,10 @@ def transmit_analysis_reports(content=None):
             if not analysis_report:
                 return {'success': False, 'message': f"Analysis Report '{report}' does not exist in the ERP."}
             if content['sales_order'] != analysis_report.sales_order:
-                return {'success': False, 'message': f"Got Sales Order 'content['sales_order']', but Analysis Report '{report}' belongs to Sales Order 'analysis_report.sales_order'."}
+                return {'success': False, 'message': f"Got Sales Order '{content['sales_order']}', but Analysis Report '{report}' belongs to Sales Order '{analysis_report.sales_order}'."}
         contact_person = frappe.get_value('Sales Order', content['sales_order'], 'contact_person')
         recipient = frappe.get_value('Contact', contact_person, 'email_id')
+        # send reports to the contact person of the given Sales Order
         return send_reports(recipient, content['cc_mails'], content['analysis_reports'])
     else:
         # no Sales Order -> create list of distinct contact_persons from the given analysis_reports
@@ -135,7 +173,7 @@ def transmit_analysis_reports(content=None):
         overall_success = True
         for contact_person, analysis_reports in reports_per_person.items():
             recipient = frappe.get_value('Contact', contact_person, 'email_id')
-            message = send_reports(recipient, content['cc_mails'], analysis_reports)
+            message = send_reports(recipient, '', analysis_reports)
             overall_success = overall_success and message['success']
         if overall_success:
             return {'success': True, 'message': "Successfully send all reports"}
