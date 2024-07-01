@@ -31,6 +31,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('web_order_id', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
         } else {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('nc_type', 'read_only', false);
@@ -38,6 +39,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('web_order_id', 'read_only', false);
+            cur_frm.set_df_property('description', 'read_only', false);
         }
 
         // allow the creator or QAU to change the creator (transfer document)

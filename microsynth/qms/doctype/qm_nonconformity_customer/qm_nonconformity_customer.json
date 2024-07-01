@@ -1,0 +1,37 @@
+{
+ "creation": "2024-07-01 13:23:49.363583",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "customer_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name"
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-07-01 13:31:15.847027",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Nonconformity Customer",
+ "owner": "jens.petermann@microsynth.ch",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

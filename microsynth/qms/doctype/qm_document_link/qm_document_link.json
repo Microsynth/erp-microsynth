@@ -4,7 +4,8 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "qm_document"
+  "qm_document",
+  "title"
  ],
  "fields": [
   {
@@ -14,11 +15,18 @@
    "label": "QM Document",
    "options": "QM Document",
    "reqd": 1
+  },
+  {
+   "fetch_from": "qm_document.title",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
   }
  ],
  "istable": 1,
- "modified": "2024-02-02 13:28:50.969422",
- "modified_by": "Administrator",
+ "modified": "2024-07-01 13:27:15.002408",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document Link",
  "owner": "Administrator",
