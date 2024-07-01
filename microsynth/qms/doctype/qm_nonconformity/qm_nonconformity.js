@@ -5,6 +5,10 @@
 frappe.ui.form.on('QM Nonconformity', {
     refresh: function(frm) {
 
+        // avoid manual changes to some fields
+        cur_frm.set_df_property('created_by', 'read_only', true);
+        cur_frm.set_df_property('created_on', 'read_only', true);
+
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
@@ -19,19 +23,21 @@ frappe.ui.form.on('QM Nonconformity', {
             determine_nc_type(frm);
         }
 
-        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company
+        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('nc_type', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('web_order_id', 'read_only', true);
         } else {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('nc_type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
+            cur_frm.set_df_property('web_order_id', 'read_only', false);
         }
 
         // allow the creator or QAU to change the creator (transfer document)
@@ -48,8 +54,8 @@ frappe.ui.form.on('QM Nonconformity', {
             );
         }
 
-        // Only QAU can change the classification
-        if (frappe.user.has_role('QAU')) {
+        // Only QAU can change the classification in status "Draft" or "Created"
+        if (frappe.user.has_role('QAU') && ["Draft", "Created"].includes(frm.doc.status)) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
         } else {
@@ -280,7 +286,7 @@ function classify(frm) {
 }
 
 
-function set_status(frm, status) {
+function set_status(status) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_status',
         'args': {

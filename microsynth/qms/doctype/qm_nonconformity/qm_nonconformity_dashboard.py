@@ -8,7 +8,7 @@ def get_data():
       'fieldname': 'document_name',
       'transactions': [
          {
-            'label': _("Corrections / Corrective Actions"),
+            'label': _("Corrections & Corrective Actions"),
             'items': ['QM Action']
          },
          {

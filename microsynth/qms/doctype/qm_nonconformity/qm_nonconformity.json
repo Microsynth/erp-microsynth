@@ -25,7 +25,6 @@
   "criticality_classification",
   "column_break_5",
   "regulatory_classification",
-  "investigation_section",
   "root_cause_analysis_section",
   "root_cause",
   "risk_analysis_section",
@@ -84,12 +83,6 @@
   },
   {
    "collapsible": 1,
-   "fieldname": "investigation_section",
-   "fieldtype": "Section Break",
-   "label": "Investigation"
-  },
-  {
-   "collapsible": 1,
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
    "label": "Planning"
@@ -115,12 +108,14 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\"",
    "fieldname": "root_cause_analysis_section",
    "fieldtype": "Section Break",
    "label": "Root Cause Analysis"
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
    "fieldname": "risk_analysis_section",
    "fieldtype": "Section Break",
    "label": "Risk Analysis"
@@ -150,6 +145,7 @@
   },
   {
    "collapsible": 1,
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
    "fieldname": "risk_analysis_after_actions_section",
    "fieldtype": "Section Break",
    "label": "Risk Analysis after Actions"
@@ -262,8 +258,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-28 11:41:08.780013",
- "modified_by": "Administrator",
+ "modified": "2024-07-01 12:25:46.984625",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",
