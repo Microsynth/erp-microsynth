@@ -65,6 +65,12 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
         }
 
+        if (["Closed"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('closure_comments', 'read_only', true);
+        } else {
+            cur_frm.set_df_property('closure_comments', 'read_only', false);
+        }
+
         if (frm.doc.status == 'Draft'
             && frm.doc.title
             && frm.doc.nc_type
@@ -136,12 +142,23 @@ frappe.ui.form.on('QM Nonconformity', {
             // TODO: Check, that the required actions exist
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             // add button to finish planning and start implementation
-            cur_frm.page.set_primary_action(
-                __("Finish Planning"),
-                function() {
-                    set_status('Implementation');
-                }
-            );
+            if ((frm.doc.nc_type == "Deviation" && (frm.doc.regulatory_classification == "GMP" || frm.doc.criticality_classification == "critical")
+                || (frm.doc.nc_type == "Event" && true))) {  // TODO: Replace true by a a check whether a CA is present
+                cur_frm.page.set_primary_action(
+                    __("Submit Action Plan to QAU"),
+                    function() {
+                        set_status('Implementation');
+                        // TODO: Function that sends an email to Q?
+                    }
+                );
+            } else {
+                cur_frm.page.set_primary_action(
+                    __("Finish Planning"),
+                    function() {
+                        set_status('Implementation');
+                    }
+                );
+            }
         }
 
         if (frm.doc.status == 'Implementation'
