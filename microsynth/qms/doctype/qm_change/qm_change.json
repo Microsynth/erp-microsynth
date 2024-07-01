@@ -15,7 +15,16 @@
   "document_name",
   "amended_from",
   "section_break_2",
-  "description"
+  "current_state",
+  "column_break_12",
+  "description",
+  "creation1_section",
+  "created_on",
+  "column_break_16",
+  "created_by",
+  "references_section",
+  "qm_documents",
+  "customers"
  ],
  "fields": [
   {
@@ -79,11 +88,59 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "current_state",
+   "fieldtype": "Text Editor",
+   "label": "Current State"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
+  },
+  {
+   "fieldname": "customers",
+   "fieldtype": "Table",
+   "label": "Customers",
+   "options": "QM Change Customer"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "creation1_section",
+   "fieldtype": "Section Break",
+   "label": "Creation"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-28 12:42:40.336917",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-07-01 14:32:09.673921",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",
