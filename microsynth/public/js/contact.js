@@ -79,7 +79,7 @@ frappe.ui.form.on('Contact', {
                         'contact_id': frm.doc.name
                     },
                     "callback": function(response) {
-                        if (response.message) {
+                        if (response.message && response.message.length > 0) {
                             frm.dashboard.add_comment('<br>Potential Duplicates:', 'red', true);
                             var contacts = response.message;
                             for (var i = 0; i < contacts.length; i++) {
