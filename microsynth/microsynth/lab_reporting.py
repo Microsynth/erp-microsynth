@@ -101,7 +101,7 @@ def create_pdf_attachment(analysis_report):
 
 def send_reports(recipient, cc_mails, analysis_reports):
     """
-    bench execute microsynth.microsynth.lab_reporting.send_reports --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001-1', 'AR-2400002']}"
+    bench execute microsynth.microsynth.lab_reporting.send_reports --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400010', 'AR-2400011']}"
     """
     if not recipient:
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
@@ -118,9 +118,8 @@ def send_reports(recipient, cc_mails, analysis_reports):
             frappe.db.commit()
         make(
                 recipients = recipient,
-                sender = "info@microsynth.ch",  # TODO: What should be the sender email address?
-                cc = cc_mails,  # TODO: How to send an email to more than one cc recipient? One cc_recipient can be passed as a string, but a list of strings does not work.
-                # -> "Document for field "cc" must be a dict or BaseDocument, not class 'str' (me@mail.com)"
+                sender = "no-reply@microsynth.ch",  # TODO: What should be the sender email address?
+                cc = ", ".join(cc_mails),
                 subject = f"Your Microsynth analysis {'reports' if len(all_attachements) > 1 else 'report'}",  # TODO: Better subject?
                 content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachements) > 1 else 'report'}."
                             f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
