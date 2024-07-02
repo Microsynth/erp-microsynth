@@ -2178,29 +2178,36 @@ def overwrite_item_defaults(item):
 
 @frappe.whitelist()
 def force_cancel(dt, dn):
-	"""
-	This function allows to move a document from draft directly to cancelled
-	
-	Parameters:
-		dt		Doctype Name, e.g. "Quotation"
-		dn		Record Name, e.g. "QTN-01234"
-		
-	It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
-	"""
-	try:
-		frappe.db.sql("""
-			UPDATE `tab{dt}`
-			SET 
-				`docstatus` = 2,
-				`status` = "Cancelled"
-			WHERE
-				`name` = "{dn}"
-				AND `docstatus` = 0;
-		""".format(dt=dt, dn=dn))
-		frappe.db.commit()
-	except Exception as err:
-		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
-	return
+    """
+    This function allows to move a document from draft directly to cancelled
+    
+    Parameters:
+        dt      Doctype Name, e.g. "Quotation"
+        dn      Record Name, e.g. "QTN-01234"
+        
+    It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
+    """
+    try:
+        # check if this doctype has a status field
+        meta = frappe.get_meta(dt)
+        if meta.has_field('status'):
+            status_update = """ `status` = "Cancelled" """
+        else:
+            status_update = ""
+            
+        frappe.db.sql("""
+            UPDATE `tab{dt}`
+            SET 
+                `docstatus` = 2,
+                {status}
+            WHERE
+                `name` = "{dn}"
+                AND `docstatus` = 0;
+        """.format(dt=dt, dn=dn, status=status_update))
+        frappe.db.commit()
+    except Exception as err:
+        frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
+    return
 
 
 @frappe.whitelist()
