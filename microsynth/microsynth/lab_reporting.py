@@ -118,7 +118,8 @@ def send_reports(recipient, cc_mails, analysis_reports):
             frappe.db.commit()
         make(
                 recipients = recipient,
-                sender = "no-reply@microsynth.ch",  # TODO: What should be the sender email address?
+                sender = "info@microsynth.ch",
+                sender_full_name = "Microsynth",
                 cc = ", ".join(cc_mails),
                 subject = f"Your Microsynth analysis {'reports' if len(all_attachements) > 1 else 'report'}",  # TODO: Better subject?
                 content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachements) > 1 else 'report'}."
