@@ -67,7 +67,8 @@ def create_analysis_report(content=None):
             'address': address,
             'address_display': get_address_display(address) if address else '',
             'sample_details': sample_details,
-            'comment': content['comment'] if 'comment' in content else ''
+            'comment': content['comment'] if 'comment' in content else '',
+            'disclaimer': content['disclaimer'] if 'disclaimer' in content else ''
 
         })
         ar.insert()

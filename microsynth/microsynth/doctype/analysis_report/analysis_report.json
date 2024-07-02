@@ -22,7 +22,9 @@
   "address_display",
   "data_section",
   "sample_details",
-  "comment"
+  "comment",
+  "disclaimer_section",
+  "disclaimer"
  ],
  "fields": [
   {
@@ -135,11 +137,21 @@
    "fieldtype": "Small Text",
    "label": "Address",
    "read_only": 1
+  },
+  {
+   "fieldname": "disclaimer_section",
+   "fieldtype": "Section Break",
+   "label": "Disclaimer"
+  },
+  {
+   "fieldname": "disclaimer",
+   "fieldtype": "Text Editor",
+   "label": "Disclaimer"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-06-14 16:09:38.234671",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-07-02 16:22:01.071088",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report",
  "owner": "Administrator",
