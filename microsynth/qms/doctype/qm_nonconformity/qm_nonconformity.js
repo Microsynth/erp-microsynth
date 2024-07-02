@@ -176,15 +176,27 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Implementation'
-            // TODO: Check, that all actions are finished
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            // add button to finish implementation and complete
-            cur_frm.page.set_primary_action(
-                __("Finish Implementation"),
-                function() {
-                    set_status('Complete');
-                }
-            );
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_non_completed_action',
+                    'args': {
+                        'doc': frm.doc.name
+                    },
+                    'callback': function(response) {
+                        // Check, that all actions are finished
+                        if (response.message) {
+                            frm.dashboard.add_comment( __("Please complete all actions to finish the Implementation of this Nonconformity."), 'red', true);
+                        } else {
+                            // add button to finish implementation and complete
+                            cur_frm.page.set_primary_action(
+                                __("Finish Implementation"),
+                                function() {
+                                    set_status('Complete');
+                                }
+                            );
+                        }
+                    }
+                });
         }
 
         if (frm.doc.status == 'Completed') {
@@ -390,6 +402,7 @@ function request_qm_action(type) {
                 'description': values.description
             },
             "callback": function(response) {
+                cur_frm.reload_doc();
                 frappe.show_alert( __(type + " created") +
                             ": <a href='/desk#Form/QM Action/" +
                             response.message + "'>" + response.message +
@@ -423,6 +436,7 @@ function create_change(frm) {
                 'description': values.description
             },
             "callback": function(response) {
+                cur_frm.reload_doc();
                 frappe.show_alert( __("QM Change created") +
                             ": <a href='/desk#Form/QM Change/" +
                             response.message + "'>" + response.message +
