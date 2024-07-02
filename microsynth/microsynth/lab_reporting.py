@@ -66,7 +66,9 @@ def create_analysis_report(content=None):
             'contact_person': content['contact_person'] if 'contact_person' in content else '',
             'address': address,
             'address_display': get_address_display(address) if address else '',
-            'sample_details': sample_details
+            'sample_details': sample_details,
+            'comment': content['comment'] if 'comment' in content else ''
+
         })
         ar.insert()
         ar.submit()
