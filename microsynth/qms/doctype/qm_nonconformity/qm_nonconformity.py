@@ -64,6 +64,49 @@ def update_status(nc, status):
         frappe.throw(f"Update QM Nonconformity: Status transition is not allowed {nc.status} --> {status}")
 
 
+@frappe.whitelist()
+def has_actions(doc):
+    """
+    Returns whether a given QM Nonconformity has Corrections and Corrective Actions.
+    """
+    corrective_actions = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Action`
+        WHERE `type` = 'Corrective Action'
+          AND `docstatus` < 2
+          AND `document_name` = '{doc}';
+        """, as_dict=True)
+    
+    corrections = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Action`
+        WHERE `type` = 'Correction'
+          AND `docstatus` < 2
+          AND `document_name` = '{doc}';
+        """, as_dict=True)
+    
+    actions = {
+        'has_correction': len(corrections) > 0,
+        'has_corrective_action': len(corrective_actions) > 0
+    }    
+    return actions
+
+
+@frappe.whitelist()
+def has_change(doc):
+    """
+    Returns whether there is at least one QM Change linked against the given QM Nonconformity.
+    """
+    changes = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Change`
+        WHERE `docstatus` < 2
+          AND `document_name` = '{doc}';
+        """, as_dict=True)
+    
+    return len(changes) > 0
+
+
 def user_has_role(user, role):
     """
     Check if a user has a role
@@ -76,7 +119,4 @@ def user_has_role(user, role):
           AND `parenttype` = "User";
         """, as_dict=True)
     
-    if len(role_matches) > 0:
-        return True
-    else:
-        return False
+    return len(role_matches) > 0
