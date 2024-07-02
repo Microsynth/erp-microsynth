@@ -50,12 +50,14 @@
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description",
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -65,24 +67,28 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "fieldname": "classification_section",
    "fieldtype": "Section Break",
    "label": "Classification"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "criticality_classification",
    "fieldtype": "Select",
    "label": "Criticality Classification",
    "options": "\ncritical\nnon-critical"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
    "label": "Regulatory Classification",
    "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
   },
@@ -103,15 +109,18 @@
    "label": "Effectiveness"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "root_cause",
    "fieldtype": "Text Editor",
    "label": "Root Cause"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "column_break_9",
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\"",
    "fieldname": "root_cause_analysis_section",
@@ -119,6 +128,7 @@
    "label": "Root Cause Analysis"
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
    "fieldname": "risk_analysis_section",
@@ -126,22 +136,26 @@
    "label": "Risk Analysis"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "column_break_12",
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "occurrence_probability",
    "fieldtype": "Select",
    "label": "Occurrence Probability",
    "options": "\nsmall\nmedium\nhigh"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "impact",
    "fieldtype": "Select",
    "label": "Impact",
    "options": "\nneglectable\nnoticable\nsevere"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "risk_classification",
    "fieldtype": "Select",
    "label": "Risk Classification",
@@ -149,6 +163,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
    "fieldname": "risk_analysis_after_actions_section",
@@ -164,18 +179,21 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "occurrence_probability_after_actions",
    "fieldtype": "Select",
    "label": "Occurrence Probability after Actions",
    "options": "\nsmall\nmedium\nhigh"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "impact_after_actions",
    "fieldtype": "Select",
    "label": "Impact after Actions",
    "options": "\nneglectable\nnoticable\nsevere"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "risk_classification_after_actions",
    "fieldtype": "Select",
    "label": "Risk Classification after Actions",
@@ -183,6 +201,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -205,11 +224,13 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "document_identification_section",
    "fieldtype": "Section Break",
    "label": "Document Identification"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "description_section",
    "fieldtype": "Section Break"
   },
@@ -218,6 +239,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "nc_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -225,6 +247,7 @@
    "options": "\nAuthorities Audit\nCustomer Audit\nInternal Audit\nDeviation\nEvent\nOOS\nTrack & Trend"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "web_order_id",
    "fieldtype": "Data",
    "label": "Web Order ID"
@@ -262,37 +285,42 @@
    "label": "Date"
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "fieldname": "references_section",
    "fieldtype": "Section Break",
    "label": "References"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_documents",
    "fieldtype": "Table",
    "label": "QM Documents",
    "options": "QM Document Link"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "customers",
    "fieldtype": "Table",
    "label": "Customers",
    "options": "QM Nonconformity Customer"
   },
   {
+   "allow_on_submit": 1,
    "collapsible": 1,
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "closure_comments",
    "fieldtype": "Text Editor",
    "label": "Closure Comments"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-01 14:03:00.302043",
+ "modified": "2024-07-02 12:38:37.335684",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
@@ -322,7 +350,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1

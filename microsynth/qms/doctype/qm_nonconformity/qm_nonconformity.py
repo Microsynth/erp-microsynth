@@ -23,6 +23,7 @@ def set_created(doc, user):
     nc.created_on = today()
     nc.created_by = user
     nc.save()
+    nc.submit()
     frappe.db.commit()
     update_status(nc.name, "Created")
 
@@ -43,7 +44,7 @@ def set_status(doc, user, status):
 
 
 def update_status(nc, status):
-    nc = frappe.get_doc("QM Document", nc)
+    nc = frappe.get_doc("QM Nonconformity", nc)
     if nc.status == status:
         return
 

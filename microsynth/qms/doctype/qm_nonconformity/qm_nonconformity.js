@@ -77,11 +77,11 @@ frappe.ui.form.on('QM Nonconformity', {
             && frm.doc.description
             && frm.doc.qm_process
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            // add create button
+            // add submit button
             cur_frm.page.set_primary_action(
-                __("Create"),
+                __("Submit"),
                 function() {
-                    create();
+                    submit();
                 }
             );
         }
@@ -275,7 +275,7 @@ function change_creator() {
 }
 
 
-function create(frm) {
+function submit(frm) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_created',
         'args': {
