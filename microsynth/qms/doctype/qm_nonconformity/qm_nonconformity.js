@@ -391,6 +391,7 @@ function calculate_risk_classification(occ_prob, impact) {
 function request_qm_action(type) {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
+        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process')},
         {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
         {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description')}
@@ -403,6 +404,7 @@ function request_qm_action(type) {
                 'responsible_person': values.responsible_person,
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
+                'qm_process': values.qm_process,
                 'due_date': values.due_date,
                 'type': type,
                 'description': values.description

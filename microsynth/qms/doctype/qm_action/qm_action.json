@@ -5,19 +5,19 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "document_type",
-  "document_name",
-  "column_break_3",
-  "type",
-  "amended_from",
   "general_attributes_section",
-  "title",
+  "type",
+  "qm_process",
   "initiation_date",
   "responsible_person",
+  "document_type",
   "column_break_9",
+  "title",
   "status",
   "due_date",
   "closure_date",
+  "document_name",
+  "amended_from",
   "section_break_14",
   "description"
  ],
@@ -40,18 +40,16 @@
    "fieldname": "document_type",
    "fieldtype": "Link",
    "label": "Source Document Type",
-   "options": "DocType"
+   "options": "DocType",
+   "read_only": 1
   },
   {
    "fieldname": "document_name",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
-   "label": "Source",
-   "options": "document_type"
-  },
-  {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
+   "label": "Source Document Name",
+   "options": "document_type",
+   "read_only": 1
   },
   {
    "fieldname": "type",
@@ -80,7 +78,8 @@
    "fieldname": "responsible_person",
    "fieldtype": "Link",
    "label": "Responsible Person",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_9",
@@ -90,7 +89,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nCreated\nWork in Progress\nCompleted"
+   "options": "\nDraft\nCreated\nWork in Progress\nCompleted"
   },
   {
    "fieldname": "due_date",
@@ -105,10 +104,16 @@
   {
    "fieldname": "section_break_14",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "label": "Process",
+   "options": "QM Process"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-02 16:47:04.534524",
+ "modified": "2024-07-03 12:00:24.719946",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",

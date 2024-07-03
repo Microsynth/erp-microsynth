@@ -13,7 +13,7 @@ class QMAction(Document):
 
 
 @frappe.whitelist()
-def create_action(title, responsible_person, dt, dn, due_date, type, description):
+def create_action(title, responsible_person, dt, dn, qm_process, due_date, type, description):
     action = frappe.get_doc(
         {
             'doctype': 'QM Action',
@@ -21,11 +21,12 @@ def create_action(title, responsible_person, dt, dn, due_date, type, description
             'responsible_person': responsible_person, 
             'document_type': dt,
             'document_name': dn,
+            'qm_process': qm_process,
             'initiation_date': today(),
             'due_date': due_date,
             'type': type,
             'description': description,
-            'status': 'Created'
+            'status': 'Draft'
         })
 
     action.save(ignore_permissions = True)
@@ -43,5 +44,6 @@ def assign(doc, responsible_person):
     add({
         'doctype': "QM Action",
         'name': doc,
-        'assign_to': responsible_person
+        'assign_to': responsible_person,
+        'notify': True
     })
