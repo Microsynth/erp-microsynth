@@ -91,6 +91,14 @@ frappe.ui.form.on('Quotation', {
                 force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
             });
         }
+
+        if ((frm.doc.__islocal || frm.doc.status == "Draft") && frm.doc.valid_till && frm.doc.valid_till < frappe.datetime.get_today()) {
+            frappe.msgprint({
+                title: __('Warning'),
+                indicator: 'orange',
+                message: __("Please enter a Valid Till date that is in the future.")
+            });
+        }
     },
     
     before_save(frm) {
@@ -112,16 +120,6 @@ frappe.ui.form.on('Quotation', {
             update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category, frm.doc.transaction_date);
         } else {
             frappe.msgprint(__("Check shipping address"), __("Quotation"));
-        }
-    },
-
-    valid_till: function(frm) {
-        if (frm.doc.valid_till && frm.doc.valid_till < frappe.datetime.get_today()) {
-            frappe.msgprint({
-                title: __('Warning'),
-                indicator: 'orange',
-                message: __("Please enter a Valid Till date that is in the future.")
-            });
         }
     }
 });
