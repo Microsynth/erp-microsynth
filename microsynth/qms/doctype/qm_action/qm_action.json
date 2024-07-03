@@ -24,7 +24,7 @@
  "fields": [
   {
    "fieldname": "description",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Description"
   },
   {
@@ -113,7 +113,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-03 12:00:24.719946",
+ "modified": "2024-07-03 12:22:16.277338",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",
