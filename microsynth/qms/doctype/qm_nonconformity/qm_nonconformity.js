@@ -15,8 +15,19 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.page.clear_secondary_action();
         }
 
-        if (frm.doc.docstatus == 0 && !frm.doc.nc_type && !frappe.user.has_role('QAU')) {
-            determine_nc_type(frm);
+        // if (frm.doc.docstatus == 0 && !frm.doc.nc_type && !frappe.user.has_role('QAU')) {
+        //     determine_nc_type(frm);
+        // }
+
+        // fetch classification wizard
+        if (!frm.doc.nc_type) {
+            frappe.call({
+                'method': 'get_classification_wizard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('classification_wizard', 'options', r.message);
+                }
+            });
         }
 
         // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID
@@ -286,11 +297,6 @@ frappe.ui.form.on('QM Nonconformity', {
 });
 
 
-function determine_nc_type(frm) {
-    // TODO: Discuss with Lars how to best implement the decision tree? (ideas: frappe.prompt, new frappe.ui.Dialog)
-}
-
-
 function change_creator() {
     frappe.prompt(
         [
@@ -449,3 +455,6 @@ function create_change(frm) {
     __('Create')
     )
 }
+
+
+// TODO: Implement functions for classification wizard here?

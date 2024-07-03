@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "classification_wizard",
   "document_identification_section",
   "nc_type",
   "qm_process",
@@ -330,10 +331,14 @@
    "fieldname": "action_plan_summary",
    "fieldtype": "Text",
    "label": "Action Plan Summary"
+  },
+  {
+   "fieldname": "classification_wizard",
+   "fieldtype": "HTML"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-03 11:42:38.130746",
+ "modified": "2024-07-03 13:33:41.014166",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

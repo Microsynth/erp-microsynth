@@ -1,0 +1,38 @@
+<div id="container" class="wizard-container">
+    <div id="step_gmp">
+        <h3>Does the Nonconformity belong to or affect a GMP order?</h3>
+        <button class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes, GMP related</button>
+        <button class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No, non-GMP related</button>
+    </div><!-- TODO: Where to implement the onclick functions and how exactly? -->
+
+    <div id="step_no_gmp_dev" style="display: none; "><!-- non-GMP: Deviation in process? -->
+        <h3>Is it a deviation in a process?</h3>
+        <button class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_no_gmp_safety" style="display: none; "><!-- non-GMP Deviation: Affects product / patient safety? -->
+        <h3>Can the deviation affect product / patient safety?</h3>
+        <button class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp_dev" style="display: none; "><!-- GMP: Deviation in process? -->
+        <h3>Is it a deviation in a process?</h3>
+        <button class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes, Deviation in process</button>
+        <button class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No, no Deviation in process</button>
+    </div>
+
+    <div id="step_gmp_safety" style="display: none; "><!-- GMP Deviation: Affects product / patient safety? -->
+        <h3>Can the deviation affect product / patient safety?</h3>
+        <button class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp_oos" style="display: none; "><!-- GMP, no Deviation: OOS result? -->
+        <h3>Is it an OOS result?</h3>
+        <button class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
+        <button class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+</div><!-- end of wizard container -->

@@ -10,7 +10,12 @@ from microsynth.microsynth.utils import user_has_role
 
 
 class QMNonconformity(Document):
-    pass
+    def get_classification_wizard(self):            
+        html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/classification_wizard.html",
+            {
+                'doc': self
+            })
+        return html
 
 
 @frappe.whitelist()
