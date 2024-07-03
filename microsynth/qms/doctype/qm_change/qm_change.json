@@ -35,7 +35,7 @@
  "fields": [
   {
    "fieldname": "description",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Description Change"
   },
   {
@@ -81,13 +81,15 @@
    "fieldname": "document_type",
    "fieldtype": "Link",
    "label": "Source Document Type",
-   "options": "DocType"
+   "options": "DocType",
+   "read_only": 1
   },
   {
    "fieldname": "document_name",
    "fieldtype": "Dynamic Link",
    "label": "Source Document Name",
-   "options": "document_type"
+   "options": "document_type",
+   "read_only": 1
   },
   {
    "fieldname": "company",
@@ -97,7 +99,7 @@
   },
   {
    "fieldname": "current_state",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Current State"
   },
   {
@@ -131,7 +133,8 @@
   {
    "fieldname": "created_on",
    "fieldtype": "Date",
-   "label": "Created on"
+   "label": "Created on",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_16",
@@ -141,7 +144,8 @@
    "fieldname": "created_by",
    "fieldtype": "Link",
    "label": "Created by",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "effectiveness_section",
@@ -150,7 +154,7 @@
   },
   {
    "fieldname": "effectiveness_summary",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Effectiveness Summary"
   },
   {
@@ -160,7 +164,7 @@
   },
   {
    "fieldname": "closure_comments",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Closure Comments"
   },
   {
@@ -170,12 +174,12 @@
   },
   {
    "fieldname": "summary_test_trial_results",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Summary of Test & Trial Results"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-01 15:55:37.297385",
+ "modified": "2024-07-03 15:00:07.592788",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
