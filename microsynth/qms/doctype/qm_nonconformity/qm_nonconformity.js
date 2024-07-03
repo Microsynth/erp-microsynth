@@ -159,7 +159,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Planning'
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU') || frappe.user.has_role('PV'))) {
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_actions',
                     'args': {
@@ -168,11 +168,13 @@ frappe.ui.form.on('QM Nonconformity', {
                     'callback': function(response) {
                         // Check, that the required actions exist
                         if (['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type)
-                            && !response.message.has_correction) {
+                            && !response.message.has_correction)
+                            {
                             frm.dashboard.add_comment( __("Please create a Correction for this Nonconformity."), 'red', true);
                         } else if (['Authorities Audit', 'Customer Audit', 'Internal Audit', 'Deviation'].includes(frm.doc.nc_type)
                             && frm.doc.criticality_classification == "critical"
-                            && !response.message.has_corrective_action) {
+                            && !response.message.has_corrective_action)
+                            {
                             frm.dashboard.add_comment( __("Please create a Corrective Action for this Nonconformity."), 'red', true);
                         } else if ((frm.doc.nc_type == "Deviation" && (frm.doc.regulatory_classification == "GMP" || frm.doc.criticality_classification == "critical")
                             || (frm.doc.nc_type == "Event" && response.message.has_corrective_action))) {
@@ -237,7 +239,7 @@ frappe.ui.form.on('QM Nonconformity', {
                             }
                         );
                     } else {
-                        frm.dashboard.add_comment( __("Please create a Preventive Action (Change Control) or explain in the Closure Comment why not."), 'red', true);
+                        frm.dashboard.add_comment( __("Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
                     }
                 }
             });
@@ -266,7 +268,7 @@ frappe.ui.form.on('QM Nonconformity', {
             && frm.doc.criticality_classification == "critical"
             && !["OOS", "Track & Trend", "Event"].includes(frm.doc.nc_type)
             && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
-            frm.add_custom_button(__("Create Preventive Action (Change Control)"), function() {
+            frm.add_custom_button(__("Create Change Request"), function() {
                 create_change(frm);
             });
         }
@@ -316,7 +318,6 @@ function change_creator() {
     );
 }
 
-
 function submit(frm) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_created',
@@ -330,7 +331,6 @@ function submit(frm) {
         }
     });
 }
-
 
 function classify(frm) {
     frappe.call({
@@ -346,7 +346,6 @@ function classify(frm) {
     });
 }
 
-
 function set_status(status) {
     frappe.call({
         'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_status',
@@ -361,7 +360,6 @@ function set_status(status) {
         }
     });
 }
-
 
 function calculate_risk_classification(occ_prob, impact) {
     const values = new Map([
@@ -384,7 +382,6 @@ function calculate_risk_classification(occ_prob, impact) {
         return "";
     }
 }
-
 
 function request_qm_action(type) {
     frappe.prompt([
@@ -421,7 +418,6 @@ function request_qm_action(type) {
     __('Request ' + type)
     )
 }
-
 
 function create_change(frm) {
     frappe.prompt([
