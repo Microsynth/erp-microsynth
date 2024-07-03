@@ -113,6 +113,16 @@ frappe.ui.form.on('Quotation', {
         } else {
             frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
+    },
+
+    valid_till: function(frm) {
+        if (frm.doc.valid_till && frm.doc.valid_till < frappe.datetime.get_today()) {
+            frappe.msgprint({
+                title: __('Warning'),
+                indicator: 'orange',
+                message: __("Please enter a Valid Till date that is in the future.")
+            });
+        }
     }
 });
 
