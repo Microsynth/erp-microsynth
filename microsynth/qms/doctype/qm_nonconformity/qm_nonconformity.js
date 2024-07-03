@@ -86,17 +86,18 @@ frappe.ui.form.on('QM Nonconformity', {
             );
         }
 
-        if (frm.doc.status == 'Created'
-            && frm.doc.criticality_classification
-            && frm.doc.regulatory_classification
-            && (frappe.user.has_role('PV') || frappe.user.has_role('QAU'))) {
-            // add classify button
-            cur_frm.page.set_primary_action(
-                __("Classify"),
-                function() {
-                    classify();
-                }
-            );
+        if (frm.doc.status == 'Created' && (frappe.user.has_role('PV') || frappe.user.has_role('QAU'))) {
+            if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
+                // add classify button
+                cur_frm.page.set_primary_action(
+                    __("Classify"),
+                    function() {
+                        classify();
+                    }
+                );
+            } else {
+                frm.dashboard.add_comment( __("Please do the classification."), 'red', true);
+            }
         }
 
         if (frm.doc.status == 'Classified'
@@ -120,22 +121,31 @@ frappe.ui.form.on('QM Nonconformity', {
             }
         }
 
-        if (frm.doc.status == 'Investigation'
+        if (frm.doc.status == 'Investigation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             // Check, that the required investigation is documented
             // if critical, risk analysis is required
-            && (frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
-            // root cause analysis is mandatory for Internal Audit, Deviation and Event
-            && (!['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type) || frm.doc.root_cause)
-            // root cause analysis is mandatory for some ISO Authorities Audits
-            && (!(frm.doc.nc_type == 'Authorities Audit' && ['ISO 9001', 'ISO 13485', 'ISO 17025'].includes(frm.doc.regulatory_classification)) || frm.doc.root_cause)
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            // add button to finish investigation and start planning
-            cur_frm.page.set_primary_action(
-                __("Finish Investigation"),
-                function() {
-                    set_status('Planning');
+            if ((frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
+                // root cause analysis is mandatory for Internal Audit, Deviation and Event
+                && (!['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type) || frm.doc.root_cause)
+                // root cause analysis is mandatory for some ISO Authorities Audits
+                && (!(frm.doc.nc_type == 'Authorities Audit' && ['ISO 9001', 'ISO 13485', 'ISO 17025'].includes(frm.doc.regulatory_classification)) || frm.doc.root_cause)
+                ) {
+                    // add button to finish investigation and start planning
+                    cur_frm.page.set_primary_action(
+                        __("Finish Investigation"),
+                        function() {
+                            set_status('Planning');
+                        }
+                    );
+            } else {
+                if (!frm.doc.root_cause && (['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type)
+                    || (frm.doc.nc_type == 'Authorities Audit' && ['ISO 9001', 'ISO 13485', 'ISO 17025'].includes(frm.doc.regulatory_classification)))) {
+                    frm.dashboard.add_comment( __("Please do a root cause analysis."), 'red', true);
                 }
-            );
+                if (frm.doc.criticality_classification == 'critical') {
+                    frm.dashboard.add_comment( __("Please do a risk analysis."), 'red', true);
+                }
+            }
         }
 
         if (frm.doc.status == 'Planning'
@@ -185,13 +195,13 @@ frappe.ui.form.on('QM Nonconformity', {
                     'callback': function(response) {
                         // Check, that all actions are finished
                         if (response.message) {
-                            frm.dashboard.add_comment( __("Please complete all actions to finish the Implementation of this Nonconformity."), 'red', true);
+                            frm.dashboard.add_comment( __("Please complete all actions and reload this QM Nonconformity to finish the Implementation."), 'red', true);
                         } else {
                             // add button to finish implementation and complete
                             cur_frm.page.set_primary_action(
                                 __("Finish Implementation"),
                                 function() {
-                                    set_status('Complete');
+                                    set_status('Completed');
                                 }
                             );
                         }
