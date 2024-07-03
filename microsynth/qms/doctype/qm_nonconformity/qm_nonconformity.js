@@ -67,19 +67,22 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
         }
 
-        if (frm.doc.status == 'Draft'
-            && frm.doc.title
-            && frm.doc.nc_type
-            && frm.doc.description
-            && frm.doc.qm_process
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            // add submit button
-            cur_frm.page.set_primary_action(
-                __("Submit"),
-                function() {
-                    submit();
-                }
-            );
+        if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            if (frm.doc.title
+                && frm.doc.nc_type
+                && frm.doc.description
+                && frm.doc.qm_process) {
+                // add submit button
+                cur_frm.page.set_primary_action(
+                    __("Submit"),
+                    function() {
+                        submit();
+                    }
+                );
+            } else {
+                frm.dashboard.clear_comment();
+                frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
+            }
         }
 
         if (frm.doc.status == 'Created' && (frappe.user.has_role('PV') || frappe.user.has_role('QAU'))) {
@@ -227,17 +230,6 @@ frappe.ui.form.on('QM Nonconformity', {
                     }
                 }
             });
-        }            
-
-        // set information bar for missing infos
-        if ((!frm.doc.__islocal)
-            && frm.doc.status == 'Draft'
-            && (!frm.doc.title 
-            || !frm.doc.nc_type
-            || !frm.doc.description
-            || !frm.doc.qm_process)) {
-                frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
         }
 
         // remove dashboard doc (+) buttons

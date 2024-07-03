@@ -2144,3 +2144,18 @@ def force_cancel(dt, dn):
 		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
 	
 	return
+
+
+def user_has_role(user, role):
+    """
+    Check if a user has a given role
+    """
+    role_matches = frappe.db.sql(f"""
+        SELECT `parent`, `role`
+        FROM `tabHas Role`
+        WHERE `parent` = "{user}"
+          AND `role` = "{role}"
+          AND `parenttype` = "User";
+        """, as_dict=True)
+    
+    return len(role_matches) > 0

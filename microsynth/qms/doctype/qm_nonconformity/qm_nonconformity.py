@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
+from microsynth.microsynth.utils import user_has_role
 
 
 class QMNonconformity(Document):
@@ -121,18 +122,3 @@ def has_change(doc):
         """, as_dict=True)
     
     return len(changes) > 0
-
-
-def user_has_role(user, role):
-    """
-    Check if a user has a role
-    """
-    role_matches = frappe.db.sql(f"""
-        SELECT `parent`, `role`
-        FROM `tabHas Role`
-        WHERE `parent` = "{user}"
-          AND `role` = "{role}"
-          AND `parenttype` = "User";
-        """, as_dict=True)
-    
-    return len(role_matches) > 0
