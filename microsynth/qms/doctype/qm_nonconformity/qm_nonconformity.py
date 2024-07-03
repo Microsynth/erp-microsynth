@@ -18,6 +18,49 @@ class QMNonconformity(Document):
         return html
 
 
+    def get_advanced_dashboard(self):
+        corrections = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Action`.`name`,
+                `tabQM Action`.`title`
+            FROM `tabQM Action`
+            WHERE 
+                `tabQM Action`.`document_type` = "QM Nonconformity"
+                AND `tabQM Action`.`document_name` = "{self.name}"
+                AND `tabQM Action`.`type` = "Correction"
+            ;""", as_dict=True)
+
+        corrective_actions = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Action`.`name`,
+                `tabQM Action`.`title`
+            FROM `tabQM Action`
+            WHERE 
+                `tabQM Action`.`document_type` = "QM Nonconformity"
+                AND `tabQM Action`.`document_name` = "{self.name}"
+                AND `tabQM Action`.`type` = "Corrective Action"
+            ;""", as_dict=True)
+
+        changes = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Change`.`name`,
+                `tabQM Change`.`title`
+            FROM `tabQM Change`
+            WHERE 
+                `tabQM Change`.`document_type` = "QM Nonconformity"
+                AND `tabQM Change`.`document_name` = "{self.name}"
+            ;""", as_dict=True)
+
+        html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/advanced_dashboard.html",
+            {
+                'doc': self, 
+                'corrections': corrections,
+                'corrective_actions': corrective_actions,
+                'changes': changes
+            })
+        return html
+
+
 @frappe.whitelist()
 def set_created(doc, user):
     # pull selected document

@@ -28,6 +28,15 @@ frappe.ui.form.on('QM Nonconformity', {
                     cur_frm.set_df_property('classification_wizard', 'options', r.message);
                 }
             });
+        } else {
+            // use the classification_wizard HTML field to display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('classification_wizard', 'options', r.message);
+                }
+            });
         }
 
         // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID

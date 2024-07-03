@@ -1,0 +1,37 @@
+<div class="row">    
+    <div class="col-sm-4">
+        {% if corrections %}
+            <h6>{{ _("Corrections") }}</h6>
+            {% for c in corrections %}
+                <a href="/desk#Form/QM Action/{{ c.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ c.title }}
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="col-sm-4">
+        {% if corrective_actions %}
+            <h6>{{ _("Corrective Actions") }}</h6>
+            {% for ca in corrective_actions %}
+                <a href="/desk#Form/QM Action/{{ ca.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ ca.title }}
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="col-sm-4">
+        {% if changes %}
+            <h6>{{ _("Preventive Actions (QM Change)") }}</h6>
+            {% for c in changes %}
+                <a href="/desk#Form/QM Change/{{ c.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ c.title }}
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
