@@ -1,38 +1,117 @@
+<script>
+    function is_gmp() {
+        cur_frm.set_value("regulatory_classification", "GMP");
+        document.getElementById("step_gmp_dev").style.display = "block";
+        clicked("btn_gmp");
+        document.getElementById("btn_no_gmp").disabled = true;
+    }
+
+    function no_gmp() {
+        document.getElementById("step_no_gmp_dev").style.display = "block";
+        clicked("btn_no_gmp");
+        document.getElementById("btn_gmp").disabled = true;
+    }
+
+    function no_gmp_but_deviation() {
+        document.getElementById("step_no_gmp_dev").style.display = "block";
+        document.getElementById("step_no_gmp_safety").style.display = "block";
+        clicked("btn_no_gmp_dev");
+        document.getElementById("btn_no_gmp_tt").disabled = true;
+    }
+
+    function gmp_deviation() {
+        document.getElementById("step_gmp_dev").style.display = "block";
+        document.getElementById("step_gmp_safety").style.display = "block";
+        clicked("btn_gmp_dev");
+        document.getElementById("btn_gmp_no_dev").disabled = true;
+    }
+
+    function gmp_no_deviation() {
+        document.getElementById("step_gmp_dev").style.display = "block";
+        document.getElementById("step_gmp_oos").style.display = "block";
+        clicked("btn_gmp_no_dev");
+        document.getElementById("btn_gmp_dev").disabled = true;
+    }
+
+    function set_track_and_trend() {
+        cur_frm.set_value("nc_type", "Track & Trend");
+        clicked("btn_no_gmp_tt");
+        document.getElementById("btn_no_gmp_dev").disabled = true;
+        clicked("btn_gmp_tt");
+        document.getElementById("btn_oos").disabled = true;
+    }
+
+    function set_critical_deviation() {
+        cur_frm.set_value("nc_type", "Deviation");
+        cur_frm.set_value("criticality_classification", "critical");
+        clicked("btn_crit_dev");
+        document.getElementById("btn_event").disabled = true;
+        clicked("btn_gmp_dev_safety");
+        document.getElementById("btn_gmp_dev_no_safety").disabled = true;
+    }
+
+    function set_non_critical_deviation() {
+        cur_frm.set_value("nc_type", "Deviation");
+        cur_frm.set_value("criticality_classification", "non-critical");
+        clicked("btn_gmp_dev_no_safety");
+        document.getElementById("btn_gmp_dev_safety").disabled = true;
+    }
+
+    function set_event() {
+        cur_frm.set_value("nc_type", "Event");
+        cur_frm.set_value("criticality_classification", "non-critical");
+        clicked("btn_event");
+        document.getElementById("btn_crit_dev").disabled = true;
+    }
+
+    function set_oos() {
+        cur_frm.set_value("nc_type", "OOS");
+        clicked("btn_oos");
+        document.getElementById("btn_gmp_tt").disabled = true;
+    }
+
+    function clicked(btn_id) {
+        document.getElementById(btn_id).classList.remove("btn-secondary");
+        document.getElementById(btn_id).classList.add("btn-primary");
+        document.getElementById(btn_id).disabled = true;
+    }
+</script>
+
 <div id="container" class="wizard-container">
     <div id="step_gmp">
         <h3>Does the Nonconformity belong to or affect a GMP order?</h3>
-        <button class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes, GMP related</button>
-        <button class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No, non-GMP related</button>
+        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes, GMP related</button>
+        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No, non-GMP related</button>
     </div><!-- TODO: Where to implement the onclick functions and how exactly? -->
 
     <div id="step_no_gmp_dev" style="display: none; "><!-- non-GMP: Deviation in process? -->
         <h3>Is it a deviation in a process?</h3>
-        <button class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+        <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_no_gmp_safety" style="display: none; "><!-- non-GMP Deviation: Affects product / patient safety? -->
         <h3>Can the deviation affect product / patient safety?</h3>
-        <button class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
+        <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_dev" style="display: none; "><!-- GMP: Deviation in process? -->
         <h3>Is it a deviation in a process?</h3>
-        <button class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes, Deviation in process</button>
-        <button class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No, no Deviation in process</button>
+        <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes, Deviation in process</button>
+        <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No, no Deviation in process</button>
     </div>
 
     <div id="step_gmp_safety" style="display: none; "><!-- GMP Deviation: Affects product / patient safety? -->
         <h3>Can the deviation affect product / patient safety?</h3>
-        <button class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
+        <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes, it can</button>
+        <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No, it can't</button>
     </div>
 
     <div id="step_gmp_oos" style="display: none; "><!-- GMP, no Deviation: OOS result? -->
         <h3>Is it an OOS result?</h3>
-        <button class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
-        <button class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+        <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
     </div>
 
 </div><!-- end of wizard container -->
