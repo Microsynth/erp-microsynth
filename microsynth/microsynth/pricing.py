@@ -276,3 +276,63 @@ def find_credits_without_jv():
             continue
 
     print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry. {sum=}')
+
+
+def check_item_prices(outfile):
+    """
+    List Item Prices for multiple occureces for the same Price List, Item and Quantity with different rates unequal 0.
+
+    run
+    bench execute microsynth.microsynth.pricing.check_item_prices --kwargs "{'outfile': '/mnt/erp_share/JPe/item_prices.txt'}"
+    """
+
+    the_magic_query = """
+        SELECT 
+            CONCAT(`item_code`, ":", `price_list`, ":", `min_qty`) AS `key`, 
+            `item_code`, 
+            `price_list`, 
+            `min_qty`,
+            `modified`,
+            (SELECT `disabled` FROM `tabItem` WHERE `tabItem`.`name` = `tabItem Price`.`item_code`) AS `item_disabled`,
+            (SELECT IF(`enabled`=0,1,0) FROM `tabPrice List` WHERE `tabPrice List`.`name` = `tabItem Price`.`price_list`) AS `price_list_disabled`,
+            GROUP_CONCAT(`price_list_rate`) AS `rates`,
+            GROUP_CONCAT(`modified`) AS `modified`
+        FROM   `tabItem Price`
+        GROUP  BY `key`
+        HAVING COUNT(`name`) > 1;
+    """
+    duplicates = frappe.db.sql(the_magic_query, as_dict=True)
+    print("query done")
+
+    active_duplicates = []
+    for d in duplicates:
+        if not d.item_disabled and not d.price_list_disabled:
+            active_duplicates.append(d)
+
+    duplicates_with_different_rates = []
+    for a in active_duplicates:
+        rates = a['rates'].split(',')
+        # Find first rate != 0
+        for rate in rates:
+            if round(float(rate), 4) != 0:
+                first_rate = round(float(rates[0]),4)
+        for rate in rates:
+            rate = round(float(rate), 4)
+            if first_rate and rate != first_rate and rate != 0:
+                duplicates_with_different_rates.append(a)
+                break
+    
+    price_lists = set()
+    with open(outfile, mode='w') as file:
+        file.write(f"Price List;Item Code;Minimum Quantity;Rates;Last modified of Item Prices\r\n")
+        for e in duplicates_with_different_rates:
+            if e['price_list'] not in price_lists:
+                price_lists.add(e['price_list'])
+            file.write(f"{e['price_list']};{e['item_code']};{e['min_qty']};{e['rates']};{e['modified']}\r\n")
+
+        file.write(f"{len(duplicates)=}\r\n")  # alle duplikate
+        file.write(f"{len(active_duplicates)=}\r\n")  # aktive duplikate
+        file.write(f"number of duplicates with at least two different rates != 0: {len(duplicates_with_different_rates)}\r\n")
+
+        file.write(f"{len(price_lists)=}\r\n")
+        file.write(f"{price_lists=}\r\n")
