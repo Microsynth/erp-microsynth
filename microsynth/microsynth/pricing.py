@@ -278,17 +278,16 @@ def find_credits_without_jv():
     print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry. {sum=}')
 
 
-def check_item_prices(outfile):
+def find_item_price_duplicates(outfile):
     """
-    List Item Prices for multiple occureces for the same Price List, Item and Quantity with different rates unequal 0.
+    List Item Prices for multiple occurrences for the same Price List, Item and Quantity with different rates unequal 0.
 
     run
-    bench execute microsynth.microsynth.pricing.check_item_prices --kwargs "{'outfile': '/mnt/erp_share/JPe/item_prices.txt'}"
+    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/item_price_duplicates.txt'}"
     """
-
-    the_magic_query = """
+    sql_query = """
         SELECT 
-            CONCAT(`item_code`, ":", `price_list`, ":", `min_qty`) AS `key`, 
+            CONCAT(`item_code`, ":", `price_list`, ":", `min_qty`) AS `key`,
             `item_code`, 
             `price_list`, 
             `min_qty`,
@@ -296,43 +295,82 @@ def check_item_prices(outfile):
             (SELECT `disabled` FROM `tabItem` WHERE `tabItem`.`name` = `tabItem Price`.`item_code`) AS `item_disabled`,
             (SELECT IF(`enabled`=0,1,0) FROM `tabPrice List` WHERE `tabPrice List`.`name` = `tabItem Price`.`price_list`) AS `price_list_disabled`,
             GROUP_CONCAT(`price_list_rate`) AS `rates`,
-            GROUP_CONCAT(`modified`) AS `modified`
-        FROM   `tabItem Price`
-        GROUP  BY `key`
+            GROUP_CONCAT(`modified`) AS `last_modified`,
+            GROUP_CONCAT(`name`) AS `item_price_names`
+        FROM `tabItem Price`
+        GROUP BY `key`
         HAVING COUNT(`name`) > 1;
     """
-    duplicates = frappe.db.sql(the_magic_query, as_dict=True)
+    duplicates = frappe.db.sql(sql_query, as_dict=True)
     print("query done")
-
     active_duplicates = []
     for d in duplicates:
         if not d.item_disabled and not d.price_list_disabled:
             active_duplicates.append(d)
 
-    duplicates_with_different_rates = []
-    for a in active_duplicates:
-        rates = a['rates'].split(',')
+    duplicates_with_different_non_zero_rates = []
+    for ad in active_duplicates:
+        rates = ad['rates'].split(',')
         # Find first rate != 0
-        for rate in rates:
-            if round(float(rate), 4) != 0:
-                first_rate = round(float(rates[0]),4)
+        first_non_zero_rate = None
         for rate in rates:
             rate = round(float(rate), 4)
-            if first_rate and rate != first_rate and rate != 0:
-                duplicates_with_different_rates.append(a)
+            if rate != 0:
+                first_non_zero_rate = rate
+        for rate in rates:
+            rate = round(float(rate), 4)
+            if first_non_zero_rate and rate != first_non_zero_rate and rate != 0:
+                duplicates_with_different_non_zero_rates.append(ad)
                 break
     
-    price_lists = set()
+    grouped_by_price_lists = {}
+
+    for e in duplicates_with_different_non_zero_rates:
+        if e['price_list'] not in grouped_by_price_lists:
+            grouped_by_price_lists[e['price_list']] = [e]
+        else:
+            grouped_by_price_lists[e['price_list']].append(e)
+
+    grouped_by_sales_managers = {}
+
+    for price_list, items in grouped_by_price_lists.items():
+        managers = frappe.db.sql(f"""
+            SELECT 
+                GROUP_CONCAT(`account_manager`) AS `sales_managers`
+            FROM `tabCustomer`
+            WHERE `tabCustomer`.`default_price_list` = '{price_list}'
+                AND `tabCustomer`.`disabled` = 0
+            ;""", as_dict=True)
+        if managers and len(managers) > 0 and 'sales_managers' in managers[0] and managers[0]['sales_managers'] and len(managers[0]['sales_managers']) > 0:
+            users = managers[0]['sales_managers'].split(',')
+            distinct_sales_managers = ', '.join(str(u) for u in set(users))
+        else:
+            distinct_sales_managers = "not the default Price List of any enabled Customer"
+            continue  # ELa decided to disable those Price Lists
+        if not distinct_sales_managers in grouped_by_sales_managers:
+            grouped_by_sales_managers[distinct_sales_managers] = {}
+            grouped_by_sales_managers[distinct_sales_managers][price_list] = {}
+        else:
+            grouped_by_sales_managers[distinct_sales_managers][price_list] = {}
+        #file.write(f"\r\n\r\nPrice List '{price_list}' ({distinct_sales_managers}):")
+        for e in items:
+            item_price_duplicates = []
+            #file.write(f"\r\nItem Code {e['item_code']} with minimum quantity {e['min_qty']}: ")
+            item_price_names = e['item_price_names'].split(',')
+            for name in item_price_names:
+                item_price = frappe.get_doc("Item Price", name)
+                #file.write(f"Item Price {item_price.name} ({item_price.price_list_rate} {item_price.currency} modified {item_price.modified} by {item_price.modified_by}), ")
+                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.modified};{item_price.modified_by}")
+            grouped_by_sales_managers[distinct_sales_managers][price_list][e['item_code']] = item_price_duplicates
+
     with open(outfile, mode='w') as file:
-        file.write(f"Price List;Item Code;Minimum Quantity;Rates;Last modified of Item Prices\r\n")
-        for e in duplicates_with_different_rates:
-            if e['price_list'] not in price_lists:
-                price_lists.add(e['price_list'])
-            file.write(f"{e['price_list']};{e['item_code']};{e['min_qty']};{e['rates']};{e['modified']}\r\n")
-
-        file.write(f"{len(duplicates)=}\r\n")  # alle duplikate
-        file.write(f"{len(active_duplicates)=}\r\n")  # aktive duplikate
-        file.write(f"number of duplicates with at least two different rates != 0: {len(duplicates_with_different_rates)}\r\n")
-
-        file.write(f"{len(price_lists)=}\r\n")
-        file.write(f"{price_lists=}\r\n")
+        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Last Modified Date;Last Modified By\r\n")
+        for sales_manager, price_lists in grouped_by_sales_managers.items():
+            for price_list, items in price_lists.items():
+                for item_code, item_price_duplicates in items.items():
+                    for item_price_details in item_price_duplicates:
+                        file.write(f"{sales_manager};{price_list};{item_code};{item_price_details}\r\n")
+                    file.write(";;;;;;;;\r\n")
+                file.write(";;;;;;;;\r\n")
+            file.write(";;;;;;;;\r\n")
+        file.write(";;;;;;;;\r\n")
