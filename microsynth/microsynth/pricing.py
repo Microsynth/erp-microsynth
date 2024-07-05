@@ -283,7 +283,7 @@ def find_item_price_duplicates(outfile):
     List Item Prices for multiple occurrences for the same Price List, Item and Quantity with different rates unequal 0.
 
     run
-    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/item_price_duplicates.txt'}"
+    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/item_price_duplicates_with_creation.csv'}"
     """
     sql_query = """
         SELECT 
@@ -292,10 +292,12 @@ def find_item_price_duplicates(outfile):
             `price_list`, 
             `min_qty`,
             `modified`,
+            `creation`,
             (SELECT `disabled` FROM `tabItem` WHERE `tabItem`.`name` = `tabItem Price`.`item_code`) AS `item_disabled`,
             (SELECT IF(`enabled`=0,1,0) FROM `tabPrice List` WHERE `tabPrice List`.`name` = `tabItem Price`.`price_list`) AS `price_list_disabled`,
             GROUP_CONCAT(`price_list_rate`) AS `rates`,
             GROUP_CONCAT(`modified`) AS `last_modified`,
+            GROUP_CONCAT(`creation`) AS `creation`,
             GROUP_CONCAT(`name`) AS `item_price_names`
         FROM `tabItem Price`
         GROUP BY `key`
@@ -360,11 +362,11 @@ def find_item_price_duplicates(outfile):
             for name in item_price_names:
                 item_price = frappe.get_doc("Item Price", name)
                 #file.write(f"Item Price {item_price.name} ({item_price.price_list_rate} {item_price.currency} modified {item_price.modified} by {item_price.modified_by}), ")
-                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.modified};{item_price.modified_by}")
+                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.creation};{item_price.modified};{item_price.modified_by}")
             grouped_by_sales_managers[distinct_sales_managers][price_list][e['item_code']] = item_price_duplicates
 
     with open(outfile, mode='w') as file:
-        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Last Modified Date;Last Modified By\r\n")
+        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Creation Date;Last Modified Date;Last Modified By\r\n")
         for sales_manager, price_lists in grouped_by_sales_managers.items():
             for price_list, items in price_lists.items():
                 for item_code, item_price_duplicates in items.items():
