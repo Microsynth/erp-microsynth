@@ -34,6 +34,8 @@ def create_analysis_report(content=None):
             # Validate values?
             sample_details.append({
                 "sample": sample_doc.name,
+                "reception_date": sample_detail['reception_date'] or '',
+                "analysis_date": sample_detail['analysis_date'] or '',
                 "analysis_method": sample_detail['analysis_method'] or '',
                 "analysis_result": sample_detail['analysis_result'] or '',
                 "comment": sample_detail['comment'] or ''
