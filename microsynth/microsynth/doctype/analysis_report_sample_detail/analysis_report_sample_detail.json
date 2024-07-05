@@ -4,6 +4,8 @@
  "engine": "InnoDB",
  "field_order": [
   "sample",
+  "reception_date",
+  "analysis_date",
   "analysis_method",
   "analysis_result",
   "comment"
@@ -25,7 +27,6 @@
   {
    "fieldname": "comment",
    "fieldtype": "Text Editor",
-   "in_list_view": 1,
    "label": "Comment"
   },
   {
@@ -33,11 +34,23 @@
    "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Analysis Result"
+  },
+  {
+   "fieldname": "reception_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Reception Date"
+  },
+  {
+   "fieldname": "analysis_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Analysis Date"
   }
  ],
  "istable": 1,
- "modified": "2024-06-14 17:00:58.046197",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-07-05 10:31:52.791456",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report Sample Detail",
  "owner": "Administrator",
