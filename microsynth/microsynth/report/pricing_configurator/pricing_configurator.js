@@ -42,7 +42,7 @@ frappe.query_reports["Pricing Configurator"] = {
             frappe.set_route("Form", "Price List", frappe.query_report.filters[0].value);
         });
         report.page.add_inner_button(__('Customers'), function () {
-           frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value });
+           frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value, "disabled": 0});
         });
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;

@@ -7,7 +7,7 @@ frappe.ui.form.on('Price List', {
             });
             // show customers with this price list
             frm.add_custom_button(__("Customers"), function() {
-                frappe.set_route("List", "Customer", {"default_price_list": frm.doc.name});
+                frappe.set_route("List", "Customer", {"default_price_list": frm.doc.name, "disabled": 0});
             });
         }
     }
