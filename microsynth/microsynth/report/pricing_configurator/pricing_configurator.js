@@ -141,6 +141,8 @@ function change_general_discount(){
                                 'new_general_discount': values.new_general_discount,
                                 'user': frappe.session.user
                             },
+                            'freeze': true,
+                            'freeze_message': __("Changing General Discount from " + values.current_general_discount + "% to " + values.new_general_discount + "% ..."),
                             'callback': function(response)
                             {
                                 frappe.query_report.refresh();
@@ -191,6 +193,8 @@ function populate_from_reference() {
             'user': frappe.session.user,
             'item_group': frappe.query_report.filters[1].value
         },
+        'freeze': true,
+        'freeze_message': __("Populating Item Prices from the Reference Price List ..."),
         'callback': function(r)
         {
             frappe.query_report.refresh();
@@ -204,7 +208,7 @@ function populate_with_factor() {
         {'fieldname': 'factor', 'fieldtype': 'Float', 'label': __('Factor'), 'default': 1.0, 'reqd': 1}  
     ],
     function(values){
-        frappe.confirm('Are you sure you want to proceed?<br><b>All prices</b> will be <b>overwritten</b> with a rate derived from the reference list multiplied with the given factor.',
+        frappe.confirm('Are you sure you want to proceed?<br><b>All prices</b> will be <b>overwritten</b> with a rate derived from the reference list multiplied with the given factor ' + values.factor + '.',
             () => {
                 frappe.call({
                     'method': "microsynth.microsynth.report.pricing_configurator.pricing_configurator.populate_with_factor",
@@ -214,6 +218,8 @@ function populate_with_factor() {
                         'item_group': frappe.query_report.filters[1].value,
                         'factor': values.factor
                     },
+                    'freeze': true,
+                    'freeze_message': __("Populating Item Prices from the Reference Price List with factor " + values.factor + " ..."),
                     'callback': function(r)
                     {
                         frappe.query_report.refresh();
