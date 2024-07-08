@@ -280,10 +280,10 @@ def find_credits_without_jv():
 
 def find_item_price_duplicates(outfile):
     """
-    List Item Prices for multiple occurrences for the same Price List, Item and Quantity with different rates unequal 0.
+    List Item Prices with multiple occurrences on the same Price List, for the same Item and same Quantity.
 
     run
-    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/item_price_duplicates_with_creation.csv'}"
+    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-07-08.csv'}"
     """
     sql_query = """
         SELECT 
@@ -310,24 +310,25 @@ def find_item_price_duplicates(outfile):
         if not d.item_disabled and not d.price_list_disabled:
             active_duplicates.append(d)
 
-    duplicates_with_different_non_zero_rates = []
-    for ad in active_duplicates:
-        rates = ad['rates'].split(',')
-        # Find first rate != 0
-        first_non_zero_rate = None
-        for rate in rates:
-            rate = round(float(rate), 4)
-            if rate != 0:
-                first_non_zero_rate = rate
-        for rate in rates:
-            rate = round(float(rate), 4)
-            if first_non_zero_rate and rate != first_non_zero_rate and rate != 0:
-                duplicates_with_different_non_zero_rates.append(ad)
-                break
+    # duplicates_with_different_non_zero_rates = []
+    # for ad in active_duplicates:
+    #     rates = ad['rates'].split(',')
+    #     # Find first rate != 0
+    #     first_non_zero_rate = None
+    #     for rate in rates:
+    #         rate = round(float(rate), 4)
+    #         if rate != 0:
+    #             first_non_zero_rate = rate
+    #     for rate in rates:
+    #         rate = round(float(rate), 4)
+    #         if first_non_zero_rate and rate != first_non_zero_rate and rate != 0:
+    #             duplicates_with_different_non_zero_rates.append(ad)
+    #             break
     
     grouped_by_price_lists = {}
 
-    for e in duplicates_with_different_non_zero_rates:
+    # for e in duplicates_with_different_non_zero_rates:
+    for e in active_duplicates:
         if e['price_list'] not in grouped_by_price_lists:
             grouped_by_price_lists[e['price_list']] = [e]
         else:
@@ -348,25 +349,23 @@ def find_item_price_duplicates(outfile):
             distinct_sales_managers = ', '.join(str(u) for u in set(users))
         else:
             distinct_sales_managers = "not the default Price List of any enabled Customer"
-            continue  # ELa decided to disable those Price Lists
+            #continue  # ELa decided to disable those Price Lists
         if not distinct_sales_managers in grouped_by_sales_managers:
             grouped_by_sales_managers[distinct_sales_managers] = {}
             grouped_by_sales_managers[distinct_sales_managers][price_list] = {}
         else:
             grouped_by_sales_managers[distinct_sales_managers][price_list] = {}
-        #file.write(f"\r\n\r\nPrice List '{price_list}' ({distinct_sales_managers}):")
+
         for e in items:
             item_price_duplicates = []
-            #file.write(f"\r\nItem Code {e['item_code']} with minimum quantity {e['min_qty']}: ")
             item_price_names = e['item_price_names'].split(',')
             for name in item_price_names:
                 item_price = frappe.get_doc("Item Price", name)
-                #file.write(f"Item Price {item_price.name} ({item_price.price_list_rate} {item_price.currency} modified {item_price.modified} by {item_price.modified_by}), ")
-                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.creation};{item_price.modified};{item_price.modified_by}")
+                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.creation};{item_price.owner};{item_price.modified};{item_price.modified_by}")
             grouped_by_sales_managers[distinct_sales_managers][price_list][e['item_code']] = item_price_duplicates
 
     with open(outfile, mode='w') as file:
-        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Creation Date;Last Modified Date;Last Modified By\r\n")
+        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Creation Date;Creator;Last Modified Date;Last Modified By\r\n")
         for sales_manager, price_lists in grouped_by_sales_managers.items():
             for price_list, items in price_lists.items():
                 for item_code, item_price_duplicates in items.items():
@@ -376,3 +375,11 @@ def find_item_price_duplicates(outfile):
                 file.write(";;;;;;;;\r\n")
             file.write(";;;;;;;;\r\n")
         file.write(";;;;;;;;\r\n")
+    
+    price_list_duplicates = []
+    for price_list, duplicates in grouped_by_price_lists.items():
+        price_list_duplicates.append((price_list, len(duplicates)))
+    for tuple in sorted(price_list_duplicates, key=lambda x: x[1], reverse=True):
+        print(f"Price List '{tuple[0]}' has {tuple[1]} Item Prices with the same Item Code and the same Qty more than once.")
+    
+    print(f"\nThere are {len(active_duplicates)} active duplicates (Item enabled and Price List enabled) on {len(grouped_by_price_lists)} different Price Lists.")
