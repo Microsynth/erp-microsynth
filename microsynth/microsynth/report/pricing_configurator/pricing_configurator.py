@@ -179,7 +179,7 @@ def get_data_legacy(filters):
                AND `tPref`.`min_qty` = `tP`.`min_qty`
                AND (`tPref`.`valid_from` IS NULL OR `tPref`.`valid_from` <= CURDATE())
                AND (`tPref`.`valid_upto` IS NULL OR `tPref`.`valid_upto` >= CURDATE())
-             ORDER BY `tPref`.`valid_from` ASC
+             ORDER BY `tPref`.`valid_from` DESC
              LIMIT 1) AS `reference_rate`,
             `tP`.`name` AS `record`
          FROM `tabItem`
