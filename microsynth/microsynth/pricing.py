@@ -283,7 +283,7 @@ def find_item_price_duplicates(outfile):
     List Item Prices with multiple occurrences on the same Price List, for the same Item and same Quantity.
 
     run
-    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-07-08.csv'}"
+    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-07-09.csv'}"
     """
     sql_query = """
         SELECT 
@@ -324,7 +324,7 @@ def find_item_price_duplicates(outfile):
     #         if first_non_zero_rate and rate != first_non_zero_rate and rate != 0:
     #             duplicates_with_different_non_zero_rates.append(ad)
     #             break
-    
+
     grouped_by_price_lists = {}
 
     # for e in duplicates_with_different_non_zero_rates:
@@ -361,25 +361,49 @@ def find_item_price_duplicates(outfile):
             item_price_names = e['item_price_names'].split(',')
             for name in item_price_names:
                 item_price = frappe.get_doc("Item Price", name)
-                item_price_duplicates.append(f"{e['min_qty']};{item_price.name};{item_price.price_list_rate};{item_price.currency};{item_price.creation};{item_price.owner};{item_price.modified};{item_price.modified_by}")
+                # append a tuple of creation date and a dictionary with details to output
+                item_price_duplicates.append((item_price.creation, {
+                        'item_name': item_price.item_name,
+                        'min_qty': item_price.min_qty,
+                        'name': item_price.name,
+                        'delete': '',
+                        'price_list_rate': item_price.price_list_rate,
+                        'currency': item_price.currency,
+                        'valid_from': item_price.valid_from,
+                        'creation': item_price.creation,
+                        'owner': item_price.owner,
+                        'modified': item_price.modified,
+                        'modified_by': item_price.modified_by
+                    }))
+            item_price_duplicates.sort()  # sort in-place by the creation date (first element of tuple) ascending (oldest first)
+            all_other_by_administrator = True
+            if item_price_duplicates[0][1]['price_list_rate'] == 0:  # check if rate of oldest (first) Item Price is 0
+                for i in range(1, len(item_price_duplicates)):
+                    if item_price_duplicates[i][1]['owner'] != 'Administrator':  # check if all other Item Prices are created by the Administrator
+                        all_other_by_administrator = False
+                        break
+                if all_other_by_administrator:
+                    for i in range(1, len(item_price_duplicates)):
+                        item_price_duplicates[i][1]['delete'] = 'delete'
             grouped_by_sales_managers[distinct_sales_managers][price_list][e['item_code']] = item_price_duplicates
 
     with open(outfile, mode='w') as file:
-        file.write("Sales Manager;Price List;Item Code;Minimum Quantity;Item Price ID;Rate;Currency;Creation Date;Creator;Last Modified Date;Last Modified By\r\n")
+        file.write("Sales Manager;Price List;Item Code;Item Name;Minimum Quantity;Item Price ID;Delete?;Rate;Currency;Valid from date;Creation date;Creator;Last Modified date;Last Modified by\r\n")
         for sales_manager, price_lists in grouped_by_sales_managers.items():
             for price_list, items in price_lists.items():
                 for item_code, item_price_duplicates in items.items():
                     for item_price_details in item_price_duplicates:
-                        file.write(f"{sales_manager};{price_list};{item_code};{item_price_details}\r\n")
-                    file.write(";;;;;;;;\r\n")
-                file.write(";;;;;;;;\r\n")
-            file.write(";;;;;;;;\r\n")
-        file.write(";;;;;;;;\r\n")
-    
+                        e = item_price_details[-1]
+                        file.write(f"{sales_manager};{price_list};{item_code};'{e['item_name']}';{e['min_qty']};{e['name']};{e['delete']};{e['price_list_rate']};{e['currency']};{e['valid_from']};{e['creation']};{e['owner']};{e['modified']};{e['modified_by']}\r\n")
+                    file.write(";;;;;;;;;;;;\r\n")
+                file.write(";;;;;;;;;;;;\r\n")
+            file.write(";;;;;;;;;;;;\r\n")
+        file.write(";;;;;;;;;;;;\r\n")
+
     price_list_duplicates = []
     for price_list, duplicates in grouped_by_price_lists.items():
         price_list_duplicates.append((price_list, len(duplicates)))
     for tuple in sorted(price_list_duplicates, key=lambda x: x[1], reverse=True):
         print(f"Price List '{tuple[0]}' has {tuple[1]} Item Prices with the same Item Code and the same Qty more than once.")
-    
+
     print(f"\nThere are {len(active_duplicates)} active duplicates (Item enabled and Price List enabled) on {len(grouped_by_price_lists)} different Price Lists.")
