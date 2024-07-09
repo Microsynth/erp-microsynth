@@ -38,6 +38,7 @@ def get_columns(filters):
 def get_item_prices(price_list):
     """
     Returns the item prices for a given price list. Fields: 'record', 'item_code', 'item_group', 'uom', 'item_name', 'min_qty', 'rate'
+    The Item Prices are sorted oldest to newest to show the latest entry in the Pricing Configurator (last entry is choosen).
     """
     simple_sql_query = """
         SELECT
@@ -52,6 +53,9 @@ def get_item_prices(price_list):
         JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
         WHERE `price_list` = "{price_list}"
             AND `tabItem`.`disabled` = 0
+            AND (`tabItem Price`.`valid_from` IS NULL OR `tabItem Price`.`valid_from` <= CURDATE())
+            AND (`tabItem Price`.`valid_upto` IS NULL OR `tabItem Price`.`valid_upto` >= CURDATE())
+        ORDER BY `tabItem Price`.`item_code` ASC, `tabItem Price`.`valid_from` ASC
     """.format(price_list=price_list)
     data = frappe.db.sql(simple_sql_query, as_dict=True)
     return data
@@ -75,12 +79,12 @@ def get_data(filters):
     raw_reference_prices = get_item_prices(reference_price_list)
     
     customer_prices = {}
-    for p in raw_customer_prices:        
-        customer_prices[p.item_code, p.min_qty] = p  
+    for p in raw_customer_prices:
+        customer_prices[p.item_code, p.min_qty] = p     # the last item price from the list (sorted oldest to newest) ist taken
    
     reference_prices = {}
     for p in raw_reference_prices:
-        reference_prices[p.item_code, p.min_qty] = p     
+        reference_prices[p.item_code, p.min_qty] = p    # the last item price from the list (sorted oldest to newest) ist taken
 
     data = []
     # key is a tuple of item_code and min_qty.
@@ -124,81 +128,6 @@ def get_data(filters):
         return [ x for x in filtered_data if x['discount'] is not None and round(x['discount'],2) != general_discount and x['discount'] != 0 ]
     else:
         return filtered_data
-
-
-def get_data_legacy(filters):
-    # fetch accounts
-    conditions = ""
-    raw_conditions = ""
-    #frappe.throw("{0}".format(type(filters)))
-    if type(filters) == str:
-        filters = json.loads(filters)
-    elif type(filters) == dict:
-        pass
-    else:
-        filters = dict(filters)
-        
-    if 'item_group' in filters:
-        conditions += """ AND `item_group` = "{0}" """.format(filters['item_group'])
-    if 'discounts' in filters:
-        # get general discount 
-        general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")
-        raw_conditions += """ WHERE `all`.`discount` !=0 AND `all`.`discount` != "{0}" """.format(general_discount)
-        
-    reference_price_list = get_reference_price_list(filters['price_list'])
-    currency = frappe.get_value("Price List", filters['price_list'], "currency")
-    
-    sql_query = """
-        SELECT
-            *
-        FROM
-        (SELECT
-            `item_code`,
-            `item_name`,
-            `item_group`,
-            `qty`,
-            `uom`,
-            `reference_rate`,
-            `price_list_rate`,
-            IF(`reference_rate` IS NULL, 0, 100 * (`reference_rate` - `price_list_rate`) / `reference_rate`) AS `discount`,
-            "{currency}" AS `currency`,
-            `record`
-        FROM
-        (SELECT 
-            `tabItem`.`item_code`,
-            `tabItem`.`item_name`,
-            `tabItem`.`item_group`,
-            `tabItem`.`stock_uom` AS `uom`,
-            `tP`.`min_qty` AS `qty`,
-            `tP`.`price_list_rate` AS `price_list_rate`,
-            (SELECT
-                `tPref`.`price_list_rate`
-             FROM `tabItem Price` AS `tPref`
-             WHERE `tPref`.`item_code` = `tabItem`.`item_code`
-               AND `tPref`.`price_list` = "{reference_price_list}"
-               AND `tPref`.`min_qty` = `tP`.`min_qty`
-               AND (`tPref`.`valid_from` IS NULL OR `tPref`.`valid_from` <= CURDATE())
-               AND (`tPref`.`valid_upto` IS NULL OR `tPref`.`valid_upto` >= CURDATE())
-             ORDER BY `tPref`.`valid_from` DESC
-             LIMIT 1) AS `reference_rate`,
-            `tP`.`name` AS `record`
-         FROM `tabItem`
-         LEFT JOIN `tabItem Price` AS `tP` ON
-            `tP`.`item_code` = `tabItem`.`item_code`
-            AND `tP`.`price_list` = "{price_list}"
-            AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
-            AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
-         WHERE `tabItem`.`disabled` = 0
-           {conditions}
-        ) AS `raw`
-        ) AS `all`
-        {raw_conditions}
-        ORDER BY `all`.`item_code` ASC, `all`.`qty` ASC;
-    """.format(reference_price_list=reference_price_list, 
-        price_list=filters['price_list'], conditions=conditions, raw_conditions=raw_conditions, currency=currency)
-
-    data = frappe.db.sql(sql_query, as_dict=True)   
-    return data
 
 
 def get_reference_price_list(price_list):
