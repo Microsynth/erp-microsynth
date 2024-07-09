@@ -110,11 +110,10 @@ function change_general_discount(){
             frappe.prompt([
                 {
                     'fieldname': 'current_general_discount',
-                    'fieldtype': 'Percent',
+                    'fieldtype': 'Data',
                     'label': __('Current General Discount'),
-                    'reqd': 1,
                     'read_only': 1,
-                    'default': response.message.general_discount
+                    'default': (response.message.general_discount.toString() + '%')
                 },
                 {
                     'fieldname': 'new_general_discount',
@@ -124,7 +123,8 @@ function change_general_discount(){
                 }
             ],
             function(values){
-                frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount of ' + response.message.general_discount + '% <b>will be changed</b> to the new general discount of ' + values.new_general_discount + '%.<br><br><b>Please be patient</b>, the process may take several minutes. The table is automatically reloaded after completion.',
+                console.log(values);
+                frappe.confirm('Are you sure you want to proceed?<br>All <b>prices</b> with the original general discount of ' + values.current_general_discount + ' <b>will be changed</b> to the new general discount of ' + values.new_general_discount + '%.<br><br><b>Please be patient</b>, the process may take several minutes. The table is automatically reloaded after completion.',
                     () => {
                         if (values.new_general_discount > 100) {
                             frappe.show_alert('New general discount has to be <= 100. Otherwise prices would get negative.');
@@ -142,7 +142,7 @@ function change_general_discount(){
                                 'user': frappe.session.user
                             },
                             'freeze': true,
-                            'freeze_message': __("Changing General Discount from " + values.current_general_discount + "% to " + values.new_general_discount + "% ..."),
+                            'freeze_message': __("Changing General Discount from " + values.current_general_discount + " to " + values.new_general_discount + "% ..."),
                             'callback': function(response)
                             {
                                 frappe.query_report.refresh();
