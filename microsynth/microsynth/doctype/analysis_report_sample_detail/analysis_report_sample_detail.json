@@ -1,0 +1,62 @@
+{
+ "creation": "2024-06-14 10:40:10.526653",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sample",
+  "reception_date",
+  "analysis_date",
+  "analysis_method",
+  "analysis_result",
+  "comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "sample",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sample",
+   "options": "Sample"
+  },
+  {
+   "fieldname": "analysis_method",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Analysis Method"
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Text Editor",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "analysis_result",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Analysis Result"
+  },
+  {
+   "fieldname": "reception_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Reception Date"
+  },
+  {
+   "fieldname": "analysis_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Analysis Date"
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-07-05 10:31:52.791456",
+ "modified_by": "rolf.suter@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Analysis Report Sample Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
