@@ -239,7 +239,7 @@ def get_price_list_rates(item_code, price_list, qty):
            AND (`tP`.`valid_from` IS NULL OR `tP`.`valid_from` <= CURDATE())
            AND (`tP`.`valid_upto` IS NULL OR `tP`.`valid_upto` >= CURDATE())
            AND `tP`.`min_qty` <= {qty}
-         ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` ASC
+         ORDER BY `tP`.`min_qty` DESC, `tP`.`valid_from` DESC
          LIMIT 1;
         """.format(item_code=item_code, price_list=price_list, qty=qty), as_dict=True)
     return data
