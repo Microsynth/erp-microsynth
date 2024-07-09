@@ -7,6 +7,7 @@ from microsynth.microsynth.utils import get_customer
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from frappe.desk.form.load import get_attachments
 from frappe.core.doctype.communication.email import make
+import os
 
 
 @frappe.whitelist()
@@ -136,6 +137,31 @@ def send_reports(recipient, cc_mails, analysis_reports):
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
 
 
+def webshop_upload(contact_id, web_order_id, analysis_reports):
+    """
+    Write the given Analysis Reports to the path specified in the Microsynth Settings to enable Webshop upload.
+    """
+    export_path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "webshop_result_files")
+
+    for analysis_report in analysis_reports:
+        report_doc = frappe.get_doc("Analysis Report", analysis_report)
+        if not web_order_id:
+            web_order_id = report_doc.web_order_id
+        if not web_order_id:
+            frappe.throw(f"Got no Web Order ID and Analysis Report '{analysis_report}' has no Web Order ID. Unable to create a folder.")
+        content_pdf = frappe.get_print(
+            "Analysis Report", 
+            analysis_report, 
+            print_format="Analysis Report", 
+            as_pdf=True)
+        path = f"{export_path}/{contact_id}/{web_order_id}"
+        if not os.path.exists(path):
+            os.makedirs(path)
+        file_path = f"{path}/{analysis_report}.pdf"
+        with open(file_path, mode='wb') as file:
+            file.write(content_pdf)
+
+
 @frappe.whitelist()
 def transmit_analysis_reports(content=None):
     """
@@ -158,8 +184,9 @@ def transmit_analysis_reports(content=None):
                 return {'success': False, 'message': f"Analysis Report '{report}' does not exist in the ERP."}
             if content['sales_order'] != analysis_report.sales_order:
                 return {'success': False, 'message': f"Got Sales Order '{content['sales_order']}', but Analysis Report '{report}' belongs to Sales Order '{analysis_report.sales_order}'."}
-        contact_person = frappe.get_value('Sales Order', content['sales_order'], 'contact_person')
-        recipient = frappe.get_value('Contact', contact_person, 'email_id')
+        sales_order = frappe.get_doc('Sales Order', content['sales_order'])
+        recipient = frappe.get_value('Contact', sales_order.contact_person, 'email_id')
+        webshop_upload(sales_order.contact_person, sales_order.web_order_id, content['analysis_reports'])
         # send reports to the contact person of the given Sales Order
         return send_reports(recipient, content['cc_mails'], content['analysis_reports'])
     else:
@@ -178,7 +205,8 @@ def transmit_analysis_reports(content=None):
         overall_success = True
         for contact_person, analysis_reports in reports_per_person.items():
             recipient = frappe.get_value('Contact', contact_person, 'email_id')
-            message = send_reports(recipient, '', analysis_reports)
+            webshop_upload(contact_person, None, analysis_reports)
+            message = send_reports(recipient, content['cc_mails'] if 'cc_mails' in content else '', analysis_reports)
             overall_success = overall_success and message['success']
         if overall_success:
             return {'success': True, 'message': "Successfully send all reports"}
