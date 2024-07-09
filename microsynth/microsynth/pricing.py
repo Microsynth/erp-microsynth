@@ -407,3 +407,61 @@ def find_item_price_duplicates(outfile):
         print(f"Price List '{tuple[0]}' has {tuple[1]} Item Prices with the same Item Code and the same Qty more than once.")
 
     print(f"\nThere are {len(active_duplicates)} active duplicates (Item enabled and Price List enabled) on {len(grouped_by_price_lists)} different Price Lists.")
+
+
+def delete_item_price_duplicates(price_list, dry_run=True):
+    """
+    If there are exact two Item Prices with the same Item Code, same Qty and same rate on the given Price List, delete one of them.
+
+    bench execute microsynth.microsynth.pricing.delete_item_price_duplicates --kwargs "{'price_list': 'Fr_Par_ENS', 'dry_run': True}"
+    """
+    sql_query = f"""
+        SELECT 
+            CONCAT(`item_code`, ":", `min_qty`) AS `key`,
+            `item_code`, 
+            `min_qty`,
+            (SELECT `disabled` FROM `tabItem` WHERE `tabItem`.`name` = `tabItem Price`.`item_code`) AS `item_disabled`,
+            GROUP_CONCAT(`name`) AS `item_price_names`
+        FROM `tabItem Price`
+        WHERE `tabItem Price`.`price_list` = '{price_list}'
+        GROUP BY `key`
+        HAVING COUNT(`name`) > 1;
+    """
+    duplicates = frappe.db.sql(sql_query, as_dict=True)
+    for dup in duplicates:
+        item_price_names = dup['item_price_names'].split(',')
+        if len(item_price_names) == 2:
+            item_price_0 = frappe.get_doc("Item Price", item_price_names[0])
+            item_price_1 = frappe.get_doc("Item Price", item_price_names[1])
+            if item_price_0.price_list_rate == item_price_1.price_list_rate:
+                if not dry_run:
+                    item_price_0.delete()
+                    print(f"Deleted Item Price {item_price_0.name}.")
+                else:
+                    print(f"Would delete Item Price {item_price_0.name}.")
+        else:
+            print(f"{len(item_price_names)=} for {dup=}")
+
+
+def delete_item_prices(csv_file, dry_run=True):
+    """
+    0:Sales Manager;1:Disabled Price List?;2:Price List;3:Item Code;4:Minimum Quantity;5:Item Price ID;6:Should be deleted;7:Rate;8:Currency;9:Last Modified Date;10:Last Modified By
+    
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/Helena_Item Price Duplicates with different non-zero rates_2024-07-05.csv', 'dry_run': True}"
+    """
+    import csv
+    with open(csv_file) as file:
+        print(f"Parsing '{csv_file}' ...")
+        csv_reader = csv.reader(file, delimiter=";")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 11:
+                print(f"Line '{line}' has length {len(line)}, but expected length 11. Going to continue.")
+                continue
+            if line[6] == "delete":
+                item_price = frappe.get_doc("Item Price", line[5])
+                if not dry_run:
+                    item_price.delete()
+                    print(f"Deleted Item Price {item_price.name}.")
+                else:
+                    print(f"Would delete Item Price {item_price.name}.")
