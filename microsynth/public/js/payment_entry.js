@@ -295,7 +295,7 @@ function match_outstanding_amounts() {
 /// Avis booking
 function allocate_avis(frm) {
     // hack: disable delete rows
-    var styles = ".grid-delete-row { display: none; } .grid-remove-rows { display: none; }";
+    var styles = ".grid-delete-row { display: none; } .grid-remove-rows { display: none; } .row-actions { display: none !important; }";
     var styleSheet = document.createElement("style");
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
