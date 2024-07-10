@@ -11,6 +11,37 @@ import os
 
 
 @frappe.whitelist()
+def get_sales_order_samples(web_order_id):
+    """
+    Try to find Sales Order by Web Order Id (there might be multiple!), return Samples
+
+    Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#fetch-sales-order-samples
+
+    bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'web_order_id': '4124877'}"
+    """
+    if not web_order_id:
+        return {'success': False, 'message': "Please provide a Web Order ID", 'samples': None}
+    sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
+    if len(sales_orders) == 1:
+        sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
+        samples_to_return = []
+        for sample in sales_order_doc.samples:
+            sample_doc = frappe.get_doc("Sample", sample.sample)
+            samples_to_return.append({
+                "name": sample_doc.name,
+                "sample_name": sample_doc.sample_name,
+                "sequencing_label_id": sample_doc.sequencing_label,
+                "web_id": sample_doc.web_id
+            })
+        return {'success': True, 'message': "OK", 'samples': samples_to_return}
+    if len(sales_orders) == 0:
+        return {'success': False, 'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.", 'samples': None}
+    else:  # more than one Sales Order
+        # TODO: How to choose the correct Sales Order?
+        return {'success': False, 'message': f"Found {len(sales_orders)} submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.", 'samples': None}
+
+
+@frappe.whitelist()
 def create_analysis_report(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#create-analysis-report
@@ -23,15 +54,44 @@ def create_analysis_report(content=None):
     sample_details = []
     if 'sample_details' in content:
         for sample_detail in content['sample_details']:
-            
-            # TODO use existing samples from Sales Order #16658
-            sample_doc = frappe.get_doc({
-                'doctype': 'Sample',
-                'sample_name': sample_detail['sample_name'],
-                
-            })
-            sample_doc.insert()
-            
+            if 'sample' in sample_detail and sample_detail['sample']:
+                if frappe.db.exists('Sample', sample_detail['sample']):
+                    sample_doc = frappe.get_doc("Sample", sample_detail['sample'])
+                else:
+                    return {'success': False, 'message': f"The given Sample '{sample_detail['sample']}' does not exist in the ERP.", 'reference': None}
+            else:
+                matching_samples = []
+                if 'sales_order' in content and content['sales_order']:
+                    if frappe.db.exists('Sales Order', content['sales_order']):
+                        sales_order_doc =frappe.get_doc('Sales Order', content['sales_order'])
+                        samples = sales_order_doc.samples
+                    else:
+                        return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
+                elif 'web_order_id' in content and content['web_order_id']:
+                    # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
+                    message = get_sales_order_samples(content['web_order_id'])
+                    samples = message['samples']                    
+                else:
+                    return {'success': False, 'message': "Please provide a Sales Order or Web Order ID.", 'reference': None}
+
+                for sample in samples:
+                    if sample['sample_name'] == sample_detail['sample_name']:
+                        matching_samples.append(sample)
+                if len(matching_samples) == 1:
+                    # Sample found -> link it
+                    sample_doc = frappe.get_doc("Sample", sample['name'])
+                elif len(matching_samples) == 0:
+                    # no Sample found -> create a sample with the name
+                    sample_doc = frappe.get_doc({
+                        'doctype': 'Sample',
+                        'sample_name': sample_detail['sample_name']
+                    })
+                    sample_doc.insert()
+                else:
+                    return {'success': False, 'message': f"Found more than one Sample with the Sample Name '{sample_detail['sample_name']}' on the Sales Order with the given Web Order ID '{content['web_order_id']}'.", 'reference': None}
+
+            # TODO use existing samples from Sales Order #16658            
+
             # Validate values?
             sample_details.append({
                 "sample": sample_doc.name,
