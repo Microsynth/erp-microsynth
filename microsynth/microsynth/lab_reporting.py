@@ -22,23 +22,21 @@ def get_sales_order_samples(web_order_id):
     if not web_order_id:
         return {'success': False, 'message': "Please provide a Web Order ID", 'samples': None}
     sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
-    if len(sales_orders) == 1:
-        sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
-        samples_to_return = []
-        for sample in sales_order_doc.samples:
-            sample_doc = frappe.get_doc("Sample", sample.sample)
-            samples_to_return.append({
-                "name": sample_doc.name,
-                "sample_name": sample_doc.sample_name,
-                "sequencing_label_id": sample_doc.sequencing_label,
-                "web_id": sample_doc.web_id
-            })
-        return {'success': True, 'message': "OK", 'samples': samples_to_return}
     if len(sales_orders) == 0:
         return {'success': False, 'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.", 'samples': None}
-    else:  # more than one Sales Order
-        # TODO: How to choose the correct Sales Order?
-        return {'success': False, 'message': f"Found {len(sales_orders)} submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.", 'samples': None}
+    else:
+        samples_to_return = []
+        for sales_order in sales_orders:
+            sales_order_doc = frappe.get_doc("Sales Order", sales_order['name'])
+            for sample in sales_order_doc.samples:
+                sample_doc = frappe.get_doc("Sample", sample.sample)
+                samples_to_return.append({
+                    "name": sample_doc.name,
+                    "sample_name": sample_doc.sample_name,
+                    "sequencing_label_id": sample_doc.sequencing_label,
+                    "web_id": sample_doc.web_id
+                })
+        return {'success': True, 'message': "OK", 'samples': samples_to_return}
 
 
 @frappe.whitelist()
@@ -72,7 +70,7 @@ def create_analysis_report(content=None):
                     message = get_sales_order_samples(content['web_order_id'])
                     samples = message['samples']                    
                 else:
-                    return {'success': False, 'message': "Please provide a Sales Order or Web Order ID.", 'reference': None}
+                    return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order or Web Order ID.", 'reference': None}
 
                 for sample in samples:
                     if sample['sample_name'] == sample_detail['sample_name']:
@@ -88,9 +86,10 @@ def create_analysis_report(content=None):
                     })
                     sample_doc.insert()
                 else:
+                    # multiple samples found -> throw an error
                     return {'success': False, 'message': f"Found more than one Sample with the Sample Name '{sample_detail['sample_name']}' on the Sales Order with the given Web Order ID '{content['web_order_id']}'.", 'reference': None}
 
-            # TODO use existing samples from Sales Order #16658            
+            # TODO use existing samples from Sales Order #16658
 
             # Validate values?
             sample_details.append({
