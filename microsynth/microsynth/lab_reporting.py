@@ -33,7 +33,7 @@ def fetch_sales_order_samples(web_order_id):
                 'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.",
                 'sales_order': None,
                 'web_order_id': None,
-                'samples': None}
+                'samples': [] }
     elif len(sales_orders) == 1:
         samples_to_return = []
         sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
@@ -57,7 +57,7 @@ def fetch_sales_order_samples(web_order_id):
                 'message': f"Found {len(sales_orders)} Sales Order with the given Web Order ID '{web_order_id}' in the ERP.",
                 'sales_order': None,
                 'web_order_id': None,
-                'samples': None}
+                'samples': [] }
 
 
 @frappe.whitelist()
