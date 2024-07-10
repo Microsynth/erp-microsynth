@@ -1438,8 +1438,8 @@ def configure_territory(customer_id):
                 f"Therefore the ERP is unable to determine the Territory of this Customer.<br>" \
                 f"Please add a shipping address, Territory and Sales Manager for Customer '{customer_id}' in the ERP.<br>" \
                 f"{reason}<br>Best regards,<br>Jens"
-            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory. Send an email to {recipient}."
-            frappe.log_error(subject, "utils.configure_territory")
+            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory."
+            frappe.log_error(subject + f" Send an email to {recipient}.", "utils.configure_territory")
             make(
                 recipients = recipient,
                 cc = "info@microsynth.ch" if recipient != "info@microsynth.ch" else '',

@@ -68,7 +68,7 @@ def create_analysis_report(content=None):
                 elif 'web_order_id' in content and content['web_order_id']:
                     # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
                     message = get_sales_order_samples(content['web_order_id'])
-                    samples = message['samples']                    
+                    samples = message['samples']
                 else:
                     return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order or Web Order ID.", 'reference': None}
 
