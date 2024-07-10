@@ -1982,6 +1982,32 @@ def set_territory_for_customers():
     return
 
 
+def check_territories():
+    """
+    bench execute microsynth.microsynth.migration.check_territories
+    """
+    from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
+
+    customers = frappe.db.get_all("Customer",
+        filters = [['disabled', '=', 0]],
+        fields = ['name', 'customer_name', 'territory'])
+
+    for cust in customers:
+        try:
+            address_id = get_first_shipping_address(cust['name'])
+            if not address_id:
+                print(f"### Found no shipping address for Customer '{cust['name']}' ('{cust['customer_name']}'). Unable to determine Territory.")
+                continue
+            territory = determine_territory(address_id)
+            if not territory:
+                continue
+            if cust['territory'] != territory.name:
+                address = frappe.get_doc("Address", address_id)
+                print(f"Customer '{cust['name']}' ('{cust['customer_name']}') has Territory {cust['territory']}, but the first shipping address is in {address.country} ({address.pincode} {address.city}) and the Territory should therefore be {territory.name}.")
+        except Exception as err:
+            print(f"##### Could not update Territory for Customer '{cust['name']}': {err}")
+
+
 def update_territories_and_sales_managers(current_territory):
     """
     Update the territories and sales managers for all enabled Customers whose current territory is the given current_territory.
