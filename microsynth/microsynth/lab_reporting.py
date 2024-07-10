@@ -11,32 +11,53 @@ import os
 
 
 @frappe.whitelist()
-def get_sales_order_samples(web_order_id):
+def fetch_sales_order_samples(web_order_id):
     """
     Try to find Sales Order by Web Order Id (there might be multiple!), return Samples
 
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#fetch-sales-order-samples
 
-    bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'web_order_id': '4124877'}"
+    bench execute microsynth.microsynth.lab_reporting.fetch_sales_order_samples --kwargs "{'web_order_id': '4124877'}"
     """
     if not web_order_id:
-        return {'success': False, 'message': "Please provide a Web Order ID", 'samples': None}
+        return {'success': False,
+                'message': "Please provide a Web Order ID",
+                'sales_order': None,
+                'web_order_id': None,
+                'samples': None}
+
     sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
+
     if len(sales_orders) == 0:
-        return {'success': False, 'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.", 'samples': None}
-    else:
+        return {'success': False,
+                'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.",
+                'sales_order': None,
+                'web_order_id': None,
+                'samples': None}
+    elif len(sales_orders) == 1:
         samples_to_return = []
-        for sales_order in sales_orders:
-            sales_order_doc = frappe.get_doc("Sales Order", sales_order['name'])
-            for sample in sales_order_doc.samples:
-                sample_doc = frappe.get_doc("Sample", sample.sample)
-                samples_to_return.append({
-                    "name": sample_doc.name,
-                    "sample_name": sample_doc.sample_name,
-                    "sequencing_label_id": sample_doc.sequencing_label,
-                    "web_id": sample_doc.web_id
-                })
-        return {'success': True, 'message': "OK", 'samples': samples_to_return}
+        sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
+
+        for sample in sales_order_doc.samples:
+            sample_doc = frappe.get_doc("Sample", sample.sample)
+            samples_to_return.append({
+                "name": sample_doc.name,
+                "sample_name": sample_doc.sample_name,
+                "sequencing_label_id": sample_doc.sequencing_label,
+                "web_id": sample_doc.web_id
+            })
+        return {'success': True,
+                'message': "OK",
+                'sales_order': sales_order_doc.name,
+                'web_order_id': sales_order_doc.web_order_id,
+                'samples': samples_to_return}
+    else:
+        # more than one Sales Order
+        return {'success': False,
+                'message': f"Found {len(sales_orders)} Sales Order with the given Web Order ID '{web_order_id}' in the ERP.",
+                'sales_order': None,
+                'web_order_id': None,
+                'samples': None}
 
 
 @frappe.whitelist()
