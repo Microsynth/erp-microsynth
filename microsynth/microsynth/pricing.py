@@ -453,6 +453,9 @@ def delete_item_price_duplicates(price_list, dry_run=True):
 
 def delete_item_prices(csv_file, dry_run=True):
     """
+    Takes a CSV file and deletes the Item Prices that are marked as to be deleted in the CSV file.
+
+    Expected header of csv_file:
     0:Sales Manager;1:Disabled Price List?;2:Price List;3:Item Code;4:Minimum Quantity;5:Item Price ID;6:Should be deleted;7:Rate;8:Currency;9:Last Modified Date;10:Last Modified By
     
     bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/Summary Item Price Duplicates with different non-zero rates_2024-07-05.csv', 'dry_run': True}"
@@ -493,7 +496,7 @@ def delete_item_prices(csv_file, dry_run=True):
                     continue
                 if not dry_run:
                     item_price.delete()
-                    frappe.db.commit()
+                    #frappe.db.commit()  # not necessary, the deletion is considered when query again
                     print(f"Deleted {details}.")
                 else:
                     print(f"Would delete {details}.")
