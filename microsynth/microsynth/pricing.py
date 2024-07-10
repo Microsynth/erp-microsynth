@@ -413,6 +413,8 @@ def delete_item_price_duplicates(price_list, dry_run=True):
     """
     If there are exact two Item Prices with the same Item Code, same Qty and same rate on the given Price List, delete one of them.
 
+    delete_item_price_duplicates('Fr_Par_ENS', True)
+
     bench execute microsynth.microsynth.pricing.delete_item_price_duplicates --kwargs "{'price_list': 'Fr_Par_ENS', 'dry_run': True}"
     """
     sql_query = f"""
@@ -428,6 +430,7 @@ def delete_item_price_duplicates(price_list, dry_run=True):
         HAVING COUNT(`name`) > 1;
     """
     duplicates = frappe.db.sql(sql_query, as_dict=True)
+    print(f"{len(duplicates)=}")
     if len(duplicates) == 0:
         print(f"Found no duplicates on the given Price List '{price_list}'. Are they already deleted?")
     for dup in duplicates:
@@ -439,7 +442,6 @@ def delete_item_price_duplicates(price_list, dry_run=True):
                 details = f"Item Price {item_price_0.name} (Price List {item_price_0.price_list}, Item Code {item_price_0.item_code}, Qty {item_price_0.min_qty}, Rate {item_price_0.price_list_rate} {item_price_0.currency})"
                 if not dry_run:
                     item_price_0.delete()
-                    frappe.db.commit()
                     print(f"Deleted {details}.")
                 else:
                     print(f"Would delete {details}.")
