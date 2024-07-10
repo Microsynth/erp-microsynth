@@ -1348,8 +1348,8 @@ def determine_territory(address_id):
             return frappe.get_doc("Territory", "Rest of Europe (PL)")
         
         elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
-                                 "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Luxembourg", "Monaco", "Netherlands",
-                                 "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
+                                 "Holy See (Vatican City State)", "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Luxembourg", "Monaco",
+                                 "Netherlands", "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
             return frappe.get_doc("Territory", "Rest of Europe (West)")
         
         elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
