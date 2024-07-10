@@ -428,17 +428,23 @@ def delete_item_price_duplicates(price_list, dry_run=True):
         HAVING COUNT(`name`) > 1;
     """
     duplicates = frappe.db.sql(sql_query, as_dict=True)
+    if len(duplicates) == 0:
+        print(f"Found no duplicates on the given Price List '{price_list}'. Are they already deleted?")
     for dup in duplicates:
         item_price_names = dup['item_price_names'].split(',')
         if len(item_price_names) == 2:
             item_price_0 = frappe.get_doc("Item Price", item_price_names[0])
             item_price_1 = frappe.get_doc("Item Price", item_price_names[1])
             if item_price_0.price_list_rate == item_price_1.price_list_rate:
+                details = f"Item Price {item_price_0.name} (Price List {item_price_0.price_list}, Item Code {item_price_0.item_code}, Qty {item_price_0.min_qty}, Rate {item_price_0.price_list_rate} {item_price_0.currency})"
                 if not dry_run:
                     item_price_0.delete()
-                    print(f"Deleted Item Price {item_price_0.name}.")
+                    frappe.db.commit()
+                    print(f"Deleted {details}.")
                 else:
-                    print(f"Would delete Item Price {item_price_0.name}.")
+                    print(f"Would delete {details}.")
+            else:
+                print(f"Rates do not match: {len(item_price_names)=} for {dup=}")
         else:
             print(f"{len(item_price_names)=} for {dup=}")
 
@@ -447,7 +453,7 @@ def delete_item_prices(csv_file, dry_run=True):
     """
     0:Sales Manager;1:Disabled Price List?;2:Price List;3:Item Code;4:Minimum Quantity;5:Item Price ID;6:Should be deleted;7:Rate;8:Currency;9:Last Modified Date;10:Last Modified By
     
-    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/Helena_Item Price Duplicates with different non-zero rates_2024-07-05.csv', 'dry_run': True}"
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/Summary Item Price Duplicates with different non-zero rates_2024-07-05.csv', 'dry_run': True}"
     """
     import csv
     with open(csv_file) as file:
@@ -459,9 +465,33 @@ def delete_item_prices(csv_file, dry_run=True):
                 print(f"Line '{line}' has length {len(line)}, but expected length 11. Going to continue.")
                 continue
             if line[6] == "delete":
-                item_price = frappe.get_doc("Item Price", line[5])
+                item_price_name = line[5]
+                if not frappe.db.exists("Item Price", item_price_name):
+                    print(f"Item Price {item_price_name} does not exist (anymore).")
+                    continue
+                item_price = frappe.get_doc("Item Price", item_price_name)
+                details = f"Item Price {item_price.name} (Price List {item_price.price_list}, Item Code {item_price.item_code}, Qty {item_price.min_qty}, Rate {item_price.price_list_rate} {item_price.currency})"
+                # check that there are at least two Item Prices with the same combination of Item Code, Qty and Price List
+                sql_query = f"""
+                    SELECT
+                        `name`,
+                        `price_list`,
+                        `item_code`, 
+                        `min_qty`,
+                        `price_list_rate`,
+                        `currency`
+                    FROM `tabItem Price`
+                    WHERE `price_list` = '{item_price.price_list}'
+                        AND `item_code` = '{item_price.item_code}'
+                        AND `min_qty` = {item_price.min_qty}
+                    ;"""
+                duplicates = frappe.db.sql(sql_query, as_dict=True)
+                if len(duplicates) < 2:
+                    print(f"{details} seems to be the only Item Price with the given combination of Item Code and Qty. Going to NOT delete it.")
+                    continue
                 if not dry_run:
                     item_price.delete()
-                    print(f"Deleted Item Price {item_price.name}.")
+                    frappe.db.commit()
+                    print(f"Deleted {details}.")
                 else:
-                    print(f"Would delete Item Price {item_price.name}.")
+                    print(f"Would delete {details}.")
