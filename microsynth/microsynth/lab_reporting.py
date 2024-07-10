@@ -27,7 +27,7 @@ def create_analysis_report(content=None):
             # TODO use existing samples from Sales Order #16658
             sample_doc = frappe.get_doc({
                 'doctype': 'Sample',
-                'sample_name': sample_detail['sample'],
+                'sample_name': sample_detail['sample_name'],
                 
             })
             sample_doc.insert()
