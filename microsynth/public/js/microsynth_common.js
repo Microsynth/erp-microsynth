@@ -294,23 +294,35 @@ if (window.location.href.includes("/desk#List/QM%20Document/")) {
 }
 
 function force_cancel(dt, dn) {
-	frappe.confirm(
-		__("Are you sure that you want to set this draft directly to the cancelled state?"),
-		function () {
-			// yes
-			frappe.call({
-				'method': 'microsynth.microsynth.utils.force_cancel',
-				'args': {
-					'dt': dt,
-					'dn': dn
-				},
-				callback: function(r){
-					cur_frm.reload_doc();
-				}
-			});
-		},
-		function () {
-			// no: do nothing
-		}
-	);
+    frappe.confirm(
+        __("Are you sure that you want to set this draft directly to the cancelled state?"),
+        function () {
+            // yes
+            frappe.call({
+                'method': 'microsynth.microsynth.utils.force_cancel',
+                'args': {
+                    'dt': dt,
+                    'dn': dn
+                },
+                callback: function(r){
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        function () {
+            // no: do nothing
+        }
+    );
+}
+
+// this is embedded in doctype_list.js functions to clear all filters
+function clear_filters() {
+    var standard_filters = {};
+    var fields = frappe.meta.docfield_list[cur_list.meta.name];
+    for (var i = 0; i < fields.length; i++) {
+        if (fields[i].in_standard_filter === 1) {
+            standard_filters[fields[i].fieldname] = '';
+        }
+    }
+    frappe.set_route("List", cur_list.meta.name, standard_filters);
 }
