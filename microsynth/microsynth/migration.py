@@ -4077,10 +4077,30 @@ def find_oligo_orders_without_shipping_item(from_date):
 
 def find_contacts_without_address():
     """
+    bench execute microsynth.microsynth.migration.find_contacts_without_address
+    """
+    sql_query = """
+        SELECT
+            `tabContact`.`name` AS `contact_id`,
+            `tabContact`.`first_name` AS `first_name`,
+            `tabContact`.`last_name` AS `last_name`,
+            `tabContact`.`contact_classification`,
+            `tabContact`.`creation` AS `creation_date`,
+            `tabContact`.`owner` AS `creator`
+        FROM `tabContact`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND (`tabContact`.`address` IS NULL OR `tabContact`.`address` = '')
+        ;"""
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+    print(f"There are {len(contacts)} non-Disabled Contacts without an address.")
+
+
+def fix_contacts_without_address():
+    """
     Search for Contacts without an Address.
     Check if there is an Address with the same ID as the Contact and if both belong to the same Customer.
     
-    bench execute microsynth.microsynth.migration.find_contacts_without_address
+    bench execute microsynth.microsynth.migration.fix_contacts_without_address
     """
     sql_query = f"""
         SELECT `tabContact`.`name`,
