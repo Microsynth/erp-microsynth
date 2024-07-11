@@ -3251,6 +3251,48 @@ def correct_invoice_addresses():
     frappe.db.commit()
 
 
+def correct_email_ids():
+    """
+    Find non-Disabled Contacts with no email_id.
+    If the length of Contact.email_ids is 1, set this entry as 'Is Primary' and Contact.email_id to this email address.
+
+    bench execute microsynth.microsynth.migration.check_email_ids
+    """
+    sql_query = """
+        SELECT
+            `tabContact`.`name` AS `contact_id`,
+            `tabAddress`.`address_type` AS `address_type`,
+            `tabContact`.`first_name` AS `first_name`,
+            `tabContact`.`last_name` AS `last_name`,
+            `tabContact`.`contact_classification`,
+            `tabContact`.`creation` AS `creation_date`,
+            `tabContact`.`owner` AS `creator`
+        FROM `tabContact`
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND (`tabContact`.`email_id` IS NULL OR `tabContact`.`email_id` = '')
+        ;"""
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+    print(f"There are {len(contacts)} non-Disabled Contacts without an email_id.")
+
+    for contact in contacts:
+        contact_doc = frappe.get_doc("Contact", contact['contact_id'])
+        if len(contact_doc.email_ids) == 1:
+            if not contact_doc.email_ids[0].is_primary:
+                print(f"Contact {contact_doc.name} has exactly one Email address ('{contact_doc.email_ids[0].email_id}'), but it is not marked as 'Is Primary' (created by {contact_doc.owner} on {contact_doc.creation}). Going to set as 'Is Primary'.")
+                contact_doc.email_ids[0].is_primary = 1
+                contact_doc.email_ids[0].save()
+                contact_doc.email_id = contact_doc.email_ids[0].email_id
+                contact_doc.save()
+            else:
+                # This should never be the case
+                print(f"### Contact {contact_doc.name} has exactly one Email address ('{contact_doc.email_ids[0].email_id}') and it is marked as 'Is Primary'. Going to set email_id of this Contact.")
+                contact_doc.email_id = contact_doc.email_ids[0].email_id
+                contact_doc.save()
+        elif len(contact_doc.email_ids) > 1:
+            print(f"# Contact {contact_doc.name} has {len(contact_doc.email_ids)} Email addresses ('{contact_doc.email_ids[0].email_id}'), but none of them is marked as 'Is Primary'.")
+
+
 def export_abacus_file_with_account_matrix(abacus_export_file, output_file, validate=False):
     """
     Export an Abacus Export File and replace income accounts according to account matrix
