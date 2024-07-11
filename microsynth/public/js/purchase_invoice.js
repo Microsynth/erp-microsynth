@@ -33,7 +33,7 @@ function request_approval(frm) {
     ],
     function(values){
         frappe.call({
-            'method': 'microsynth.microsynth.invoicing.create_approval_request',
+            'method': 'microsynth.microsynth.purchasing.create_approval_request',
             'args': {
                 'approver': values.approver,
                 'dt': cur_frm.doc.doctype,
