@@ -5,7 +5,7 @@
             {% for c in corrections %}
                 <a href="/desk#Form/QM Action/{{ c.name }}">
                     <i class="fa fa-chain"></i>
-                    {{ c.title }}
+                    {{ c.title }} ({{ c.status }})
                 </a><br>
             {% endfor %}
         {% endif %}
@@ -17,7 +17,7 @@
             {% for ca in corrective_actions %}
                 <a href="/desk#Form/QM Action/{{ ca.name }}">
                     <i class="fa fa-chain"></i>
-                    {{ ca.title }}
+                    {{ ca.title }} ({{ ca.status }})
                 </a><br>
             {% endfor %}
         {% endif %}
@@ -29,7 +29,7 @@
             {% for c in changes %}
                 <a href="/desk#Form/QM Change/{{ c.name }}">
                     <i class="fa fa-chain"></i>
-                    {{ c.title }}
+                    {{ c.title }} ({{ c.status }})
                 </a><br>
             {% endfor %}
         {% endif %}

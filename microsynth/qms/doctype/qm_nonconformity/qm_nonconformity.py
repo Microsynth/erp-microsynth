@@ -22,7 +22,8 @@ class QMNonconformity(Document):
         corrections = frappe.db.sql(f"""
             SELECT 
                 `tabQM Action`.`name`,
-                `tabQM Action`.`title`
+                `tabQM Action`.`title`,
+                `tabQM Action`.`status`
             FROM `tabQM Action`
             WHERE 
                 `tabQM Action`.`document_type` = "QM Nonconformity"
@@ -33,7 +34,8 @@ class QMNonconformity(Document):
         corrective_actions = frappe.db.sql(f"""
             SELECT 
                 `tabQM Action`.`name`,
-                `tabQM Action`.`title`
+                `tabQM Action`.`title`,
+                `tabQM Action`.`status`
             FROM `tabQM Action`
             WHERE 
                 `tabQM Action`.`document_type` = "QM Nonconformity"
@@ -44,7 +46,8 @@ class QMNonconformity(Document):
         changes = frappe.db.sql(f"""
             SELECT 
                 `tabQM Change`.`name`,
-                `tabQM Change`.`title`
+                `tabQM Change`.`title`,
+                `tabQM Change`.`status`
             FROM `tabQM Change`
             WHERE 
                 `tabQM Change`.`document_type` = "QM Nonconformity"
