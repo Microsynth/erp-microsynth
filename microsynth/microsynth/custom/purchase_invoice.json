@@ -329,7 +329,7 @@
    "docstatus": 0,
    "dt": "Purchase Invoice",
    "fetch_from": "supplier.default_approver",
-   "fetch_if_empty": 0,
+   "fetch_if_empty": 1,
    "fieldname": "approver",
    "fieldtype": "Link",
    "hidden": 0,

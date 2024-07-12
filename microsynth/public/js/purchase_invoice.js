@@ -29,26 +29,54 @@ frappe.ui.form.on('Purchase Invoice', {
 
 function request_approval(frm) {
     frappe.prompt([
-        {'fieldname': 'approver', 'fieldtype': 'Link', 'label': __('Approver'), 'options':'User', 'default': cur_frm.doc.approver, 'reqd': 1}
+        {'fieldname': 'assign_to', 'fieldtype': 'Link', 'label': __('Approver'), 'options':'User', 'default': cur_frm.doc.approver, 'reqd': 1}
     ],
     function(values){
-        frappe.call({
-            'method': 'microsynth.microsynth.purchasing.create_approval_request',
-            'args': {
-                'approver': values.approver,
-                'dt': cur_frm.doc.doctype,
-                'dn': cur_frm.doc.name
-            },
-            "callback": function(response) {
-                if (response.message) {
-                    cur_frm.set_value("in_approval", 1);
-                    frappe.show_alert( __("Approval request created") );
-                    cur_frm.reload_doc();
-                } else {
-                    frappe.show_alert( __("This Purchase Invoice seems to be already assigned to an approver.") );
+        if (values.assign_to != cur_frm.doc.approver) {
+            frappe.confirm(
+                __("Are you sure that you want to change the approver from " + cur_frm.doc.approver + " to " + values.assign_to + "?"),
+                function () {
+                    // yes
+                    frappe.call({
+                        'method': 'microsynth.microsynth.purchasing.create_approval_request',
+                        'args': {
+                            'assign_to': values.assign_to,
+                            'dt': cur_frm.doc.doctype,
+                            'dn': cur_frm.doc.name
+                        },
+                        "callback": function(response) {
+                            if (response.message) {
+                                frappe.show_alert( __("Approval request created") );
+                                cur_frm.reload_doc();
+                            } else {
+                                frappe.show_alert( __("No approval request created. This Purchase Invoice seems to be already assigned to an approver.") );
+                            }
+                        }
+                    });
+                },
+                function () {
+                    // no
+                    frappe.show_alert('No approval request created.');
                 }
-            }
-        });
+            );
+        } else {
+            frappe.call({
+                'method': 'microsynth.microsynth.purchasing.create_approval_request',
+                'args': {
+                    'assign_to': values.assign_to,
+                    'dt': cur_frm.doc.doctype,
+                    'dn': cur_frm.doc.name
+                },
+                "callback": function(response) {
+                    if (response.message) {
+                        frappe.show_alert( __("Approval request created") );
+                        cur_frm.reload_doc();
+                    } else {
+                        frappe.show_alert( __("This Purchase Invoice seems to be already assigned to an approver.") );
+                    }
+                }
+            });
+        }
     },
     __('Please choose an approver'),
     __('Request approval')
