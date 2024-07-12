@@ -394,11 +394,11 @@ function calculate_risk_classification(occ_prob, impact) {
 
 function request_qm_action(type) {
     frappe.prompt([
-        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
-        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process')},
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
+        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
         {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
-        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description')}
+        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description'), 'reqd': 1}
     ],
     function(values){
         frappe.call({
@@ -430,10 +430,10 @@ function request_qm_action(type) {
 
 function create_change(frm) {
     frappe.prompt([
-        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title')},
-        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process')},
-        {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company')},
-        {'fieldname': 'description', 'fieldtype': 'Text Editor', 'label': __('Description Change')}
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
+        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
+        {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company'), 'reqd': 1},
+        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description Change'), 'reqd': 1}
     ],
     function(values){
         frappe.call({
@@ -460,6 +460,3 @@ function create_change(frm) {
     __('Create')
     )
 }
-
-
-// TODO: Implement functions for classification wizard here?
