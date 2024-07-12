@@ -81,6 +81,28 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
         }
 
+        if (['Draft', 'Created', 'Classified', 'Investigation'].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('root_cause', 'read_only', false);
+            cur_frm.set_df_property('occurrence_probability', 'read_only', false);
+            cur_frm.set_df_property('impact', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('root_cause', 'read_only', true);
+            cur_frm.set_df_property('occurrence_probability', 'read_only', true);
+            cur_frm.set_df_property('impact', 'read_only', true);
+        }
+
+        if (['Draft', 'Created', 'Classified', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('action_plan_summary', 'read_only', false);
+            cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
+            cur_frm.set_df_property('impact_after_actions', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
+            cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', true);
+            cur_frm.set_df_property('impact_after_actions', 'read_only', true);
+        }
+
         if (["Closed"].includes(frm.doc.status)) {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         } else {
