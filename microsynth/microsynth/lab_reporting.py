@@ -88,7 +88,7 @@ def create_analysis_report(content=None):
                         return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
                 elif 'web_order_id' in content and content['web_order_id']:
                     # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
-                    message = get_sales_order_samples(content['web_order_id'])
+                    message = fetch_sales_order_samples(content['web_order_id'])
                     samples = message['samples']
                 else:
                     return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order or Web Order ID.", 'reference': None}
