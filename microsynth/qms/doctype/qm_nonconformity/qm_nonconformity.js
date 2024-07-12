@@ -15,12 +15,12 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.page.clear_secondary_action();
         }
 
-        // if (frm.doc.docstatus == 0 && !frm.doc.nc_type && !frappe.user.has_role('QAU')) {
-        //     determine_nc_type(frm);
-        // }
+        if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)) {
+            cur_frm.set_df_property('criticality_classification', 'read_only', true);
+        }
 
         // fetch classification wizard
-        if (!frm.doc.nc_type) {
+        if (!frm.doc.__islocal && !frm.doc.nc_type) {
             frappe.call({
                 'method': 'get_classification_wizard',
                 'doc': frm.doc,
@@ -101,7 +101,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 );
             } else {
                 frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to create this Nonconformity."), 'red', true);
+                frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to submit this Nonconformity."), 'red', true);
             }
         }
 
@@ -109,13 +109,13 @@ frappe.ui.form.on('QM Nonconformity', {
             if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
                 // add classify button
                 cur_frm.page.set_primary_action(
-                    __("Classify"),
+                    __("Confirm Classification"),
                     function() {
                         classify();
                     }
                 );
             } else {
-                frm.dashboard.add_comment( __("Please do the classification."), 'red', true);
+                frm.dashboard.add_comment( __("Please complete the <b>Classification</b> section."), 'red', true);
             }
         }
 
@@ -398,7 +398,7 @@ function request_qm_action(type) {
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
         {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
-        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description'), 'reqd': 1}
+        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description')}
     ],
     function(values){
         frappe.call({
@@ -411,7 +411,7 @@ function request_qm_action(type) {
                 'qm_process': values.qm_process,
                 'due_date': values.due_date,
                 'type': type,
-                'description': values.description
+                'description': values.description || ''
             },
             "callback": function(response) {
                 cur_frm.reload_doc();
@@ -423,8 +423,8 @@ function request_qm_action(type) {
             }
         });
     },
-    __('Please choose a Responsible Person and a Due Date'),
-    __('Request ' + type)
+    __(type),
+    __('Request ')
     )
 }
 
@@ -433,7 +433,7 @@ function create_change(frm) {
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
         {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company'), 'reqd': 1},
-        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description Change'), 'reqd': 1}
+        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description Change')}
     ],
     function(values){
         frappe.call({
@@ -444,7 +444,7 @@ function create_change(frm) {
                 'qm_process': values.qm_process,
                 'company': values.company,
                 'title': values.title,
-                'description': values.description
+                'description': values.description || ''
             },
             "callback": function(response) {
                 cur_frm.reload_doc();

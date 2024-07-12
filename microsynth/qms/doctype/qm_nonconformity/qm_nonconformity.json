@@ -290,7 +290,8 @@
    "allow_on_submit": 1,
    "fieldname": "date",
    "fieldtype": "Date",
-   "label": "Date"
+   "label": "Date",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -338,7 +339,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-04 14:35:00.562409",
+ "modified": "2024-07-12 11:53:12.130198",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

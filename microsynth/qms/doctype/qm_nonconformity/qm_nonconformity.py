@@ -104,6 +104,7 @@ def update_status(nc, status):
         (nc.status == 'Investigation' and status == 'Planning') or
         (nc.status == 'Planning' and status == 'Implementation') or
         (nc.status == 'Implementation' and status == 'Completed') or
+        (nc.status == 'Classified' and status == 'Closed') or
         (nc.status == 'Completed' and status == 'Closed')
        ):
         nc.status = status
