@@ -27,6 +27,7 @@
   "created_by",
   "classification_section",
   "criticality_classification",
+  "rational_for_classification",
   "column_break_5",
   "regulatory_classification",
   "root_cause_analysis_section",
@@ -342,10 +343,15 @@
   {
    "fieldname": "classification_wizard",
    "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "rational_for_classification",
+   "fieldtype": "Text",
+   "label": "Rational for Classification"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-12 15:20:36.490060",
+ "modified": "2024-07-15 13:58:05.242584",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

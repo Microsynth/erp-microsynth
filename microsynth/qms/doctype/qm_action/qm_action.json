@@ -15,7 +15,7 @@
   "title",
   "status",
   "due_date",
-  "closure_date",
+  "completion_date",
   "document_name",
   "amended_from",
   "section_break_14",
@@ -57,7 +57,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "Correction\nCorrective Action\nPreventive Action"
+   "options": "Correction\nCorrective Action\nNC Effectiveness Check\nCC Action\nCC Effectiveness Check"
   },
   {
    "fieldname": "general_attributes_section",
@@ -98,11 +98,6 @@
    "label": "Due Date"
   },
   {
-   "fieldname": "closure_date",
-   "fieldtype": "Date",
-   "label": "Closure Date"
-  },
-  {
    "fieldname": "section_break_14",
    "fieldtype": "Section Break"
   },
@@ -111,10 +106,15 @@
    "fieldtype": "Link",
    "label": "Process",
    "options": "QM Process"
+  },
+  {
+   "fieldname": "completion_date",
+   "fieldtype": "Date",
+   "label": "Completion Date"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-12 10:00:37.921253",
+ "modified": "2024-07-15 14:04:23.993943",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",
