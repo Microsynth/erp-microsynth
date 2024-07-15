@@ -8,12 +8,13 @@ frappe.listview_settings['QM Nonconformity'] = {
         var status_color = {
             "Draft": "red",  /* note: all document status draft are overruled by the core to red/draft */
             "Created": "orange",
-            "Classified": "yellow",
-            "Investigation": "lightblue",
-            "Planning": "blue",
+            "Investigation": "yellow",
+            "Planning": "lightblue",
+            "Plan Approval": "blue",
             "Implementation": "purple",
             "Completed": "green",
             "Closed": "black",  // alternative: darkgrey or grey
+            "Cancelled": "red"
         };
         return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
     }

@@ -81,10 +81,11 @@ def set_created(doc, user):
 
 
 @frappe.whitelist()
-def set_classified(doc, user):
-    if not (user_has_role(user, "QAU") or user_has_role(user, "PV")):
+def confirm_classification(doc, user):
+    if not (user_has_role(user, "QAU") or user_has_role(user, "PV")):  # TODO: PV is not allowed to confirm classification if GMP
         frappe.throw(f"Only QAU or PV is allowed to classify a QM Nonconformity.")
-    update_status(doc, "Classified")
+    # TODO: function to check combinations of NC Type, Criticality Classification, Regulatory Classification 
+    update_status(doc, "Investigation")
 
 
 @frappe.whitelist()
@@ -102,12 +103,13 @@ def update_status(nc, status):
 
     # validate status transitions
     if ((nc.status == 'Draft' and status == 'Created') or
-        (nc.status == 'Created' and status == 'Classified') or
-        (nc.status == 'Classified' and status == 'Investigation') or
+        (nc.status == 'Created' and status == 'Investigation') or
         (nc.status == 'Investigation' and status == 'Planning') or
-        (nc.status == 'Planning' and status == 'Implementation') or
+        (nc.status == 'Planning' and status == 'Plan Approval') or
+        (nc.status == 'Plan Approval' and status == 'Planning') or
+        (nc.status == 'Plan Approval' and status == 'Implementation') or
         (nc.status == 'Implementation' and status == 'Completed') or
-        (nc.status == 'Classified' and status == 'Closed') or
+        (nc.status == 'Created' and status == 'Closed') or
         (nc.status == 'Completed' and status == 'Closed')
        ):
         nc.status = status

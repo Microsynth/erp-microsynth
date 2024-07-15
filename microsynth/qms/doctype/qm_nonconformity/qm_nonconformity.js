@@ -81,7 +81,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
         }
 
-        if (['Draft', 'Created', 'Classified', 'Investigation'].includes(frm.doc.status)
+        if (['Draft', 'Created', 'Investigation'].includes(frm.doc.status)
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
             cur_frm.set_df_property('occurrence_probability', 'read_only', false);
@@ -92,7 +92,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('impact', 'read_only', true);
         }
 
-        if (['Draft', 'Created', 'Classified', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
+        if (['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('action_plan_summary', 'read_only', false);
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
@@ -134,23 +134,9 @@ frappe.ui.form.on('QM Nonconformity', {
             }
         }
 
-        if (frm.doc.status == 'Created' && (frappe.user.has_role('PV') || frappe.user.has_role('QAU'))) {
-            if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
-                // add classify button
-                cur_frm.page.set_primary_action(
-                    __("Confirm Classification"),
-                    function() {
-                        classify();
-                    }
-                );
-            } else {
-                frm.dashboard.add_comment( __("Please complete the <b>Classification</b> section."), 'red', true);
-            }
-        }
-
-        if (frm.doc.status == 'Classified'
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)) {
+        if (frm.doc.status == 'Created') {
+            if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)
+                && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
                 // add close button
                 cur_frm.page.set_primary_action(
                     __("Close"),
@@ -158,14 +144,18 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Closed');
                     }
                 );
-            } else {
-                // add investigate button
-                cur_frm.page.set_primary_action(
-                    __("Investigate"),
-                    function() {
-                        set_status('Investigation');
-                    }
-                );
+            } else if (frappe.user.has_role('PV') || frappe.user.has_role('QAU')) {  // TODO: PV is not allowed to confirm classification if GMP
+                if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
+                    // add confirm classification button
+                    cur_frm.page.set_primary_action(
+                        __("Confirm Classification"),
+                        function() {
+                            confirm_classification();
+                        }
+                    );
+                } else {
+                    frm.dashboard.add_comment( __("Please complete the <b>Classification</b> section."), 'red', true);
+                }
             }
         }
 
@@ -219,21 +209,25 @@ frappe.ui.form.on('QM Nonconformity', {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to QAU"),
                                 function() {
-                                    set_status('Implementation');
-                                    // TODO: Function that sends an email to Q?
+                                    set_status('Plan Approval');
+                                    // TODO: Function that sends an email to Q
                                 }
                             );
-                        } else {  // add button to finish planning and start implementation
+                        } else {
                             cur_frm.page.set_primary_action(
-                                __("Finish Planning"),
+                                __("Submit Action Plan to PV"),
                                 function() {
-                                    set_status('Implementation');
+                                    set_status('Plan Approval');
+                                    // TODO: Function that sends an email to PV?
                                 }
                             );
                         }
                     }
                 });
         }
+
+        // TODO: Add button "Reject Action Plan" that goes back to status "Planning"
+        // and button "Confirm Action Plan" that goes to status "Implementation"
 
         if (frm.doc.status == 'Implementation'
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
@@ -388,9 +382,9 @@ function cancel(frm) {
     });
 }
 
-function classify(frm) {
+function confirm_classification(frm) {
     frappe.call({
-        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.set_classified',
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.confirm_classification',
         'args': {
             'doc': cur_frm.doc.name,
             'user': frappe.session.user
