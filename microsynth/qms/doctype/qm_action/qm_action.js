@@ -40,6 +40,13 @@ frappe.ui.form.on('QM Action', {
             );
         }
 
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
+        }
+
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.type
@@ -56,6 +63,7 @@ frappe.ui.form.on('QM Action', {
                     }
                 );
             } else {
+                frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please set and save Title, Type, Process, Initiation date, Due Date and Description to submit this QM Action."), 'red', true);
             }
         }        
@@ -126,6 +134,24 @@ function submit(frm) {
         'callback': function(response) {
             cur_frm.reload_doc();
         }
+    });
+}
+
+function cancel(frm) {
+    frappe.confirm("Are you sure you want to cancel QM Action '" + frm.doc.name + "'? This cannot be undone.",
+    () => {
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_action.qm_action.cancel',
+            'args': {
+                'action': cur_frm.doc.name
+            },
+            'async': false,
+            'callback': function(response) {
+                cur_frm.reload_doc();
+            }
+        });
+    }, () => {
+        // nothing
     });
 }
 

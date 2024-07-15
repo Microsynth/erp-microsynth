@@ -75,6 +75,20 @@ def update_status(action, status):
 
 
 @frappe.whitelist()
+def cancel(action):
+    from microsynth.microsynth.utils import force_cancel
+    action_doc = frappe.get_doc("QM Action", action)
+    if action_doc.status == "Draft":
+        force_cancel("QM Action", action_doc.name)
+    else:
+        try:
+            action_doc.cancel()
+            frappe.db.commit()
+        except Exception as err:
+            force_cancel("QM Action", action_doc.name)
+
+
+@frappe.whitelist()
 def assign(doc, responsible_person):
     clear("QM Action", doc)
     add({
