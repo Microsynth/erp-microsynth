@@ -40,6 +40,13 @@ frappe.ui.form.on('QM Action', {
             );
         }
 
+        if (frm.doc.status == "Work in Progress"
+            && (frappe.session.user === frm.doc.responsible_person) || (frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('notes', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('notes', 'read_only', true);
+        }
+
         // allow QAU to cancel
         if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
             frm.add_custom_button(__("Cancel"), function() {
@@ -84,7 +91,7 @@ frappe.ui.form.on('QM Action', {
                 __("Complete"),
                 function() {
                     set_status('Completed');
-                    cur_frm.set_value("closure_date", frappe.datetime.get_today());
+                    cur_frm.set_value("completion_date", frappe.datetime.get_today());
                     cur_frm.reload_doc();
                 }
             );

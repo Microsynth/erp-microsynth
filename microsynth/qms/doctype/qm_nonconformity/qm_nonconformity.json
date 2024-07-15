@@ -40,6 +40,7 @@
   "risk_classification",
   "planning_section",
   "action_plan_summary",
+  "plan_approval",
   "implementation_section",
   "effectiveness_section",
   "risk_analysis_after_actions_section",
@@ -98,7 +99,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Planning'",
+   "collapsible_depends_on": "eval:doc.status=='Planning'||doc.status=='Plan Approval'",
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
    "label": "Planning"
@@ -348,10 +349,15 @@
    "fieldname": "rational_for_classification",
    "fieldtype": "Text",
    "label": "Rational for Classification"
+  },
+  {
+   "fieldname": "plan_approval",
+   "fieldtype": "Text",
+   "label": "Plan Approval"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-15 15:39:19.341777",
+ "modified": "2024-07-15 17:04:50.755957",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

@@ -100,6 +100,13 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('impact', 'read_only', true);
         }
 
+        // Only QAU can change the plan approval field in status 'Plan Approval'
+        if (frappe.user.has_role('QAU') && ['Plan Approval'].includes(frm.doc.status)) {
+            cur_frm.set_df_property('plan_approval', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('plan_approval', 'read_only', true);
+        }
+
         if (['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('action_plan_summary', 'read_only', false);
