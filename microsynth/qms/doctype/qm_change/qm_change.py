@@ -19,11 +19,11 @@ def create_change(dt, dn, title, qm_process, company, description):
             'document_name': dn,
             'title': title,
             'qm_process': qm_process,
+            'status': 'Requested',
             'company': company,
             'description': description
         })
-
     change.save(ignore_permissions = True)
+    change.submit()
     frappe.db.commit()
-
     return change.name

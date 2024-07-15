@@ -28,10 +28,10 @@ def create_action(title, responsible_person, dt, dn, qm_process, due_date, type,
             'due_date': due_date,
             'type': type,
             'description': description,
-            'status': 'Draft'
+            'status': 'Created'
         })
-
     action.save(ignore_permissions = True)
+    action.submit()
     frappe.db.commit()
 
     # create assignment to user
