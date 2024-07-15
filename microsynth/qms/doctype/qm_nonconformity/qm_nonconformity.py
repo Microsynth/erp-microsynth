@@ -53,13 +53,26 @@ class QMNonconformity(Document):
                 `tabQM Change`.`document_type` = "QM Nonconformity"
                 AND `tabQM Change`.`document_name` = "{self.name}"
             ;""", as_dict=True)
+        
+        effectiveness_checks = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Action`.`name`,
+                `tabQM Action`.`title`,
+                `tabQM Action`.`status`
+            FROM `tabQM Action`
+            WHERE 
+                `tabQM Action`.`document_type` = "QM Nonconformity"
+                AND `tabQM Action`.`document_name` = "{self.name}"
+                AND `tabQM Action`.`type` = "NC Effectiveness Check"
+            ;""", as_dict=True)
 
         html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/advanced_dashboard.html",
             {
                 'doc': self, 
                 'corrections': corrections,
                 'corrective_actions': corrective_actions,
-                'changes': changes
+                'changes': changes,
+                'effectiveness_checks': effectiveness_checks
             })
         return html
 

@@ -72,6 +72,14 @@ frappe.ui.form.on('QM Nonconformity', {
             );
         }
 
+        // add a button to request an effectiveness check
+        if (frm.doc.status == "Planning"
+            && (frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU'))) {
+            frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                request_qm_action("NC Effectiveness Check");
+            });
+        }
+
         // Only QAU can change the classification in status "Draft" or "Created"
         if (frappe.user.has_role('QAU') && ["Draft", "Created"].includes(frm.doc.status)) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
