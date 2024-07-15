@@ -123,7 +123,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 );
             } else {
                 frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please set and save Title, NC Type, Process and Description to submit this Nonconformity."), 'red', true);
+                frm.dashboard.add_comment( __("Please set and save NC Type, Title, Process, Date and Description to submit this Nonconformity."), 'red', true);
             }
         }
 
@@ -201,12 +201,12 @@ frappe.ui.form.on('QM Nonconformity', {
                         if (['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type)
                             && !response.message.has_correction)
                             {
-                            frm.dashboard.add_comment( __("Please create a Correction for this Nonconformity."), 'red', true);
+                            frm.dashboard.add_comment( __("Please request a Correction for this Nonconformity."), 'red', true);
                         } else if (['Authorities Audit', 'Customer Audit', 'Internal Audit', 'Deviation'].includes(frm.doc.nc_type)
                             && frm.doc.criticality_classification == "critical"
                             && !response.message.has_corrective_action)
                             {
-                            frm.dashboard.add_comment( __("Please create a Corrective Action for this Nonconformity."), 'red', true);
+                            frm.dashboard.add_comment( __("Please request a Corrective Action for this Nonconformity."), 'red', true);
                         } else if ((frm.doc.nc_type == "Deviation" && (frm.doc.regulatory_classification == "GMP" || frm.doc.criticality_classification == "critical")
                             || (frm.doc.nc_type == "Event" && response.message.has_corrective_action))) {
                             cur_frm.page.set_primary_action(
@@ -288,10 +288,10 @@ frappe.ui.form.on('QM Nonconformity', {
             && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
             frm.add_custom_button(__("Request Correction"), function() {
                 request_qm_action("Correction");
-            });
+            }).addClass("btn-primary");
             frm.add_custom_button(__("Request Corrective Action"), function() {
                 request_qm_action("Corrective Action");
-            });
+            }).addClass("btn-primary");
         }
 
         // Add button to create a Change Request
@@ -301,7 +301,7 @@ frappe.ui.form.on('QM Nonconformity', {
             && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
             frm.add_custom_button(__("Create Change Request"), function() {
                 create_change(frm);
-            });
+            }).addClass("btn-primary");
         }
     },
     on_submit(frm) {
