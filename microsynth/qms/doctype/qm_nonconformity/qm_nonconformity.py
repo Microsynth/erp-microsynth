@@ -177,15 +177,17 @@ def has_actions(doc):
 @frappe.whitelist()
 def has_non_completed_action(doc):
     """
-    Returns whether there is a QM Action with status unequals "Completed" linked against the given QM Nonconformity.
+    Returns whether there is a QM Action with status unequals 'Completed' and
+    Type 'Correction' or 'Corrective Action' linked against the given QM Nonconformity.
     """
     non_completed_actions = frappe.db.sql(f"""
         SELECT `name`
         FROM `tabQM Action`
         WHERE `status` != 'Completed'
           AND `docstatus` < 2
-          AND `document_name` = '{doc}';
-        """, as_dict=True)
+          AND `document_name` = '{doc}'
+          AND `type` IN ('Correction', 'Corrective Action')
+        ;""", as_dict=True)
     
     return len(non_completed_actions) > 0
 

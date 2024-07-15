@@ -217,16 +217,14 @@ frappe.ui.form.on('QM Nonconformity', {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to QAU"),
                                 function() {
-                                    set_status('Plan Approval');
-                                    // TODO: Function that sends an email to Q
+                                    set_status('Plan Approval');  // TODO: Function that sends an email to Q
                                 }
                             );
                         } else {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to PV"),
                                 function() {
-                                    set_status('Plan Approval');
-                                    // TODO: Function that sends an email to PV?
+                                    set_status('Plan Approval');  // TODO: Function that sends an email to PV?
                                 }
                             );
                         }
@@ -234,8 +232,23 @@ frappe.ui.form.on('QM Nonconformity', {
                 });
         }
 
-        // TODO: Add button "Reject Action Plan" that goes back to status "Planning"
+        // Add button "Reject Action Plan" that goes back to status "Planning"
         // and button "Confirm Action Plan" that goes to status "Implementation"
+        if (frm.doc.status == 'Plan Approval'
+            && (frappe.user.has_role('QAU') || (!frm.doc.regulatory_classification && frappe.user.has_role('PV')))) {
+            cur_frm.page.set_primary_action(
+                __("Confirm Action Plan"),
+                function() {
+                    set_status('Implementation');
+                }
+            );
+            cur_frm.page.set_secondary_action(
+                __("Reject Action Plan"),
+                function() {
+                    set_status('Planning');
+                }
+            );
+        }
 
         if (frm.doc.status == 'Implementation'
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
