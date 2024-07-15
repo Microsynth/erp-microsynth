@@ -109,6 +109,13 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
         }
 
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
+        }
+
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.nc_type
@@ -360,6 +367,24 @@ function submit(frm) {
         'callback': function(response) {
             cur_frm.reload_doc();
         }
+    });
+}
+
+function cancel(frm) {
+    frappe.confirm("Are you sure you want to cancel QM Nonconformity '" + frm.doc.name + "'? This cannot be undone.",
+    () => {
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.cancel',
+            'args': {
+                'nc': cur_frm.doc.name
+            },
+            'async': false,
+            'callback': function(response) {
+                cur_frm.reload_doc();
+            }
+        });
+    }, () => {
+        // nothing
     });
 }
 

@@ -118,6 +118,20 @@ def update_status(nc, status):
 
 
 @frappe.whitelist()
+def cancel(nc):
+    from microsynth.microsynth.utils import force_cancel
+    nc = frappe.get_doc("QM Nonconformity", nc)
+    if nc.status == "Draft":
+        force_cancel("QM Nonconformity", nc.name)
+    else:
+        try:
+            nc.cancel()
+            frappe.db.commit()
+        except Exception as err:
+            force_cancel("QM Nonconformity", nc.name)
+
+
+@frappe.whitelist()
 def has_actions(doc):
     """
     Returns whether a given QM Nonconformity has Corrections and Corrective Actions.

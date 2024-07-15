@@ -797,8 +797,8 @@ def get_child_territories(territory):
     """
 
     entries = frappe.db.sql("""select name, lft, rgt, {parent} as parent
-			from `tab{tree}` order by lft"""
-		.format(tree="Territory", parent="parent_territory"), as_dict=1)
+            from `tab{tree}` order by lft"""
+        .format(tree="Territory", parent="parent_territory"), as_dict=1)
     
     range = {}
     for d in entries:
@@ -2120,30 +2120,39 @@ def overwrite_item_defaults(item):
 
 @frappe.whitelist()
 def force_cancel(dt, dn):
-	"""
-	This function allows to move a document from draft directly to cancelled
-	
-	Parameters:
-		dt		Doctype Name, e.g. "Quotation"
-		dn		Record Name, e.g. "QTN-01234"
-		
-	It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
-	"""
-	try:
-		frappe.db.sql("""
-			UPDATE `tab{dt}`
-			SET 
-				`docstatus` = 2,
-				`status` = "Cancelled"
-			WHERE
-				`name` = "{dn}"
-				AND `docstatus` = 0;
-		""".format(dt=dt, dn=dn))
-		frappe.db.commit()
-	except Exception as err:
-		frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
-	
-	return
+    """
+    This function allows to move a document from draft directly to cancelled
+    
+    Parameters:
+        dt		Doctype Name, e.g. "Quotation"
+        dn		Record Name, e.g. "QTN-01234"
+        
+    It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
+    """
+    try:
+        frappe.db.sql("""
+            UPDATE `tab{dt}`
+            SET 
+                `docstatus` = 2,
+                `status` = "Cancelled"
+            WHERE
+                `name` = "{dn}"
+                AND `docstatus` = 0;
+        """.format(dt=dt, dn=dn))
+        frappe.db.commit()
+    except Exception as err:
+        frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
+    else:
+        new_comment = frappe.get_doc({
+            'doctype': 'Communication',
+            'comment_type': "Comment",
+            'subject': dn,
+            'content': f'Force cancelled by {frappe.get_user().name}',
+            'reference_doctype': dt,
+            'status': "Linked",
+            'reference_name': dn
+        })
+        new_comment.insert()
 
 
 def user_has_role(user, role):
