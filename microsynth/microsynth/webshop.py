@@ -1607,3 +1607,50 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         seq_label.registered_to = None
         seq_label.save()
     return {'success': True, 'message': 'OK'}
+
+
+@frappe.whitelist()
+def set_label_submitted(contact, labels):
+    """
+    Set the Status of the given Labels to submitted if they are all unused and pass further tests.
+
+    bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'contact': '215856', 'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    """
+    if not frappe.db.exists("Contact", contact):
+        return {'success': False, 'message': f"The given Contact '{contact}' does not exist in the ERP.", 'labels': None}
+    labels_to_submit = []
+    for label in labels:
+        sql_query = f"""
+            SELECT `name`,
+                `item`,
+                `label_id` AS `barcode`,
+                `status`,
+                `registered`,
+                `contact`,
+                `registered_to`
+            FROM `tabSequencing Label`
+            WHERE `label_id` = '{label['barcode']}'
+                AND `item` = '{label['item']}'
+            ;"""
+        sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+        if len(sequencing_labels) == 0:
+            return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'labels': None}
+        if len(sequencing_labels) > 1:
+            return {'success': False, 'message': f"Found multiple labels with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'labels': None}
+        erp_label = sequencing_labels[0]
+        if erp_label['status'] != 'unused':
+            return {'success': False, 'message': f"The label with barcode {label['barcode']} and Item {label['item']} has not status unused in the ERP.", 'labels': None}
+        if erp_label['registered'] and erp_label['registered_to'] != contact:
+            return {'success': False, 'message': f"The label with barcode {label['barcode']} and Item {label['item']} is not registered to the given Contact {contact}.", 'labels': None}
+        labels_to_submit.append(erp_label)
+    submitted_labels = []
+    for label in labels_to_submit:
+        seq_label = frappe.get_doc("Sequencing Label", label['name'])
+        seq_label.status = "submitted"
+        seq_label.save()
+        submitted_labels.append({
+            "item": seq_label.item,
+            "barcode": seq_label.label_id,
+            "status": seq_label.status
+        })
+    return {'success': True, 'message': 'OK', 'labels': submitted_labels}
