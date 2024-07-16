@@ -40,6 +40,19 @@ frappe.ui.form.on('QM Nonconformity', {
             });
         }
 
+        // Only show Valid QM Documents when linking
+        frm.fields_dict.qm_documents.grid.get_field('qm_document').get_query = function() {
+            return {
+                    filters: [
+                        ["status", "=", "Valid"]
+                ]
+            };
+        };
+        
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+
         // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.set_df_property('title', 'read_only', true);
