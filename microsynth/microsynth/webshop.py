@@ -1276,3 +1276,45 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     frappe.db.commit()
 
     return {'success': True, 'message': "OK", 'reference': sinv.name}
+
+
+### Label API
+
+
+def get_sql_list(list):
+    if list:
+        return (','.join('"{0}"'.format(e) for e in list))
+    else:
+        return '""'
+
+
+@frappe.whitelist()
+def get_unused_labels(contacts, items):
+    """
+    Return unused Sequencing Labels that are unregistered or have a matching contact.
+
+    bench execute microsynth.microsynth.webshop.get_unused_labels --kwargs "{'contacts': ['215856', '237365'], 'items': ['6030', '6031'] }"
+    """
+    if not contacts or len(contacts) == 0:
+        return {'success': False, 'message': "Please provide at least one Contact", 'labels': None}
+    if not items or len(items) == 0:
+        return {'success': False, 'message': "Please provide at least one Item", 'labels': None}
+
+    try:
+        sql_query = f"""
+            SELECT `item`,
+                `label_id` AS `barcode`,
+                `status`,
+                `registered`,
+                `contact`,
+                `registered_to`
+            FROM `tabSequencing Label`
+            WHERE `status` = 'unused'
+                AND `item` IN ({get_sql_list(items)})
+                AND ((`registered` = 0 AND `contact` IN ({get_sql_list(contacts)}) AND `registered_to` IS NULL)
+                    OR (`registered_to` IN ({get_sql_list(contacts)})))
+            ;"""
+        labels = frappe.db.sql(sql_query, as_dict=True)
+        return {'success': True, 'message': 'OK', 'labels': labels}
+    except Exception as err:
+        return {'success': False, 'message': err, 'labels': None}
