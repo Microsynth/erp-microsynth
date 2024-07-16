@@ -1521,10 +1521,11 @@ def check_and_unfold_label_range(barcode_start_range, barcode_end_range, item):
     return barcodes
 
 
-@frappe.whitelist()
-def register_labels(registered_to, item, barcode_start_range, barcode_end_range):
+def check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range):
     """
-    bench execute microsynth.microsynth.webshop.register_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    Check the given parameters, check and unfold the given label range, return the Sequencing Labels as a list of dictionaries
+
+    bench execute microsynth.microsynth.webshop.check_and_get_sequencing_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
     """
     if not (registered_to and barcode_start_range and barcode_end_range):
         return {'success': False, 'message': "registered_to, barcode_start_range and barcode_end_range are mandatory parameters. Please provide all of them.", 'ranges': None}
@@ -1549,7 +1550,17 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
         WHERE `label_id` IN ({get_sql_list(barcodes)})
             {item_condition}
         ;"""
-    sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+    return frappe.db.sql(sql_query, as_dict=True)
+
+
+@frappe.whitelist()
+def register_labels(registered_to, item, barcode_start_range, barcode_end_range):
+    """
+    Register the given label range to the given Contact after doing several checks.
+
+    bench execute microsynth.microsynth.webshop.register_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    """
+    sequencing_labels = check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range)
     registered_labels = []
     # check labels
     messages = ''
@@ -1577,3 +1588,22 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
         return {'success': True, 'message': messages if messages else 'OK', 'ranges': partition_into_ranges(registered_labels)}
     else:
         return {'success': False, 'message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
+
+
+@frappe.whitelist()
+def unregister_labels(registered_to, item, barcode_start_range, barcode_end_range):
+    """
+    Unregister the given label range if it is registered to the given Contact
+
+    bench execute microsynth.microsynth.webshop.unregister_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
+    """
+    sequencing_labels = check_and_get_sequencing_labels(registered_to, item, barcode_start_range, barcode_end_range)
+    for label in sequencing_labels:
+        if label['registered_to'] != registered_to:
+            return {'success': False, 'message': f"Barcode {label['barcode']} is not registered to {registered_to}. Did not unregister any labels."}
+    for label in sequencing_labels:
+        seq_label = frappe.get_doc("Sequencing Label", label['name'])
+        seq_label.registered = 0
+        seq_label.registered_to = None
+        seq_label.save()
+    return {'success': True, 'message': 'OK'}
