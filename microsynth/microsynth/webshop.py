@@ -1318,3 +1318,47 @@ def get_unused_labels(contacts, items):
         return {'success': True, 'message': 'OK', 'labels': labels}
     except Exception as err:
         return {'success': False, 'message': err, 'labels': None}
+
+
+@frappe.whitelist()
+def get_label_status(labels):
+    """
+    Check uniqueness of label: throw an error if multiple Labels with the barcode are found
+
+    bench execute microsynth.microsynth.webshop.get_label_status --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00043'}, {'item': '6030', 'barcode': 'MY00047'}]}"
+    """
+    if not labels or len(labels) == 0:
+        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
+    try:
+        labels_to_return = []
+        for label in labels:
+            if 'item' in label and label['item']:
+                item_condition = f"AND `item` = {label['item']}"
+                item_string = f" and Item Code {label['item']}"
+            else:
+                item_condition = ""
+                item_string = ""
+            if not 'barcode' in label or not label['barcode']:
+                return {'success': False, 'message': 'Barcode is mandatory', 'labels': None}
+
+            sql_query = f"""
+                SELECT `item`,
+                    `label_id` AS `barcode`,
+                    `status`,
+                    `registered`,
+                    `contact`,
+                    `registered_to`
+                FROM `tabSequencing Label`
+                WHERE `label_id` = '{label['barcode']}'
+                    {item_condition}
+                ;"""
+            sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+            if len(sequencing_labels) > 1:
+                return {'success': False, 'message': f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.", 'labels': None}
+            elif len(sequencing_labels) == 0:
+                return {'success': False, 'message': f"Found no label for the given barcode {label['barcode']}{item_string}.", 'labels': None}
+            else:
+                labels_to_return.append(sequencing_labels[0])
+        return {'success': True, 'message': 'OK', 'labels': labels_to_return}
+    except Exception as err:
+        return {'success': False, 'message': err, 'labels': None}
