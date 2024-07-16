@@ -80,8 +80,9 @@ frappe.ui.form.on('QM Nonconformity', {
             });
         }
 
-        // Only QAU can change the classification in status "Draft" or "Created"
-        if (frappe.user.has_role('QAU') && ["Draft", "Created"].includes(frm.doc.status)) {
+        // Only the creator or QAU can change the classification in status "Draft" or "Created"
+        if ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU'))
+            && ["Draft", "Created"].includes(frm.doc.status)) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
         } else {
@@ -89,6 +90,8 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
         }
 
+        // Only the creator or QAU can change the fields Root Cause, Occurence Probability and Impact
+        // in Status Draft, Created or Investigation
         if (['Draft', 'Created', 'Investigation'].includes(frm.doc.status)
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
@@ -107,6 +110,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('plan_approval', 'read_only', true);
         }
 
+        // Only QAU and the creator can change these fields in the specified Status
         if (['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('action_plan_summary', 'read_only', false);
@@ -135,7 +139,8 @@ frappe.ui.form.on('QM Nonconformity', {
             if (frm.doc.title
                 && frm.doc.nc_type
                 && frm.doc.description
-                && frm.doc.qm_process) {
+                && frm.doc.qm_process
+                && frm.doc.date) {
                 // add submit button
                 cur_frm.page.set_primary_action(
                     __("Submit"),
@@ -159,7 +164,8 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Closed');
                     }
                 );
-            } else if (frappe.user.has_role('PV') || frappe.user.has_role('QAU')) {  // TODO: PV is not allowed to confirm classification if GMP
+            } else if ((frappe.user.has_role('PV') && frm.doc.regulatory_classification != 'GMP')
+                || frappe.user.has_role('QAU')) {
                 if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
                     // add confirm classification button
                     cur_frm.page.set_primary_action(
@@ -231,7 +237,7 @@ frappe.ui.form.on('QM Nonconformity', {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to PV"),
                                 function() {
-                                    set_status('Plan Approval');  // TODO: Function that sends an email to PV?
+                                    set_status('Plan Approval');
                                 }
                             );
                         }
@@ -242,7 +248,7 @@ frappe.ui.form.on('QM Nonconformity', {
         // Add button "Reject Action Plan" that goes back to status "Planning"
         // and button "Confirm Action Plan" that goes to status "Implementation"
         if (frm.doc.status == 'Plan Approval'
-            && (frappe.user.has_role('QAU') || (!frm.doc.regulatory_classification && frappe.user.has_role('PV')))) {
+            && (frappe.user.has_role('QAU') || (frm.doc.regulatory_classification != 'GMP' && frappe.user.has_role('PV')))) {
             cur_frm.page.set_primary_action(
                 __("Confirm Action Plan"),
                 function() {
