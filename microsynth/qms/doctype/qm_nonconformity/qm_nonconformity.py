@@ -95,10 +95,23 @@ def set_created(doc, user):
 
 @frappe.whitelist()
 def confirm_classification(doc, user):
-    if not (user_has_role(user, "QAU") or user_has_role(user, "PV")):  # TODO: PV is not allowed to confirm classification if GMP
-        frappe.throw(f"Only QAU or PV is allowed to classify a QM Nonconformity.")
-    # TODO: function to check combinations of NC Type, Criticality Classification, Regulatory Classification 
-    update_status(doc, "Investigation")
+    nc = frappe.get_doc("QM Nonconformity", doc)
+    if not user_has_role(user, "QAU") and not (user_has_role(user, "PV") and nc.regulatory_classification != 'GMP'):
+        frappe.throw(f"Only QAU or PV (if non-GMP) is allowed to classify a QM Nonconformity.")
+    check_classification(nc)
+    update_status(nc.name, "Investigation")
+
+
+def check_classification(nc):
+    """
+    Check combinations of NC Type, Criticality Classification and Regulatory Classification
+    """
+    if nc.nc_type == 'Event':
+        if nc.criticality_classification != 'non-critical' or nc.regulatory_classification == 'GMP':
+            frappe.throw("An Event has to be classified as non-critical and non-GMP. Please change the Classification.")
+    elif nc.nc_type == 'OOS':
+        if nc.regulatory_classification != 'GMP':
+            frappe.throw("An OOS has to be classified as GMP. Please change the Classification.")
 
 
 @frappe.whitelist()

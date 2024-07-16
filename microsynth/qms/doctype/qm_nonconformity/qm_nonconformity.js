@@ -15,6 +15,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.page.clear_secondary_action();
         }
 
+        // lock Criticality Classification for OOS and Track & Trend since it is an excluded step for these NC Types
         if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)) {
             cur_frm.set_df_property('criticality_classification', 'read_only', true);
         }
