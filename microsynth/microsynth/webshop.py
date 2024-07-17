@@ -1654,3 +1654,77 @@ def set_label_submitted(contact, labels):
             "status": seq_label.status
         })
     return {'success': True, 'message': 'OK', 'labels': submitted_labels}
+
+
+@frappe.whitelist()
+def cancel_order(sales_order, web_order_id):
+    """
+    Cancel the given Sales Order and return the labels of its samples.
+
+    bench execute microsynth.microsynth.webshop.cancel_order --kwargs "{'sales_order': 'SO-BAL-24032361', 'web_order_id': '4128337'}"
+    """
+    try:
+        sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+        if not sales_order_doc or sales_order_doc.docstatus != 1:
+            sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
+            if len(sales_orders) == 0:
+                return {
+                    'success': False,
+                    'message': 'Found no valid Sales Order with the given Sales Order ID or Web Order ID in the ERP.',
+                    "sales_order": None,
+                    "web_order_id": None,
+                    'labels': None
+                }
+            if len(sales_orders) > 1:
+                return {
+                    'success': False,
+                    'message': 'Found no valid Sales Order with the given Sales Order ID and multiple valid Sales Orders with the given Web Order ID in the ERP.',
+                    "sales_order": None,
+                    "web_order_id": None,
+                    'labels': None
+                }
+            else:
+                # found exactly one valid Sales Order with the given Web Order ID
+                sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
+        elif sales_order_doc.web_order_id != web_order_id:
+            return {
+                'success': False,
+                'message': f"The given Sales Order '{sales_order}' has not the given Web Order ID '{web_order_id}'.",
+                "sales_order": None,
+                "web_order_id": None,
+                'labels': None
+            }
+        labels = []
+        for sample in sales_order_doc.samples:
+            sequencing_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
+            if not sequencing_label:
+                return {
+                    'success': False,
+                    'message': f"Sample {sample.sample} has no Barcode Label.",
+                    "sales_order": sales_order_doc.name,
+                    "web_order_id": sales_order_doc.web_order_id,
+                    'labels': None
+                }
+            label_doc = frappe.get_doc("Sequencing Label", sequencing_label)
+            labels.append({
+                "item": label_doc.item,
+                "barcode": label_doc.label_id,
+                "status": label_doc.status
+            })
+        sales_order_doc.cancel()
+        frappe.db.commit()
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            "sales_order": None,
+            "web_order_id": None,
+            'labels': None
+        }
+    return {
+        'success': True,
+        'message': 'OK',
+        "sales_order": sales_order_doc.name,
+        "web_order_id": sales_order_doc.web_order_id,
+        'labels': labels
+    }
