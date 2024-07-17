@@ -35,6 +35,7 @@
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fieldname": "description",
    "fieldtype": "Text",
    "label": "Description Change"
@@ -60,7 +61,8 @@
   {
    "fieldname": "cc_type",
    "fieldtype": "Select",
-   "label": "CC Type"
+   "label": "CC Type",
+   "options": "Small Impact\nLarge Impact"
   },
   {
    "fieldname": "title",
@@ -99,6 +101,7 @@
    "options": "Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "current_state",
    "fieldtype": "Text",
    "label": "Current State"
@@ -114,12 +117,14 @@
    "label": "References"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_documents",
    "fieldtype": "Table",
    "label": "QM Documents",
    "options": "QM Document Link"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "customers",
    "fieldtype": "Table",
    "label": "Customers",
@@ -149,36 +154,43 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "effectiveness_section",
    "fieldtype": "Section Break",
    "label": "Effectiveness"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "effectiveness_summary",
    "fieldtype": "Text",
    "label": "Effectiveness Summary"
   },
   {
+   "collapsible": 1,
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "closure_comments",
    "fieldtype": "Text",
    "label": "Closure Comments"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_tests_trials",
    "fieldtype": "Section Break",
    "label": "Tests & Trials"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "summary_test_trial_results",
    "fieldtype": "Text",
    "label": "Summary of Test & Trial Results"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
@@ -186,7 +198,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-12 13:41:33.093031",
+ "modified": "2024-07-17 14:23:56.209291",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

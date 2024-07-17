@@ -519,6 +519,7 @@ function create_change(frm) {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
+        {'fieldname': 'creator', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
         {'fieldname': 'company', 'fieldtype': 'Link', 'options': 'Company', 'default': cur_frm.doc.company, 'label': __('Company'), 'reqd': 1},
         {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description Change')}
     ],
@@ -529,6 +530,7 @@ function create_change(frm) {
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
+                'creator': values.creator,
                 'company': values.company,
                 'title': values.title,
                 'description': values.description || ''
