@@ -21,7 +21,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // fetch classification wizard
-        if (!frm.doc.__islocal && !frm.doc.nc_type) {
+        if (!frm.doc.__islocal && !frm.doc.nc_type && frm.doc.status == 'Draft') {
             frappe.call({
                 'method': 'get_classification_wizard',
                 'doc': frm.doc,
@@ -53,14 +53,13 @@ frappe.ui.form.on('QM Nonconformity', {
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
 
-        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company, Web Order ID
+        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('nc_type', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
-            cur_frm.set_df_property('web_order_id', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
         } else {
             cur_frm.set_df_property('title', 'read_only', false);
@@ -68,7 +67,6 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
-            cur_frm.set_df_property('web_order_id', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         }
 
