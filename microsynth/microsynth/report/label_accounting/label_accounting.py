@@ -198,23 +198,20 @@ def get_data(filters):
                 print(msg)
             continue
 
-        # if d['rate'] is None:
-            # print(f"d.rate is None: {d=}")
-        
         # Distinguish territory only for Microsynth Seqlab GmbH
         if d['company'] == 'Microsynth Seqlab GmbH':
             if 'Germany' in d['territory'] or 'Göttingen' in d['territory']:
                 destination = 'DE'
-            elif 'France' in d['territory'] or 'Paris' in d['territory'] or 'Lyon' in d['territory'] or d['territory'] == 'Austria' or d['territory'] == 'Rest of Europe':
+            elif 'France' in d['territory'] or 'Paris' in d['territory'] or 'Lyon' in d['territory'] or 'Austria' in d['territory'] or 'Rest of Europe' in d['territory']:
                 destination = 'Europe'  # without DE and CH
-            elif d['territory'] == 'Rest of the World':
+            elif 'Rest of World' in d['territory']:
                 destination = 'ROW'
             else:
-                print(f"This should be a mistake: {d=}")
                 if 'Switzerland' in d['territory']:
                     destination = 'CH'
                 else:
                     # This should never happen
+                    frappe.log_error(f"The Territory {d['territory']} could not be matched to any destination (CH, DE, Europe, ROW).\n{d=}", "label_accounting.get_data")
                     destination = None
             company_item_dest = (d['company'], d['item_code'], destination)
         else:
