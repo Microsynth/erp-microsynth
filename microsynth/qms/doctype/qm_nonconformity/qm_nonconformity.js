@@ -5,6 +5,8 @@
 frappe.ui.form.on('QM Nonconformity', {
     refresh: function(frm) {
 
+        //cur_frm.set_df_property('status', 'read_only', true);  TODO: comment in before releasing to ERP-Test
+
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
@@ -54,20 +56,20 @@ frappe.ui.form.on('QM Nonconformity', {
         $(target).parent().parent().remove();
 
         // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company
-        if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
-            cur_frm.set_df_property('title', 'read_only', true);
-            cur_frm.set_df_property('nc_type', 'read_only', true);
-            cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('date', 'read_only', true);
-            cur_frm.set_df_property('company', 'read_only', true);
-            cur_frm.set_df_property('description', 'read_only', true);
-        } else {
+        if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('nc_type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('nc_type', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('date', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
         }
 
         // allow the creator or QAU to change the creator (transfer document)
@@ -93,8 +95,8 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only the creator or QAU can change the classification in status "Draft" or "Created"
-        if ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU'))
-            && ["Draft", "Created"].includes(frm.doc.status)) {
+        if ((["Draft", "Created"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
         } else {
@@ -104,8 +106,8 @@ frappe.ui.form.on('QM Nonconformity', {
 
         // Only the creator or QAU can change the fields Root Cause, Occurence Probability and Impact
         // in Status Draft, Created or Investigation
-        if (['Draft', 'Created', 'Investigation'].includes(frm.doc.status)
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
             cur_frm.set_df_property('occurrence_probability', 'read_only', false);
             cur_frm.set_df_property('impact', 'read_only', false);
@@ -116,15 +118,15 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only QAU can change the plan approval field in status 'Plan Approval'
-        if (frappe.user.has_role('QAU') && ['Plan Approval'].includes(frm.doc.status)) {
+        if (frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('plan_approval', 'read_only', false);
         } else {
             cur_frm.set_df_property('plan_approval', 'read_only', true);
         }
 
         // Only QAU and the creator can change these fields in the specified Status
-        if (['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if ((['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
+            && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('action_plan_summary', 'read_only', false);
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
             cur_frm.set_df_property('impact_after_actions', 'read_only', false);
@@ -134,7 +136,8 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('impact_after_actions', 'read_only', true);
         }
 
-        if (["Closed"].includes(frm.doc.status)) {
+        if ((!["Closed"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         } else {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
