@@ -54,7 +54,8 @@ doctype_js = {
 }
 # include js in doctype lists
 doctype_list_js = {
-    "Customer" : "public/js/customer_list.js"
+    "Customer" : "public/js/customer_list.js",
+    "Contact" : "public/js/contact_list.js"
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
