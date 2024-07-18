@@ -80,10 +80,18 @@ frappe.ui.form.on('Contact', {
                     },
                     "callback": function(response) {
                         if (response.message && response.message.length > 0) {
-                            frm.dashboard.add_comment('<br>Potential Duplicates:', 'red', true);
+                            if (response.message.length == 1) {
+                                frm.dashboard.add_comment('<br>' + response.message.length + ' potential Duplicate:', 'red', true);
+                            } else {
+                                frm.dashboard.add_comment('<br>' + response.message.length + ' potential Duplicates:', 'red', true);
+                            }
                             var contacts = response.message;
                             for (var i = 0; i < contacts.length; i++) {
-                                frm.dashboard.add_comment('<b>' + contacts[i].name + '</b>: ' + contacts[i].first_name + ' ' + contacts[i].last_name + ', Institute: ' + contacts[i].institute + ' (<a href="/desk#contact_merger?contact_1=' + frm.doc.name + '&contact_2=' + contacts[i].name + '">Open in Contact Merger</a>)', 'red', true);
+                                if (i > 10) {
+                                    frm.dashboard.add_comment('<b>...</b>', 'red', true);
+                                    break;
+                                }
+                                frm.dashboard.add_comment('<b>' + contacts[i].name + '</b>: ' + contacts[i].first_name + ' ' + (contacts[i].last_name || '') + ', Institute: ' + (contacts[i].institute || '') + ' (<a href="/desk#contact_merger?contact_1=' + frm.doc.name + '&contact_2=' + contacts[i].name + '">Open in Contact Merger</a>)', 'red', true);
                             }
                         }
                     }
