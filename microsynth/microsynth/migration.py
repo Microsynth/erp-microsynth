@@ -1324,7 +1324,7 @@ def disable_customers_without_contacts():
     Does only disable Customers with a numeric ID, no Quotations and no Sales Orders.
 
     Run from
-    $ bench execute microsynth.microsynth.migration.disable_customers_without_contacts
+    bench execute microsynth.microsynth.migration.disable_customers_without_contacts
     """
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
     disabled = failed = skipped = 0
@@ -1351,6 +1351,7 @@ def disable_customers_without_contacts():
 
             if len(quotations) != 0 or len(sales_orders) != 0 or len(delivery_notes) != 0 or len(sales_invoices) != 0:
                 skipped += 1
+                #print(f"Customer {c['name']} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices.")
                 continue
 
             customer = frappe.get_doc("Customer", c['name'])
@@ -1358,15 +1359,15 @@ def disable_customers_without_contacts():
             try:
                 customer.save()
             except Exception as err:
-                print(f"{int(100 * count / len(customers))}%... Failed updating {c['name']} ({err})")
+                #print(f"{int(100 * count / len(customers))}%... Failed updating {c['name']} ({err})")
                 failed += 1
             else:
-                print(f"{int(100 * count / len(customers))}% ({count}/{len(customers)})... Successfully disabled {c['name']}")
+                #print(f"{int(100 * count / len(customers))}% ({count}/{len(customers)})... Successfully disabled {c['name']}")
                 disabled += 1
         else:
             skipped += 1
             #print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
-    print(f"Disabled {disabled} Customers, failed {failed} times, skipped {skipped} Customers.")
+    #print(f"Disabled {disabled} Customers, failed {failed} times, skipped {skipped} Customers.")
     frappe.db.commit()
 
 
