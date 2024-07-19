@@ -4213,3 +4213,34 @@ def parse_abacus_account_sheet(account_sheet, export_file):
         print(summary_line)
 
     export_file.close()
+
+
+def find_unused_enabled_items_with_price():
+    """
+    Find Items that are created before 2023-09-01, do not occur on any valid document, oligo or sample and have at least one Item Price.
+
+    bench execute microsynth.microsynth.migration.find_unused_enabled_items_with_price
+    """
+    from datetime import date
+    enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'creation'])
+    counter = 0
+    price_counter = 0
+    print("There are Item Prices for the following enabled Items that do not occur on any valid SQ, QTN, SO, DN, SI, Oligo or Sample in the ERP:")
+    for item in enabled_items:
+        if "AC-" in item['name'] or item['creation'].date() > date(2023, 8, 31):
+            continue
+        sq_items = frappe.db.get_all("Standing Quotation Item", filters={'docstatus': 1, 'item_code': item['name']}, fields=['name'])
+        qtn_items = frappe.db.get_all("Quotation Item", filters={'docstatus': 1, 'item_code': item['name']}, fields=['name'])
+        so_items = frappe.db.get_all("Sales Order Item", filters={'docstatus': 1, 'item_code': item['name']}, fields=['name'])
+        dn_items = frappe.db.get_all("Delivery Note Item", filters={'docstatus': 1, 'item_code': item['name']}, fields=['name'])
+        si_items = frappe.db.get_all("Sales Invoice Item", filters={'docstatus': 1, 'item_code': item['name']}, fields=['name'])
+        sample_items = frappe.db.get_all("Sample Item", filters={'item_code': item['name']}, fields=['name'])
+        oligo_items = frappe.db.get_all("Oligo Item", filters={'item_code': item['name']}, fields=['name'])
+        if len(sq_items) + len(qtn_items) + len(so_items) + len(dn_items) + len(si_items) + len(sample_items) + len(oligo_items) == 0:
+            item_prices = frappe.db.get_all("Item Price", filters={'item_code': item['name']}, fields=['name'])
+            if len(item_prices) > 0:
+                print(f"{item['name']}: {item['item_name']}: {len(item_prices)} Item Prices")
+                counter += 1
+                price_counter += len(item_prices)
+    print(f"There are {counter} enabled Items in the ERP that do not occur on any valid document but have at least one Item Price.")
+    print(f"There seem to be {price_counter} useless Item Prices of enabled Items.")
