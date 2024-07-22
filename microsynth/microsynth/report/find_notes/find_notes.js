@@ -76,5 +76,28 @@ frappe.query_reports["Find Notes"] = {
             "label": __("To date"),
             "fieldtype": "Date"
         }
-	]
+	],
+    "onload": (report) => {
+        report.page.add_inner_button( __("Create PDF"), function() {
+            create_pdf(report.get_values());
+        });
+    }
 };
+
+
+function create_pdf(filters) {
+    frappe.call({
+        'method': "microsynth.microsynth.report.find_notes.find_notes.create_pdf",
+        'args': {
+            'filters': filters
+        },
+        'freeze': true,
+        'freeze_message': __("Creating PDF ..."),
+        'callback': function (response) {
+            // var doc = response.message;
+            // frappe.model.sync(doc);
+            // frappe.set_route("Form", doc.doctype, doc.name);
+            window.location.href = response.message;
+        }
+    });
+}

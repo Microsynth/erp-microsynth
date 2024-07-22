@@ -107,3 +107,45 @@ def get_data(filters):
 def execute(filters=None):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+
+@frappe.whitelist()
+def create_pdf(filters):
+    """
+    Get Contact Notes matching the given filters, create and append their print formats and return the URL to the merged PDF.
+ 
+    bench execute microsynth.microsynth.report.find_notes.find_notes.create_pdf --kwargs "{'filters': {'sales_manager': 'atila.durmus@microsynth.seqlab.de', 'from_date':'2024-06-01', 'to_date':'2024-06-30'}}"
+    """
+    import io
+    import json
+    from datetime import datetime
+    from PyPDF2 import PdfFileMerger, PdfFileReader  # JPe: I've checked that PyPDF is available on the server. It was also used in microsynth/report/fiscal_representation_export/fiscal_representation_export.py
+
+    if type(filters) == str:
+        filters = json.loads(filters)
+    data = get_data(filters)
+    merger = PdfFileMerger()
+
+    for note in data:
+        #contact_note = frappe.get_doc("Contact Note", note['note_id'])
+        pdf = frappe.get_print(
+                    doctype="Contact Note",
+                    name=note['note_id'],
+                    print_format="Contact Note",
+                    as_pdf=True
+                )
+        merger.append(PdfFileReader(io.BytesIO(pdf)))
+    # https://gist.github.com/vijaywm/d6b7d1a54274838cd25acd1e3dd31740#pypdf2-pdffilemerger-to-merge-pdfs
+    out = io.BytesIO()
+    merger.write(out)
+    file = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": f"customer_contact_report_{datetime.now()}.pdf",
+            "is_private": 1,
+            "content": out.getvalue(),
+        })
+    file.save()
+    merger.close()
+    #return file.name
+    return file.file_url
