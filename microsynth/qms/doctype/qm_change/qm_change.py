@@ -10,7 +10,50 @@ from microsynth.microsynth.utils import user_has_role
 
 
 class QMChange(Document):
-	pass
+    def get_advanced_dashboard(self):
+        assessments = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Impact Assessment`.`name`,
+                `tabQM Impact Assessment`.`title`,
+                `tabQM Impact Assessment`.`status`
+            FROM `tabQM Impact Assessment`
+            WHERE 
+                `tabQM Impact Assessment`.`document_type` = "QM Nonconformity"
+                AND `tabQM Impact Assessment`.`document_name` = "{self.name}"
+            ;""", as_dict=True)
+
+        actions = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Action`.`name`,
+                `tabQM Action`.`title`,
+                `tabQM Action`.`status`
+            FROM `tabQM Action`
+            WHERE 
+                `tabQM Action`.`document_type` = "QM Nonconformity"
+                AND `tabQM Action`.`document_name` = "{self.name}"
+                AND `tabQM Action`.`type` = "CC Action"
+            ;""", as_dict=True)
+
+        effectiveness_checks = frappe.db.sql(f"""
+            SELECT 
+                `tabQM Action`.`name`,
+                `tabQM Action`.`title`,
+                `tabQM Action`.`status`
+            FROM `tabQM Action`
+            WHERE 
+                `tabQM Action`.`document_type` = "QM Nonconformity"
+                AND `tabQM Action`.`document_name` = "{self.name}"
+                AND `tabQM Action`.`type` = "CC Effectiveness Check"
+            ;""", as_dict=True)
+
+        html = frappe.render_template("microsynth/qms/doctype/qm_change/advanced_dashboard.html",
+            {
+                'doc': self,
+                'assessments': assessments,
+                'actions': actions,
+                'effectiveness_checks': effectiveness_checks
+            })
+        return html
 
 
 @frappe.whitelist()

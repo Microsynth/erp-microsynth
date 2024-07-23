@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "overview",
   "document_identification_section",
   "cc_type",
   "qm_process",
@@ -206,11 +207,15 @@
    "fieldname": "date",
    "fieldtype": "Date",
    "label": "Date"
+  },
+  {
+   "fieldname": "overview",
+   "fieldtype": "HTML"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-23 09:48:12.812059",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-07-23 10:43:35.462469",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",

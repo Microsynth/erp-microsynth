@@ -8,6 +8,17 @@ frappe.ui.form.on('QM Change', {
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
 
+        // add advanced dashboard
+        if (frm.doc.__islocal) {
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
+
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
