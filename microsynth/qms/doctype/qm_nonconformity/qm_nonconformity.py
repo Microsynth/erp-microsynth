@@ -116,7 +116,7 @@ def check_classification(nc):
 
 @frappe.whitelist()
 def set_status(doc, user, status):
-    created_by = frappe.get_doc(frappe.get_doc("QM Nonconformity", doc, "created_by"))
+    created_by = frappe.get_value("QM Nonconformity", doc, "created_by")
     if not (user == created_by or user_has_role(user, "QAU")):
         frappe.throw(f"Only Creator or QAU is allowed to set a QM Nonconformity to Status '{status}'.")
     update_status(doc, status)
