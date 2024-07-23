@@ -55,7 +55,7 @@ frappe.ui.form.on('QM Nonconformity', {
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
 
-        // Only creator and QAU can change these fields in Draft status: Title, NC Type, Process, Date, Company
+        // Only QAU (independent of Status) and creator (in Draft Status) can change these fields: Title, NC Type, Process, Date, Company
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('nc_type', 'read_only', false);

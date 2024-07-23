@@ -4,31 +4,35 @@
 frappe.ui.form.on('QM Change', {
 	refresh: function(frm) {
 
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
         }
 
         // Only creator and QAU can change these fields in Draft status:
-        if (!((["Draft"].includes(frm.doc.status) || frm.doc.docstatus == 0) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
-            cur_frm.set_df_property('title', 'read_only', true);
-            cur_frm.set_df_property('cc_type', 'read_only', true);
-            cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('company', 'read_only', true);
-            cur_frm.set_df_property('current_state', 'read_only', true);
-            cur_frm.set_df_property('description', 'read_only', true);
-        } else {
+        if (((["Draft"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('cc_type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('current_state', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('cc_type', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('current_state', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
         }
 
-		// allow the creator or QAU to change the creator (transfer document)
+		// allow the creator or QAU to change the creator (transfer document) in status "Requested"
         if ((!frm.doc.__islocal)
-            && (["Draft"].includes(frm.doc.status) || frm.doc.docstatus == 0)
+            && (["Requested"].includes(frm.doc.status))
             && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
             ) {
             // add change creator button
