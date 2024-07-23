@@ -8,6 +8,7 @@
   "document_identification_section",
   "cc_type",
   "qm_process",
+  "date",
   "document_type",
   "amended_from",
   "column_break_3",
@@ -59,12 +60,14 @@
    "label": "Document Identification"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "cc_type",
    "fieldtype": "Select",
    "label": "CC Type",
    "options": "Small Impact\nLarge Impact"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "title",
    "fieldtype": "Data",
    "label": "Title"
@@ -74,6 +77,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -95,6 +99,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
@@ -195,10 +200,16 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "\nRequested\nAssessment & Classification\nTrial\nPlanning\nImplementation\nCompleted\nClosed"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-17 14:23:56.209291",
+ "modified": "2024-07-23 09:48:12.812059",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
