@@ -9,7 +9,7 @@ frappe.ui.form.on('QM Change', {
         $(target).parent().parent().remove();
 
         // add advanced dashboard
-        if (frm.doc.__islocal) {
+        if (!frm.doc.__islocal) {
             frappe.call({
                 'method': 'get_advanced_dashboard',
                 'doc': frm.doc,

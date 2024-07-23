@@ -18,7 +18,7 @@ class QMChange(Document):
                 `tabQM Impact Assessment`.`status`
             FROM `tabQM Impact Assessment`
             WHERE 
-                `tabQM Impact Assessment`.`document_type` = "QM Nonconformity"
+                `tabQM Impact Assessment`.`document_type` = "QM Change"
                 AND `tabQM Impact Assessment`.`document_name` = "{self.name}"
             ;""", as_dict=True)
 
@@ -29,7 +29,7 @@ class QMChange(Document):
                 `tabQM Action`.`status`
             FROM `tabQM Action`
             WHERE 
-                `tabQM Action`.`document_type` = "QM Nonconformity"
+                `tabQM Action`.`document_type` = "QM Change"
                 AND `tabQM Action`.`document_name` = "{self.name}"
                 AND `tabQM Action`.`type` = "CC Action"
             ;""", as_dict=True)
@@ -41,7 +41,7 @@ class QMChange(Document):
                 `tabQM Action`.`status`
             FROM `tabQM Action`
             WHERE 
-                `tabQM Action`.`document_type` = "QM Nonconformity"
+                `tabQM Action`.`document_type` = "QM Change"
                 AND `tabQM Action`.`document_name` = "{self.name}"
                 AND `tabQM Action`.`type` = "CC Effectiveness Check"
             ;""", as_dict=True)
