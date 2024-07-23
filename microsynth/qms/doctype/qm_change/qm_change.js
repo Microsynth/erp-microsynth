@@ -63,7 +63,7 @@ frappe.ui.form.on('QM Change', {
             }
         }
 
-        if (frm.doc.status == 'Assessment & Classification') {
+        if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
             cur_frm.add_custom_button(
                 __("Request Impact Assessment"),
                 function() {
@@ -119,16 +119,14 @@ function request_impact_assessment() {
         {'fieldname': 'creator', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1}
     ],
     function(values){
-        frappe.show_alert("Not yet implemented");
-        return;
         frappe.call({
             'method': 'microsynth.qms.doctype.qm_impact_assessment.qm_impact_assessment.create_impact_assessment',
             'args': {
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
-                'creator': values.creator,
-                'title': values.title
+                'title': values.title,
+                'creator': values.creator
             },
             "callback": function(response) {
                 cur_frm.reload_doc();

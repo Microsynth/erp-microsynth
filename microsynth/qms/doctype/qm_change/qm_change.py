@@ -22,6 +22,7 @@ def create_change(dt, dn, title, qm_process, creator, company, description):
             'document_name': dn,
             'title': title,
             'qm_process': qm_process,
+            'date': today(),
             'created_on': today(),
             'created_by': creator,
             'status': 'Requested',
