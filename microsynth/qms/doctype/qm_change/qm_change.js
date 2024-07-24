@@ -109,6 +109,21 @@ frappe.ui.form.on('QM Change', {
             ).addClass("btn-primary");
         }
 
+        if (frm.doc.status == 'Trial' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            if (frm.doc.summary_test_trial_results) {
+                // add submit button
+                cur_frm.page.set_primary_action(
+                    __("Submit to QAU"),
+                    function() {
+                        set_status("Planning");
+                    }
+                );
+            } else {
+                frm.dashboard.clear_comment();
+                frm.dashboard.add_comment( __("Please enter a Summary of Test & Trial Results to submit this QM Change to QAU."), 'red', true);
+            }
+        }
+
         // add buttons to request CC Action and Effectiveness Check
         if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
