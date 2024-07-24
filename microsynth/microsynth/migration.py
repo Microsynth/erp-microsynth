@@ -1321,7 +1321,8 @@ def set_webshop_address_readonly():
 def disable_customers_without_contacts():
     """
     Sets the Customer field "disabled" for all Customers that do not have any non-Billing Contacts.
-    Does only disable Customers with a numeric ID, no Quotations and no Sales Orders.
+    Does only disable Customers with a numeric ID and no Quotation, no Sales Order,
+    no Delivery Note and no Sales Invoice (Cancelled documents are ignored).
 
     Run from
     bench execute microsynth.microsynth.migration.disable_customers_without_contacts
@@ -1344,10 +1345,10 @@ def disable_customers_without_contacts():
         """.format(customer_id=c['name']), as_dict=True)
         
         if len(linked_contacts) == 0 and c['name'].isnumeric():  # disable only customers with numeric names (created by the webshop)
-            quotations = frappe.get_all("Quotation", filters=[['party_name', '=', c['name']]], fields=['name'])
-            sales_orders = frappe.get_all("Sales Order", filters=[['customer', '=', c['name']]], fields=['name'])
-            delivery_notes = frappe.get_all("Delivery Note", filters=[['customer', '=', c['name']]], fields=['name'])
-            sales_invoices = frappe.get_all("Sales Invoice", filters=[['customer', '=', c['name']]], fields=['name'])
+            quotations = frappe.get_all("Quotation", filters=[['docstatus', '<', '2'], ['party_name', '=', c['name']]], fields=['name'])
+            sales_orders = frappe.get_all("Sales Order", filters=[['docstatus', '<', '2'], ['customer', '=', c['name']]], fields=['name'])
+            delivery_notes = frappe.get_all("Delivery Note", filters=[['docstatus', '<', '2'], ['customer', '=', c['name']]], fields=['name'])
+            sales_invoices = frappe.get_all("Sales Invoice", filters=[['docstatus', '<', '2'], ['customer', '=', c['name']]], fields=['name'])
 
             if len(quotations) != 0 or len(sales_orders) != 0 or len(delivery_notes) != 0 or len(sales_invoices) != 0:
                 skipped += 1
