@@ -37,10 +37,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nRequested\nCompleted"
+   "options": "Draft\nRequested\nCompleted\nCancelled"
   },
   {
    "fieldname": "assessment_section",
@@ -100,13 +101,14 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-23 10:27:39.763594",
- "modified_by": "Administrator",
+ "modified": "2024-07-24 12:22:58.703434",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Impact Assessment",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -116,6 +118,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -124,9 +127,11 @@
    "report": 1,
    "role": "Microsynth User",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "cancel": 1,
    "create": 1,
    "email": 1,
    "export": 1,
@@ -135,6 +140,7 @@
    "report": 1,
    "role": "QAU",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

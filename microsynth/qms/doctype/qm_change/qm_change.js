@@ -4,9 +4,16 @@
 frappe.ui.form.on('QM Change', {
 	refresh: function(frm) {
 
+        //cur_frm.set_df_property('status', 'read_only', true);  TODO: comment in before releasing to ERP-Test
+
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
+
+        if (!frm.doc.__islocal) {
+            cur_frm.page.clear_primary_action();
+            cur_frm.page.clear_secondary_action();
+        }
 
         // add advanced dashboard
         if (!frm.doc.__islocal) {
@@ -127,12 +134,19 @@ frappe.ui.form.on('QM Change', {
         // add buttons to request CC Action and Effectiveness Check
         if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
-                    request_qm_action('CC Action');
+                request_qm_action('CC Action');
             }).addClass("btn-primary");
 
             frm.add_custom_button(__("Request Effectiveness Check"), function() {
                 request_qm_action("CC Effectiveness Check");
             });
+
+            cur_frm.page.set_primary_action(
+                __("Confirm Action Plan"),
+                function() {
+                    set_status('Implementation');
+                }
+            );
         }
 
         if (frm.doc.status == 'Implementation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
