@@ -75,6 +75,32 @@ frappe.ui.form.on('QM Change', {
         }
 
         if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_assessments',
+                'args': {
+                    'qm_change': frm.doc.name
+                },
+                'callback': function(response) {
+                    // Check, that the requested Impact Assessments are Completed or Cancelled
+                    if (response.message) {
+                        frm.dashboard.add_comment( __("There are QM Impact Assessments linked that are not in Status Completed or Cancelled."), 'red', true);
+                    } else {
+                        cur_frm.page.set_primary_action(
+                            __("Confirm Classification"),
+                            function() {
+                                if (cur_frm.doc.cc_type == 'Large Impact') {
+                                    set_status('Trial');
+                                } else {
+                                    set_status('Planning');
+                                }                                
+                            }
+                        );
+                    }
+                }
+            });
+        }
+
+        if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
             cur_frm.add_custom_button(
                 __("Request Impact Assessment"),
                 function() {
@@ -83,6 +109,16 @@ frappe.ui.form.on('QM Change', {
             ).addClass("btn-primary");
         }
 
+        // add buttons to request CC Action and Effectiveness Check
+        if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.add_custom_button(__("Request Action"), function() {
+                    request_qm_action('CC Action');
+            }).addClass("btn-primary");
+
+            frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                request_qm_action("CC Effectiveness Check");
+            });
+        }
 	}
 });
 
@@ -151,5 +187,41 @@ function request_impact_assessment() {
     },
     __('Please create a QM Impact Assessment'),
     __('Create')
+    )
+}
+
+function request_qm_action(type) {
+    frappe.prompt([
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
+        {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
+        {'fieldname': 'responsible_person', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
+        {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1},
+        {'fieldname': 'description', 'fieldtype': 'Text', 'label': __('Description')}
+    ],
+    function(values){
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_action.qm_action.create_action',
+            'args': {
+                'title': values.title,
+                'responsible_person': values.responsible_person,
+                'dt': cur_frm.doc.doctype,
+                'dn': cur_frm.doc.name,
+                'qm_process': values.qm_process,
+                'due_date': values.due_date,
+                'type': type,
+                'description': values.description || ''
+            },
+            "callback": function(response) {
+                cur_frm.reload_doc();
+                frappe.show_alert( __(type + " created") +
+                            ": <a href='/desk#Form/QM Action/" +
+                            response.message + "'>" + response.message +
+                            "</a>"
+                        );
+            }
+        });
+    },
+    __(type),
+    __('Request ')
     )
 }

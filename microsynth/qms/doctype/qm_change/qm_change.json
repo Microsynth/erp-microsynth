@@ -200,7 +200,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nRequested\nAssessment & Classification\nTrial\nPlanning\nImplementation\nCompleted\nClosed"
+   "options": "Draft\nRequested\nAssessment & Classification\nTrial\nPlanning\nImplementation\nCompleted\nClosed"
   },
   {
    "allow_on_submit": 1,
@@ -214,8 +214,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-23 10:43:35.462469",
- "modified_by": "Administrator",
+ "modified": "2024-07-24 09:06:23.244605",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",

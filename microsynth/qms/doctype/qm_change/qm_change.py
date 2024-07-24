@@ -95,6 +95,7 @@ def update_status(nc, status):
     if ((change.status == 'Draft' and status == 'Requested') or
         (change.status == 'Requested' and status == 'Assessment & Classification') or
         (change.status == 'Assessment & Classification' and status == 'Trial') or
+        (change.status == 'Assessment & Classification' and status == 'Planning') or  # if CC Type = Small Impact
         (change.status == 'Trial' and status == 'Planning') or
         (change.status == 'Planning' and status == 'Implementation') or
         (change.status == 'Implementation' and status == 'Completed') or
@@ -105,3 +106,19 @@ def update_status(nc, status):
         frappe.db.commit()
     else: 
         frappe.throw(f"Update QM Change: Status transition is not allowed {change.status} --> {status}")
+
+
+@frappe.whitelist()
+def has_non_completed_assessments(qm_change):
+    assessments = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Impact Assessment`.`name`,
+            `tabQM Impact Assessment`.`title`,
+            `tabQM Impact Assessment`.`status`
+        FROM `tabQM Impact Assessment`
+        WHERE `tabQM Impact Assessment`.`docstatus` < 2
+            AND `tabQM Impact Assessment`.`document_type` = "QM Change"
+            AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
+            AND `tabQM Impact Assessment`.`status` NOT IN ('Completed', 'Cancelled')
+        ;""", as_dict=True)
+    return len(assessments) > 0
