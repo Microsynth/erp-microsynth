@@ -456,9 +456,9 @@ def delete_item_prices(csv_file, dry_run=True):
     Takes a CSV file and deletes the Item Prices that are marked as to be deleted in the CSV file.
 
     Expected header of csv_file:
-    0:Sales Manager;1:Disabled Price List?;2:Price List;3:Item Code;4:Minimum Quantity;5:Item Price ID;6:Should be deleted;7:Rate;8:Currency;9:Last Modified Date;10:Last Modified By
+    0:Sales Manager; 1:Price List; 2:Item Code; 3:Item Name; 4:Minimum Quantity; 5:Item Price ID; 6:Delete?; 7:Rate; 8:Currency; 9:Valid from date; 10:Creation date; 11:Creator; 12:Last Modified date; 13:Last Modified by
     
-    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/Summary Item Price Duplicates with different non-zero rates_2024-07-05.csv', 'dry_run': True}"
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
     """
     import csv
     with open(csv_file) as file:
@@ -466,8 +466,8 @@ def delete_item_prices(csv_file, dry_run=True):
         csv_reader = csv.reader(file, delimiter=";")
         next(csv_reader)  # skip header
         for line in csv_reader:
-            if len(line) != 11:
-                print(f"Line '{line}' has length {len(line)}, but expected length 11. Going to continue.")
+            if len(line) != 14:
+                print(f"Line '{line}' has length {len(line)}, but expected length 14. Going to continue.")
                 continue
             if line[6] == "delete":
                 item_price_name = line[5]
