@@ -1329,6 +1329,7 @@ def disable_customers_without_contacts():
     """
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
     disabled = failed = skipped = 0
+    customers_to_report = []
 
     for count, c in enumerate(customers):
         # find number of linked contacts
@@ -1352,7 +1353,9 @@ def disable_customers_without_contacts():
 
             if len(quotations) != 0 or len(sales_orders) != 0 or len(delivery_notes) != 0 or len(sales_invoices) != 0:
                 skipped += 1
-                #print(f"Customer {c['name']} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices.")
+                message = f"Customer {c['name']} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices."
+                #print(message)
+                customers_to_report.append(message)
                 continue
 
             customer = frappe.get_doc("Customer", c['name'])
@@ -1370,6 +1373,22 @@ def disable_customers_without_contacts():
             #print("{1}%... Skipped {0}".format(c['name'], int(100 * count / len(customers))))
     #print(f"Disabled {disabled} Customers, failed {failed} times, skipped {skipped} Customers.")
     frappe.db.commit()
+    if len(customers_to_report) > 0:
+        from frappe.core.doctype.communication.email import make
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the following enabled Customer(s) "
+        message += f"has/have no Contacts with a Shipping Address but linked documents that are not Cancelled:<br>"
+        for msg in customers_to_report:
+            message += "<br>" + msg
+        message += f"<br><br>Please consider to disable the Customer, add a Contact with a Shipping Address to it "
+        message += "or Cancel the linked documents.<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = "[ERP] Enabled Customers without a Shipping Address but linked documents (not cancelled)",
+            content = message,
+            send_email = True
+        )
+        #print(message.replace('<br>', '\n'))
 
 
 def set_default_company():
