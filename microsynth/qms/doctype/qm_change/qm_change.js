@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
 
 frappe.ui.form.on('QM Change', {
@@ -132,6 +132,54 @@ frappe.ui.form.on('QM Change', {
 
             frm.add_custom_button(__("Request Effectiveness Check"), function() {
                 request_qm_action("CC Effectiveness Check");
+            });
+        }
+
+        if (frm.doc.status == 'Implementation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
+                'args': {
+                    'doc': frm.doc.name,
+                    'type': 'CC Action'
+                },
+                'callback': function(response) {
+                    // Check, that all actions are finished
+                    if (response.message) {
+                        frm.dashboard.add_comment( __("Please complete all CC Actions and reload this QM Change to finish the Implementation."), 'red', true);
+                    } else {
+                        // add button to finish implementation and complete
+                        cur_frm.page.set_primary_action(
+                            __("Finish Implementation"),
+                            function() {
+                                set_status('Completed');
+                            }
+                        );
+                    }
+                }
+            });
+        }
+
+        if (frm.doc.status == 'Completed' && frappe.user.has_role('QAU')) {
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
+                'args': {
+                    'doc': frm.doc.name,
+                    'type': 'CC Effectiveness Check'
+                },
+                'callback': function(response) {
+                    // Check, that all actions are finished
+                    if (response.message) {
+                        frm.dashboard.add_comment( __("Please complete Effectiveness Check and reload this QM Change to close it."), 'red', true);
+                    } else {
+                        // add button to finish implementation and complete
+                        cur_frm.page.set_primary_action(
+                            __("Close"),
+                            function() {
+                                set_status('Closed');
+                            }
+                        );
+                    }
+                }
             });
         }
 	}

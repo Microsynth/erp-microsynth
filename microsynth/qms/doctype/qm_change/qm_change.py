@@ -122,3 +122,20 @@ def has_non_completed_assessments(qm_change):
             AND `tabQM Impact Assessment`.`status` NOT IN ('Completed', 'Cancelled')
         ;""", as_dict=True)
     return len(assessments) > 0
+
+
+@frappe.whitelist()
+def has_non_completed_action(doc, type):
+    """
+    Returns whether there is a QM Action with status unequals 'Completed' and
+    the given type linked against the given QM Change.
+    """
+    non_completed_actions = frappe.db.sql(f"""
+        SELECT `name`
+        FROM `tabQM Action`
+        WHERE `status` != 'Completed'
+          AND `docstatus` < 2
+          AND `document_name` = '{doc}'
+          AND `type` IN ('{type}')
+        ;""", as_dict=True)
+    return len(non_completed_actions) > 0
