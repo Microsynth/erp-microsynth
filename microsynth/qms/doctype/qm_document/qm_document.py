@@ -429,7 +429,8 @@ def is_date_valid(date, format):
     """
     try:
         if date:
-            datetime.strptime(date, format)
+            datetime_object = datetime.strptime(date, format)
+            return datetime.datetime(2000, 1, 1) <= datetime_object <= datetime.datetime(2099, 12, 31)
     except Exception as err:
         return False
     else:
@@ -465,7 +466,7 @@ def validate_values(doc_id, chapter, title, version, status, company, created_on
     format = "%d.%m.%Y"
     for date in [created_on, reviewed_on, released_on, last_revision_on, valid_from]:
         if not is_date_valid(date, format):
-            print(f"{doc_id};{title};The date '{date}' has an incorrect format unequal dd.mm.yyyy. Going to continue.")
+            print(f"{doc_id};{title};The date '{date}' has an incorrect format unequal dd.mm.yyyy or is not in the 21st century. Going to continue.")
             return None, None
     for user in [created_by, reviewed_by, released_by, last_revision_by]:
         if user and not frappe.db.exists("User", user):
@@ -588,7 +589,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240619_ERP_Migration_3.2.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240605_ERP_Migration_2.1_2.3_5.csv'}"
     """
     import csv
 
