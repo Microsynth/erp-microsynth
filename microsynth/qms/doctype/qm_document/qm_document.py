@@ -423,14 +423,14 @@ def get_valid_appendices(qm_document):
     return docs_linking_to_this
 
 
-def is_date_valid(date, format):
+def is_date_valid(date_str, format):
     """
     Checks if the given date matches the given format string.
     """
     try:
-        if date:
-            datetime_object = datetime.strptime(date, format)
-            return datetime.datetime(2000, 1, 1) <= datetime_object <= datetime.datetime(2099, 12, 31)
+        if date_str:
+            date_object = datetime.strptime(date_str, format).date()
+            return date(2000, 1, 1) <= date_object <= date(2099, 12, 31)
     except Exception as err:
         return False
     else:
@@ -589,7 +589,7 @@ def import_qm_documents(file_path, expected_line_length=24):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240605_ERP_Migration_2.1_2.3_5.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240723_ERP_Migration_3.3.csv'}"
     """
     import csv
 
