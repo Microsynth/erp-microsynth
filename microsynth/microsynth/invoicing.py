@@ -1696,3 +1696,29 @@ def check_invoice_sent_on(days=0):
             send_email = True
             )
         #print(message.replace('<br>', '\n'))
+
+
+def report_sales_invoice_drafts():
+    """
+    Check if there is at least one Sales Invoice in Draft status.
+    If yes, report all Sales Invoices in Draft Status to the Administration.
+    This function should be executed by a cronjob daily at 16:40 pm.
+
+    bench execute microsynth.microsynth.invoicing.report_sales_invoice_drafts
+    """
+    sales_invoice_drafts = frappe.get_all("Sales Invoice", filters=[['docstatus', '=', '0']], fields=['name', 'title', 'owner'])
+    if len(sales_invoice_drafts):
+        message = f"Dear Administration,<br><br>this is an automatic email to inform you that there is/are "
+        message += f"the following Sales Invoice(s) in Draft status in the ERP:<br>"
+        for si in sales_invoice_drafts:
+            url = f"https://erp.microsynth.local/desk#Form/Sales%20Invoice/{si['name']}"
+            message += f"<br><a href={url}>{si['name']}</a>: {si['title']}, created by {si['owner']}"
+        message += f"<br><br>Please consider to submit these Sales Invoice(s).<br><br>Best regards,<br>Jens"
+        make(
+            recipients = "info@microsynth.ch",
+            sender = "jens.petermann@microsynth.ch",
+            subject = "[ERP] Sales Invoice Drafts to be submitted",
+            content = message,
+            send_email = True
+        )
+        #print(message.replace('<br>', '\n'))
