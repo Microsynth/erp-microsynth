@@ -15,7 +15,8 @@ from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 def get_customer(contact):
     """
     Returns the customer for a contact ID. 
-    Logs an error if no customer is linked to the contact.
+    If no Customer is linked and the Contact ID is numeric, the Administration is informed.
+    If no Customer is linked and the Contact ID is not numeric, the Contact is disabled.
 
     run
     bench execute microsynth.microsynth.utils.get_customer --kwargs "{'contact': 215856 }"
@@ -29,6 +30,11 @@ def get_customer(contact):
             customer_id = l.link_name
 
     if not customer_id:
+        if not contact.name.isnumeric():
+            # disable Contacts with non-numeric IDs that are not linked to a Customer (wish by Administration: "Ja, wir haben es durchdacht")
+            contact.status = 'Disabled'
+            contact.save()
+            return customer_id
         subject = f"Contact '{contact.name}' is not linked to a Customer"
         message = f"Dear Administration,<br><br>this is an automatic email to inform you that Contact '{contact.name}' (created by {contact.owner}) "
         message += f"is not linked to any Customer in the ERP.<br>Please clean up this Contact.<br><br>Best regards,<br>Jens"
