@@ -11,6 +11,8 @@ app_color = "grey"
 app_email = "info@microsynth.ch"
 app_license = "AGPL"
 
+welcome_email_subject = "Activate your new Micosynth ERP account"
+
 # Includes in <head>
 # ------------------
 
