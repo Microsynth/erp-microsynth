@@ -1,5 +1,5 @@
 {
- "autoname": "IA-.YY.####",
+ "autoname": "naming_series",
  "creation": "2024-07-23 09:58:11.742742",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -18,7 +18,8 @@
   "created_on",
   "column_break_9",
   "created_by",
-  "amended_from"
+  "amended_from",
+  "naming_series"
  ],
  "fields": [
   {
@@ -98,10 +99,18 @@
    "fieldtype": "Dynamic Link",
    "label": "Source Document Name",
    "options": "document_type"
+  },
+  {
+   "default": "IA-.YY.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "IA-.YY.####"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-24 12:22:58.703434",
+ "modified": "2024-07-25 11:41:12.355294",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Impact Assessment",
