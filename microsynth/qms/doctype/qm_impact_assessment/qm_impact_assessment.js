@@ -18,11 +18,5 @@ frappe.ui.form.on('QM Impact Assessment', {
                 frm.dashboard.add_comment( __("Please enter and save an Assessment Summary to submit this QM Impact Assessment."), 'red', true);
 			}
         }
-	},
-    on_submit(frm) {
-        cur_frm.set_value("status", "Completed");
-    },
-    before_cancel(frm) {
-        cur_frm.set_value("status", "Cancelled");  // TODO: Why is it overwritten with status "Completed"?
-    }
+	}
 });

@@ -9,7 +9,11 @@ from frappe.model.document import Document
 
 
 class QMImpactAssessment(Document):
-	pass
+    def on_submit(self):
+        self.status = "Completed"
+
+    def on_cancel(self):
+        self.status = "Cancelled"
 
 
 @frappe.whitelist()
