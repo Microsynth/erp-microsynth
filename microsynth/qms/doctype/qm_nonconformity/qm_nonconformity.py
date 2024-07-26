@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
+from frappe.desk.form.assign_to import add
 from microsynth.microsynth.utils import user_has_role
 
 
@@ -143,6 +144,21 @@ def update_status(nc, status):
         frappe.db.commit()
     else: 
         frappe.throw(f"Update QM Nonconformity: Status transition is not allowed {nc.status} --> {status}")
+
+
+@frappe.whitelist()
+def notify_q_about_action_plan(doc):
+    """
+    Notify QAU about an Action Plan submitted to them for Approval.
+    """
+    return
+    add({
+        'doctype': "QM Nonconformity",
+        'name': doc,
+        'assign_to': '...@microsynth.ch',  # TODO: Not possible, because ...@microsynth.ch is not an ERP User. Wait for Task #16017)
+        'description': f"The QM Nonconformity '{doc}' has been submitted to QAU for Action Plan Approval.",
+        'notify': True
+    })
 
 
 @frappe.whitelist()

@@ -245,7 +245,17 @@ frappe.ui.form.on('QM Nonconformity', {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to QAU"),
                                 function() {
-                                    set_status('Plan Approval');  // TODO: Function that sends an email to Q
+                                    set_status('Plan Approval');
+                                    // Call function that sends an email to Q
+                                    frappe.call({
+                                        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.notify_q_about_action_plan',
+                                        'args': {
+                                            'doc': cur_frm.doc.name
+                                        },
+                                        'callback': function(response) {
+                                            // nothing to do?
+                                        }
+                                    });
                                 }
                             );
                         } else {
