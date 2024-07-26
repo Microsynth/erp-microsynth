@@ -66,7 +66,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
                                                 and "20" in ship_adr.address_line1)): 
         sh_serv = "MFPL"
     # special cases: Tartu, Össu and Jögeva
-    elif (sh_serv != "DHL" and (ship_adr.pincode == "48309" 
+    elif (sh_serv != "UPS" and (ship_adr.pincode == "48309" 
                                 or "Tartu" in ship_adr.city
                                 or "Õssu" in ship_adr.city
                                 or "Össu" in ship_adr.city
