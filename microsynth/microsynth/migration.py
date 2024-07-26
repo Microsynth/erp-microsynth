@@ -4264,3 +4264,45 @@ def find_unused_enabled_items_with_price():
                 price_counter += len(item_prices)
     print(f"There are {counter} enabled Items in the ERP that do not occur on any valid document but have at least one Item Price.")
     print(f"There seem to be {price_counter} useless Item Prices of enabled Items.")
+
+
+def check_items_to_disable(items_to_disable):
+    """
+    Takes a list of Item Codes and checks if they appear on any new document, Sample or Oligo (created 2024-01-01 or later).
+    Already disabled Items are skipped.
+
+    bench execute microsynth.microsynth.migration.check_items_to_disable --kwargs "{'items_to_disable': ['0001','0002','0346','0347','0446','0447','0610','0611','0612','0681','0682','0683','0684','0685','0686','0687','0688','0689','0690','0691','0692','0693','0694','0695','0990','0991','0992','0999','1002','1003','1005','1006','1007','3001','3002','3003','3004','3005','3006','3007','3008','3009','3010','3051','3052','3053','3054','3055','3056','3057','3058','3059','3060','3101','3102','3103','3121','3122','3123','3201','3202','3203','3204','3205','3206','3207','3208','3209','3210','3241','3242','3243']}"
+    """
+    for item_code in items_to_disable:
+        if frappe.get_value("Item", item_code, "disabled"):  # check if Item is already disabled
+            continue
+        my_filters = [['docstatus', '<', '2'], ['item_code', '=', item_code], ['creation', '>=', '2024-01-01']]
+        my_fields = ['name', 'parent']
+
+        sq_items = frappe.db.get_all("Standing Quotation Item", filters=my_filters, fields=my_fields)
+        if len(sq_items) > 0:
+            print(f"Item {item_code} is used on {len(sq_items)} Standing Quotations: {', '.join(sq_item['parent'] for sq_item in sq_items)}")
+
+        qtn_items = frappe.db.get_all("Quotation Item", filters=my_filters, fields=my_fields)
+        if len(qtn_items) > 0:
+            print(f"Item {item_code} is used on {len(qtn_items)} Quotations: {', '.join(qtn_item['parent'] for qtn_item in qtn_items)}")
+
+        so_items = frappe.db.get_all("Sales Order Item", filters=my_filters, fields=my_fields)
+        if len(so_items) > 0:
+            print(f"Item {item_code} is used on {len(so_items)} Sales Orders: {', '.join(so_item['parent'] for so_item in so_items)}")
+
+        dn_items = frappe.db.get_all("Delivery Note Item", filters=my_filters, fields=my_fields)
+        if len(dn_items) > 0:
+            print(f"Item {item_code} is used on {len(dn_items)} Delivery Notes: {', '.join(dn_item['parent'] for dn_item in dn_items)}")
+
+        si_items = frappe.db.get_all("Sales Invoice Item", filters=my_filters, fields=my_fields)
+        if len(si_items) > 0:
+            print(f"Item {item_code} is used on {len(si_items)} Sales Invoices: {', '.join(si_item['parent'] for si_item in si_items)}")
+
+        sample_items = frappe.db.get_all("Sample Item", filters=my_filters, fields=my_fields)
+        if len(sample_items) > 0:
+            print(f"Item {item_code} is used on {len(sample_items)} Samples: {', '.join(sample_item['parent'] for sample_item in sample_items)}")
+
+        oligo_items = frappe.db.get_all("Oligo Item", filters=my_filters, fields=my_fields)
+        if len(oligo_items) > 0:
+            print(f"Item {item_code} is used on {len(oligo_items)} Oligos: {', '.join(oligo_item['parent'] for oligo_item in oligo_items)}")
