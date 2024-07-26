@@ -500,3 +500,58 @@ def delete_item_prices(csv_file, dry_run=True):
                     print(f"Deleted {details}.")
                 else:
                     print(f"Would delete {details}.")
+
+
+def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
+    """
+    Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the reference Price Lists.
+
+    bench execute microsynth.microsynth.pricing.copy_prices_from_projects_to_reference --kwargs "{'item_codes': ['20005','20006','20007','20011','20012','20013','20014','20015','20040','20041','20042','20043','20044','30000','30013','30014','30043','30044','30075','30076','30080','30081','30082','30083','30085','30087','30088','30094','30098','30099','30105','30106','30107','30119','30120','30138','30303','30304','30340','30341','30342','30500','30505','30510','30515','30520','30525','30530','30535','30550','30555','30560','30565','30570','30575','30605','30610','30615','30620','30625','30650','30655','30660','30665','30700','30705','30707','30710','30715','30720','30750','30800','30810','30850','31000','31010','31020','31030']}"
+    """
+    counter = {'CHF': 0, 'EUR': 0, 'USD': 0}
+    for item_code in item_codes:
+        # check if Item is enabled
+        if frappe.get_value("Item", item_code, "disabled"):
+            print(f"Item {item_code} is disabled. Going to skip.")
+            continue
+        for currency in ['CHF', 'EUR', 'USD']:
+            projects_price_list_name = 'Projects ' + currency
+            reference_price_list_name = 'Sales Prices ' + currency
+            item_prices = frappe.db.get_all("Item Price",
+                                            filters=[['price_list', '=', projects_price_list_name], ['item_code', '=', item_code]],
+                                            fields=['name', 'price_list_rate', 'min_qty', 'currency'])
+            if len(item_prices) == 0:
+                print(f"There is no Item Price for Item {item_code} on Price List {projects_price_list_name}.")
+                continue
+            # elif len(item_prices) > 1:
+            #     print(f"There are {len(item_prices)} Item Prices for Item {item_code} on Price List {projects_price_list_name}.")
+            #     continue
+            # elif item_prices[0]['min_qty'] != 1:
+            #     print(f"The only Item Price for Item {item_code} on Price List {projects_price_list_name} has Minimum Qty {item_prices[0]['min_qty']}, but expected 1.")
+            #     continue
+            for item_price in item_prices:
+                if currency != item_price['currency']:
+                    print(f"Currency mismatch for Item Price {item_price['name']}")
+                    continue
+                # check if Item Price already exist
+                existing_item_prices = frappe.db.get_all("Item Price",
+                                            filters=[['price_list', '=', reference_price_list_name], ['item_code', '=', item_code], ['min_qty', '=', item_price['min_qty']]],
+                                            fields=['name', 'price_list_rate', 'min_qty', 'currency'])
+                if len(existing_item_prices) > 0:
+                    print(f"There are {len(existing_item_prices)} Item Prices on {reference_price_list_name} for Item {item_code} with Minimum Qty {item_price['min_qty']}.")
+                    continue
+                # create new reference price
+                new_item_price = frappe.get_doc({
+                    'doctype': "Item Price",
+                    'item_code': item_code,
+                    'min_qty': item_price['min_qty'],
+                    'price_list': reference_price_list_name,
+                    'buying': 0,
+                    'selling': 1,
+                    'currency': item_price['currency'],
+                    'price_list_rate': item_price['price_list_rate']
+                })
+                if not dry_run:
+                    new_item_price.insert()
+                counter[currency] += 1
+    print(f"{'Would create' if dry_run else 'Created'} {counter} new Item Prices on the reference Price Lists.")
