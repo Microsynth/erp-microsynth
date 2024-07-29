@@ -10,6 +10,18 @@
             {% endfor %}
         {% endif %}
     </div>
+
+    <div class="col-xs-6">
+        {% if changes %}
+            <h6>{{ _("Preventive Actions (QM Change)") }}</h6>
+            {% for c in changes %}
+                <a href="/desk#Form/QM Change/{{ c.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ c.title }} ({{ c.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
     
     <div class="col-xs-6">
         {% if corrective_actions %}
@@ -18,18 +30,6 @@
                 <a href="/desk#Form/QM Action/{{ ca.name }}">
                     <i class="fa fa-chain"></i>
                     {{ ca.title }} ({{ ca.status }})
-                </a><br>
-            {% endfor %}
-        {% endif %}
-    </div>
-    
-    <div class="col-xs-6">
-        {% if changes %}
-            <h6>{{ _("Preventive Actions (QM Change)") }}</h6>
-            {% for c in changes %}
-                <a href="/desk#Form/QM Change/{{ c.name }}">
-                    <i class="fa fa-chain"></i>
-                    {{ c.title }} ({{ c.status }})
                 </a><br>
             {% endfor %}
         {% endif %}
