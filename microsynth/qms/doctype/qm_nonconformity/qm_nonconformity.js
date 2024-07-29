@@ -4,7 +4,7 @@
 
 frappe.ui.form.on('QM Nonconformity', {
     validate: function(frm) {
-        if (frm.doc.nc_type == 'Event' && (frm.doc.criticality_classification != 'non-critical' || nc.regulatory_classification == 'GMP')) {
+        if (frm.doc.nc_type == 'Event' && (frm.doc.criticality_classification != 'non-critical' || frm.doc.regulatory_classification == 'GMP')) {
             frappe.msgprint( __("An Event has to be classified as non-critical and non-GMP. Please change the Classification."), __("Validation") );
             frappe.validated=false;
         }
@@ -411,6 +411,12 @@ frappe.ui.form.on('QM Nonconformity', {
         if (frm.doc.occurrence_probability_after_actions && frm.doc.impact_after_actions) {
             cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions));
         }
+    },
+    nc_type: function(frm) {
+        // cur_frm.set_value("criticality_classification", "");
+        // cur_frm.set_value("regulatory_classification", "");
+        // frappe.show_alert( __("Reset Classification") );
+        frappe.show_alert( __("Please check the Classification") );
     }
 });
 
