@@ -10,7 +10,7 @@ frappe.ui.form.on('QM Change', {
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
 
-        if (!frm.doc.__islocal) {
+        if (!frm.doc.__islocal && frm.doc.status != "Draft") {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
         }
@@ -240,7 +240,8 @@ function request_impact_assessment() {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
-        {'fieldname': 'creator', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1}
+        {'fieldname': 'creator', 'fieldtype': 'Link', 'label': __('Responsible Person'), 'options':'User', 'reqd': 1},
+        {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1}
     ],
     function(values){
         frappe.call({
@@ -250,7 +251,8 @@ function request_impact_assessment() {
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
                 'title': values.title,
-                'creator': values.creator
+                'creator': values.creator,
+                'due_date': values.due_date
             },
             "callback": function(response) {
                 cur_frm.reload_doc();

@@ -10,6 +10,9 @@ from microsynth.microsynth.utils import user_has_role
 
 
 class QMChange(Document):
+    def on_submit(self):
+        self.status = "Requested"
+
     def get_advanced_dashboard(self):
         assessments = frappe.db.sql(f"""
             SELECT 
@@ -93,6 +96,7 @@ def update_status(nc, status):
 
     # validate status transitions
     if ((change.status == 'Draft' and status == 'Requested') or
+        (change.status == 'Draft' and status == 'Assessment & Classification') or  # necessary for manually created QM Changes
         (change.status == 'Requested' and status == 'Assessment & Classification') or
         (change.status == 'Assessment & Classification' and status == 'Trial') or
         (change.status == 'Assessment & Classification' and status == 'Planning') or  # if CC Type = Small Impact
