@@ -59,7 +59,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "Correction\nCorrective Action\nNC Effectiveness Check\nCC Action\nCC Effectiveness Check"
+   "options": "Correction\nCorrective Action\nNC Effectiveness Check\nChange Control Action\nCC Effectiveness Check"
   },
   {
    "fieldname": "general_attributes_section",
@@ -130,7 +130,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-25 11:43:39.196423",
+ "modified": "2024-07-29 16:21:06.177551",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",

@@ -31,7 +31,7 @@ class QMChange(Document):
             WHERE 
                 `tabQM Action`.`document_type` = "QM Change"
                 AND `tabQM Action`.`document_name` = "{self.name}"
-                AND `tabQM Action`.`type` = "CC Action"
+                AND `tabQM Action`.`type` = "Change Control Action"
             ;""", as_dict=True)
 
         effectiveness_checks = frappe.db.sql(f"""

@@ -134,7 +134,7 @@ frappe.ui.form.on('QM Change', {
         // add buttons to request CC Action and Effectiveness Check
         if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
-                request_qm_action('CC Action');
+                request_qm_action('Change Control Action');
             }).addClass("btn-primary");
 
             frm.add_custom_button(__("Request Effectiveness Check"), function() {
@@ -154,7 +154,7 @@ frappe.ui.form.on('QM Change', {
                 'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                 'args': {
                     'doc': frm.doc.name,
-                    'type': 'CC Action'
+                    'type': 'Change Control Action'
                 },
                 'callback': function(response) {
                     // Check, that all actions are finished
