@@ -3,6 +3,16 @@
 
 
 frappe.ui.form.on('QM Nonconformity', {
+    validate: function(frm) {
+        if (frm.doc.nc_type == 'Event' && (frm.doc.criticality_classification != 'non-critical' || nc.regulatory_classification == 'GMP')) {
+            frappe.msgprint( __("An Event has to be classified as non-critical and non-GMP. Please change the Classification."), __("Validation") );
+            frappe.validated=false;
+        }
+        if (frm.doc.nc_type == 'OOS' && frm.doc.regulatory_classification != 'GMP') {
+            frappe.msgprint( __("An OOS has to be classified as GMP. Please change the Classification."), __("Validation") );
+            frappe.validated=false;
+        }
+    },
     refresh: function(frm) {
 
         //cur_frm.set_df_property('status', 'read_only', true);  TODO: comment in before releasing to ERP-Test
@@ -136,11 +146,11 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('impact_after_actions', 'read_only', true);
         }
 
-        if ((!["Closed"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+        if ((["Completed"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
             || frappe.user.has_role('QAU')) {
-            cur_frm.set_df_property('closure_comments', 'read_only', true);
-        } else {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
         // allow QAU to cancel
@@ -314,23 +324,38 @@ frappe.ui.form.on('QM Nonconformity', {
 
         if (frm.doc.status == 'Completed') {
             frappe.call({
-                'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_change',
+                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                 'args': {
-                    'doc': frm.doc.name
+                    'doc': frm.doc.name,
+                    'type': 'NC Effectiveness Check'
                 },
                 'callback': function(response) {
-                    if ((frm.doc.criticality_classification != "critical" || response.message || frm.doc.closure_comments)
-                        && (frappe.user.has_role('QAU') ||
-                            (['Event', "OOS", "Track & Trend"].includes(frm.doc.nc_type) && frappe.session.user === frm.doc.created_by))) {
-                        // add close button
-                        cur_frm.page.set_primary_action(
-                            __("Close"),
-                            function() {
-                                set_status('Closed');
-                            }
-                        );
+                    // Check, that all actions are finished
+                    if (response.message) {
+                        frm.dashboard.add_comment( __("Please complete Effectiveness Check and reload this QM Change to close it."), 'red', true);
                     } else {
-                        frm.dashboard.add_comment( __("Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
+                        // Check presence of QM Change if required
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_change',
+                            'args': {
+                                'doc': frm.doc.name
+                            },
+                            'callback': function(response) {
+                                if ((frm.doc.criticality_classification != "critical" || response.message || frm.doc.closure_comments)
+                                    && (frappe.user.has_role('QAU') ||
+                                        (['Event', "OOS", "Track & Trend"].includes(frm.doc.nc_type) && frappe.session.user === frm.doc.created_by))) {
+                                    // add close button
+                                    cur_frm.page.set_primary_action(
+                                        __("Close"),
+                                        function() {
+                                            set_status('Closed');
+                                        }
+                                    );
+                                } else {
+                                    frm.dashboard.add_comment( __("Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
+                                }
+                            }
+                        });
                     }
                 }
             });
