@@ -65,7 +65,7 @@
    "allow_on_submit": 1,
    "fieldname": "cc_type",
    "fieldtype": "Select",
-   "label": "CC Type",
+   "label": "Change Control Type",
    "options": "Small Impact\nLarge Impact"
   },
   {
@@ -223,7 +223,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-25 11:42:19.016486",
+ "modified": "2024-07-29 16:25:26.261324",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
