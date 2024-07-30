@@ -1,0 +1,49 @@
+<div class="row">    
+    <div class="col-xs-6">
+        {% if corrections %}
+            <h6>{{ _("Corrections") }}</h6>
+            {% for c in corrections %}
+                <a href="/desk#Form/QM Action/{{ c.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ c.title }} ({{ c.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="col-xs-6">
+        {% if changes %}
+            <h6>{{ _("Preventive Actions (QM Change)") }}</h6>
+            {% for c in changes %}
+                <a href="/desk#Form/QM Change/{{ c.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ c.title }} ({{ c.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="col-xs-6">
+        {% if corrective_actions %}
+            <h6>{{ _("Corrective Actions") }}</h6>
+            {% for ca in corrective_actions %}
+                <a href="/desk#Form/QM Action/{{ ca.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ ca.title }} ({{ ca.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="col-xs-6">
+        {% if effectiveness_checks %}
+            <h6>{{ _("Effectiveness Checks") }}</h6>
+            {% for ec in effectiveness_checks %}
+                <a href="/desk#Form/QM Action/{{ ec.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ ec.title }} ({{ ec.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>

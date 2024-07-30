@@ -1,0 +1,37 @@
+<div class="row">    
+    <div class="col-sm-4">
+        {% if assessments %}
+            <h6>{{ _("Impact Assessments") }}</h6>
+            {% for a in assessments %}
+                <a href="/desk#Form/QM Impact Assessment/{{ a.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ a.title }} ({{ a.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="col-sm-4">
+        {% if actions %}
+            <h6>{{ _("Actions") }}</h6>
+            {% for ca in actions %}
+                <a href="/desk#Form/QM Action/{{ ca.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ ca.title }} ({{ ca.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="col-sm-4">
+        {% if effectiveness_checks %}
+            <h6>{{ _("Effectiveness Checks") }}</h6>
+            {% for ec in effectiveness_checks %}
+                <a href="/desk#Form/QM Action/{{ ec.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ ec.title }} ({{ ec.status }})
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>

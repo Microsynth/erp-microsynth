@@ -1,0 +1,417 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2024-06-21 09:28:41.403906",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "classification_wizard",
+  "document_identification_section",
+  "nc_type",
+  "qm_process",
+  "date",
+  "web_order_id",
+  "column_break_4",
+  "title",
+  "status",
+  "company",
+  "amended_from",
+  "description_section",
+  "description",
+  "references_section",
+  "qm_documents",
+  "customers",
+  "creation1_section",
+  "created_on",
+  "column_break_14",
+  "created_by",
+  "classification_section",
+  "criticality_classification",
+  "rational_for_classification",
+  "column_break_5",
+  "regulatory_classification",
+  "root_cause_analysis_section",
+  "root_cause",
+  "risk_analysis_section",
+  "occurrence_probability",
+  "column_break_9",
+  "impact",
+  "column_break_12",
+  "risk_classification",
+  "planning_section",
+  "action_plan_summary",
+  "plan_approval",
+  "implementation_section",
+  "effectiveness_section",
+  "risk_analysis_after_actions_section",
+  "occurrence_probability_after_actions",
+  "column_break_20",
+  "impact_after_actions",
+  "column_break_21",
+  "risk_classification_after_actions",
+  "closure_section",
+  "closure_comments",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Nonconformity",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Created'",
+   "fieldname": "classification_section",
+   "fieldtype": "Section Break",
+   "label": "Classification"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "criticality_classification",
+   "fieldtype": "Select",
+   "label": "Criticality Classification",
+   "options": "\ncritical\nnon-critical"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "label": "Regulatory Classification",
+   "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Planning'||doc.status=='Plan Approval'",
+   "fieldname": "planning_section",
+   "fieldtype": "Section Break",
+   "label": "Planning"
+  },
+  {
+   "fieldname": "implementation_section",
+   "fieldtype": "Section Break",
+   "label": "Implementation"
+  },
+  {
+   "fieldname": "effectiveness_section",
+   "fieldtype": "Section Break",
+   "label": "Effectiveness"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "root_cause",
+   "fieldtype": "Text",
+   "label": "Root Cause"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Investigation'",
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\"",
+   "fieldname": "root_cause_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "Root Cause Analysis"
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Investigation'",
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
+   "fieldname": "risk_analysis_section",
+   "fieldtype": "Section Break",
+   "label": "Risk Analysis"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "occurrence_probability",
+   "fieldtype": "Select",
+   "label": "Occurrence Probability",
+   "options": "\nsmall\nmedium\nhigh"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "impact",
+   "fieldtype": "Select",
+   "label": "Impact",
+   "options": "\nneglectable\nnoticable\nsevere"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "risk_classification",
+   "fieldtype": "Select",
+   "label": "Risk Classification",
+   "options": "\nno actions\ncheck for risk mitigation\nactions required",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Implementation'",
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
+   "fieldname": "risk_analysis_after_actions_section",
+   "fieldtype": "Section Break",
+   "label": "Risk Analysis after Actions"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "occurrence_probability_after_actions",
+   "fieldtype": "Select",
+   "label": "Occurrence Probability after Actions",
+   "options": "\nsmall\nmedium\nhigh"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "impact_after_actions",
+   "fieldtype": "Select",
+   "label": "Impact after Actions",
+   "options": "\nneglectable\nnoticable\nsevere"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "risk_classification_after_actions",
+   "fieldtype": "Select",
+   "label": "Risk Classification after Actions",
+   "options": "\nno actions\ncheck for risk mitigation\nactions required",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nCreated\nInvestigation\nPlanning\nPlan Approval\nImplementation\nCompleted\nClosed\nCancelled"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process",
+   "options": "QM Process",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "document_identification_section",
+   "fieldtype": "Section Break",
+   "label": "Document Identification"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "description_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "nc_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "NC Type",
+   "options": "\nAuthorities Audit\nCustomer Audit\nInternal Audit\nDeviation\nEvent\nOOS\nTrack & Trend"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "web_order_id",
+   "fieldtype": "Data",
+   "label": "Web Order ID"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "creation1_section",
+   "fieldtype": "Section Break",
+   "label": "Creation"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "customers",
+   "fieldtype": "Table",
+   "label": "Customers",
+   "options": "QM Nonconformity Customer"
+  },
+  {
+   "allow_on_submit": 1,
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Completed'",
+   "fieldname": "closure_section",
+   "fieldtype": "Section Break",
+   "label": "Closure"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "closure_comments",
+   "fieldtype": "Text",
+   "label": "Closure Comments"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "action_plan_summary",
+   "fieldtype": "Text",
+   "label": "Action Plan Summary"
+  },
+  {
+   "fieldname": "classification_wizard",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "rational_for_classification",
+   "fieldtype": "Text",
+   "label": "Rational for Classification"
+  },
+  {
+   "fieldname": "plan_approval",
+   "fieldtype": "Text",
+   "label": "Plan Approval"
+  },
+  {
+   "default": "NC-.YY.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "NC-.YY.####"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-07-30 12:31:20.243057",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "QM Nonconformity",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

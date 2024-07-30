@@ -1,0 +1,151 @@
+<script>
+    function is_gmp() {
+        cur_frm.set_value("regulatory_classification", "GMP");
+        document.getElementById("step_gmp_dev").style.display = "block";
+        clicked("btn_gmp");
+        document.getElementById("btn_no_gmp").disabled = true;
+        document.getElementById("step_reset").style.display = "block";
+    }
+
+    function no_gmp() {
+        document.getElementById("step_no_gmp_dev").style.display = "block";
+        clicked("btn_no_gmp");
+        document.getElementById("btn_gmp").disabled = true;
+        document.getElementById("step_reset").style.display = "block";
+    }
+
+    function no_gmp_but_deviation() {
+        document.getElementById("step_no_gmp_dev").style.display = "block";
+        document.getElementById("step_no_gmp_safety").style.display = "block";
+        clicked("btn_no_gmp_dev");
+        document.getElementById("btn_no_gmp_tt").disabled = true;
+    }
+
+    function gmp_deviation() {
+        document.getElementById("step_gmp_dev").style.display = "block";
+        document.getElementById("step_gmp_safety").style.display = "block";
+        clicked("btn_gmp_dev");
+        document.getElementById("btn_gmp_no_dev").disabled = true;
+    }
+
+    function gmp_no_deviation() {
+        document.getElementById("step_gmp_dev").style.display = "block";
+        document.getElementById("step_gmp_oos").style.display = "block";
+        clicked("btn_gmp_no_dev");
+        document.getElementById("btn_gmp_dev").disabled = true;
+    }
+
+    function set_track_and_trend() {
+        cur_frm.set_value("nc_type", "Track & Trend");
+        clicked("btn_no_gmp_tt");
+        document.getElementById("btn_no_gmp_dev").disabled = true;
+        clicked("btn_gmp_tt");
+        document.getElementById("btn_oos").disabled = true;
+    }
+
+    function set_critical_deviation() {
+        cur_frm.set_value("nc_type", "Deviation");
+        cur_frm.set_value("criticality_classification", "critical");
+        clicked("btn_crit_dev");
+        document.getElementById("btn_event").disabled = true;
+        clicked("btn_gmp_dev_safety");
+        document.getElementById("btn_gmp_dev_no_safety").disabled = true;
+    }
+
+    function set_non_critical_deviation() {
+        cur_frm.set_value("nc_type", "Deviation");
+        cur_frm.set_value("criticality_classification", "non-critical");
+        clicked("btn_gmp_dev_no_safety");
+        document.getElementById("btn_gmp_dev_safety").disabled = true;
+    }
+
+    function set_event() {
+        cur_frm.set_value("nc_type", "Event");
+        cur_frm.set_value("criticality_classification", "non-critical");
+        clicked("btn_event");
+        document.getElementById("btn_crit_dev").disabled = true;
+    }
+
+    function set_oos() {
+        cur_frm.set_value("nc_type", "OOS");
+        clicked("btn_oos");
+        document.getElementById("btn_gmp_tt").disabled = true;
+    }
+
+    function clicked(btn_id) {
+        document.getElementById(btn_id).classList.remove("btn-secondary");
+        document.getElementById(btn_id).classList.add("btn-primary");
+        document.getElementById(btn_id).disabled = true;
+    }
+
+    function reset_button(btn_id) {
+        document.getElementById(btn_id).classList.remove("btn-primary");
+        document.getElementById(btn_id).classList.add("btn-secondary");
+        document.getElementById(btn_id).disabled = false;
+    }
+
+    function wizard_reset() {
+        document.getElementById("step_gmp").style.display = "block";
+        document.getElementById("step_no_gmp_dev").style.display = "none";
+        document.getElementById("step_no_gmp_safety").style.display = "none";
+        document.getElementById("step_gmp_dev").style.display = "none";
+        document.getElementById("step_gmp_safety").style.display = "none";
+        document.getElementById("step_gmp_oos").style.display = "none";
+        reset_button("btn_gmp");
+        reset_button("btn_no_gmp");
+        reset_button("btn_no_gmp_dev");
+        reset_button("btn_no_gmp_tt");
+        reset_button("btn_crit_dev");
+        reset_button("btn_event");
+        reset_button("btn_gmp_dev");
+        reset_button("btn_gmp_no_dev");
+        reset_button("btn_gmp_dev_safety");
+        reset_button("btn_gmp_dev_no_safety");
+        reset_button("btn_oos");
+        reset_button("btn_gmp_tt");
+    }
+</script>
+
+<div id="container" class="wizard-container">
+    <h2>Questions to determine the nonconformity type (NC type)</h2>
+    <div id="step_gmp">
+        <h4>Was the NC observed for, or did the NC affect a GMP sample/order?</h4>
+        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes, GMP sample/order affected</button>
+        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No, no GMP sample/order affected</button>
+    </div>
+
+    <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
+        <h4>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</h4>
+        <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
+        <h4>Can or did the NC affect results or product/employee safety?</h4>
+        <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
+        <h4>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</h4>
+        <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
+        <h4>Can or did the NC affect results or product/employee safety?</h4>
+        <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
+        <h4>Is it an out of specification testing result (OOS) and system suitability testing (SST) criteria were met?</h4>
+        <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_reset" style="display: none;">
+        <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Reset answers</button>
+    </div>
+
+</div><!-- end of wizard container -->

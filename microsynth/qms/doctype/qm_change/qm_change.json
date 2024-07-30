@@ -1,0 +1,273 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2024-06-21 09:42:27.533475",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "overview",
+  "document_identification_section",
+  "cc_type",
+  "qm_process",
+  "date",
+  "document_type",
+  "amended_from",
+  "column_break_3",
+  "title",
+  "status",
+  "company",
+  "document_name",
+  "section_break_2",
+  "current_state",
+  "column_break_12",
+  "description",
+  "creation1_section",
+  "created_on",
+  "column_break_16",
+  "created_by",
+  "references_section",
+  "qm_documents",
+  "customers",
+  "section_tests_trials",
+  "summary_test_trial_results",
+  "effectiveness_section",
+  "effectiveness_summary",
+  "closure_section",
+  "closure_comments",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description Change"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Change",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "document_identification_section",
+   "fieldtype": "Section Break",
+   "label": "Document Identification"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "cc_type",
+   "fieldtype": "Select",
+   "label": "Change Control Type",
+   "options": "Small Impact\nLarge Impact"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process",
+   "options": "QM Process"
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Source Document Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document Name",
+   "options": "document_type",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "current_state",
+   "fieldtype": "Text",
+   "label": "Current State"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "customers",
+   "fieldtype": "Table",
+   "label": "Customers",
+   "options": "QM Change Customer"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "creation1_section",
+   "fieldtype": "Section Break",
+   "label": "Creation"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "effectiveness_section",
+   "fieldtype": "Section Break",
+   "label": "Effectiveness"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "effectiveness_summary",
+   "fieldtype": "Text",
+   "label": "Effectiveness Summary"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "closure_section",
+   "fieldtype": "Section Break",
+   "label": "Closure"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "closure_comments",
+   "fieldtype": "Text",
+   "label": "Closure Comments"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_tests_trials",
+   "fieldtype": "Section Break",
+   "label": "Tests & Trials"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "summary_test_trial_results",
+   "fieldtype": "Text",
+   "label": "Summary of Test & Trial Results"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nRequested\nAssessment & Classification\nTrial\nPlanning\nImplementation\nCompleted\nClosed"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "overview",
+   "fieldtype": "HTML"
+  },
+  {
+   "default": "QMC-.YY.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "QMC-.YY.####"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2024-07-30 12:29:23.513428",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "QM Change",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}
