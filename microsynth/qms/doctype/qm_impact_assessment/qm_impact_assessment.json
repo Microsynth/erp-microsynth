@@ -110,8 +110,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-30 10:26:59.943897",
- "modified_by": "Administrator",
+ "modified": "2024-07-30 12:30:54.570240",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Impact Assessment",
  "owner": "Administrator",
@@ -155,5 +155,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "title",
  "track_changes": 1
 }
