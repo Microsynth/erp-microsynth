@@ -14,6 +14,13 @@ def get_data():
                        "description": _("Quotation")
                     },
                     {
+                        "type": "report",
+                        "name": "Open Quotations",
+                        "label": _("Open Quotations"),
+                        "doctype": "Quotation",
+                        "is_query_report": True
+                    },
+                    {
                        "type": "doctype",
                        "name": "Standing Quotation",
                        "label": _("Standing Quotation"),
