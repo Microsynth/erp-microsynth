@@ -1,5 +1,5 @@
 {
- "autoname": "naming_series",
+ "autoname": "naming_series:",
  "creation": "2024-06-21 09:42:27.533475",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -223,8 +223,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-29 16:25:26.261324",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-07-30 10:27:06.835497",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Change",
  "owner": "Administrator",
