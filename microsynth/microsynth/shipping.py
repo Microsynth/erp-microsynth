@@ -9,9 +9,9 @@ TRACKING_URLS = {
     '1010': "https://www.post.at/sv/sendungssuche?snr=",
     #'1103': "https://www.post.at/sv/sendungssuche?snr=",  # has no tracking anymore
     '1105': "https://www.post.at/sv/sendungssuche?snr=",
-    '1108': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
-    '1114': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
-    '1117': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    '1108': "https://www.ups.com/track?tracknum=",
+    '1114': "https://www.ups.com/track?tracknum=",
+    '1117': "https://www.ups.com/track?tracknum=",
     '1119': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",  # TODO: Check if this is really the correct URL for DHL Economy Select
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
@@ -34,13 +34,13 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1105': "EMS",    
         '1106': "Germany",
         '1107': "DryIce",
-        '1108': "DHL",
+        '1108': "UPS",
         '1110': "Abholung",
         '1112': "Germany",
         '1113': "DryIce",
-        '1114': "DHL",
+        '1114': "UPS",
         '1115': "Germany",
-        '1117': "DHL",
+        '1117': "UPS",
         '1119': "DHL Economy Select",  # only for EU
         '1120': "DHL CH",  # not for EU
         '1122': "DHL",
@@ -66,7 +66,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
                                                 and "20" in ship_adr.address_line1)): 
         sh_serv = "MFPL"
     # special cases: Tartu, Össu and Jögeva
-    elif (sh_serv != "DHL" and (ship_adr.pincode == "48309" 
+    elif (sh_serv != "UPS" and (ship_adr.pincode == "48309" 
                                 or "Tartu" in ship_adr.city
                                 or "Õssu" in ship_adr.city
                                 or "Össu" in ship_adr.city
