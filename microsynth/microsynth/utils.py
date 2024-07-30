@@ -839,8 +839,8 @@ def get_child_territories(territory):
     """
 
     entries = frappe.db.sql("""select name, lft, rgt, {parent} as parent
-			from `tab{tree}` order by lft"""
-		.format(tree="Territory", parent="parent_territory"), as_dict=1)
+            from `tab{tree}` order by lft"""
+        .format(tree="Territory", parent="parent_territory"), as_dict=1)
     
     range = {}
     for d in entries:
