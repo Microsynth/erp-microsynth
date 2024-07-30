@@ -7,6 +7,71 @@ import frappe
 from frappe.desk.form.assign_to import add
 
 
+def create_pi_from_si(sales_invoice):
+    """
+    Create a purchase invoice for an internal company from a sales invoice
+
+    bench execute microsynth.microsynth.purchasing.create_pi_from_si  --kwargs "{'sales_invoice': 'SI-BAL-24017171'}"
+    """
+    from microsynth.microsynth.taxes import find_dated_tax_template
+    si = frappe.get_doc("Sales Invoice", sales_invoice)
+    # create matching purchase invoice
+    pi_company = si.customer_name
+    suppliers = frappe.get_all("Supplier", filters={'supplier_name': si.company}, fields=['name'])
+    if suppliers and len(suppliers) == 1:
+        if len(suppliers) > 1:
+            frappe.log_error(f"Found {len(suppliers)} Supplier for Company {si.company} on Sales Invoice {si.name}. Going to take the first one.", "purchasing.create_pi_from_si")
+        pi_supplier = suppliers[0]['name']
+    else:
+        frappe.log_error(f"Found no Supplier for Company {si.company} on Sales Invoice {si.name}. Going to return.", "purchasing.create_pi_from_si")
+        return None
+    pi_cost_center = frappe.get_value("Company", pi_company, "cost_center")
+    # find dated tax template
+    if si.product_type == "Oligos" or si.product_type == "Material":
+        category = "Material"
+    else:
+        category = "Service"
+    if si.oligos is not None and len(si.oligos) > 0:
+        category = "Material"
+    pi_tax_template = find_dated_tax_template(pi_company, pi_supplier, si.shipping_address_name, category, si.posting_date)  # TODO: Check carefully
+    # create new purchase invoice
+    new_pi = frappe.get_doc({
+        'doctype': 'Purchase Invoice',
+        'company': pi_company,
+        'supplier': pi_supplier,
+        'bill_no': si.name,
+        'bill_date': si.posting_date,
+        'due_date': si.due_date,
+        'project': si.project,
+        'cost_center': pi_cost_center,
+        #'taxes_and_charges': pi_tax_template,  # TODO
+        'disable_rounded_total': 1
+    })
+    # add item positions
+    for i in si.items:
+        new_pi.append('items', {
+            'item_code': i.item_code,
+            'qty': i.qty,
+            'description': i.description,
+            'rate': i.rate,
+            'cost_center': pi_cost_center
+        })
+    # apply taxes
+    # if pi_tax_template:
+    #     pi_tax_details = frappe.get_doc("Purchase Taxes and Charges Template", pi_tax_template)
+    #     for t in pi_tax_details.taxes:
+    #         new_pi.append('taxes', {
+    #             'charge_type': t.charge_type,
+    #             'account_head': t.account_head,
+    #             'description': t.description,
+    #             'rate': t.rate
+    #         })
+    # insert
+    new_pi.insert()
+    new_pi.submit()
+    return new_pi.name
+
+
 def is_already_assigned(dt, dn):
     if frappe.db.sql(f"""SELECT `owner`
         FROM `tabToDo`
