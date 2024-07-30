@@ -315,6 +315,18 @@ function force_cancel(dt, dn) {
     );
 }
 
+// Add the clear button. Call this function in the onload trigger of doctype_list.js
+function add_clear_button() {
+    var filter_bar = document.getElementsByClassName("page-form");
+    var btn_clear = document.createElement("div");
+    btn_clear.setAttribute('class', 'form-group frappe-control input-max-width col-md-2');
+    btn_clear.innerHTML = "<button id='btn_clear' class='btn text-muted'>Clear</button>";
+    for (var i = 0; i < filter_bar.length; i++) {
+        filter_bar[i].appendChild(btn_clear);
+        document.getElementById("btn_clear").onclick = clear_filters;
+    }
+}
+
 // this is embedded in doctype_list.js functions to clear all filters
 function clear_filters() {
     var standard_filters = {};
