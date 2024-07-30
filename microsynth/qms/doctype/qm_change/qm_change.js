@@ -4,7 +4,7 @@
 frappe.ui.form.on('QM Change', {
 	refresh: function(frm) {
 
-        //cur_frm.set_df_property('status', 'read_only', true);  TODO: comment in before releasing to ERP-Test
+        cur_frm.set_df_property('status', 'read_only', true);
 
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";

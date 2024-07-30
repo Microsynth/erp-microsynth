@@ -15,7 +15,7 @@ frappe.ui.form.on('QM Nonconformity', {
     },
     refresh: function(frm) {
 
-        //cur_frm.set_df_property('status', 'read_only', true);  TODO: comment in before releasing to ERP-Test
+        cur_frm.set_df_property('status', 'read_only', true);
 
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);

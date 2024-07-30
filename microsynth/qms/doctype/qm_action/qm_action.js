@@ -4,6 +4,8 @@
 frappe.ui.form.on('QM Action', {
     refresh: function(frm) {
 
+        cur_frm.set_df_property('status', 'read_only', true);
+
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
