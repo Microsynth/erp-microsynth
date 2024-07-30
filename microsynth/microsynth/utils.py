@@ -2168,3 +2168,70 @@ def user_has_role(user, role):
         """, as_dict=True)
     
     return len(role_matches) > 0
+
+
+@frappe.whitelist()
+def get_potential_contact_duplicates(contact_id):
+    """
+    bench execute microsynth.microsynth.utils.get_potential_contact_duplicates --kwargs "{'contact_id': '215856'}"
+    """
+    contact = frappe.get_doc("Contact", contact_id)
+    address = frappe.get_doc("Address", contact.address)
+    contacts = frappe.db.sql(f"""
+        SELECT `tabContact`.`name`,
+            `tabContact`.`first_name`,
+            `tabContact`.`last_name`,
+            `tabContact`.`institute`
+        FROM `tabContact`
+        LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND (`tabContact`.`email_id` = '{contact.email_id}'
+                OR (`tabContact`.`first_name` = '{contact.first_name}'
+                    AND `tabContact`.`last_name` = '{contact.last_name}'             
+                )
+            )
+            AND `tabAddress`.`address_type` = '{address.address_type}'
+            AND `tabContact`.`name` != '{contact.name}'
+        """, as_dict=True)
+    return contacts
+
+
+def set_module_for_one_user(module, user):
+    """
+    bench execute microsynth.microsynth.utils.set_module_for_one_user --kwargs "{'module': 'QMS', 'user': 'firstname.lastname@microsynth.ch'}"
+    """
+    home_settings = frappe.cache().hget('home_settings', user)
+    inserted = False
+    if not home_settings:
+        print(f"Found no home_settings for user '{user}'. Going to take those from the Administrator.")
+        home_settings = frappe.cache().hget('home_settings', 'Administrator')
+        if not home_settings:
+            print("Found no home_settings for Administrator. Going to return.")
+            return
+        modules = home_settings['modules_by_category']['Modules']
+        if module in modules:
+            inserted = True
+    modules = home_settings['modules_by_category']['Modules']
+    if not module in modules and 'Microsynth' in modules:
+        for i in range(len(modules)):
+            if modules[i] == 'Microsynth':
+                modules.insert(i+1, module)
+                inserted = True
+                break
+    if inserted:
+        home_settings['modules_by_category']['Modules'] = modules
+        s = frappe.parse_json(home_settings)
+        frappe.cache().hset('home_settings', user, s)                                       # update cached value (s as dict)
+        frappe.db.set_value('User', user, 'home_settings', json.dumps(home_settings))       # also update database value
+        print(f"Added module '{module}' to home_settings of user '{user}'.")
+    else:
+        print(f"Module '{module}' is already in home_settings of user '{user}'.")
+
+
+def set_module_for_all_users(module):
+    """
+    bench execute microsynth.microsynth.utils.set_module_for_all_users --kwargs "{'module': 'QMS'}"
+    """
+    users = frappe.get_all("User", fields=['name'])
+    for user in users:
+        set_module_for_one_user(module, user['name'])
