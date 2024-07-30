@@ -43,7 +43,7 @@ frappe.ui.form.on('QM Action', {
         }
 
         if (frm.doc.status == "Work in Progress"
-            && (frappe.session.user === frm.doc.responsible_person) || (frappe.user.has_role('QAU'))) {
+            && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('notes', 'read_only', false);
         } else {
             cur_frm.set_df_property('notes', 'read_only', true);
