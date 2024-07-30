@@ -2266,7 +2266,8 @@ def set_module_for_one_user(module, user):
     if inserted:
         home_settings['modules_by_category']['Modules'] = modules
         s = frappe.parse_json(home_settings)
-        frappe.cache().hset('home_settings', user, s)
+        frappe.cache().hset('home_settings', user, s)                                       # update cached value (s as dict)
+        frappe.db.set_value('User', user, 'home_settings', json.dumps(home_settings))       # also update database value
         print(f"Added module '{module}' to home_settings of user '{user}'.")
     else:
         print(f"Module '{module}' is already in home_settings of user '{user}'.")
