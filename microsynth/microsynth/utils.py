@@ -2212,7 +2212,19 @@ def force_cancel(dt, dn):
         frappe.db.commit()
     except Exception as err:
         frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
+    else:
+        new_comment = frappe.get_doc({
+            'doctype': 'Communication',
+            'comment_type': "Comment",
+            'subject': dn,
+            'content': f'Force cancelled by {frappe.get_user().name}',
+            'reference_doctype': dt,
+            'status': "Linked",
+            'reference_name': dn
+        })
+        new_comment.insert()
     return
+
 
 def user_has_role(user, role):
     """
