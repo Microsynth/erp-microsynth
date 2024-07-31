@@ -1292,7 +1292,7 @@ def get_sql_list(list):
 @frappe.whitelist()
 def get_unused_labels(contacts, items):
     """
-    Return unused Sequencing Labels that are unregistered or have a matching contact.
+    Return unused Sequencing Labels that are registered to a given contact.
 
     bench execute microsynth.microsynth.webshop.get_unused_labels --kwargs "{'contacts': ['215856', '237365'], 'items': ['6030', '6031'] }"
     """
@@ -1318,8 +1318,7 @@ def get_unused_labels(contacts, items):
             FROM `tabSequencing Label`
             WHERE `status` = 'unused'
                 AND `item` IN ({get_sql_list(items)})
-                AND ((`registered` = 0 AND `contact` IN ({get_sql_list(contacts)}) AND `registered_to` IS NULL)
-                    OR (`registered_to` IN ({get_sql_list(contacts)})))
+                AND `registered_to` IN ({get_sql_list(contacts)})
             ;"""
         labels = frappe.db.sql(sql_query, as_dict=True)
         return {'success': True, 'message': 'OK', 'labels': labels}
