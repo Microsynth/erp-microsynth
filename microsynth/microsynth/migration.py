@@ -4306,3 +4306,14 @@ def check_items_to_disable(items_to_disable):
         oligo_items = frappe.db.get_all("Oligo Item", filters=my_filters, fields=my_fields)
         if len(oligo_items) > 0:
             print(f"Item {item_code} is used on {len(oligo_items)} Oligos: {', '.join(oligo_item['parent'] for oligo_item in oligo_items)}")
+
+
+def find_users_without_signature():
+    """
+    bench execute microsynth.microsynth.migration.find_users_without_signature
+    """
+    users = frappe.get_all("User", filters={'enabled': 1}, fields=['email'])
+
+    for user in users:
+        if not frappe.db.exists("Signature", user['email']):
+            print(f"There is no Signature for {user['email']}.")
