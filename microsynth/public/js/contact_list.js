@@ -3,6 +3,7 @@
 
 // render
 frappe.listview_settings['Contact'] = {
+    add_fields: ["image"],
     onload: function(doc) {
         add_clear_button();
     }
