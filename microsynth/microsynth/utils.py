@@ -14,11 +14,8 @@ from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 def get_customer(contact):
     """
-    Returns the customer for a contact ID. 
-    If no Customer is linked and the Contact ID is numeric, the Administration is informed.
-    If no Customer is linked and the Contact ID is not numeric, the Contact is disabled.
+    Returns the customer for a contact ID.
 
-    run
     bench execute microsynth.microsynth.utils.get_customer --kwargs "{'contact': 215856 }"
     """
     # get contact
@@ -28,28 +25,53 @@ def get_customer(contact):
     for l in contact.links:
         if l.link_doctype == "Customer":
             customer_id = l.link_name
-
-    if not customer_id:
-        if not contact.name.isnumeric():
-            # disable Contacts with non-numeric IDs that are not linked to a Customer (wish by Administration: "Ja, wir haben es durchdacht")
-            contact.status = 'Disabled'
-            contact.save()
-            return customer_id
-        subject = f"Contact '{contact.name}' is not linked to a Customer"
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that Contact '{contact.name}' (created by {contact.owner}) "
-        message += f"is not linked to any Customer in the ERP.<br>Please clean up this Contact.<br><br>Best regards,<br>Jens"
-        # non_html_message = message.replace("<br>","\n")
-        # frappe.log_error(non_html_message, f"{subject} (utils.get_customer)")
-        #print(subject + '\n\n' + non_html_message)
-        make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = "[ERP] " + subject,
-            content = message,
-            send_email = True
-            )
-
     return customer_id
+
+
+def check_contact_to_customer():
+    """
+    Report non-Disabled Contacts that are not linked to any Customer to the Administration.
+    Could be executed by a cronjob, e.g. once per month.
+
+    bench execute microsynth.microsynth.utils.check_contact_to_customer
+    """
+    contacts = frappe.get_all("Contact", filters={'status': ('!=', 'Disabled')}, fields=['name'])
+    counter = 0
+    message = f"Dear Administration,<br><br>the following Contacts with an numeric ID are not Disabled and are not linked to any Customer:<br>"
+    for c in contacts:
+        contact = frappe.get_doc("Contact", c['name'])
+        customer_id = None
+        for l in contact.links:
+            if l.link_doctype == "Customer":
+                customer_id = l.link_name
+                break
+        if not customer_id:
+            if not contact.name.isnumeric():
+                # disable Contacts with non-numeric IDs that are not linked to a Customer (wish by Administration: "Ja, wir haben es durchdacht")
+                # contact.status = 'Disabled'
+                # contact.save()
+                continue
+            my_filters = [['docstatus', '<', '2'], ['contact_person', '=', contact.name]]
+            #contact_notes = frappe.get_all("Contact Notes", filters=my_filters, fields=['name'])
+            quotations = frappe.get_all("Quotation", filters=my_filters, fields=['name'])
+            sales_orders = frappe.get_all("Sales Order", filters=my_filters, fields=['name'])
+            delivery_notes = frappe.get_all("Delivery Note", filters=my_filters, fields=['name'])
+            sales_invoices = frappe.get_all("Sales Invoice", filters=my_filters, fields=['name'])
+            sum_linked_docs = len(quotations) + len(sales_orders) + len(delivery_notes) + len(sales_invoices)
+            #print(f"Contact '{contact.name}' is not linked to any Customer.")
+            url = f"https://erp.microsynth.local/desk#Form/Contact/{contact.name}"
+            message += f"<br><a href={url}>{contact.name}</a>: {contact.full_name}, created by {contact.owner} on {contact.creation}, {sum_linked_docs} linked Documents"
+            print(f"{url}: {contact.full_name}, created by {contact.owner} on {contact.creation}, {sum_linked_docs} linked Documents")
+            counter += 1
+    print(f"Found {counter} Contacts that are not Disabled and not linked to any Customer.")
+    message += "<br><br>Best regards,<br>Jens"
+    make(
+        recipients = "info@microsynth.ch",
+        sender = "jens.petermann@microsynth.ch",
+        subject = "[ERP] Contacts that are not linked to any Customer",
+        content = message,
+        send_email = True
+    )
 
 
 def get_billing_address(customer):
