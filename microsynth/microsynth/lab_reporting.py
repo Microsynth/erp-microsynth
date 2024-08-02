@@ -138,13 +138,35 @@ def create_analysis_report(content=None):
         else:
             customer = ''
 
+
+        content['approved_by'] if 'approved_by' in content else ''
+
+        if 'approved_by' in content and content['approved_by']:
+            if frappe.db.exists('User', content['approved_by']):
+                approver = content['approved_by']
+            else:
+                query = """SELECT
+                        `tabUser`.`name`
+                    FROM `tabUser`
+                    WHERE `tabUser`.`username` = "{user}"
+                    """.format(user=content['approved_by'])
+                users = frappe.db.sql(query, as_dict=True)
+
+                if len(users) == 1:
+                    approver = users[0]['name']
+                else:
+                    # frappe.throw(f"no user found: {content['approved_by']}" )
+                    approver = ''
+        else:
+            approver = ''
+
         ar = frappe.get_doc({
             'doctype': 'Analysis Report',
             'sales_order': content['sales_order'] if 'sales_order' in content else '',
             'web_order_id': content['web_order_id'] if 'web_order_id' in content else '',  # will be fetched from the Sales Order if not given
             'report_type': content['report_type'] if 'report_type' in content else '',
             'issue_date': content['issue_date'] if 'issue_date' in content else '',
-            'approved_by': content['approved_by'] if 'approved_by' in content else '',
+            'approved_by': approver,
             'customer': customer,
             'contact_person': content['contact_person'] if 'contact_person' in content else '',
             'address': address,
