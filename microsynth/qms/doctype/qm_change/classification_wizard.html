@@ -1,6 +1,6 @@
 <script>
     function is_gmp() {
-        cur_frm.set_value("cc_type", "CC full");
+        cur_frm.set_value("cc_type", "full");
         cur_frm.set_value("regulatory_classification", "GMP");
         clicked("btn_gmp");
         document.getElementById("btn_no_gmp").disabled = true;
@@ -17,14 +17,14 @@
     }
 
     function no_gmp_major() {
-        cur_frm.set_value("cc_type", "CC full");
+        cur_frm.set_value("cc_type", "full");
         cur_frm.set_value("risk_classification", "major");
         clicked("btn_major");
         document.getElementById("btn_minor").disabled = true;
     }
 
     function no_gmp_minor() {
-        cur_frm.set_value("cc_type", "CC short");
+        cur_frm.set_value("cc_type", "short");
         cur_frm.set_value("risk_classification", "minor");
         clicked("btn_minor");
         document.getElementById("btn_major").disabled = true;
@@ -79,7 +79,7 @@
 </script>
 
 <div id="container" class="wizard-container">
-    <h2>Questions to determine the change control type (CC type)</h2>
+    <h2>Questions to determine the Change Control Type</h2>
     <div id="step_gmp">
         <h4>Is it a GMP relevant change (process, analytical procedure, instruments)?</h4>
         <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes</button>
