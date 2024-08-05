@@ -416,7 +416,7 @@ frappe.ui.form.on('QM Nonconformity', {
         // cur_frm.set_value("criticality_classification", "");
         // cur_frm.set_value("regulatory_classification", "");
         // frappe.show_alert( __("Reset Classification") );
-        frappe.show_alert( __("Please check the Classification") );
+        //frappe.show_alert( __("Please check the Classification") );
     }
 });
 
