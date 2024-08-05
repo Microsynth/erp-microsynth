@@ -8,6 +8,7 @@
   "analysis_date",
   "analysis_method",
   "analysis_result",
+  "deviations",
   "comment"
  ],
  "fields": [
@@ -46,10 +47,15 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Analysis Date"
+  },
+  {
+   "fieldname": "deviations",
+   "fieldtype": "Text Editor",
+   "label": "Deviations"
   }
  ],
  "istable": 1,
- "modified": "2024-07-05 10:31:52.791456",
+ "modified": "2024-08-05 09:08:56.117469",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report Sample Detail",
