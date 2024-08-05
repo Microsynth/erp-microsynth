@@ -2234,14 +2234,14 @@ def force_cancel(dt, dn):
         # check if this doctype has a status field
         meta = frappe.get_meta(dt)
         if meta.has_field('status'):
-            status_update = """ `status` = "Cancelled" """
+            status_update = """, `status` = "Cancelled" """
         else:
             status_update = ""
             
         frappe.db.sql("""
             UPDATE `tab{dt}`
             SET 
-                `docstatus` = 2,
+                `docstatus` = 2
                 {status}
             WHERE
                 `name` = "{dn}"
