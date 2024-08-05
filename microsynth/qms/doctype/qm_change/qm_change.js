@@ -57,6 +57,13 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('description', 'read_only', true);
         }
 
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
+        }
+
 		// allow the creator or QAU to change the creator (transfer document) in status "Requested"
         if ((!frm.doc.__islocal)
             && (["Requested"].includes(frm.doc.status))
@@ -226,6 +233,25 @@ function change_creator() {
         __('Set new creator'),
         __('Set')
     );
+}
+
+
+function cancel(frm) {
+    frappe.confirm("Are you sure you want to cancel QM Change '" + cur_frm.doc.name + "'? This cannot be undone.",
+    () => {
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_change.qm_change.cancel',
+            'args': {
+                'nc': cur_frm.doc.name
+            },
+            'async': false,
+            'callback': function(response) {
+                cur_frm.reload_doc();
+            }
+        });
+    }, () => {
+        // nothing
+    });
 }
 
 

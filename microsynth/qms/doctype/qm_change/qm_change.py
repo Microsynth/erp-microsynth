@@ -120,6 +120,20 @@ def update_status(nc, status):
 
 
 @frappe.whitelist()
+def cancel(nc):
+    from microsynth.microsynth.utils import force_cancel
+    nc = frappe.get_doc("QM Change", nc)
+    if nc.status == "Draft":
+        force_cancel("QM Change", nc.name)
+    else:
+        try:
+            nc.cancel()
+            frappe.db.commit()
+        except Exception as err:
+            force_cancel("QM Change", nc.name)
+
+
+@frappe.whitelist()
 def has_non_completed_assessments(qm_change):
     assessments = frappe.db.sql(f"""
         SELECT 
