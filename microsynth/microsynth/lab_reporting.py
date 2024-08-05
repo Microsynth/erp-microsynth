@@ -138,9 +138,6 @@ def create_analysis_report(content=None):
         else:
             customer = ''
 
-
-        content['approved_by'] if 'approved_by' in content else ''
-
         if 'approved_by' in content and content['approved_by']:
             if frappe.db.exists('User', content['approved_by']):
                 approver = content['approved_by']
@@ -155,8 +152,7 @@ def create_analysis_report(content=None):
                 if len(users) == 1:
                     approver = users[0]['name']
                 else:
-                    # frappe.throw(f"no user found: {content['approved_by']}" )
-                    approver = ''
+                    return {'success': False, 'message': f"Found {len(users)} for {content['approved_by']=}", 'reference': None}
         else:
             approver = ''
 
