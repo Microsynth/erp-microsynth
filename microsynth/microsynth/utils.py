@@ -51,6 +51,22 @@ def check_contact_to_customer():
                 # contact.status = 'Disabled'
                 # contact.save()
                 continue
+            if int(contact.name) > 800000:
+                # try to find Customer with the same ID
+                if frappe.db.exists("Customer", contact.name):
+                    my_customer_filters = [['docstatus', '<', '2'], ['customer', '=', contact.name]]
+                    customer_quotations = frappe.get_all("Quotation", filters=[['docstatus', '<', '2'], ['party_name', '=', contact.name]], fields=['name'])
+                    customer_sales_orders = frappe.get_all("Sales Order", filters=my_customer_filters, fields=['name'])
+                    customer_delivery_notes = frappe.get_all("Delivery Note", filters=my_customer_filters, fields=['name'])
+                    customer_sales_invoices = frappe.get_all("Sales Invoice", filters=my_customer_filters, fields=['name'])
+                    sum_linked_customer_docs = len(customer_quotations) + len(customer_sales_orders) + len(customer_delivery_notes) + len(customer_sales_invoices)
+                    if sum_linked_customer_docs:
+                        print(f"There exists a Customer '{contact.name}' with {sum_linked_customer_docs} linked documents.")
+                    else:
+                        print(f"There exists an inactive Customer '{contact.name}'.")
+                else:
+                    print(f"There exists no Customer '{contact.name}'.")
+                #continue
             my_filters = [['docstatus', '<', '2'], ['contact_person', '=', contact.name]]
             #contact_notes = frappe.get_all("Contact Notes", filters=my_filters, fields=['name'])
             quotations = frappe.get_all("Quotation", filters=my_filters, fields=['name'])
