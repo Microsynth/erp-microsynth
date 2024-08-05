@@ -13,6 +13,13 @@ class QMChange(Document):
     def on_submit(self):
         self.status = "Requested"
 
+    def get_classification_wizard(self):            
+        html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
+            {
+                'doc': self
+            })
+        return html
+
     def get_advanced_dashboard(self):
         assessments = frappe.db.sql(f"""
             SELECT 

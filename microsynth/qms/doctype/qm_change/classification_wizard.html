@@ -1,0 +1,73 @@
+<script>
+    function is_gmp() {
+        cur_frm.set_value("cc_type", "CC full");
+        cur_frm.set_value("regulatory_classification", "GMP");
+        clicked("btn_gmp");
+        document.getElementById("btn_no_gmp").disabled = true;
+        document.getElementById("step_reset").style.display = "block";
+    }
+
+    function no_gmp() {
+        cur_frm.set_value("regulatory_classification", "non-GMP (ISO)");
+        document.getElementById("step_no_gmp").style.display = "block";
+        clicked("btn_no_gmp");
+        document.getElementById("btn_gmp").disabled = true;
+        document.getElementById("step_reset").style.display = "block";
+    }
+
+    function no_gmp_major() {
+        cur_frm.set_value("cc_type", "CC full");
+        cur_frm.set_value("risk_classification", "major");
+        clicked("btn_major");
+        document.getElementById("btn_minor").disabled = true;
+    }
+
+    function no_gmp_minor() {
+        cur_frm.set_value("cc_type", "CC short");
+        cur_frm.set_value("risk_classification", "minor");
+        clicked("btn_minor");
+        document.getElementById("btn_major").disabled = true;
+    }
+
+    function clicked(btn_id) {
+        document.getElementById(btn_id).classList.remove("btn-secondary");
+        document.getElementById(btn_id).classList.add("btn-primary");
+        document.getElementById(btn_id).disabled = true;
+    }
+
+    function reset_button(btn_id) {
+        document.getElementById(btn_id).classList.remove("btn-primary");
+        document.getElementById(btn_id).classList.add("btn-secondary");
+        document.getElementById(btn_id).disabled = false;
+    }
+
+    function wizard_reset() {
+        document.getElementById("step_gmp").style.display = "block";
+        document.getElementById("step_no_gmp").style.display = "none";
+        reset_button("btn_gmp");
+        reset_button("btn_no_gmp");
+        reset_button("btn_major");
+        reset_button("btn_minor");
+        cur_frm.set_value("regulatory_classification", "");
+        cur_frm.set_value("risk_classification", "");
+    }
+</script>
+
+<div id="container" class="wizard-container">
+    <h2>Questions to determine the change control type (CC type)</h2>
+    <div id="step_gmp">
+        <h4>Is it a GMP relevant change (process, analytical procedure, instruments)?</h4>
+        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_no_gmp" style="display: none;"><!-- non-GMP -->
+        <h4>Has the change a major effect on product or analysis results?</h4>
+        <button id="btn_major" class="btn btn-secondary" onclick="no_gmp_major()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_minor" class="btn btn-secondary" onclick="no_gmp_minor()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_reset" style="display: none;">
+        <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Reset answers</button>
+    </div>
+</div>

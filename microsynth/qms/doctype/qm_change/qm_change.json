@@ -28,6 +28,10 @@
   "references_section",
   "qm_documents",
   "customers",
+  "classification_section",
+  "regulatory_classification",
+  "column_break_26",
+  "risk_classification",
   "section_tests_trials",
   "summary_test_trial_results",
   "effectiveness_section",
@@ -66,7 +70,7 @@
    "fieldname": "cc_type",
    "fieldtype": "Select",
    "label": "Change Control Type",
-   "options": "Small Impact\nLarge Impact"
+   "options": "\nCC short\nCC full"
   },
   {
    "allow_on_submit": 1,
@@ -220,10 +224,32 @@
    "hidden": 1,
    "label": "Naming Series",
    "options": "QMC-.YY.####"
+  },
+  {
+   "collapsible_depends_on": "eval:doc.status=='Assessment & Classification'",
+   "fieldname": "classification_section",
+   "fieldtype": "Section Break",
+   "label": "Classification"
+  },
+  {
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "label": "Regulatory Classification",
+   "options": "GMP\nnon-GMP (ISO)"
+  },
+  {
+   "fieldname": "risk_classification",
+   "fieldtype": "Select",
+   "label": "Risk Classification",
+   "options": "minor\nmajor"
+  },
+  {
+   "fieldname": "column_break_26",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-30 12:29:23.513428",
+ "modified": "2024-08-05 13:29:54.942623",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

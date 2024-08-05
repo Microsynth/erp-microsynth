@@ -15,8 +15,17 @@ frappe.ui.form.on('QM Change', {
             cur_frm.page.clear_secondary_action();
         }
 
-        // add advanced dashboard
-        if (!frm.doc.__islocal) {
+        // fetch classification wizard
+        if (!frm.doc.__islocal && !frm.doc.cc_type && frm.doc.status == 'Draft') {
+            frappe.call({
+                'method': 'get_classification_wizard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        } else {
+            // display an advanced dashboard
             frappe.call({
                 'method': 'get_advanced_dashboard',
                 'doc': frm.doc,
