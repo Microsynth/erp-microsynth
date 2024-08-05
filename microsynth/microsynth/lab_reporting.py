@@ -98,7 +98,7 @@ def create_analysis_report(content=None):
                         matching_samples.append(sample)
                 if len(matching_samples) == 1:
                     # Sample found -> link it
-                    sample_doc = frappe.get_doc("Sample", sample['name'])
+                    sample_doc = frappe.get_doc("Sample", matching_samples[0]['name'])
                 elif len(matching_samples) == 0:
                     # no Sample found -> create a sample with the name
                     sample_doc = frappe.get_doc({
