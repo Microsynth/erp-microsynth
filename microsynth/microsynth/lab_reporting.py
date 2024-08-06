@@ -119,6 +119,7 @@ def create_analysis_report(content=None):
                 "analysis_date": sample_detail['analysis_date'] or '',
                 "analysis_method": sample_detail['analysis_method'] or '',
                 "analysis_result": sample_detail['analysis_result'] or '',
+                "deviations": sample_detail['analysis_deviations'] or '',
                 "comment": sample_detail['comment'] or ''
             })
     try:
