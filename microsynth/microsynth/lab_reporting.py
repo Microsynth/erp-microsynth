@@ -311,3 +311,29 @@ def transmit_analysis_reports(content=None):
             return {'success': True, 'message': "Successfully send all reports"}
         else:
             return {'success': False, 'message': "Unable to send all reports. Some might be send."}
+
+
+@frappe.whitelist()
+def set_sample_labels_processed(samples):
+    """
+    Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#set-sample-labels-processed
+
+    bench execute microsynth.microsynth.lab_reporting.set_sample_labels_processed --kwargs "{'samples': ['SAMPLE204574', 'SAMPLE204575']}"
+    """
+    if not samples:
+        return {'success': False, 'message': 'Please provide samples.'}
+    sequencing_labels = []
+    try:
+        for sample in samples:
+            sample_doc = frappe.get_doc('Sample', sample)
+            seq_label = frappe.get_doc('Sequencing Label', sample_doc.sequencing_label)
+            # Check status before setting it
+            if seq_label.status not in ['submitted', 'received']:
+                return {'success': False, 'message': f"Sequencing Label '{seq_label.name}' of Sample '{sample}' has status '{seq_label.status}'."}
+            sequencing_labels.append(seq_label)
+        for seq_label in sequencing_labels:
+            seq_label.status = 'processed'
+            seq_label.save()
+    except Exception as err:
+        return {'success': False, 'message': f"Got the following error: {err}"}
+    return {'success': True, 'message': 'OK'}
