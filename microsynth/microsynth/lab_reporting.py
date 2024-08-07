@@ -10,6 +10,32 @@ from frappe.core.doctype.communication.email import make
 import os
 
 
+def find_sales_orders(web_order_id):
+    """
+    bench execute microsynth.microsynth.lab_reporting.find_sales_orders --kwargs "{'web_order_id': '9037231'}"
+    """
+    sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
+    return sales_orders
+
+
+def get_sales_order_samples(sales_order):
+    """
+    bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-24028200'}"
+    """    
+    samples_to_return = []
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+
+    for sample in sales_order_doc.samples:
+        sample_doc = frappe.get_doc("Sample", sample.sample)
+        samples_to_return.append({
+            "name": sample_doc.name,
+            "sample_name": sample_doc.sample_name,
+            "sequencing_label_id": sample_doc.sequencing_label,
+            "web_id": sample_doc.web_id
+        })
+   
+    return samples_to_return
+
 @frappe.whitelist()
 def fetch_sales_order_samples(web_order_id):
     """
@@ -26,30 +52,20 @@ def fetch_sales_order_samples(web_order_id):
                 'web_order_id': None,
                 'samples': None}
 
-    sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
+    sales_orders = find_sales_orders(web_order_id)
 
-    if len(sales_orders) == 0:
+    if not sales_orders or len(sales_orders) == 0:
         return {'success': False,
                 'message': f"Found no submitted Sales Order with the given Web Order ID '{web_order_id}' in the ERP.",
                 'sales_order': None,
                 'web_order_id': None,
                 'samples': [] }
     elif len(sales_orders) == 1:
-        samples_to_return = []
-        sales_order_doc = frappe.get_doc("Sales Order", sales_orders[0]['name'])
-
-        for sample in sales_order_doc.samples:
-            sample_doc = frappe.get_doc("Sample", sample.sample)
-            samples_to_return.append({
-                "name": sample_doc.name,
-                "sample_name": sample_doc.sample_name,
-                "sequencing_label_id": sample_doc.sequencing_label,
-                "web_id": sample_doc.web_id
-            })
+        samples_to_return = get_sales_order_samples(sales_orders[0]['name'])
         return {'success': True,
                 'message': "OK",
-                'sales_order': sales_order_doc.name,
-                'web_order_id': sales_order_doc.web_order_id,
+                'sales_order': sales_orders[0]['name'],
+                'web_order_id': web_order_id,
                 'samples': samples_to_return}
     else:
         # more than one Sales Order
@@ -82,8 +98,7 @@ def create_analysis_report(content=None):
                 matching_samples = []
                 if 'sales_order' in content and content['sales_order']:
                     if frappe.db.exists('Sales Order', content['sales_order']):
-                        sales_order_doc =frappe.get_doc('Sales Order', content['sales_order'])
-                        samples = sales_order_doc.samples
+                        samples = get_sales_order_samples(content['sales_order'])
                     else:
                         return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
                 elif 'web_order_id' in content and content['web_order_id']:
@@ -109,8 +124,6 @@ def create_analysis_report(content=None):
                 else:
                     # multiple samples found -> throw an error
                     return {'success': False, 'message': f"Found more than one Sample with the Sample Name '{sample_detail['sample_name']}' on the Sales Order with the given Web Order ID '{content['web_order_id']}'.", 'reference': None}
-
-            # TODO use existing samples from Sales Order #16658
 
             # Validate values?
             sample_details.append({
