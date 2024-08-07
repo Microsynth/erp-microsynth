@@ -53,8 +53,8 @@ def get_users(qm_processes, companies=None):
     if not qm_processes and not companies:
         return None
 
-    companies_list = frappe.parse_json(companies)    
-    if companies and len(companies_list) > 0:
+    companies_list = frappe.parse_json(companies)
+    if companies and len(companies_list) > 0 and companies_list[0]:
         company_condition = f"`tabQM User Process Assignment`.`company` IN ({get_sql_list(companies_list)})"
     else:
         company_condition = "TRUE"
@@ -82,6 +82,7 @@ def get_users(qm_processes, companies=None):
         WHERE {company_condition}
             {qm_process_conditions}
         """
+    # frappe.log_error(f"{query=}")
     return frappe.db.sql(query, as_dict=True)
 
 
@@ -124,10 +125,10 @@ def import_process_assignments(file_path, expected_line_length=7):
                 print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
             email = line[1].strip()  # remove leading and trailing whitespaces
-            process = line[2]
-            subprocess = line[3]
-            chapter = line[4]
-            all_chapters = line[5]
+            process = line[2].strip()
+            subprocess = line[3].strip()
+            chapter = line[4].strip()
+            all_chapters = line[5].strip()
             company_city = line[6].strip()
             if not frappe.db.exists("User", email):
                 print(f"User {email} is not yet in the ERP. Going to continue.")
