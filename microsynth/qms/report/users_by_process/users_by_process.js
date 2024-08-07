@@ -22,6 +22,12 @@ frappe.query_reports["Users by Process"] = {
             "fieldname": "chapter",
             "label": __("Chapter"),
             "fieldtype": "Int"
+        },
+        {
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company"
         }
     ]
 };
