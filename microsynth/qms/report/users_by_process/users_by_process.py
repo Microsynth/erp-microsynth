@@ -83,3 +83,106 @@ def get_users(qm_processes, companies=None):
             {qm_process_conditions}
         """
     return frappe.db.sql(query, as_dict=True)
+
+
+def check_and_add_3_37(qm_user_process_assignments):
+    """
+    """
+    for process_assignment in qm_user_process_assignments:
+        if process_assignment['process_number'] == 3 and process_assignment['subprocess_number'] in ['3', '4', '5', '6', '7']:
+            qm_user_process_assignments.append({
+                'qm_process': "3.37 Genetic Analysis",
+                'process_number': 3,
+                'subprocess_number': 37,
+                'chapter': 37,
+                'company': 'Microsynth AG'
+            })
+            return
+
+
+def import_process_assignments(file_path, expected_line_length=7):
+    """
+    bench execute microsynth.qms.report.users_by_process.users_by_process.import_process_assignments --kwargs "{'file_path': '/mnt/erp_share/JPe/240807_user_process_assignments.csv'}"
+    """
+    import csv
+    imported_counter = line_counter = 0
+    last_email = ''
+    qm_user_process_assignments = []
+    company_mapping = {
+        'Balgach': 'Microsynth AG',
+        'Göttingen': 'Microsynth Seqlab GmbH',
+        'Lyon': 'Microsynth France SAS',
+        'Wien': 'Microsynth Austria GmbH'
+    }
+    with open(file_path) as file:
+        print(f"Parsing Process Assignments from '{file_path}' ...")
+        csv_reader = csv.reader(file, delimiter=";")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            line_counter += 1
+            if len(line) != expected_line_length:
+                print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
+                continue
+            email = line[1].strip()  # remove leading and trailing whitespaces
+            process = line[2]
+            subprocess = line[3]
+            chapter = line[4]
+            all_chapters = line[5]
+            company_city = line[6].strip()
+            if not frappe.db.exists("User", email):
+                print(f"User {email} is not yet in the ERP. Going to continue.")
+                continue
+            if not (email and process and subprocess and (chapter or all_chapters) and company_city):
+                print(f"Please provide at least Email, Process, Subprocess, (Chapter or All Chapters) and Company: {line}. Going to continue.")
+                continue
+            if (chapter and all_chapters) or (all_chapters and all_chapters != '1'):
+                print(f"Please provide either a Chapter or a 1 in the column All Chapters, but got {chapter=} and {all_chapters=}. Going to continue.")
+                continue
+            company = company_mapping[company_city]
+            if email != last_email and last_email != '':  # new email
+                # create a new User Settings entry for the previous email
+                user_settings = frappe.get_doc({
+                    'doctype': 'User Settings',
+                    'user': email,
+                    'qm_process_assignments': qm_user_process_assignments
+                })
+                user_settings.insert()
+                imported_counter += 1
+            else:  # reset the list of QM User Process Assignments
+                qm_user_process_assignments = []
+            # Fetch the QM Process
+            if chapter:
+                qm_processes = frappe.get_all("QM Process", filters=[
+                    ['process_number', '=', process],
+                    ['subprocess_number', '=', subprocess],
+                    ['chapter', '=', chapter]
+                    ], fields=['name'])
+            else:
+                qm_processes = frappe.get_all("QM Process", filters=[
+                    ['process_number', '=', process],
+                    ['subprocess_number', '=', subprocess],
+                    ['all_chapters', '=', 1]],
+                    fields=['name'])
+            if len(qm_processes) != 1:
+                print(f"Found {len(qm_processes)} QM Processes: {qm_processes}: {line}. Going to continue.")
+                continue
+            # Add the current values to the list of QM User Process Assignments
+            qm_user_process_assignments.append({
+                'qm_process': qm_processes[0]['name'],
+                'process_number': process,
+                'subprocess_number': subprocess,
+                'all_chapters': all_chapters,
+                'chapter': chapter,
+                'company': company
+            })
+            last_email = email
+        if email and len(qm_user_process_assignments) > 0:
+            # create a new User Settings entry for the last email
+            user_settings = frappe.get_doc({
+                'doctype': 'User Settings',
+                'user': email,
+                'qm_process_assignments': qm_user_process_assignments
+            })
+            user_settings.insert()
+            imported_counter += 1
+    print(f"Successfully imported {imported_counter}/{line_counter} User Process Assignments ({round((imported_counter/line_counter)*100, 2)} %).")
