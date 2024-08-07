@@ -557,8 +557,8 @@ function request_training_prompt(trainees) {
          'fields': [ 
             {'fieldname': 'user_name', 
              'fieldtype': 'Link', 
-             'label': __('Trainee'), 
-             'options':'User', 
+             'label': 'Trainee', 
+             'options': 'User', 
              'in_list_view': 1,
              'reqd': 1} ],
 
@@ -568,31 +568,75 @@ function request_training_prompt(trainees) {
         { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
     ],
     function(values){
-        console.log(values.trainees)
         for (var i = 0; i < values.trainees.length; i++)  {
             create_training_request(values.trainees[i].user_name, values.due_date);
         }
     },
-    __('Please choose a trainee'),
+    __('Please check the trainees'),
     __('Request training')
     );
 }
 
 
 function request_training() {
-    frappe.call({
-        'method': 'microsynth.qms.report.users_by_process.users_by_process.get_users',
-        'args': {
-            'process': cur_frm.doc.process_number,
-            'subprocess': cur_frm.doc.subprocess_number, 
-            'chapter': cur_frm.doc.chapter
+    // Ask for Companies and QM Processes
+    frappe.prompt([
+        {'fieldname': 'companies',
+         'fieldtype': 'Table',
+         'label': 'Companies',
+         'fields': [
+            {'fieldname': 'company',
+             'fieldtype': 'Link',
+             'label': 'Company',
+             'options': 'Company',
+             'in_list_view': 1,
+             'reqd': 1}
+            ],
+         'data': [{"company": cur_frm.doc.company}],
+         'get_data': () => { return []; }
         },
-        'callback': function(response) {
-            console.log(response.message)
-            // var trainees =  ['rolf.suter@microsynth.ch']
-            request_training_prompt(response.message);
+        {'fieldname': 'qm_processes',
+         'fieldtype': 'Table',
+         'label': 'QM Processes',
+         'fields': [
+            {'fieldname': 'qm_process',
+             'fieldtype': 'Link',
+             'label': 'QM Process',
+             'options': 'QM Process',
+             'in_list_view': 1,
+             'reqd': 1}
+            ],
+         'data': [{"qm_process": cur_frm.doc.qm_process}],
+         'get_data': () => { return []; }
         }
-    })
+    ],
+    function(values){
+        const qm_processes_list = [];
+        if (values.qm_processes) {
+            for (var i = 0; i < values.qm_processes.length; i++)  {
+                qm_processes_list[i] = values.qm_processes[i].qm_process;
+            }
+        }
+        const companies_list = [];
+        if (values.companies) {
+            for (var i = 0; i < values.companies.length; i++)  {
+                companies_list[i] = values.companies[i].company;
+            }
+        }
+        frappe.call({
+            'method': 'microsynth.qms.report.users_by_process.users_by_process.get_users',
+            'args': {
+                'qm_processes': qm_processes_list,
+                'companies': companies_list
+            },
+            'callback': function(response) {
+                request_training_prompt(response.message);
+            }
+        })
+    },
+    __('Select at least one Company or QM Process'),
+    __('Continue')
+    );
 }
 
 
