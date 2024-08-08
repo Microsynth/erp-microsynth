@@ -180,8 +180,8 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Created') {
-            if (["OOS", "Track & Trend"].includes(frm.doc.nc_type)
-                && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            if ((frm.doc.nc_type == "OOS" && frappe.user.has_role('QAU'))
+                || (frm.doc.nc_type == "Track & Trend" && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
                 // add close button
                 cur_frm.page.set_primary_action(
                     __("Close"),
@@ -395,21 +395,29 @@ frappe.ui.form.on('QM Nonconformity', {
     occurrence_probability: function(frm) {
         if (frm.doc.occurrence_probability && frm.doc.impact) {
             cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact));
+        } else {
+            cur_frm.set_value("risk_classification", "");
         }
     },
     impact: function(frm) {
         if (frm.doc.occurrence_probability && frm.doc.impact) {
             cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact));
+        } else {
+            cur_frm.set_value("risk_classification", "");
         }
     },
     occurrence_probability_after_actions: function(frm) {
         if (frm.doc.occurrence_probability_after_actions && frm.doc.impact_after_actions) {
             cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions));
+        } else {
+            cur_frm.set_value("risk_classification_after_actions", "");
         }
     },
     impact_after_actions: function(frm) {
         if (frm.doc.occurrence_probability_after_actions && frm.doc.impact_after_actions) {
             cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions));
+        } else {
+            cur_frm.set_value("risk_classification_after_actions", "");
         }
     },
     nc_type: function(frm) {
