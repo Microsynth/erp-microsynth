@@ -101,6 +101,7 @@
   {
    "collapsible": 1,
    "collapsible_depends_on": "eval:doc.status=='Planning'||doc.status=='Plan Approval'",
+   "depends_on": "eval: doc.nc_type!='OOS' && doc.nc_type!='Track & Trend'",
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
    "label": "Planning"
@@ -366,7 +367,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-30 12:31:20.243057",
+ "modified": "2024-08-08 14:53:19.665613",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
