@@ -1373,6 +1373,33 @@ def get_label_status(labels):
         return {'success': False, 'message': err, 'labels': None}
 
 
+@frappe.whitelist()
+def get_label_ranges():
+    """
+    Documented at https://github.com/Microsynth/erp-microsynth/wiki/Webshop-Label-API#get-label-ranges
+
+    bench execute microsynth.microsynth.webshop.get_label_ranges
+    """
+    ranges_to_return = []
+    try:  # range is also a SQL key word and needs therefore to be surrounded by backticks:
+        label_ranges = frappe.get_all("Label Range", fields=['item_code', 'prefix', '`range`'])
+        for label_range in label_ranges:
+            ranges = label_range['range'].split(',')
+            for range in ranges:
+                parts = range.split('-')
+                start = int(parts[0].strip())
+                end = int(parts[1].strip())
+                ranges_to_return.append({
+                    "item": label_range['item_code'],
+                    "prefix": label_range['prefix'],
+                    "barcode_start_range": start,
+                    "barcode_end_range": end
+                })
+    except Exception as err:
+        return {'success': False, 'message': err, 'ranges': None}
+    return {'success': True, 'message': 'OK', 'ranges': ranges_to_return}
+
+
 def is_next_barcode(first_barcode, second_barcode):
     """
     Check if second_barcode follows immediatly after first_barcode
