@@ -37,6 +37,7 @@
 
     function set_track_and_trend() {
         cur_frm.set_value("nc_type", "Track & Trend");
+        cur_frm.set_value("criticality_classification", "N/A");
         clicked("btn_no_gmp_tt");
         document.getElementById("btn_no_gmp_dev").disabled = true;
         clicked("btn_gmp_tt");
@@ -68,6 +69,7 @@
 
     function set_oos() {
         cur_frm.set_value("nc_type", "OOS");
+        cur_frm.set_value("criticality_classification", "N/A");
         clicked("btn_oos");
         document.getElementById("btn_gmp_tt").disabled = true;
     }

@@ -84,7 +84,7 @@
    "fieldname": "criticality_classification",
    "fieldtype": "Select",
    "label": "Criticality Classification",
-   "options": "\ncritical\nnon-critical"
+   "options": "\ncritical\nnon-critical\nN/A"
   },
   {
    "allow_on_submit": 1,
@@ -367,7 +367,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-08 14:53:19.665613",
+ "modified": "2024-08-08 15:04:42.256155",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

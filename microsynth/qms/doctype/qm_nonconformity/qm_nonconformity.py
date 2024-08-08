@@ -82,6 +82,7 @@ class QMNonconformity(Document):
 def set_created(doc, user):
     # pull selected document
     nc = frappe.get_doc(frappe.get_doc("QM Nonconformity", doc))
+    check_classification(nc)
 
     if user != nc.created_by:
         frappe.throw(f"Error creating the QM Nonconformity: Only {nc.created_by} is allowed to create the QM Nonconformity {nc.name}. Current login user is {user}.")
@@ -113,6 +114,13 @@ def check_classification(nc):
     elif nc.nc_type == 'OOS':
         if nc.regulatory_classification != 'GMP':
             frappe.throw("An OOS has to be classified as GMP. Please change the Classification.")
+        if nc.criticality_classification != 'N/A':
+            frappe.throw("Only N/A is allowed as Criticality Classification of an OOS. Please change the Classification.")
+    elif nc.nc_type == 'Track & Trend':
+        if nc.criticality_classification != 'N/A':
+            frappe.throw("Only N/A is allowed as Criticality Classification of Track & Trend. Please change the Classification.")
+    elif nc.nc_type not in ['OOS', 'Track & Trend'] and nc.criticality_classification == 'N/A':
+        frappe.throw("The Criticality Classification N/A is only allowed for OOS and Track & Trend. Please change the Classification.")
 
 
 @frappe.whitelist()
@@ -127,7 +135,8 @@ def update_status(nc, status):
     nc = frappe.get_doc("QM Nonconformity", nc)
     if nc.status == status:
         return
-
+    if nc.status == 'Created':
+        check_classification(nc)
     # validate status transitions
     if ((nc.status == 'Draft' and status == 'Created') or
         (nc.status == 'Created' and status == 'Investigation') or
