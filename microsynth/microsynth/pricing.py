@@ -502,6 +502,32 @@ def delete_item_prices(csv_file, dry_run=True):
                     print(f"Would delete {details}.")
 
 
+def delete_item_prices_of_disabled_items(disabled_items, verbose=False):
+    """
+    Takes a list of Item Codes, checks if the Item is disabled and if yes, deletes all Item Prices of this Item.
+
+    bench execute microsynth.microsynth.pricing.delete_item_prices_of_disabled_items --kwargs "{'disabled_items': ['0001','0002','0346','0347','0446','0447','0610','0611','0612','0681','0682','0683','0684','0685','0686','0687','0688','0689','0690','0691','0692','0693','0694','0695','0990','0991','0992','0999','1002','1003','1005','1006','1007','3001','3002','3003','3004','3005','3006','3007','3008','3009','3010','3051','3052','3053','3054','3055','3056','3057','3058','3059','3060','3101','3102','3103','3121','3122','3123','3201','3202','3203','3204','3205','3206','3207','3208','3209','3210','3241','3242','3243'], 'verbose': False}"
+    """
+    total_counter = 0
+    for item_code in disabled_items:
+        counter = 0
+        item = frappe.get_doc("Item", item_code)
+        if not item.disabled:
+            print(f"The given Item {item_code} is not yet disabled. Going to continue with the next Item.")
+            continue
+        item_prices = frappe.get_all("Item Price", filters={'item_code': item_code}, fields=['name'])
+        for item_price in item_prices:
+            item_price_doc = frappe.get_doc("Item Price", item_price['name'])
+            item_price_doc.delete()
+            if verbose:
+                print(f"Deleted Item Price {item_price['name']} of Item {item_code}.")
+            counter += 1
+        frappe.db.commit()
+        print(f"Deleted {counter} Item Prices for Item {item_code}: {item.item_name}.")
+        total_counter += counter
+    print(f"Deleted {total_counter} Item Prices in total.")
+
+
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
     """
     Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the reference Price Lists.
