@@ -88,14 +88,20 @@ def get_users(qm_processes, companies=None):
 
 def check_and_add_3_37(qm_user_process_assignments):
     """
+    Only for Microsynth AG (Balgach):
+    All employees from 3.3 to 3.7 belong also to 3.37 (all chapters).
+    All employees from 3.37 with chapter 37 belong also to 3.37 (all chapters).
     """
     for process_assignment in qm_user_process_assignments:
-        if process_assignment['process_number'] == 3 and process_assignment['subprocess_number'] in ['3', '4', '5', '6', '7']:
+        if process_assignment['process_number'] == '3' \
+            and process_assignment['subprocess_number'] in ['3', '4', '5', '6', '7', '37'] \
+            and process_assignment['company'] == 'Microsynth AG':
+            # add a QM User Process Assignment for 3.37 (all chapters)
             qm_user_process_assignments.append({
                 'qm_process': "3.37 Genetic Analysis",
                 'process_number': 3,
                 'subprocess_number': 37,
-                'chapter': 37,
+                'all_chapters': 1,
                 'company': 'Microsynth AG'
             })
             return
@@ -107,7 +113,8 @@ def import_process_assignments(file_path, expected_line_length=7):
     """
     import csv
     imported_counter = line_counter = 0
-    last_email = ''
+    previous_email = ''
+    already_inserted_emails = set()  # necessary, since there could be errors and previous_email won't be set
     qm_user_process_assignments = []
     company_mapping = {
         'Balgach': 'Microsynth AG',
@@ -140,24 +147,25 @@ def import_process_assignments(file_path, expected_line_length=7):
                 print(f"Please provide either a Chapter or a 1 in the column All Chapters, but got {chapter=} and {all_chapters=}. Going to continue.")
                 continue
             company = company_mapping[company_city]
-            if email != last_email and last_email != '':  # new email
+            if email != previous_email and previous_email != '' and previous_email not in already_inserted_emails:  # new email
+                check_and_add_3_37(qm_user_process_assignments)
                 # create a new User Settings entry for the previous email
                 user_settings = frappe.get_doc({
                     'doctype': 'User Settings',
-                    'user': email,
+                    'user': previous_email,
                     'qm_process_assignments': qm_user_process_assignments
                 })
                 user_settings.insert()
-                imported_counter += 1
-            else:  # reset the list of QM User Process Assignments
+                already_inserted_emails.add(previous_email)
+                # reset the list of QM User Process Assignments
                 qm_user_process_assignments = []
             # Fetch the QM Process
             if chapter:
                 qm_processes = frappe.get_all("QM Process", filters=[
                     ['process_number', '=', process],
                     ['subprocess_number', '=', subprocess],
-                    ['chapter', '=', chapter]
-                    ], fields=['name'])
+                    ['chapter', '=', chapter]],
+                    fields=['name'])
             else:
                 qm_processes = frappe.get_all("QM Process", filters=[
                     ['process_number', '=', process],
@@ -176,12 +184,14 @@ def import_process_assignments(file_path, expected_line_length=7):
                 'chapter': chapter,
                 'company': company
             })
-            last_email = email
-        if email and len(qm_user_process_assignments) > 0:
+            previous_email = email
+            imported_counter += 1
+        if previous_email and len(qm_user_process_assignments) > 0 and previous_email not in already_inserted_emails:
+            check_and_add_3_37(qm_user_process_assignments)
             # create a new User Settings entry for the last email
             user_settings = frappe.get_doc({
                 'doctype': 'User Settings',
-                'user': email,
+                'user': previous_email,
                 'qm_process_assignments': qm_user_process_assignments
             })
             user_settings.insert()
