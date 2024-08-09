@@ -90,11 +90,10 @@ def check_and_add_3_37(qm_user_process_assignments):
     """
     Only for Microsynth AG (Balgach):
     All employees from 3.3 to 3.7 belong also to 3.37 (all chapters).
-    All employees from 3.37 with chapter 37 belong also to 3.37 (all chapters).
     """
     for process_assignment in qm_user_process_assignments:
         if process_assignment['process_number'] == '3' \
-            and process_assignment['subprocess_number'] in ['3', '4', '5', '6', '7', '37'] \
+            and process_assignment['subprocess_number'] in ['3', '4', '5', '6', '7'] \
             and process_assignment['company'] == 'Microsynth AG':
             # add a QM User Process Assignment for 3.37 (all chapters)
             qm_user_process_assignments.append({
@@ -109,7 +108,7 @@ def check_and_add_3_37(qm_user_process_assignments):
 
 def import_process_assignments(file_path, expected_line_length=7):
     """
-    bench execute microsynth.qms.report.users_by_process.users_by_process.import_process_assignments --kwargs "{'file_path': '/mnt/erp_share/JPe/240807_user_process_assignments.csv'}"
+    bench execute microsynth.qms.report.users_by_process.users_by_process.import_process_assignments --kwargs "{'file_path': '/mnt/erp_share/JPe/240809_user_process_assignments.csv'}"
     """
     import csv
     imported_counter = line_counter = 0
