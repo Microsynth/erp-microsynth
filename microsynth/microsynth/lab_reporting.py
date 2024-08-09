@@ -179,7 +179,7 @@ def create_analysis_report(content=None):
 
     for sample_detail in matching_samples:
         sample_details.append({
-            "sample": sample_detail['name'],
+            "sample": sample_detail['sample'],
             "reception_date": sample_detail['reception_date'] or '',
             "analysis_date": sample_detail['analysis_date'] or '',
             "analysis_method": sample_detail['analysis_method'] or '',
