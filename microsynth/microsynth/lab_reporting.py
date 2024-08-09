@@ -161,6 +161,8 @@ def create_analysis_report(content=None):
                     not 'sample' in sample_detail or
                     not sample_detail['sample'] or
                     sample['name'] == sample_detail['sample']):
+                        if not 'sample' in sample_detail or not sample_detail['sample']:
+                            sample_detail['sample'] = sample['name']
                         matching_samples.append(sample_detail)
                         found = True
                         break
