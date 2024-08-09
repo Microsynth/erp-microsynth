@@ -82,7 +82,7 @@ def create_analysis_report(content=None):
     """
     Documented at https://github.com/Microsynth/erp-microsynth/wiki/Lab-Reporting-API#create-analysis-report
 
-    bench execute microsynth.microsynth.lab_reporting.create_analysis_report --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma', 'contact_person': '215856'}}"
+    bench execute microsynth.microsynth.lab_reporting.create_analysis_report --kwargs "{'content': {'sales_order': 'SO-BAL-24028200','web_order_id': '9037231','report_type': 'Mycoplasma','issue_date': '2024-08-09 12:15:13','approved_by': 'JVo','contact_person': '226318','sample_details': [{'sample_name': 'name_A','reception_date': '2024-06-10 09:48:21','analysis_date': '2024-06-10 10:16:07','analysis_method': 'Bla','analysis_result': 'Blub','analysis_deviations': 'No','comment': ''}],'comment': '','disclaimer': 'D'}}"
     """
     if not content:
         return {'success': False,
@@ -158,9 +158,9 @@ def create_analysis_report(content=None):
             for sample in samples:
                 # check if sample_name matches and name (ID) matches if given
                 if sample['sample_name'] == sample_detail['sample_name'] and (
-                    not 'name' in sample_detail or
-                    not sample_detail['name'] or
-                    sample['name'] == sample_detail['name']):
+                    not 'sample' in sample_detail or
+                    not sample_detail['sample'] or
+                    sample['name'] == sample_detail['sample']):
                         matching_samples.append(sample_detail)
                         found = True
                         break
