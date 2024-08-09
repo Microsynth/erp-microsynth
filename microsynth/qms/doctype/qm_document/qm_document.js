@@ -549,6 +549,13 @@ function create_training_request(user_name, due_date) {
 
 
 function request_training_prompt(trainees) {
+    var filtered_trainees = []
+    for (var i = 0; i < trainees.length; i++) {
+        // Creator, Reviewer and Releaser do not need to get trained
+        if (![cur_frm.doc.created_by, cur_frm.doc.reviewed_by, cur_frm.doc.released_by].includes(trainees[i].user_name)) {
+            filtered_trainees.push(trainees[i]);
+        }
+    }
     frappe.prompt([
         {'fieldname': 'trainees', 
          'fieldtype': 'Table',
@@ -562,13 +569,13 @@ function request_training_prompt(trainees) {
              'in_list_view': 1,
              'reqd': 1} ],
 
-         'data': trainees,
+         'data': filtered_trainees,
          'get_data': () => { return trainees;}
         },
         { 'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1 }
     ],
     function(values){
-        for (var i = 0; i < values.trainees.length; i++)  {
+        for (var i = 0; i < values.trainees.length; i++) {
             create_training_request(values.trainees[i].user_name, values.due_date);
         }
     },
