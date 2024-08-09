@@ -63,6 +63,8 @@ def get_users(qm_processes, companies=None):
     if qm_processes and len(qm_processes_list) > 0:
         qm_process_conditions = "AND (FALSE "
         for qm_process in qm_processes_list:
+            if not qm_process:
+                continue
             qm_process_doc = frappe.get_doc("QM Process", qm_process)
             qm_process_conditions += f" OR (`tabQM User Process Assignment`.`process_number` = '{qm_process_doc.process_number}' AND `tabQM User Process Assignment`.`subprocess_number` = '{qm_process_doc.subprocess_number}'"
             if qm_process_doc.chapter:
