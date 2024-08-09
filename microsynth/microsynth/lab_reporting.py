@@ -85,19 +85,25 @@ def create_analysis_report(content=None):
     bench execute microsynth.microsynth.lab_reporting.create_analysis_report --kwargs "{'content': {'sales_order': 'SO-BAL-24027754', 'report_type': 'Mycoplasma', 'contact_person': '215856'}}"
     """
     if not content:
-        return {'success': False, 'message': "Please provide content", 'reference': None}
+        return {'success': False,
+                'message': "Please provide content",
+                'reference': None}
     samples = []
     matching_samples = []
     if 'sales_order' in content and content['sales_order']:
         if frappe.db.exists('Sales Order', content['sales_order']):
             samples = get_sales_order_samples(content['sales_order'])
         else:
-            return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
+            return {'success': False,
+                    'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.",
+                    'reference': None}
     elif 'web_order_id' in content and content['web_order_id']:
         # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
         message = fetch_sales_order_samples(content['web_order_id'])
         if not message['success']:
-            return {'success': False, 'message': message['message'], 'reference': None}
+            return {'success': False,
+                    'message': message['message'],
+                    'reference': None}
         samples = message['samples']
     elif 'sample_details' in content and content['sample_details']:  # no Sales Order ID and no Web Order ID given
         for sample_detail in content['sample_details']:
@@ -115,7 +121,9 @@ def create_analysis_report(content=None):
                                 'message': f"Got no sample_name for the following sample (unable to compare with existing Sample): {sample_detail}",
                                 'reference': None}
                 else:
-                    return {'success': False, 'message': f"The given Sample '{sample_detail['sample']}' does not exist in the ERP.", 'reference': None}
+                    return {'success': False,
+                            'message': f"The given Sample '{sample_detail['sample']}' does not exist in the ERP.",
+                            'reference': None}
             else:
                 # no Sample -> create a sample with the given name
                 if 'sample_name' in sample_detail and sample_detail['sample_name']:
@@ -131,19 +139,23 @@ def create_analysis_report(content=None):
                             'reference': None}
             matching_samples.append(sample_detail)
     else:
-        return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order ID or Web Order ID.", 'reference': None}
+        return {'success': False,
+                'message': "Please provide existing Sample IDs, a Sales Order ID or Web Order ID.",
+                'reference': None}
     
     if len(samples) > 0:
         # compare samples from Sales Order with samples_details from request
         if not ('sample_details' in content and content['sample_details']):
-            return {'success': False, 'message': "Please provide sample_details.", 'reference': None}
-        for sample in samples:
+            return {'success': False,
+                    'message': "Please provide sample_details.",
+                    'reference': None}
+        for sample_detail in content['sample_details']:
             found = False
-            for sample_detail in content['sample_details']:
-                if not 'sample_name' in sample_detail and sample_detail['sample_name']:
-                    return {'success': False,
-                            'message': f"Got no sample_name for the following sample (unable to compare with SO sample): {sample_detail}",
-                            'reference': None}
+            if not 'sample_name' in sample_detail and sample_detail['sample_name']:
+                return {'success': False,
+                        'message': f"Got no sample_name for the following sample (unable to compare with Sales Order Samples): {sample_detail}",
+                        'reference': None}
+            for sample in samples:
                 # check if sample_name matches and name (ID) matches if given
                 if sample['sample_name'] == sample_detail['sample_name'] and (
                     not 'name' in sample_detail or
@@ -154,12 +166,8 @@ def create_analysis_report(content=None):
                         break
             if not found:
                 return {'success': False,
-                        'message': f"The Sample '{sample['sample_name']}' does not occur in the provided sample_details.",
+                        'message': f"The given sample {sample_detail} does not occur on the given or fetched Sales Order.",
                         'reference': None}
-        if len(samples) != len(content['sample_details']):
-            return {'success': False,
-                    'message': f"There are {len(samples)} on the given Sales Order but got {len(content['sample_details'])} sample details",
-                    'reference': None}
     
     if len(matching_samples) != len(content['sample_details']):
         # should not occur?
@@ -210,7 +218,9 @@ def create_analysis_report(content=None):
                 if len(users) == 1:
                     approver = users[0]['name']
                 else:
-                    return {'success': False, 'message': f"Found {len(users)} for {content['approved_by']=}", 'reference': None}
+                    return {'success': False,
+                            'message': f"Found {len(users)} for {content['approved_by']=}",
+                            'reference': None}
         else:
             approver = ''
 
@@ -228,14 +238,17 @@ def create_analysis_report(content=None):
             'sample_details': sample_details,
             'comment': content['comment'] if 'comment' in content else '',
             'disclaimer': content['disclaimer'] if 'disclaimer' in content else ''
-
         })
         ar.insert()
         ar.submit()
         frappe.db.commit()
-        return {'success': True, 'message': 'OK', 'reference': ar.name}
+        return {'success': True,
+                'message': 'OK',
+                'reference': ar.name}
     except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+        return {'success': False,
+                'message': err,
+                'reference': None}
 
 
 def create_pdf_attachment(analysis_report):
