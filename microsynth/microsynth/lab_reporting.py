@@ -145,17 +145,20 @@ def create_analysis_report(content=None):
                             'message': f"Got no sample_name for the following sample (unable to compare with SO sample): {sample_detail}",
                             'reference': None}
                 # check if sample_name matches and name (ID) matches if given
-                if sample['sample_name'] == sample_detail['sample_name'] and ((not ('name' in sample_detail or sample_detail['name'])) or sample['name'] == sample_detail['name']):
-                    matching_samples.append(sample_detail)
-                    found = True
-                    break
+                if sample['sample_name'] == sample_detail['sample_name'] and (
+                    not 'name' in sample_detail or
+                    not sample_detail['name'] or
+                    sample['name'] == sample_detail['name']):
+                        matching_samples.append(sample_detail)
+                        found = True
+                        break
             if not found:
                 return {'success': False,
-                        'message': f"The Sample '{sample['sample_name']}' from Sales Order {message['sales_order']} with Web Order ID {message['web_order_id']} does not occur in the provided sample_details.",
+                        'message': f"The Sample '{sample['sample_name']}' does not occur in the provided sample_details.",
                         'reference': None}
         if len(samples) != len(content['sample_details']):
             return {'success': False,
-                    'message': f"There are {len(samples)} on Sales Order {message['sales_order']} with Web Order ID {message['web_order_id']} but got {len(content['sample_details'])} sample details",
+                    'message': f"There are {len(samples)} on the given Sales Order but got {len(content['sample_details'])} sample details",
                     'reference': None}
     
     if len(matching_samples) != len(content['sample_details']):
