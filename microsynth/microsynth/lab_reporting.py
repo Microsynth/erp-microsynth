@@ -36,6 +36,7 @@ def get_sales_order_samples(sales_order):
    
     return samples_to_return
 
+
 @frappe.whitelist()
 def fetch_sales_order_samples(web_order_id):
     """
@@ -85,56 +86,96 @@ def create_analysis_report(content=None):
     """
     if not content:
         return {'success': False, 'message': "Please provide content", 'reference': None}
-
-    sample_details = []
-    if 'sample_details' in content:
+    samples = []
+    matching_samples = []
+    if 'sales_order' in content and content['sales_order']:
+        if frappe.db.exists('Sales Order', content['sales_order']):
+            samples = get_sales_order_samples(content['sales_order'])
+        else:
+            return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
+    elif 'web_order_id' in content and content['web_order_id']:
+        # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
+        message = fetch_sales_order_samples(content['web_order_id'])
+        if not message['success']:
+            return {'success': False, 'message': message['message'], 'reference': None}
+        samples = message['samples']
+    elif 'sample_details' in content and content['sample_details']:  # no Sales Order ID and no Web Order ID given
         for sample_detail in content['sample_details']:
             if 'sample' in sample_detail and sample_detail['sample']:
                 if frappe.db.exists('Sample', sample_detail['sample']):
                     sample_doc = frappe.get_doc("Sample", sample_detail['sample'])
+                    if 'sample_name' in sample_detail and sample_detail['sample_name']:
+                        # compare sample_name
+                        if sample_detail['sample_name'] != sample_doc.sample_name:
+                            return {'success': False,
+                                    'message': f"Sample '{sample_doc.name}' has sample_name '{sample_doc.sample_name}' in the ERP, but got sample_name '{sample_detail['sample_name']}' in sample_details.",
+                                    'reference': None}
+                    else:
+                        return {'success': False,
+                                'message': f"Got no sample_name for the following sample (unable to compare with existing Sample): {sample_detail}",
+                                'reference': None}
                 else:
                     return {'success': False, 'message': f"The given Sample '{sample_detail['sample']}' does not exist in the ERP.", 'reference': None}
             else:
-                matching_samples = []
-                if 'sales_order' in content and content['sales_order']:
-                    if frappe.db.exists('Sales Order', content['sales_order']):
-                        samples = get_sales_order_samples(content['sales_order'])
-                    else:
-                        return {'success': False, 'message': f"The given Sales Order '{content['sales_order']}' does not exist in the ERP.", 'reference': None}
-                elif 'web_order_id' in content and content['web_order_id']:
-                    # Try to find Sales Order by Web Order Id (there might be multiple!), match Sample by Customer Sample Name (Sample.sample_name)
-                    message = fetch_sales_order_samples(content['web_order_id'])
-                    samples = message['samples']
-                else:
-                    return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order or Web Order ID.", 'reference': None}
-
-                for sample in samples:
-                    if sample['sample_name'] == sample_detail['sample_name']:
-                        matching_samples.append(sample)
-                if len(matching_samples) == 1:
-                    # Sample found -> link it
-                    sample_doc = frappe.get_doc("Sample", matching_samples[0]['name'])
-                elif len(matching_samples) == 0:
-                    # no Sample found -> create a sample with the name
+                # no Sample -> create a sample with the given name
+                if 'sample_name' in sample_detail and sample_detail['sample_name']:
                     sample_doc = frappe.get_doc({
                         'doctype': 'Sample',
                         'sample_name': sample_detail['sample_name']
                     })
                     sample_doc.insert()
+                    sample_detail['sample'] = sample_doc.name
                 else:
-                    # multiple samples found -> throw an error
-                    return {'success': False, 'message': f"Found more than one Sample with the Sample Name '{sample_detail['sample_name']}' on the Sales Order with the given Web Order ID '{content['web_order_id']}'.", 'reference': None}
+                    return {'success': False,
+                            'message': f"Got no sample_name for the following sample (unable to create a new sample): {sample_detail}",
+                            'reference': None}
+            matching_samples.append(sample_detail)
+    else:
+        return {'success': False, 'message': "Please provide existing Sample IDs, a Sales Order ID or Web Order ID.", 'reference': None}
+    
+    if len(samples) > 0:
+        # compare samples from Sales Order with samples_details from request
+        if not ('sample_details' in content and content['sample_details']):
+            return {'success': False, 'message': "Please provide sample_details.", 'reference': None}
+        for sample in samples:
+            found = False
+            for sample_detail in content['sample_details']:
+                if not 'sample_name' in sample_detail and sample_detail['sample_name']:
+                    return {'success': False,
+                            'message': f"Got no sample_name for the following sample (unable to compare with SO sample): {sample_detail}",
+                            'reference': None}
+                # check if sample_name matches and name (ID) matches if given
+                if sample['sample_name'] == sample_detail['sample_name'] and ((not ('name' in sample_detail or sample_detail['name'])) or sample['name'] == sample_detail['name']):
+                    matching_samples.append(sample_detail)
+                    found = True
+                    break
+            if not found:
+                return {'success': False,
+                        'message': f"The Sample '{sample['sample_name']}' from Sales Order {message['sales_order']} with Web Order ID {message['web_order_id']} does not occur in the provided sample_details.",
+                        'reference': None}
+        if len(samples) != len(content['sample_details']):
+            return {'success': False,
+                    'message': f"There are {len(samples)} on Sales Order {message['sales_order']} with Web Order ID {message['web_order_id']} but got {len(content['sample_details'])} sample details",
+                    'reference': None}
+    
+    if len(matching_samples) != len(content['sample_details']):
+        # should not occur?
+        return {'success': False,
+                'message': f"Found {len(matching_samples)} matching Samples but got {len(content['sample_details'])} sample details.",
+                'reference': None}
 
-            # Validate values?
-            sample_details.append({
-                "sample": sample_doc.name,
-                "reception_date": sample_detail['reception_date'] or '',
-                "analysis_date": sample_detail['analysis_date'] or '',
-                "analysis_method": sample_detail['analysis_method'] or '',
-                "analysis_result": sample_detail['analysis_result'] or '',
-                "deviations": sample_detail['analysis_deviations'] or '',
-                "comment": sample_detail['comment'] or ''
-            })
+    sample_details = []
+
+    for sample_detail in matching_samples:
+        sample_details.append({
+            "sample": sample_detail['name'],
+            "reception_date": sample_detail['reception_date'] or '',
+            "analysis_date": sample_detail['analysis_date'] or '',
+            "analysis_method": sample_detail['analysis_method'] or '',
+            "analysis_result": sample_detail['analysis_result'] or '',
+            "deviations": sample_detail['analysis_deviations'] or '',
+            "comment": sample_detail['comment'] or ''
+        })
     try:
         if 'contact_person' in content and content['contact_person'] and (not 'address' in content or not content['address']):
             # get Address from Contact
