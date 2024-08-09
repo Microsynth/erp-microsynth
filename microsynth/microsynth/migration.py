@@ -4245,10 +4245,11 @@ def find_unused_enabled_items_with_price():
     bench execute microsynth.microsynth.migration.find_unused_enabled_items_with_price
     """
     from datetime import date
-    enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'creation'])
+    enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'item_group', 'creation'])
     counter = 0
     price_counter = 0
     print("There are Item Prices for the following enabled Items that do not occur on any valid SQ, QTN, SO, DN, SI, Oligo or Sample in the ERP:")
+    print("Item Group;Item Code;Item Name;Item Prices")
     for item in enabled_items:
         if "AC-" in item['name'] or item['creation'].date() > date(2023, 8, 31):
             continue
@@ -4262,7 +4263,7 @@ def find_unused_enabled_items_with_price():
         if len(sq_items) + len(qtn_items) + len(so_items) + len(dn_items) + len(si_items) + len(sample_items) + len(oligo_items) == 0:
             item_prices = frappe.db.get_all("Item Price", filters={'item_code': item['name']}, fields=['name'])
             if len(item_prices) > 0:
-                print(f"{item['name']}: {item['item_name']}: {len(item_prices)} Item Prices")
+                print(f"{item['item_group']};{item['name']};'{item['item_name']}';{len(item_prices)}")
                 counter += 1
                 price_counter += len(item_prices)
     print(f"There are {counter} enabled Items in the ERP that do not occur on any valid document but have at least one Item Price.")
