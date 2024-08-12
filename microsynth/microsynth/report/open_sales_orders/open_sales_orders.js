@@ -28,6 +28,11 @@ frappe.query_reports["Open Sales Orders"] = {
             "fieldname":"include_zero",
             "label": __("Include zero-sum orders"),
             "fieldtype": "Check"
+        },
+        {
+            "fieldname":"include_drafts",
+            "label": __("Include SO Drafts"),
+            "fieldtype": "Check"
         }
 	]
 };
