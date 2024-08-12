@@ -4238,6 +4238,22 @@ def parse_abacus_account_sheet(account_sheet, export_file):
     export_file.close()
 
 
+def find_duplicate_items():
+    """
+    bench execute microsynth.microsynth.migration.find_duplicate_items
+    """
+    duplicates = set()
+    enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'item_group', 'creation'])
+    print("Item Group;Item Code;Item Name;Creation")
+    for item in enabled_items:
+        potential_duplicates = frappe.db.get_all("Item", filters={'disabled': 0, 'item_name': item['item_name']}, fields=['name', 'item_name', 'item_group', 'creation'])
+        if len(potential_duplicates) > 1:
+            for duplicate in potential_duplicates:
+                if not duplicate['name'] in duplicates:
+                    print(f"{duplicate['item_group']};{duplicate['name']};{duplicate['item_name']};{duplicate['creation']}")
+                duplicates.add(duplicate['name'])
+
+
 def find_unused_enabled_items_with_price():
     """
     Find Items that are created before 2023-09-01, do not occur on any valid document, oligo or sample and have at least one Item Price.
