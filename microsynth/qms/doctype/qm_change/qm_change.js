@@ -16,7 +16,7 @@ frappe.ui.form.on('QM Change', {
         }
 
         // fetch classification wizard
-        if (!frm.doc.__islocal && !frm.doc.cc_type && frm.doc.status == 'Draft') {
+        if (!frm.doc.cc_type && frm.doc.status == 'Draft') {
             frappe.call({
                 'method': 'get_classification_wizard',
                 'doc': frm.doc,
