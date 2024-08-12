@@ -33,7 +33,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // fetch classification wizard
-        if (!frm.doc.__islocal && !frm.doc.nc_type && frm.doc.status == 'Draft') {
+        if (!frm.doc.nc_type && frm.doc.status == 'Draft') {
             frappe.call({
                 'method': 'get_classification_wizard',
                 'doc': frm.doc,
@@ -160,7 +160,7 @@ frappe.ui.form.on('QM Nonconformity', {
             }).addClass("btn-danger");
         }
 
-        if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if (!frm.doc.__islocal && frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.nc_type
                 && frm.doc.description && frm.doc.description != "<div><br></div>"
