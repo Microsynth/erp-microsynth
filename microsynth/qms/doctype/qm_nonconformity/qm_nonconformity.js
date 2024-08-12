@@ -163,7 +163,7 @@ frappe.ui.form.on('QM Nonconformity', {
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.nc_type
-                && frm.doc.description
+                && frm.doc.description && frm.doc.description != "<div><br></div>"
                 && frm.doc.qm_process
                 && frm.doc.date) {
                 // add submit button
