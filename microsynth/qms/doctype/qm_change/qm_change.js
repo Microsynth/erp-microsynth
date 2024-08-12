@@ -81,9 +81,9 @@ frappe.ui.form.on('QM Change', {
         if (frm.doc.status == 'Requested' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.cc_type
                 && frm.doc.title
-                && frm.doc.description
+                && frm.doc.description && frm.doc.description != "<div><br></div>"
                 && frm.doc.qm_process
-                && frm.doc.current_state) {
+                && frm.doc.current_state && frm.doc.current_state != "<div><br></div>") {
                 // add submit button
                 cur_frm.page.set_primary_action(
                     __("Submit to QAU"),

@@ -59,7 +59,7 @@ frappe.ui.form.on('QM Action', {
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.type
-                && frm.doc.description
+                && frm.doc.description && frm.doc.description != "<div><br></div>"
                 && frm.doc.qm_process
                 && frm.doc.initiation_date
                 && frm.doc.due_date

@@ -44,7 +44,7 @@
   {
    "allow_on_submit": 1,
    "fieldname": "description",
-   "fieldtype": "Text",
+   "fieldtype": "Text Editor",
    "label": "Description Change"
   },
   {
@@ -114,7 +114,7 @@
   {
    "allow_on_submit": 1,
    "fieldname": "current_state",
-   "fieldtype": "Text",
+   "fieldtype": "Text Editor",
    "label": "Current State"
   },
   {
@@ -248,7 +248,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-05 14:36:20.401401",
+ "modified": "2024-08-12 12:25:39.473249",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
