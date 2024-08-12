@@ -399,28 +399,28 @@ frappe.ui.form.on('QM Nonconformity', {
     },
     occurrence_probability: function(frm) {
         if (frm.doc.occurrence_probability && frm.doc.impact) {
-            cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact));
+            cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact, false));
         } else {
             cur_frm.set_value("risk_classification", "");
         }
     },
     impact: function(frm) {
         if (frm.doc.occurrence_probability && frm.doc.impact) {
-            cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact));
+            cur_frm.set_value("risk_classification", calculate_risk_classification(frm.doc.occurrence_probability, frm.doc.impact, false));
         } else {
             cur_frm.set_value("risk_classification", "");
         }
     },
     occurrence_probability_after_actions: function(frm) {
         if (frm.doc.occurrence_probability_after_actions && frm.doc.impact_after_actions) {
-            cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions));
+            cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions, true));
         } else {
             cur_frm.set_value("risk_classification_after_actions", "");
         }
     },
     impact_after_actions: function(frm) {
         if (frm.doc.occurrence_probability_after_actions && frm.doc.impact_after_actions) {
-            cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions));
+            cur_frm.set_value("risk_classification_after_actions", calculate_risk_classification(frm.doc.occurrence_probability_after_actions, frm.doc.impact_after_actions, true));
         } else {
             cur_frm.set_value("risk_classification_after_actions", "");
         }
@@ -514,7 +514,7 @@ function set_status(status) {
     });
 }
 
-function calculate_risk_classification(occ_prob, impact) {
+function calculate_risk_classification(occ_prob, impact, after_actions) {
     const values = new Map([
         ["small", 1],
         ["medium", 2],
@@ -525,11 +525,11 @@ function calculate_risk_classification(occ_prob, impact) {
     ])
     var res = values.get(occ_prob) * values.get(impact);
     if (res < 3) {
-        return "no actions";
+        return after_actions ? "small" : "no actions";
     } else if (res < 6) {
-        return "check for risk mitigation";
+        return after_actions ? "medium" : "check for risk mitigation";
     } else if (res >= 6) {
-        return "actions required";
+        return after_actions ? "high" : "actions required";
     } else {
         console.log(res);
         return "";

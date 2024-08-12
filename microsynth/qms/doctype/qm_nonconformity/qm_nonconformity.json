@@ -208,7 +208,7 @@
    "fieldname": "risk_classification_after_actions",
    "fieldtype": "Select",
    "label": "Risk Classification after Actions",
-   "options": "\nno actions\ncheck for risk mitigation\nactions required",
+   "options": "\nsmall\nmedium\nhigh",
    "read_only": 1
   },
   {
@@ -367,7 +367,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-12 08:36:30.956309",
+ "modified": "2024-08-12 14:12:35.629841",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
