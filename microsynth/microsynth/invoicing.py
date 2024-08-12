@@ -1135,8 +1135,11 @@ def transmit_sales_invoice(sales_invoice_id):
             invoice_contact = frappe.get_doc("Contact", punchout_billing_contact_id)
         elif sales_invoice.invoice_to:
             invoice_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
-        else:
+        elif customer.invoice_to:
             invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
+        else:
+            frappe.log_error(f"Found no Invoice To Contact for Sales Invoice '{sales_invoice_id}'.", "invoicing.transmit_sales_invoice")
+            return
 
         #for k,v in sales_order.as_dict().items():
         #    print ( "%s: %s" %(k,v))
