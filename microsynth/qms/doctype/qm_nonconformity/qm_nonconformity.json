@@ -34,6 +34,7 @@
   "root_cause",
   "risk_analysis_section",
   "occurrence_probability",
+  "risk_analysis",
   "column_break_9",
   "impact",
   "column_break_12",
@@ -45,6 +46,7 @@
   "effectiveness_section",
   "risk_analysis_after_actions_section",
   "occurrence_probability_after_actions",
+  "risk_analysis_after_actions",
   "column_break_20",
   "impact_after_actions",
   "column_break_21",
@@ -364,10 +366,20 @@
    "hidden": 1,
    "label": "Naming Series",
    "options": "NC-.YY.####"
+  },
+  {
+   "fieldname": "risk_analysis",
+   "fieldtype": "Text",
+   "label": "Risk Analysis Summary"
+  },
+  {
+   "fieldname": "risk_analysis_after_actions",
+   "fieldtype": "Text",
+   "label": "Risk Analysis Summary after Actions"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-12 14:12:35.629841",
+ "modified": "2024-08-12 14:18:59.095336",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
