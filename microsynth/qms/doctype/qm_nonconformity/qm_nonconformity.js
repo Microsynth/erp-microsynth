@@ -68,18 +68,23 @@ frappe.ui.form.on('QM Nonconformity', {
         // Only QAU (independent of Status) and creator (in Draft Status) can change these fields: Title, NC Type, Process, Date, Company
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
-            cur_frm.set_df_property('nc_type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         } else {
             cur_frm.set_df_property('title', 'read_only', true);
-            cur_frm.set_df_property('nc_type', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
+        }
+
+        // Only QAU can set field NC Type in status Draft directly
+        if (["Draft"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('nc_type', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('nc_type', 'read_only', true);
         }
 
         // allow the creator or QAU to change the creator (transfer document)
