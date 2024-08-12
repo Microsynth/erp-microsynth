@@ -37,7 +37,7 @@ def check_contact_to_customer():
     """
     contacts = frappe.get_all("Contact", filters={'status': ('!=', 'Disabled')}, fields=['name'])
     counter = 0
-    message = f"Dear Administration,<br><br>the following Contacts with an numeric ID are not Disabled and are not linked to any Customer:<br>"
+    message = f"Dear Administration,<br><br>the following Contacts with a numeric ID are not Disabled and are not linked to any Customer:<br>"
     for c in contacts:
         contact = frappe.get_doc("Contact", c['name'])
         customer_id = None
@@ -65,7 +65,8 @@ def check_contact_to_customer():
                     else:
                         print(f"There exists an inactive Customer '{contact.name}'.")
                 else:
-                    print(f"There exists no Customer '{contact.name}'.")
+                    #print(f"There exists no Customer '{contact.name}'.")
+                    pass
                 #continue
             my_filters = [['docstatus', '<', '2'], ['contact_person', '=', contact.name]]
             #contact_notes = frappe.get_all("Contact Notes", filters=my_filters, fields=['name'])
@@ -88,6 +89,32 @@ def check_contact_to_customer():
         content = message,
         send_email = True
     )
+
+
+def disable_contacts_without_customers():
+    """
+    Disable Contacts with a numeric ID that are not linked to any Customer
+
+    bench execute microsynth.microsynth.utils.disable_contacts_without_customers
+    """
+    contacts = frappe.get_all("Contact", filters={'status': ('!=', 'Disabled')}, fields=['name'])
+    counter = 0
+    for c in contacts:
+        contact = frappe.get_doc("Contact", c['name'])
+        customer_id = None
+        for l in contact.links:
+            if l.link_doctype == "Customer":
+                customer_id = l.link_name
+                break
+        if not customer_id:
+            if not contact.name.isnumeric():
+                continue
+            contact.status = 'Disabled'
+            contact.save()
+            url = f"https://erp.microsynth.local/desk#Form/Contact/{contact.name}"
+            print(f"Disabled {url}: {contact.full_name}, created by {contact.owner} on {contact.creation}")
+            counter += 1
+    print(f"Disabled {counter} Contacts with a numeric ID that are not linked to any Customer.")
 
 
 def get_billing_address(customer):
