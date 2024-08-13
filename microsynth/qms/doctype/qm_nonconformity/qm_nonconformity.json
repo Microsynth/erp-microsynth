@@ -142,7 +142,7 @@
    "allow_on_submit": 1,
    "collapsible": 1,
    "collapsible_depends_on": "eval:doc.status=='Investigation'",
-   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\" && doc.criticality_classification == \"critical\"",
    "fieldname": "risk_analysis_section",
    "fieldtype": "Section Break",
    "label": "Risk Analysis"
@@ -178,7 +178,7 @@
    "allow_on_submit": 1,
    "collapsible": 1,
    "collapsible_depends_on": "eval:doc.status=='Implementation'",
-   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\"",
+   "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\" && doc.criticality_classification == \"critical\"",
    "fieldname": "risk_analysis_after_actions_section",
    "fieldtype": "Section Break",
    "label": "Risk Analysis after Actions"
@@ -329,6 +329,7 @@
    "allow_on_submit": 1,
    "collapsible": 1,
    "collapsible_depends_on": "eval:doc.status=='Completed'",
+   "depends_on": "eval:doc.status!='Draft'&&doc.status!='Created'",
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
@@ -382,7 +383,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-13 15:49:53.437120",
+ "modified": "2024-08-13 16:36:22.687787",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
