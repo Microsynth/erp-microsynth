@@ -201,6 +201,8 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Closed');
                     }
                 );
+            } else if (['OOS', 'Track & Trend'].includes(frm.doc.nc_type)) {
+                frm.dashboard.add_comment( __("An OOS needs to be closed by QAU and Track & Trend needs to b closed by the creator or QAU."), 'yellow', true);
             } else if ((frappe.user.has_role('PV') && frm.doc.regulatory_classification != 'GMP')
                 || frappe.user.has_role('QAU')) {
                 if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
@@ -214,6 +216,8 @@ frappe.ui.form.on('QM Nonconformity', {
                 } else {
                     frm.dashboard.add_comment( __("Please complete the <b>Classification</b> section."), 'red', true);
                 }
+            } else {
+                frm.dashboard.add_comment( __("The Classification needs to be confirmed by PV (non-GMP) or QAU (GMP)."), 'yellow', true);
             }
         }
 
