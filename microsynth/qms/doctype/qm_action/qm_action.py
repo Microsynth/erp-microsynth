@@ -51,7 +51,7 @@ def set_created(doc, user):
 
 @frappe.whitelist()
 def set_status(doc, user, status):
-    responsible_person = frappe.get_doc(frappe.get_doc("QM Action", doc, "responsible_person"))
+    responsible_person = frappe.get_value("QM Action", doc, "responsible_person")
     if not (user == responsible_person or user_has_role(user, "QAU")):
         frappe.throw(f"Only the Responsible Person '{responsible_person}' or QAU is allowed to set a QM Action to Status '{status}', but user = '{user}'.")
     update_status(doc, status)
