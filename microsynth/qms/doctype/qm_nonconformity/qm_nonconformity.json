@@ -350,6 +350,7 @@
    "fieldtype": "HTML"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "rational_for_classification",
    "fieldtype": "Text",
    "label": "Rational for Classification"
@@ -368,18 +369,20 @@
    "options": "NC-.YY.####"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "risk_analysis",
    "fieldtype": "Text",
    "label": "Risk Analysis Summary"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "risk_analysis_after_actions",
    "fieldtype": "Text",
    "label": "Risk Analysis Summary after Actions"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-12 14:18:59.095336",
+ "modified": "2024-08-13 08:49:29.601008",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
