@@ -242,7 +242,7 @@ frappe.ui.form.on('QM Nonconformity', {
                     cur_frm.page.set_primary_action(
                         __("Confirm Classification"),
                         function() {
-                            confirm_classification();
+                            confirm_classification();  // -> status "Investigation"
                         }
                     );
                 } else {
@@ -254,9 +254,20 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Investigation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            if ((frm.doc.nc_type == "Track & Trend" && frm.doc.regulatory_classification == 'GMP')
+                || (frm.doc.nc_type == "OOS" && frappe.user.has_role('QAU'))) {
+                // add close button
+                cur_frm.page.set_primary_action(
+                    __("Close"),
+                    function() {
+                        set_status('Closed');
+                    }
+                );
+            } else if (frm.doc.nc_type == "OOS") {
+                frm.dashboard.add_comment( __("An OOS needs to be closed by QAU."), 'yellow', true);         
             // Check, that the required investigation is documented
             // if critical, risk analysis is required
-            if ((frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
+            } else if ((frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
                 // root cause analysis is mandatory for Internal Audit, Deviation and Event
                 && (!['Internal Audit', 'Deviation', 'Event'].includes(frm.doc.nc_type) || frm.doc.root_cause)
                 // root cause analysis is mandatory for some ISO Authorities Audits

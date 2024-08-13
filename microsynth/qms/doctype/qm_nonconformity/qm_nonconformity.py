@@ -146,7 +146,8 @@ def update_status(nc, status):
         (nc.status == 'Plan Approval' and status == 'Implementation') or
         (nc.status == 'Implementation' and status == 'Completed') or
         (nc.status == 'Created' and status == 'Closed') or
-        (nc.status == 'Completed' and status == 'Closed')
+        (nc.status == 'Completed' and status == 'Closed') or
+        (nc.status == 'Investigation' and status == 'Closed')
        ):
         nc.status = status
         nc.save()
