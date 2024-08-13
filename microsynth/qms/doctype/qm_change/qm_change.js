@@ -35,6 +35,7 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
+        // set created_by and created_on
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
