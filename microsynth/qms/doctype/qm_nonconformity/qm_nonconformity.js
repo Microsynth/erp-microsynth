@@ -357,19 +357,22 @@ frappe.ui.form.on('QM Nonconformity', {
                                 'doc': frm.doc.name
                             },
                             'callback': function(response) {
-                                if ((frm.doc.criticality_classification != "critical" || response.message || frm.doc.closure_comments)
-                                    && (frappe.user.has_role('QAU') ||
-                                        (['Event', "OOS", "Track & Trend"].includes(frm.doc.nc_type) && frappe.session.user === frm.doc.created_by))) {
-                                    // add close button
-                                    cur_frm.page.set_primary_action(
-                                        __("Close"),
-                                        function() {
-                                            set_status('Closed');
-                                        }
-                                    );
+                                if (frappe.user.has_role('QAU')
+                                    || (['Event', "OOS", "Track & Trend"].includes(frm.doc.nc_type) && frappe.session.user === frm.doc.created_by)) {
+                                    if (frm.doc.criticality_classification != "critical" || response.message || frm.doc.closure_comments) {
+                                        // add close button
+                                        cur_frm.page.set_primary_action(
+                                            __("Close"),
+                                            function() {
+                                                set_status('Closed');
+                                            }
+                                        );
+                                    } else {
+                                        frm.dashboard.add_comment( __("Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
+                                    }
                                 } else {
-                                    frm.dashboard.add_comment( __("Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
-                                }
+                                    frm.dashboard.add_comment( __("This Nonconformity needs to be processed by its creator or QAU."), 'blue', true);
+                                }                                
                             }
                         });
                     }
