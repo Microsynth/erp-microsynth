@@ -166,7 +166,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // allow QAU to cancel
-        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU') && !['Closed', 'Cancelled'].includes(frm.doc.status)) {
             frm.add_custom_button(__("Cancel"), function() {
                 cancel(frm);
             }).addClass("btn-danger");
