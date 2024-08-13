@@ -101,7 +101,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only QAU can set field NC Type in status Draft directly
-        if (["Draft"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        if (["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('nc_type', 'read_only', false);
         } else {
             cur_frm.set_df_property('nc_type', 'read_only', true);
