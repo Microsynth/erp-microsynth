@@ -247,6 +247,7 @@ def update_status(qm_document, status):
     if ((qm_doc.status == "Draft" and status == "Created") or 
         (qm_doc.status == "Created" and status == "In Review") or
         (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type not in document_types_with_review) or
+        (qm_doc.status == "Created" and status == "Invalid" and qm_doc.document_type not in document_types_with_review) or
         (qm_doc.status == "In Review" and status == "Reviewed") or
         (qm_doc.status == "In Review" and status == "Invalid") or
         (qm_doc.status == "Reviewed" and status == "Released") or
