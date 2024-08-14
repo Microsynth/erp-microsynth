@@ -17,6 +17,21 @@ frappe.ui.form.on('QM Nonconformity', {
 
         cur_frm.set_df_property('status', 'read_only', true);
 
+        // remove option to attach files depending on status
+        if (["Closed", "Cancelled"].includes(frm.doc.status) || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            var attach_btns = document.getElementsByClassName("add-attachment");
+            for (var i = 0; i < attach_btns.length; i++) {
+                attach_btns[i].style.visibility = "hidden";
+            }
+        }
+
+        // access protection: only QAU in status unequals Closed and System Manager can remove attachments
+        if (["Closed", "Cancelled"].includes(frm.doc.status) || frappe.user.has_role('QAU')) {
+            access_protection();
+        } else {
+            remove_access_protection();
+        }
+
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
             cur_frm.set_value("created_on", frappe.datetime.get_today());
