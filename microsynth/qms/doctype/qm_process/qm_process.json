@@ -57,8 +57,8 @@
    "unique": 1
   }
  ],
- "modified": "2024-02-15 15:52:16.231035",
- "modified_by": "Administrator",
+ "modified": "2024-08-14 15:16:48.149845",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Process",
  "owner": "Administrator",
@@ -79,6 +79,10 @@
    "read": 1,
    "report": 1,
    "role": "Microsynth User"
+  },
+  {
+   "read": 1,
+   "role": "NGS Lab User"
   }
  ],
  "sort_field": "modified",
