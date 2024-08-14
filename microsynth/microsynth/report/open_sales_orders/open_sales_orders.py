@@ -33,13 +33,20 @@ def get_data(filters=None):
     outer_conditions = inner_conditions = ''
 
     if not filters.get('include_zero'):
-        outer_conditions += "AND `raw`.`total` > 0"
+        outer_conditions += " AND `raw`.`total` > 0"
     if filters.get('company'):
-        inner_conditions += f"AND `company` = '{filters.get('company')}'"
+        inner_conditions += f" AND `tabSales Order`.`company` = '{filters.get('company')}'"
+    if filters.get('product_type'):
+        inner_conditions += f" AND `tabSales Order`.`product_type` = '{filters.get('product_type')}'"
     if filters.get('include_drafts'):
-        inner_conditions += "AND `tabSales Order`.`docstatus` < 2"
+        inner_conditions += " AND `tabSales Order`.`docstatus` < 2"
     else:
-        inner_conditions += "AND `tabSales Order`.`docstatus` = 1"
+        inner_conditions += " AND `tabSales Order`.`docstatus` = 1"
+    
+    if filters.get('to_date'):
+        inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND '{filters.get('to_date')}'"
+    else:
+        inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -14 DAY)"
 
     data = frappe.db.sql(f"""
         SELECT * FROM
@@ -66,7 +73,6 @@ def get_data(filters=None):
             FROM `tabSales Order`
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
             WHERE `tabSales Order`.`per_delivered` < 0.01
-                AND `tabSales Order`.`transaction_date` BETWEEN "{filters.get('from_date')}" AND "{filters.get('to_date')}"
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
                 {inner_conditions}
             ) AS `raw`
@@ -86,7 +92,12 @@ def get_data(filters=None):
 
             if len(delivery_notes) > 0:
                 so['unlinked_dn_name'] = delivery_notes[0]['unlinked_dn_name']
+            else:
+                so['unlinked_dn_name'] = ''
             so['dns'] = len(delivery_notes)
+        else:
+            so['unlinked_dn_name'] = ''
+            so['dns'] = 0
         if 'product_type' in so and so['product_type'] == 'Sequencing':
             pending_samples = frappe.db.sql(f"""
                 SELECT 

@@ -15,7 +15,6 @@ frappe.query_reports["Open Sales Orders"] = {
             "fieldname": "to_date",
             "label": __("To date"),
             "fieldtype": "Date",
-            "reqd": 1,
 			"default": frappe.datetime.add_days(frappe.datetime.get_today(), -21)
         },
         {
@@ -23,6 +22,12 @@ frappe.query_reports["Open Sales Orders"] = {
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company"
+        },
+        {
+            "fieldname": "product_type",
+            "label": __("Product Type"),
+            "fieldtype": "Select",
+            "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
         },
         {
             "fieldname":"include_zero",
