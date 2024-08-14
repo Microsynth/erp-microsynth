@@ -281,28 +281,28 @@ def send_reports(recipient, cc_mails, analysis_reports):
     if not recipient:
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
     try:
-        # Create attachements for the given analysis_reports
-        all_attachements = []
+        # Create attachments for the given analysis_reports
+        all_attachments = []
         for analysis_report in analysis_reports:
             create_pdf_attachment(analysis_report)
             attachments = get_attachments("Analysis Report", analysis_report)
             fid = None
             for a in attachments:
                 fid = a['name']
-            all_attachements.append({'fid': fid})
+            all_attachments.append({'fid': fid})
             frappe.db.commit()
         make(
                 recipients = recipient,
                 sender = "info@microsynth.ch",
                 sender_full_name = "Microsynth",
                 cc = ", ".join(cc_mails),
-                subject = f"Your Microsynth analysis {'reports' if len(all_attachements) > 1 else 'report'}",  # TODO: Better subject?
-                content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachements) > 1 else 'report'}."
+                subject = f"Your Microsynth analysis {'reports' if len(all_attachments) > 1 else 'report'}",  # TODO: Better subject?
+                content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachments) > 1 else 'report'}."
                             f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
                 send_email = True,
-                attachments = all_attachements
+                attachments = all_attachments
             )
-        #print(f"Send an email with the following attachment to '{recipient}': {all_attachements=}")
+        #print(f"Send an email with the following attachment to '{recipient}': {all_attachments=}")
     except Exception as err:
         return {'success': False, 'message': f"Got the following error: {err}"}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}

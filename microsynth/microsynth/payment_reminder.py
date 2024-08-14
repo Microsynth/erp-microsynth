@@ -147,7 +147,7 @@ def print_payment_reminder(prm):
 @frappe.whitelist()
 def transmit_payment_reminder(self, event):
     """
-    Takes a Payment Reminder object or name/ID, creates the PDF attachement
+    Takes a Payment Reminder object or name/ID, creates the PDF attachment
     and sends the Payment Reminder either via email or to the printer.
     The Payment Reminder is sent to the printer if the Customer has Invoicing Method "Post"
     or if the highest reminder level is greater 3.
