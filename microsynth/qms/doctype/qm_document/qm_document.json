@@ -81,6 +81,7 @@
   {
    "fieldname": "chapter",
    "fieldtype": "Int",
+   "in_standard_filter": 1,
    "label": "Chapter",
    "reqd": 1
   },
@@ -88,6 +89,7 @@
    "allow_in_quick_entry": 1,
    "fieldname": "title",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1
   },
@@ -285,7 +287,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-04-26 11:05:31.132456",
+ "modified": "2024-08-14 14:44:13.865497",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
