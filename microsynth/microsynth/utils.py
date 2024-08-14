@@ -1081,7 +1081,7 @@ def set_default_language(customer):
             else:
                 l = "de"
         except Exception as err:
-            frappe.log_error("Billing address '{0}' of customer '{1}' has an invalid pincode".format(a.name, customer), "utils.set_default_language")
+            frappe.log_error("Billing address '{0}' of customer '{1}' has an invalid pincode".format(a.name, customer.name), "utils.set_default_language")
             l = "de"
     elif a.country in ("Germany", "Austria"):
         l = "de"
