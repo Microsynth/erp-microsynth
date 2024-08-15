@@ -155,25 +155,25 @@
     </div>
 
     <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
-        <p>Can or did the NC affect results or product/employee safety?</p>
+        <p>Is <b>product</b> or <b>employee safety</b> affected by this nonconformity?</p>
         <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
-        <p>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</p>
+        <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
         <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
-        <p>Can or did the NC affect results or product/employee safety?</p>
+        <p>Is <b>product</b> or <b>employee safety</b> affected by this nonconformity?</p>
         <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
-        <p>Is it an out of specification testing result (OOS) and system suitability testing (SST) criteria were met?</p>
+        <p>Is it an <b>out of specification</b> testing result (OOS) and system suitability testing (SST) criteria were met?</p>
         <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
     </div>
