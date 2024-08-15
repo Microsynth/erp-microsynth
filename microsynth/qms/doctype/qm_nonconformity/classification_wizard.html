@@ -42,6 +42,7 @@
         document.getElementById("btn_no_gmp_dev").disabled = true;
         clicked("btn_gmp_tt");
         document.getElementById("btn_oos").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function set_critical_deviation() {
@@ -51,6 +52,7 @@
         document.getElementById("btn_event").disabled = true;
         clicked("btn_gmp_dev_safety");
         document.getElementById("btn_gmp_dev_no_safety").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function set_non_critical_deviation() {
@@ -58,6 +60,7 @@
         cur_frm.set_value("criticality_classification", "non-critical");
         clicked("btn_gmp_dev_no_safety");
         document.getElementById("btn_gmp_dev_safety").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function set_event() {
@@ -65,6 +68,7 @@
         cur_frm.set_value("criticality_classification", "non-critical");
         clicked("btn_event");
         document.getElementById("btn_crit_dev").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function set_oos() {
@@ -72,6 +76,7 @@
         cur_frm.set_value("criticality_classification", "N/A");
         clicked("btn_oos");
         document.getElementById("btn_gmp_tt").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function clicked(btn_id) {
@@ -86,13 +91,36 @@
         document.getElementById(btn_id).disabled = false;
     }
 
+    function add_restart_wizard_button() {
+        cur_frm.add_custom_button(
+            "Restart classification wizard",
+            function() {
+                console.log("restart wizard");
+                document.getElementById("wizard_container").style.display = "block";
+                wizard_reset();
+                cur_frm.remove_custom_button("Show classification wizard");
+            }
+        );
+    }
+
+    function wizard_confirm() {
+        document.getElementById("wizard_container").style.display = "none";
+        locals.classification_wizard = "closed";
+        console.log("confirmed");
+        add_restart_wizard_button();
+    }
+
+
     function wizard_reset() {
+        console.log("wizard_reset");
         document.getElementById("step_gmp").style.display = "block";
         document.getElementById("step_no_gmp_dev").style.display = "none";
         document.getElementById("step_no_gmp_safety").style.display = "none";
         document.getElementById("step_gmp_dev").style.display = "none";
         document.getElementById("step_gmp_safety").style.display = "none";
         document.getElementById("step_gmp_oos").style.display = "none";
+        document.getElementById("step_confirm").style.display = "none";
+        document.getElementById("step_reset").style.display = "none";
         reset_button("btn_gmp");
         reset_button("btn_no_gmp");
         reset_button("btn_no_gmp_dev");
@@ -111,46 +139,51 @@
     }
 </script>
 
-<div id="container" class="wizard-container">
-    <h2>Questions to determine the nonconformity type (NC type)</h2>
+<div id="wizard_container" {% if visible %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+    
+    <h4>Type determination</h4>
     <div id="step_gmp">
-        <h4>Was the NC observed for, or did the NC affect a GMP sample/order?</h4>
-        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes, GMP sample/order affected</button>
-        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No, no GMP sample/order affected</button>
+        <p>Is a <b>GMP</b> sample or order affected by this nonconfirmity?</p>
+        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;"><b>Yes</b>, <b>GMP</b> sample/order affected</button>
+        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;"><b>No</b>, <b>no GMP</b> sample/order affected</button>
     </div>
 
     <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
-        <h4>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</h4>
+        <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
         <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
-        <h4>Can or did the NC affect results or product/employee safety?</h4>
+        <p>Can or did the NC affect results or product/employee safety?</p>
         <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
-        <h4>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</h4>
+        <p>Is the NC due to a discrepancy in the standard process/sample processing according to SOP?</p>
         <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
-        <h4>Can or did the NC affect results or product/employee safety?</h4>
+        <p>Can or did the NC affect results or product/employee safety?</p>
         <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
-        <h4>Is it an out of specification testing result (OOS) and system suitability testing (SST) criteria were met?</h4>
+        <p>Is it an out of specification testing result (OOS) and system suitability testing (SST) criteria were met?</p>
         <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
     </div>
 
-    <div id="step_reset" style="display: none;">
-        <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Reset answers</button>
+    <div id="step_reset" style="display: none; float: right;">
+        <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Clear answers</button>
+    </div>       
+
+    <div id="step_confirm" style="display: none;">
+        <button id="btn_reset" class="btn btn-primary" onclick="wizard_confirm()"; style="margin-bottom: 10px;">OK</button>
     </div>
 
 </div><!-- end of wizard container -->

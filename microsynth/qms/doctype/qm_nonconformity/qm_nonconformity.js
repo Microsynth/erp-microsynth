@@ -47,17 +47,22 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('criticality_classification', 'read_only', true);
         }
 
-        // fetch classification wizard
-        if (!frm.doc.nc_type && frm.doc.status == 'Draft') {
-            frappe.call({
-                'method': 'get_classification_wizard',
-                'doc': frm.doc,
-                'callback': function (r) {
-                    cur_frm.set_df_property('classification_wizard', 'options', r.message);
-                }
-            });
+        // load classification wizard or dashboard
+        if (frm.doc.status == 'Draft') {
+            if (locals.classification_wizard && locals.classification_wizard=="closed"){
+                var visible = false;
+                load_wizard(visible);
+                setTimeout(function () {
+                    console.log("try to add button")
+                    add_restart_wizard_button();}, 300);
+            } else {
+                var visible = true;
+                load_wizard(visible);
+            }
+            
         } else {
             // use the classification_wizard HTML field to display an advanced dashboard
+            console.log("load dashboard");
             frappe.call({
                 'method': 'get_advanced_dashboard',
                 'doc': frm.doc,
@@ -232,7 +237,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 }
             } else {
                 frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please set and save NC Type, Title, Process, Date and Description to submit this Nonconformity."), 'red', true);
+                frm.dashboard.add_comment( __("Please set and <b>save</b> NC Type, Title, Process, Date and Description to submit this Nonconformity."), 'red', true);
             }
         }
 
@@ -539,6 +544,22 @@ frappe.ui.form.on('QM Nonconformity', {
 });
 
 
+function load_wizard(visible) {
+    console.log("load_wizard");
+    frappe.call({
+        'method': 'get_classification_wizard',
+        'doc': cur_frm.doc,
+        'args': {
+            'visible': visible
+        },
+        'callback': function (r) {
+            cur_frm.set_df_property('classification_wizard', 'options', r.message);
+        }
+    });
+}
+
+
+
 function change_creator() {
     frappe.prompt(
         [
@@ -711,3 +732,5 @@ function create_change(frm) {
     __('Create')
     )
 }
+
+

@@ -11,11 +11,13 @@ from microsynth.microsynth.utils import user_has_role
 
 
 class QMNonconformity(Document):
-    def get_classification_wizard(self):            
+    def get_classification_wizard(self, visible):
         html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/classification_wizard.html",
             {
-                'doc': self
+                'doc': self,
+                'visible': visible
             })
+        frappe.log_error(html)
         return html
 
 
