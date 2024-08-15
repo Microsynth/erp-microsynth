@@ -110,7 +110,14 @@ def check_and_add_3_37(qm_user_process_assignments):
 
 def import_process_assignments(file_path, expected_line_length=7):
     """
-    bench execute microsynth.qms.report.users_by_process.users_by_process.import_process_assignments --kwargs "{'file_path': '/mnt/erp_share/JPe/240809_user_process_assignments.csv'}"
+    Imports the User Process Assignments from the given CSV with the format:
+
+    Full Name; Email;Process;Subprocess;Chapter;All Chapters;Company
+    Rolf Suter;rolf.suter@microsynth.ch;5;3;2;Balgach
+
+    This is the newer version of migration.import_user_process_assignments.
+
+    sudo bench execute microsynth.qms.report.users_by_process.users_by_process.import_process_assignments --kwargs "{'file_path': '/mnt/erp_share/JPe/20240815_user_process_assignments.csv'}"
     """
     import csv
     imported_counter = line_counter = 0
