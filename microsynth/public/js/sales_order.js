@@ -30,6 +30,23 @@ frappe.ui.form.on('Sales Order', {
         } else {
             prepare_naming_series(frm);             // common function
         }
+
+        if (frm.doc.customer && frm.doc.product_type && frm.doc.docstatus == 0) {
+            // Call a python function that checks if the Customer has a Distributor for the Product Type
+            frappe.call({
+                'method': "microsynth.microsynth.utils.has_distributor",
+                'args': {
+                    "customer": frm.doc.customer,
+                    "product_type": frm.doc.product_type
+                },
+                'callback': function(response) {
+                    if (response.message) {
+                        cur_frm.dashboard.clear_comment();
+                        cur_frm.dashboard.add_comment('Customer <b>' + cur_frm.doc.customer + '</b> has a Distributor for Product Type <b>' + cur_frm.doc.product_type + '</b>. Please ask the administration how to create this Sales Order correctly <b>before</b> submitting it.', 'red', true);
+                    }
+                }
+            });
+        }
         
         hide_in_words();
         

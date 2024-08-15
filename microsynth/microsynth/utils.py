@@ -2378,3 +2378,17 @@ def set_module_for_all_users(module):
     users = frappe.get_all("User", fields=['name'])
     for user in users:
         set_module_for_one_user(module, user['name'])
+
+
+@frappe.whitelist()
+def has_distributor(customer, product_type):
+    """
+    Checks if the given Customer has a Distributor for the given Product Type.
+
+    bench execute microsynth.microsynth.utils.has_distributor --kwargs "{'customer': '832547', 'product_type': 'Genetic Analysis'}"
+    """
+    customer_doc = frappe.get_doc("Customer", customer)
+    for distributor in customer_doc.distributors:
+        if distributor.product_type == product_type:
+            return True
+    return False
