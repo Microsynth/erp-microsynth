@@ -236,9 +236,9 @@ def check_submit_delivery_note(delivery_note):
                 message += f"<br>Please check these Samples. If you are sure that there is no problem, please submit '{delivery_note.name}' manually in the ERP.<br>"
                 message += f"If one of those Samples is on a Sales Order that was not processed and will not be processed, please comment and cancel this Sales Order."
                 message += f"<br><br>Best regards,<br>Jens"
-                non_html_message = message.replace("<br>","\n")
+                #non_html_message = message.replace("<br>","\n")
                 #print(non_html_message)
-                frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
+                #frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
                 make(
                     recipients = recipient,
                     sender = "jens.petermann@microsynth.ch",
