@@ -53,7 +53,6 @@ frappe.ui.form.on('QM Nonconformity', {
                 var visible = false;
                 load_wizard(visible);
                 setTimeout(function () {
-                    console.log("try to add button")
                     add_restart_wizard_button();}, 300);
             } else {
                 var visible = true;
@@ -62,7 +61,6 @@ frappe.ui.form.on('QM Nonconformity', {
             
         } else {
             // use the classification_wizard HTML field to display an advanced dashboard
-            console.log("load dashboard");
             frappe.call({
                 'method': 'get_advanced_dashboard',
                 'doc': frm.doc,
@@ -199,7 +197,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if ((["Completed"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
-            || frappe.user.has_role('QAU')) {
+            || (frappe.user.has_role('QAU') && !["Closed", "Cancelled"].includes(frm.doc.status))) {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
         } else {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
@@ -248,7 +246,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.page.set_primary_action(
                     __("Close"),
                     function() {
-                        set_status('Closed');
+                        sign_and_close(frm);
                     }
                 );
             } else if (['Track & Trend'].includes(frm.doc.nc_type)) {
@@ -278,7 +276,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.page.set_primary_action(
                     __("Close"),
                     function() {
-                        set_status('Closed');
+                        sign_and_close(frm);
                     }
                 );
             } else if (frm.doc.nc_type == "OOS") {
@@ -462,7 +460,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                         cur_frm.page.set_primary_action(
                                             __("Close"),
                                             function() {
-                                                set_status('Closed');
+                                                sign_and_close(frm);
                                             }
                                         );
                                     } else {
@@ -536,18 +534,11 @@ frappe.ui.form.on('QM Nonconformity', {
         } else {
             cur_frm.set_value("risk_classification_after_actions", "");
         }
-    },
-    nc_type: function(frm) {
-        // cur_frm.set_value("criticality_classification", "");
-        // cur_frm.set_value("regulatory_classification", "");
-        // frappe.show_alert( __("Reset Classification") );
-        //frappe.show_alert( __("Please check the Classification") );
     }
 });
 
 
 function load_wizard(visible) {
-    console.log("load_wizard");
     frappe.call({
         'method': 'get_classification_wizard',
         'doc': cur_frm.doc,
@@ -559,8 +550,6 @@ function load_wizard(visible) {
         }
     });
 }
-
-
 
 function change_creator() {
     frappe.prompt(
@@ -640,6 +629,42 @@ function set_status(status) {
             cur_frm.reload_doc();
         }
     });
+}
+
+function sign_and_close(frm) {
+    frappe.prompt([
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+        ],
+        function(values){
+            // check password and if correct, sign
+            frappe.call({
+                'method': 'microsynth.qms.signing.sign',
+                'args': {
+                    'dt': "QM Nonconformity",
+                    'dn': cur_frm.doc.name,
+                    'user': frappe.session.user,
+                    'password': values.password,
+                    'submit': false
+                },
+                "callback": function(response) {
+                    if (response.message) {
+                        // signed, set signing date & close NC
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
+                            'args': {
+                                'doc': cur_frm.doc.name,
+                                'user': frappe.session.user
+                            },
+                            'async': false
+                        });
+                    }
+                    cur_frm.reload_doc();
+                }
+            });
+        },
+        __('Please enter your approval password'),
+        __('Sign & Close')
+    );
 }
 
 function calculate_risk_classification(occ_prob, impact, after_actions) {

@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.desk.form.assign_to import add
 from microsynth.microsynth.utils import user_has_role
+from datetime import date
 
 
 class QMNonconformity(Document):
@@ -101,7 +102,7 @@ def set_created(doc, user):
 def confirm_classification(doc, user):
     nc = frappe.get_doc("QM Nonconformity", doc)
     if not user_has_role(user, "QAU") and not (user_has_role(user, "PV") and nc.regulatory_classification != 'GMP'):
-        frappe.throw(f"Only QAU or PV (if non-GMP) is allowed to classify a QM Nonconformity.")
+        frappe.throw(f"Only QAU or PV (if non-GMP) is allowed to classify a QM Nonconformity.")  # TODO: Remove PV, replace with creator
     check_classification(nc)
     update_status(nc.name, "Investigation")
 
@@ -171,6 +172,21 @@ def notify_q_about_action_plan(doc):
         'description': f"The QM Nonconformity '{doc}' has been submitted to QAU for Action Plan Approval.",
         'notify': True
     })
+
+
+@frappe.whitelist()
+def close(doc, user):
+    # pull selected document
+    qm_nc = frappe.get_doc("QM Nonconformity", doc)
+    if qm_nc.created_by == user or user_has_role(user, "QAU"):
+        # set closing user and (current) date
+        qm_nc.closed_by = user
+        qm_nc.closed_on = date.today()
+        qm_nc.save()
+        frappe.db.commit()
+        update_status(qm_nc.name, "Closed")
+    else:
+        frappe.throw(f"Only the creator {qm_nc.created_by} or a user with the QAU role is allowed to close this Nonconformity.")
 
 
 @frappe.whitelist()
