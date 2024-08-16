@@ -47,7 +47,7 @@ class Signature(Document):
 
 def user_has_role(user, role):
     """
-    Check if a user has a role
+    Check if an user has a role
     """
     role_matches = frappe.db.sql("""
         SELECT `parent`, `role`

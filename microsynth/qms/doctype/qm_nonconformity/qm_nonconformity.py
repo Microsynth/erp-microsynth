@@ -101,10 +101,12 @@ def set_created(doc, user):
 @frappe.whitelist()
 def confirm_classification(doc, user):
     nc = frappe.get_doc("QM Nonconformity", doc)
-    if not user_has_role(user, "QAU") and not (user_has_role(user, "PV") and nc.regulatory_classification != 'GMP'):
-        frappe.throw(f"Only QAU or PV (if non-GMP) is allowed to classify a QM Nonconformity.")  # TODO: Remove PV, replace with creator
-    check_classification(nc)
-    update_status(nc.name, "Investigation")
+    if user_has_role(user, "QAU") or user == nc.created_by:
+        check_classification(nc)
+        update_status(nc.name, "Investigation")
+    else:
+        frappe.throw(f"Only the creator {nc.created_by} or an user with the QAU role is allowed to classify a QM Nonconformity.")
+    
 
 
 def check_classification(nc):
@@ -186,7 +188,7 @@ def close(doc, user):
         frappe.db.commit()
         update_status(qm_nc.name, "Closed")
     else:
-        frappe.throw(f"Only the creator {qm_nc.created_by} or a user with the QAU role is allowed to close this Nonconformity.")
+        frappe.throw(f"Only the creator {qm_nc.created_by} or an user with the QAU role is allowed to close this Nonconformity.")
 
 
 @frappe.whitelist()

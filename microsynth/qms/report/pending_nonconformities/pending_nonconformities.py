@@ -39,14 +39,14 @@ def get_data(filters):
     if user_has_role(frappe.session.user, "QAU"):
         filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND "
         filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Deviation' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`criticality_classification` = 'critical')) OR "
-        filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Event'))"  # TODO: Show only Events with Corrective Actions and move all other Events to the PV list
+        filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Event'))"  # TODO: Show only Events with Corrective Actions and move all other Events to the creator list
         # Created OOS
         filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Created' AND `tabQM Nonconformity`.`nc_type` = 'OOS')"
         # Created and GMP
         filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Created' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`regulatory_classification` IS NULL OR `tabQM Nonconformity`.`regulatory_classification` = ''))"
         # Plan Approval and GMP
         filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND `tabQM Nonconformity`.`regulatory_classification` = 'GMP')"
-    if user_has_role(frappe.session.user, "PV"):
+    if user_has_role(frappe.session.user, "PV"):  # TODO: Replace PV by creator (created_by)
         filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND NOT "
         filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Deviation' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`criticality_classification` = 'critical'))) "
         filter_conditions += f"AND NOT `tabQM Nonconformity`.`nc_type` = 'Event')"
