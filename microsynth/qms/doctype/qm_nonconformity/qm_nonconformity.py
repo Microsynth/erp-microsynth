@@ -84,7 +84,7 @@ class QMNonconformity(Document):
 @frappe.whitelist()
 def set_created(doc, user):
     # pull selected document
-    nc = frappe.get_doc(frappe.get_doc("QM Nonconformity", doc))
+    nc = frappe.get_doc("QM Nonconformity", doc)
     check_classification(nc)
 
     if user != nc.created_by:

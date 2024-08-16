@@ -43,7 +43,7 @@ def create_action(title, responsible_person, dt, dn, qm_process, due_date, type,
 @frappe.whitelist()
 def set_created(doc, user):
     # pull selected document
-    action = frappe.get_doc(frappe.get_doc("QM Action", doc))
+    action = frappe.get_doc("QM Action", doc)
     action.submit()
     frappe.db.commit()
     update_status(action.name, "Created")
