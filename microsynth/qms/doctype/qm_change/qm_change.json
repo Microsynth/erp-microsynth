@@ -213,6 +213,7 @@
    "label": "Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "overview",
    "fieldtype": "HTML"
   },
@@ -231,12 +232,14 @@
    "label": "Classification"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
    "label": "Regulatory Classification",
    "options": "GMP\nnon-GMP (ISO)"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "risk_classification",
    "fieldtype": "Select",
    "label": "Risk Classification",
@@ -248,7 +251,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-12 12:25:39.473249",
+ "modified": "2024-08-16 15:38:55.887080",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
