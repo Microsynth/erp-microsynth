@@ -34,6 +34,8 @@ def get_data(filters=None):
 
     if not filters.get('include_zero'):
         outer_conditions += " AND `raw`.`total` > 0"
+    if not filters.get('include_orders_on_hold'):
+        inner_conditions += " AND `tabSales Order`.`hold_order` != 1"
     if filters.get('company'):
         inner_conditions += f" AND `tabSales Order`.`company` = '{filters.get('company')}'"
     if filters.get('product_type'):
