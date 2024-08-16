@@ -174,7 +174,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('risk_analysis', 'read_only', true);           
         }
 
-        // Access protection for fields Occurence Probability and Impact
+        // Access protection for fields Occurrence Probability and Impact
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
             || ['Draft', 'Created', 'Investigation', 'Planning'].includes(frm.doc.status) && frappe.user.has_role('QAU')) {            
             cur_frm.set_df_property('occurrence_probability', 'read_only', false);
@@ -182,14 +182,6 @@ frappe.ui.form.on('QM Nonconformity', {
         } else {
             cur_frm.set_df_property('occurrence_probability', 'read_only', true);
             cur_frm.set_df_property('impact', 'read_only', true);            
-        }
-
-        // PV can change the plan approval field in status 'Plan Approval' if not GMP
-        if ((['Plan Approval'].includes(frm.doc.status) && frm.doc.regulatory_classification != 'GMP' && frappe.user.has_role('PV'))
-            || frappe.user.has_role('QAU')) {
-            cur_frm.set_df_property('plan_approval', 'read_only', false);
-        } else {
-            cur_frm.set_df_property('plan_approval', 'read_only', true);
         }
 
         // Only QAU and the creator can change these fields in the specified Status
@@ -320,7 +312,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Planning'
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU') || frappe.user.has_role('PV'))) {
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.has_actions',
                     'args': {
@@ -337,8 +329,14 @@ frappe.ui.form.on('QM Nonconformity', {
                             && !response.message.has_corrective_action)
                             {
                             frm.dashboard.add_comment( __("Please request a Corrective Action for this Nonconformity."), 'red', true);
-                        } else if ((frm.doc.nc_type == "Deviation" && (frm.doc.regulatory_classification == "GMP" || frm.doc.criticality_classification == "critical")
-                            || (frm.doc.nc_type == "Event" && response.message.has_corrective_action))) {
+                        } else if (frm.doc.nc_type == "Event" && !response.message.has_corrective_action) {  // If Event and has no CAs -> Submit Action Plan to Creator else to QAU
+                            cur_frm.page.set_primary_action(
+                                __("Submit Action Plan to Creator"),
+                                function() {
+                                    set_status('Plan Approval');
+                                }
+                            );
+                        } else {
                             cur_frm.page.set_primary_action(
                                 __("Submit Action Plan to QAU"),
                                 function() {
@@ -353,13 +351,6 @@ frappe.ui.form.on('QM Nonconformity', {
                                             // nothing to do?
                                         }
                                     });
-                                }
-                            );
-                        } else {
-                            cur_frm.page.set_primary_action(
-                                __("Submit Action Plan to PV"),
-                                function() {
-                                    set_status('Plan Approval');
                                 }
                             );
                         }
@@ -387,6 +378,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 });
             }
             if (allowed) {
+                cur_frm.set_df_property('plan_approval', 'read_only', false);
                 cur_frm.page.set_primary_action(
                     __("Confirm Action Plan"),
                     function() {
@@ -399,7 +391,11 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Planning');
                     }
                 );
+            } else {
+                cur_frm.set_df_property('plan_approval', 'read_only', true);
             }
+        } else {
+            cur_frm.set_df_property('plan_approval', 'read_only', true);
         }
 
         if (frm.doc.status == 'Implementation'
