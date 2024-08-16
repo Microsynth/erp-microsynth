@@ -86,7 +86,7 @@ frappe.ui.form.on('QM Nonconformity', {
         $(target).parent().parent().remove();
 
         // Only QAU (independent of Status) and creator (in Draft Status) can change these fields: Title, NC Type, Process, Date, Company
-        if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
+        if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
@@ -151,29 +151,37 @@ frappe.ui.form.on('QM Nonconformity', {
 
         // Only the creator or QAU can change the classification in status "Draft" or "Created"
         if ((["Draft", "Created"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
-            || frappe.user.has_role('QAU')) {
+            || ["Draft", "Created", "Investigation"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('criticality_classification', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
             cur_frm.set_df_property('rational_for_classification', 'read_only', false);
         } else {
             cur_frm.set_df_property('criticality_classification', 'read_only', true);
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
-            cur_frm.set_df_property('rational_for_classification', 'read_only', true);
+            if (!frappe.user.has_role('QAU')){
+                cur_frm.set_df_property('rational_for_classification', 'read_only', true);
+            }
         }
 
-        // Only the creator or QAU can change the fields Root Cause, Occurence Probability,
-        // Risk Analysis Summary and Impact in Status Draft, Created or Investigation
+        // Only QAU or the creator in Status Draft, Created or Investigation
+        // can change the fields Root Cause and Risk Analysis Summary
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
             || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
-            cur_frm.set_df_property('occurrence_probability', 'read_only', false);
-            cur_frm.set_df_property('impact', 'read_only', false);
-            cur_frm.set_df_property('risk_analysis', 'read_only', false);
+            cur_frm.set_df_property('risk_analysis', 'read_only', false);          
         } else {
             cur_frm.set_df_property('root_cause', 'read_only', true);
+            cur_frm.set_df_property('risk_analysis', 'read_only', true);           
+        }
+
+        // Access protection for fields Occurence Probability and Impact
+        if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || ['Draft', 'Created', 'Investigation', 'Planning'].includes(frm.doc.status) && frappe.user.has_role('QAU')) {            
+            cur_frm.set_df_property('occurrence_probability', 'read_only', false);
+            cur_frm.set_df_property('impact', 'read_only', false);            
+        } else {
             cur_frm.set_df_property('occurrence_probability', 'read_only', true);
-            cur_frm.set_df_property('impact', 'read_only', true);
-            cur_frm.set_df_property('risk_analysis', 'read_only', true);
+            cur_frm.set_df_property('impact', 'read_only', true);            
         }
 
         // PV can change the plan approval field in status 'Plan Approval' if not GMP
