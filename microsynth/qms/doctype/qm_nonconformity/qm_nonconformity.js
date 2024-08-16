@@ -168,20 +168,20 @@ frappe.ui.form.on('QM Nonconformity', {
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
             || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
-            cur_frm.set_df_property('risk_analysis', 'read_only', false);          
+            cur_frm.set_df_property('risk_analysis', 'read_only', false);
         } else {
             cur_frm.set_df_property('root_cause', 'read_only', true);
-            cur_frm.set_df_property('risk_analysis', 'read_only', true);           
+            cur_frm.set_df_property('risk_analysis', 'read_only', true);
         }
 
         // Access protection for fields Occurrence Probability and Impact
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
             || ['Draft', 'Created', 'Investigation', 'Planning'].includes(frm.doc.status) && frappe.user.has_role('QAU')) {            
             cur_frm.set_df_property('occurrence_probability', 'read_only', false);
-            cur_frm.set_df_property('impact', 'read_only', false);            
+            cur_frm.set_df_property('impact', 'read_only', false);
         } else {
             cur_frm.set_df_property('occurrence_probability', 'read_only', true);
-            cur_frm.set_df_property('impact', 'read_only', true);            
+            cur_frm.set_df_property('impact', 'read_only', true);
         }
 
         // Only QAU and the creator can change these fields in the specified Status
@@ -243,7 +243,6 @@ frappe.ui.form.on('QM Nonconformity', {
 
         if (frm.doc.status == 'Created') {
             if (frm.doc.nc_type == "Track & Trend"
-                && frm.doc.regulatory_classification != 'GMP'
                 && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
                 // add close button
                 cur_frm.page.set_primary_action(
@@ -254,8 +253,8 @@ frappe.ui.form.on('QM Nonconformity', {
                 );
             } else if (['Track & Trend'].includes(frm.doc.nc_type)) {
                 frm.dashboard.add_comment( __("Track & Trend needs to be closed by the creator or QAU."), 'yellow', true);
-            } else if ((((frm.doc.regulatory_classification != 'GMP' && frm.doc.nc_type != 'Deviation')
-                || frm.doc.nc_type == "Track & Trend") && frappe.session.user === frm.doc.created_by)
+            } else if (((frm.doc.regulatory_classification != 'GMP' && frm.doc.nc_type != 'Deviation')
+                && frappe.session.user === frm.doc.created_by)
                 || frappe.user.has_role('QAU')) {
                 if (frm.doc.criticality_classification && frm.doc.regulatory_classification) {
                     // add confirm classification button
@@ -274,8 +273,7 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         if (frm.doc.status == 'Investigation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            if ((frm.doc.nc_type == "Track & Trend" && frm.doc.regulatory_classification == 'GMP')
-                || (frm.doc.nc_type == "OOS" && frappe.user.has_role('QAU'))) {
+            if (frm.doc.nc_type == "OOS" && frappe.user.has_role('QAU')) {
                 // add close button
                 cur_frm.page.set_primary_action(
                     __("Close"),
@@ -443,7 +441,7 @@ frappe.ui.form.on('QM Nonconformity', {
                             'callback': function(response) {
                                 var allowed = false;
                                 if (frappe.user.has_role('QAU')
-                                    || (frappe.session.user === frm.doc.created_by && frm.doc.nc_type == "Track & Trend")) {
+                                    || (frappe.session.user === frm.doc.created_by && frm.doc.nc_type == "Track & Trend")) {  // Track & Trend should never reach the status "Completed"
                                     allowed = true;
                                 } else if (frm.doc.nc_type == "Event" && frm.doc.regulatory_classification != 'GMP') {
                                     frappe.call({
