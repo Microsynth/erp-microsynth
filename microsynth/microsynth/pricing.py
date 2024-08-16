@@ -581,3 +581,69 @@ def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
                     new_item_price.insert()
                 counter[currency] += 1
     print(f"{'Would create' if dry_run else 'Created'} {counter} new Item Prices on the reference Price Lists.")
+
+
+def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_level=3):
+    """
+    bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices SEK', 'tolerance_percentage': 2.5, 'verbose_level': 5}"
+    """
+    price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name'])
+    groups = []
+    already_checked = {}
+    for i, base_price_list in enumerate(price_lists):
+        if verbose_level > 2:
+            print(f"Checking Price List '{base_price_list['name']}' ({i}/{len(price_lists)}) ...")
+        group = [base_price_list['name']]
+        already_checked[base_price_list['name']] = [base_price_list['name']]
+        base_item_prices = frappe.db.get_all("Item Price", filters={'price_list': base_price_list['name']}, fields=['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate'])
+        for price_list in price_lists:
+            if price_list['name'] in already_checked[base_price_list['name']]:
+                continue  # avoid to compare a pair of Price Lists more than once
+            already_checked[base_price_list['name']].append(price_list['name'])
+            item_prices = frappe.db.get_all("Item Price", filters={'price_list': price_list['name']}, fields=['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate'])
+            list_mismatch = False
+            for bip in base_item_prices:
+                rate_mismatch = False
+                rate_match = False
+                for ip in item_prices:
+                    if bip['item_code'] == ip['item_code'] and bip['min_qty'] == ip['min_qty']:
+                        # matching item -> compare rates
+                        if bip['price_list_rate'] != ip['price_list_rate']:  # TODO: replace by an approximate comparison using a parameter 'tolerance_percentage'
+                            # mismatching rates -> Price Lists differ
+                            rate_mismatch = True
+                            if verbose_level > 4:
+                                print(f"Rate mismatch: Item {bip['item_code']}: {bip['item_name']} with Minimum Qty {bip['min_qty']} on Price List '{base_price_list['name']}' = {bip['price_list_rate']} != {ip['price_list_rate']} of Item {ip['item_code']}: {ip['item_name']} with Minimum Qty {ip['min_qty']} on Price List '{price_list['name']}'")
+                        else:
+                            rate_match = True
+                        break
+                if rate_mismatch:
+                    list_mismatch = True
+                    break
+                elif rate_match:
+                    continue
+                else:
+                    list_mismatch = True
+                    if verbose_level > 5:
+                        print(f"It seems that Item {bip['item_code']}: {bip['item_name']} with minimum quantity {bip['min_qty']} from Price List '{base_price_list['name']}' does not occur on Price List '{price_list['name']}'.")
+                    break
+            if list_mismatch:
+                continue
+            group.append(price_list['name'])
+        if len(groups) > 1:
+            if verbose_level > 1:
+                print(group)
+            groups.append(group)
+    if verbose_level > 0:
+        print(groups)
+    return groups
+
+
+def group_all_price_lists():
+    """
+    bench execute microsynth.microsynth.pricing.group_all_price_lists
+    """
+    reference_price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': ''}, fields=['name'])
+    for ref_pl in reference_price_lists:
+        print(f"Processing Price Lists referring to the reference Price List '{ref_pl['name']}' ...")
+        groups = group_price_lists(ref_pl['name'], verbose_level=0)
+        print(f"Groups of identical Price Lists:\n{groups}")
