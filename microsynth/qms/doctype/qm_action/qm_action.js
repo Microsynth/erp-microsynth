@@ -78,13 +78,31 @@ frappe.ui.form.on('QM Action', {
         }        
 
         if (frm.doc.status == 'Created' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
-            // add start working button
-            cur_frm.page.set_primary_action(
-                __("Start working"),
-                function() {
-                    set_status('Work in Progress');
+            frappe.db.get_value(frm.doc.document_type, frm.doc.document_name, ["status"], function(value) {
+                var show_button = false;
+                if (frm.doc.document_type === "QM Nonconformity" && frm.doc.type === "NC Effectiveness Check") {
+                    if (value["status"] === "Completed") {
+                        show_button = true;
+                    } else {
+                        frm.dashboard.add_comment( "QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Completed' to start working on this QM Action." , 'yellow', true);
+                    }
+                } else if (frm.doc.document_type === "QM Nonconformity" && (frm.doc.type === "Correction" || frm.doc.type === "Corrective Action")) {
+                    if (value["status"] === "Implementation") {
+                        show_button = true;
+                    } else {
+                        frm.dashboard.add_comment( "QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Implementation' to start working on this QM Action." , 'yellow', true);
+                    }
                 }
-            );
+                if (show_button) {
+                    // add start working button
+                    cur_frm.page.set_primary_action(
+                        __("Start working"),
+                        function() {
+                            set_status('Work in Progress');
+                        }
+                    );
+                }
+            });
         }
 
         if (frm.doc.status == 'Work in Progress' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
