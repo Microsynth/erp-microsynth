@@ -49,7 +49,7 @@ frappe.ui.form.on('QM Nonconformity', {
 
         // load classification wizard or dashboard
         if (frm.doc.status == 'Draft') {
-            if (locals.classification_wizard && locals.classification_wizard=="closed"){
+            if ((locals.classification_wizard && locals.classification_wizard=="closed") || frm.doc.nc_type){
                 var visible = false;
                 load_wizard(visible);
                 setTimeout(function () {
