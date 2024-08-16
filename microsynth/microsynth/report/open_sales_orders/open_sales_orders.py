@@ -76,6 +76,7 @@ def get_data(filters=None):
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
             WHERE `tabSales Order`.`per_delivered` < 0.01
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+                AND NOT (`tabCustomer`.`invoicing_method` = 'Stripe Prepayment' AND `tabSales Order`.`hold_order` = 1)
                 {inner_conditions}
             ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
