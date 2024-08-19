@@ -225,12 +225,6 @@ def set_released(doc, user):
 
 
 @frappe.whitelist()
-def set_rejected(doc):
-    invalidate_document(doc)
-    return
-
-
-@frappe.whitelist()
 def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
     if qm_doc.status == status:
@@ -301,6 +295,7 @@ def find_first_number_gap(base_name, length):
     return gap
 
 
+@frappe.whitelist()
 def invalidate_document(qm_document):
     if type(qm_document) == str:
         qm_document = frappe.get_doc("QM Document", qm_document)

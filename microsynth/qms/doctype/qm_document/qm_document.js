@@ -407,11 +407,17 @@ function request_revision() {
 function invalidate(frm) {
     frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?<br>There will be <b>no other valid version.</b>",
     () => {
-        cur_frm.set_value("status", "Invalid");  // TODO: Use python function invalidate_document instead to ensure that the creator gets notified.
-        setTimeout(() => {
-            cur_frm.save_or_update();
-            frappe.show_alert( __("Status changed to Invalid.") );
-        }, "150");
+        // on yes
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_document.qm_document.invalidate_document',
+            'args': {
+                'qm_document': cur_frm.doc.name
+            },
+            'callback': function(response) {
+                cur_frm.reload_doc();
+                frappe.show_alert( __("Status changed to Invalid.") );
+            }
+        });
     }, () => {
         frappe.show_alert('No changes');
     });
@@ -516,9 +522,9 @@ function reject() {
         function (){
             // on yes
             frappe.call({
-                'method': 'microsynth.qms.doctype.qm_document.qm_document.set_rejected',
+                'method': 'microsynth.qms.doctype.qm_document.qm_document.invalidate_document',
                 'args': {
-                    'doc': cur_frm.doc.name
+                    'qm_document': cur_frm.doc.name
                 },
                 'callback': function(response) {
                     cur_frm.reload_doc();
