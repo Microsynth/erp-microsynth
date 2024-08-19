@@ -583,24 +583,40 @@ def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
     print(f"{'Would create' if dry_run else 'Created'} {counter} new Item Prices on the reference Price Lists.")
 
 
+def max_percentage_diff(a, b):
+    if a == b:
+        return 0
+    try:
+        a_to_b = (abs(a - b) / b) * 100.0
+        b_to_a = (abs(b - a) / a) * 100.0
+        return max(a_to_b, b_to_a)
+    except ZeroDivisionError:
+        return float('inf')
+
+
 def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_level=3):
     """
-    bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices SEK', 'tolerance_percentage': 2.5, 'verbose_level': 5}"
+    bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices USD', 'tolerance_percentage': 3.0, 'verbose_level': 3}"
     """
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name'])
     groups = []
+    my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate', 'currency']
     already_checked = {}
     for i, base_price_list in enumerate(price_lists):
-        if verbose_level > 2:
-            print(f"Checking Price List '{base_price_list['name']}' ({i}/{len(price_lists)}) ...")
+        if verbose_level > 1:
+            print(f"Checking Price List '{base_price_list['name']}' ({i+1}/{len(price_lists)}) ...")
         group = [base_price_list['name']]
         already_checked[base_price_list['name']] = [base_price_list['name']]
-        base_item_prices = frappe.db.get_all("Item Price", filters={'price_list': base_price_list['name']}, fields=['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate'])
+        base_item_prices = frappe.db.get_all("Item Price", filters={'price_list': base_price_list['name']}, fields=my_fields)
         for price_list in price_lists:
-            if price_list['name'] in already_checked[base_price_list['name']]:
+            if price_list['name'] in already_checked[base_price_list['name']] or (price_list['name'] in already_checked and base_price_list['name'] in already_checked[price_list['name']]):
                 continue  # avoid to compare a pair of Price Lists more than once
             already_checked[base_price_list['name']].append(price_list['name'])
-            item_prices = frappe.db.get_all("Item Price", filters={'price_list': price_list['name']}, fields=['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate'])
+            if price_list['name'] in already_checked:
+                already_checked[price_list['name']].append(base_price_list['name'])
+            else:
+                already_checked[price_list['name']] = [base_price_list['name']]
+            item_prices = frappe.db.get_all("Item Price", filters={'price_list': price_list['name']}, fields=my_fields)
             list_mismatch = False
             for bip in base_item_prices:
                 rate_mismatch = False
@@ -608,11 +624,12 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
                 for ip in item_prices:
                     if bip['item_code'] == ip['item_code'] and bip['min_qty'] == ip['min_qty']:
                         # matching item -> compare rates
-                        if bip['price_list_rate'] != ip['price_list_rate']:  # TODO: replace by an approximate comparison using a parameter 'tolerance_percentage'
+                        max_percentage_difference = max_percentage_diff(bip['price_list_rate'], ip['price_list_rate'])
+                        if max_percentage_difference > tolerance_percentage:
                             # mismatching rates -> Price Lists differ
                             rate_mismatch = True
-                            if verbose_level > 4:
-                                print(f"Rate mismatch: Item {bip['item_code']}: {bip['item_name']} with Minimum Qty {bip['min_qty']} on Price List '{base_price_list['name']}' = {bip['price_list_rate']} != {ip['price_list_rate']} of Item {ip['item_code']}: {ip['item_name']} with Minimum Qty {ip['min_qty']} on Price List '{price_list['name']}'")
+                            if verbose_level > 3:
+                                print(f"Rate mismatch: Item {bip['item_code']}: {bip['item_name']} with Minimum Qty {bip['min_qty']} on Price List '{base_price_list['name']}' = {bip['price_list_rate']} {bip['currency']} differs by {max_percentage_difference:.2f} % from {ip['price_list_rate']} {ip['currency']} of Item {ip['item_code']}: {ip['item_name']} with Minimum Qty {ip['min_qty']} on Price List '{price_list['name']}'")
                         else:
                             rate_match = True
                         break
@@ -623,14 +640,14 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
                     continue
                 else:
                     list_mismatch = True
-                    if verbose_level > 5:
+                    if verbose_level > 4:
                         print(f"It seems that Item {bip['item_code']}: {bip['item_name']} with minimum quantity {bip['min_qty']} from Price List '{base_price_list['name']}' does not occur on Price List '{price_list['name']}'.")
                     break
             if list_mismatch:
                 continue
             group.append(price_list['name'])
-        if len(groups) > 1:
-            if verbose_level > 1:
+        if len(group) > 1:
+            if verbose_level > 2:
                 print(group)
             groups.append(group)
     if verbose_level > 0:
