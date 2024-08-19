@@ -72,7 +72,10 @@ def get_data(filters):
     else:
         filters = dict(filters)
     
-    reference_price_list = get_reference_price_list(filters['price_list'])
+    if 'reference_price_list' in filters and filters['reference_price_list']:
+        reference_price_list = filters['reference_price_list']
+    else:
+        reference_price_list = get_reference_price_list(filters['price_list'])
     # currency = frappe.get_value("Price List", filters['price_list'], "currency")
     
     raw_customer_prices = get_item_prices(filters['price_list'])
