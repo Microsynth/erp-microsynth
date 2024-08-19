@@ -194,15 +194,17 @@ def close(doc, user):
 @frappe.whitelist()
 def cancel(nc):
     from microsynth.microsynth.utils import force_cancel
-    nc = frappe.get_doc("QM Nonconformity", nc)
-    if nc.status == "Draft":
-        force_cancel("QM Nonconformity", nc.name)
+    nc_doc = frappe.get_doc("QM Nonconformity", nc)
+    if nc_doc.status == "Draft":
+        force_cancel("QM Nonconformity", nc_doc.name)
     else:
         try:
-            nc.cancel()
+            nc_doc.status = 'Cancelled'
+            nc_doc.save()
+            nc_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Nonconformity", nc.name)
+            force_cancel("QM Nonconformity", nc_doc.name)
 
 
 @frappe.whitelist()

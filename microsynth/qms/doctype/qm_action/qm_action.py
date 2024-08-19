@@ -82,6 +82,8 @@ def cancel(action):
         force_cancel("QM Action", action_doc.name)
     else:
         try:
+            action_doc.status = 'Cancelled'
+            action_doc.save()
             action_doc.cancel()
             frappe.db.commit()
         except Exception as err:

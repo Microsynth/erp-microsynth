@@ -120,17 +120,19 @@ def update_status(nc, status):
 
 
 @frappe.whitelist()
-def cancel(nc):
+def cancel(change):
     from microsynth.microsynth.utils import force_cancel
-    nc = frappe.get_doc("QM Change", nc)
-    if nc.status == "Draft":
-        force_cancel("QM Change", nc.name)
+    change_doc = frappe.get_doc("QM Change", change)
+    if change_doc.status == "Draft":
+        force_cancel("QM Change", change_doc.name)
     else:
         try:
-            nc.cancel()
+            change_doc.status = 'Cancelled'
+            change_doc.save()
+            change_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Change", nc.name)
+            force_cancel("QM Change", change_doc.name)
 
 
 @frappe.whitelist()

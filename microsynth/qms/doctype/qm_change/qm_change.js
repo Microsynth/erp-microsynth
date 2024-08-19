@@ -243,7 +243,7 @@ function cancel(frm) {
         frappe.call({
             'method': 'microsynth.qms.doctype.qm_change.qm_change.cancel',
             'args': {
-                'nc': cur_frm.doc.name
+                'change': cur_frm.doc.name
             },
             'async': false,
             'callback': function(response) {
