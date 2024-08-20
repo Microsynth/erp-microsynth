@@ -276,7 +276,7 @@ def create_pdf_attachment(analysis_report):
 
 def send_reports(recipient, cc_mails, analysis_reports):
     """
-    bench execute microsynth.microsynth.lab_reporting.send_reports --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400010', 'AR-2400011']}"
+    bench execute microsynth.microsynth.lab_reporting.send_reports --kwargs "{'recipient': 'test@mail.ch', 'cc_mails': ['me@mail.com', 'somebody@mail.com'], 'analysis_reports': ['AR-2400001']}"
     """
     if not recipient:
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
@@ -291,18 +291,21 @@ def send_reports(recipient, cc_mails, analysis_reports):
                 fid = a['name']
             all_attachments.append({'fid': fid})
             frappe.db.commit()
+        email_template = frappe.get_doc("Email Template", "Analysis Report")  # TODO: Create an Email Template with the name "Analysis Report"
         make(
                 recipients = recipient,
-                sender = "info@microsynth.ch",
-                sender_full_name = "Microsynth",
+                sender = email_template.sender,
+                sender_full_name = email_template.sender_full_name,
                 cc = ", ".join(cc_mails),
-                subject = f"Your Microsynth analysis {'reports' if len(all_attachments) > 1 else 'report'}",  # TODO: Better subject?
-                content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachments) > 1 else 'report'}."
-                            f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
+                subject = email_template.subject + f"{'s' if len(all_attachments) > 1 else ''}",  # TODO: Better subject? Your Microsynth Analysis report
+                content = email_template.response,
+                # content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachments) > 1 else 'report'}."
+                #             f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
                 send_email = True,
                 attachments = all_attachments
             )
-        #print(f"Send an email with the following attachment to '{recipient}': {all_attachments=}")
+        # print(f"Send an email with the following attachment to '{recipient}': {all_attachments=}")
+        # print(f"{email_template.response=}")
     except Exception as err:
         return {'success': False, 'message': f"Got the following error: {err}"}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
