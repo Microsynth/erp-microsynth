@@ -187,6 +187,7 @@ doc_events = {
 scheduler_events = {
     "hourly": [
         "microsynth.microsynth.slims.sync",
+        "microsynth.microsynth.batch_invoice_processing.process_files"
         # "microsynth.microsynth.seqblatt.check_sales_order_completion"
     ],
     "daily": [

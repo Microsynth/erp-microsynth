@@ -337,6 +337,12 @@ def get_data():
                        "name": "Accounts Settings",
                        "label": _("Accounts Settings"),
                        "description": _("Accounts Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Batch Invoice Processing Settings",
+                       "label": _("Batch Invoice Processing Settings"),
+                       "description": _("Batch Invoice Processing Settings")
                    }
             ]
         },
