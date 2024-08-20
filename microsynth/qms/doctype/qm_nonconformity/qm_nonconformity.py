@@ -266,3 +266,26 @@ def has_change(doc):
         """, as_dict=True)
     
     return len(changes) > 0
+
+
+def get_allowed_classification_for_process(doctype, txt, searchfield, start, page_len, filters):
+    return frappe.db.sql("""
+        SELECT `tabQM Classification Hierarchy Link`.`hierarchy` AS `name`
+        FROM `tabQM Classification Hierarchy Link`
+        WHERE
+            `tabQM Classification Hierarchy Link`.`parent` = "{process}"
+            AND `tabQM Classification Hierarchy Link`.`parenttype` = "QM Process"
+            AND `tabQM Classification Hierarchy Link`.`hierarchy` LIKE "%{s}%";
+        """.format(process=filters['process'], s=txt)
+        )
+
+def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, page_len, filters):
+    return frappe.db.sql("""
+        SELECT `tabQM Classification Hierarchy Link`.`hierarchy` AS `name`
+        FROM `tabQM Classification Hierarchy Link`
+        WHERE
+            `tabQM Classification Hierarchy Link`.`parent` = "{hierarchy}"
+            AND `tabQM Classification Hierarchy Link`.`parenttype` = "QM Classification Hierarchy"
+            AND `tabQM Classification Hierarchy Link`.`hierarchy` LIKE "%{s}%";
+        """.format(hierarchy=filters['hierarchy'], s=txt)
+        )

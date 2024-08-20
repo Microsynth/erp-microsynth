@@ -11,7 +11,9 @@
   "subprocess_number",
   "all_chapters",
   "chapter",
-  "full_name"
+  "full_name",
+  "sec_allowed_classifications",
+  "allowed_classifications"
  ],
  "fields": [
   {
@@ -55,10 +57,21 @@
    "label": "Full Name",
    "read_only": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "sec_allowed_classifications",
+   "fieldtype": "Section Break",
+   "label": "Allowed Classifications"
+  },
+  {
+   "fieldname": "allowed_classifications",
+   "fieldtype": "Table",
+   "label": "Allowed Classifications",
+   "options": "QM Classification Hierarchy Link"
   }
  ],
- "modified": "2024-08-14 15:16:48.149845",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-08-20 15:51:41.105588",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Process",
  "owner": "Administrator",

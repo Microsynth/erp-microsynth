@@ -7,12 +7,15 @@
  "field_order": [
   "classification_wizard",
   "document_identification_section",
-  "nc_type",
-  "qm_process",
+  "title",
   "date",
   "web_order_id",
+  "col_main_1",
+  "qm_process",
+  "hierarchy_1",
+  "hierarchy_2",
   "column_break_4",
-  "title",
+  "nc_type",
   "status",
   "company",
   "amended_from",
@@ -415,11 +418,29 @@
    "fieldtype": "Data",
    "label": "Signature",
    "read_only": 1
+  },
+  {
+   "fieldname": "col_main_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.qm_process",
+   "fieldname": "hierarchy_1",
+   "fieldtype": "Link",
+   "label": "Hierarchy 1",
+   "options": "QM Classification Hierarchy"
+  },
+  {
+   "depends_on": "eval:doc.hierarchy_1",
+   "fieldname": "hierarchy_2",
+   "fieldtype": "Link",
+   "label": "Hierarchy 2",
+   "options": "QM Classification Hierarchy"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-16 14:06:39.531620",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2024-08-20 15:46:28.137978",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",
