@@ -664,3 +664,29 @@ def group_all_price_lists():
         print(f"Processing Price Lists referring to the reference Price List '{ref_pl['name']}' ...")
         groups = group_price_lists(ref_pl['name'], verbose_level=0)
         print(f"Groups of identical Price Lists:\n{groups}")
+
+
+def compare_ref_to_project():
+    """
+    List Item Prices that are on a reference Price List but not on the corresponding Projects Price List.
+
+    bench execute microsynth.microsynth.pricing.compare_ref_to_project
+    """
+    my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty']
+    for currency in ['CHF', 'EUR', 'USD']:        
+        reference_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Sales Prices {currency}"}, fields=my_fields)
+        project_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Projects {currency}"}, fields=my_fields)
+        for ref_price in reference_prices:
+            # ignore Item Prices of disabled Items
+            if frappe.get_value("Item", ref_price['item_code'], 'disabled'):
+                continue
+            found = False
+            for project_price in project_prices:
+                if project_price['item_code'] == ref_price['item_code'] and project_price['min_qty'] == ref_price['min_qty']:
+                    found = True
+                    break
+            if found:
+                continue
+            else:
+                print(f"Item {ref_price['item_code']}: {ref_price['item_name']} with minimum Qty {ref_price['min_qty']} is on Sales Prices {currency} but not on Projects {currency}.")
+
