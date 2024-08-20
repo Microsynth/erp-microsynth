@@ -510,6 +510,7 @@ def delete_item_prices_of_disabled_items(disabled_items, verbose=False, dry_run=
     """
     total_counter = 0
     for item_code in disabled_items:
+        print(f"process item '{item_code}'...")
         counter = 0
         item = frappe.get_doc("Item", item_code)
         if not item.disabled:
