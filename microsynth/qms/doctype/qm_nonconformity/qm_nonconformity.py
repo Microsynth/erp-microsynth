@@ -9,7 +9,7 @@ from frappe.utils.data import today
 from frappe.desk.form.assign_to import add
 from microsynth.microsynth.utils import user_has_role
 from datetime import date
-
+from frappe import _
 
 class QMNonconformity(Document):
     def get_classification_wizard(self, visible):
@@ -79,6 +79,36 @@ class QMNonconformity(Document):
                 'effectiveness_checks': effectiveness_checks
             })
         return html
+
+
+    def validate(self):
+        self.validate_hierarchy()
+
+
+    def validate_hierarchy(self):
+        if self.hierarchy_1:
+            allowed_hierarchy_1s = get_allowed_classification_for_process(
+                doctype="QM Nonconformity", 
+                txt=self.hierarchy_1, 
+                searchfield="name", 
+                start=0, 
+                page_len=20, 
+                filters={'process': self.qm_process}
+            )
+            if len(allowed_hierarchy_1s) == 0:
+                frappe.throw( _("Invalid value in 'Hierarchy 1'. Please select from the available values."), _("Validation") )
+        
+        if self.hierarchy_2:
+            allowed_hierarchy_2s = get_allowed_classification_for_hierarchy(
+                doctype="QM Nonconformity", 
+                txt=self.hierarchy_2, 
+                searchfield="name", 
+                start=0, 
+                page_len=20, 
+                filters={'hierarchy': self.hierarchy_1}
+            )
+            if len(allowed_hierarchy_2s) == 0:
+                frappe.throw( _("Invalid value in 'Hierarchy 2'. Please select from the available values."), _("Validation") )
 
 
 @frappe.whitelist()
