@@ -105,12 +105,16 @@ frappe.ui.form.on('QM Nonconformity', {
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
+            cur_frm.set_df_property('hierarchy_1', 'read_only', false);
+            cur_frm.set_df_property('hierarchy_2', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         } else {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('hierarchy_1', 'read_only', true);
+            cur_frm.set_df_property('hierarchy_2', 'read_only', true);
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
