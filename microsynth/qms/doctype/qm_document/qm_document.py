@@ -778,3 +778,9 @@ def fix_chapters(file_path):
             else:
                 print(f"Unable to find '{qm_doc_name}' in the ERP. Going to continue.")
     print(f"Updated {counter} QM Documents.")
+
+
+@frappe.whitelist()
+def get_overview_wrapper(doc_name):
+    self = frappe.get_doc("QM Document", doc_name)
+    return self.get_overview()

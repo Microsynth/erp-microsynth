@@ -230,8 +230,10 @@ frappe.ui.form.on('QM Document', {
         // fetch document overview
         if (!frm.doc.__islocal) {
             frappe.call({
-                'method': 'get_overview',
-                'doc': frm.doc,
+                'method': 'microsynth.qms.doctype.qm_document.qm_document.get_overview_wrapper',
+                'args': {
+                    'doc_name': frm.doc.name
+                },
                 'callback': function (r) {
                     cur_frm.set_df_property('overview', 'options', r.message);
                 }
