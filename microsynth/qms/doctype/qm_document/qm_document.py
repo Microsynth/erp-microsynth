@@ -685,12 +685,23 @@ def import_qm_documents(file_path, expected_line_length=24):
             if '*' in import_name:
                 print(f"{doc_id_new};{title};Column 'Document ID NEW' should not contain any '*', but import_name = '{import_name}'. Going to continue.")
                 continue
+            chapter = chapter if chapter is not None else 0
+
+            # Check that there is not already a QM Document with the same type, qm_process, chapter and document_number
+            duplicates = frappe.db.get_all("QM Document", filters=[['document_type', '=', parts['doc_type']],
+                                                               ['qm_process', '=', qm_processes[0]['name']],
+                                                               ['chapter', '=', chapter],
+                                                               ['document_number', '=', parts['document_number']]])
+            if len(duplicates) > 0:
+                print(f"{doc_id_new};{title};There is already at a QM Document with type {parts['doc_type']}, qm_process {qm_processes[0]['name']}, chapter {chapter} and document_number {parts['document_number']}. Going to continue.")
+                continue
+
             # Create QM Document
             qm_doc = frappe.get_doc({
                 'doctype': "QM Document",
                 'document_type': parts['doc_type'],
                 'qm_process': qm_processes[0]['name'],
-                'chapter': chapter if chapter is not None else 0,
+                'chapter': chapter,
                 'date': parts['date'],  # only for PROT
                 'document_number': parts['document_number'],
                 'import_name': import_name,
@@ -784,3 +795,30 @@ def fix_chapters(file_path):
 def get_overview_wrapper(doc_name):
     self = frappe.get_doc("QM Document", doc_name)
     return self.get_overview()
+
+
+def find_duplicate_valid_documents():
+    """
+    Find duplicate valid QM Documents ignoring the version.
+
+    bench execute microsynth.qms.doctype.qm_document.qm_document.find_duplicate_valid_documents
+    """
+    found_duplicates = set()
+    qm_docs = frappe.db.get_all("QM Document", filters={'status': 'Valid'}, fields=['name', 'document_type', 'qm_process', 'process_number', 'subprocess_number', 'chapter', 'document_number'])
+
+    for qm_doc in qm_docs:
+        if qm_doc['name'] in found_duplicates:
+            continue
+        duplicates = frappe.db.get_all("QM Document", filters=[['name', '!=', qm_doc['name']],
+                                                               ['status', '=', 'Valid'],
+                                                               ['document_type', '=', qm_doc['document_type']],
+                                                               ['process_number', '=', qm_doc['process_number']],
+                                                               ['subprocess_number', '=', qm_doc['subprocess_number']],
+                                                               ['chapter', '=', qm_doc['chapter']],
+                                                               ['document_number', '=', qm_doc['document_number']]],
+                                                      fields=['name'])
+        if len(duplicates) > 0:
+            print(f"Found a Valid duplicate for Valid {qm_doc['name']}: {duplicates}")
+            found_duplicates.add(qm_doc['name'])
+            for d in duplicates:
+                found_duplicates.add(d['name'])
