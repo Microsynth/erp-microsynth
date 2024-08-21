@@ -319,3 +319,12 @@ def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, p
             AND `tabQM Classification Hierarchy Link`.`hierarchy` LIKE "%{s}%";
         """.format(hierarchy=filters['hierarchy'], s=txt)
         )
+
+@frappe.whitelist()
+def fetch_nonconformities(nonconformity_ids):
+    nonconformities = frappe.get_all("QM Nonconformity", fields=['name', 'title', 'nc_type', 'date', 'description'])
+
+    for n  in nonconformities:
+        n['url'] = "http://localhost:8000"
+
+    return {'success': True, 'message': 'OK', 'nonconformities': nonconformities}
