@@ -15,8 +15,6 @@ frappe.ui.form.on('QM Nonconformity', {
     },
     refresh: function(frm) {
 
-        cur_frm.set_df_property('status', 'read_only', true);
-
         // remove option to attach files depending on status
         if (["Closed", "Cancelled"].includes(frm.doc.status) || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             var attach_btns = document.getElementsByClassName("add-attachment");
@@ -25,7 +23,11 @@ frappe.ui.form.on('QM Nonconformity', {
             }
         }
 
-        // access protection: only QAU in status unequals Closed and System Manager can remove attachments
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+
+        // access protection: only QAU in status unequals Closed can remove attachments
         if (["Closed", "Cancelled"].includes(frm.doc.status) || frappe.user.has_role('QAU')) {
             access_protection();
         } else {
@@ -69,37 +71,6 @@ frappe.ui.form.on('QM Nonconformity', {
                 }
             });
         }
-
-        // Only show Valid QM Documents when linking
-        frm.fields_dict.qm_documents.grid.get_field('qm_document').get_query = function() {
-            return {
-                    filters: [
-                        ["status", "=", "Valid"]
-                ]
-            };
-        };
-        
-        // filters for hierarchy fields
-        frm.fields_dict.hierarchy_1.get_query = function(frm) {
-            return {
-                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_process',
-                'filters': {
-                    'process': cur_frm.doc.qm_process
-                }
-            };
-        };
-        frm.fields_dict.hierarchy_2.get_query = function(frm) {
-            return {
-                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_hierarchy',
-                'filters': {
-                    'hierarchy': cur_frm.doc.hierarchy_1
-                }
-            };
-        };
-        
-        // remove Menu > Duplicate
-        var target ="span[data-label='" + __("Duplicate") + "']";
-        $(target).parent().parent().remove();
 
         // Only QAU (independent of Status) and creator (in Draft Status) can change these fields: Title, NC Type, Process, Date, Company
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
@@ -145,28 +116,6 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('nc_type', 'read_only', false);
         } else {
             cur_frm.set_df_property('nc_type', 'read_only', true);
-        }
-
-        // allow the creator or QAU to change the creator (transfer document)
-        if ((!frm.doc.__islocal)
-            && (["Draft"].includes(frm.doc.status))
-            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
-            ) {
-            // add change creator button
-            cur_frm.add_custom_button(
-                __("Change Creator"),
-                function() {
-                    change_creator();
-                }
-            );
-        }
-
-        // add a button to request an effectiveness check
-        if (frm.doc.status == "Planning"
-            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            frm.add_custom_button(__("Request Effectiveness Check"), function() {
-                request_qm_action("NC Effectiveness Check");
-            });
         }
 
         // Only the creator or QAU can change the classification in status "Draft" or "Created"
@@ -225,11 +174,55 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
+        // allow the creator or QAU to change the creator (transfer document)
+        if ((!frm.doc.__islocal)
+            && (["Draft"].includes(frm.doc.status))
+            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
+            ) {
+            // add change creator button
+            cur_frm.add_custom_button(
+                __("Change Creator"),
+                function() {
+                    change_creator();
+                }
+            );
+        }
+
         // allow QAU to cancel
         if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU') && !['Closed', 'Cancelled'].includes(frm.doc.status)) {
             frm.add_custom_button(__("Cancel"), function() {
                 cancel(frm);
             }).addClass("btn-danger");
+        }
+
+        // Add buttons to request Correction or Corrective Action
+        if (["Planning"].includes(frm.doc.status)
+            && !["OOS", "Track & Trend"].includes(frm.doc.nc_type)
+            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
+            frm.add_custom_button(__("Request Correction"), function() {
+                request_qm_action("Correction");
+            }).addClass("btn-primary");
+            frm.add_custom_button(__("Request Corrective Action"), function() {
+                request_qm_action("Corrective Action");
+            }).addClass("btn-primary");
+        }
+
+        // Add button to create a Change Request
+        if (["Completed"].includes(frm.doc.status)
+            && frm.doc.criticality_classification == "critical"
+            && !["OOS", "Track & Trend", "Event"].includes(frm.doc.nc_type)
+            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
+            frm.add_custom_button(__("Create Change Request"), function() {
+                create_change(frm);
+            }).addClass("btn-primary");
+        }
+
+        // add a button to request an effectiveness check
+        if (frm.doc.status == "Planning"
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                request_qm_action("NC Effectiveness Check");
+            });
         }
 
         if (!frm.doc.__islocal && frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
@@ -498,32 +491,37 @@ frappe.ui.form.on('QM Nonconformity', {
             });
         }
 
+        // Only show Valid QM Documents when linking
+        frm.fields_dict.qm_documents.grid.get_field('qm_document').get_query = function() {
+            return {
+                    filters: [
+                        ["status", "=", "Valid"]
+                ]
+            };
+        };
+        
+        // filters for hierarchy fields
+        frm.fields_dict.hierarchy_1.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_process',
+                'filters': {
+                    'process': cur_frm.doc.qm_process
+                }
+            };
+        };
+        frm.fields_dict.hierarchy_2.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_hierarchy',
+                'filters': {
+                    'hierarchy': cur_frm.doc.hierarchy_1
+                }
+            };
+        };
+
         // remove dashboard doc (+) buttons
         var new_btns = document.getElementsByClassName("btn-new");
         for (var i = 0; i < new_btns.length; i++) {
             new_btns[i].style.visibility = "hidden";
-        }
-
-        // Add buttons to request Correction or Corrective Action
-        if (["Planning"].includes(frm.doc.status)
-            && !["OOS", "Track & Trend"].includes(frm.doc.nc_type)
-            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
-            frm.add_custom_button(__("Request Correction"), function() {
-                request_qm_action("Correction");
-            }).addClass("btn-primary");
-            frm.add_custom_button(__("Request Corrective Action"), function() {
-                request_qm_action("Corrective Action");
-            }).addClass("btn-primary");
-        }
-
-        // Add button to create a Change Request
-        if (["Completed"].includes(frm.doc.status)
-            && frm.doc.criticality_classification == "critical"
-            && !["OOS", "Track & Trend", "Event"].includes(frm.doc.nc_type)
-            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
-            frm.add_custom_button(__("Create Change Request"), function() {
-                create_change(frm);
-            }).addClass("btn-primary");
         }
     },
     on_submit(frm) {
