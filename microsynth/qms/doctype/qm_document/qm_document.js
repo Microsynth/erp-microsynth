@@ -355,7 +355,6 @@ function request_review() {
         {'fieldname': 'due_date', 'fieldtype': 'Date', 'label': __('Due date'), 'reqd': 1}
     ],
     function(values){
-        console.log(values.reviewer);
         if (values.reviewer === cur_frm.doc.created_by) {
             frappe.msgprint( __("Please select a different reviewer than the creator."), __("Validation") );
         } else {
@@ -368,7 +367,6 @@ function request_review() {
                     'due_date': values.due_date
                 },
                 "callback": function(response) {
-                    console.log("created review request...")
                     cur_frm.reload_doc();
                 }
             });
@@ -395,7 +393,6 @@ function request_revision() {
                 'due_date': values.due_date
             },
             "callback": function(response) {
-                console.log("created revision request...")
                 cur_frm.reload_doc();
             }
         });

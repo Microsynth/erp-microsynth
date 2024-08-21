@@ -95,7 +95,6 @@
         cur_frm.add_custom_button(
             "Restart classification wizard",
             function() {
-                console.log("restart wizard");
                 document.getElementById("wizard_container").style.display = "block";
                 wizard_reset();
                 cur_frm.remove_custom_button("Show classification wizard");
@@ -106,13 +105,11 @@
     function wizard_confirm() {
         document.getElementById("wizard_container").style.display = "none";
         locals.classification_wizard = "closed";
-        console.log("confirmed");
         add_restart_wizard_button();
     }
 
 
     function wizard_reset() {
-        console.log("wizard_reset");
         document.getElementById("step_gmp").style.display = "block";
         document.getElementById("step_no_gmp_dev").style.display = "none";
         document.getElementById("step_no_gmp_safety").style.display = "none";
