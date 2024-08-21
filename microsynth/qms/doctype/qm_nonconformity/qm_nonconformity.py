@@ -18,7 +18,6 @@ class QMNonconformity(Document):
                 'doc': self,
                 'visible': visible
             })
-        frappe.log_error(html)
         return html
 
 
@@ -309,6 +308,7 @@ def get_allowed_classification_for_process(doctype, txt, searchfield, start, pag
         """.format(process=filters['process'], s=txt)
         )
 
+
 def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, page_len, filters):
     return frappe.db.sql("""
         SELECT `tabQM Classification Hierarchy Link`.`hierarchy` AS `name`
@@ -319,6 +319,7 @@ def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, p
             AND `tabQM Classification Hierarchy Link`.`hierarchy` LIKE "%{s}%";
         """.format(hierarchy=filters['hierarchy'], s=txt)
         )
+
 
 @frappe.whitelist()
 def fetch_nonconformities(nonconformity_ids):
