@@ -396,7 +396,7 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Implementation');
                     }
                 );
-                cur_frm.page.set_secondary_action(
+                cur_frm.add_custom_button(
                     __("Reject Action Plan"),
                     function() {
                         set_status('Planning');
