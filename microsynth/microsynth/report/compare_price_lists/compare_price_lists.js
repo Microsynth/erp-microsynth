@@ -17,6 +17,12 @@ frappe.query_reports["Compare Price Lists"] = {
             "fieldtype": "Link",
             "options": "Price List",
             "reqd": 1
+        },
+        {
+            "fieldname":"discounts",
+            "label": __("Hide equal rates"),
+            "fieldtype": "Check",
+            "default": 1
         }
     ],
     "onload": (report) => {

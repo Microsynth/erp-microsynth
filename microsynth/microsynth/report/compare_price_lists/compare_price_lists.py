@@ -26,7 +26,10 @@ def get_columns(filters):
 
 
 def get_data(filters):
-    return pricing_configurator_get_data(filters)
+    data = pricing_configurator_get_data(filters)
+    for d in data:
+        d['discount'] = d['discount'] * (-1)
+    return data
 
 
 def execute(filters=None):
