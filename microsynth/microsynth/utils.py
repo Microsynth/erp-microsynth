@@ -342,7 +342,7 @@ def find_label(label_barcode, item):
 @frappe.whitelist(allow_guest=True)
 def login(usr, pwd):
     """
-    Create an user session
+    Create a user session
     """
     from frappe.auth import LoginManager
     lm = LoginManager()
@@ -2293,7 +2293,7 @@ def force_cancel(dt, dn):
 
 def user_has_role(user, role):
     """
-    Check if an user has a given role
+    Check if a user has a given role
     """
     role_matches = frappe.db.sql(f"""
         SELECT `parent`, `role`

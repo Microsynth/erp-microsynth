@@ -134,7 +134,7 @@ def confirm_classification(doc, user):
         check_classification(nc)
         update_status(nc.name, "Investigation")
     else:
-        frappe.throw(f"Only the creator {nc.created_by} or an user with the QAU role is allowed to classify a QM Nonconformity.")
+        frappe.throw(f"Only the creator {nc.created_by} or a user with the QAU role is allowed to classify a QM Nonconformity.")
     
 
 
@@ -217,7 +217,7 @@ def close(doc, user):
         frappe.db.commit()
         update_status(qm_nc.name, "Closed")
     else:
-        frappe.throw(f"Only the creator {qm_nc.created_by} or an user with the QAU role is allowed to close this Nonconformity.")
+        frappe.throw(f"Only the creator {qm_nc.created_by} or a user with the QAU role is allowed to close this Nonconformity.")
 
 
 @frappe.whitelist()
