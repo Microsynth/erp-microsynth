@@ -1,5 +1,6 @@
-// Copyright (c) 2022-2024, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2022-2024, Microsynth, libracore and contributors
 // For license information, please see license.txt
+
 
 frappe.ui.form.on('Signature', {
     refresh: function(frm) {
@@ -10,8 +11,16 @@ frappe.ui.form.on('Signature', {
                 change_approval_password(frm);
             });
         }
+
+        // add button to reset Approval Password
+        if (frappe.user.has_role("QAU") && frm.doc.approval_password) {
+            frm.add_custom_button(__("Reset Approval Password"), function() {
+                reset_approval_password(frm);
+            });
+        }
     }
 });
+
 
 function change_approval_password(frm) {
     frappe.prompt(
@@ -57,5 +66,27 @@ function change_approval_password(frm) {
         __('Change Approval Password'),
         __('Set')
     )
+}
 
+
+function reset_approval_password(frm) {
+    frappe.confirm('Are you sure you want to <b>reset</b> the <b>Approval Password</b> of ' + frm.doc.name + '? This requires the user to set a new Approval Password.',
+        () => {
+            frappe.call({
+                'method': "reset_approval_password",
+                'doc': frm.doc,
+                'args':{
+                    'resetting_user': frappe.session.user
+                },
+                'freeze': true,
+                'freeze_message': __("Resetting Approval Password ..."),
+                'callback': function(r)
+                {
+                    cur_frm.reload_doc();
+                    frappe.show_alert('Reset Approval Password');
+                }
+            });
+        }, () => {
+            frappe.show_alert('No changes made');
+        });
 }

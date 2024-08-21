@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022-2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2022-2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -41,8 +41,16 @@ class Signature(Document):
         # set new password
         self.approval_password = new_pw
         self.save(ignore_permissions=True)
-        
         return {'success': True}
+
+
+    def reset_approval_password(self, resetting_user):
+        if resetting_user != frappe.session.user:
+            frappe.throw(f"{resetting_user=} != {frappe.session.user=}. Please tell the IT App group how you did this.")
+        if not user_has_role(frappe.session.user, "QAU"):
+            frappe.throw(f"Only user with QAU role are allowed to reset the Approval Password.")
+        self.approval_password = ""
+        self.save()
 
 
 def user_has_role(user, role):
