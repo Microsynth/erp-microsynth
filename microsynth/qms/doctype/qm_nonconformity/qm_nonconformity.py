@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
+from frappe.utils import get_url_to_form
 from frappe.desk.form.assign_to import add
 from microsynth.microsynth.utils import user_has_role
 from datetime import date
@@ -323,9 +324,16 @@ def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, p
 
 @frappe.whitelist()
 def fetch_nonconformities(nonconformity_ids):
-    nonconformities = frappe.get_all("QM Nonconformity", fields=['name', 'title', 'nc_type', 'date', 'description'])
+    """
+    bench execute microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.fetch_nonconformities --kwargs "{'nonconformity_ids': ['NC-240011', 'NC-240002']}"
+    """
+    for nc in nonconformity_ids:
+        if not frappe.db.exists("QM Nonconformity", nc):
+            return {'success': False, 'message': f"At least QM Nonconformity '{nc}' does not exist.", 'nonconformities': None}
 
-    for n  in nonconformities:
-        n['url'] = "http://localhost:8000"
+    nonconformities = frappe.get_all("QM Nonconformity", filters=[['name', 'IN', nonconformity_ids]], fields=['name', 'title', 'nc_type', 'date', 'description'])
+
+    for n in nonconformities:
+        n['url'] = get_url_to_form("QM Nonconformity", n['name'])
 
     return {'success': True, 'message': 'OK', 'nonconformities': nonconformities}
