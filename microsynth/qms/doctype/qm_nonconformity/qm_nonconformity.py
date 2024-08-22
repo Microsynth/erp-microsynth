@@ -23,60 +23,13 @@ class QMNonconformity(Document):
 
 
     def get_advanced_dashboard(self):
-        corrections = frappe.db.sql(f"""
-            SELECT 
-                `tabQM Action`.`name`,
-                `tabQM Action`.`title`,
-                `tabQM Action`.`status`
-            FROM `tabQM Action`
-            WHERE 
-                `tabQM Action`.`document_type` = "QM Nonconformity"
-                AND `tabQM Action`.`document_name` = "{self.name}"
-                AND `tabQM Action`.`type` = "Correction"
-            ;""", as_dict=True)
-
-        corrective_actions = frappe.db.sql(f"""
-            SELECT 
-                `tabQM Action`.`name`,
-                `tabQM Action`.`title`,
-                `tabQM Action`.`status`
-            FROM `tabQM Action`
-            WHERE 
-                `tabQM Action`.`document_type` = "QM Nonconformity"
-                AND `tabQM Action`.`document_name` = "{self.name}"
-                AND `tabQM Action`.`type` = "Corrective Action"
-            ;""", as_dict=True)
-
-        changes = frappe.db.sql(f"""
-            SELECT 
-                `tabQM Change`.`name`,
-                `tabQM Change`.`title`,
-                `tabQM Change`.`status`
-            FROM `tabQM Change`
-            WHERE 
-                `tabQM Change`.`document_type` = "QM Nonconformity"
-                AND `tabQM Change`.`document_name` = "{self.name}"
-            ;""", as_dict=True)
-        
-        effectiveness_checks = frappe.db.sql(f"""
-            SELECT 
-                `tabQM Action`.`name`,
-                `tabQM Action`.`title`,
-                `tabQM Action`.`status`
-            FROM `tabQM Action`
-            WHERE 
-                `tabQM Action`.`document_type` = "QM Nonconformity"
-                AND `tabQM Action`.`document_name` = "{self.name}"
-                AND `tabQM Action`.`type` = "NC Effectiveness Check"
-            ;""", as_dict=True)
-
         html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/advanced_dashboard.html",
             {
-                'doc': self, 
-                'corrections': corrections,
-                'corrective_actions': corrective_actions,
-                'changes': changes,
-                'effectiveness_checks': effectiveness_checks
+                'doc': self,
+                'corrections': get_corrections(self.name),
+                'corrective_actions': get_corrective_actions(self.name),
+                'changes': get_qm_changes(self.name),
+                'effectiveness_checks': get_effectiveness_checks(self.name)
             })
         return html
 
@@ -235,6 +188,85 @@ def cancel(nc):
             frappe.db.commit()
         except Exception as err:
             force_cancel("QM Nonconformity", nc_doc.name)
+
+
+@frappe.whitelist()
+def get_corrections(qm_nc):
+    corrections = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Action`.`name`,
+            `tabQM Action`.`title`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`notes`,
+            `tabQM Action`.`status`
+        FROM `tabQM Action`
+        WHERE 
+            `tabQM Action`.`document_type` = "QM Nonconformity"
+            AND `tabQM Action`.`document_name` = "{qm_nc}"
+            AND `tabQM Action`.`type` = "Correction"
+        ;""", as_dict=True)
+    return corrections
+
+
+@frappe.whitelist()
+def get_corrective_actions(qm_nc):
+    corrective_actions = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Action`.`name`,
+            `tabQM Action`.`title`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`notes`,
+            `tabQM Action`.`status`
+        FROM `tabQM Action`
+        WHERE 
+            `tabQM Action`.`document_type` = "QM Nonconformity"
+            AND `tabQM Action`.`document_name` = "{qm_nc}"
+            AND `tabQM Action`.`type` = "Corrective Action"
+        ;""", as_dict=True)
+    return corrective_actions
+
+
+@frappe.whitelist()
+def get_effectiveness_checks(qm_nc):
+    effectiveness_checks = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Action`.`name`,
+            `tabQM Action`.`title`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`notes`,
+            `tabQM Action`.`status`
+        FROM `tabQM Action`
+        WHERE 
+            `tabQM Action`.`document_type` = "QM Nonconformity"
+            AND `tabQM Action`.`document_name` = "{qm_nc}"
+            AND `tabQM Action`.`type` = "NC Effectiveness Check"
+        ;""", as_dict=True)
+    return effectiveness_checks
+
+
+@frappe.whitelist()
+def get_qm_changes(qm_nc):
+    changes = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Change`.`name`,
+            `tabQM Change`.`title`,
+            `tabQM Change`.`description`,
+            `tabQM Change`.`created_by`,
+            `tabQM Change`.`current_state`,
+            `tabQM Change`.`description`,
+            `tabQM Change`.`status`
+        FROM `tabQM Change`
+        WHERE 
+            `tabQM Change`.`document_type` = "QM Nonconformity"
+            AND `tabQM Change`.`document_name` = "{qm_nc}"
+        ;""", as_dict=True)
+    return changes
 
 
 @frappe.whitelist()

@@ -78,6 +78,10 @@ jenv = {
         "get_training_records:microsynth.qms.doctype.qm_training_record.qm_training_record.get_training_records",
         "get_qm_reviews:microsynth.qms.doctype.qm_review.qm_review.get_qm_reviews",
         "get_valid_appendices:microsynth.qms.doctype.qm_document.qm_document.get_valid_appendices",
+        "get_corrections:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_corrections",
+        "get_corrective_actions:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_corrective_actions",
+        "get_effectiveness_checks:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_effectiveness_checks",
+        "get_qm_changes:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_qm_changes",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message"
     ]
