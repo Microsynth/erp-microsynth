@@ -594,9 +594,19 @@ def max_percentage_diff(a, b):
 
 def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_level=3):
     """
+    Search for similar Price Lists that refer to the given reference Price List.
+
+    Verbose levels (higher levels include all smaller levels except level 0):
+    0: Hide all prints
+    1: Print final groups
+    2: Print Price List name that is currently checked
+    3: Print groups for the recently checked Price List
+    4: Print the first reason found why two Price Lists are not similar except missing Items
+    5: Print Items for which there is no Item Price with the same minimim qty on both Price Lists compared
+
     bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices USD', 'tolerance_percentage': 3.0, 'verbose_level': 3}"
     """
-    price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name'])
+    price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name', 'general_discount'])
     groups = []
     my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate', 'currency']
     already_checked = {}
@@ -614,6 +624,11 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
                 already_checked[price_list['name']].append(base_price_list['name'])
             else:
                 already_checked[price_list['name']] = [base_price_list['name']]
+            # skip Price List if General Discount differs
+            if abs(base_price_list['general_discount'] - price_list['general_discount']) > tolerance_percentage:
+                if verbose_level > 3:
+                    print(f"General Discount mismatch: {base_price_list['general_discount']} for '{base_price_list['name']}' vs {price_list['general_discount']} for '{price_list['name']}'")
+                continue
             item_prices = frappe.db.get_all("Item Price", filters={'price_list': price_list['name']}, fields=my_fields)
             list_mismatch = False
             for bip in base_item_prices:
@@ -649,7 +664,16 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
                 print(group)
             groups.append(group)
     if verbose_level > 0:
-        print(groups)
+        print(f"\nThe rates of all Item Prices on the following Price Lists differ by less than {tolerance_percentage} %:")
+        for group in groups:
+            for pl in group:
+                all_sales_managers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': pl}, fields=['account_manager'])
+                sales_manager_set = set([sm['account_manager'] for sm in all_sales_managers])
+                if len(sales_manager_set) > 0:
+                    print(f"Price List '{pl}' is used by enabled Customer(s) of {', '.join(sales_manager_set)}")
+                else:
+                    print(f"Price List '{pl}' is used by no enabled Customer.")
+            print("")
     return groups
 
 
