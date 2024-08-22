@@ -72,22 +72,28 @@ frappe.ui.form.on('QM Nonconformity', {
             });
         }
 
-        // Only QAU (independent of Status) and creator (in Draft Status) can change these fields: Title, NC Type, Process, Date, Company
+        // Only QAU (in status Draft or Created) and creator (in status Draft) can change these fields: Process, Date of Occurrence, Company
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
-            cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
-            cur_frm.set_df_property('hierarchy_1', 'read_only', false);
-            cur_frm.set_df_property('hierarchy_2', 'read_only', false);
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
-            cur_frm.set_df_property('description', 'read_only', false);
+            
         } else {
-            cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('hierarchy_1', 'read_only', true);
-            cur_frm.set_df_property('hierarchy_2', 'read_only', true);
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
+        }
+
+        // Only creator (in status Draft) or QAU (in status unequals Closed) can change these fields: Process, Date of Occurrence, Company
+        if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || !["Closed", "Cancelled"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('title', 'read_only', false);
+            cur_frm.set_df_property('hierarchy_1', 'read_only', false);
+            cur_frm.set_df_property('hierarchy_2', 'read_only', false);
+            cur_frm.set_df_property('description', 'read_only', false);            
+        } else {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('hierarchy_1', 'read_only', true);
+            cur_frm.set_df_property('hierarchy_2', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
         }
 
