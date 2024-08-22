@@ -587,7 +587,7 @@ def max_percentage_diff(a, b):
     try:
         a_to_b = (abs(a - b) / b) * 100.0
         b_to_a = (abs(b - a) / a) * 100.0
-        return max(a_to_b, b_to_a)
+        return max(a_to_b, b_to_a)  # make it symmetrical
     except ZeroDivisionError:
         return float('inf')
 
@@ -604,6 +604,10 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
     4: Print the first reason found why two Price Lists are not similar except missing Items
     5: Print Items for which there is no Item Price with the same minimim qty on both Price Lists compared
 
+    Note: Our similarity here is not transitive: Example: Let tolerance_percentage = 3.0 and A, B and C Price Lists.
+    If the rates of B are 2 % higher than the rates of A and the rates of C are 2 % higher than the rates of B,
+    then A and B are similar and B and C are similar, but A and C are NOT similar. A Price List (here B) can therefore occur in more than one group.
+
     bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices USD', 'tolerance_percentage': 3.0, 'verbose_level': 3}"
     """
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name', 'general_discount'])
@@ -617,9 +621,12 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
         already_checked[base_price_list['name']] = [base_price_list['name']]
         base_item_prices = frappe.db.get_all("Item Price", filters={'price_list': base_price_list['name']}, fields=my_fields)
         for price_list in price_lists:
-            if price_list['name'] in already_checked[base_price_list['name']] or (price_list['name'] in already_checked and base_price_list['name'] in already_checked[price_list['name']]):
-                continue  # avoid to compare a pair of Price Lists more than once
+            # avoid to compare a pair of Price Lists more than once
+            if price_list['name'] in already_checked[base_price_list['name']]:
+                continue
             already_checked[base_price_list['name']].append(price_list['name'])
+            if price_list['name'] in already_checked and base_price_list['name'] in already_checked[price_list['name']]:
+                continue
             if price_list['name'] in already_checked:
                 already_checked[price_list['name']].append(base_price_list['name'])
             else:
@@ -663,17 +670,50 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
             if verbose_level > 2:
                 print(group)
             groups.append(group)
+    # Exclude groups that are fully contained in another group
+    # filtered_groups = []
+    # fully_contained = False
+    # for a, group in enumerate(groups):
+    #     for b, existing_group in enumerate(groups):
+    #         if a == len(groups) and b == len(groups):
+    #             break  # avoid that the last group is skipped
+    #         elif a == b:  # do not compare a group against itself (list order is fixed)
+    #             continue
+    #         else:
+    #             match = True
+    #         for pl in group:
+    #             match = match and (pl in existing_group)
+    #             if not match:
+    #                 break                    
+    #         if match:
+    #             fully_contained = True
+    #             break
+    #     if not fully_contained:
+    #         filtered_groups.append(group)
     if verbose_level > 0:
         print(f"\nThe rates of all Item Prices on the following Price Lists differ by less than {tolerance_percentage} %:")
+        already_processed_pairs = set()
         for group in groups:
-            for pl in group:
+            if len(group) == 2 and frozenset(group) in already_processed_pairs:  # use sets to get rid of the order of elements
+                # a frozenset is a build-in type, immutable and therefore hashable
+                continue  # since the function max_percentage_diff makes our similarity symmetrical (A=B -> B=A), do not list a pair twice
+            for i, pl in enumerate(group):
                 all_sales_managers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': pl}, fields=['account_manager'])
                 sales_manager_set = set([sm['account_manager'] for sm in all_sales_managers])
-                if len(sales_manager_set) > 0:
-                    print(f"Price List '{pl}' is used by enabled Customer(s) of {', '.join(sales_manager_set)}")
+                if i == 0:
+                    base_str = f"The rates of Item Prices on the following Price Lists differ by less than {tolerance_percentage} % from the rates on Price List '{pl}'"
+                    if len(sales_manager_set) > 0:
+                        print(f"{base_str} (used by enabled Customer(s) of {', '.join(sales_manager_set)}):")
+                    else:
+                        print(f"{base_str} (used by no enabled Customer):")
                 else:
-                    print(f"Price List '{pl}' is used by no enabled Customer.")
+                    if len(sales_manager_set) > 0:
+                        print(f"Price List '{pl}' (used by enabled Customer(s) of {', '.join(sales_manager_set)})")
+                    else:
+                        print(f"Price List '{pl}' (used by no enabled Customer)")
             print("")
+            if len(group) == 2:
+                already_processed_pairs.add(frozenset([group[0], group[1]]))
     return groups
 
 
@@ -683,9 +723,9 @@ def group_all_price_lists():
     """
     reference_price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': ''}, fields=['name'])
     for ref_pl in reference_price_lists:
-        print(f"Processing Price Lists referring to the reference Price List '{ref_pl['name']}' ...")
-        groups = group_price_lists(ref_pl['name'], verbose_level=0)
-        print(f"Groups of identical Price Lists:\n{groups}")
+        print(f"\nProcessing Price Lists referring to the reference Price List '{ref_pl['name']}' ...\n")
+        groups = group_price_lists(ref_pl['name'], verbose_level=1)
+        #print(f"Groups of identical Price Lists:\n{groups}")
 
 
 def disable_unused_price_lists(dry_run=True):
