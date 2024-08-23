@@ -198,6 +198,7 @@ def get_corrections(qm_nc):
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
             `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
             `tabQM Action`.`status`
@@ -218,6 +219,7 @@ def get_corrective_actions(qm_nc):
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
             `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
             `tabQM Action`.`status`
@@ -232,12 +234,18 @@ def get_corrective_actions(qm_nc):
 
 @frappe.whitelist()
 def get_effectiveness_checks(qm_nc):
+    """
+    TODO: Combine functions get_corrections, get_corrective_actions and get_effectiveness_checks
+    to function "get_actions" that takes an additional parameter "type",
+    change in function get_advanced_dashboard, hooks.py and QM Nonconformity print format (already inserted in ERP-Test)
+    """
     effectiveness_checks = frappe.db.sql(f"""
         SELECT 
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
             `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
             `tabQM Action`.`status`
