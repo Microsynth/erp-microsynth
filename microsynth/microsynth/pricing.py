@@ -608,7 +608,7 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
     If the rates of B are 2 % higher than the rates of A and the rates of C are 2 % higher than the rates of B,
     then A and B are similar and B and C are similar, but A and C are NOT similar. A Price List (here B) can therefore occur in more than one group.
 
-    bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices USD', 'tolerance_percentage': 3.0, 'verbose_level': 3}"
+    bench execute microsynth.microsynth.pricing.group_price_lists --kwargs "{'reference_price_list': 'Sales Prices CHF', 'tolerance_percentage': 2.0, 'verbose_level': 3}"
     """
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name', 'general_discount'])
     groups = []
@@ -670,26 +670,7 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
             if verbose_level > 2:
                 print(group)
             groups.append(group)
-    # Exclude groups that are fully contained in another group
-    # filtered_groups = []
-    # fully_contained = False
-    # for a, group in enumerate(groups):
-    #     for b, existing_group in enumerate(groups):
-    #         if a == len(groups) and b == len(groups):
-    #             break  # avoid that the last group is skipped
-    #         elif a == b:  # do not compare a group against itself (list order is fixed)
-    #             continue
-    #         else:
-    #             match = True
-    #         for pl in group:
-    #             match = match and (pl in existing_group)
-    #             if not match:
-    #                 break                    
-    #         if match:
-    #             fully_contained = True
-    #             break
-    #     if not fully_contained:
-    #         filtered_groups.append(group)
+
     if verbose_level > 0:
         print(f"\nThe rates of all Item Prices on the following Price Lists differ by less than {tolerance_percentage} %:")
         already_processed_pairs = set()
@@ -701,7 +682,7 @@ def group_price_lists(reference_price_list, tolerance_percentage=2.5, verbose_le
                 all_sales_managers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': pl}, fields=['account_manager'])
                 sales_manager_set = set([sm['account_manager'] for sm in all_sales_managers])
                 if i == 0:
-                    base_str = f"The rates of Item Prices on the following Price Lists differ by less than {tolerance_percentage} % from the rates on Price List '{pl}'"
+                    base_str = f"The rates of Item Prices on the following Price List(s) differ by less than {tolerance_percentage} % from the rates on Price List '{pl}'"
                     if len(sales_manager_set) > 0:
                         print(f"{base_str} (used by enabled Customer(s) of {', '.join(sales_manager_set)}):")
                     else:
@@ -724,8 +705,7 @@ def group_all_price_lists():
     reference_price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': ''}, fields=['name'])
     for ref_pl in reference_price_lists:
         print(f"\nProcessing Price Lists referring to the reference Price List '{ref_pl['name']}' ...\n")
-        groups = group_price_lists(ref_pl['name'], verbose_level=1)
-        #print(f"Groups of identical Price Lists:\n{groups}")
+        group_price_lists(ref_pl['name'], verbose_level=1)
 
 
 def disable_unused_price_lists(dry_run=True):
@@ -737,11 +717,10 @@ def disable_unused_price_lists(dry_run=True):
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1}, fields=['name', 'modified_by', 'modified', 'reference_price_list'])
     print(f"The following enabled Price Lists are not the default Price List of any Customer:")
     for pl in price_lists:
-        if not pl['reference_price_list'] or 'Projects' in pl['name'] or not 'Pricelist' in pl['name'] or pl['modified_by'] != 'Administrator':
+        if not pl['reference_price_list'] or 'Projects' in pl['name']:  # or not 'Pricelist' in pl['name'] or pl['modified_by'] != 'Administrator':
             continue
-        disabled_customers = frappe.db.get_all("Customer", filters={'default_price_list': pl['name'], 'disabled': 1}, fields=['name'])
         enabled_customers = frappe.db.get_all("Customer", filters={'default_price_list': pl['name'], 'disabled': 0}, fields=['name'])
-        if len(enabled_customers) == 0 and len(disabled_customers) > 0:
+        if len(enabled_customers) == 0:
             item_prices = frappe.db.get_all("Item Price", filters={'price_list': pl['name']}, fields=['name'])
             item_price_counter += len(item_prices)
             if not dry_run:
