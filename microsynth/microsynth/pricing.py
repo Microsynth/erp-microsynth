@@ -710,14 +710,17 @@ def group_all_price_lists():
 
 def disable_unused_price_lists(dry_run=True):
     """
+    Disable all enabled Price Lists that are not the default Price List of any enabled Customer,
+    that have a Reference Price List (are not Reference Price Lists themselve) and that have not 'Projects' in their name.
+
     bench execute microsynth.microsynth.pricing.disable_unused_price_lists --kwargs "{'dry_run': True}"
     """
     pl_counter = 0
     item_price_counter = 0
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1}, fields=['name', 'modified_by', 'modified', 'reference_price_list'])
-    print(f"The following enabled Price Lists are not the default Price List of any Customer:")
+    print(f"The following enabled Price Lists are not the default Price List of any enabled Customer:")
     for pl in price_lists:
-        if not pl['reference_price_list'] or 'Projects' in pl['name']:  # or not 'Pricelist' in pl['name'] or pl['modified_by'] != 'Administrator':
+        if (not pl['reference_price_list']) or ('Projects' in pl['name']):  # or (not 'Pricelist' in pl['name']) or (pl['modified_by'] != 'Administrator'):
             continue
         enabled_customers = frappe.db.get_all("Customer", filters={'default_price_list': pl['name'], 'disabled': 0}, fields=['name'])
         if len(enabled_customers) == 0:
@@ -729,7 +732,7 @@ def disable_unused_price_lists(dry_run=True):
                 price_list.save()
             print(f"{'Disabled ' if not dry_run else ''}{pl['name']} last modified by {pl['modified_by']} on {pl['modified']}")
             pl_counter += 1
-    print(f"Found {pl_counter} enabled Price Lists that are not the default Price List of any Customer containing {item_price_counter} Item Prices in total.")
+    print(f"Found {pl_counter} enabled Price Lists that are not the default Price List of any enabled Customer containing {item_price_counter} Item Prices in total.")
 
 
 def compare_ref_to_project():
