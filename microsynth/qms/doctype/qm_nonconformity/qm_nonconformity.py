@@ -278,6 +278,13 @@ def get_qm_changes(qm_nc):
 
 
 @frappe.whitelist()
+def get_nc_attachments(qm_nc):
+    from frappe.desk.form.load import get_attachments
+    attachments = get_attachments("QM Nonconformity", qm_nc)
+    return attachments
+
+
+@frappe.whitelist()
 def has_actions(doc):
     """
     Returns whether a given QM Nonconformity has Corrections and Corrective Actions.
