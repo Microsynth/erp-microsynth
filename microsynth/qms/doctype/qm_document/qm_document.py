@@ -733,7 +733,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                 inserted_docs.append(qm_doc.name)
                 if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
                     new_comment = frappe.get_doc({
-                        'doctype': 'Communication',
+                        'doctype': 'Comment',
                         'comment_type': "Comment",
                         'subject': qm_doc.name,
                         'content': f"The old ID of this document in FileMaker was '{doc_id_old}'",

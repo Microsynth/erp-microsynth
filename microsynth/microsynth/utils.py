@@ -1812,7 +1812,7 @@ def comment_invoice(sales_invoice, comment):
     bench execute microsynth.microsynth.utils.comment_invoice --kwargs "{ 'sales_invoice': 'SI-BAL-23016302', 'comment': 'my_comment' }"
     """
     new_comment = frappe.get_doc({
-        'doctype': 'Communication',
+        'doctype': 'Comment',
         'comment_type': "Comment",
         'subject': sales_invoice,
         'content': comment,
@@ -2279,7 +2279,7 @@ def force_cancel(dt, dn):
         frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
     else:
         new_comment = frappe.get_doc({
-            'doctype': 'Communication',
+            'doctype': 'Comment',
             'comment_type': "Comment",
             'subject': dn,
             'content': f'Force cancelled by {frappe.get_user().name}',
