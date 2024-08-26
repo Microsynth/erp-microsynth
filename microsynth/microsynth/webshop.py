@@ -1335,21 +1335,26 @@ def get_label_status(labels):
     """
     # Check parameter
     if not labels or len(labels) == 0:
-        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
+        return {'success': True, 'messages': []}
     try:
-        labels_to_return = []
+        messages_to_return = []
         for label in labels:
-            if 'item' in label and label['item']:
-                if not frappe.db.exists("Item", label['item']):
-                    return {'success': False, 'message': f"The given Item '{label['item']}' does not exist in the ERP.", 'labels': None}
-                item_condition = f"AND `item` = {label['item']}"
-                item_string = f" and Item Code {label['item']}"
-            else:
-                item_condition = ""
-                item_string = ""
-            if not 'barcode' in label or not label['barcode']:
-                return {'success': False, 'message': 'Barcode is mandatory', 'labels': None}
-
+            if not 'item' in label or not label['item'] or not 'barcode' in label or not label['barcode']:
+                messages_to_return.append({
+                    'query': label,
+                    'label': None,
+                    'message': f"Label '{label['barcode']}' does not exist."  # Item and Barcode are both mandatory.
+                })
+                continue
+            if not frappe.db.exists("Item", label['item']):
+                messages_to_return.append({
+                    'query': label,
+                    'label': None,
+                    'message': f"Label '{label['barcode']}' does not exist."  # f"The given Item '{label['item']}' does not exist in the ERP."
+                })
+                continue
+            item_condition = f"AND `item` = {label['item']}"
+            item_string = f" and Item Code {label['item']}"
             sql_query = f"""
                 SELECT `item`,
                     `label_id` AS `barcode`,
@@ -1363,14 +1368,32 @@ def get_label_status(labels):
                 ;"""
             sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
             if len(sequencing_labels) > 1:
-                return {'success': False, 'message': f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.", 'labels': None}
+                frappe.log_error(f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
+                messages_to_return.append({
+                    'query': label,
+                    'label': None,
+                    'message': f"Label '{label['barcode']}' is not valid. Please contact the Microsynth support."
+                })
+                continue
             elif len(sequencing_labels) == 0:
-                return {'success': False, 'message': f"Found no label for the given barcode {label['barcode']}{item_string}.", 'labels': None}
+                frappe.log_error(f"Found no label for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
+                messages_to_return.append({
+                    'query': label,
+                    'label': None,
+                    'message': f"Label '{label['barcode']}' does not exist."
+                })
+                continue
             else:
-                labels_to_return.append(sequencing_labels[0])
-        return {'success': True, 'message': 'OK', 'labels': labels_to_return}
+                messages_to_return.append({
+                    'query': label,
+                    'label': sequencing_labels[0],
+                    'message': "OK"
+                })
+        return {'success': True, 'messages': messages_to_return}
     except Exception as err:
-        return {'success': False, 'message': err, 'labels': None}
+        frappe.log_error(f"{labels=}\n{err}", "webshop.get_label_status")
+        return {'success': False, 'messages': [{'query': None, 'label': None, 'message': err}]}
+        #return {'success': False, 'message': err, 'labels': None}
 
 
 @frappe.whitelist()
