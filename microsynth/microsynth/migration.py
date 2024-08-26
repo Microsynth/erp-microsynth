@@ -3954,6 +3954,7 @@ def check_tax_ids():
 
 def is_workday_before_10am(date):
     """
+    DEPRECATED
     Returns true if the given date is a workday (Monday to Friday and no holiday), otherwise false.
     Currently adapted to public holidays of St. Gallen 2023-2024.
     Source: https://www.sg.ch/verkehr/strassenverkehr/formulare_merkblaetter/feiertage-und-spezielle-oeffnungszeiten.html
@@ -3963,10 +3964,8 @@ def is_workday_before_10am(date):
                             datetime(2023, 11, 1), datetime(2023, 12, 25), datetime(2023, 12, 26),
                             datetime(2024, 1, 1), datetime(2024, 1, 2), datetime(2024, 3, 29),
                             datetime(2024, 4, 1), datetime(2024, 5, 9), datetime(2024, 5, 20),
-                            datetime(2024, 8, 1), datetime(2024, 11, 1), datetime(2024, 12, 24),
-                            datetime(2024, 12, 25), datetime(2024, 12, 26), datetime(2024, 12, 27),
-                            datetime(2024, 12, 31)]
-    # 27. Dezember 2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
+                            datetime(2024, 8, 1), datetime(2024, 11, 1), datetime(2024, 12, 25),
+                            datetime(2024, 12, 26)]
     if date.weekday() < 5 and date not in holidays_st_gallen:  # https://docs.python.org/3/library/datetime.html#datetime.date.weekday
         if date.hour < 10:  # before 10 am
             return True
@@ -3975,6 +3974,7 @@ def is_workday_before_10am(date):
 
 def evaluate_same_day_oligos(export_file, start_date='2023-10-01', end_date='2024-03-31'):
     """
+    DEPRECATED, see same_day_oligos.py
     Determine Oligo Sales Orders that fulfill the advertised same day delivery conditions
     and compute the proportion of Sales Orders that were shipped in-time (on the same day).
 

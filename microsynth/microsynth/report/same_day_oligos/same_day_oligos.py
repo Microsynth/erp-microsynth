@@ -30,12 +30,8 @@ def get_holidays():
     holidays_balgach = []
     parsed_holidays = []
     for y in range(2023, int(datetime.now().year)+1):
-        parsed_holidays += parse_holidays("1903", str(y))
-        holidays_balgach += [datetime(y, 11, 1).strftime('%d.%m.%Y'),  # unclear why it is missing
-                             datetime(y, 12, 24).strftime('%d.%m.%Y'),  # half-day holiday
-                             datetime(y, 12, 31).strftime('%d.%m.%Y')]  # half-day holiday
-    # Add 27.12.2024: Art. 60 Abs. 1 PersV: "Fällt der Weihnachtstag auf einen Mittwoch, ist der folgende Freitag arbeitsfrei."
-    holidays_balgach.append(datetime(2024, 12, 27).strftime('%d.%m.%Y'))
+        parsed_holidays += parse_holidays("1903", str(y))  # 1903 is the geocode of Balgach: https://feiertagskalender.ch/index.php?geo=1903
+        holidays_balgach.append(datetime(y, 11, 1).strftime('%d.%m.%Y'))  # unclear why it is missing
     for parsed_holiday in parsed_holidays:
         holidays_balgach.append(parsed_holiday['date'])
     #print(holidays_balgach)
