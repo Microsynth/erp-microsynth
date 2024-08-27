@@ -30,6 +30,16 @@ frappe.ui.form.on('Contact', {
 
         check_email_id(frm);
     },
+    validate(frm) {
+        if (frm.doc.salutation && !['Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'].includes(frm.doc.salutation)) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please set the field <b>Salutation</b> to a valid value (Frau / Herr / Ms. / Mr. / Mme / M.).")
+            });
+            frappe.validated=false;
+        }
+    },
     refresh(frm) {
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
