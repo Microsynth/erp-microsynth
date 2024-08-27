@@ -425,7 +425,7 @@ function allocate_avis(frm) {
             },
             {
                 'fieldname': 'allocated', 
-                'fieldtype': 'Float', 
+                'fieldtype': 'Data',
                 'label': __('Allocated'),
                 'default': 0,
                 'read_only': 1
@@ -496,11 +496,15 @@ function allocate_avis(frm) {
 }
 
 function recalc_allocation(d) {
-    var sum = 0;
-    for (var i = 0; i < d.fields[4].data.length; i++) {
+    let sum = 0;
+    for (let i = 0; i < d.fields[4].data.length; i++) {
         sum += (d.fields[4].data[i].outstanding_amount || 0);
     }
-    d.set_value("allocated", sum);
+    let color = "black";
+    if (sum != (d.fields_dict.camt_amount.value || 0)) {
+        color = "red";
+    }
+    d.set_value("allocated", "<span style='color: " + color + "; '>" + sum.toLocaleString("de-ch", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + "</span>");
     return sum
 }
 

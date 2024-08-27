@@ -94,6 +94,7 @@ function update_taxes(company, customer, address, category, date) {
     });
 }
 
+/* DEPRECATED, now in payment entry.js 
 /// Avis booking
 function allocate_avis(frm) {
     var d = new frappe.ui.Dialog({
@@ -212,7 +213,7 @@ function allocate_avis(frm) {
             },
             {
                 'fieldname': 'allocated', 
-                'fieldtype': 'Float', 
+                'fieldtype': 'Data', 
                 'label': __('Allocated'),
                 'default': 0,
                 'read_only': 1
@@ -258,9 +259,15 @@ function recalc_allocation(d) {
     for (var i = 0; i < d.fields[4].data.length; i++) {
         sum += d.fields[4].data[i].outstanding_amount;
     }
-    d.set_value("allocated", sum);
+    let color = "black";
+    if (sum != d.camt_amount) {
+        color = "red";
+    }
+    d.set_value("allocated", "<span style='color: " + color + "; '>" + sum + "</span>");
+    console.log("color: " + color);
     return sum
 }
+*/ 
 
 function hide_in_words() {
     // remove in words (because customisation and setting both do not apply)
