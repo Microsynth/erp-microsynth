@@ -530,6 +530,42 @@ def delete_item_prices_of_disabled_items(disabled_items, verbose=False, dry_run=
     print(f"{'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
 
 
+def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
+    """
+    Takes a list of Item Codes, checks if the Item is disabled and if yes, deletes all Item Prices of this Item.
+
+    verbose_level (higher levels include all lower levels):
+    0: only one summary line in total
+    1: currently processed Price List
+    2: number of deleted Item Prices per Price List
+    3: every single deleted Item Price (not recommended)
+
+    bench execute microsynth.microsynth.pricing.delete_item_prices_of_disabled_price_lists --kwargs "{'verbose_level': 2, 'dry_run': True}"
+    """
+    total_counter = 0
+    disabled_price_lists = frappe.db.get_all("Price List", filters={'enabled': 0}, fields=['name', 'modified_by', 'modified', 'reference_price_list'])
+    for i, pl in enumerate(disabled_price_lists):
+        # exclude some Price Lists
+        if "Sales" in pl['name'] or "Project" in pl['name'] or "Standard" in pl['name']:
+            continue
+        if verbose_level > 0:
+            print(f"Processing Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
+        counter = 0
+        item_prices = frappe.get_all("Item Price", filters={'price_list': pl['name']}, fields=['name'])
+        for item_price in item_prices:
+            if not dry_run:
+                item_price_doc = frappe.get_doc("Item Price", item_price['name'])
+                item_price_doc.delete()
+            if verbose_level > 2:
+                print(f"Deleted Item Price {item_price['name']} from Price List '{pl['name']}'.")
+            counter += 1
+        frappe.db.commit()
+        if verbose_level > 1:
+            print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices from Price List '{pl['name']}'.")
+        total_counter += counter
+    print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
+
+
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
     """
     Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the respective reference Price List.
@@ -720,7 +756,7 @@ def disable_unused_price_lists(dry_run=True):
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1}, fields=['name', 'modified_by', 'modified', 'reference_price_list'])
     print(f"The following enabled Price Lists are not the default Price List of any enabled Customer:")
     for pl in price_lists:
-        if (not pl['reference_price_list']) or ('Projects' in pl['name']):  # or (not 'Pricelist' in pl['name']) or (pl['modified_by'] != 'Administrator'):
+        if (not pl['reference_price_list']) or ('Projects' in pl['name']) or ('Standard' in pl['name']):  # or (not 'Pricelist' in pl['name']) or (pl['modified_by'] != 'Administrator'):
             continue
         enabled_customers = frappe.db.get_all("Customer", filters={'default_price_list': pl['name'], 'disabled': 0}, fields=['name'])
         if len(enabled_customers) == 0:
