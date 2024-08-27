@@ -52,6 +52,7 @@ doctype_js = {
     "Sales Invoice":      "public/js/sales_invoice.js",
     "Sales Order":        "public/js/sales_order.js",
     "Standing Quotation": "public/js/standing_quotation.js",
+    "Supplier":           "public/js/supplier.js",
     "User":               "public/js/user.js"
 }
 # include js in doctype lists
