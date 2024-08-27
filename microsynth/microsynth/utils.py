@@ -1747,6 +1747,10 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             current_exchange_rate = exchange_rates[0]['exchange_rate']
         else:
             current_exchange_rate = 1
+
+    # get cost center
+    cost_center = frappe.get_cached_value("Company", company, "cost_center")
+
     # create base document
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
@@ -1760,7 +1764,8 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
                 'account_currency': intermediate_currency,
                 'debit_in_account_currency': amount,
                 'debit': round(amount * current_exchange_rate, 2),
-                'exchange_rate': current_exchange_rate
+                'exchange_rate': current_exchange_rate,
+                'cost_center': cost_center
             }
         ]
     })
@@ -1783,7 +1788,8 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             'reference_type': 'Sales Invoice',
             'reference_name': invoice.get('sales_invoice'),
             'credit_in_account_currency': invoice.get('outstanding_amount'),
-            'credit': round((invoice.get('outstanding_amount') or 0) * (exchange_rate or 1), 2)
+            'credit': round((invoice.get('outstanding_amount') or 0) * (exchange_rate or 1), 2),
+            'cost_center': cost_center
         })
         base_total_credit += (invoice.get('outstanding_amount') or 0) * (exchange_rate or 1)
 
@@ -1794,7 +1800,8 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
         jv.append('accounts', {
             'account': currency_deviation_account,
             'credit': currency_deviation,
-            'account_currency': frappe.get_cached_value("Account", currency_deviation_account, "account_currency")
+            'account_currency': frappe.get_cached_value("Account", currency_deviation_account, "account_currency"),
+            'cost_center': cost_center
         })
 
         jv.set_total_debit_credit()
