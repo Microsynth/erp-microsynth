@@ -547,6 +547,7 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
     for i, pl in enumerate(disabled_price_lists):
         # exclude some Price Lists
         if "Sales" in pl['name'] or "Project" in pl['name'] or "Standard" in pl['name']:
+            print(f"Going to skip Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}).")
             continue
         if verbose_level > 0:
             print(f"Processing Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
@@ -795,3 +796,21 @@ def compare_ref_to_project():
             else:
                 print(f"Item {ref_price['item_code']}: {ref_price['item_name']} with minimum Qty {ref_price['min_qty']} is on Sales Prices {currency} but not on Projects {currency}.")
 
+
+@frappe.whitelist()
+def is_price_list_used(customer, price_list):
+    """
+    Check if the given Price List is the Default Price List of any enabled Customer except the given customer.
+
+    bench execute microsynth.microsynth.pricing.is_price_list_used
+    """
+    enabled_customers = frappe.db.get_all("Customer", filters=[['default_price_list', '=', price_list], ['disabled', '=', 0], ['name', '!=', customer]], fields=['name'])
+    return len(enabled_customers) > 0
+
+
+@frappe.whitelist()
+def disable_price_list(price_list):
+    price_list_doc = frappe.get_doc("Price List", price_list)
+    price_list_doc.enabled = 0
+    price_list_doc.save()
+    frappe.db.commit()

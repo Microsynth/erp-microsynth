@@ -105,9 +105,14 @@ frappe.ui.form.on('Customer', {
     },
     tax_id: function(frm) {
         if (frm.doc.tax_id && frm.doc.customer_type != 'Individual') {
-            verify_tax_id(frm.doc.tax_id)
+            verify_tax_id(frm.doc.tax_id);
         }
-    }
+    },
+    disabled: function(frm) {
+        if (frm.doc.disabled) {  // TODO: Move to after_save trigger?
+            check_price_list_usage(frm.doc.name, frm.doc.default_price_list);
+        }
+    },
 });
 
 function fetch_primary_contact(frm) {
@@ -186,4 +191,43 @@ function verify_tax_id(tax_id) {
             }
         });
     }
+}
+
+
+function check_price_list_usage(customer, price_list) {
+    frappe.call({
+        "method":"microsynth.microsynth.pricing.is_price_list_used",
+        "args": {
+            "customer": customer,
+            "price_list": price_list,
+        },
+        "callback": function(response) {
+            if (!response.message) {
+
+                var d = new frappe.ui.Dialog({
+                    'fields': [
+                        {'fieldname': 'text', 'fieldtype': 'HTML'}
+                    ],
+                    'primary_action': function() {
+                        d.hide();
+                        // Disable Price List
+                        frappe.call({
+                            'method': 'microsynth.microsynth.pricing.disable_price_list',
+                            'args': {
+                                'price_list': price_list
+                            },
+                            "async": false,
+                            'callback': function(response) {
+                                frappe.show_alert("Disabled Price List " + price_list);
+                            }
+                        });
+                    },
+                    'primary_action_label': __("Disable Price List " + price_list),
+                    'title': __("Found unused Price List")
+                });
+                d.fields_dict.text.$wrapper.html(__("The Default Price List '" + price_list + "' of this Customer is not used by any other enabled Customer. Do you want to disable Price List '" + price_list + "'?")),
+                d.show();
+            }
+        }
+    });
 }
