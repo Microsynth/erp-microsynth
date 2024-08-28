@@ -23,16 +23,16 @@ frappe.ui.form.on('QM Nonconformity', {
             }
         }
 
+        // access protection: only QAU in status unequals Closed can remove attachments
+        if (frappe.user.has_role('QAU') && !["Closed", "Cancelled"].includes(frm.doc.status)) {
+            remove_access_protection();
+        } else {
+            access_protection();
+        }
+
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
-
-        // access protection: only QAU in status unequals Closed can remove attachments
-        if (["Closed", "Cancelled"].includes(frm.doc.status) || frappe.user.has_role('QAU')) {
-            access_protection();
-        } else {
-            remove_access_protection();
-        }
 
         if (frm.doc.__islocal) {
             cur_frm.set_value("created_by", frappe.session.user);
@@ -141,7 +141,7 @@ frappe.ui.form.on('QM Nonconformity', {
         // Only QAU or the creator in Status Draft, Created or Investigation
         // can change the fields Root Cause and Risk Analysis Summary
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
-            || frappe.user.has_role('QAU')) {
+            || (frappe.user.has_role('QAU') && !["Closed", "Cancelled"].includes(frm.doc.status))) {
             cur_frm.set_df_property('root_cause', 'read_only', false);
             cur_frm.set_df_property('risk_analysis', 'read_only', false);
         } else {

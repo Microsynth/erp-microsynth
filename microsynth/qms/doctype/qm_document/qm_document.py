@@ -741,7 +741,7 @@ def import_qm_documents(file_path, expected_line_length=24):
                         'status': "Linked",
                         'reference_name': qm_doc.name
                     })
-                    new_comment.insert()
+                    new_comment.insert(ignore_permissions=True)
 
                 imported_counter += 1
             except Exception as err:

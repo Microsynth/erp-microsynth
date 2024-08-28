@@ -1827,7 +1827,7 @@ def comment_invoice(sales_invoice, comment):
         'status': "Linked",
         'reference_name': sales_invoice
     })
-    new_comment.insert()
+    new_comment.insert(ignore_permissions=True)
     return
 
 
@@ -2294,7 +2294,7 @@ def force_cancel(dt, dn):
             'status': "Linked",
             'reference_name': dn
         })
-        new_comment.insert()
+        new_comment.insert(ignore_permissions=True)
     return
 
 

@@ -70,8 +70,8 @@ def set_created(doc, user):
     nc = frappe.get_doc("QM Nonconformity", doc)
     check_classification(nc)
 
-    if user != nc.created_by:
-        frappe.throw(f"Error creating the QM Nonconformity: Only {nc.created_by} is allowed to create the QM Nonconformity {nc.name}. Current login user is {user}.")
+    if user != nc.created_by and not user_has_role(user, "QAU"):
+        frappe.throw(f"Error creating the QM Nonconformity: Only {nc.created_by} or QAU is allowed to create the QM Nonconformity {nc.name}. Current login user is {user}.")
 
     nc.created_on = today()
     nc.created_by = user

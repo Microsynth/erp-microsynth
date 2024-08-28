@@ -30,7 +30,7 @@ frappe.ui.form.on('QM Action', {
 
         // allow the responsible person or QAU to change the responsible person in Draft status (transfer document)
         if ((!frm.doc.__islocal)
-            && (["Draft"].includes(frm.doc.status))
+            && (["Draft", "Created"].includes(frm.doc.status))
             && ((frappe.session.user === frm.doc.responsible_person) || (frappe.user.has_role('QAU')))
             ) {
             // add change responsible person button
