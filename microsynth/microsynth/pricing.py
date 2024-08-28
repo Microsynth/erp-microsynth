@@ -745,6 +745,42 @@ def group_all_price_lists():
         group_price_lists(ref_pl['name'], verbose_level=1)
 
 
+def find_rate_differences(reference_price_list, tolerance_percentage=100, verbose=False):
+    """
+    List all rate differences > tolerance_percentage for matching Item codes with matching Minimum Qty on all Price Lists referring to the given reference_price_list.
+
+    bench execute microsynth.microsynth.pricing.find_rate_differences --kwargs "{'reference_price_list': 'Sales Prices CHF', 'tolerance_percentage': 500, 'verbose': False}"
+    """
+    price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name', 'general_discount'])
+    my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate', 'currency']
+    already_checked = {}
+    for i, base_price_list in enumerate(price_lists):
+        if verbose:
+            print(f"Checking Price List '{base_price_list['name']}' ({i+1}/{len(price_lists)}) ...")
+        already_checked[base_price_list['name']] = [base_price_list['name']]
+        base_item_prices = frappe.db.get_all("Item Price", filters={'price_list': base_price_list['name']}, fields=my_fields)
+        for price_list in price_lists:
+            # avoid to compare a pair of Price Lists more than once
+            if price_list['name'] in already_checked[base_price_list['name']]:
+                continue
+            already_checked[base_price_list['name']].append(price_list['name'])
+            if price_list['name'] in already_checked and base_price_list['name'] in already_checked[price_list['name']]:
+                continue
+            if price_list['name'] in already_checked:
+                already_checked[price_list['name']].append(base_price_list['name'])
+            else:
+                already_checked[price_list['name']] = [base_price_list['name']]
+            item_prices = frappe.db.get_all("Item Price", filters={'price_list': price_list['name']}, fields=my_fields)
+            for bip in base_item_prices:
+                for ip in item_prices:
+                    if bip['item_code'] == ip['item_code'] and bip['min_qty'] == ip['min_qty']:
+                        # matching item -> compare rates
+                        max_percentage_difference = max_percentage_diff(bip['price_list_rate'], ip['price_list_rate'])
+                        if max_percentage_difference > tolerance_percentage and max_percentage_difference != float('inf'):
+                            print(f"Rate mismatch: Item {bip['item_code']}: {bip['item_name']} with Minimum Qty {bip['min_qty']} on Price List '{base_price_list['name']}' = {bip['price_list_rate']} {bip['currency']} differs by {max_percentage_difference:.2f} % from {ip['price_list_rate']} {ip['currency']} of Item {ip['item_code']}: {ip['item_name']} with Minimum Qty {ip['min_qty']} on Price List '{price_list['name']}'")
+                        break
+
+
 def disable_unused_price_lists(dry_run=True):
     """
     Disable all enabled Price Lists that are not the default Price List of any enabled Customer,
