@@ -745,24 +745,24 @@ def group_all_price_lists():
         group_price_lists(ref_pl['name'], verbose_level=1)
 
 
-def percentage_diff(a, b):
-    if a == b:
+def percentage_discount(ref_rate, cust_rate):
+    if ref_rate == cust_rate:
         return 0
-    elif a == 0:
+    elif ref_rate == 0:
         return float('inf')
-    return (a - b) / a * 100
+    return (ref_rate - cust_rate) / ref_rate * 100
 
 
-def find_rate_differences(reference_price_list, min_perc_diff=80, max_perc_diff=100):
+def output_discounts(reference_price_list, min_discount=80, max_discount=100):
     """
-    List all rate differences from min_perc_diff to max_perc_diff to the given reference_price_list with matching Item code and matching Minimum Qty.
+    List all rate differences from min_discount to max_discount to the given reference_price_list with matching Item code and matching Minimum Qty.
 
-    bench execute microsynth.microsynth.pricing.find_rate_differences --kwargs "{'reference_price_list': 'Sales Prices EUR', 'min_perc_diff': 90, 'max_perc_diff': 100}"
+    bench execute microsynth.microsynth.pricing.output_discounts --kwargs "{'reference_price_list': 'Sales Prices SEK', 'min_discount': 60, 'max_discount': 100}"
     """
     my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty', 'price_list_rate', 'currency']
     reference_item_prices = frappe.db.get_all("Item Price", filters={'price_list': reference_price_list}, fields=my_fields)
     price_lists = frappe.db.get_all("Price List", filters={'enabled': 1, 'reference_price_list': reference_price_list}, fields=['name'])
-    print("Item Code;Item Name;Minimum Qty;Price List A;Rate A;Price List B;Rate B;Difference")
+    print("Item Code;Item Name;Minimum Qty;Price List A;Rate A;Price List B;Rate B;Discount in %")
     for price_list in price_lists:
         if price_list['name'] == "Microsynth AG":  # skip the internal Price List
             continue
@@ -771,9 +771,9 @@ def find_rate_differences(reference_price_list, min_perc_diff=80, max_perc_diff=
             for ip in item_prices:
                 if rip['item_code'] == ip['item_code'] and rip['min_qty'] == ip['min_qty']:
                     # matching item -> compare rates
-                    max_percentage_difference = percentage_diff(rip['price_list_rate'], ip['price_list_rate'])
-                    if min_perc_diff <= max_percentage_difference <= max_perc_diff:
-                        print(f"{rip['item_code']};{rip['item_name']};{rip['min_qty']};{reference_price_list};{rip['price_list_rate']} {rip['currency']};{price_list['name']};{ip['price_list_rate']} {ip['currency']};{max_percentage_difference:.2f} %")
+                    discount = percentage_discount(rip['price_list_rate'], ip['price_list_rate'])
+                    if min_discount <= discount <= max_discount:
+                        print(f"{rip['item_code']};{rip['item_name']};{rip['min_qty']};{reference_price_list};{rip['price_list_rate']} {rip['currency']};{price_list['name']};{ip['price_list_rate']} {ip['currency']};{discount:.2f}")
                     break
 
 
