@@ -54,7 +54,18 @@ frappe.ui.form.on('Customer', {
             frm.add_custom_button(__("Price List"), function() {
                 frappe.set_route("query-report", "Pricing Configurator", {'price_list': frm.doc.default_price_list});
             });
-            // TODO: Show a warning if the Customer is enabled and the Default Price List is disabled?
+            if (!frm.doc.disabled) {
+                frappe.db.get_value('Price List', frm.doc.default_price_list, ["enabled"], function(value) {
+                    if (!value["enabled"]) {
+                        // Show a warning if Default Price List is disabled
+                        frappe.msgprint({
+                            title: __('Warning'),
+                            indicator: 'orange',
+                            message: __("The Default Price List <b>" + frm.doc.default_price_list + "</b> of this Customer is <b>disabled</b>.<br><br>Please consider to enable it.")
+                        });
+                    }
+                });
+            }
         };
         if ((!frm.doc.__islocal) && (frm.doc.invoicing_method === "Email") && (!frm.doc.invoice_to) && (!frm.doc.disabled)) {
             frappe.msgprint({
