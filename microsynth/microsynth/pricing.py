@@ -845,4 +845,3 @@ def disable_price_list(price_list):
     price_list_doc = frappe.get_doc("Price List", price_list)
     price_list_doc.enabled = 0
     price_list_doc.save()
-    frappe.db.commit()

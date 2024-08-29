@@ -102,17 +102,15 @@ frappe.ui.form.on('Customer', {
                 }
             });
         }
+        if (frm.doc.disabled) {
+            check_price_list_usage(frm.doc.name, frm.doc.default_price_list);
+        }
     },
     tax_id: function(frm) {
         if (frm.doc.tax_id && frm.doc.customer_type != 'Individual') {
             verify_tax_id(frm.doc.tax_id);
         }
-    },
-    disabled: function(frm) {
-        if (frm.doc.disabled) {  // TODO: Move to after_save trigger?
-            check_price_list_usage(frm.doc.name, frm.doc.default_price_list);
-        }
-    },
+    }
 });
 
 function fetch_primary_contact(frm) {
@@ -218,14 +216,14 @@ function check_price_list_usage(customer, price_list) {
                             },
                             "async": false,
                             'callback': function(response) {
-                                frappe.show_alert("Disabled Price List " + price_list);
+                                frappe.show_alert("Disabled Price List <b>" + price_list + "</b>");
                             }
                         });
                     },
-                    'primary_action_label': __("Disable Price List " + price_list),
+                    'primary_action_label': __("Disable Price List"),
                     'title': __("Found unused Price List")
                 });
-                d.fields_dict.text.$wrapper.html(__("The Default Price List '" + price_list + "' of this Customer is not used by any other enabled Customer. Do you want to disable Price List '" + price_list + "'?")),
+                d.fields_dict.text.$wrapper.html(__("The Price List <b>" + price_list + "</b> is no longer used by any Customer.<br><br>Do you want to <b>disable</b> it?")),
                 d.show();
             }
         }
