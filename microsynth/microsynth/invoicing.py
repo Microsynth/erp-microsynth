@@ -28,6 +28,7 @@ import json
 import random
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 
+
 @frappe.whitelist()
 def create_invoices(mode, company, customer):
     kwargs={
@@ -41,6 +42,26 @@ def create_invoices(mode, company, customer):
         timeout=15000,
         **kwargs)
     return {'result': _('Invoice creation started...')}
+
+
+def print_invoices():
+    """
+    Print Sales Invoices for all Companies.
+    Should be run by a weekly cronjob.
+
+    bench execute microsynth.microsynth.invoicing.print_invoices
+    """
+    companies = frappe.db.get_all("Company", fields=['name'])
+    for company in companies:
+        kwargs={
+            'mode': 'Post',
+            'company': company['name'],
+            'customer': None
+        }
+        enqueue("microsynth.microsynth.invoicing.async_create_invoices",
+            queue='long',
+            timeout=15000,
+            **kwargs)
 
 
 def get_tax_templates(delivery_notes):
