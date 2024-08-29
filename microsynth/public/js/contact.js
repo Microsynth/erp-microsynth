@@ -190,8 +190,32 @@ function preview_address(frm, customer) {
                 "customer": customer
             },
             "callback": function(response) {
-                var address_layout = response.message; 
-                frappe.msgprint(address_layout, __("Address Preview"));
+                var address_layout = response.message;
+                console.log(address_layout);
+                var d = new frappe.ui.Dialog({
+                    'fields': [
+                        {'fieldname': 'address_preview', 'fieldtype': 'Data', 'read_only': 1, 'default': address_layout}
+                    ],
+                    'primary_action': function(){
+                        //var values = d.get_values();
+                        console.log("201");
+                        frappe.call({
+                            "method": "microsynth.microsynth.labels.print_contact_shipping_label",
+                            "args": {
+                                "address_id": frm.doc.address,
+                                "contact_id": frm.doc.name,
+                                "customer_id": customer
+                            },
+                            'callback': function(r) {
+                                d.hide();
+                                frappe.show_alert( __("Adress Label printed.") );
+                            }
+                        });
+                    },
+                    'primary_action_label': __('Print Label'),
+                    'title': __('Address Preview')
+                });
+                d.show();
             }
         });
     }

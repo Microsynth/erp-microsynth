@@ -4,12 +4,12 @@
 
 import frappe
 import socket
-import sys
 from datetime import datetime
 from microsynth.microsynth.shipping import get_shipping_service, get_shipping_item, create_receiver_address_lines, get_sender_address_line
 
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
 BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html"
+
 
 def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -66,6 +66,7 @@ def print_test_label_novexx():
 #!P1
 '''
     print_raw('192.0.1.72', 9100, content )
+
 
 def choose_brady_printer(company):
     """
@@ -154,6 +155,37 @@ def print_shipping_label(sales_order_id):
     sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sales_order.save()
     frappe.db.commit()
+
+
+@frappe.whitelist()
+def print_contact_shipping_label(address_id, contact_id, customer_id):
+    """
+    function calls respective template for creating a transport label
+
+    bench execute "microsynth.microsynth.labels.print_contact_shipping_label" --kwargs "{'contact_id': '215856'}"
+    """
+    try:
+        user_settings = frappe.get_doc("User Settings", frappe.session.user)
+        sender_company = user_settings.qm_process_assignments[0].company
+    except Exception as err:
+        frappe.log_error(f"{err}", "labels.print_contact_shipping_label")
+        sender_company = "Microsynth AG"
+    letter_head = frappe.get_doc("Letter Head", sender_company)
+    country = frappe.get_value("Address", address_id, "country")
+    customer_name = frappe.get_value("Customer", customer_id, "customer_name")
+    if not letter_head.sender_address_line:
+        sender_header = ""
+    else:
+        sender_header = letter_head.sender_address_line
+    label_data = {
+        'lines': create_receiver_address_lines(customer_name=customer_name, contact=contact_id, address=address_id), 
+        'sender_header': sender_header,
+        'destination_country': country,
+        'cstm_id': customer_id
+    }
+    content = frappe.render_template("microsynth/templates/includes/contact_address_label_brady.html", label_data)
+    printer = choose_brady_printer(sender_company)
+    print_raw(printer.ip, printer.port, content)
 
 
 @frappe.whitelist()
