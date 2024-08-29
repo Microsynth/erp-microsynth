@@ -31,29 +31,13 @@ def get_data(filters):
         filter_conditions += f"AND `tabQM Nonconformity`.`created_by` = '{filters.get('created_by')}'"
     if filters.get('qm_process'):
         filter_conditions += f"AND `tabQM Nonconformity`.`qm_process` = '{filters.get('qm_process')}'"
-
     # Created Track & Trend can be closed by the creator
     filter_conditions += f"AND ((`tabQM Nonconformity`.`status` = 'Created' AND `tabQM Nonconformity`.`nc_type` = 'Track & Trend' AND `tabQM Nonconformity`.`created_by` = '{frappe.session.user}') "
     # Completed Event, OOS or Track & Trend can be closed by the creator
     filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Completed' AND `tabQM Nonconformity`.`nc_type` IN ('Track & Trend', 'OOS', 'Event') AND `tabQM Nonconformity`.`created_by` = '{frappe.session.user}')"
     if user_has_role(frappe.session.user, "QAU"):
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND "
-        filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Deviation' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`criticality_classification` = 'critical')) OR "
-        filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Event'))"  # TODO: Show only Events with Corrective Actions and move all other Events to the creator list
-        # Created OOS
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Created' AND `tabQM Nonconformity`.`nc_type` = 'OOS')"
-        # Created and GMP
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Created' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`regulatory_classification` IS NULL OR `tabQM Nonconformity`.`regulatory_classification` = ''))"
-        # Plan Approval and GMP
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND `tabQM Nonconformity`.`regulatory_classification` = 'GMP')"
-    if user_has_role(frappe.session.user, "PV"):  # TODO: Replace PV by creator (created_by)
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND NOT "
-        filter_conditions += f"(`tabQM Nonconformity`.`nc_type` = 'Deviation' AND (`tabQM Nonconformity`.`regulatory_classification` = 'GMP' OR `tabQM Nonconformity`.`criticality_classification` = 'critical'))) "
-        filter_conditions += f"AND NOT `tabQM Nonconformity`.`nc_type` = 'Event')"
-        # Created and non-GMP
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Created' AND (`tabQM Nonconformity`.`regulatory_classification` != 'GMP' OR `tabQM Nonconformity`.`regulatory_classification` IS NULL OR `tabQM Nonconformity`.`regulatory_classification` = ''))"
-        # Plan Approval and non-GMP
-        filter_conditions += f" OR (`tabQM Nonconformity`.`status` = 'Plan Approval' AND `tabQM Nonconformity`.`regulatory_classification` != 'GMP')"
+        filter_conditions += f" OR `tabQM Nonconformity`.`status` = 'Plan Approval'"
+        filter_conditions += f" OR `tabQM Nonconformity`.`status` = 'Created'"
     filter_conditions += ')'
 
     query = f"""
