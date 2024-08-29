@@ -581,15 +581,15 @@ def rewrite_posix_path(windows_path):
     return Path(posix_path)
 
 
-def import_qm_documents(file_path, expected_line_length=24):
+def import_qm_documents(file_path, expected_line_length=24, only_attach_docx=False):
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/240723_ERP_Migration_3.3.csv'}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/ReImport_SOPS_3.37_v03.csv', 'expected_line_length': 24, 'only_attach_docx': True}"
     """
     import csv
 
-    imported_counter = line_counter = 0
+    imported_counter = line_counter = corrected_counter = 0
     inserted_docs = []
     with open(file_path) as file:
         print(f"Parsing Q Documents from '{file_path}' ...")
@@ -692,58 +692,65 @@ def import_qm_documents(file_path, expected_line_length=24):
                                                                ['qm_process', '=', qm_processes[0]['name']],
                                                                ['chapter', '=', chapter],
                                                                ['document_number', '=', parts['document_number']]])
-            if len(duplicates) > 0:
+            if len(duplicates) > 0 and not only_attach_docx:
                 print(f"{doc_id_new};{title};There is already at a QM Document with type {parts['doc_type']}, qm_process {qm_processes[0]['name']}, chapter {chapter} and document_number {parts['document_number']}. Going to continue.")
                 continue
-
-            # Create QM Document
-            qm_doc = frappe.get_doc({
-                'doctype': "QM Document",
-                'document_type': parts['doc_type'],
-                'qm_process': qm_processes[0]['name'],
-                'chapter': chapter,
-                'date': parts['date'],  # only for PROT
-                'document_number': parts['document_number'],
-                'import_name': import_name,
-                'title': title,
-                'version': version,
-                'status': status,
-                'classification_level': 'Secret' if secret else 'Confidential',
-                'company': company,
-                'created_on': datetime.strptime(created_on, given_date_format).strftime(target_date_format) if created_on else None,
-                'created_by': created_by or None,
-                'reviewed_on': datetime.strptime(reviewed_on, given_date_format).strftime(target_date_format) if reviewed_on else None,
-                'reviewed_by': reviewed_by or None,
-                'released_on': released_on_formatted,
-                'released_by': released_by or None,
-                'last_revision_on': datetime.strptime(last_revision_on, given_date_format).strftime(target_date_format) if last_revision_on else released_on_formatted,
-                'last_revision_by': last_revision_by or None,
-                'valid_from': datetime.strptime(valid_from, given_date_format).strftime(target_date_format)
-            })
+            if only_attach_docx and file_path_2:
+                qm_doc = frappe.get_doc("QM Document", import_name)
+            else:
+                # Create QM Document
+                qm_doc = frappe.get_doc({
+                    'doctype': "QM Document",
+                    'document_type': parts['doc_type'],
+                    'qm_process': qm_processes[0]['name'],
+                    'chapter': chapter,
+                    'date': parts['date'],  # only for PROT
+                    'document_number': parts['document_number'],
+                    'import_name': import_name,
+                    'title': title,
+                    'version': version,
+                    'status': status,
+                    'classification_level': 'Secret' if secret else 'Confidential',
+                    'company': company,
+                    'created_on': datetime.strptime(created_on, given_date_format).strftime(target_date_format) if created_on else None,
+                    'created_by': created_by or None,
+                    'reviewed_on': datetime.strptime(reviewed_on, given_date_format).strftime(target_date_format) if reviewed_on else None,
+                    'reviewed_by': reviewed_by or None,
+                    'released_on': released_on_formatted,
+                    'released_by': released_by or None,
+                    'last_revision_on': datetime.strptime(last_revision_on, given_date_format).strftime(target_date_format) if last_revision_on else released_on_formatted,
+                    'last_revision_by': last_revision_by or None,
+                    'valid_from': datetime.strptime(valid_from, given_date_format).strftime(target_date_format)
+                })
             try:
-                qm_doc.insert()
-                if not company:
-                    qm_doc.company = None
-                qm_doc.submit()
-
-                create_file_attachment(qm_doc.name, file_path)
-                if file_path_2:
+                if only_attach_docx and file_path_2:
                     create_file_attachment(qm_doc.name, file_path_2)
+                    corrected_counter += 1
+                else:
+                    qm_doc.insert()
+                    if not company:
+                        qm_doc.company = None
+                    qm_doc.submit()
 
-                inserted_docs.append(qm_doc.name)
-                if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
-                    new_comment = frappe.get_doc({
-                        'doctype': 'Comment',
-                        'comment_type': "Comment",
-                        'subject': qm_doc.name,
-                        'content': f"The old ID of this document in FileMaker was '{doc_id_old}'",
-                        'reference_doctype': "QM Document",
-                        'status': "Linked",
-                        'reference_name': qm_doc.name
-                    })
-                    new_comment.insert(ignore_permissions=True)
+                    create_file_attachment(qm_doc.name, file_path)
 
-                imported_counter += 1
+                    if file_path_2:
+                        create_file_attachment(qm_doc.name, file_path_2)
+
+                    inserted_docs.append(qm_doc.name)
+                    if line[5].strip() != line[6].strip():  # compare old and new document ID from the import file
+                        new_comment = frappe.get_doc({
+                            'doctype': 'Comment',
+                            'comment_type': "Comment",
+                            'subject': qm_doc.name,
+                            'content': f"The old ID of this document in FileMaker was '{doc_id_old}'",
+                            'reference_doctype': "QM Document",
+                            'status': "Linked",
+                            'reference_name': qm_doc.name
+                        })
+                        new_comment.insert(ignore_permissions=True)
+
+                    imported_counter += 1
             except Exception as err:
                 print(f"{doc_id_new};{title};Unable to insert and submit: {err}")
                 continue
@@ -751,8 +758,10 @@ def import_qm_documents(file_path, expected_line_length=24):
             if qm_doc.name != import_name:  # currently useless
                 print(f"{doc_id_new};{title};name/ID unequal {qm_doc.name=}.")
                 continue
-
-    print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
+    if only_attach_docx:
+        print(f"Could successfully attach DOCX to {corrected_counter}/{line_counter} Q Documents ({round((corrected_counter/line_counter)*100, 2)} %).")
+    else:
+        print(f"Could successfully import {imported_counter}/{line_counter} Q Documents ({round((imported_counter/line_counter)*100, 2)} %).")
 
 
 def fix_chapters(file_path):
