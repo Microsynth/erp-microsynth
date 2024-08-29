@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2024-08-29 10:02:42.046497",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2024-08-29 10:22:22.748780",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "invoice_entry",
+ "owner": "Administrator",
+ "page_name": "invoice_entry",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Invoice Entry"
+}
