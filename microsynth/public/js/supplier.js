@@ -11,5 +11,14 @@ frappe.ui.form.on('Supplier', {
                 }
             };
         };
+
+        frm.set_query('default_tax_template', 'accounts', function(doc, cdt, cdn) {
+            var d = locals[cdt][cdn];
+            var filters = {
+                'company': d.company
+            }
+            return {'filters': filters}
+        });
+
     }
 });
