@@ -18,7 +18,7 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
     data = []
-    for account in ['1070 - stripe - BAL', '1090 - Transferkonto CHF (Geld unterwegs) - BAL', '1091 - Transferkonto USD (Geld unterwegs) - BAL', '1092 - Transferkonto EUR (Geld unterwegs) - BAL']:
+    for account in ['1070 - stripe - BAL', '1090 - Transferkonto CHF (Geld unterwegs) - BAL', '1091 - Transferkonto USD (Geld unterwegs) - BAL', '1092 - Transferkonto EUR (Geld unterwegs) - BAL', '1590 - Durchlaufende Posten - GOE']:
         entry = frappe.db.sql(f"""
             SELECT DISTINCT `account_currency`,
                 SUM(`credit`) as `total_credit`,
