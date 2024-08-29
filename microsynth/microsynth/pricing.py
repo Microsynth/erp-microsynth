@@ -550,7 +550,7 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
             print(f"Going to skip Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}).")
             continue
         if verbose_level > 0:
-            print(f"Processing Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
+            print(f"{datetime.now()}: Processing Price List '{pl['name']}' ({i}/{len(disabled_price_lists)}) ...")
         counter = 0
         item_prices = frappe.get_all("Item Price", filters={'price_list': pl['name']}, fields=['name'])
         for item_price in item_prices:
@@ -564,7 +564,7 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
         if verbose_level > 1:
             print(f"{'Would have deleted' if dry_run else 'Deleted'} {counter} Item Prices from Price List '{pl['name']}'.")
         total_counter += counter
-    print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
+    print(f"\n{datetime.now()}: {'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
 
 
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
