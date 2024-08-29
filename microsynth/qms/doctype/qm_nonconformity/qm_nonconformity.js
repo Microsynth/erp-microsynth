@@ -160,17 +160,23 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only QAU and the creator can change these fields in the specified Status
-        if ((['Draft', 'Created', 'Plan Approval', 'Investigation', 'Planning', 'Implementation'].includes(frm.doc.status)
+        if ((['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status)
             && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
-            cur_frm.set_df_property('action_plan_summary', 'read_only', false);
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
             cur_frm.set_df_property('impact_after_actions', 'read_only', false);
             cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', false);
         } else {
-            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', true);
             cur_frm.set_df_property('impact_after_actions', 'read_only', true);
             cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', true);
+        }
+
+        // Only QAU and the creator can change these fields in the specified Status
+        if ((['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || (['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status) && frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('action_plan_summary', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
         }
 
         if ((["Completed"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
