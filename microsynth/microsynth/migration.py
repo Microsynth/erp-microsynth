@@ -1342,6 +1342,7 @@ def disable_customers_without_contacts():
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
             LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
             WHERE `tDLA`.`link_name` = "{customer_id}"
+                AND `tabContact`.`status` != "Disabled"
                 AND `tabAddress`.`address_type` != "Billing"
         """.format(customer_id=c['name']), as_dict=True)
         
