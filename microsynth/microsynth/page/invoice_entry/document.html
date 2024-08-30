@@ -14,7 +14,7 @@
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
-                <button type="submit" class="btn btn-sm btn-primary" id="btn_submit_{{ name }}">{{ _("Submit") }}</button>
+                <button type="submit" class="btn btn-sm btn-primary" id="btn_save_{{ name }}">{{ _("Save") }}</button>
         </td>
         <tr>
             <td>{{ _("Supplier") }}</td>
@@ -29,16 +29,6 @@
         <tr>
             <td>{{ _("Due Date") }}</td>
             <td>{{ due_date }}</td>
-            <!-- <td>
-            <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-pencil"></i></span>
-                <input type="date"
-                 class="form-control"
-                 placeholder="{{ due_date or "" }}"
-                 {% if due_date %}due_date = "{{ due_date }}",{% endif %}
-                 onBlur="frappe.model.set_value('Checklist Data', '{{ name }}', 'due_date', this.due_date);" >
-            </div>
-            </td> -->
         </tr>
         <tr>
             <td>{{ _("Supplier Invoice No") }}</td>

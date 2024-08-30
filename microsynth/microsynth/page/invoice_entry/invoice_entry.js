@@ -45,6 +45,7 @@ frappe.invoice_entry = {
         
         for (let i = 0; i < purchase_invoice_drafts.length; i++) {
             frappe.invoice_entry.create_fields(purchase_invoice_drafts[i]);
+            frappe.invoice_entry.attach_save_handler(purchase_invoice_drafts[i].name);
         }
     },
     create_fields: function(purchase_invoice) {
@@ -77,6 +78,29 @@ frappe.invoice_entry = {
         });
         posting_date_link_field.refresh();
         posting_date_link_field.set_value(purchase_invoice.posting_date);
+    },
+    attach_save_handler: function(purchase_invoice_name) {
+        let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
+        btn_save.onclick = frappe.invoice_entry.save_document.bind(this, purchase_invoice_name);
+    },
+    save_document: function(purchase_invoice_name) {
+        let doc = {
+            'name': purchase_invoice_name,
+            'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
+            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value
+        };
+        
+        frappe.call({
+            'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
+            'args': {
+                'doc': doc
+            },
+            'freeze': true,
+            'freeze_message': __("Saving..."),
+            'callback': function(response) {
+                frappe.show_alert(response.message);
+            }
+        });
     }
 
 }

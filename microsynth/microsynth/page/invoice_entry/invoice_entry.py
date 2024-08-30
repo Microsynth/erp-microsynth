@@ -3,7 +3,17 @@
 
 import frappe
 from frappe import _
+import json
+from datetime import datetime
 
+FORMAT_MAPPER = {
+    'dd.mm.yyyy': '%d.%m.%Y',
+    'yyyy-mm-dd': '%Y-%m-%d',
+    'dd-mm-yyyy': '%d-%m-%Y',
+    'dd/mm/yyyy': '%d/%m/%Y',
+    'mm/dd/yyyy': '%m/%d/%Y',
+    'mm-dd-yyyy': '%m-%d-%Y'
+}
 
 @frappe.whitelist()
 def get_purchase_invoice_drafts():
@@ -40,11 +50,6 @@ def get_purchase_invoice_drafts():
                 `attached_to_doctype` = "Purchase Invoice"
                 AND `attached_to_name` = "{pinv}"
             ;""".format(pinv=pinv['name']), as_dict=True)
-        # reformat values for output
-        pinv['posting_date'] = frappe.utils.get_datetime(pinv['posting_date']).strftime("%d.%m.%Y")
-        pinv['due_date'] = frappe.utils.get_datetime(pinv['due_date']).strftime("%d.%m.%Y")
-        pinv['net_total'] = "{:,.2f}".format(pinv['net_total']).replace(",", "'")
-        pinv['grand_total'] = "{:,.2f}".format(pinv['grand_total']).replace(",", "'")
 
         # render html
         pinv['html'] = frappe.render_template("microsynth/microsynth/page/invoice_entry/document.html", pinv)
@@ -65,3 +70,22 @@ def add_comment(pinv, subject, comment, user):
     })
     new_comment.insert(ignore_permissions=True)
     frappe.db.commit()
+
+
+@frappe.whitelist()
+def save_document(doc):
+    if type(doc) == str:
+        doc = json.loads(doc)
+    
+    d = frappe.get_doc("Purchase Invoice", doc.get('name'))
+    d.supplier = doc.get('supplier')
+    # date field: parse back from human-friendly format
+    date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
+    d.posting_date = datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d")
+    
+    try:
+        d.save()
+        return "Saved."
+    except Exception as err:
+        return err
+        
