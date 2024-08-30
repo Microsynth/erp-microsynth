@@ -97,26 +97,6 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('description', 'read_only', true);
         }
 
-        // lock all fields except References and Web Order ID if NC is Closed
-        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
-            cur_frm.set_df_property('title', 'read_only', true);
-            cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('date', 'read_only', true);
-            cur_frm.set_df_property('company', 'read_only', true);
-            cur_frm.set_df_property('description', 'read_only', true);
-            cur_frm.set_df_property('criticality_classification', 'read_only', true);
-            cur_frm.set_df_property('regulatory_classification', 'read_only', true);
-            cur_frm.set_df_property('rational_for_classification', 'read_only', true);
-            cur_frm.set_df_property('root_cause', 'read_only', true);
-            cur_frm.set_df_property('occurrence_probability', 'read_only', true);
-            cur_frm.set_df_property('impact', 'read_only', true);
-            cur_frm.set_df_property('risk_analysis', 'read_only', true);
-            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
-            cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', true);
-            cur_frm.set_df_property('impact_after_actions', 'read_only', true);
-            cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', true);
-        }
-
         // Only QAU can set field NC Type in status Draft directly
         if (["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('nc_type', 'read_only', false);
@@ -160,8 +140,8 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only QAU and the creator can change these fields in the specified Status
-        if ((['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status)
-            && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
+        if ((['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
+            || (['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status) && frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
             cur_frm.set_df_property('impact_after_actions', 'read_only', false);
             cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', false);
@@ -184,6 +164,26 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
         } else {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
+        }
+
+        // lock all fields except References and Web Order ID if NC is Closed
+        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('date', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
+            cur_frm.set_df_property('criticality_classification', 'read_only', true);
+            cur_frm.set_df_property('regulatory_classification', 'read_only', true);
+            cur_frm.set_df_property('rational_for_classification', 'read_only', true);
+            cur_frm.set_df_property('root_cause', 'read_only', true);
+            cur_frm.set_df_property('occurrence_probability', 'read_only', true);
+            cur_frm.set_df_property('impact', 'read_only', true);
+            cur_frm.set_df_property('risk_analysis', 'read_only', true);
+            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
+            cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', true);
+            cur_frm.set_df_property('impact_after_actions', 'read_only', true);
+            cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', true);
         }
 
         // allow the creator or QAU to change the creator (transfer document)
