@@ -501,7 +501,7 @@ function recalc_allocation(d) {
         sum += (d.fields[4].data[i].outstanding_amount || 0);
     }
     let color = "black";
-    if (sum != (d.fields_dict.camt_amount.value || 0)) {
+    if (sum.toFixed(2) != (d.fields_dict.camt_amount.value || 0).toFixed(2)) {
         color = "red";
     }
     d.set_value("allocated", "<span style='color: " + color + "; '>" + sum.toLocaleString("de-ch", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + "</span>");
