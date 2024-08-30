@@ -1669,89 +1669,98 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         return {'success': False, 'message': err}
 
 
-def check_and_get_labels(contact, labels):
+def check_and_get_label(label):
     """
-    Take a list of labels (item, barcode, status), search them in the ERP and return them if they are all unique or an error message otherwise.
+    Take a label dictionary (item, barcode, status), search it in the ERP and return it if it is unique or an error message otherwise.
 
-    bench execute microsynth.microsynth.webshop.check_and_get_labels --kwargs "{'contact': '215856', 'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    bench execute microsynth.microsynth.webshop.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}}"
     """
-    # Check parameters
-    if not frappe.db.exists("Contact", contact):
-        return {'success': False, 'message': f"The given Contact '{contact}' does not exist in the ERP.", 'labels': None}
-    if not labels or len(labels) == 0:
-        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
-    labels_to_return = []
-    for label in labels:
-        sql_query = f"""
-            SELECT `name`,
-                `item`,
-                `label_id` AS `barcode`,
-                `status`,
-                `registered`,
-                `contact`,
-                `registered_to`,
-                `sales_order`
-            FROM `tabSequencing Label`
-            WHERE `label_id` = '{label['barcode']}'
-                AND `item` = '{label['item']}'
-            ;"""
-        sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
-        if len(sequencing_labels) == 0:
-            return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'labels': None}
-        if len(sequencing_labels) > 1:
-            return {'success': False, 'message': f"Found multiple labels with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'labels': None}
-        erp_label = sequencing_labels[0]
-        labels_to_return.append(erp_label)
-    return labels_to_return
+    sql_query = f"""
+        SELECT `name`,
+            `item`,
+            `label_id` AS `barcode`,
+            `status`,
+            `registered`,
+            `contact`,
+            `registered_to`,
+            `sales_order`
+        FROM `tabSequencing Label`
+        WHERE `label_id` = '{label['barcode']}'
+            AND `item` = '{label['item']}'
+        ;"""
+    sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+    if len(sequencing_labels) == 0:
+        return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
+    elif len(sequencing_labels) > 1:
+        return {'success': False, 'message': f"Found multiple labels with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
+    else:
+        return {'success': True, 'message': "OK", 'label': sequencing_labels[0]}
 
 
 @frappe.whitelist()
-def set_label_submitted(contact, labels):
+def set_label_submitted(labels):
     """
-    Set the Status of the given Labels to submitted if they are all unused and pass further tests.
+    Set the Status of the given Labels to submitted if they are unused and pass further tests.
+    Try to submit as many labels as possible, return False if at least one given label could not be submitted
 
-    bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'contact': '215856', 'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
     """
+    if not labels or len(labels) == 0:
+        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
     try:
-        erp_labels = check_and_get_labels(contact, labels)
-        if type(erp_labels) != type([]):  # if the return type of check_and_get_labels is not a list, there was a problem that is returned
-            return erp_labels
-        labels_to_submit = []
-        for erp_label in erp_labels:
-            if erp_label['status'] != 'unused':
-                return {'success': False, 'message': f"The label with barcode {erp_label['barcode']} and Item {erp_label['item']} has not status unused in the ERP.", 'labels': None}
-            if erp_label['registered'] and erp_label['registered_to'] != contact:
-                return {'success': False, 'message': f"The label with barcode {erp_label['barcode']} and Item {erp_label['item']} is not registered to the given Contact {contact}.", 'labels': None}
-            labels_to_submit.append(erp_label)
-        submitted_labels = []
-        for label in labels_to_submit:
-            seq_label = frappe.get_doc("Sequencing Label", label['name'])
+        success = True
+        labels_to_return = []
+        for label in labels:
+            response = check_and_get_label(label)
+            if not response['success']:
+                label['message'] = response['message']
+                labels_to_return.append(label)
+                success = False
+                continue
+            if not response['label']:  # should not happen here, but just for safety
+                label['message'] = response['message'] or "Did not found exactly one label in the ERP."
+                labels_to_return.append(label)
+                success = False
+                continue
+            erp_label = response['label']
+            if response['label']['status'] != 'unused':
+                erp_label['message'] = "The label has not status unused in the ERP."
+                labels_to_return.append(erp_label)
+                success = False
+                continue
+            seq_label = frappe.get_doc("Sequencing Label", erp_label['name'])
             # set label sumitted
             seq_label.status = "submitted"
             seq_label.save()
-            submitted_labels.append({
-                "item": seq_label.item,
-                "barcode": seq_label.label_id,
-                "status": seq_label.status
-            })
-        return {'success': True, 'message': 'OK', 'labels': submitted_labels}
+            erp_label['status'] = seq_label.status
+            erp_label['message'] = "OK"
+            labels_to_return.append(erp_label)
+        if success:
+            return {'success': success, 'message': 'OK', 'labels': labels_to_return}
+        else:
+            return {'success': success, 'message': 'There was at least one label that could not be set to status submitted. Please check the label messages.', 'labels': labels_to_return}
     except Exception as err:
         return {'success': False, 'message': err, 'labels': None}
 
 
 @frappe.whitelist()
-def set_label_unused(contact, labels):
+def set_label_unused(labels):
     """
     Set the Status of the given Labels to unused if they are all submitted and pass further tests.
 
-    bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'contact': '215856', 'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
     """
+    if not labels or len(labels) == 0:
+        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
     try:
-        erp_labels = check_and_get_labels(contact, labels)
-        if type(erp_labels) != type([]):
-            return erp_labels
         labels_to_set_unused = []
-        for erp_label in erp_labels:
+        for label_to_check in labels:
+            response = check_and_get_label(label_to_check)
+            if not response['success']:
+                return {'success': False, 'message': response['message'], 'labels': None}
+            if not response['label']:  # should not happen here, but just for safety
+                return {'success': False, 'message': response['message'] or "Did not found exactly one label in the ERP.", 'labels': None}
+            erp_label = response['label']
             if erp_label['status'] != 'submitted':
                 return {'success': False, 'message': f"The label with barcode '{erp_label['barcode']}' and Item '{erp_label['item']}' has not status submitted in the ERP.", 'labels': None}
             labels_to_set_unused.append(erp_label)
