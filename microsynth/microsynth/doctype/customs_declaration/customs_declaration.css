@@ -1,0 +1,64 @@
+h2 {
+    color: #e65023;
+    border-bottom: 2px solid #e65023;
+    /* text-transform: uppercase; */
+    font-style: italic;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+h3 {
+    font-size: 12px;
+}
+
+@font-face {
+    font-family: calibri;
+    src: url('/files/Calibri.woff');
+}
+
+@font-face {
+    font-family: calibri-bold;
+    src: url('/files/Calibri_Bold.woff');
+}
+
+@font-face {
+    font-family: myriad;
+    src: url('/files/MyriadPro-Regular.woff');
+}
+
+@font-face {
+    font-family: myriad-bold;
+    src: url('/files/MyriadPro-Bold.woff');
+}
+.print-format { margin-left: 10mm }
+
+.print-format {
+  font-family: sans-serif;
+}
+
+.print-format b {
+  font-family: sans-serif;
+}
+
+#header {
+    height: 65px !important;
+    width: 100% !important;
+}
+
+#subject {
+    font-size: 16px !important;
+    margin-top: 10px !important; 
+    margin-bottom: 10px !important
+}
+
+#meta {
+    width: 100%; 
+    border-top: 1px solid silver;
+    border-bottom: 1px solid silver;
+}
+
+#meta td {
+    padding: 0px !important;
+    padding-top: 2px !important;
+    padding-bottom: 1px !important;
+}
