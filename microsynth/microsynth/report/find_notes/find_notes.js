@@ -126,7 +126,7 @@ function edit_cell(note_id, date, contact, contact_name, value) {
             {'fieldname': 'note_id', 'fieldtype': 'Link', 'options': "Contact Note", 'label': __('Contact Note'), 'read_only': 1, 'default': note_id},
             {'fieldname': 'date', 'fieldtype': 'Date', 'label': __('Date'), 'read_only': 1, 'default': date},
             {'fieldname': 'contact', 'fieldtype': 'Link', 'options': "Contact", 'label': __('Contact'), 'read_only': 1, 'default': contact},
-            {'fieldname': 'contact_name', 'fieldtype': 'Data', 'label': __('First Name'), 'read_only': 1, 'default': contact_name},
+            {'fieldname': 'contact_name', 'fieldtype': 'Data', 'label': __('Contact Name'), 'read_only': 1, 'default': contact_name},
             {'fieldname': 'notes', 'fieldtype': 'Text Editor', 'label': __('Notes'), 'reqd': 1, 'default': value}
         ],
         'primary_action': function(){
