@@ -31,6 +31,7 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,
             `tabPurchase Invoice Item`.`cost_center`,
+            `tabPurchase Invoice`.`approver`,
             `tabPurchase Invoice`.`remarks`
         FROM `tabPurchase Invoice`
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
@@ -82,9 +83,12 @@ def save_document(doc):
     # date field: parse back from human-friendly format
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     d.posting_date = datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d")
-    
+    d.due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
+    d.bill_no = doc.get('bill_no')
+    d.approver = doc.get('approver')
+    d.remarks = doc.get('remarks')
     try:
-        d.save()
+        d.save()  # TODO: posting_date is overwritten by today when saving
         return "Saved."
     except Exception as err:
         return err

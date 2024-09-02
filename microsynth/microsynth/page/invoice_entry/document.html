@@ -18,9 +18,7 @@
         </td>
         <tr>
             <td>{{ _("Supplier") }}</td>
-            <td>
-                <div class="supplier" id="supplier_{{ name }}"></div>
-            </td>
+            <td><div class="supplier" id="supplier_{{ name }}"></div></td>
         </tr>
         <tr>
             <td>{{ _("Posting Date") }}</td>
@@ -28,11 +26,11 @@
         </tr>
         <tr>
             <td>{{ _("Due Date") }}</td>
-            <td>{{ due_date }}</td>
+            <td><div id="due_date_{{ name }}"></div></td>
         </tr>
         <tr>
             <td>{{ _("Supplier Invoice No") }}</td>
-            <td>{{ bill_no }}</td>
+            <td><div id="bill_no_{{ name }}"></div></td>
         </tr>
         <tr>
             <td>{{ _("Amount") }}</td>
@@ -51,8 +49,12 @@
             <td>{{ (expense_account or "")[0:4] }} / {{ (cost_center or "0").split(" ")[0] }}</td>
         </tr>
         <tr>
+            <td>{{ _("Approver") }}</td>
+            <td><div id="approver_{{ name }}"></div></td>
+        </tr>
+        <tr>
             <td>{{ _("Remarks") }}</td>
-            <td>{{ remarks }}</td>
+            <td><div id="remarks_{{ name }}"></div></td>
         </tr>
     </tbody>
 </table>

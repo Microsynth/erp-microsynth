@@ -49,35 +49,28 @@ frappe.invoice_entry = {
         }
     },
     create_fields: function(purchase_invoice) {
-        // supplier link field
-        let supplier_fieldname = "supplier_" + purchase_invoice.name;
-        let supplier_field = document.getElementById(supplier_fieldname);
-        let supplier_link_field = frappe.ui.form.make_control({
-            'parent': supplier_field,
+        frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'supplier', 'Supplier', 'Supplier');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'posting_date', 'Posting Date', '');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'due_date', 'Due Date', '');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'bill_no', 'Supplier Invoice No', '');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'approver', 'Approver', 'User');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Small Text', 'remarks', 'Remarks', '');
+    },
+    create_field: function(purchase_invoice, fieldtype, field_name, placeholder, options) {
+        let fieldname = field_name + "_" + purchase_invoice.name;
+        let field = document.getElementById(fieldname);
+        let link_field = frappe.ui.form.make_control({
+            'parent': field,
             'df': {
-                'fieldtype': "Link",
-                'fieldname': supplier_fieldname,
-                'options': 'Supplier',
-                'placeholder': __("Supplier")
+                'fieldtype': fieldtype,
+                'fieldname': fieldname,
+                'options': options,
+                'placeholder': __(placeholder),
+                'default': purchase_invoice[fieldname]
             }
         });
-        supplier_link_field.refresh();
-        supplier_link_field.set_value(purchase_invoice.supplier);
-        
-        // posting date
-        let posting_date_fieldname = "posting_date_" + purchase_invoice.name;
-        let posting_date_field = document.getElementById(posting_date_fieldname);
-        let posting_date_link_field = frappe.ui.form.make_control({
-            'parent': posting_date_field,
-            'df': {
-                'fieldtype': "Date",
-                'fieldname': posting_date_fieldname,
-                'placeholder': __("Posting Date"),
-                'default': purchase_invoice.posting_date
-            }
-        });
-        posting_date_link_field.refresh();
-        posting_date_link_field.set_value(purchase_invoice.posting_date);
+        link_field.refresh();
+        link_field.set_value(purchase_invoice[field_name]);
     },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
@@ -87,7 +80,11 @@ frappe.invoice_entry = {
         let doc = {
             'name': purchase_invoice_name,
             'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
-            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value
+            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
+            'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
+            'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
+            'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
+            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
         };
         
         frappe.call({
@@ -102,5 +99,4 @@ frappe.invoice_entry = {
             }
         });
     }
-
 }
