@@ -8,27 +8,24 @@ import os
 from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_zugferd
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 
+
 def process_files():
     settings = frappe.get_doc("Batch Invoice Processing Settings", "Batch Invoice Processing Settings")
     if cint(settings.enabled) == 0:
         return
-    
     if not settings.company_settings:
         return
-        
     for company in settings.company_settings:
         read_company(company.company, company.input_path, company)
-    return
+
 
 def read_company(company, input_path, company_settings):
     if not input_path:
         return
-    
     for f in os.listdir(input_path):
         if f.lower().endswith(".pdf"):
             parse_file(os.path.join(input_path, f), company, company_settings)
-    
-    return
+
 
 def parse_file(file_name, company, company_settings):
     # try to fetch data from zugferd
@@ -45,11 +42,9 @@ def parse_file(file_name, company, company_settings):
         
     # create invoice record
     create_invoice(file_name, invoice, company_settings)
-    
-    return
-    
+
+
 def create_invoice(file_name, invoice, settings):
-    
     if not invoice.get('supplier'):
         invoice['supplier'] = settings.fallback_supplier
 
@@ -139,7 +134,6 @@ def create_invoice(file_name, invoice, settings):
         dn=pinv_doc.name,
         is_private=True
     )
-    
     # remove file
     os.remove(file_name)
     
@@ -148,3 +142,40 @@ def create_invoice(file_name, invoice, settings):
         'url': get_url_to_form("Purchase Invoice", pinv_doc.name),
         'link': get_link_to_form("Purchase Invoice", pinv_doc.name)
     }
+
+
+def read_folder(folder):
+    """
+    bench execute microsynth.microsynth.batch_invoice_processing.read_folder  --kwargs "{'folder': '/mnt/erp_share/JPe/test_invoices/seqlab'}"
+    """
+    counter = 0
+    success_counter = 0
+    for file in os.listdir(folder):
+        if file.lower().endswith(".pdf"):
+            file_path = os.path.join(folder, file)
+            print(file_path)
+            invoice = process_file(file_path)
+            counter += 1
+            if invoice:
+                success_counter += 1
+    print(f"success rate: {round((success_counter/counter) * 100, 2)} % ({success_counter}/{counter})")
+
+
+def process_file(file_path):
+    # try to fetch data from zugferd
+    try:
+        xml_content = get_xml(file_path)
+        invoice = None
+        settings = frappe.get_doc("ZUGFeRD Wizard", "ZUGFeRD Wizard")
+        if xml_content:
+            invoice = get_content_from_zugferd(xml_content)
+        else:
+            # zugferd failed, fall back to qr-reader
+            qr_content = find_qr_content_from_pdf(file_path)
+            if qr_content:
+                invoice = get_content_from_qr(qr_content, settings.default_tax, settings.default_item)
+        print("{0}".format(invoice))
+        return invoice
+    except Exception as err:
+        print(err)
+        return None
