@@ -1854,13 +1854,25 @@ def cancel_order(sales_order, web_order_id):
                     'labels': None
                 }
             label_doc = frappe.get_doc("Sequencing Label", sequencing_label)
+            # Set label unused
+            label_doc.status = "unused"
+            label_doc.save()
             labels.append({
                 "item": label_doc.item,
                 "barcode": label_doc.label_id,
                 "status": label_doc.status
             })
         sales_order_doc.cancel()
-        frappe.db.commit()
+        new_comment = frappe.get_doc({
+            'doctype': "Comment",
+            'comment_type': "Comment",
+            'subject': sales_order_doc.name,
+            'content': "Cancelled by the Webshop (webshop.cancel_order)",
+            'reference_doctype': "Sales Order",
+            'status': "Linked",
+            'reference_name': sales_order_doc.name
+        })
+        new_comment.insert(ignore_permissions=True)
         return {
             'success': True,
             'message': 'OK',
