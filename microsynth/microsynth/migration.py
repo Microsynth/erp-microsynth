@@ -2944,6 +2944,45 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
     print("Checked {0} invoices, {1} deviations and {2} skipped".format(len(invoices), deviation_count, skipped_count))
 
 
+@frappe.whitelist()
+def link_quotation_to_order(sales_order, quotation):
+    """
+    Check if the given Sales Order and Quotation matches,
+    cancel & amend the Sales Order, link the Quotation to the Sales Order Items,
+    insert the new Sales Order and return its name.
+    """
+    qtn = frappe.get_doc("Quotation", quotation)
+    old_so = frappe.get_doc("Sales Order", sales_order)
+    # check that the Quotation belongs to the same Customer than the Sales Order
+    if qtn.party_name != old_so.customer:
+        frappe.throw(f"Quotation {quotation} belongs to Customer {qtn.party_name} but Sales Order {sales_order} belongs to Customer {old_so.customer}. Unable to link.")
+    # check that all Sales Order Items are on the Quotation
+    for so_itm in old_so.items:
+        found = False
+        for qtn_itm in qtn.items:
+            if so_itm.item_code == qtn_itm.item_code and so_itm.qty <= qtn_itm.qty:
+                found = True
+                break
+        if not found:
+            frappe.throw(f"Item {so_itm.item_code} is not on Quotation {quotation} or the Quantity on the Quotation is lower. Unable to link.")
+    if old_so.docstatus > 1:
+        frappe.throw(f"Sales Order {sales_order} is cancelled. Unable to link.")
+
+    old_so.cancel()
+    frappe.db.commit()
+
+    new_so = frappe.get_doc(old_so.as_dict())
+    new_so.name = None
+    new_so.docstatus = 0
+    new_so.amended_from = old_so.name
+    # write the Quotation ID into the field Sales Order Item.prevdoc_docname
+    for item in new_so.items:
+        item.prevdoc_docname = quotation
+    new_so.insert()
+    frappe.db.commit()
+    return new_so.name
+
+
 def correct_income_account(sales_invoice):
     """
     This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable

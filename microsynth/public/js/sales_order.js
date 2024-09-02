@@ -56,6 +56,12 @@ frappe.ui.form.on('Sales Order', {
 				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
 			});
 		}
+
+        if (frm.doc.docstatus == 1 && frm.doc.product_type == "Labels") {
+            frm.add_custom_button(__("Link Quote"), function() {
+				link_quote(cur_frm.doc.name);
+			});
+        }
     },
     before_save(frm) {
         if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
@@ -80,3 +86,31 @@ frappe.ui.form.on('Sales Order Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function link_quote(sales_order) {
+    var d = new frappe.ui.Dialog({
+        'fields': [
+            {'fieldname': 'sales_order', 'fieldtype': 'Link', 'options': "Sales Order", 'label': __('Sales Order'), 'read_only': 1, 'default': sales_order},
+            {'fieldname': 'quotation', 'fieldtype': 'Link', 'options': "Quotation", 'label': __('Quotation'), 'reqd': 1}
+        ],
+        'primary_action': function(){
+            d.hide();
+            var values = d.get_values();
+            frappe.call({
+                'method': "microsynth.microsynth.migration.link_quotation_to_order",
+                'args':{
+                    'sales_order': values.sales_order,
+                    'quotation': values.quotation
+                },
+                'callback': function(r) {
+                    console.log(r.message);
+                    frappe.set_route("Form", "Sales Order", r.message);
+                }
+            });
+        },
+        'primary_action_label': __('Cancel & Amend'),
+        'title': __('Link Quotation to new Sales Order')
+    });
+    d.show();
+}
