@@ -46,7 +46,7 @@ frappe.query_reports["Compare Price Lists"] = {
                         }
                     }
                     // get the quantity from data
-                    var qty = frappe.query_report.data[row].qty
+                    var qty = frappe.query_report.data[row].qty;
                     // get item_code from data
                     var item_code = frappe.query_report.data[row].item_code;
                     edit_cell(item_code, price_list, qty, value);
@@ -64,7 +64,7 @@ frappe.query_reports["Compare Price Lists"] = {
                         }
                     }
                     // get the quantity from data
-                    var qty = frappe.query_report.data[row].qty
+                    var qty = frappe.query_report.data[row].qty;
                     // get item_code from data
                     var item_code = frappe.query_report.data[row].item_code;
                     edit_cell(item_code, price_list, qty, value);

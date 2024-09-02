@@ -149,3 +149,11 @@ def create_pdf(filters):
     merger.close()
     #return file.name
     return file.file_url
+
+
+@frappe.whitelist()
+def set_notes(note_id, notes):
+    contact_note = frappe.get_doc("Contact Note", note_id)
+    contact_note.notes = notes
+    contact_note.save()
+    frappe.db.commit()
