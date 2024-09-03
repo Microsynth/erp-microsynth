@@ -7,9 +7,9 @@ from frappe.model.mapper import get_mapped_doc
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from datetime import datetime
 
+
 @frappe.whitelist()
 def make_quotation(contact_name):
-
     doc = get_mapped_doc(
         "Contact", 
         contact_name, 
@@ -34,3 +34,56 @@ def make_quotation(contact_name):
     doc.customer_address = frappe.get_value('Contact', invoice_to, 'address')
     doc.shipping_address_name = frappe.get_value('Contact', doc.contact_person, 'address')
     return doc
+
+
+@frappe.whitelist()
+def link_quotation_to_order(sales_order, quotation):
+    """
+    Check if the given Sales Order and Quotation matches.
+    If the given Sales Order is submitted, cancel & amend it.
+    Link the Quotation to the Sales Order Items.
+    Return the name of the (new) Sales Order.
+
+    bench execute microsynth.microsynth.quotation.link_quotation_to_order --kwargs "{'sales_order': 'SO-WIE-24001533-3', 'quotation': 'QTN-2402702'}"
+    """
+    qtn = frappe.get_doc("Quotation", quotation)
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    # check that the Quotation belongs to the same Customer than the Sales Order
+    if qtn.party_name != sales_order_doc.customer:
+        frappe.throw(f"Quotation {quotation} belongs to Customer {qtn.party_name} but Sales Order {sales_order} belongs to Customer {sales_order_doc.customer}. Unable to link.")
+    # check that the Quotation belongs to the same Contact than the Sales Order
+    if qtn.contact_person != sales_order_doc.contact_person:
+        frappe.throw(f"Quotation {quotation} belongs to Contact {qtn.contact_person} but Sales Order {sales_order} belongs to Contact {sales_order_doc.contact_person}. Unable to link.")
+    # check that all Sales Order Items are on the Quotation
+    for so_itm in sales_order_doc.items:
+        found = False
+        for qtn_itm in qtn.items:
+            if so_itm.item_code == qtn_itm.item_code and so_itm.qty >= qtn_itm.qty:
+                found = True
+                break
+        if not found:
+            frappe.throw(f"Item {so_itm.item_code} is not on Quotation {quotation} or the Quantity on the Quotation is higher. Unable to link.")
+    if sales_order_doc.docstatus > 1:
+        frappe.throw(f"Sales Order {sales_order} is cancelled. Unable to link.")
+    if sales_order_doc.docstatus == 1:
+        sales_order_doc.cancel()
+        frappe.db.commit()
+        new_so = frappe.get_doc(sales_order_doc.as_dict())
+        new_so.name = None
+        new_so.docstatus = 0
+        new_so.amended_from = sales_order_doc.name
+        so_doc = new_so
+    else:  # Draft
+        so_doc = sales_order_doc
+    # write the Quotation ID into the field Sales Order Item.prevdoc_docname
+    for item in so_doc.items:
+        item.prevdoc_docname = quotation
+        # TODO: Clarify with Administration whether to take the rate from the Quotation.
+        for qtn_itm in qtn.items:
+            if item.item_code == qtn_itm.item_code and item.qty >= qtn_itm.qty:
+                item.rate = qtn_itm.rate
+                break
+    if sales_order_doc.docstatus == 2:
+        so_doc.insert()
+    frappe.db.commit()
+    return so_doc.name

@@ -57,8 +57,8 @@ frappe.ui.form.on('Sales Order', {
 			});
 		}
 
-        if (frm.doc.docstatus == 1 && frm.doc.product_type == "Labels") {
-            frm.add_custom_button(__("Link Quote"), function() {
+        if ((!frm.doc.__islocal) && frm.doc.docstatus < 2 && frm.doc.product_type == "Labels") {
+            frm.add_custom_button(__("Link Quotation"), function() {
 				link_quote(cur_frm.doc.name);
 			});
         }
@@ -89,28 +89,59 @@ frappe.ui.form.on('Sales Order Item', {
 
 
 function link_quote(sales_order) {
-    var d = new frappe.ui.Dialog({
-        'fields': [
-            {'fieldname': 'sales_order', 'fieldtype': 'Link', 'options': "Sales Order", 'label': __('Sales Order'), 'read_only': 1, 'default': sales_order},
-            {'fieldname': 'quotation', 'fieldtype': 'Link', 'options': "Quotation", 'label': __('Quotation'), 'reqd': 1}
-        ],
-        'primary_action': function(){
-            d.hide();
-            var values = d.get_values();
-            frappe.call({
-                'method': "microsynth.microsynth.migration.link_quotation_to_order",
-                'args':{
-                    'sales_order': values.sales_order,
-                    'quotation': values.quotation
-                },
-                'callback': function(r) {
-                    console.log(r.message);
-                    frappe.set_route("Form", "Sales Order", r.message);
-                }
-            });
-        },
-        'primary_action_label': __('Cancel & Amend'),
-        'title': __('Link Quotation to new Sales Order')
-    });
-    d.show();
+    if (cur_frm.doc.docstatus == 0) {
+        var d = new frappe.ui.Dialog({
+            'fields': [
+                {'fieldname': 'sales_order', 'fieldtype': 'Link', 'options': "Sales Order", 'label': __('Sales Order'), 'read_only': 1, 'default': sales_order},
+                {'fieldname': 'quotation', 'fieldtype': 'Link', 'options': "Quotation", 'label': __('Quotation'), 'reqd': 1}
+            ],
+            'primary_action': function(){
+                d.hide();
+                var values = d.get_values();
+                frappe.call({
+                    'method': "microsynth.microsynth.quotation.link_quotation_to_order",
+                    'args':{
+                        'sales_order': values.sales_order,
+                        'quotation': values.quotation
+                    },
+                    'callback': function(r) {
+                        cur_frm.reload_doc();
+                    }
+                });
+            },
+            'primary_action_label': __('Link Quote & pull its rates'),
+            'title': __('Link quote to Sales Order & pull quote rates')
+        });
+        d.show();
+    }
+    else if (cur_frm.doc.docstatus == 1) {
+        var d = new frappe.ui.Dialog({
+            'fields': [
+                {'fieldname': 'sales_order', 'fieldtype': 'Link', 'options': "Sales Order", 'label': __('Sales Order'), 'read_only': 1, 'default': sales_order},
+                {'fieldname': 'quotation', 'fieldtype': 'Link', 'options': "Quotation", 'label': __('Quotation'), 'reqd': 1}
+            ],
+            'primary_action': function(){
+                d.hide();
+                var values = d.get_values();
+                frappe.call({
+                    'method': "microsynth.microsynth.quotation.link_quotation_to_order",
+                    'args':{
+                        'sales_order': values.sales_order,
+                        'quotation': values.quotation
+                    },
+                    'callback': function(r) {
+                        console.log(r.message);
+                        if (r.message) {
+                            frappe.set_route("Form", "Sales Order", r.message);
+                        } else {
+                            frappe.show_alert("Internal Error")
+                        }
+                    }
+                });
+            },
+            'primary_action_label': __('Cancel & Amend'),
+            'title': __('Link quote to a new Sales Order & pull quote rates')
+        });
+        d.show();
+    }
 }
