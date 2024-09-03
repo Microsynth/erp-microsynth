@@ -31,7 +31,10 @@ def execute(filters=None):
             or c['fieldname'] == "age" \
             or c['fieldname'] == "due_date":
             continue
-        
+        # skip range columns
+        if c['fieldname'] == "currency":
+            continue
+            
         # insert external debtor number
         if c['fieldname'] == "party":
             new_columns.append({
