@@ -567,6 +567,33 @@ def delete_item_prices_of_disabled_price_lists(verbose_level=2, dry_run=True):
     print(f"\n{datetime.now()}: {'Would have deleted' if dry_run else 'Deleted'} {total_counter} Item Prices in total.")
 
 
+def delete_empty_disabled_price_lists(dry_run=True):
+    """
+    For each disabled Price List: Check that there are no Item Prices and
+    that the Price List is not the Default Price List of any enabled Customer.
+    Delete the empty disabled Price List.
+
+    bench execute microsynth.microsynth.pricing.delete_empty_disabled_price_lists --kwargs "{'dry_run': True}"
+    """
+    counter = 0
+    disabled_price_lists = frappe.db.get_all("Price List", filters={'enabled': 0}, fields=['name'])
+    for dpl in disabled_price_lists:
+        enabled_customers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': dpl['name']}, fields=['name'])
+        if len(enabled_customers) > 0:
+            print(f"Price List {dpl['name']} is used by the following {len(enabled_customers)} enabled Customer(s): {','.join(c['name'] for c in enabled_customers)}. Going to continue.")
+            continue
+        item_prices = frappe.get_all("Item Price", filters={'price_list': dpl['name']}, fields=['name'])
+        if len(item_prices) > 0:
+            print(f"Price List {dpl['name']} contains {len(item_prices)} Item Prices. Please delete them first. Going to continue.")
+            continue
+        price_list_doc = frappe.get_doc("Price List", dpl['name'])
+        if not dry_run:
+            price_list_doc.delete()
+        print(f"{'Would have deleted' if dry_run else 'Deleted'} Price List '{dpl['name']}'.")
+        counter += 1
+    print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {counter} Price Lists.")
+
+
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
     """
     Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the respective reference Price List.
