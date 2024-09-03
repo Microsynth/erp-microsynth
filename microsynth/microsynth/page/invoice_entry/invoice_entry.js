@@ -55,6 +55,7 @@ frappe.invoice_entry = {
         frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'bill_no', 'Supplier Invoice No', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'approver', 'Approver', 'User');
         frappe.invoice_entry.create_field(purchase_invoice, 'Small Text', 'remarks', 'Remarks', '');
+        frappe.invoice_entry.remove_clearfix_nodes();
     },
     create_field: function(purchase_invoice, fieldtype, field_name, placeholder, options) {
         let fieldname = field_name + "_" + purchase_invoice.name;
@@ -84,7 +85,7 @@ frappe.invoice_entry = {
             'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
             'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
             'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
-            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
+            'remarks': document.querySelectorAll("textarea[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
         };
         
         frappe.call({
@@ -98,5 +99,13 @@ frappe.invoice_entry = {
                 frappe.show_alert(response.message);
             }
         });
+    },
+    remove_clearfix_nodes: function() {
+        console.log("remove")
+        let clearfixes = document.getElementsByClassName("clearfix"); 
+        for  (let i = clearfixes.length - 1; i >= 0 ; i--) {
+            clearfixes[i].remove();
+        }
     }
 }
+

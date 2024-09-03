@@ -10,7 +10,7 @@
         <tr>
             <td>{{ _("Document") }}</td>
             <td><a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a></td>
-            <td rowspan=10>
+            <td rowspan=11>
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
