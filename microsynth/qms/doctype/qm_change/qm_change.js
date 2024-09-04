@@ -44,18 +44,60 @@ frappe.ui.form.on('QM Change', {
         // Only creator and QAU can change these fields in Draft status:
         if (((["Draft"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
-            cur_frm.set_df_property('cc_type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
+            cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('current_state', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         } else {
             cur_frm.set_df_property('title', 'read_only', true);
-            cur_frm.set_df_property('cc_type', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('current_state', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
+        }
+
+        // Only QAU can set field CC Type in status Draft or Requested directly
+        if (["Draft", "Requested"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('cc_type', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('cc_type', 'read_only', true);
+        }
+
+        // Only QAU can set fields Regulatory Classification and Risk Classification in status Draft, Requested or Assessment & Classification directly
+        if (["Draft", "Requested", "Assessment & Classification"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('regulatory_classification', 'read_only', false);
+            cur_frm.set_df_property('risk_classification', 'read_only', false);
+            cur_frm.set_df_property('impact_description', 'read_only', false);
+            if (frm.doc.regulatory_classification == 'GMP') {
+                cur_frm.set_df_property('impact', 'read_only', false);
+            } else {
+                cur_frm.set_df_property('impact', 'read_only', true);
+                cur_frm.set_df_property('impact', 'hidden', true);
+            }
+        } else {
+            cur_frm.set_df_property('regulatory_classification', 'read_only', true);
+            cur_frm.set_df_property('risk_classification', 'read_only', true);
+            cur_frm.set_df_property('impact_description', 'read_only', true);
+        }
+
+        if (frm.doc.regulatory_classification == 'GMP') {
+            cur_frm.set_df_property('impact', 'hidden', false);
+        }
+
+        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('effectiveness_summary', 'read_only', true);
+            cur_frm.set_df_property('closure_comments', 'read_only', true);
+        } else {
+            cur_frm.set_df_property('effectiveness_summary', 'read_only', false);
+            cur_frm.set_df_property('closure_comments', 'read_only', false);
+        }
+
+        if (["Draft", "Requested", "Assessment & Classification", "Trial", "Planning"].includes(frm.doc.status)) {
+            cur_frm.set_df_property('summary_test_trial_results', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('summary_test_trial_results', 'read_only', true);
         }
 
         // allow QAU to cancel
