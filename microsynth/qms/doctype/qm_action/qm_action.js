@@ -50,7 +50,7 @@ frappe.ui.form.on('QM Action', {
         }
 
         // allow QAU to cancel
-        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU') && frm.doc.status != 'Completed') {
             frm.add_custom_button(__("Cancel"), function() {
                 cancel(frm);
             }).addClass("btn-danger");
