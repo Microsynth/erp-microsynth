@@ -67,6 +67,25 @@ def get_data():
             ]
         },
         {
+            "label": _("Nonconformities"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Nonconformity",
+                       "label": _("Nonconformity"),
+                       "description": _("QM Nonconformity")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Pending Nonconformities",
+                        "label": _("Pending Nonconformities"),
+                        "doctype": "QM Nonconformity",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
             "label": _("Complaints"),
             "icon": "octicon octicon-file-submodule",
             "items": [
