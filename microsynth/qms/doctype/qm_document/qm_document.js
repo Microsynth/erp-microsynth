@@ -51,7 +51,6 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('classification_level', 'read_only', true);
-            cur_frm.set_df_property('linked_documents', 'read_only', true);
             cur_frm.set_df_property('valid_from', 'read_only', true);
             cur_frm.set_df_property('valid_till', 'read_only', true);
         }
@@ -65,12 +64,16 @@ frappe.ui.form.on('QM Document', {
             }
         }
 
-        // when a document is invalid, the valid_till field must be read-only
+        // when a document is invalid, the fields valid_till and the table linked_documents must be read-only
         if (["Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
+            cur_frm.set_df_property('linked_documents', 'read_only', true);
         } else {
             if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
                 cur_frm.set_df_property('valid_till', 'read_only', false);
+            }
+            if (frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('linked_documents', 'read_only', false);
             }
         }
 
