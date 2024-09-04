@@ -89,10 +89,12 @@ def get_delivery_notes_to_declare():
 @frappe.whitelist()
 def create_partial_pdf(doc, part):
     customs_declaration = frappe.get_doc("Customs Declaration", doc)
+    css = frappe.get_value('Print Format', 'Customs Declaration', 'css')
+    raw_html = frappe.get_value('Print Format', 'Customs Declaration', 'html')
     # create html
-    html = frappe.render_template(
-        frappe.get_value('Print Format', 'Customs Declaration', 'html'),
-        # TODO: How to include CSS?
+    css_html = f"<style>{css}</style>{raw_html}"
+    rendered_html = frappe.render_template(
+        css_html,
         {
             'doc': customs_declaration,
             'part': part
@@ -101,7 +103,7 @@ def create_partial_pdf(doc, part):
     # need to load the styles and tags
     content = frappe.render_template(
         'microsynth/templates/pages/print.html',
-        {'html': html}
+        {'html': rendered_html}
     )
     options = {
         'disable-smart-shrinking': ''
