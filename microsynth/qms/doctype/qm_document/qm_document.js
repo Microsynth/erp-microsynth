@@ -586,7 +586,7 @@ function request_training_prompt(trainees) {
             create_training_request(values.trainees[i].user_name, values.due_date);
         }
     },
-    __('Please check the trainees'),
+    __('Add or delete Trainees if necessary'),
     __('Request training')
     );
 }
@@ -625,6 +625,11 @@ function request_training() {
         }
     ],
     function(values){
+        if (!values.qm_processes && !values.companies) {
+            // no process and no company -> shortcut and show Request training prompt with an empty list of trainees
+            request_training_prompt([]);
+            return;
+        }
         const qm_processes_list = [];
         if (values.qm_processes) {
             for (var i = 0; i < values.qm_processes.length; i++)  {
