@@ -52,7 +52,7 @@ def link_quotation_to_order(sales_order, quotation):
     if qtn.party_name != sales_order_doc.customer:
         frappe.throw(f"Quotation {quotation} belongs to Customer {qtn.party_name} but Sales Order {sales_order} belongs to Customer {sales_order_doc.customer}. Unable to link.")
     # check that the Quotation belongs to the same Contact than the Sales Order
-    if qtn.contact_person != sales_order_doc.contact_person:
+    if not qtn.customer_web_access and qtn.contact_person != sales_order_doc.contact_person:
         frappe.throw(f"Quotation {quotation} belongs to Contact {qtn.contact_person} but Sales Order {sales_order} belongs to Contact {sales_order_doc.contact_person}. Unable to link.")
     # check that all Sales Order Items are on the Quotation
     for so_itm in sales_order_doc.items:
@@ -63,27 +63,27 @@ def link_quotation_to_order(sales_order, quotation):
                 break
         if not found:
             frappe.throw(f"Item {so_itm.item_code} is not on Quotation {quotation} or the Quantity on the Quotation is higher. Unable to link.")
+    created_new_order = False
     if sales_order_doc.docstatus > 1:
         frappe.throw(f"Sales Order {sales_order} is cancelled. Unable to link.")
-    if sales_order_doc.docstatus == 1:
+    elif sales_order_doc.docstatus == 1:
         sales_order_doc.cancel()
-        frappe.db.commit()
         new_so = frappe.get_doc(sales_order_doc.as_dict())
         new_so.name = None
         new_so.docstatus = 0
         new_so.amended_from = sales_order_doc.name
         so_doc = new_so
+        created_new_order = True
     else:  # Draft
         so_doc = sales_order_doc
     # write the Quotation ID into the field Sales Order Item.prevdoc_docname
     for item in so_doc.items:
         item.prevdoc_docname = quotation
-        # TODO: Clarify with Administration whether to take the rate from the Quotation.
+        # Rates are taken from the Quotation
         for qtn_itm in qtn.items:
             if item.item_code == qtn_itm.item_code and item.qty >= qtn_itm.qty:
                 item.rate = qtn_itm.rate
                 break
-    if sales_order_doc.docstatus == 2:
+    if created_new_order:
         so_doc.insert()
-    frappe.db.commit()
     return so_doc.name
