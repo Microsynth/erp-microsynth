@@ -100,7 +100,7 @@ def execute(filters=None):
         if filters.get("account") and d.get("voucher_no"):
             doc = frappe.get_doc(d.get("voucher_type"), d.get("voucher_no"))
             d['doc_currency'] = doc.get("currency")
-            d['doc_outstanding'] = (d.get('outstanding') or 0) * (doc.get("conversion_rate") or 1)  # do not use (current value): doc.get("outstanding_amount")
+            d['doc_outstanding'] = (d.get('outstanding') or 0) / (doc.get("conversion_rate") or 1)  # do not use (current value): doc.get("outstanding_amount")
 
     # group by external debtor number
     for c in sorted(external_debtors or []):
