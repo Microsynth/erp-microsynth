@@ -5,7 +5,6 @@
         clicked("btn_gmp");
         document.getElementById("btn_no_gmp").disabled = true;
         document.getElementById("step_reset").style.display = "block";
-        document.getElementById("step_0").style.display = "block";
     }
 
     function no_gmp() {
@@ -30,25 +29,6 @@
         document.getElementById("btn_major").disabled = true;
     }
 
-    function impact(id) {
-        cur_frm.set_value("risk_classification", "major");
-        clicked("btn_impact_" + id);
-        document.getElementById("btn_no_impact_" + id).disabled = true;
-        if (id < 5) {
-            document.getElementById("step_" + id).style.display = "block";
-        }
-    }
-
-    function no_impact(id) {
-        clicked("btn_no_impact_" + id);
-        document.getElementById("btn_impact_" + id).disabled = true;
-        if (id == 5 && cur_frm.doc.risk_classification !== "major") {
-            cur_frm.set_value("risk_classification", "minor");
-        } else {
-            document.getElementById("step_" + id).style.display = "block";
-        }
-    }
-
     function clicked(btn_id) {
         document.getElementById(btn_id).classList.remove("btn-secondary");
         document.getElementById(btn_id).classList.add("btn-primary");
@@ -64,17 +44,13 @@
     function wizard_reset() {
         document.getElementById("step_gmp").style.display = "block";
         document.getElementById("step_no_gmp").style.display = "none";
-        for (var i = 0; i < 5; i++) {
-            document.getElementById("step_" + i).style.display = "none";
-            reset_button("btn_impact_" + (i+1));
-            reset_button("btn_no_impact_" + (i+1));
-        }
         reset_button("btn_gmp");
         reset_button("btn_no_gmp");
         reset_button("btn_major");
         reset_button("btn_minor");
         cur_frm.set_value("regulatory_classification", "");
         cur_frm.set_value("risk_classification", "");
+        cur_frm.set_value("cc_type", "");
     }
 </script>
 
@@ -90,36 +66,6 @@
         <h4>Has the change a major effect on product or analysis results?</h4>
         <button id="btn_major" class="btn btn-secondary" onclick="no_gmp_major()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_minor" class="btn btn-secondary" onclick="no_gmp_minor()"; style="margin-bottom: 20px;">No</button>
-    </div>
-
-    <div id="step_0" style="display: none;">
-        <h4>Impact on Swissmedic GMP certification?</h4>
-        <button id="btn_impact_1" class="btn btn-secondary" onclick="impact(1)"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_impact_1" class="btn btn-secondary" onclick="no_impact(1)"; style="margin-bottom: 20px;">No</button>
-    </div>
-
-    <div id="step_1" style="display: none;">
-        <h4>Impact on sponsor registration documentation?</h4>
-        <button id="btn_impact_2" class="btn btn-secondary" onclick="impact(2)"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_impact_2" class="btn btn-secondary" onclick="no_impact(2)"; style="margin-bottom: 20px;">No</button>
-    </div>
-
-    <div id="step_2" style="display: none;">
-        <h4>Impact on validated state of analytical procedure?</h4>
-        <button id="btn_impact_3" class="btn btn-secondary" onclick="impact(3)"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_impact_3" class="btn btn-secondary" onclick="no_impact(3)"; style="margin-bottom: 20px;">No</button>
-    </div>
-
-    <div id="step_3" style="display: none;">
-        <h4>Impact on validated state of process?</h4>
-        <button id="btn_impact_4" class="btn btn-secondary" onclick="impact(4)"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_impact_4" class="btn btn-secondary" onclick="no_impact(4)"; style="margin-bottom: 20px;">No</button>
-    </div>
-
-    <div id="step_4" style="display: none;">
-        <h4>Other potential impact?</h4>
-        <button id="btn_impact_5" class="btn btn-secondary" onclick="impact(5)"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_impact_5" class="btn btn-secondary" onclick="no_impact(5)"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_reset" style="display: none;">

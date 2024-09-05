@@ -4,32 +4,35 @@
 frappe.ui.form.on('Customs Declaration', {
 	refresh: function(frm) {
 		if (frm.doc.docstatus == 1) {
-            frm.add_custom_button(__("Print Front Page"), function() {
-                frappe.call({
-                    "method":"microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf",
-                    "args": {
-                        "doc":frm.doc.name,
-						"part": "front"
-                    }
-                })
+            frm.add_custom_button(__("Download Front Page"), function() {
+                var w = window.open(
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf"  
+                            + "?doc=" + encodeURIComponent(frm.doc.name)
+                            + "&part=front")
+                );
+                if (!w) {
+                    frappe.msgprint(__("Please enable pop-ups")); return;
+                }
             });
-			frm.add_custom_button(__("Print AT"), function() {
-                frappe.call({
-                    "method":"microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf",
-                    "args": {
-                        "doc":frm.doc.name,
-						"part": "AT"
-                    }
-                })
+			frm.add_custom_button(__("Download AT"), function() {
+                var w = window.open(
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf"  
+                            + "?doc=" + encodeURIComponent(frm.doc.name)
+                            + "&part=AT")
+                );
+                if (!w) {
+                    frappe.msgprint(__("Please enable pop-ups")); return;
+                }
             });
-			frm.add_custom_button(__("Print EU"), function() {
-                frappe.call({
-                    "method":"microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf",
-                    "args": {
-                        "doc":frm.doc.name,
-						"part": "EU"
-                    }
-                })
+			frm.add_custom_button(__("Download EU"), function() {
+                var w = window.open(
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf"  
+                            + "?doc=" + encodeURIComponent(frm.doc.name)
+                            + "&part=EU")
+                );
+                if (!w) {
+                    frappe.msgprint(__("Please enable pop-ups")); return;
+                }
             });
         }
 

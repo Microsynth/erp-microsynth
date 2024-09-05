@@ -12,6 +12,8 @@ frappe.ui.form.on('QM Document', {
             cur_frm.set_value("created_on", frappe.datetime.get_today());
             // on fresh documents, hide company field (will be clean on insert to prevent default)
             cur_frm.set_df_property('company', 'hidden', true);
+            // ensure that a fresh document is always created in draft status
+            cur_frm.set_value("status", "Draft");
         }
 
         // company reset-controller
@@ -45,17 +47,16 @@ frappe.ui.form.on('QM Document', {
         setup_attachment_watcher(frm);
 
         // Only creator and QAU can change these fields in Draft status: Title, Company, Classification Level, linked Documents
-        if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
+        if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) && !frm.doc.__islocal) {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('classification_level', 'read_only', true);
-            cur_frm.set_df_property('linked_documents', 'read_only', true);
             cur_frm.set_df_property('valid_from', 'read_only', true);
             cur_frm.set_df_property('valid_till', 'read_only', true);
         }
 
         // when a document is valid or invalid, the valid_from field must be read-only
-        if (["Valid", "Invalid"].includes(frm.doc.status)) {
+        if (["Valid", "Invalid"].includes(frm.doc.status) && !frm.doc.__islocal) {
             cur_frm.set_df_property('valid_from', 'read_only', true);
         } else {
             if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU') || (frm.doc.reviewed_by && frappe.session.user === frm.doc.reviewed_by)) {
@@ -63,12 +64,16 @@ frappe.ui.form.on('QM Document', {
             }
         }
 
-        // when a document is invalid, the valid_till field must be read-only
+        // when a document is invalid, the fields valid_till and the table linked_documents must be read-only
         if (["Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
+            cur_frm.set_df_property('linked_documents', 'read_only', true);
         } else {
             if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
                 cur_frm.set_df_property('valid_till', 'read_only', false);
+            }
+            if (frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('linked_documents', 'read_only', false);
             }
         }
 
@@ -105,14 +110,14 @@ frappe.ui.form.on('QM Document', {
         }
 
         // allow revision when document is valid
-        if ((["Valid"].includes(frm.doc.status))) {
+        if ((["Valid"].includes(frm.doc.status)) && !frm.doc.__islocal) {
             frm.add_custom_button(__("Revision request"), function() {
                 request_revision(frm);
             }).addClass("btn-primary");
         }
 
         // Invalidate
-        if (["Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        if (["Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU') && !frm.doc.__islocal) {
             frm.add_custom_button(__("Invalidate"), function() {
                 invalidate(frm);
             }).addClass("btn-danger");
@@ -584,7 +589,7 @@ function request_training_prompt(trainees) {
             create_training_request(values.trainees[i].user_name, values.due_date);
         }
     },
-    __('Please check the trainees'),
+    __('Add or delete Trainees if necessary'),
     __('Request training')
     );
 }
@@ -623,6 +628,11 @@ function request_training() {
         }
     ],
     function(values){
+        if (!values.qm_processes && !values.companies) {
+            // no process and no company -> shortcut and show Request training prompt with an empty list of trainees
+            request_training_prompt([]);
+            return;
+        }
         const qm_processes_list = [];
         if (values.qm_processes) {
             for (var i = 0; i < values.qm_processes.length; i++)  {

@@ -27,6 +27,7 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`due_date`,
             `tabPurchase Invoice`.`net_total`,
             `tabPurchase Invoice`.`grand_total`,
+            `tabPurchase Invoice`.`taxes_and_charges`,
             `tabPurchase Invoice`.`currency`,
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,
@@ -37,6 +38,13 @@ def get_purchase_invoice_drafts():
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
         WHERE
             `tabPurchase Invoice`.`docstatus` = 0
+            AND `tabPurchase Invoice`.`name` NOT IN (
+                SELECT `tabToDo`.`reference_name`
+                FROM `tabToDo`
+                WHERE 
+                    `tabToDo`.`reference_type` = "Purchase Invoice"
+                    AND `tabToDo`.`status` = "Open"
+            )
         GROUP BY `tabPurchase Invoice`.`name`
         ORDER BY `tabPurchase Invoice`.`due_date` ASC, `tabPurchase Invoice`.`name` ASC
         ;

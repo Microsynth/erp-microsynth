@@ -4333,8 +4333,19 @@ def find_users_without_signature():
     """
     bench execute microsynth.microsynth.migration.find_users_without_signature
     """
-    users = frappe.get_all("User", filters={'enabled': 1}, fields=['email'])
+    users = frappe.get_all("User", filters={'enabled': 1, 'user_type': 'System User'}, fields=['email'])
 
     for user in users:
         if not frappe.db.exists("Signature", user['email']):
-            print(f"There is no Signature for {user['email']}.")
+            print(f"There is no Signature for {user['email']}")
+
+
+def find_users_without_user_settings():
+    """
+    bench execute microsynth.microsynth.migration.find_users_without_user_settings
+    """
+    users = frappe.get_all("User", filters={'enabled': 1, 'user_type': 'System User'}, fields=['email'])
+
+    for user in users:
+        if not frappe.db.exists("User Settings", user['email']):
+            print(f"There are no User Settings for {user['email']}")

@@ -35,22 +35,48 @@ def set_status(status, labels):
     """
     if type(labels) == str:
         labels = json.loads(labels)
-    try:        
+    try:
+        customers = set()
+        disabled_customers = []
+        labels_to_process = []
+
         for l in labels or []:
             matching_labels = frappe.get_all("Sequencing Label",filters={
                 'label_id': l.get("label_id"),
                 'item': l.get("item_code")
-            }, fields=['name'])
-            
-            if matching_labels and len(matching_labels) == 1:
-                label = frappe.get_doc("Sequencing Label", matching_labels[0]["name"])
-                # ToDo: Check if status transition is allowed               
-                label.status = status
-                label.save(ignore_permissions=True)
+            }, fields=['name', 'customer'])
+
+            if not matching_labels or len(matching_labels) != 1:
+                #return {'success': False, 'message': "none or multiple labels." }
+                return {'success': False, 'message': f"Found {len(matching_labels)} Sequencing Label(s) for Label {l} in the ERP."}
             else:
-                return {'success': False, 'message': "none or multiple labels." }            
-        frappe.db.commit()        
-        return {'success': True, 'message': None }
+                customers.add(matching_labels[0]['customer'])
+                labels_to_process.append(matching_labels[0]['name'])
+        
+        # Enable Customer if necessary
+        for customer in customers:
+            customer_doc = frappe.get_doc("Customer", customer)
+            if customer_doc.disabled:
+                customer_doc.disabled = 0
+                customer_doc.save(ignore_permissions=True)
+                disabled_customers.append(customer)
+        
+        # Set status of Sequencing Labels
+        for label in labels_to_process:
+            label_doc = frappe.get_doc("Sequencing Label", label)
+            # ToDo: Check if status transition is allowed               
+            label_doc.status = status
+            label_doc.save(ignore_permissions=True)
+
+        # Disable Customers that were disabled before calling this function
+        for customer_to_disable in disabled_customers:
+            customer_doc = frappe.get_doc("Customer", customer_to_disable)
+            customer_doc.disabled = 1
+            customer_doc.save(ignore_permissions=True)
+
+        frappe.db.commit()
+        message = f"The following Customers are disabled: {','.join(disabled_customers)}" if len(disabled_customers) > 0 else None
+        return {'success': True, 'message': message }
     except Exception as err:
         return {'success': False, 'message': err }
 

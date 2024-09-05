@@ -88,43 +88,27 @@ def get_delivery_notes_to_declare():
 
 @frappe.whitelist()
 def create_partial_pdf(doc, part):
-    # pdf = frappe.get_print(
-    #                 doctype="Customs Declaration",
-    #                 name=doc,
-    #                 print_format="Customs Declaration",
-    #                 as_pdf=True
-    #             )
-    # file = frappe.get_doc(
-    #     {
-    #         "doctype": "File",
-    #         "file_name": f"{doc}_part_{part}.pdf",
-    #         "is_private": 1,
-    #         "content": pdf,
-    #     })
-    # file.save()
-    # return file.file_url
-
     customs_declaration = frappe.get_doc("Customs Declaration", doc)
-    content = frappe.render_template(
-        "microsynth/microsynth/doctype/customs_declaration/customs_declaration.html",
+    css = frappe.get_value('Print Format', 'Customs Declaration', 'css')
+    raw_html = frappe.get_value('Print Format', 'Customs Declaration', 'html')
+    # create html
+    css_html = f"<style>{css}</style>{raw_html}"
+    rendered_html = frappe.render_template(
+        css_html,
         {
             'doc': customs_declaration,
             'part': part
         }
     )
-    pdf = get_pdf(content)
-
+    # need to load the styles and tags
+    content = frappe.render_template(
+        'microsynth/templates/pages/print.html',
+        {'html': rendered_html}
+    )
+    options = {
+        'disable-smart-shrinking': ''
+    }
+    pdf = get_pdf(content, options)
     frappe.local.response.filename = f"Customs_Declaration_{doc}_{part}.pdf"
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
-
-    # from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
-    # folder = create_folder("Customs Declaration", "Home")
-    # save_and_attach(
-    #     content = pdf,
-    #     to_doctype = "Customs Declaration",
-    #     to_name = doc,  
-    #     folder = folder,
-    #     file_name = f"Customs_Declaration_{doc}_{part}.pdf", 
-    #     hashname = None,
-    #     is_private = True)

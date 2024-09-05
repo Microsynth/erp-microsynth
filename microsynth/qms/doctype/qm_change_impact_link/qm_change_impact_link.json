@@ -1,0 +1,30 @@
+{
+ "creation": "2024-09-04 15:59:18.046639",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "qm_change_impact"
+ ],
+ "fields": [
+  {
+   "fieldname": "qm_change_impact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "QM Change Impact",
+   "options": "QM Change Impact",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2024-09-04 16:00:30.425265",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Change Impact Link",
+ "owner": "jens.petermann@microsynth.ch",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

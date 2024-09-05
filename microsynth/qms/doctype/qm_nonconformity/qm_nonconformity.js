@@ -23,11 +23,11 @@ frappe.ui.form.on('QM Nonconformity', {
             }
         }
 
-        // access protection: only QAU in status unequals Closed can remove attachments
-        if (frappe.user.has_role('QAU') && !["Closed", "Cancelled"].includes(frm.doc.status)) {
-            remove_access_protection();
-        } else {
+        // access protection: avoid deletion of own attachments in status Closed and Cancelled (foreign attachments can only be deleted by System Manager)
+        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
             access_protection();
+        } else {
+            remove_access_protection();
         }
 
         // remove Menu > Duplicate

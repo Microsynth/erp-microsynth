@@ -46,6 +46,7 @@ frappe.invoice_entry = {
         for (let i = 0; i < purchase_invoice_drafts.length; i++) {
             frappe.invoice_entry.create_fields(purchase_invoice_drafts[i]);
             frappe.invoice_entry.attach_save_handler(purchase_invoice_drafts[i].name);
+            frappe.invoice_entry.attach_assign_handler(purchase_invoice_drafts[i].name);
         }
     },
     create_fields: function(purchase_invoice) {
@@ -77,6 +78,10 @@ frappe.invoice_entry = {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
         btn_save.onclick = frappe.invoice_entry.save_document.bind(this, purchase_invoice_name);
     },
+    attach_assign_handler: function(purchase_invoice_name) {
+        let btn_assign = document.getElementById("btn_assign_" + purchase_invoice_name);
+        btn_assign.onclick = frappe.invoice_entry.assign_document.bind(this, purchase_invoice_name);
+    },
     save_document: function(purchase_invoice_name) {
         let doc = {
             'name': purchase_invoice_name,
@@ -97,6 +102,26 @@ frappe.invoice_entry = {
             'freeze_message': __("Saving..."),
             'callback': function(response) {
                 frappe.show_alert(response.message);
+            }
+        });
+    },
+    assign_document: function(purchase_invoice_name) {        
+        frappe.call({
+            'method': 'microsynth.microsynth.purchasing.create_approval_request',
+            'args': {
+                'assign_to': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
+                'dt': 'Purchase Invoice',
+                'dn': purchase_invoice_name
+            },
+            'freeze': true,
+            'freeze_message': __("Assigning ..."),
+            'callback': function(response) {
+                if (response.message) {
+                    frappe.show_alert("Sucessfully assigned");
+                    document.getElementById("row_" + purchase_invoice_name).style.display = "None";
+                } else {
+                    frappe.show_alert("Failed assigning");
+                }
             }
         });
     },

@@ -105,7 +105,12 @@ function link_quote(sales_order) {
                         'quotation': values.quotation
                     },
                     'callback': function(r) {
-                        cur_frm.reload_doc();
+                        if (r.message) {
+                            cur_frm.reload_doc();
+                            frappe.show_alert("Successfully linked Quotation");
+                        } else {
+                            frappe.show_alert("Internal Error")
+                        }
                     }
                 });
             },

@@ -93,6 +93,8 @@
    "allow_on_submit": 1,
    "fieldname": "criticality_classification",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Criticality Classification",
    "options": "\ncritical\nnon-critical\nN/A"
   },
@@ -100,6 +102,8 @@
    "allow_on_submit": 1,
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Regulatory Classification",
    "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
   },
@@ -235,6 +239,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1
   },
@@ -243,6 +248,7 @@
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Process",
    "options": "QM Process",
    "reqd": 1
@@ -267,6 +273,7 @@
    "fieldname": "nc_type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Type",
    "options": "\nAuthorities Audit\nCustomer Audit\nInternal Audit\nDeviation\nEvent\nOOS\nTrack & Trend"
   },
@@ -442,7 +449,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-08-21 15:03:53.845368",
+ "modified": "2024-09-04 10:44:45.222719",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
