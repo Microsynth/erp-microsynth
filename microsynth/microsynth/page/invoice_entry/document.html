@@ -1,66 +1,84 @@
 <table class="table" id="row_{{ name }}">
     <thead class="thead-light">
         <tr>
-            <th scope="col" style="width: 19%;">{{ _("Purchase Invoice") }}</th>
-            <th scope="col" style="width: 29%;"></th>
+            <th scope="col" style="width: 48%;">{{ _("Purchase Invoice") }}</th>
             <th scope="col" style="width: 52%;">{{ _("Attachments") }}</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>{{ _("Document") }}</td>
-            <td><a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a></td>
-            <td rowspan=12>
+            <td>
+                <!-- left column -->
+                <div id="quick_entry_{{ name }}">
+                    <table class="table" style="width: 100%; margin-top: 0px; ">
+                            <tr>
+                                <td style="width: 50%; ">{{ _("Document") }}</td>
+                                <td>
+                                    <a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a>
+                                    <button class="btn btn-sm btn-primary pull-right" id="btn_edit_{{ name }}">{{ _("Edit") }}</button>
+                                </td>
+                            <tr>
+                                <td>{{ _("Supplier") }}</td>
+                                <td><div class="supplier" id="supplier_{{ name }}"></div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Posting Date") }}</td>
+                                <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Due Date") }}</td>
+                                <td><div id="due_date_{{ name }}"></div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Supplier Invoice No") }}</td>
+                                <td><div id="bill_no_{{ name }}"></div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Amount") }}</td>
+                                <td>{{ currency }} {{ grand_total }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Tax Template") }}</td>
+                                <td>{{ taxes_and_charges }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Taxes") }}</td>
+                                <td>TODO</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Zahlungsverbindung") }}</td>
+                                <td>TODO?</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Expense Account / Cost Center") }}</td>
+                                <td>{{ (expense_account or "")[0:4] }} / {{ (cost_center or "0").split(" ")[0] }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Approver") }}</td>
+                                <td><div id="approver_{{ name }}"></div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Remarks") }}</td>
+                                <td><div id="remarks_{{ name }}"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="full_form_{{ name }}" style="display: none; ">
+                    <button class="btn btn-sm btn-primary pull-right" id="btn_close_{{ name }}">{{ _("Close") }}</button>
+                    <div id="form_frame_{{ name }}">
+                    </div>
+                </div>
+            </td>
+            <td>
+                <!-- right column -->
                 {% for a in attachments %}
-                <iframe class="pdf" src="{{ a.file_url }}"></iframe>
+                    <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
                 <button class="btn btn-sm btn-primary" id="btn_save_{{ name }}">{{ _("Save") }}</button>
                 <button class="btn btn-sm btn-primary" id="btn_assign_{{ name }}">{{ _("Assign to Approver") }}</button>
-        </td>
-        <tr>
-            <td>{{ _("Supplier") }}</td>
-            <td><div class="supplier" id="supplier_{{ name }}"></div></td>
+            </td>
         </tr>
-        <tr>
-            <td>{{ _("Posting Date") }}</td>
-            <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
-        </tr>
-        <tr>
-            <td>{{ _("Due Date") }}</td>
-            <td><div id="due_date_{{ name }}"></div></td>
-        </tr>
-        <tr>
-            <td>{{ _("Supplier Invoice No") }}</td>
-            <td><div id="bill_no_{{ name }}"></div></td>
-        </tr>
-        <tr>
-            <td>{{ _("Amount") }}</td>
-            <td>{{ currency }} {{ grand_total }}</td>
-        </tr>
-        <tr>
-            <td>{{ _("Tax Template") }}</td>
-            <td>{{ taxes_and_charges }}</td>
-        </tr>
-        <tr>
-            <td>{{ _("Taxes") }}</td>
-            <td>TODO</td>
-        </tr>
-        <tr>
-            <td>{{ _("Zahlungsverbindung") }}</td>
-            <td>TODO?</td>
-        </tr>
-        <tr>
-            <td>{{ _("Expense Account / Cost Center") }}</td>
-            <td>{{ (expense_account or "")[0:4] }} / {{ (cost_center or "0").split(" ")[0] }}</td>
-        </tr>
-        <tr>
-            <td>{{ _("Approver") }}</td>
-            <td><div id="approver_{{ name }}"></div></td>
-        </tr>
-        <tr>
-            <td>{{ _("Remarks") }}</td>
-            <td><div id="remarks_{{ name }}"></div></td>
-        </tr>
-    </tbody>
+    <tbody>
 </table>
   

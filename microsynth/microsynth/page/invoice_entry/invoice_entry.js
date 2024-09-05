@@ -47,6 +47,8 @@ frappe.invoice_entry = {
             frappe.invoice_entry.create_fields(purchase_invoice_drafts[i]);
             frappe.invoice_entry.attach_save_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_assign_handler(purchase_invoice_drafts[i].name);
+            frappe.invoice_entry.attach_edit_handler(purchase_invoice_drafts[i].name);
+            frappe.invoice_entry.attach_close_handler(purchase_invoice_drafts[i].name);
         }
     },
     create_fields: function(purchase_invoice) {
@@ -78,9 +80,17 @@ frappe.invoice_entry = {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
         btn_save.onclick = frappe.invoice_entry.save_document.bind(this, purchase_invoice_name);
     },
+    attach_edit_handler: function(purchase_invoice_name) {
+        let btn_edit = document.getElementById("btn_edit_" + purchase_invoice_name);
+        btn_edit.onclick = frappe.invoice_entry.edit_document.bind(this, purchase_invoice_name);
+    },
     attach_assign_handler: function(purchase_invoice_name) {
         let btn_assign = document.getElementById("btn_assign_" + purchase_invoice_name);
         btn_assign.onclick = frappe.invoice_entry.assign_document.bind(this, purchase_invoice_name);
+    },
+    attach_close_handler: function(purchase_invoice_name) {
+        let btn_close = document.getElementById("btn_close_" + purchase_invoice_name);
+        btn_close.onclick = frappe.invoice_entry.close_document.bind(this, purchase_invoice_name);
     },
     save_document: function(purchase_invoice_name) {
         let doc = {
@@ -124,6 +134,26 @@ frappe.invoice_entry = {
                 }
             }
         });
+    },
+    edit_document: function(purchase_invoice_name) {
+        // toggle quick entry/form
+        let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
+        quick_entry.style.display = "None";
+        let full_form = document.getElementById("full_form_" + purchase_invoice_name);
+        full_form.style.display = "Block";
+        // load full form
+        let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
+        form_frame.innerHTML = "<iframe class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
+    },
+    close_document: function(purchase_invoice_name) {
+        // toggle quick entry/form
+        let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
+        quick_entry.style.display = "Block";
+        let full_form = document.getElementById("full_form_" + purchase_invoice_name);
+        full_form.style.display = "None";
+        // unload form
+        let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
+        form_frame.innerHTML = "";
     },
     remove_clearfix_nodes: function() {
         console.log("remove")
