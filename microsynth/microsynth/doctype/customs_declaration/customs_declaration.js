@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Customs Declaration', {
 	refresh: function(frm) {
-		if (frm.doc.docstatus == 1) {
+		if (frm.doc.docstatus < 2) {
             frm.add_custom_button(__("Download Front Page"), function() {
                 var w = window.open(
                     frappe.urllib.get_full_url("/api/method/microsynth.microsynth.doctype.customs_declaration.customs_declaration.create_partial_pdf"  
@@ -35,6 +35,5 @@ frappe.ui.form.on('Customs Declaration', {
                 }
             });
         }
-
 	}
 });
