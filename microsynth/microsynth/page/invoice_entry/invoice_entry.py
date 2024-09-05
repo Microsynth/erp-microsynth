@@ -28,6 +28,7 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`net_total`,
             `tabPurchase Invoice`.`grand_total`,
             `tabPurchase Invoice`.`taxes_and_charges`,
+            `tabPurchase Invoice`.`total_taxes_and_charges`,
             `tabPurchase Invoice`.`currency`,
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,

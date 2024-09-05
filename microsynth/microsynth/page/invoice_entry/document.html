@@ -35,7 +35,7 @@
                             </tr>
                             <tr>
                                 <td>{{ _("Amount") }}</td>
-                                <td>{{ currency }} {{ grand_total }}</td>
+                                <td>{{ currency }} {{ "{:,.2f}".format(grand_total).replace(",", "&apos;") }}</td>
                             </tr>
                             <tr>
                                 <td>{{ _("Tax Template") }}</td>
@@ -43,11 +43,7 @@
                             </tr>
                             <tr>
                                 <td>{{ _("Taxes") }}</td>
-                                <td>TODO</td>
-                            </tr>
-                            <tr>
-                                <td>{{ _("Zahlungsverbindung") }}</td>
-                                <td>TODO?</td>
+                                <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
                             </tr>
                             <tr>
                                 <td>{{ _("Expense Account / Cost Center") }}</td>
