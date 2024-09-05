@@ -118,6 +118,7 @@ frappe.invoice_entry = {
             'callback': function(response) {
                 if (response.message) {
                     frappe.show_alert("Sucessfully assigned");
+                    document.getElementById("row_" + purchase_invoice_name).style.display = "None";
                 } else {
                     frappe.show_alert("Failed assigning");
                 }
