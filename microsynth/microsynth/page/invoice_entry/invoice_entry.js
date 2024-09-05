@@ -146,6 +146,7 @@ frappe.invoice_entry = {
         form_frame.innerHTML = "<iframe class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
     },
     close_document: function(purchase_invoice_name) {
+        /*
         // toggle quick entry/form
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
         quick_entry.style.display = "Block";
@@ -154,6 +155,8 @@ frappe.invoice_entry = {
         // unload form
         let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
         form_frame.innerHTML = "";
+        */
+        location.reload();
     },
     remove_clearfix_nodes: function() {
         console.log("remove")
