@@ -17,7 +17,7 @@ class AbacusExportFileAddition(Document):
         set_export_flag("Payment Entry", get_sql_list(self.get_docs("Payment Entry")), 0)
         set_export_flag("Journal Entry", get_sql_list(self.get_docs("Journal Entry")), 0)
         return
-        
+
     # find all transactions, add the to references and mark as collected
     def get_transactions(self):
         account_list_str = get_sql_list(self.get_account_list())
@@ -41,24 +41,24 @@ class AbacusExportFileAddition(Document):
                 company=self.company, accounts=account_list_str)
         
         docs = frappe.db.sql(document_query, as_dict=True)
-        
+
         # clear all children
         self.references = []
-        
+
         # add to child table
         for doc in docs:
             row = self.append('references', {'dt': doc['dt'], 'dn': doc['dn']})
         self.save()
-        
+
         # mark as exported
         set_export_flag("Payment Entry", get_sql_list(self.get_docs("Payment Entry")), 1)
         set_export_flag("Journal Entry", get_sql_list(self.get_docs("Journal Entry")), 1)
         return
-    
+
     def prepare_transactions(self):
         base_currency = frappe.get_value("Company", self.company, "default_currency")
         transactions = []
-            
+
         # add payment entry transactions
         pes = self.get_docs("Payment Entry")
         sql_query = """SELECT `tabPayment Entry`.`name`
@@ -67,7 +67,7 @@ class AbacusExportFileAddition(Document):
             """.format(pes=get_sql_list(pes))
 
         pe_items = frappe.db.sql(sql_query, as_dict=True)
-        
+
         # create item entries
         for item in pe_items:
             pe_record = frappe.get_doc("Payment Entry", item.name)
@@ -110,13 +110,13 @@ class AbacusExportFileAddition(Document):
                     'key_amount': sign * deduction.amount,
                     'key_currency': base_currency
                 })
-                
+
             # verify integrity
             sums = {'base': transaction['key_amount'], 'other': transaction['amount']}
             for s in transaction['against_singles']:
                 sums['base'] -= s['key_amount']
                 sums['other'] -= s['amount']
-            
+
             if sums['base'] != 0:           # correct difference on last entry
                 transaction['against_singles'][-1]['key_amount'] += sums['base']
             if sums['other'] != 0:           # correct difference on last entry
@@ -133,7 +133,7 @@ class AbacusExportFileAddition(Document):
             """.format(jvs=get_sql_list(jvs))
 
         jv_items = frappe.db.sql(sql_query, as_dict=True)
-        
+
         # create item entries
         for item in jv_items:
             jv_record = frappe.get_doc("Journal Entry", item.name)
@@ -164,7 +164,7 @@ class AbacusExportFileAddition(Document):
             }
             if jv_record.multi_currency == 1:
                 transaction['exchange_rate'] = jv_record.accounts[0].exchange_rate
-                
+
             # append single accounts
             for i in range(1, len(jv_record.accounts), 1):
                 if debit_credit == "D":
@@ -186,25 +186,25 @@ class AbacusExportFileAddition(Document):
                 transaction['against_singles'].append(transaction_single)
             # insert transaction
             transactions.append(transaction)  
-                    
+
         return transactions      
-          
+
     # prepare transfer file
     def render_transfer_file(self, restrict_currencies=None):
         data = {
             'transactions': self.prepare_transactions()
-        }            
-        
-        
+        }
+
         content = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
         return {'content': content}
+
 
     def get_account_list(self):
         account_list = []
         for a in self.accounts:
             account_list.append(a.account)
         return account_list
-        
+
     # extract document names of one doctype as list
     def get_docs(self, dt):
         docs = []
@@ -212,13 +212,15 @@ class AbacusExportFileAddition(Document):
             if d.get('dt') == dt:
                 docs.append(d.get('dn'))
         return docs
-        
-# safe call to get SQL IN statement    
+
+
+# safe call to get SQL IN statement
 def get_sql_list(docs):
     if docs:
         return (','.join('"{0}"'.format(w) for w in docs))
     else:
         return '""'
+
 
 # get account number
 def get_account_number(account_name):
@@ -226,3 +228,8 @@ def get_account_number(account_name):
         return frappe.get_value("Account", account_name, "account_number")
     else:
         return None
+
+def save_abacus_export_file(self, event):
+    # TODO
+    # Implement code
+    return
