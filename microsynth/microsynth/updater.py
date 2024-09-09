@@ -70,6 +70,7 @@ def disable_hot_config_in_dev():
         config.paynet_export_path = (config.paynet_export_path or "").replace("/erp_share/", "/erp_share_test/")
         config.carlo_erba_export_path = (config.carlo_erba_export_path or "").replace("/erp_share/", "/erp_share_test/")
         config.commission_calculator_export_path = (config.commission_calculator_export_path or "").replace("/erp_share/", "/erp_share_test/")
+        config.abacus_export_path = (config.abacus_export_path or "").replace("/erp_share/", "/erp_share_test/")
         config.save()
 
         seq_config = frappe.get_doc("Sequencing Settings", "Sequencing Settings")

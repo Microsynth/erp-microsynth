@@ -194,10 +194,8 @@ class AbacusExportFileAddition(Document):
         data = {
             'transactions': self.prepare_transactions()
         }
-
         content = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
         return {'content': content}
-
 
     def get_account_list(self):
         account_list = []
@@ -212,6 +210,18 @@ class AbacusExportFileAddition(Document):
             if d.get('dt') == dt:
                 docs.append(d.get('dn'))
         return docs
+    
+    def save_abacus_export_file(self, event):
+        from datetime import datetime
+        data = {
+            'transactions': self.prepare_transactions()
+        }
+        xml = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
+        folder = frappe.get_value("Microsynth Settings", "Microsynth Settings", "abacus_export_path")
+        file = f"{self.name}_{datetime.now().strftime("%Y-%m-%d__%H-%M")}.xml"
+        file_path = f"{folder}/{file}"
+        with open(file_path, 'w') as file:
+            file.write(xml)
 
 
 # safe call to get SQL IN statement
@@ -228,8 +238,3 @@ def get_account_number(account_name):
         return frappe.get_value("Account", account_name, "account_number")
     else:
         return None
-
-def save_abacus_export_file(self, event):
-    # TODO
-    # Implement code
-    return
