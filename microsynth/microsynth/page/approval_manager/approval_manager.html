@@ -6,22 +6,27 @@
     .btn-secondary:hover {
         background-color: grey;
     }
+    .pdf {
+        width: 95%;
+        aspect-ratio: 3.1 / 4;
+    }
+    .pdf,
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
 </style>
 
-<div style="margin: 5px; margin-top: 0px; border-top: 1px solid white; ">
+<div style="margin: 5px; margin-top: 0px; border-top: 1px solid white;">
     <div class="row">
         <div class="form-column col-sm-6">
-            <p class="text-muted">{%= __("User") %}</p>
+            <!-- <p class="text-muted">{%= __("User") %}</p> -->
             <div class="input-group">
                 <span class="input-group-addon"><i class="fa fa-user"></i></span>
                 <input type="text" id="user" name="user" class="form-control" placeholder="User" readonly>
             </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="form-column col-sm-6">
-            <p><br></p>
         </div>
     </div>
 

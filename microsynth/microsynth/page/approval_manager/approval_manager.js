@@ -58,6 +58,7 @@ frappe.approval_manager = {
             btn_reject.onclick = frappe.approval_manager.reject.bind(this, approvals[i].name);
             var btn_approve = document.getElementById("btn_approve_" + approvals[i].name);
             btn_approve.onclick = frappe.approval_manager.approve.bind(this, approvals[i].name);
+            frappe.approval_manager.remove_clearfix_nodes();
         }
     },
     approve: function(pinv) {
@@ -87,5 +88,11 @@ frappe.approval_manager = {
                 document.getElementById("row_" + pinv).style.display = "none";
             }
         });
+    },
+    remove_clearfix_nodes: function() {
+        let clearfixes = document.getElementsByClassName("clearfix"); 
+        for  (let i = clearfixes.length - 1; i >= 0 ; i--) {
+            clearfixes[i].remove();
+        }
     }
 }

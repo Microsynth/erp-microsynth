@@ -1,17 +1,3 @@
-<style>
-    .pdf {
-        width: 100%;
-        aspect-ratio: 3 / 4;
-    }
-    .pdf,
-    html,
-    body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-</style>
-
 <table class="table" id="row_{{ name }}">
     <thead class="thead-light">
         <tr>
@@ -54,7 +40,7 @@
         </tr>
         <tr>
             <td>{{ _("Taxes") }}</td>
-            <td>TODO</td>
+            <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
         </tr>
         <tr>
             <td>{{ _("Zahlungsverbindung") }}</td>

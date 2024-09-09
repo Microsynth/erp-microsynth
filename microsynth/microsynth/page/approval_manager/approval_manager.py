@@ -20,6 +20,7 @@ def get_approvals(user):
             `tabPurchase Invoice`.`due_date`,
             `tabPurchase Invoice`.`net_total`,
             `tabPurchase Invoice`.`grand_total`,
+            `tabPurchase Invoice`.`total_taxes_and_charges`,
             `tabPurchase Invoice`.`currency`,
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,
