@@ -53,15 +53,7 @@ def print_invoices():
     """
     companies = frappe.db.get_all("Company", fields=['name'])
     for company in companies:
-        kwargs={
-            'mode': 'Post',
-            'company': company['name'],
-            'customer': None
-        }
-        enqueue("microsynth.microsynth.invoicing.async_create_invoices",
-            queue='long',
-            timeout=15000,
-            **kwargs)
+        async_create_invoices('Post', company['name'], None)
 
 
 def get_tax_templates(delivery_notes):
@@ -175,6 +167,7 @@ def make_carlo_erba_invoices(company):
 
 def async_create_invoices(mode, company, customer):
     """
+    TODO: Rename this function and all its calls since it is not asynchronous itself
     run 
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
