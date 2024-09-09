@@ -198,20 +198,20 @@ def change_rates_from_csv(csv_file, user):
     print(f"Finished after {elapsed_time} hh:mm:ss.")
 
 
-def change_rates_from_csv_files(user, file_path):
+def change_rates_from_csv_files(user, file_paths):
     """
     Wrapper to call function change_rates_from_csv with multiple csv files.
     Don't forget to change the hard coded file path if necessary.
 
     run from bench
-    bench execute microsynth.microsynth.pricing.change_rates_from_csv_files --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'file_path': '/mnt/erp_share/price_adjustments'}"
+    bench execute microsynth.microsynth.pricing.change_rates_from_csv_files --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'file_paths': ['/mnt/erp_share/price_adjustments/chf.csv', '/mnt/erp_share/price_adjustments/eur.csv']}"
     """
     if not frappe.db.exists("User", user):
         print(f"User '{user}' does not exist. Please check User and restart. Going to return.")
         return
-    for currency in ['sek', 'usd', 'eur']:  # 'chf',
-        print(f"\n########## Start with {currency} ...")
-        change_rates_from_csv(f"{file_path}/{currency}.csv", user)
+    for file_path in file_paths:
+        print(f"\n########## Start with {file_path} ...")
+        change_rates_from_csv(file_path, user)
 
 
 @frappe.whitelist()
