@@ -5,6 +5,12 @@ frappe.ui.form.on('Purchase Invoice', {
             prepare_naming_series(frm);             // common function
         }
 
+        // avoid submission outside the Approval Manager
+        if (!frm.doc.__islocal && frm.doc.docstatus == 0) {
+            cur_frm.page.clear_primary_action();
+            //cur_frm.page.clear_secondary_action();
+        }
+
         if (!frm.doc.__islocal && frm.doc.docstatus == 0 && !frm.doc.in_approval) {
             frm.add_custom_button(__("Request Approval"), function() {
                 request_approval(frm);
