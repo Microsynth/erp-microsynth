@@ -99,3 +99,16 @@ def assign(doc, responsible_person):
         'assign_to': responsible_person,
         'notify': True
     })
+
+
+@frappe.whitelist()
+def change_responsible_person(user, action, responsible_person):
+    action_doc = frappe.get_doc("QM Action", action)
+    # check that the user has the right to change the responsible person
+    if not (user == action_doc.responsible_person or user_has_role(user, "QAU")):
+        frappe.throw(f"Only the Responsible Person '{responsible_person}' or QAU is allowed to change the responsible person, but user = '{user}'.")
+    # change the responsible person
+    action_doc.responsible_person = responsible_person
+    action_doc.save()
+    # create assignment to user
+    assign(action, responsible_person)

@@ -134,9 +134,10 @@ function change_responsible_person() {
             cur_frm.set_value("responsible_person", values.new_responsible_person);
             cur_frm.save();
             frappe.call({
-                'method': 'microsynth.qms.doctype.qm_action.qm_action.assign',
+                'method': 'microsynth.qms.doctype.qm_action.qm_action.change_responsible_person',
                 'args': {
-                    'doc': cur_frm.doc.name,
+                    'user': frappe.session.user,
+                    'action': cur_frm.doc.name,
                     'responsible_person': values.new_responsible_person
                 },
                 'async': false,
