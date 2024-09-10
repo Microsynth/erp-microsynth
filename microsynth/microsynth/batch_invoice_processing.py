@@ -7,7 +7,7 @@ from frappe.utils.file_manager import save_file
 import os
 from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_zugferd
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
-
+from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 
 def process_files():
     settings = frappe.get_doc("Batch Invoice Processing Settings", "Batch Invoice Processing Settings")
@@ -31,6 +31,7 @@ def parse_file(file_name, company, company_settings):
     # try to fetch data from zugferd
     xml_content = get_xml(file_name)
     invoice = {}
+    supplier = None
     if xml_content:
         invoice = get_content_from_zugferd(xml_content)
     else:
@@ -38,7 +39,15 @@ def parse_file(file_name, company, company_settings):
         qr_content = find_qr_content_from_pdf(file_name)
         if qr_content:
             invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
-        # TODO: QR-reader failed also, try to get text-content from PDF and parse for UID
+        else:
+            invoice.update({
+                'supplier': find_supplier_from_pdf(file_name),
+                'items': [{
+                    'item_code': company_settings.default_item,
+                    'qty': 1,
+                    'rate': 0
+                }]
+            })
         
     # create invoice record
     create_invoice(file_name, invoice, company_settings)
@@ -79,45 +88,46 @@ def create_invoice(file_name, invoice, settings):
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", taxes_and_charges_template[0]['name'])
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
-            
-    for item in invoice.get("items"):
-        if not item.get('item_code'):
-            # get item from seller_item_code
-            if not frappe.db.exists("Item", item.get('seller_item_code')):
-                # try to find item by supplier item
-                supplier_item_matches = frappe.db.sql("""
-                    SELECT `parent`
-                    FROM `tabItem Supplier`
-                    WHERE 
-                        `supplier` = "{supplier}"
-                        AND `supplier_part_no` = "{supplier_item}"
-                    ;""".format(supplier=pinv_doc.supplier, supplier_item=item.get('seller_item_code')), as_dict=True)
-                if len(supplier_item_matches) > 0:
-                    item['item_code'] = supplier_item_matches[0]['parent']
+    
+    if invoice.get("items"):
+        for item in invoice.get("items"):
+            if not item.get('item_code'):
+                # get item from seller_item_code
+                if not frappe.db.exists("Item", item.get('seller_item_code')):
+                    # try to find item by supplier item
+                    supplier_item_matches = frappe.db.sql("""
+                        SELECT `parent`
+                        FROM `tabItem Supplier`
+                        WHERE 
+                            `supplier` = "{supplier}"
+                            AND `supplier_part_no` = "{supplier_item}"
+                        ;""".format(supplier=pinv_doc.supplier, supplier_item=item.get('seller_item_code')), as_dict=True)
+                    if len(supplier_item_matches) > 0:
+                        item['item_code'] = supplier_item_matches[0]['parent']
+                    else:
+                        # create new item
+                        _item = {
+                            'doctype': "Item",
+                            'item_code': item.get('seller_item_code'),
+                            'item_name': item.get('item_name'),
+                            'item_group': frappe.get_value("ZUGFeRD Settings", "ZUGFeRD Settings", "item_group")
+                        }
+                        # apply default values
+                        for d in settings.defaults:
+                            if d.dt == "Item":
+                                _item[d.field] = d.value
+                        item_doc = frappe.get_doc(_item)
+                        item_doc.insert()
+                        item['item_code'] = item_doc.name
                 else:
-                    # create new item
-                    _item = {
-                        'doctype': "Item",
-                        'item_code': item.get('seller_item_code'),
-                        'item_name': item.get('item_name'),
-                        'item_group': frappe.get_value("ZUGFeRD Settings", "ZUGFeRD Settings", "item_group")
-                    }
-                    # apply default values
-                    for d in settings.defaults:
-                        if d.dt == "Item":
-                            _item[d.field] = d.value
-                    item_doc = frappe.get_doc(_item)
-                    item_doc.insert()
-                    item['item_code'] = item_doc.name
-            else:
-                item['item_code'] = item.get('seller_item_code')
-        
-        pinv_doc.append("items", {
-            'item_code': item.get('item_code'),
-            'item_name': item.get('item_name'),
-            'qty': flt(item.get("qty")),
-            'rate': flt(item.get("net_price"))
-        })
+                    item['item_code'] = item.get('seller_item_code')
+            
+            pinv_doc.append("items", {
+                'item_code': item.get('item_code'),
+                'item_name': item.get('item_name'),
+                'qty': flt(item.get("qty")),
+                'rate': flt(item.get("net_price"))
+            })
     
     pinv_doc.flags.ignore_mandatory = True
     pinv_doc.insert()
