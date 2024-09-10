@@ -1,3 +1,8 @@
+// avoid submission outside the Approval Manager
+$( document ).ready(function() {
+    cur_frm.page.clear_primary_action();
+});
+
 /* Custom script extension for Purchase Invoice */
 frappe.ui.form.on('Purchase Invoice', {
     refresh(frm) {
@@ -24,6 +29,10 @@ frappe.ui.form.on('Purchase Invoice', {
         }
         
         hide_in_words();
+    },
+    before_submit() {
+        frappe.msgprint("Please use the Approval Manager to submit.")
+        frappe.validated = false;
     },
     company(frm) {
         if (frm.doc.__islocal) {
