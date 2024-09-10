@@ -13,10 +13,11 @@ class QMChange(Document):
     def on_submit(self):
         self.status = "Requested"
 
-    def get_classification_wizard(self):            
+    def get_classification_wizard(self, visible):            
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
             {
-                'doc': self
+                'doc': self,
+                'visible': visible
             })
         return html
 

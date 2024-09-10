@@ -5,6 +5,7 @@
         clicked("btn_gmp");
         document.getElementById("btn_no_gmp").disabled = true;
         document.getElementById("step_reset").style.display = "block";
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function no_gmp() {
@@ -20,6 +21,7 @@
         cur_frm.set_value("risk_classification", "major");
         clicked("btn_major");
         document.getElementById("btn_minor").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function no_gmp_minor() {
@@ -27,6 +29,7 @@
         cur_frm.set_value("risk_classification", "minor");
         clicked("btn_minor");
         document.getElementById("btn_major").disabled = true;
+        document.getElementById("step_confirm").style.display = "block";
     }
 
     function clicked(btn_id) {
@@ -41,9 +44,27 @@
         document.getElementById(btn_id).disabled = false;
     }
 
+    function add_restart_wizard_button() {
+        cur_frm.add_custom_button(
+            "Restart classification wizard",
+            function() {
+                document.getElementById("wizard_container").style.display = "block";
+                wizard_reset();
+                cur_frm.remove_custom_button("Show classification wizard");
+            }
+        );
+    }
+
+    function wizard_confirm() {
+        document.getElementById("wizard_container").style.display = "none";
+        locals.classification_wizard = "closed";
+        add_restart_wizard_button();
+    }
+
     function wizard_reset() {
         document.getElementById("step_gmp").style.display = "block";
         document.getElementById("step_no_gmp").style.display = "none";
+        document.getElementById("step_confirm").style.display = "none";
         reset_button("btn_gmp");
         reset_button("btn_no_gmp");
         reset_button("btn_major");
@@ -54,21 +75,25 @@
     }
 </script>
 
-<div id="container" class="wizard-container">
-    <h2>Questions to determine the Change Control Type</h2>
+<div id="wizard_container" {% if visible %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+    <h4>Questions to determine the Change Control Type</h4>
     <div id="step_gmp">
-        <h4>Is it a GMP relevant change (process, analytical procedure, instruments)?</h4>
+        <p>Is it a <b>GMP</b> relevant change (process, analytical procedure, instruments)?</p>
         <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_no_gmp" style="display: none;"><!-- non-GMP -->
-        <h4>Has the change a major effect on product or analysis results?</h4>
+        <p>Has the change a <b>major</b> effect on product or analysis results?</p>
         <button id="btn_major" class="btn btn-secondary" onclick="no_gmp_major()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_minor" class="btn btn-secondary" onclick="no_gmp_minor()"; style="margin-bottom: 20px;">No</button>
     </div>
 
     <div id="step_reset" style="display: none;">
         <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Reset answers</button>
+    </div>
+
+    <div id="step_confirm" style="display: none;">
+        <button id="btn_reset" class="btn btn-primary" onclick="wizard_confirm()"; style="margin-bottom: 10px;">OK</button>
     </div>
 </div>

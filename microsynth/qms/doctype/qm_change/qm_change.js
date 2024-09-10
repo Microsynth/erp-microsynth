@@ -3,12 +3,30 @@
 
 frappe.ui.form.on('QM Change', {
 	refresh: function(frm) {
+        // remove option to attach files depending on status
+        if (["Closed", "Cancelled"].includes(frm.doc.status) || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            var attach_btns = document.getElementsByClassName("add-attachment");
+            for (var i = 0; i < attach_btns.length; i++) {
+                attach_btns[i].style.visibility = "hidden";
+            }
+        }
 
-        cur_frm.set_df_property('status', 'read_only', true);
+        // access protection: avoid deletion of own attachments in status Closed and Cancelled (foreign attachments can only be deleted by System Manager)
+        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
+            access_protection();
+        } else {
+            remove_access_protection();
+        }
 
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
+
+        // set created_by and created_on
+        if (frm.doc.__islocal) {
+            cur_frm.set_value("created_by", frappe.session.user);
+            cur_frm.set_value("created_on", frappe.datetime.get_today());
+        }
 
         if (!frm.doc.__islocal && frm.doc.status != "Draft") {
             cur_frm.page.clear_primary_action();
@@ -16,14 +34,16 @@ frappe.ui.form.on('QM Change', {
         }
 
         // fetch classification wizard
-        if (!frm.doc.cc_type && ["Draft", "Requested"].includes(frm.doc.status)) {
-            frappe.call({
-                'method': 'get_classification_wizard',
-                'doc': frm.doc,
-                'callback': function (r) {
-                    cur_frm.set_df_property('overview', 'options', r.message);
-                }
-            });
+        if (["Draft", "Requested"].includes(frm.doc.status)) {
+            if ((locals.classification_wizard && locals.classification_wizard=="closed") || frm.doc.cc_type) {
+                var visible = false;
+                load_wizard(visible);
+                setTimeout(function () {
+                    add_restart_wizard_button();}, 300);
+            } else {
+                var visible = true;
+                load_wizard(visible);
+            }
         } else {
             // display an advanced dashboard
             frappe.call({
@@ -33,12 +53,6 @@ frappe.ui.form.on('QM Change', {
                     cur_frm.set_df_property('overview', 'options', r.message);
                 }
             });
-        }
-
-        // set created_by and created_on
-        if (frm.doc.__islocal) {
-            cur_frm.set_value("created_by", frappe.session.user);
-            cur_frm.set_value("created_on", frappe.datetime.get_today());
         }
 
         // Only creator and QAU can change these fields in Draft status:
@@ -100,14 +114,10 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('summary_test_trial_results', 'read_only', true);
         }
 
-        // allow QAU to cancel
-        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
-            frm.add_custom_button(__("Cancel"), function() {
-                cancel(frm);
-            }).addClass("btn-danger");
-        }
+        // lock all fields except References if CC is Closed
+        // TODO
 
-		// allow the creator or QAU to change the creator (transfer document) in status "Requested"
+        // allow the creator or QAU to change the creator (transfer document) in status "Requested"
         if ((!frm.doc.__islocal)
             && (["Requested"].includes(frm.doc.status))
             && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
@@ -119,6 +129,13 @@ frappe.ui.form.on('QM Change', {
                     change_creator();
                 }
             );
+        }
+
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
         }
 
         if (frm.doc.status == 'Requested' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
@@ -166,6 +183,7 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
+        // add button to request an Impact Assessment
         if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
             cur_frm.add_custom_button(
                 __("Request Impact Assessment"),
@@ -255,9 +273,31 @@ frappe.ui.form.on('QM Change', {
                 }
             });
         }
+
+        // Only show Valid QM Documents when linking
+        frm.fields_dict.qm_documents.grid.get_field('qm_document').get_query = function() {
+            return {
+                    filters: [
+                        ["status", "=", "Valid"]
+                ]
+            };
+        };
 	}
 });
 
+
+function load_wizard(visible) {
+    frappe.call({
+        'method': 'get_classification_wizard',
+        'doc': cur_frm.doc,
+        'args': {
+            'visible': visible
+        },
+        'callback': function (r) {
+            cur_frm.set_df_property('overview', 'options', r.message);
+        }
+    });
+}
 
 function change_creator() {
     frappe.prompt(

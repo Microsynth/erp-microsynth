@@ -91,7 +91,6 @@ def confirm_classification(doc, user):
         frappe.throw(f"Only the creator {nc.created_by} or a user with the QAU role is allowed to classify a QM Nonconformity.")
     
 
-
 def check_classification(nc):
     """
     Check combinations of NC Type, Criticality Classification and Regulatory Classification
