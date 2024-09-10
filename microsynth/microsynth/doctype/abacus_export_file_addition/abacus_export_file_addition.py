@@ -218,7 +218,7 @@ class AbacusExportFileAddition(Document):
         }
         xml = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
         folder = frappe.get_value("Microsynth Settings", "Microsynth Settings", "abacus_export_path")
-        file = f"{self.name}_{datetime.now().strftime("%Y-%m-%d__%H-%M")}.xml"
+        file = f"{self.name}_{datetime.now().strftime('%Y-%m-%d__%H-%M')}.xml"
         file_path = f"{folder}/{file}"
         with open(file_path, 'w') as file:
             file.write(xml)
