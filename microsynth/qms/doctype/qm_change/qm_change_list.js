@@ -6,7 +6,7 @@ frappe.listview_settings['QM Change'] = {
     get_indicator: function(doc) {
         var status_color = {
             "Draft": "red",  /* note: all document status draft are overruled by the core to red/draft */
-            "Requested": "orange",
+            "Created": "orange",
             "Assessment & Classification": "yellow",
             "Trial": "lightblue",
             "Planning": "blue",

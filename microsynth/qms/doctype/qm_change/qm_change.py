@@ -11,7 +11,7 @@ from microsynth.microsynth.utils import user_has_role
 
 class QMChange(Document):
     def on_submit(self):
-        self.status = "Requested"
+        self.status = "Created"
 
     def get_classification_wizard(self, visible):            
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
@@ -79,7 +79,7 @@ def create_change(dt, dn, title, qm_process, creator, company, description):
             'date': today(),
             'created_on': today(),
             'created_by': creator,
-            'status': 'Requested',
+            'status': 'Created',
             'company': company,
             'description': description
         })
@@ -103,9 +103,9 @@ def update_status(nc, status):
         return
 
     # validate status transitions
-    if ((change.status == 'Draft' and status == 'Requested') or
+    if ((change.status == 'Draft' and status == 'Created') or
         (change.status == 'Draft' and status == 'Assessment & Classification') or  # necessary for manually created QM Changes
-        (change.status == 'Requested' and status == 'Assessment & Classification') or
+        (change.status == 'Created' and status == 'Assessment & Classification') or
         (change.status == 'Assessment & Classification' and status == 'Trial') or
         (change.status == 'Assessment & Classification' and status == 'Planning') or  # if CC Type = Small Impact
         (change.status == 'Trial' and status == 'Planning') or

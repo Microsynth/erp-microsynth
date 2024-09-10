@@ -34,7 +34,7 @@ frappe.ui.form.on('QM Change', {
         }
 
         // fetch classification wizard
-        if (["Draft", "Requested"].includes(frm.doc.status)) {
+        if (["Draft", "Created"].includes(frm.doc.status)) {
             if ((locals.classification_wizard && locals.classification_wizard=="closed") || frm.doc.cc_type) {
                 var visible = false;
                 load_wizard(visible);
@@ -72,15 +72,15 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('description', 'read_only', true);
         }
 
-        // Only QAU can set field CC Type in status Draft or Requested directly
-        if (["Draft", "Requested"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        // Only QAU can set field CC Type in status Draft or Created directly
+        if (["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('cc_type', 'read_only', false);
         } else {
             cur_frm.set_df_property('cc_type', 'read_only', true);
         }
 
-        // Only QAU can set fields Regulatory Classification and Risk Classification in status Draft, Requested or Assessment & Classification directly
-        if (["Draft", "Requested", "Assessment & Classification"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        // Only QAU can set fields Regulatory Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
+        if (["Draft", "Created", "Assessment & Classification"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
             cur_frm.set_df_property('risk_classification', 'read_only', false);
             cur_frm.set_df_property('impact_description', 'read_only', false);
@@ -108,7 +108,7 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', false);
         }
 
-        if (["Draft", "Requested", "Assessment & Classification", "Trial", "Planning"].includes(frm.doc.status)) {
+        if (["Draft", "Created", "Assessment & Classification", "Trial", "Planning"].includes(frm.doc.status)) {
             cur_frm.set_df_property('summary_test_trial_results', 'read_only', false);
         } else {
             cur_frm.set_df_property('summary_test_trial_results', 'read_only', true);
@@ -117,9 +117,9 @@ frappe.ui.form.on('QM Change', {
         // lock all fields except References if CC is Closed
         // TODO
 
-        // allow the creator or QAU to change the creator (transfer document) in status "Requested"
+        // allow the creator or QAU to change the creator (transfer document) in status "Created"
         if ((!frm.doc.__islocal)
-            && (["Requested"].includes(frm.doc.status))
+            && (["Created"].includes(frm.doc.status))
             && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
             ) {
             // add change creator button
@@ -138,7 +138,7 @@ frappe.ui.form.on('QM Change', {
             }).addClass("btn-danger");
         }
 
-        if (frm.doc.status == 'Requested' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if (frm.doc.status == 'Created' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.cc_type
                 && frm.doc.title
                 && frm.doc.description && frm.doc.description != "<div><br></div>"
