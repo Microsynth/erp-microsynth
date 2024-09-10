@@ -56,17 +56,21 @@ frappe.ui.form.on('QM Change', {
         }
 
         // Only creator and QAU can change these fields in Draft status:
-        if (((["Draft"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
+        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('title', 'read_only', false);
-            cur_frm.set_df_property('qm_process', 'read_only', false);
-            cur_frm.set_df_property('date', 'read_only', false);
-            cur_frm.set_df_property('company', 'read_only', false);
             cur_frm.set_df_property('current_state', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
+            if (frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('qm_process', 'read_only', false);
+                cur_frm.set_df_property('company', 'read_only', false);
+            } else if (frm.doc.status == "Created") {
+                // only QAU can edit these fields in status "Created"
+                cur_frm.set_df_property('qm_process', 'read_only', true);
+                cur_frm.set_df_property('company', 'read_only', true);
+            }
         } else {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('current_state', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
