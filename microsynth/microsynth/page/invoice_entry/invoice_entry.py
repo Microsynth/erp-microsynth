@@ -112,7 +112,7 @@ def save_document(doc):
         
         deviations = []
         for k,v in target_values.items():
-            if d.get(k) != target_values[k]:
+            if (d.get(k) or "") != target_values[k]:
                 deviations.append(k)
         if len(deviations) > 0:
             frappe.throw("Invalid input detected: {0}".format(deviations) )
