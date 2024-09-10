@@ -1,19 +1,8 @@
-// avoid submission outside the Approval Manager
-$( document ).ready(function() {
-    cur_frm.page.clear_primary_action();
-});
-
 /* Custom script extension for Purchase Invoice */
 frappe.ui.form.on('Purchase Invoice', {
     refresh(frm) {
         if (frm.doc.__islocal) {
             prepare_naming_series(frm);             // common function
-        }
-
-        // avoid submission outside the Approval Manager
-        if (!frm.doc.__islocal && frm.doc.docstatus == 0) {
-            cur_frm.page.clear_primary_action();
-            //cur_frm.page.clear_secondary_action();
         }
 
         if (!frm.doc.__islocal && frm.doc.docstatus == 0 && !frm.doc.in_approval) {
