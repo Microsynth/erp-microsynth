@@ -21,6 +21,7 @@ def get_purchase_invoice_drafts():
     pinvs = frappe.db.sql(f"""
         SELECT 
             `tabPurchase Invoice`.`name`,
+            `tabPurchase Invoice`.`company`,
             `tabPurchase Invoice`.`supplier`,
             `tabPurchase Invoice`.`supplier_name`,
             `tabPurchase Invoice`.`posting_date`,
@@ -91,13 +92,31 @@ def save_document(doc):
     d.supplier = doc.get('supplier')
     # date field: parse back from human-friendly format
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
-    d.posting_date = datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d")
-    d.due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
-    d.bill_no = doc.get('bill_no')
-    d.approver = doc.get('approver')
-    d.remarks = doc.get('remarks')
+    # prepare document fields
+    d.set_posting_time = 1
+    d.payment_terms_template = None
+    d.payment_schedule = []
+    
+    target_values = {
+        'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
+        'due_date': datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d"),
+        'bill_no': doc.get('bill_no'),
+        'approver': doc.get('approver'),
+        'remarks': doc.get('remarks')
+    }
+    d.update(target_values)
+    
     try:
-        d.save()  # TODO: posting_date is overwritten by today when saving
+        d.save()
+        frappe.db.commit()
+        
+        deviations = []
+        for k,v in target_values.items():
+            if d.get(k) != target_values[k]:
+                deviations.append(k)
+        if len(deviations) > 0:
+            frappe.throw("Invalid input detected: {0}".format(deviations) )
+            
         return "Saved."
     except Exception as err:
         return err
