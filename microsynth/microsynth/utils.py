@@ -2399,3 +2399,13 @@ def has_distributor(customer, product_type):
         if distributor.product_type == product_type:
             return True
     return False
+
+
+def print_users_without_role(role):
+    """
+    bench execute microsynth.microsynth.utils.print_users_without_role --kwargs "{'role': 'Microsynth User'}"
+    """
+    users = frappe.get_all("User", fields=['name'])
+    for user in users:
+        if not user_has_role(user['name'], role):
+            print(user['name'])
