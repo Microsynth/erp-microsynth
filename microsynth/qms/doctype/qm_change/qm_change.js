@@ -103,8 +103,11 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('risk_classification', 'read_only', true);
         }
 
-        if (frm.doc.regulatory_classification == 'GMP') {
+        if (frm.doc.regulatory_classification && frm.doc.regulatory_classification == 'GMP') {
             cur_frm.set_df_property('impact', 'hidden', false);
+            if (frm.doc.status == "Assessment & Classification" && frappe.user.has_role('QAU')) {
+                // TODO: Fill table impact
+            }
         }
 
         if (!["Closed", "Cancelled"].includes(frm.doc.status)
@@ -164,6 +167,13 @@ frappe.ui.form.on('QM Change', {
 
         // BUTTONS
 
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frm.doc.status != 'Closed' && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
+        }
+
         // allow the creator or QAU to change the creator (transfer document) in status "Created"
         if ((!frm.doc.__islocal)
             && (["Draft", "Created"].includes(frm.doc.status))
@@ -201,13 +211,6 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
-        // allow QAU to cancel
-        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frm.doc.status == 'Closed' && frappe.user.has_role('QAU')) {
-            frm.add_custom_button(__("Cancel"), function() {
-                cancel(frm);
-            }).addClass("btn-danger");
-        }
-
 
         // STATUS TRANSITIONS
 
@@ -238,7 +241,7 @@ frappe.ui.form.on('QM Change', {
                 || frappe.user.has_role('QAU'))) {
             if (frm.doc.regulatory_classification
                 && frm.doc.risk_classification) {
-                // && (frm.doc.regulatory_classification != 'GMP' || frm.doc.impact)) {
+                // && (frm.doc.regulatory_classification != 'GMP' || frm.doc.impact)) {  // TODO: Ensure that each Impact question is answered if Regulatory Classification is GMP?
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_assessments',
                     'args': {
@@ -252,7 +255,7 @@ frappe.ui.form.on('QM Change', {
                             cur_frm.page.set_primary_action(
                                 __("Confirm Classification"),
                                 function() {
-                                    if (cur_frm.doc.cc_type == 'Large Impact') {
+                                    if (cur_frm.doc.cc_type == 'full') {
                                         set_status('Trial');
                                     } else {
                                         set_status('Planning');
@@ -272,16 +275,28 @@ frappe.ui.form.on('QM Change', {
             && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
                 || frappe.user.has_role('QAU'))) {
             if (frm.doc.summary_test_trial_results) {
-                // add submit button
-                cur_frm.page.set_primary_action(
-                    __("Submit to QAU"),
-                    function() {
-                        set_status("Planning");
-                    }
-                );
+                if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
+                    // Add Approve and Reject buttons
+                    cur_frm.page.set_primary_action(
+                        __("Approve"),
+                        function() {
+                            create_qm_decision("Approve", frm.doc.status, "Planning");
+                        }
+                    );
+                    frm.add_custom_button(__("Reject"), function() {
+                        create_qm_decision("Reject", frm.doc.status, "Planning");
+                    }).addClass("btn-danger");
+                } else if (frm.doc.cc_type == 'short') {
+                    cur_frm.page.set_primary_action(
+                        __("Finish Tests & Trials"),
+                        function() {
+                            set_status("Planning");
+                        }
+                    );
+                }
             } else {
                 frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please enter a Summary of Test & Trial Results to submit this QM Change to QAU."), 'red', true);
+                frm.dashboard.add_comment( __("Please enter a Summary of Test & Trial Results."), 'red', true);
             }
         }
 
@@ -289,12 +304,25 @@ frappe.ui.form.on('QM Change', {
             && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
                 || frappe.user.has_role('QAU'))) {
             if (frm.doc.action_plan_summary) {
-                cur_frm.page.set_primary_action(
-                    __("Confirm Action Plan"),
-                    function() {
-                        set_status('Implementation');
-                    }
-                );
+                if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
+                    // Add Approve and Reject buttons
+                    cur_frm.page.set_primary_action(
+                        __("Approve"),
+                        function() {
+                            create_qm_decision("Approve", frm.doc.status, "Implementation");
+                        }
+                    );
+                    frm.add_custom_button(__("Reject"), function() {
+                        create_qm_decision("Reject", frm.doc.status, "Implementation");
+                    }).addClass("btn-danger");
+                } else if (frm.doc.cc_type == 'short') {
+                    cur_frm.page.set_primary_action(
+                        __("Finish Planning"),
+                        function() {
+                            set_status('Implementation');
+                        }
+                    );
+                }                
             } else {
                 frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please enter an Action Plan Summary."), 'red', true);
@@ -315,13 +343,16 @@ frappe.ui.form.on('QM Change', {
                     if (response.message) {
                         frm.dashboard.add_comment( __("Please complete all CC Actions and reload this QM Change to finish the Implementation."), 'red', true);
                     } else {
-                        // add button to finish implementation and complete
+                        // Add Approve and Reject buttons
                         cur_frm.page.set_primary_action(
-                            __("Finish Implementation"),
+                            __("Approve"),
                             function() {
-                                set_status('Completed');
+                                create_qm_decision("Approve", frm.doc.status, "Completed");
                             }
                         );
+                        frm.add_custom_button(__("Reject"), function() {
+                            create_qm_decision("Reject", frm.doc.status, "Completed");
+                        }).addClass("btn-danger");
                     }
                 }
             });
@@ -435,6 +466,55 @@ function set_status(status) {
             cur_frm.reload_doc();
         }
     });
+}
+
+
+function create_qm_decision(decision, from_status, to_status) {
+    frappe.prompt([
+        {'fieldname': 'decision', 'fieldtype': 'Data', 'label': __('Decision'), 'read_only': 1, 'default': decision},
+        {'fieldname': 'from_status', 'fieldtype': 'Data', 'label': __('From Status'), 'read_only': 1, 'default': from_status},
+        {'fieldname': 'to_status', 'fieldtype': 'Data', 'label': __('To Status'), 'read_only': 1, 'default': to_status},
+        {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
+    ],
+    function(values){
+        // Create QM Decision
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_decision.qm_decision.create_decision',
+            'args': {
+                'approver': frappe.session.user,
+                'decision': decision,
+                'dt': 'QM Change',
+                'dn': cur_frm.doc.name,
+                'from_status': from_status,
+                'to_status': to_status
+            },
+            "async": false,
+            'callback': function(response) {
+                // check password and if correct, submit
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_decision.qm_decision.sign_decision',
+                    'args': {
+                        'doc': response.message,
+                        'user': frappe.session.user,
+                        'password': values.password
+                    },
+                    "callback": function(response) {
+                        if (response.message) {
+                            if (decision === "Approve") {
+                                set_status(to_status);
+                            } else {
+                                // TODO: Send notification to creator of QM Change if decision='Reject'
+                                //cur_frm.reload_doc();
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    },
+    __('Please enter your approval password to ' + decision),
+    __('Sign')
+);
 }
 
 
