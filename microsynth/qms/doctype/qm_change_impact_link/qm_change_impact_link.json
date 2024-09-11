@@ -4,21 +4,31 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "qm_change_impact"
+  "qm_change_impact",
+  "impact_answer"
  ],
  "fields": [
   {
+   "columns": 7,
    "fieldname": "qm_change_impact",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "QM Change Impact",
+   "label": "This Change has an impact on",
    "options": "QM Change Impact",
    "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "impact_answer",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Answer",
+   "options": "\nyes\nno"
   }
  ],
  "istable": 1,
- "modified": "2024-09-04 16:00:30.425265",
- "modified_by": "Administrator",
+ "modified": "2024-09-11 11:44:03.395530",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change Impact Link",
  "owner": "jens.petermann@microsynth.ch",

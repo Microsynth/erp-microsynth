@@ -248,7 +248,7 @@
   {
    "allow_on_submit": 1,
    "fieldname": "impact",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Impact",
    "options": "QM Change Impact Link"
   },
@@ -270,7 +270,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-11 09:11:52.240495",
+ "modified": "2024-09-11 11:32:09.161160",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
