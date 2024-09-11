@@ -28,7 +28,8 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_value("created_on", frappe.datetime.get_today());
         }
 
-        if (!frm.doc.__islocal && frm.doc.status != "Draft") {
+        if ((!frm.doc.__islocal && frm.doc.status != "Draft")
+            || (frm.doc.status == "Draft" && !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
         }
@@ -54,6 +55,9 @@ frappe.ui.form.on('QM Change', {
                 }
             });
         }
+
+
+        // FIELDS LOCKING
 
         if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
             || (["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
@@ -157,6 +161,9 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
+
+        // BUTTONS
+
         // allow the creator or QAU to change the creator (transfer document) in status "Created"
         if ((!frm.doc.__islocal)
             && (["Created"].includes(frm.doc.status))
@@ -181,6 +188,17 @@ frappe.ui.form.on('QM Change', {
             ).addClass("btn-primary");
         }
 
+        // add buttons to request CC Action and Effectiveness Check
+        if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.add_custom_button(__("Request Action"), function() {
+                request_qm_action('Change Control Action');
+            }).addClass("btn-primary");
+
+            frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                request_qm_action("CC Effectiveness Check");
+            });
+        }
+
         // allow QAU to cancel
         if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
             frm.add_custom_button(__("Cancel"), function() {
@@ -188,7 +206,12 @@ frappe.ui.form.on('QM Change', {
             }).addClass("btn-danger");
         }
 
-        if (frm.doc.status == 'Created' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+
+        // STATUS TRANSITIONS
+
+        if (frm.doc.status == 'Created'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             if (frm.doc.cc_type
                 && frm.doc.qm_process
                 && frm.doc.title
@@ -208,7 +231,9 @@ frappe.ui.form.on('QM Change', {
             }
         }
 
-        if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
+        if (frm.doc.status == 'Assessment & Classification'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             if (frm.doc.regulatory_classification
                 && frm.doc.risk_classification) {
                 // && (frm.doc.regulatory_classification != 'GMP' || frm.doc.impact)) {
@@ -241,7 +266,9 @@ frappe.ui.form.on('QM Change', {
             }
         }
 
-        if (frm.doc.status == 'Trial' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if (frm.doc.status == 'Trial'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             if (frm.doc.summary_test_trial_results) {
                 // add submit button
                 cur_frm.page.set_primary_action(
@@ -256,16 +283,9 @@ frappe.ui.form.on('QM Change', {
             }
         }
 
-        // add buttons to request CC Action and Effectiveness Check
-        if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            cur_frm.add_custom_button(__("Request Action"), function() {
-                request_qm_action('Change Control Action');
-            }).addClass("btn-primary");
-
-            frm.add_custom_button(__("Request Effectiveness Check"), function() {
-                request_qm_action("CC Effectiveness Check");
-            });
-
+        if (frm.doc.status == 'Planning'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             if (frm.doc.action_plan_summary) {
                 cur_frm.page.set_primary_action(
                     __("Confirm Action Plan"),
@@ -279,7 +299,9 @@ frappe.ui.form.on('QM Change', {
             }
         }
 
-        if (frm.doc.status == 'Implementation' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if (frm.doc.status == 'Implementation'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             frappe.call({
                 'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                 'args': {
@@ -303,7 +325,9 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
-        if (frm.doc.status == 'Completed' && frappe.user.has_role('QAU')) {
+        if (frm.doc.status == 'Completed'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             if (frm.doc.closure_comments) {
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
