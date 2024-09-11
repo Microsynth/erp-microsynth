@@ -11,9 +11,13 @@ from frappe.model.document import Document
 class QMImpactAssessment(Document):
     def on_submit(self):
         self.status = "Completed"
+        self.save()
+        frappe.db.commit()
 
     def on_cancel(self):
         self.status = "Cancelled"
+        self.save()
+        frappe.db.commit()
 
 
 @frappe.whitelist()
