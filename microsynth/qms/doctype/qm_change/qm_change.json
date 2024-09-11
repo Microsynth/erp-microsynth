@@ -36,8 +36,8 @@
   "impact_description",
   "section_tests_trials",
   "summary_test_trial_results",
-  "effectiveness_section",
-  "effectiveness_summary",
+  "planning_section",
+  "action_plan_summary",
   "closure_section",
   "closure_comments",
   "naming_series"
@@ -171,18 +171,6 @@
   },
   {
    "collapsible": 1,
-   "fieldname": "effectiveness_section",
-   "fieldtype": "Section Break",
-   "label": "Effectiveness"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "effectiveness_summary",
-   "fieldtype": "Text",
-   "label": "Effectiveness Summary"
-  },
-  {
-   "collapsible": 1,
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
@@ -269,10 +257,20 @@
    "fieldname": "impact_description",
    "fieldtype": "Small Text",
    "label": "Impact Description"
+  },
+  {
+   "fieldname": "planning_section",
+   "fieldtype": "Section Break",
+   "label": "Planning"
+  },
+  {
+   "fieldname": "action_plan_summary",
+   "fieldtype": "Text",
+   "label": "Action Plan Summary"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-10 16:11:46.112792",
+ "modified": "2024-09-11 09:11:52.240495",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

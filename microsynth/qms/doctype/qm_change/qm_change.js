@@ -55,39 +55,39 @@ frappe.ui.form.on('QM Change', {
             });
         }
 
-        // Only creator and QAU can change these fields in Draft status:
-        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by) || frappe.user.has_role('QAU')) {
+        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
+            || (["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
+            cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('title', 'read_only', false);
-            cur_frm.set_df_property('current_state', 'read_only', false);
-            cur_frm.set_df_property('description', 'read_only', false);
-            if (frappe.user.has_role('QAU')) {
-                cur_frm.set_df_property('qm_process', 'read_only', false);
-                cur_frm.set_df_property('company', 'read_only', false);
-            } else if (frm.doc.status == "Created") {
-                // only QAU can edit these fields in status "Created"
-                cur_frm.set_df_property('qm_process', 'read_only', true);
-                cur_frm.set_df_property('company', 'read_only', true);
-            }
+            cur_frm.set_df_property('company', 'read_only', false);
         } else {
-            cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
-            cur_frm.set_df_property('current_state', 'read_only', true);
-            cur_frm.set_df_property('description', 'read_only', true);
         }
 
+        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
+            || (!["Closed", "Cancelled"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
+            cur_frm.set_df_property('current_state', 'read_only', false);
+            cur_frm.set_df_property('description', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('current_state', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
+        }      
+
         // Only QAU can set field CC Type in status Draft or Created directly
-        if (["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        if (["Draft", "Created"].includes(frm.doc.status)
+            && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('cc_type', 'read_only', false);
         } else {
             cur_frm.set_df_property('cc_type', 'read_only', true);
         }
 
         // Only QAU can set fields Regulatory Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
-        if (["Draft", "Created", "Assessment & Classification"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
+        if (["Draft", "Created", "Assessment & Classification"].includes(frm.doc.status)
+            && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
             cur_frm.set_df_property('risk_classification', 'read_only', false);
-            cur_frm.set_df_property('impact_description', 'read_only', false);
             if (frm.doc.regulatory_classification == 'GMP') {
                 cur_frm.set_df_property('impact', 'read_only', false);
             } else {
@@ -97,29 +97,65 @@ frappe.ui.form.on('QM Change', {
         } else {
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
             cur_frm.set_df_property('risk_classification', 'read_only', true);
-            cur_frm.set_df_property('impact_description', 'read_only', true);
         }
 
         if (frm.doc.regulatory_classification == 'GMP') {
             cur_frm.set_df_property('impact', 'hidden', false);
         }
 
-        if (["Closed", "Cancelled"].includes(frm.doc.status)) {
-            cur_frm.set_df_property('effectiveness_summary', 'read_only', true);
-            cur_frm.set_df_property('closure_comments', 'read_only', true);
+        if (!["Closed", "Cancelled"].includes(frm.doc.status)
+            && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('impact_description', 'read_only', false);
         } else {
-            cur_frm.set_df_property('effectiveness_summary', 'read_only', false);
-            cur_frm.set_df_property('closure_comments', 'read_only', false);
+            cur_frm.set_df_property('impact_description', 'read_only', true);
         }
 
-        if (["Draft", "Created", "Assessment & Classification", "Trial", "Planning"].includes(frm.doc.status)) {
+        if (["Draft", "Created", "Assessment & Classification", "Trial", "Planning"].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('summary_test_trial_results', 'read_only', false);
+            cur_frm.set_df_property('action_plan_summary', 'read_only', false);
         } else {
             cur_frm.set_df_property('summary_test_trial_results', 'read_only', true);
+            if (["Closed", "Cancelled"].includes(frm.doc.status) || !frappe.user.has_role('QAU')) {
+                cur_frm.set_df_property('action_plan_summary', 'read_only', true);
+            }
+        }
+
+        if (!["Closed", "Cancelled"].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('closure_comments', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('closure_comments', 'read_only', true);
+        }
+
+        // Only creator and QAU can edit reference fields in all status unequals Cancelled
+        if (frm.doc.docstatus < 2 && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('qm_documents', 'read_only', false);
+            cur_frm.set_df_property('customers', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('qm_documents', 'read_only', true);
+            cur_frm.set_df_property('customers', 'read_only', true);
         }
 
         // lock all fields except References if CC is Closed
-        // TODO
+        if (["Closed", "Cancelled"].includes(frm.doc.status)
+            || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+            cur_frm.set_df_property('cc_type', 'read_only', true);
+            cur_frm.set_df_property('qm_documents', 'read_only', true);
+            cur_frm.set_df_property('customers', 'read_only', true);
+            cur_frm.set_df_property('qm_process', 'read_only', true);
+            cur_frm.set_df_property('title', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('current_state', 'read_only', true);
+            cur_frm.set_df_property('description', 'read_only', true);
+            cur_frm.set_df_property('regulatory_classification', 'read_only', true);
+            cur_frm.set_df_property('risk_classification', 'read_only', true);
+            cur_frm.set_df_property('impact', 'read_only', true);
+            cur_frm.set_df_property('impact_description', 'read_only', true);
+            cur_frm.set_df_property('summary_test_trial_results', 'read_only', true);
+            cur_frm.set_df_property('action_plan_summary', 'read_only', true);
+            cur_frm.set_df_property('closure_comments', 'read_only', true);
+        }
 
         // allow the creator or QAU to change the creator (transfer document) in status "Created"
         if ((!frm.doc.__islocal)
