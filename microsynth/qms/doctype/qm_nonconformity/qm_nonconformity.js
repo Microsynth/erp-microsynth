@@ -713,7 +713,7 @@ function calculate_risk_classification(occ_prob, impact, after_actions) {
         ["medium", 2],
         ["high", 3],
         ["neglectable", 1],
-        ["noticable", 2],
+        ["noticeable", 2],
         ["severe", 3]
     ])
     var res = values.get(occ_prob) * values.get(impact);

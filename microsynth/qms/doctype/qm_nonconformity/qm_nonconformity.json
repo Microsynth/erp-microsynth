@@ -176,7 +176,7 @@
    "fieldname": "impact",
    "fieldtype": "Select",
    "label": "Impact",
-   "options": "\nneglectable\nnoticable\nsevere"
+   "options": "\nneglectable\nnoticeable\nsevere"
   },
   {
    "allow_on_submit": 1,
@@ -215,7 +215,7 @@
    "fieldname": "impact_after_actions",
    "fieldtype": "Select",
    "label": "Impact after Actions",
-   "options": "\nneglectable\nnoticable\nsevere"
+   "options": "\nneglectable\nnoticeable\nsevere"
   },
   {
    "allow_on_submit": 1,
@@ -449,7 +449,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-11 12:22:34.334203",
+ "modified": "2024-09-11 13:19:09.034736",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
