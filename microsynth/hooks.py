@@ -166,11 +166,9 @@ doc_events = {
     },
     "Communication": {
         "after_insert": "microsynth.microsynth.email_handler.communication_on_insert"
-    },
-    "Abacus Export File": {
-        "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
     }
- }
+}
+
 
 # Scheduled Tasks
 # ---------------
