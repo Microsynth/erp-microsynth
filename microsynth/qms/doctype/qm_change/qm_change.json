@@ -171,6 +171,7 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Completed'",
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
@@ -183,6 +184,7 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Trial'",
    "fieldname": "section_tests_trials",
    "fieldtype": "Section Break",
    "label": "Tests & Trials"
@@ -222,6 +224,7 @@
    "options": "QMC-.YY.####"
   },
   {
+   "collapsible": 1,
    "collapsible_depends_on": "eval:doc.status=='Assessment & Classification'",
    "fieldname": "classification_section",
    "fieldtype": "Section Break",
@@ -259,18 +262,21 @@
    "label": "Impact Description"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.status=='Planning'",
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
    "label": "Planning"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "action_plan_summary",
    "fieldtype": "Text",
    "label": "Action Plan Summary"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-11 11:32:09.161160",
+ "modified": "2024-09-11 17:20:18.596829",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
