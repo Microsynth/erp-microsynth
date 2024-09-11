@@ -84,13 +84,25 @@ frappe.ui.form.on('QM Action', {
                     if (value["status"] === "Completed") {
                         show_button = true;
                     } else {
-                        frm.dashboard.add_comment( "QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Completed' to start working on this QM Action." , 'yellow', true);
+                        frm.dashboard.add_comment("QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Completed' to start working on this QM Action.", 'yellow', true);
                     }
                 } else if (frm.doc.document_type === "QM Nonconformity" && (frm.doc.type === "Correction" || frm.doc.type === "Corrective Action")) {
                     if (value["status"] === "Implementation") {
                         show_button = true;
                     } else {
-                        frm.dashboard.add_comment( "QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Implementation' to start working on this QM Action." , 'yellow', true);
+                        frm.dashboard.add_comment("QM Nonconformity " + frm.doc.document_name + " needs to be in status 'Implementation' to start working on this QM Action.", 'yellow', true);
+                    }
+                } else if (frm.doc.document_type === "QM Change" && frm.doc.type === "NC Effectiveness Check") {
+                    if (value["status"] === "Completed") {
+                        show_button = true;
+                    } else {
+                        frm.dashboard.add_comment("QM Change " + frm.doc.document_name + " needs to be in status 'Completed' to start working on this QM Action.", 'yellow', true);
+                    }
+                } else if (frm.doc.document_type === "QM Change" && frm.doc.type === "Change Control Action") {
+                    if (value["status"] === "Implementation") {
+                        show_button = true;
+                    } else {
+                        frm.dashboard.add_comment("QM Change " + frm.doc.document_name + " needs to be in status 'Implementation' to start working on this QM Action.", 'yellow', true);
                     }
                 }
                 if (show_button) {

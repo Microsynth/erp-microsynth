@@ -132,8 +132,8 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
-        // Only creator and QAU can edit reference fields in all status unequals Cancelled
-        if (frm.doc.docstatus < 2 && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        // Reference fields can be edited in all status unequals Cancelled
+        if (frm.doc.docstatus < 2) {
             cur_frm.set_df_property('qm_documents', 'read_only', false);
             cur_frm.set_df_property('customers', 'read_only', false);
         } else {
@@ -166,7 +166,7 @@ frappe.ui.form.on('QM Change', {
 
         // allow the creator or QAU to change the creator (transfer document) in status "Created"
         if ((!frm.doc.__islocal)
-            && (["Created"].includes(frm.doc.status))
+            && (["Draft", "Created"].includes(frm.doc.status))
             && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
             ) {
             // add change creator button
@@ -179,7 +179,9 @@ frappe.ui.form.on('QM Change', {
         }
 
         // add button to request an Impact Assessment
-        if (frm.doc.status == 'Assessment & Classification' && frappe.user.has_role('QAU')) {
+        if (frm.doc.status == 'Assessment & Classification'
+            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                || frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(
                 __("Request Impact Assessment"),
                 function() {
@@ -200,7 +202,7 @@ frappe.ui.form.on('QM Change', {
         }
 
         // allow QAU to cancel
-        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU')) {
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frm.doc.status == 'Closed' && frappe.user.has_role('QAU')) {
             frm.add_custom_button(__("Cancel"), function() {
                 cancel(frm);
             }).addClass("btn-danger");
