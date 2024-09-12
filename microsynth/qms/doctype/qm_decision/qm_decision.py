@@ -16,7 +16,7 @@ class QMDecision(Document):
 
 
 @frappe.whitelist()
-def create_decision(approver, decision, dt, dn, from_status, to_status):
+def create_decision(approver, decision, dt, dn, from_status, to_status, comments):
     decision = frappe.get_doc(
         {
             'doctype': 'QM Decision',
@@ -26,7 +26,8 @@ def create_decision(approver, decision, dt, dn, from_status, to_status):
             'document_name': dn,
             'from_status': from_status,
             'to_status': to_status,
-            'date': date.today()
+            'date': date.today(),
+            'comments': comments
         })
 
     decision.save(ignore_permissions = True)

@@ -474,7 +474,8 @@ function create_qm_decision(decision, from_status, to_status) {
         {'fieldname': 'decision', 'fieldtype': 'Data', 'label': __('Decision'), 'read_only': 1, 'default': decision},
         {'fieldname': 'from_status', 'fieldtype': 'Data', 'label': __('From Status'), 'read_only': 1, 'default': from_status},
         {'fieldname': 'to_status', 'fieldtype': 'Data', 'label': __('To Status'), 'read_only': 1, 'default': to_status},
-        {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
+        {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1},
+        {'fieldname': 'comments', 'fieldtype': 'Text', 'label': __('Comments')}
     ],
     function(values){
         // Create QM Decision
@@ -486,7 +487,8 @@ function create_qm_decision(decision, from_status, to_status) {
                 'dt': 'QM Change',
                 'dn': cur_frm.doc.name,
                 'from_status': from_status,
-                'to_status': to_status
+                'to_status': to_status,
+                'comments': values.comments
             },
             "async": false,
             'callback': function(response) {
