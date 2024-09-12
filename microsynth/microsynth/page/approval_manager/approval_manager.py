@@ -71,10 +71,20 @@ def approve(pinv, user):
 
 
 @frappe.whitelist()
-def reject(pinv, user):
-    add_comment(pinv, _("Reject"), _("Rejected"), user)
+def reject(pinv, user, reason, new_assignee):
+    add_comment(pinv, _("Reject"), reason, user)
     # clear assignment
     clear("Purchase Invoice", pinv)
+    pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
+    pinv_doc.approver = new_assignee
+    pinv_doc.save()
+    add({
+            'doctype': "Purchase Invoice",
+            'name': pinv,
+            'assign_to': new_assignee,
+            #'description': f"",
+            'notify': True
+        })
 
 
 def add_comment(pinv, subject, comment, user):

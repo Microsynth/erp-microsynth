@@ -76,18 +76,30 @@ frappe.approval_manager = {
         });
     },
     reject: function(pinv) {
-        frappe.call({
-            'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reject',
-            'freeze': true,
-            'freeze_message': __("Rejecting..."),
-            'args': {
-                'pinv': pinv,
-                'user': frappe.session.user
+        // Show dialog for reason, allow to assign to a different person
+        frappe.prompt([
+            {'fieldname': 'new_assignee', 'fieldtype': 'Link', 'options': 'User', 'label': __('Assign to'), 'reqd': 1},
+            {'fieldname': 'reason', 'fieldtype': 'Text', 'label': __('Reason')}
+        ],
+            function(values){
+                frappe.call({
+                    'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reject',
+                    'freeze': true,
+                    'freeze_message': __("Rejecting & assigning ..."),
+                    'args': {
+                        'pinv': pinv,
+                        'user': frappe.session.user,
+                        'reason': values.reason || "",
+                        'new_assignee': values.new_assignee
+                    },
+                    'callback': function(r) {
+                        document.getElementById("row_" + pinv).style.display = "none";
+                    }
+                });
             },
-            'callback': function(r) {
-                document.getElementById("row_" + pinv).style.display = "none";
-            }
-        });
+        __('Please reassign'),
+        __('Reject & assign')
+        );
     },
     remove_clearfix_nodes: function() {
         let clearfixes = document.getElementsByClassName("clearfix"); 

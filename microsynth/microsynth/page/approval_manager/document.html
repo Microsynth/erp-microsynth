@@ -13,7 +13,7 @@
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
-                <button type="submit" class="btn btn-sm btn-danger" id="btn_reject_{{ name }}">{{ _("Reject") }}</button>
+                <button type="submit" class="btn btn-sm btn-danger" id="btn_reject_{{ name }}">{{ _("Reject & reassign") }}</button>
                 <button type="submit" class="btn btn-sm btn-primary" id="btn_approve_{{ name }}" data-pinv="{{ name }}">{{ _("Approve") }}</button>
         </td>
         <tr>
