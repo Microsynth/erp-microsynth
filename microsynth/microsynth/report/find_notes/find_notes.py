@@ -8,7 +8,7 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Note ID"), "fieldname": "note_id", "fieldtype": "Link", "options": "Contact Note", "width": 85 },
+        {"label": _("Note ID"), "fieldname": "note_id", "fieldtype": "Link", "options": "Contact Note", "width": 100 },
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75 },
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 65 },
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 80 },
@@ -27,6 +27,42 @@ def get_columns(filters):
         {"label": _("Note Type"), "fieldname": "note_type", "fieldtype": "Data", "width": 80 },
         {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "options": "Notes", "width": 200 },
     ]
+
+
+def get_notes(sql_conditions, indent):
+    query = f"""
+            SELECT
+                {indent} AS `indent`,
+                `tabContact Note`.`name` AS `note_id`,
+                `tabContact Note`.`date`,
+                `tabContact Note`.`contact_person` AS `contact`,
+                `tabContact Note`.`first_name`,
+                `tabContact Note`.`last_name`,
+                `tabCustomer`.`customer_name`,
+                `tabCustomer`.`name` AS `customer_id`,
+                `tabCustomer`.`account_manager` AS `sales_manager`,
+                `tabCustomer`.`territory`,
+                `tabAddress`.`country`,
+                `tabAddress`.`city`,
+                `tabContact`.`institute`,
+                `tabContact`.`institute_key`,
+                `tabContact`.`department`,
+                `tabContact`.`group_leader`,
+                `tabContact Note`.`owner` AS `creator`,
+                `tabContact Note`.`contact_note_type` AS `note_type`,
+                `tabContact Note`.`notes`
+            FROM `tabContact Note`
+            LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabContact Note`.`contact_person`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
+                                              AND `tDLA`.`parenttype`  = "Contact" 
+                                              AND `tDLA`.`link_doctype` = "Customer"
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+            WHERE TRUE
+                {sql_conditions}
+            ORDER BY `tabContact Note`.`date` DESC
+        """
+    return frappe.db.sql(query, as_dict=True)
 
 
 def get_data(filters):
@@ -69,39 +105,24 @@ def get_data(filters):
         if filters.get('to_date'):
             filter_conditions += f"AND `tabContact Note`.`date` <= DATE('{filters.get('to_date')}')"
 
-    query = """
-            SELECT
-                `tabContact Note`.`name` AS `note_id`,
-                `tabContact Note`.`date`,
-                `tabContact Note`.`contact_person` AS `contact`,
-                `tabContact Note`.`first_name`,
-                `tabContact Note`.`last_name`,
-                `tabCustomer`.`customer_name`,
-                `tabCustomer`.`name` AS `customer_id`,
-                `tabCustomer`.`account_manager` AS `sales_manager`,
-                `tabCustomer`.`territory`,
-                `tabAddress`.`country`,
-                `tabAddress`.`city`,
-                `tabContact`.`institute`,
-                `tabContact`.`institute_key`,
-                `tabContact`.`department`,
-                `tabContact`.`group_leader`,
-                `tabContact Note`.`owner` AS `creator`,
-                `tabContact Note`.`contact_note_type` AS `note_type`,
-                `tabContact Note`.`notes`
-            FROM `tabContact Note`
-            LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabContact Note`.`contact_person`
-            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
-                                              AND `tDLA`.`link_doctype` = "Customer"
-            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
-            LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
-            WHERE TRUE
-                {filter_conditions}
-            ORDER BY `tabContact Note`.`date` DESC
-        """.format(filter_conditions=filter_conditions)
+    raw_notes = get_notes(filter_conditions, 0)
 
-    return frappe.db.sql(query, as_dict=True)
+    if not filters.get('no_previous_notes') or filters.get('no_previous_notes') < 1:
+        return raw_notes
+    
+    enriched = []
+    for note in raw_notes:
+        enriched.append(note)
+        sql_conditions = f" AND `tabContact Note`.`name` != '{note['note_id']}'"
+        sql_conditions += f" AND `tabContact Note`.`contact_person` = '{note['contact']}'"
+        previous_notes = get_notes(sql_conditions, 1)        
+
+        for i, previous_note in enumerate(previous_notes):
+            if i >= filters.get('no_previous_notes'):
+                break
+            enriched.append(previous_note)
+    
+    return enriched
 
 
 def execute(filters=None):

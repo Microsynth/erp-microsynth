@@ -75,6 +75,11 @@ frappe.query_reports["Find Notes"] = {
             "fieldname": "to_date",
             "label": __("To date"),
             "fieldtype": "Date"
+        },
+        {
+            "fieldname": "no_previous_notes",
+            "label": __("Number of previous Notes"),
+            "fieldtype": "Int"
         }
 	],
     "onload": (report) => {
