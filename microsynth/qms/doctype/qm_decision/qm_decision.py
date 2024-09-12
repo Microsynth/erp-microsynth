@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from microsynth.microsynth.utils import user_has_role
+from frappe.desk.form.assign_to import add
 from microsynth.qms.signing import sign
 from frappe.model.document import Document
 from datetime import date
@@ -16,8 +16,8 @@ class QMDecision(Document):
 
 
 @frappe.whitelist()
-def create_decision(approver, decision, dt, dn, from_status, to_status, comments):
-    decision = frappe.get_doc(
+def create_decision(approver, decision, dt, dn, from_status, to_status, comments, refdoc_creator):
+    decision_doc = frappe.get_doc(
         {
             'doctype': 'QM Decision',
             'approver': approver,
@@ -30,9 +30,18 @@ def create_decision(approver, decision, dt, dn, from_status, to_status, comments
             'comments': comments
         })
 
-    decision.save(ignore_permissions = True)
+    decision_doc.save(ignore_permissions = True)
+    if refdoc_creator:
+        # Assign creator of linked document
+        add({
+            'doctype': "QM Decision",
+            'name': decision_doc.name,
+            'assign_to': refdoc_creator,
+            'description': f"Your {dt} {dn} has been {'rejected' if decision == 'Reject' else 'approved'} by {approver} for status transition {from_status} -> {to_status}.",
+            'notify': True
+        })
     frappe.db.commit()
-    return decision.name
+    return decision_doc.name
 
 
 @frappe.whitelist()

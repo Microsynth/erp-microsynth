@@ -488,15 +488,17 @@ function create_qm_decision(decision, from_status, to_status) {
                 'dn': cur_frm.doc.name,
                 'from_status': from_status,
                 'to_status': to_status,
-                'comments': values.comments
+                'comments': values.comments || "",
+                'refdoc_creator': cur_frm.doc.created_by
             },
             "async": false,
             'callback': function(response) {
+                let qm_decision = response.message;
                 // check password and if correct, submit
                 frappe.call({
                     'method': 'microsynth.qms.doctype.qm_decision.qm_decision.sign_decision',
                     'args': {
-                        'doc': response.message,
+                        'doc': qm_decision,
                         'user': frappe.session.user,
                         'password': values.password
                     },
@@ -505,8 +507,7 @@ function create_qm_decision(decision, from_status, to_status) {
                             if (decision === "Approve") {
                                 set_status(to_status);
                             } else {
-                                // TODO: Send notification to creator of QM Change if decision='Reject'
-                                //cur_frm.reload_doc();
+                                frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator");
                             }
                         }
                     }
