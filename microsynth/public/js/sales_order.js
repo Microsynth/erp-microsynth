@@ -18,7 +18,7 @@ frappe.ui.form.on('Sales Order', {
             $(target).parent().parent().remove();
         }
 
-        if (!frm.doc.__islocal) {
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({
                     "method": "microsynth.microsynth.labels.print_shipping_label",
