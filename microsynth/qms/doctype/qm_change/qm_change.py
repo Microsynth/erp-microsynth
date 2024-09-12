@@ -65,6 +65,17 @@ class QMChange(Document):
                 'effectiveness_checks': effectiveness_checks
             })
         return html
+    
+    def fill_impact_table(self):
+        impacts = frappe.db.get_all("QM Change Impact", fields=['name'])
+        if len(self.impact) < 1:
+            for impact in impacts:
+                self.append("impact", {
+                    'qm_change_impact': impact['name'],
+                    'impact_answer': ''
+                    })
+            self.save()
+            frappe.db.commit()
 
 
 @frappe.whitelist()

@@ -106,7 +106,7 @@ frappe.ui.form.on('QM Change', {
         if (frm.doc.regulatory_classification && frm.doc.regulatory_classification == 'GMP') {
             cur_frm.set_df_property('impact', 'hidden', false);
             if (frm.doc.status == "Assessment & Classification" && frappe.user.has_role('QAU')) {
-                // TODO: Fill table impact
+                fill_impact_table(frm);
             }
         }
 
@@ -410,6 +410,16 @@ function load_wizard(visible) {
         },
         'callback': function (r) {
             cur_frm.set_df_property('overview', 'options', r.message);
+        }
+    });
+}
+
+function fill_impact_table(frm) {
+    frappe.call({
+        'method': 'fill_impact_table',
+        'doc': cur_frm.doc,
+        'callback': function (r) {
+            // nothing to do?
         }
     });
 }
