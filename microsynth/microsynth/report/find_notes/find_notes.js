@@ -116,10 +116,10 @@ function create_pdf(filters) {
         'freeze': true,
         'freeze_message': __("Creating PDF ..."),
         'callback': function (response) {
-            // var doc = response.message;
-            // frappe.model.sync(doc);
-            // frappe.set_route("Form", doc.doctype, doc.name);
-            window.location.href = response.message;
+            window.open(
+                response.message,
+                '_blank' // open in a new window.
+              );
         }
     });
 }
