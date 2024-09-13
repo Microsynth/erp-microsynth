@@ -166,6 +166,9 @@ doc_events = {
     },
     "Communication": {
         "after_insert": "microsynth.microsynth.email_handler.communication_on_insert"
+    },
+    "Supplier": {
+        "before_save": "microsynth.microsynth.purchasing.set_default_payable_accounts"
     }
 }
 

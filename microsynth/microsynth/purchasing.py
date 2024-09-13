@@ -126,3 +126,101 @@ def assign_purchase_invoices():
         assigned = create_approval_request(pi['approver'], "Purchase Invoice", pi['name'])
         if assigned:
             print(f"Assigned {pi['name']} to {pi['approver']}.")
+
+
+def fetch_billing_address(supplier_id):
+    """
+    Returns the primary billing address of a supplier specified by its id.
+
+    bench execute "microsynth.microsynth.purchasing.fetch_billing_address" --kwargs "{'supplier_id': 'S-00001'}"
+    """
+    addresses = frappe.db.sql(f"""
+        SELECT 
+            `tabAddress`.`name`,
+            `tabAddress`.`address_type`,
+            `tabAddress`.`overwrite_company`,
+            `tabAddress`.`address_line1`,
+            `tabAddress`.`address_line2`,
+            `tabAddress`.`pincode`,
+            `tabAddress`.`city`,
+            `tabAddress`.`country`,
+            `tabAddress`.`is_shipping_address`,
+            `tabAddress`.`is_primary_address`
+        FROM `tabDynamic Link`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
+        WHERE `tabDynamic Link`.`parenttype` = "Address"
+            AND `tabDynamic Link`.`link_doctype` = "Supplier"
+            AND `tabDynamic Link`.`link_name` = "{supplier_id}"
+            AND (`tabAddress`.`is_primary_address` = 1)
+        ;""", as_dict=True)
+
+    if len(addresses) == 1:
+        return addresses[0]
+    else: 
+        frappe.throw(f"Found {len(addresses)} billing addresses for Supplier '{supplier_id}'", "fetch_billing_address")
+
+
+def set_default_payable_accounts(supplier, event):
+    """
+    Set the default payable accounts for the given supplier.
+
+    bench execute microsynth.microsynth.purchasing.set_default_payable_accounts --kwargs "{'supplier': 'S-00001'}"
+    """
+    if type(supplier) == str:
+        supplier = frappe.get_doc("Supplier", supplier)
+    companies = frappe.get_all("Company", fields = ['name', 'default_currency'])
+
+    for company in companies:
+        print(f"Processing {company['name']} ...")
+        if company['name'] == "Microsynth Seqlab GmbH":
+            account = "1600 - Verb. aus Lieferungen und Leistungen - GOE"
+        elif company['name'] == "Microsynth France SAS":
+            account = "4191000 - Clients acptes s/com - LYO"
+        elif company['name'] == "Microsynth AG":
+            if supplier.default_currency and supplier.default_currency == "EUR":
+                account = "2005 - Kreditoren EUR - BAL"
+            elif supplier.default_currency and supplier.default_currency == "USD":
+                account = "2003 - Kreditoren USD - BAL"
+            else:
+                account = "2000 - Kreditoren - BAL"
+        elif company['name'] == "Microsynth Austria GmbH":
+            billing_address = fetch_billing_address(supplier.name)
+            country = billing_address['country']
+            country_doc = frappe.get_doc("Country", country)
+            if country_doc.name == "Austria":
+                account = "3300 - Lieferverbindlichkeiten Inland - WIE"
+            elif country_doc.eu:
+                account = "3360 - Lieferverbindlichkeiten EU - WIE"
+            else:
+                account = "3370 - Lieferverbindlichkeiten sonstiges Ausland - WIE"
+        else:
+            continue
+        if not frappe.db.exists("Account", account):
+            msg = f"Account '{account}' does not exist. Please check if it was renamed."
+            frappe.log_error(msg, "set_default_payable_accounts")
+            frappe.throw(msg)
+            continue
+        entry_exists = False    
+        for a in supplier.accounts:
+            if a.company == company['name']:
+                # update
+                a.account = account
+                entry_exists = True
+                break
+        if not entry_exists:
+            # create new account entry
+            entry = {
+                'company': company['name'],
+                'account': account
+                # TODO: default_tax_template?
+            }
+            supplier.append("accounts", entry)
+            print(f"appended {entry=}")
+    # Do not save since function is called in before_save server hook    
+
+
+def set_and_save_default_payable_accounts(supplier):
+    if type(supplier) == str:
+        supplier = frappe.get_doc("Supplier", supplier)
+    supplier.save()
+    #frappe.db.commit()
