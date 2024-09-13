@@ -32,6 +32,8 @@ def set_status(status, labels):
             "item_code": "3110"
         }
     ]
+
+    bench execute microsynth.microsynth.seqblatt.set_status --kwargs "{'status': 'locked', 'labels': [{'label_id': '10000001', 'item_code': '3000'}, {'label_id': '10000051', 'item_code': '3000'}]}"
     """
     if type(labels) == str:
         labels = json.loads(labels)
@@ -50,7 +52,8 @@ def set_status(status, labels):
                 #return {'success': False, 'message': "none or multiple labels." }
                 return {'success': False, 'message': f"Found {len(matching_labels)} Sequencing Label(s) for Label {l} in the ERP."}
             else:
-                customers.add(matching_labels[0]['customer'])
+                if matching_labels[0]['customer']:
+                    customers.add(matching_labels[0]['customer'])
                 labels_to_process.append(matching_labels[0]['name'])
         
         # Enable Customer if necessary
