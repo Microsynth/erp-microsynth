@@ -140,8 +140,8 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Only QAU and the creator can change these fields in the specified Status
-        if ((['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
-            || (['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status) && frappe.user.has_role('QAU'))) {
+        if (['Draft', 'Created', 'Investigation', 'Planning', 'Plan Approval', 'Implementation', 'Completed'].includes(frm.doc.status)
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('occurrence_probability_after_actions', 'read_only', false);
             cur_frm.set_df_property('impact_after_actions', 'read_only', false);
             cur_frm.set_df_property('risk_analysis_after_actions', 'read_only', false);
@@ -494,7 +494,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                         frm.dashboard.add_comment( __("This is a critical Nonconformity. Please create a Change Request or explain in the Closure Comment why not."), 'red', true);
                                     }
                                 } else {
-                                    frm.dashboard.add_comment( __("This Nonconformity needs to be processed by its creator or QAU."), 'blue', true);
+                                    frm.dashboard.add_comment( __("This Nonconformity needs to be processed by QAU or its creator (non-GMP Event with no Corrective Actions)."), 'blue', true);
                                 }                                
                             }
                         });
