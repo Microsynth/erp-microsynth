@@ -9,7 +9,7 @@
         <tr>
             <td>{{ _("Document") }}</td>
             <td><a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a></td>
-            <td rowspan=10>
+            <td rowspan=9>
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
@@ -41,10 +41,6 @@
         <tr>
             <td>{{ _("Taxes") }}</td>
             <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
-        </tr>
-        <tr>
-            <td>{{ _("Zahlungsverbindung") }}</td>
-            <td>TODO</td>
         </tr>
         <tr>
             <td>{{ _("Expense Account / Cost Center") }}</td>

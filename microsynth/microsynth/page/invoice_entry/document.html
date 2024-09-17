@@ -50,6 +50,18 @@
                                 <td>{{ (expense_account or "")[0:4] }} / {{ (cost_center or "0").split(" ")[0] }}</td>
                             </tr>
                             <tr>
+                                <td>{{ _("IBAN") }}</td>
+                                <td>{{ iban }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("ESR Participation Number / QR-IBAN") }}</td>
+                                <td>{{ esr_participation_number }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Default Payment Method") }}</td>
+                                <td>{{ default_payment_method }}</td>
+                            </tr>
+                            <tr>
                                 <td>{{ _("Approver") }}</td>
                                 <td><div id="approver_{{ name }}"></div></td>
                             </tr>
