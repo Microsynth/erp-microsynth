@@ -33,6 +33,14 @@ frappe.query_reports["DATEV Export"] = {
             "options": "AT",
             "reqd": 1,
             "default": "AT"
+        },
+        {
+            "fieldname": "transactions",
+            "label": __("Transactions"),
+            "fieldtype": "Select",
+            "options": "Debtors\nCreditors",
+            "reqd": 1,
+            "default": "Debtors"
         }
     ],
     "onload": (report) => {
