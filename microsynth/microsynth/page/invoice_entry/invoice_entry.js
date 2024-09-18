@@ -40,6 +40,9 @@ frappe.invoice_entry = {
         for (let i = 0; i < purchase_invoice_drafts.length; i++) {
             html += purchase_invoice_drafts[i].html;
         }
+        if (purchase_invoice_drafts.length == 0) {
+            html = "<h1>Nothing to do 😎</h1>"
+        }
         // insert content
         document.getElementById("pi_drafts_view").innerHTML = html;
         
