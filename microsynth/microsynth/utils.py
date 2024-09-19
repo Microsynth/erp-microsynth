@@ -189,8 +189,10 @@ def find_billing_address(customer_id):
 
     if len(addresses) == 1:
         return addresses[0]
-    else: 
-        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"find_billing_address")
+    else:
+        #frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
+        frappe.log_error("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
+        return None
 
 
 @frappe.whitelist()
@@ -1032,6 +1034,10 @@ def set_debtor_accounts(customer):
 
     address = get_billing_address(customer.name)
 
+    if not address:
+        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", "utils.set_debtor_accounts")
+        return
+
     for company in companies:
         account_number =  get_debtor_account(company.name, customer.default_currency, address.country)
         account = get_account_by_number(company.name, account_number)
@@ -1056,7 +1062,6 @@ def set_debtor_accounts(customer):
     customer.save()
     #TODO Do not commit when using this function when initializing a customer
     frappe.db.commit()
-    
     return
 
 
@@ -1073,6 +1078,10 @@ def set_default_language(customer):
         return
 
     a = get_billing_address(customer)
+
+    if not a:
+        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set default language.", "utils.set_default_language")
+        return
 
     if a.country == "Switzerland":
         try:
