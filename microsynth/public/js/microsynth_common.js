@@ -94,6 +94,15 @@ function update_taxes(company, customer, address, category, date) {
     });
 }
 
+
+// hide chart buttons on reports
+function hide_chart_buttons() {
+    setTimeout(function() {
+        frappe.query_report.page.remove_inner_button( __("Set Chart") );
+        frappe.query_report.page.remove_inner_button( __("Hide Chart") );
+    }, 500);
+}
+
 /* DEPRECATED, now in payment entry.js 
 /// Avis booking
 function allocate_avis(frm) {

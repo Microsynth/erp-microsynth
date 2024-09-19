@@ -53,6 +53,8 @@ frappe.query_reports["DATEV Export"] = {
         report.page.add_inner_button( __("Package Export"), function() {
             package_export(report.get_values());
         });
+        
+        hide_chart_buttons();
     }
 };
 
