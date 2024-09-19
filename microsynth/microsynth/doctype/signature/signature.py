@@ -8,7 +8,7 @@ from frappe.model.document import Document
 from frappe.utils.password import check_password
 from frappe import _
 from frappe.core.doctype.user.user import test_password_strength
-from frappe.utils.password import get_decrypted_password
+from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
 class Signature(Document):
     def change_approval_password(self, new_pw, retype_new_pw, old_pw=None):
@@ -49,7 +49,8 @@ class Signature(Document):
             frappe.throw(f"{resetting_user=} != {frappe.session.user=}. Please tell the IT App group how you did this.")
         if not user_has_role(frappe.session.user, "QAU"):
             frappe.throw(f"Only user with QAU role are allowed to reset the Approval Password.")
-        self.approval_password = ""
+        self.approval_password = None
+        set_encrypted_password("Signature", self.name, "", "approval_password")
         self.save()
 
 
