@@ -254,7 +254,7 @@ def package_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
-    path = "{0}/{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
+    path = "{0}/{1}_{2}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"), filters.get("transactions"))
     if not os.path.exists(path):
         os.mkdir(path)
 
