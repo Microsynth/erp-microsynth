@@ -220,7 +220,8 @@ def async_create_invoices(mode, company, customer):
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) or      # invoices transmitted by email. unclear if invoices get paid.
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth Seqlab GmbH") ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
-                        transmit_sales_invoice(si)
+                        if si:
+                            transmit_sales_invoice(si)
                         continue
                     else:
                         # TODO implement punchout orders
