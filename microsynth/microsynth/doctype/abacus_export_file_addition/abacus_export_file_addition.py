@@ -214,13 +214,10 @@ class AbacusExportFileAddition(Document):
 
 def save_abacus_export_file(abacus_export_file, event):
     from datetime import datetime
-    data = {
-        'transactions': abacus_export_file.get_individual_transactions()
-    }
-    xml = frappe.render_template('erpnextswiss/erpnextswiss/doctype/abacus_export_file/transfer_file.html', data)
+    xml = abacus_export_file.render_transfer_file().get("content")
     folder = frappe.get_value("Microsynth Settings", "Microsynth Settings", "abacus_export_path")
-    file = f"{abacus_export_file.name}_{datetime.now().strftime('%Y-%m-%d__%H-%M')}.xml"
-    file_path = f"{folder}/{file}"
+    file_name = f"{abacus_export_file.name}_{datetime.now().strftime('%Y-%m-%d__%H-%M')}.xml"
+    file_path = f"{folder}/{file_name}"
     with open(file_path, 'w') as file:
         file.write(xml)
 

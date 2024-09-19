@@ -170,6 +170,9 @@ doc_events = {
     "Supplier": {
         "before_save": "microsynth.microsynth.purchasing.set_default_payable_accounts"
     }
+    #"Abacus Export File": {
+    #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
+    #}
 }
 
 
