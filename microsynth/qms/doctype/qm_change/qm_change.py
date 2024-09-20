@@ -13,7 +13,10 @@ class QMChange(Document):
     def on_submit(self):
         self.status = "Created"
         self.save()
-        #frappe.db.commit()
+    
+    def set_in_approval(self, in_approval):
+        self.in_approval = in_approval
+        self.save()
 
     def get_classification_wizard(self, visible):            
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
@@ -126,6 +129,8 @@ def update_status(nc, status):
         (change.status == 'Implementation' and status == 'Completed') or
         (change.status == 'Completed' and status == 'Closed')
        ):
+        if change.status == 'Created' and status == 'Assessment & Classification':
+            change.date = today()
         change.status = status
         change.save()
         frappe.db.commit()
