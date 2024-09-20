@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Microsynth, libracore and contributors and contributors
+// Copyright (c) 2022, Microsynth, libracore and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -118,5 +118,8 @@ frappe.query_reports["Customer Finder"] = {
             "label": __("Include disabled Customers (e.g. leads)"),
             "fieldtype": "Check"
         }
-    ]
+    ],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

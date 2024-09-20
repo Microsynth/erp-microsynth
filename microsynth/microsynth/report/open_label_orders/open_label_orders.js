@@ -20,6 +20,8 @@ frappe.query_reports["Open Label Orders"] = {
         report.page.add_inner_button( __("PrioPick"), function() {
             prio_pick(report.get_values());
         });
+
+        hide_chart_buttons();
     }
 };
 

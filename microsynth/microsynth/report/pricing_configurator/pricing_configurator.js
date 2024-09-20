@@ -95,6 +95,7 @@ frappe.query_reports["Pricing Configurator"] = {
                 }
             });
         }
+        hide_chart_buttons();
     }
 };
 
