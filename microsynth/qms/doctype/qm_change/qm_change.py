@@ -12,6 +12,8 @@ from microsynth.microsynth.utils import user_has_role
 class QMChange(Document):
     def on_submit(self):
         self.status = "Created"
+        self.save()
+        #frappe.db.commit()
 
     def get_classification_wizard(self, visible):            
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",

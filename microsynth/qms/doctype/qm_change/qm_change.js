@@ -77,19 +77,12 @@ frappe.ui.form.on('QM Change', {
         } else {
             cur_frm.set_df_property('current_state', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
-        }      
-
-        // Only QAU can set field CC Type in status Draft or Created directly
-        if (["Draft", "Created"].includes(frm.doc.status)
-            && frappe.user.has_role('QAU')) {
-            cur_frm.set_df_property('cc_type', 'read_only', false);
-        } else {
-            cur_frm.set_df_property('cc_type', 'read_only', true);
         }
 
-        // Only QAU can set fields Regulatory Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
+        // Only QAU can set fields CC Type, Regulatory Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
         if (["Draft", "Created", "Assessment & Classification"].includes(frm.doc.status)
             && frappe.user.has_role('QAU')) {
+            cur_frm.set_df_property('cc_type', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
             cur_frm.set_df_property('risk_classification', 'read_only', false);
             if (frm.doc.regulatory_classification == 'GMP') {
@@ -99,6 +92,7 @@ frappe.ui.form.on('QM Change', {
                 cur_frm.set_df_property('impact', 'hidden', true);
             }
         } else {
+            cur_frm.set_df_property('cc_type', 'read_only', true);
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
             cur_frm.set_df_property('risk_classification', 'read_only', true);
         }
