@@ -155,6 +155,22 @@ def cancel(change):
 
 
 @frappe.whitelist()
+def has_assessments(qm_change):
+    assessments = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Impact Assessment`.`name`,
+            `tabQM Impact Assessment`.`title`,
+            `tabQM Impact Assessment`.`status`
+        FROM `tabQM Impact Assessment`
+        WHERE `tabQM Impact Assessment`.`docstatus` < 2
+            AND `tabQM Impact Assessment`.`document_type` = "QM Change"
+            AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
+            AND `tabQM Impact Assessment`.`status` NOT IN ('Cancelled')
+        ;""", as_dict=True)
+    return len(assessments) > 0
+
+
+@frappe.whitelist()
 def has_non_completed_assessments(qm_change):
     assessments = frappe.db.sql(f"""
         SELECT 
