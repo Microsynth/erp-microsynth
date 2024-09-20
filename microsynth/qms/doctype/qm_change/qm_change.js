@@ -322,57 +322,69 @@ frappe.ui.form.on('QM Change', {
                     frm.dashboard.add_comment( __("In Approval"), 'yellow', true);
                 }
             } else {
-                frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please enter a Summary of Test & Trial Results."), 'red', true);
             }
         }
 
         if (frm.doc.status == 'Planning'
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
-            if (frm.doc.action_plan_summary) {
-                if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
-                    // Add Approve and Reject buttons
-                    cur_frm.page.set_primary_action(
-                        __("Approve"),
-                        function() {
-                            create_qm_decision("Approve", frm.doc.status, "Implementation");
+            // Check that there is at least one Action
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_action',
+                'args': {
+                    'doc': frm.doc.name,
+                    'type': 'Change Control Action'
+                },
+                'callback': function(response) {
+                    if (response.message) {
+                        if (frm.doc.action_plan_summary) {
+                            if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
+                                // Add Approve and Reject buttons
+                                cur_frm.page.set_primary_action(
+                                    __("Approve"),
+                                    function() {
+                                        create_qm_decision("Approve", frm.doc.status, "Implementation");
+                                    }
+                                );
+                                frm.add_custom_button(__("Reject"), function() {
+                                    create_qm_decision("Reject", frm.doc.status, "Implementation");
+                                }).addClass("btn-danger");
+                            } else if (frm.doc.cc_type == 'short') {
+                                cur_frm.page.set_primary_action(
+                                    __("Finish Planning"),
+                                    function() {
+                                        set_status('Implementation');
+                                    }
+                                );
+                            } else if (!frm.doc.in_approval) {
+                                cur_frm.page.set_primary_action(
+                                    __("Send to Approval"),
+                                    function() {
+                                        //cur_frm.set_value("in_approval", 1);
+                                        frappe.call({
+                                            'method': 'set_in_approval',
+                                            'doc': cur_frm.doc,
+                                            'args': {
+                                                'in_approval': 1
+                                            },
+                                            'async': false,
+                                            'callback': function (r) {
+                                            }
+                                        });
+                                        cur_frm.reload_doc();
+                                    }
+                                );
+                            } else {
+                                frm.dashboard.add_comment( __("In Approval"), 'yellow', true);
+                            }
+                        } else {
+                            frm.dashboard.add_comment( __("Please enter an Action Plan Summary."), 'red', true);
                         }
-                    );
-                    frm.add_custom_button(__("Reject"), function() {
-                        create_qm_decision("Reject", frm.doc.status, "Implementation");
-                    }).addClass("btn-danger");
-                } else if (frm.doc.cc_type == 'short') {
-                    cur_frm.page.set_primary_action(
-                        __("Finish Planning"),
-                        function() {
-                            set_status('Implementation');
-                        }
-                    );
-                } else if (!frm.doc.in_approval) {
-                    cur_frm.page.set_primary_action(
-                        __("Send to Approval"),
-                        function() {
-                            //cur_frm.set_value("in_approval", 1);
-                            frappe.call({
-                                'method': 'set_in_approval',
-                                'doc': cur_frm.doc,
-                                'args': {
-                                    'in_approval': 1
-                                },
-                                'async': false,
-                                'callback': function (r) {
-                                }
-                            });
-                            cur_frm.reload_doc();
-                        }
-                    );
-                } else {
-                    frm.dashboard.add_comment( __("In Approval"), 'yellow', true);
+                    } else {
+                        frm.dashboard.add_comment( __("Please request at least one Action."), 'red', true);
+                    }
                 }
-            } else {
-                frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please enter an Action Plan Summary."), 'red', true);
-            }
+            });
         }
 
         if (frm.doc.status == 'Implementation'
@@ -386,7 +398,7 @@ frappe.ui.form.on('QM Change', {
                 'callback': function(response) {
                     // Check, that all actions are finished
                     if (response.message) {
-                        frm.dashboard.add_comment( __("Please complete all CC Actions and reload this QM Change to finish the Implementation."), 'red', true);
+                        frm.dashboard.add_comment( __("Please complete all Change Control Actions and reload this QM Change to finish the Implementation."), 'red', true);
                     } else if (frappe.user.has_role('QAU')) {
                         // Add Approve and Reject buttons
                         cur_frm.page.set_primary_action(
