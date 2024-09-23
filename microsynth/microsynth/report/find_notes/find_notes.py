@@ -115,6 +115,7 @@ def get_data(filters):
         enriched.append(note)
         sql_conditions = f" AND `tabContact Note`.`name` != '{note['name']}'"
         sql_conditions += f" AND `tabContact Note`.`contact_person` = '{note['contact_person']}'"
+        sql_conditions += f" AND `tabContact Note`.`date` <= '{note['date']}'"
         previous_notes = get_notes(sql_conditions, 1)        
 
         for i, previous_note in enumerate(previous_notes):
@@ -147,51 +148,48 @@ def create_pdf(filters):
     if type(filters) == str:
         filters = json.loads(filters)
     raw_data = get_data(filters)
-    enriched_data = OrderedDict()
     merger = PdfFileMerger()
+    enriched_data = OrderedDict()
 
     for i, note in enumerate(raw_data):
-    #     if not note['contact_person'] in enriched_data:
-    #         enriched_data[note['contact_person']] = note
-    #     else:
-    #         note_content = enriched_data[note['contact_person']]['notes']
-    #         url = f'<a href="https://erp.microsynth.local/desk#Form/Contact%20Note/{note["name"]}"><u>{note["name"]}</u></a>'
-    #         note_content += f"<br><b>Contact Note {url} from {note['date'].strftime('%d.%m.%Y')}:</b><p>{note['notes']}</p>"
-    #         enriched_data[note['contact_person']]['notes'] = note_content
+        if not note['contact_person']:
+            continue  # should never happen
+        if not note['contact_person'] in enriched_data:
+            enriched_data[note['contact_person']] = note
+        else:
+            note_content = enriched_data[note['contact_person']]['notes']
+            url = f'<a href="https://erp.microsynth.local/desk#Form/Contact%20Note/{note["name"]}"><b>{note["name"]}</b></a>'
+            note_content += f"<br>Contact Note {url} <b>({note['contact_note_type']})</b> from <b>{note['date'].strftime('%d.%m.%Y')}</b> created by <b>{note['owner']}:</b><p>{note['notes']}</p>"
+            enriched_data[note['contact_person']]['notes'] = note_content
+    data = list(enriched_data.values())
 
-    # for i, note in enumerate(list(enriched_data.values())):
-        # css = frappe.get_value('Print Format', 'Contact Note', 'css')
-        # raw_html = frappe.get_value('Print Format', 'Contact Note', 'html')
-        # # create html
-        # css_html = f"<style>{css}</style>{raw_html}"
-        # #frappe.throw(f"{note=}")
-        # frappe.log_error(css_html, "css_html")
-        # frappe.log_error(note, "note")
-        # rendered_html = frappe.render_template(  # TODO: TypeError: 'NoneType' object is not callable
-        #     css_html,
-        #     {
-        #         'doc': note,
-        #         'idx': (i+1),
-        #         'customer_id': note['customer_id']
-        #     }
-        # )
-        # # need to load the styles and tags
-        # content = frappe.render_template(
-        #     'microsynth/templates/pages/print.html',
-        #     {'html': rendered_html}
-        # )
-        # options = {
-        #     'disable-smart-shrinking': ''
-        # }
-        # pdf = get_pdf(content, options)
-        pdf = frappe.get_print(
-                    doctype="Contact Note",
-                    name=note['name'],
-                    print_format="Contact Note",
-                    as_pdf=True
-                )
+    for i, note in enumerate(data):
+        note_doc = frappe.get_doc("Contact Note", note['name'])
+        note_doc.notes = note['notes']
+        css = frappe.get_value('Print Format', 'Contact Note', 'css')
+        raw_html = frappe.get_value('Print Format', 'Contact Note', 'html')
+        # create html
+        css_html = f"<style>{css}</style>{raw_html}"
+        rendered_html = frappe.render_template(
+            css_html,
+            {
+                'doc': note_doc,
+                'my_idx': (i+1),
+                'customer_id': note['customer_id']
+            }
+        )
+        # need to load the styles and tags
+        content = frappe.render_template(
+            'microsynth/templates/pages/print.html',
+            {'html': rendered_html}
+        )
+        options = {
+            'disable-smart-shrinking': ''
+        }
+        pdf = get_pdf(content, options)
         merger.append(PdfFileReader(io.BytesIO(pdf)))
-    # https://gist.github.com/vijaywm/d6b7d1a54274838cd25acd1e3dd31740#pypdf2-pdffilemerger-to-merge-pdfs
+        # https://gist.github.com/vijaywm/d6b7d1a54274838cd25acd1e3dd31740#pypdf2-pdffilemerger-to-merge-pdfs
+
     out = io.BytesIO()
     merger.write(out)
     file = frappe.get_doc(
@@ -203,7 +201,6 @@ def create_pdf(filters):
         })
     file.save()
     merger.close()
-    #return file.name
     return file.file_url
 
 
