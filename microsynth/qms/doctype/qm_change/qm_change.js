@@ -216,21 +216,25 @@ frappe.ui.form.on('QM Change', {
         // STATUS TRANSITIONS
 
         if (frm.doc.status == 'Created'
-            && ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
-                || frappe.user.has_role('QAU'))) {
+            && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.cc_type
                 && frm.doc.qm_process
                 && frm.doc.title
                 && frm.doc.company
                 && frm.doc.description && frm.doc.description != "<div><br></div>"
                 && frm.doc.current_state && frm.doc.current_state != "<div><br></div>") {
-                // add submit button
-                cur_frm.page.set_primary_action(
-                    __("Submit to QAU"),
-                    function() {
-                        set_status("Assessment & Classification");
-                    }
-                );
+                if ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
+                    || frappe.user.has_role('QAU')) {
+                    // add submit button
+                    cur_frm.page.set_primary_action(
+                        __("Submit to QAU"),
+                        function() {
+                            set_status("Assessment & Classification");
+                        }
+                    );
+                } else {
+                    frm.dashboard.add_comment( __("Waiting for QAU to proceed."), 'yellow', true);
+                }
             } else {
                 frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to submit this QM Change to QAU."), 'red', true);
