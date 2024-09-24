@@ -2418,3 +2418,17 @@ def print_users_without_role(role):
     for user in users:
         if not user_has_role(user['name'], role):
             print(user['name'])
+
+
+def fetch_quotation(sales_order):
+    """
+    Checks if there is a Quotation linked against the given Sales Order.
+    If yes, return it. If no, return None.
+
+    bench execute microsynth.microsynth.utils.fetch_quotation --kwargs "{'sales_order': 'SO-BAL-24041373'}"
+    """
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    for item in sales_order_doc.items:
+        if item.prevdoc_docname:
+            return item.prevdoc_docname
+    return None
