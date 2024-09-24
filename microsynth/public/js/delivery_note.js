@@ -3,6 +3,11 @@ frappe.ui.form.on('Delivery Note', {
     refresh(frm) {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
+
+        // show a warning if is_punchout
+        if (frm.doc.docstatus == 0 && frm.doc.is_punchout == 1) {
+            frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
+        }
         
         hide_in_words();
 
