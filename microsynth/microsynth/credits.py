@@ -382,7 +382,7 @@ def get_total_credit_difference(company, currency, account, to_date):
 
     def get_closing(company, account, to_date):
         from erpnext.accounts.report.general_ledger.general_ledger import get_gl_entries, initialize_gle_map, get_accountwise_gle
-        gl_filters={'company': company, 'from_date': to_date, 'to_date': to_date, 'account': account}
+        gl_filters=frappe._dict({'company': company, 'from_date': to_date, 'to_date': to_date, 'account': account})
         gl_entries = get_gl_entries(gl_filters)
         gle_map = initialize_gle_map(gl_entries, gl_filters)
         totals, _ = get_accountwise_gle(gl_filters, gl_entries, gle_map)
@@ -391,7 +391,7 @@ def get_total_credit_difference(company, currency, account, to_date):
 
     if type(to_date) == str:
         to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
-    credit_filters={'company': company, 'to_date': to_date, 'currency': currency}
+    credit_filters=frappe._dict({'company': company, 'to_date': to_date, 'currency': currency})
     credits = get_customer_credits(credit_filters)
     total_outstanding = 0
     for credit in credits:
