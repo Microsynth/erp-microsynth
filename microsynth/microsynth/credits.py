@@ -305,6 +305,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     run
     bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kwargs "{'currency': 'EUR', 'date': '2023-06-15'}"
     """
+    results = []
     for d in frappe.db.sql("""
         SELECT
             `raw`.`type` AS `type`,
@@ -360,7 +361,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
         ) AS `raw`
         WHERE `raw`.`net_amount` != 0
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date, company=company), as_dict=True):
-        print("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
+        results.append("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
             d['date'],
             d['customer'],
             d['customer_name'],
@@ -370,6 +371,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
             d['status'],
             d['reference'],
             d['currency']))
+    return results
 
 
 def get_total_credit_difference(company, currency, account, to_date):
@@ -422,14 +424,25 @@ def print_total_credit_differences(company, currency, account, from_date, to_dat
         print(f"{single_date.strftime('%d.%m.%Y')}: {diff_str} {currency}")
 
 
-def check_credit_balance():
+def check_credit_balance(date=today()):
     """
     Should be run by a daily cronjob or moved to a new report to use an Auto Email report.
 
-    bench execute microsynth.microsynth.credits.check_credit_balance
+    bench execute microsynth.microsynth.credits.check_credit_balance --kwargs "{'date': '2024-09-20'}"
     """
+    def get_and_check_diff(diffs, company, currency, account, date):
+        diff = get_total_credit_difference(company, currency, account, date)
+        if abs(diff) > 0.01:
+            credit_transactions = get_customer_credit_transactions(currency, date, company)
+            diffs.append({
+                'company': company,
+                'account': account,
+                'currency': currency,
+                'diff': diff,
+                'transactions': credit_transactions
+            })        
+
     diffs = []
-    current_date = today()
     # get Credit Item from Microsynth Settings
     credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     credit_item = frappe.get_doc("Item", credit_item_code)
@@ -438,28 +451,18 @@ def check_credit_balance():
         company = default.company
         account = default.income_account
         currency = frappe.get_value("Account", account, "account_currency")
-        diff = get_total_credit_difference(company, currency, account, current_date)
-        if abs(diff) > 0.01:
-            diffs.append({
-                'company': company,
-                'account': account,
-                'currency': currency,
-                'diff': diff
-            })
+        get_and_check_diff(diffs, company, currency, account, date)
         for currency in ['USD', 'EUR', 'CHF']:
             alternative_account = get_alternative_account(account, currency)
             if alternative_account != account:
-                diff = get_total_credit_difference(company, currency, alternative_account, current_date)
-                if abs(diff) > 0.01:
-                    diffs.append({
-                        'company': company,
-                        'account': alternative_account,
-                        'currency': currency,
-                        'diff': diff
-                    })
+                get_and_check_diff(diffs, company, currency, alternative_account, date)
     if len(diffs) > 0:
         # TODO: Send a notification containing all differences.
         for diff in diffs:
             diff_str = f"{diff['diff']:,.2f}".replace(",", "'")
-            print(f"{diff['company']}, {diff['currency']}, {diff['account']}: {diff_str} {diff['currency']}")
+            print(f"\n{diff['company']}, {diff['currency']}, {diff['account']}: {diff_str} {diff['currency']}")
+            if len(diff['transactions']) > 0:
+                print(f"Transactions from {date}:")
+                for transaction in diff['transactions']:
+                    print(transaction)
         
