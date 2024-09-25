@@ -3,7 +3,7 @@
 
 import frappe
 from datetime import datetime
-
+from frappe.utils.data import today
 from frappe.utils import flt, cint
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
@@ -303,7 +303,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     Debug function to find customer credit transactions per day
 
     run
-    bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kargs "{'currency': 'EUR', 'date': '2023-06-15'}"
+    bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kwargs "{'currency': 'EUR', 'date': '2023-06-15'}"
     """
     for d in frappe.db.sql("""
         SELECT
@@ -370,4 +370,53 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
             d['status'],
             d['reference'],
             d['currency']))
-            
+
+
+def get_total_credit_difference(company, currency, account, to_date):
+    """
+    Returns the difference between the Outstanding sum from the Customer Credits report and the Closing Balance in the General Ledger.
+
+    bench execute microsynth.microsynth.credits.get_total_credit_difference --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'to_date': '2024-09-23'}"
+    """
+    from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
+
+    def get_closing(company, account, to_date):
+        from erpnext.accounts.report.general_ledger.general_ledger import get_gl_entries, initialize_gle_map, get_accountwise_gle
+        gl_filters={'company': company, 'from_date': to_date, 'to_date': to_date, 'account': account}
+        gl_entries = get_gl_entries(gl_filters)
+        gle_map = initialize_gle_map(gl_entries, gl_filters)
+        totals, _ = get_accountwise_gle(gl_filters, gl_entries, gle_map)
+        closing = totals.get('closing')
+        return closing.get('debit_in_account_currency') - closing.get('credit_in_account_currency')
+
+    if type(to_date) == str:
+        to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+    credit_filters={'company': company, 'to_date': to_date, 'currency': currency}
+    credits = get_customer_credits(credit_filters)
+    total_outstanding = 0
+    for credit in credits:
+        total_outstanding += credit['outstanding']
+    gl_closing = get_closing(company, account, to_date)
+    diff = gl_closing + total_outstanding
+    return diff
+
+
+def print_total_credit_differences(company, currency, account, from_date, to_date):
+    """
+    Calls get_total_credit_difference for each day from the given date till today and prints the results.
+
+    bench execute microsynth.microsynth.credits.print_total_credit_differences --kwargs "{'company': 'Microsynth AG', 'currency': 'EUR', 'account': '2020 - Anzahlungen von Kunden EUR - BAL', 'from_date': '2023-12-31', 'to_date': '2024-09-25'}"
+    """
+    from datetime import date, timedelta
+
+    def daterange(from_date: date, to_date: date):
+        days = int((to_date - from_date).days)
+        for n in range(days):
+            yield from_date + timedelta(n)
+
+    from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+    to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+    for single_date in daterange(from_date, to_date):
+        diff = get_total_credit_difference(company, currency, account, single_date)
+        diff_str = f"{diff:,.2f}".replace(",", "'")
+        print(f"{single_date.strftime('%d.%m.%Y')}: {diff_str} {currency}")
