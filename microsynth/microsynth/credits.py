@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, libracore and Contributors
+# Copyright (c) 2021-2024, Microsynth, libracore and contributors
 # License: GNU General Public License v3. See license.txt
 
 import frappe
@@ -420,3 +420,32 @@ def print_total_credit_differences(company, currency, account, from_date, to_dat
         diff = get_total_credit_difference(company, currency, account, single_date)
         diff_str = f"{diff:,.2f}".replace(",", "'")
         print(f"{single_date.strftime('%d.%m.%Y')}: {diff_str} {currency}")
+
+
+def check_credit_balance():
+    """
+    Should be run by a daily cronjob or moved to a new report to use an Auto Email report.
+
+    bench execute microsynth.microsynth.credits.check_credit_balance
+    """
+    diffs = []
+    current_date = today()
+    # get Credit Item from Microsynth Settings
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    credit_item = frappe.get_doc("Item", credit_item_code)
+    # iterate over item_defaults
+    for default in credit_item.item_defaults:
+        company = default.company
+        account = default.income_account
+        currency = frappe.get_value("Account", account, "account_currency")
+        diff = get_total_credit_difference(company, currency, account, current_date)
+        if abs(diff) > 0.01:
+            diffs.append({
+                'company': company,
+                'account': account,
+                'currency': currency,
+                'diff': diff
+            })
+    if len(diffs) > 0:
+        print(diffs)
+        # TODO: Send a notification containing all differences.
