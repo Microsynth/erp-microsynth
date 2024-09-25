@@ -446,6 +446,20 @@ def check_credit_balance():
                 'currency': currency,
                 'diff': diff
             })
+        for currency in ['USD', 'EUR', 'CHF']:
+            alternative_account = get_alternative_account(account, currency)
+            if alternative_account != account:
+                diff = get_total_credit_difference(company, currency, alternative_account, current_date)
+                if abs(diff) > 0.01:
+                    diffs.append({
+                        'company': company,
+                        'account': alternative_account,
+                        'currency': currency,
+                        'diff': diff
+                    })
     if len(diffs) > 0:
-        print(diffs)
         # TODO: Send a notification containing all differences.
+        for diff in diffs:
+            diff_str = f"{diff['diff']:,.2f}".replace(",", "'")
+            print(f"{diff['company']}, {diff['currency']}, {diff['account']}: {diff_str} {diff['currency']}")
+        
