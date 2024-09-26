@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('QM Change', {
-    validate(frm) {
-        // console.log("6"); // TODO: Why is this code not executed?
+    validate: function(frm) {
         if (frm.doc.cc_type == 'short' && frm.doc.regulatory_classification == 'GMP') {
             frappe.msgprint( __("Change Control Type 'short' cannot have Regulatory Classification 'GMP'."), __("Validation") );
             frappe.validated = false;
