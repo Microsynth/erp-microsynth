@@ -2439,4 +2439,4 @@ def check_sales_order(sales_order, event):
        not sales_order.invoice_to or \
        not sales_order.contact_person or \
        not sales_order.shipping_address_name:
-        frappe.throw("Billing Address Name, Shipping Address Name, Invoice To and Contact Person are mandatory fields to submit. Please check the section 'Address and Contact'.")
+        frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
