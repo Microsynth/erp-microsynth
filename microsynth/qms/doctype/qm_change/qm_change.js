@@ -245,44 +245,67 @@ frappe.ui.form.on('QM Change', {
                 || frappe.user.has_role('QAU'))) {
             if (frm.doc.regulatory_classification
                 && frm.doc.risk_classification) {
-                // && (frm.doc.regulatory_classification != 'GMP' || frm.doc.impact)) {  // TODO: Ensure that each Impact question is answered if Regulatory Classification is GMP?
-                // Check that there is at least one QM Impact Assessment
-                frappe.call({
-                    'method': 'microsynth.qms.doctype.qm_change.qm_change.has_assessments',
-                    'args': {
-                        'qm_change': frm.doc.name
-                    },
-                    'callback': function(response) {
-                        // Check, that the requested Impact Assessments are Completed or Cancelled
-                        if (response.message) {
-                            frappe.call({
-                                'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_assessments',
-                                'args': {
-                                    'qm_change': frm.doc.name
-                                },
-                                'callback': function(response) {
-                                    // Check, that all requested Impact Assessments are Completed or Cancelled
-                                    if (response.message) {
-                                        frm.dashboard.add_comment( __("There are QM Impact Assessments linked that are not in Status Completed or Cancelled."), 'red', true);
-                                    } else {
-                                        cur_frm.page.set_primary_action(
-                                            __("Confirm Classification"),
-                                            function() {
-                                                if (cur_frm.doc.cc_type == 'full') {
-                                                    set_status('Trial');
-                                                } else {
-                                                    set_status('Planning');
-                                                }                                
-                                            }
-                                        );
-                                    }
-                                }
-                            });
-                        } else {
-                            frm.dashboard.add_comment( __("Please request at least one QM Impact Assessments."), 'red', true);
+                var continue_checks = false;
+                // Ensure that each Impact question is answered if Regulatory Classification is GMP
+                if (frm.doc.regulatory_classification == 'GMP') {
+                    frappe.call({
+                        'method': 'are_all_impacts_answered',
+                        'doc': cur_frm.doc,
+                        'async': false,
+                        'callback': function (response) {
+                            if (response.message) {
+                                // all questions answered
+                                continue_checks = true;
+                                console.log("259");
+                            } else {
+                                frm.dashboard.add_comment( __("Please answer all potential impacts."), 'red', true);
+                                continue_checks = false;
+                                console.log("263");
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    continue_checks = true;
+                }
+                if (continue_checks) {
+                    // Check that there is at least one QM Impact Assessment
+                    frappe.call({
+                        'method': 'microsynth.qms.doctype.qm_change.qm_change.has_assessments',
+                        'args': {
+                            'qm_change': frm.doc.name
+                        },
+                        'callback': function(response) {
+                            // Check, that the requested Impact Assessments are Completed or Cancelled
+                            if (response.message) {
+                                frappe.call({
+                                    'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_assessments',
+                                    'args': {
+                                        'qm_change': frm.doc.name
+                                    },
+                                    'callback': function(response) {
+                                        // Check, that all requested Impact Assessments are Completed or Cancelled
+                                        if (response.message) {
+                                            frm.dashboard.add_comment( __("There are QM Impact Assessments linked that are not in Status Completed or Cancelled."), 'red', true);
+                                        } else {
+                                            cur_frm.page.set_primary_action(
+                                                __("Confirm Classification"),
+                                                function() {
+                                                    if (cur_frm.doc.cc_type == 'full') {
+                                                        set_status('Trial');
+                                                    } else {
+                                                        set_status('Planning');
+                                                    }                                
+                                                }
+                                            );
+                                        }
+                                    }
+                                });
+                            } else {
+                                frm.dashboard.add_comment( __("Please request at least one QM Impact Assessments."), 'red', true);
+                            }
+                        }
+                    });
+                }
             } else {
                 frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please do the Classification"), 'red', true);

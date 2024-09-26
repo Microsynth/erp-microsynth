@@ -81,6 +81,12 @@ class QMChange(Document):
                     })
             self.save()
             frappe.db.commit()
+    
+    def are_all_impacts_answered(self):
+        for potential_impact in self.impact:
+            if not potential_impact.impact_answer:
+                return False
+        return True
 
 
 @frappe.whitelist()
