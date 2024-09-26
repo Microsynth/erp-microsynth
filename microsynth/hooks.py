@@ -157,7 +157,8 @@ doc_events = {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     },
     "Sales Order": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
+        "on_submit": "microsynth.microsynth.utils.check_sales_order"
     },
     "Delivery Note": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"

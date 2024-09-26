@@ -2432,3 +2432,11 @@ def fetch_quotation(sales_order):
         if item.prevdoc_docname:
             return item.prevdoc_docname
     return None
+
+
+def check_sales_order(sales_order, event):
+    if not sales_order.customer_address or \
+       not sales_order.invoice_to or \
+       not sales_order.contact_person or \
+       not sales_order.shipping_address_name:
+        frappe.throw("Billing Address Name, Shipping Address Name, Invoice To and Contact Person are mandatory fields to submit. Please check the section 'Address and Contact'.")
