@@ -1672,14 +1672,23 @@ def process_daily_invoices():
 def process_collective_invoices_monthly():
     """
     Executed by a Cron job every month to transmit collective sales invoices.
+    Should be run by a cronjob on the last day of each month:
+    30 18 28-31 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
 
-    for testing: run
     bench execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
     """
     # TODO: split up collective invoices into Post and electronic invoices
     return
-    # for company in frappe.db.get_all('Company', fields=['name']):
-    #     async_create_invoices("Collective", company['name'], None)
+
+    # def is_last_day_of_month(dt):
+    #     todays_month = dt.month
+    #     tomorrows_month = (dt + datetime.timedelta(days=1)).month
+    #     return tomorrows_month != todays_month
+
+    # if is_last_day_of_month(datetime.datetime.now()):
+    #     companies = frappe.get_all("Company", fields=['name'])
+    #     for company in companies:
+    #         create_invoices("Collective", company['name'], None)
 
 
 def check_invoice_sent_on(days=0):
