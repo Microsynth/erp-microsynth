@@ -84,6 +84,11 @@ jenv = {
         "get_effectiveness_checks:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_effectiveness_checks",
         "get_qm_changes:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_qm_changes",
         "get_nc_attachments:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_nc_attachments",
+        "get_cc_impact_assessments:microsynth.qms.doctype.qm_change.qm_change.get_cc_impact_assessments",
+        "get_cc_actions:microsynth.qms.doctype.qm_change.qm_change.get_cc_actions",
+        "get_cc_effectiveness_checks:microsynth.qms.doctype.qm_change.qm_change.get_cc_effectiveness_checks",
+        "get_qm_decisions:microsynth.qms.doctype.qm_change.qm_change.get_qm_decisions",
+        "get_cc_attachments:microsynth.qms.doctype.qm_change.qm_change.get_cc_attachments",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message",
         "fetch_quotation:microsynth.microsynth.utils.fetch_quotation"

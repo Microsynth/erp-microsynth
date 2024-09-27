@@ -624,6 +624,7 @@ function create_qm_decision(decision, from_status, to_status) {
                     },
                     "callback": function(response) {
                         if (response.message) {
+                            // reset in_approval flag
                             frappe.call({
                                 'method': 'set_in_approval',
                                 'doc': cur_frm.doc,

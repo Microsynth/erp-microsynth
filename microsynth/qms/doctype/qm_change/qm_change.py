@@ -225,3 +225,90 @@ def has_non_completed_action(doc, type):
           AND `type` IN ('{type}')
         ;""", as_dict=True)
     return len(non_completed_actions) > 0
+
+
+def get_cc_attachments(qm_change):
+    from frappe.desk.form.load import get_attachments
+    attachments = get_attachments("QM Change", qm_change)
+    return attachments
+
+
+def get_cc_actions(qm_change):
+    actions = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Action`.`name`,
+            `tabQM Action`.`title`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`initiation_date`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`notes`,
+            `tabQM Action`.`status`
+        FROM `tabQM Action`
+        WHERE 
+            `tabQM Action`.`document_type` = "QM Change"
+            AND `tabQM Action`.`document_name` = "{qm_change}"
+            AND `tabQM Action`.`type` = "Change Control Action"
+            AND `tabQM Action`.`status` != "Cancelled"
+        ;""", as_dict=True)
+    return actions
+
+
+def get_cc_effectiveness_checks(qm_change):
+    effectiveness_checks = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Action`.`name`,
+            `tabQM Action`.`title`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`responsible_person`,
+            `tabQM Action`.`initiation_date`,
+            `tabQM Action`.`description`,
+            `tabQM Action`.`notes`,
+            `tabQM Action`.`status`
+        FROM `tabQM Action`
+        WHERE 
+            `tabQM Action`.`document_type` = "QM Change"
+            AND `tabQM Action`.`document_name` = "{qm_change}"
+            AND `tabQM Action`.`type` = "CC Effectiveness Check"
+            AND `tabQM Action`.`status` != "Cancelled"
+        ;""", as_dict=True)
+    return effectiveness_checks
+
+
+def get_cc_impact_assessments(qm_change):
+    impact_assessments = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Impact Assessment`.`name`,
+            `tabQM Impact Assessment`.`title`,
+            `tabQM Impact Assessment`.`status`,
+            `tabQM Impact Assessment`.`qm_process`,
+            `tabQM Impact Assessment`.`due_date`,
+            `tabQM Impact Assessment`.`assessment_summary`,
+            `tabQM Impact Assessment`.`created_on`,
+            `tabQM Impact Assessment`.`created_by`
+        FROM `tabQM Impact Assessment`
+        WHERE 
+            `tabQM Impact Assessment`.`document_type` = "QM Change"
+            AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
+            AND `tabQM Impact Assessment`.`status` != "Cancelled"
+        ;""", as_dict=True)
+    return impact_assessments
+
+
+def get_qm_decisions(qm_change):
+    decisions = frappe.db.sql(f"""
+        SELECT 
+            `tabQM Decision`.`name`,
+            `tabQM Decision`.`approver`,
+            `tabQM Decision`.`decision`,
+            `tabQM Decision`.`from_status`,
+            `tabQM Decision`.`to_status`,
+            `tabQM Decision`.`date`,
+            `tabQM Decision`.`signature`,
+            `tabQM Decision`.`comments`
+        FROM `tabQM Decision`
+        WHERE 
+            `tabQM Decision`.`document_type` = "QM Change"
+            AND `tabQM Decision`.`document_name` = "{qm_change}"
+        ;""", as_dict=True)
+    return decisions
