@@ -5,7 +5,11 @@ cur_frm.dashboard.add_transactions([
     {
         'label': __("Reference"),
         'items': ["Payment Reminder"]
-    }
+    } // ,
+    // {
+    //     'label': __("Reference"),
+    //     'items': ["Accounting Note"]
+    // }
 ]);
 
 
@@ -81,6 +85,12 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("ZUGFeRD XML"), function() {
                 download_zugferd_xml(frm);
+            });
+        }
+
+        if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
+            frm.add_custom_button(__("Search valid version"), function() {
+                frappe.set_route("List", "Sales Invoice", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
             });
         }
 

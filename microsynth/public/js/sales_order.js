@@ -53,6 +53,12 @@ frappe.ui.form.on('Sales Order', {
             });
         }
 
+        if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
+            frm.add_custom_button(__("Search valid version"), function() {
+                frappe.set_route("List", "Sales Order", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
+            });
+        }
+
         if (frm.doc.docstatus == 1) {
             if (!frm.doc.customer_address) {
                 frappe.msgprint({
