@@ -100,7 +100,7 @@ def execute(filters=None):
         
         # in case of specific account, collect document outstanding amount
         if filters.get("account") and d.get("voucher_no"):
-            d['doc_outstanding'] = get_foreign_currency_outstaning(
+            d['doc_outstanding'] = get_foreign_currency_outstanding(
                 docname=d.get("voucher_no"), 
                 account=filters.get("account"), 
                 date=filters.get("report_date"), 
@@ -202,12 +202,36 @@ def execute(filters=None):
 
     return new_columns, output #sorted(data, key= lambda x: x['ext_customer'] or "" )
 
-def get_foreign_currency_outstaning(docname, account, date, party):
+def get_foreign_currency_outstanding(docname, account, date, party):
+    #sql_query = """
+    #    SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding` 
+    #    FROM `tabGL Entry` 
+    #    WHERE 
+    #        (`voucher_no` = "{docname}" OR `against_voucher` = "{docname}") 
+    #        AND `account` = "{account}" 
+    #        AND `party` = "{party}"
+    #        AND `posting_date` <= "{date}";
+    #    """.format(docname=docname, account=account, date=date, party=party)
+    
     sql_query = """
         SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding` 
         FROM `tabGL Entry` 
         WHERE 
-            (`voucher_no` = "{docname}" OR `against_voucher` = "{docname}") 
+            (`voucher_no` IN (
+                SELECT `voucher_no`
+                FROM `tabGL Entry`
+                WHERE `debit` > 0 AND `voucher_no` = "{docname}" AND `account` = "{account}"
+                UNION SELECT `against_voucher`
+                FROM `tabGL Entry`
+                WHERE `credit` > 0 AND `voucher_no` = "{docname}" AND `account` = "{account}"
+            ) OR `against_voucher` IN (
+                SELECT `voucher_no`
+                FROM `tabGL Entry`
+                WHERE `debit` > 0 AND `voucher_no` = "{docname}" AND `account` = "{account}"
+                UNION SELECT `against_voucher`
+                FROM `tabGL Entry`
+                WHERE `credit` > 0 AND `voucher_no` = "{docname}" AND `account` = "{account}"
+            )) 
             AND `account` = "{account}" 
             AND `party` = "{party}"
             AND `posting_date` <= "{date}";
