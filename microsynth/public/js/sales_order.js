@@ -52,6 +52,23 @@ frappe.ui.form.on('Sales Order', {
                 }
             });
         }
+
+        if (frm.doc.docstatus == 1) {
+            if (!frm.doc.customer_address) {
+                frappe.msgprint({
+                    title: __('Missing Billing Address'),
+                    indicator: 'red',
+                    message: __("Please enter and save a <b>Billing Address Name</b> in the section <b>Address and Contact</b>.")
+                });
+            }
+            if (!frm.doc.shipping_address_name) {
+                frappe.msgprint({
+                    title: __('Missing Shipping Address'),
+                    indicator: 'red',
+                    message: __("Please enter and save a <b>Shipping Address Name</b> in the section <b>Address and Contact</b>.")
+                });
+            }
+        }
         
         hide_in_words();
         
