@@ -19,6 +19,7 @@ def get_columns():
         {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 45},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Integer", "width": 45},
+        {"label": _("Open Oligos"), "fieldname": "open_oligos", "fieldtype": "Integer", "width": 45},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
@@ -114,6 +115,18 @@ def get_data(filters=None):
                     AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
                 """, as_dict=True)
             so['pending_samples'] = len(pending_samples)
+        if 'product_type' in so and so['product_type'] == 'Oligos':
+            open_oligos = frappe.db.sql(f"""
+                SELECT 
+                    `tabOligo`.`name`
+                FROM `tabOligo Link`
+                LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+                WHERE
+                    `tabOligo Link`.`parent` = "{so['name']}"
+                    AND `tabOligo Link`.`parenttype` = "Sales Order"
+                    AND `tabOligo`.`status` = "Open";
+                """, as_dict=True)
+            so['open_oligos'] = len(open_oligos)
 
     return data
 
