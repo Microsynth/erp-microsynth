@@ -157,15 +157,14 @@ def allocate_credits_to_invoice(sales_invoice):
 
 
 @frappe.whitelist()
-def book_credit(sales_invoice):
+def book_credit(sales_invoice, event=None):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
 
-    run
     bench execute microsynth.microsynth.credits.book_credit --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
     """
-
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    if type(sales_invoice) == str:
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 

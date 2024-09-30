@@ -138,11 +138,11 @@ frappe.ui.form.on('Sales Invoice', {
     company(frm) {
         set_naming_series(frm);                 // common function
     },
-    on_submit(frm) {
-        if (frm.doc.total_customer_credit > 0) {
-            book_credits(frm.doc.name);
-        }
-    },
+    // on_submit(frm) {
+    //     if (frm.doc.total_customer_credit > 0) {
+    //         book_credits(frm.doc.name);
+    //     }
+    // },
     before_cancel(frm) {
         if (frm.doc.total_customer_credit > 0) {
             cancel_credit_journal_entry(frm.doc.name)
@@ -241,18 +241,18 @@ function allocate_credits(frm) {
 }
 
 
-function book_credits(sales_invoice) {
-    frappe.call({
-        'method': "microsynth.microsynth.credits.book_credit",
-        'args': { 
-            'sales_invoice': sales_invoice 
-        },
-        'callback': function(r)
-        {
-            frappe.show_alert( __("booked credits"));
-        }
-    });
-}
+// function book_credits(sales_invoice) {
+//     frappe.call({
+//         'method': "microsynth.microsynth.credits.book_credit",
+//         'args': { 
+//             'sales_invoice': sales_invoice 
+//         },
+//         'callback': function(r)
+//         {
+//             frappe.show_alert( __("booked credits"));
+//         }
+//     });
+// }
 
 
 function set_income_accounts(frm) {

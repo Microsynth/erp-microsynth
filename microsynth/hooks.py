@@ -169,7 +169,8 @@ doc_events = {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     },
     "Sales Invoice": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
+        "on_submit": "microsynth.microsynth.credits.book_credit"
     },
     "Communication": {
         "after_insert": "microsynth.microsynth.email_handler.communication_on_insert"
