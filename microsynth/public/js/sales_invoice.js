@@ -138,16 +138,6 @@ frappe.ui.form.on('Sales Invoice', {
     company(frm) {
         set_naming_series(frm);                 // common function
     },
-    // on_submit(frm) {
-    //     if (frm.doc.total_customer_credit > 0) {
-    //         book_credits(frm.doc.name);
-    //     }
-    // },
-    // before_cancel(frm) {
-    //     if (frm.doc.total_customer_credit > 0) {
-    //         cancel_credit_journal_entry(frm.doc.name)
-    //     }
-    // },
     before_save(frm) {
         set_income_accounts(frm);
         // set goodwill period to 10 days
@@ -241,20 +231,6 @@ function allocate_credits(frm) {
 }
 
 
-// function book_credits(sales_invoice) {
-//     frappe.call({
-//         'method': "microsynth.microsynth.credits.book_credit",
-//         'args': { 
-//             'sales_invoice': sales_invoice 
-//         },
-//         'callback': function(r)
-//         {
-//             frappe.show_alert( __("booked credits"));
-//         }
-//     });
-// }
-
-
 function set_income_accounts(frm) {
     frappe.call({
         'method': "microsynth.microsynth.invoicing.get_income_accounts",
@@ -267,27 +243,12 @@ function set_income_accounts(frm) {
         'callback': function(r)
         {
             var income_accounts = r.message;
-            //console.log(income_accounts);
             for (var i = 0; i < cur_frm.doc.items.length; i++) {
                 frappe.model.set_value("Sales Invoice Item", cur_frm.doc.items[i].name, "income_account", income_accounts[i]);
             }
         }
     });
 }
-
-
-// function cancel_credit_journal_entry(sales_invoice) {
-//     frappe.call({
-//         'method': "microsynth.microsynth.credits.cancel_credit_journal_entry",
-//         'args': { 
-//             'sales_invoice': sales_invoice 
-//         },
-//         'callback': function(r)
-//         {
-//             frappe.show_alert( __("cancelled " + r.message));
-//         }
-//     });
-// }
 
 
 function close_against_expense(frm) {

@@ -156,7 +156,6 @@ def allocate_credits_to_invoice(sales_invoice):
     sales_invoice.save()
 
 
-@frappe.whitelist()
 def book_credit(sales_invoice, event=None):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
@@ -165,6 +164,9 @@ def book_credit(sales_invoice, event=None):
     """
     if type(sales_invoice) == str:
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    if sales_invoice.total_customer_credit <= 0:            # if this invoice has no applied customer credit, skip
+        return None
+        
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
@@ -218,21 +220,24 @@ def book_credit(sales_invoice, event=None):
     return jv.name
 
 
-@frappe.whitelist()
 def cancel_credit_journal_entry(sales_invoice, event=None):
     """
     Cancel the journal entry used for booking credits from the credit account with the book_credit function    
 
     bench execute microsynth.microsynth.credits.cancel_credit_journal_entry --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
     """
-    if sales_invoice and type(sales_invoice) != str:
-        sales_invoice = sales_invoice.name
+    if type(sales_invoice) == str:
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    
+    if flt(sales_invoice.total_customer_credit) <= 0:            # if this invoice has no applied customer credit, skip
+        return None
+        
     journal_entries = frappe.get_all("Journal Entry",
-        filters={'user_remark': "Credit from {0}".format(sales_invoice)},
+        filters={'user_remark': "Credit from {0}".format(sales_invoice.name)},
         fields=['name'])
 
     if len(journal_entries) != 1:
-        msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice)
+        msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice.name)
         frappe.log_error(msg, "credits.cancel_credit_journal_entry")
         print(msg)
         return None
