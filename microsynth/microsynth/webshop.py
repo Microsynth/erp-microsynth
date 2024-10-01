@@ -695,14 +695,14 @@ def get_item_prices(content, client="webshop"):
                 })
             else:
                 return {'success': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
-        # temporarily insert
-        #so.insert(ignore_permissions=True)
-        print("Before validate: {0}".format(so.as_dict()))
+        # extend values
         so.company = frappe.get_value("Customer", content['customer'], 'default_company') or frappe.defaults.get_global_default('company')
-        so.set_missing_values()
-        
-        so.validate()
-        print("After validate: {0}".format(so.as_dict()))
+        try:
+            so.set_missing_values()
+            so.validate()
+        except Exception as err:
+            return {'success': False, 'message': err, 'quotation': None}
+        # pick prices
         item_prices = []
         for i in so.items:
             item_prices.append({
@@ -711,8 +711,6 @@ def get_item_prices(content, client="webshop"):
                 'rate': i.rate,
                 'description': i.item_name
             })
-        # remove temporary record
-        #so.delete()
         return {'success': True, 'message': "OK", 'item_prices': item_prices, 'meta': meta }
     else:
         return {'success': False, 'message': 'Customer not found', 'quotation': None}
