@@ -219,14 +219,14 @@ def book_credit(sales_invoice, event=None):
 
 
 @frappe.whitelist()
-def cancel_credit_journal_entry(sales_invoice):
+def cancel_credit_journal_entry(sales_invoice, event=None):
     """
     Cancel the journal entry used for booking credits from the credit account with the book_credit function    
 
-    run
     bench execute microsynth.microsynth.credits.cancel_credit_journal_entry --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
     """
-     
+    if sales_invoice and type(sales_invoice) != str:
+        sales_invoice = sales_invoice.name
     journal_entries = frappe.get_all("Journal Entry",
         filters={'user_remark': "Credit from {0}".format(sales_invoice)},
         fields=['name'])
