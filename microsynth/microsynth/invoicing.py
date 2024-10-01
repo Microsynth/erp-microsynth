@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 #
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
@@ -10,8 +10,8 @@ import traceback
 import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
-from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data
-from frappe.utils import cint
+from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
+from frappe.utils import cint, flt
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
 from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
@@ -19,7 +19,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
-from microsynth.microsynth.credits import allocate_credits, book_credit, get_total_credit
+from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -151,7 +151,7 @@ def make_carlo_erba_invoices(company):
     run
     bench execute microsynth.microsynth.invoicing.make_carlo_erba_invoices --kwargs "{'company': 'Microsynth Seqlab GmbH'}"
     """
-    all_invoiceable = get_data(filters={'company': company, 'customer': None})
+    all_invoiceable = get_invoiceable_services(filters={'company': company, 'customer': None})
     invoices = []
     for dn in all_invoiceable:
         if (dn.get('invoicing_method').upper() == "CARLO ERBA" 
@@ -184,10 +184,10 @@ def async_create_invoices(mode, company, customer):
     if (mode in ["Post", "Electronic"]):
         # individual invoices
         if mode == "Electronic":
-            all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+            all_invoiceable = get_invoiceable_services(filters={'company': company, 'customer': customer})
         else:
             # exclude punchout invoices, because punchout invoices must be send electronically
-            all_invoiceable = get_data(filters={'company': company, 'customer': customer, 'exclude_punchout': 1})
+            all_invoiceable = get_invoiceable_services(filters={'company': company, 'customer': customer, 'exclude_punchout': 1})
         count = 0
         insufficient_credit_warnings = {}
 
@@ -315,7 +315,7 @@ def async_create_invoices(mode, company, customer):
     elif mode == "Collective":
         # colletive invoices
 
-        all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+        all_invoiceable = get_invoiceable_services(filters={'company': company, 'customer': customer})
 
         customers = []
         for dn in all_invoiceable:
@@ -420,10 +420,8 @@ def make_invoice(delivery_note):
     # for payment reminders: set 10 days goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
     sales_invoice.submit()
-    # if a credit was allocated, book credit account
-    if cint(sales_invoice.total_customer_credit) > 0:
-        book_credit(sales_invoice.name)
-        
+    # in case of customer credit, this will be covered by the sales_invoice:on_submit hook
+
     frappe.db.commit()
 
     return sales_invoice.name
@@ -561,9 +559,7 @@ def make_collective_invoice(delivery_notes):
 
     sales_invoice.submit()
 
-    # if a credit was allocated, book credit account
-    if cint(sales_invoice.total_customer_credit) > 0:
-        book_credit(sales_invoice.name)
+    # in case of customer credit, this will be covered by the sales_invoice:on_submit hook
 
     frappe.db.commit()
 
@@ -578,7 +574,7 @@ def make_monthly_collective_invoice(company, customer, month):
     bench execute microsynth.microsynth.invoicing.make_monthly_collective_invoice --kwargs "{'company': 'Microsynth AG', 'customer': 35581487, 'month': 4}"
     """
 
-    all_invoiceable = get_data(filters={'company': company, 'customer': customer})
+    all_invoiceable = get_invoiceable_services(filters={'company': company, 'customer': customer})
     
     dns = []
     for dn in all_invoiceable:
