@@ -121,6 +121,11 @@ frappe.ui.form.on('Quotation', {
         } else {
             frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
+    },
+    
+    on_submit(frm) {
+        // this is a hack to prevent not allowed to change discount amount after submit because the form has an unrounded value on an item
+        cur_frm.reload_doc();
     }
 });
 
