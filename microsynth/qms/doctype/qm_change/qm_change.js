@@ -65,6 +65,8 @@ frappe.ui.form.on('QM Change', {
 
         // FIELDS LOCKING
 
+        // TODO: Allow only QAU in status "Assessment & Classification" to edit the Impact table
+
         if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
             || (["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
             cur_frm.set_df_property('qm_process', 'read_only', false);
@@ -76,8 +78,8 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('company', 'read_only', true);
         }
 
-        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
-            || (!["Closed", "Cancelled"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
+        if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.session.user === frm.doc.created_by)
+            || (!["Closed", "Cancelled"].includes(frm.doc.status) && frappe.user.has_role('QAU'))) {
             cur_frm.set_df_property('current_state', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         } else {
@@ -101,6 +103,10 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('cc_type', 'read_only', true);
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
             cur_frm.set_df_property('risk_classification', 'read_only', true);
+            cur_frm.set_df_property('impact', 'read_only', true);
+            if (frm.doc.regulatory_classification != 'GMP') {
+                cur_frm.set_df_property('impact', 'hidden', true);
+            }
         }
 
         if (frm.doc.regulatory_classification && frm.doc.regulatory_classification == 'GMP') {
@@ -226,7 +232,7 @@ frappe.ui.form.on('QM Change', {
                     || frappe.user.has_role('QAU')) {
                     // add submit button
                     cur_frm.page.set_primary_action(
-                        __("Submit to QAU"),
+                        __("Proceed"),
                         function() {
                             set_status("Assessment & Classification");
                         }
