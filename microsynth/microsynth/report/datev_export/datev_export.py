@@ -278,7 +278,8 @@ def package_export(filters):
             
             document['documents'].append({
                 'xml_filename': xml_file,
-                'pdf_filename': pdf_file
+                'pdf_filename': pdf_file,
+                'document_type': d.get("document_type")
             })
         
         elif d.get("document_type") == "Purchase Invoice" and d.get("gross_amount") != 0:
@@ -294,7 +295,8 @@ def package_export(filters):
             
             document['documents'].append({
                 'xml_filename': xml_file,
-                'pdf_filename': pdf_file
+                'pdf_filename': pdf_file,
+                'document_type': d.get("document_type")
             })
         
     create_datev_summary_xml(path, document)
