@@ -103,6 +103,7 @@ frappe.query_reports["Find Notes"] = {
                 }
             });
         }
+        hide_chart_buttons();
     }
 };
 

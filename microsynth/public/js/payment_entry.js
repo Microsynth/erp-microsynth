@@ -4,6 +4,12 @@ frappe.ui.form.on('Payment Entry', {
     refresh(frm) {
         check_display_unallocated_warning(frm);
 
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("Create Accounting Note"), function() {
+                create_accounting_note(frm);
+            });
+        }
+
         /* add auto deduction buttons */
         if (frm.doc.docstatus === 0) {
 

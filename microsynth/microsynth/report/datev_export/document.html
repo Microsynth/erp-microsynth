@@ -8,7 +8,7 @@
         {%- for document in documents %}
         <document>
             <extension xsi:type="Invoice" datafile="{{ document.get('xml_filename') }}">
-                <property key="InvoiceType" value="Outgoing"/>
+                <property key="InvoiceType" value="{% if document.document_type == "Sales Invoice" %}Outgoing{% else %}Incoming{% endif %}"/>
             </extension>
             <extension xsi:type="File" name="{{ document.get('pdf_filename') }}"/>
         </document>

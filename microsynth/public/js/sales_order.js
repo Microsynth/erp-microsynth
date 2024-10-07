@@ -31,6 +31,11 @@ frappe.ui.form.on('Sales Order', {
             prepare_naming_series(frm);             // common function
         }
 
+        // show a warning if is_punchout
+        if (frm.doc.docstatus == 0 && frm.doc.is_punchout == 1) {
+            frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
+        }
+
         if (frm.doc.customer && frm.doc.product_type && frm.doc.docstatus == 0) {
             // Call a python function that checks if the Customer has a Distributor for the Product Type
             frappe.call({
@@ -46,6 +51,29 @@ frappe.ui.form.on('Sales Order', {
                     }
                 }
             });
+        }
+
+        if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
+            frm.add_custom_button(__("Search valid version"), function() {
+                frappe.set_route("List", "Sales Order", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
+            });
+        }
+
+        if (frm.doc.docstatus == 1) {
+            if (!frm.doc.customer_address) {
+                frappe.msgprint({
+                    title: __('Missing Billing Address'),
+                    indicator: 'red',
+                    message: __("Please enter and save a <b>Billing Address Name</b> in the section <b>Address and Contact</b>.")
+                });
+            }
+            if (!frm.doc.shipping_address_name) {
+                frappe.msgprint({
+                    title: __('Missing Shipping Address'),
+                    indicator: 'red',
+                    message: __("Please enter and save a <b>Shipping Address Name</b> in the section <b>Address and Contact</b>.")
+                });
+            }
         }
         
         hide_in_words();

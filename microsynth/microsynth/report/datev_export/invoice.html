@@ -1,19 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV Import invoices" version="5.0" xml_data="Kopie nur zur Verbuchung berechtigt nicht zum Vorsteuerabzug" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v050 Belegverwaltung_online_invoice_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v050" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <invoice_info invoice_date="{{ doc.posting_date }}" invoice_type="Rechnung" delivery_date="{{ doc.posting_date }}" invoice_id="{{ doc.name }}" />
-<accounting_info booking_text="Erlöse" account_no="{{ doc.get("items")[0].income_account.split(" - ")[0] }}" />
+{%- set first_item = doc.get("items")[0] %}
+{%- if first_item.get('income_account') %}
+<accounting_info booking_text="Erlöse" account_no="{{ first_item.get('income_account').split(" - ")[0] }}" />
+{%- else %}
+<accounting_info booking_text="Aufwand" account_no="{{ first_item.get('expense_account').split(" - ")[0] }}" />
+{%- endif %}
 <invoice_party>
-    {%- set customer_address = frappe.get_doc("Address", doc.customer_address) %}
-    {%- set customer = frappe.get_doc("Customer", doc.customer) %}
-    <address street="{{ customer_address.address_line1[:40] }}" name="{{ doc.customer_name }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city[:44] }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
-    <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or "99999" }}"/>
+    {%- if doc.doctype == "Sales Invoice" %}
+        {%- set customer_address = frappe.get_doc("Address", doc.get('customer_address')) %}
+        {%- set customer = frappe.get_doc("Customer", doc.customer) %}
+        <address street="{{ customer_address.address_line1[:40] }}" name="{{ doc.customer_name }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city[:44] }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
+        <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or "99999" }}"/>
+    {%- else %}
+        {%- set supplier_address = frappe.get_doc("Address", doc.get('supplier_address')) %}
+        {%- set supplier = frappe.get_doc("Supplier", doc.supplier) %}
+        <address street="{{ supplier_address.address_line1[:40] }}" name="{{ doc.supplier_name }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city[:44] }}" party_id="{{ supplier.get('ext_creditor_id') or supplier.name }}" />
+        <booking_info_bp bp_account_no="{{ supplier.get('ext_creditor_id') or "99999" }}"/>
+    {%- endif %}
 </invoice_party>
 {%- set company = frappe.get_doc("Company", doc.company) %}
 <supplier_party vat_id="{{ (company.tax_id or '').replace(' ', '') }}">
-    {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
-    <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
-    {%- set account = frappe.get_doc("Account", doc.debit_to) %}
-    <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+    {%- if doc.doctype == "Sales Invoice" %}
+        {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
+        <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+        {%- set account = frappe.get_doc("Account", doc.debit_to) %}
+        <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+    {%- else %}
+        {%- set company_address = frappe.get_doc("Address", doc.shipping_address) %}
+        <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+        {%- set account = frappe.get_doc("Account", doc.credit_to) %}
+        <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+    {%- endif %}
 </supplier_party>
 <payment_conditions currency="{{ doc.currency }}" due_date="{{ doc.due_date }}" payment_conditions_text="{{ doc.payment_terms_template or '-' }}"></payment_conditions>
 {%- if doc.taxes and doc.taxes|len > 0 %}
@@ -25,7 +44,7 @@
 {%- if item.amount != 0 %}
 <invoice_item_list description_short="{{ item.item_name }}" quantity="{{ "{:.2f}".format(item.qty) }}">
     <price_line_amount tax="{{ "{:.2f}".format(tax_rate) }}" net_price_line_amount="{{ "{:.2f}".format(item.net_amount) }}" currency="{{ doc.currency }}" />
-    {%- set account_info = item.income_account.split(" - ") %}
+    {%- set account_info = (item.income_account or item.expense_account).split(" - ") %}
     <accounting_info account_no="{{ account_info[0] }}" booking_text="{{ account_info[1] }}" />
 </invoice_item_list>
 {%- endif %}

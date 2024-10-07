@@ -1854,6 +1854,15 @@ def cancel_order(sales_order, web_order_id):
                     'labels': None
                 }
             label_doc = frappe.get_doc("Sequencing Label", sequencing_label)
+            # Check that the Sequencing Label is in status "submitted"
+            if label_doc.status != "submitted":
+                return {
+                    'success': False,
+                    'message': f"Sample {sample.sample} has the Barcode Label {label_doc.name} with status {label_doc.status} (not status 'submitted').",
+                    "sales_order": sales_order_doc.name,
+                    "web_order_id": sales_order_doc.web_order_id,
+                    'labels': None
+                }
             # Set label unused
             label_doc.status = "unused"
             label_doc.save()
@@ -1862,6 +1871,7 @@ def cancel_order(sales_order, web_order_id):
                 "barcode": label_doc.label_id,
                 "status": label_doc.status
             })
+        # Cancel & comment
         sales_order_doc.cancel()
         new_comment = frappe.get_doc({
             'doctype': "Comment",

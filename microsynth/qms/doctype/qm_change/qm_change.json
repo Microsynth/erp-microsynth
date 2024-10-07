@@ -9,14 +9,15 @@
   "document_identification_section",
   "cc_type",
   "qm_process",
-  "date",
+  "company",
   "document_type",
   "amended_from",
   "column_break_3",
   "title",
   "status",
-  "company",
   "document_name",
+  "date",
+  "in_approval",
   "section_break_2",
   "current_state",
   "column_break_12",
@@ -31,8 +32,8 @@
   "classification_section",
   "regulatory_classification",
   "impact",
-  "column_break_26",
   "risk_classification",
+  "column_break_26",
   "impact_description",
   "section_tests_trials",
   "summary_test_trial_results",
@@ -259,7 +260,7 @@
    "allow_on_submit": 1,
    "fieldname": "impact_description",
    "fieldtype": "Small Text",
-   "label": "Impact Description"
+   "label": "Impact Assessment Summary"
   },
   {
    "collapsible": 1,
@@ -273,10 +274,19 @@
    "fieldname": "action_plan_summary",
    "fieldtype": "Text",
    "label": "Action Plan Summary"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "in_approval",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "In Approval",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-11 17:20:18.596829",
+ "modified": "2024-09-20 16:01:28.385280",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

@@ -189,8 +189,10 @@ def find_billing_address(customer_id):
 
     if len(addresses) == 1:
         return addresses[0]
-    else: 
-        frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id),"find_billing_address")
+    else:
+        #frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
+        frappe.log_error("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
+        return None
 
 
 @frappe.whitelist()
@@ -1032,6 +1034,10 @@ def set_debtor_accounts(customer):
 
     address = get_billing_address(customer.name)
 
+    if not address:
+        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", "utils.set_debtor_accounts")
+        return
+
     for company in companies:
         account_number =  get_debtor_account(company.name, customer.default_currency, address.country)
         account = get_account_by_number(company.name, account_number)
@@ -1056,7 +1062,6 @@ def set_debtor_accounts(customer):
     customer.save()
     #TODO Do not commit when using this function when initializing a customer
     frappe.db.commit()
-    
     return
 
 
@@ -1073,6 +1078,10 @@ def set_default_language(customer):
         return
 
     a = get_billing_address(customer)
+
+    if not a:
+        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set default language.", "utils.set_default_language")
+        return
 
     if a.country == "Switzerland":
         try:
@@ -2409,3 +2418,159 @@ def print_users_without_role(role):
     for user in users:
         if not user_has_role(user['name'], role):
             print(user['name'])
+
+
+def fetch_quotation(sales_order):
+    """
+    Checks if there is a Quotation linked against the given Sales Order.
+    If yes, return it. If no, return None.
+
+    bench execute microsynth.microsynth.utils.fetch_quotation --kwargs "{'sales_order': 'SO-BAL-24041373'}"
+    """
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    for item in sales_order_doc.items:
+        if item.prevdoc_docname:
+            return item.prevdoc_docname
+    return None
+
+
+def check_sales_order(sales_order, event):
+    if not sales_order.customer_address or \
+       not sales_order.invoice_to or \
+       not sales_order.contact_person or \
+       not sales_order.shipping_address_name:
+        frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
+
+
+def calculate_therapeutic_oligo_sales():
+    """
+    bench execute microsynth.microsynth.utils.calculate_therapeutic_oligo_sales
+    """
+    start_ts = datetime.now()
+    _0640_bis_0671 = set(['0640', '0650', '0652', '0653', '0655', '0660', '0665', '0670', '0671'])
+    _0672_bis_0679 = set(['0672', '0673', '0674', '0677', '0678', '0679'])
+    _0830_bis_0837 = set(['0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837'])
+    _0870_bis_0890 = set(['0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890'])
+
+    query = """
+            SELECT 
+                `tabSales Invoice`.`name`,
+                `tabSales Invoice`.`total`,
+                `tabSales Invoice`.`currency`,
+                `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice`.`web_order_id`,
+                `tabSales Invoice`.`customer`,
+                `tabSales Invoice`.`customer_name`,
+                `tabSales Invoice`.`contact_person`,
+                `tabSales Invoice`.`company`,
+                `tabSales Invoice`.`product_type`
+            FROM `tabSales Invoice Item`
+            LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            WHERE 
+                `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`is_return` = 0
+                AND `tabSales Invoice Item`.`item_code` IN ('0352', '0353', '0354', '0355', '0372', '0373', '0374', '0379', '0380', '0381', '0382', '0383', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0570', '0571', '0572', '0573', '0574', '0575', '0576', '0600', '0601', '0602', '0605', '0606', '0607', '0608', '0640', '0650', '0652', '0653', '0655', '0660', '0665', '0670', '0671', '0672', '0673', '0674', '0677', '0678', '0679', '0820', '0821', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0845', '0860', '0861', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890' )
+            GROUP BY `tabSales Invoice`.`name`
+            """
+    # TODO: Do we need to exclude Sales Invoices for which a Credit Note was issued? If yes, what is the easiest way to do so?
+    potential_sales_invoices = frappe.db.sql(query, as_dict=True)
+    print(f"{datetime.now()}: Going to distinguish between siRNA, ASO and neither for {len(potential_sales_invoices)} Sales Invoices.")
+    asos = []
+    sirnas = []
+    neither_counter = 0
+
+    for si in potential_sales_invoices:
+        si_doc = frappe.get_doc("Sales Invoice", si['name'])
+        items = set()
+        # add items to a set
+        for item in si_doc.items:
+            items.add(item.item_code)
+        si['items'] = items
+        # search for siRNA first
+        if len(items.intersection(_0640_bis_0671)) > 0:
+            sirnas.append(si)
+            continue
+        elif '0651' in items or '0661' in items:
+            # potential siRNA
+            if '0379' in items or '0372' in items or '0373' in items or '0374' in items:
+                sirnas.append(si)
+                continue
+            elif '0605' in items or '0606' in items or '0607' in items or '0608' in items:
+                sirnas.append(si)
+                continue
+            elif '0375' in items or '0376' in items or '0377' in items or '0378' in items:
+                sirnas.append(si)
+                continue
+            elif '0380' in items or '0381' in items or '0382' in items or '0383' in items:
+                sirnas.append(si)
+                continue
+            elif '0448' in items or '0449' in items or '0450' in items or '0451' in items:
+                sirnas.append(si)
+                continue
+            elif '0452' in items or '0453' in items or '0454' in items or '0455' in items:
+                sirnas.append(si)
+                continue
+            # it could still be an ASO
+        if ('0662' in items or '0663' in items) and ('0379' in items or '0372' in items or '0373' in items or '0374' in items):
+            sirnas.append(si)
+            continue
+        elif len(items.intersection(_0830_bis_0837)) > 0:
+            sirnas.append(si)
+            continue
+        elif len(items.intersection(_0672_bis_0679)) > 0:
+            sirnas.append(si)
+            continue
+        # search for ASOs
+        elif '0860' in items or '0861' in items:
+            asos.append(si)
+            continue
+        elif '0820' in items or '0821' in items:
+            asos.append(si)
+            continue
+        elif len(items.intersection(_0870_bis_0890)) > 0:
+            asos.append(si)
+            continue
+        elif '0380' in items or '0381' in items or '0382' in items or '0383' in items:
+            asos.append(si)
+            continue
+        elif '0600' in items or '0601' in items or '0602' in items:
+            # potential ASO
+            if '0352' in items or '0353' in items or '0354' in items or '0355' in items:
+                asos.append(si)
+                continue
+            elif '0605' in items or '0606' in items or '0607' in items or '0608' in items:
+                asos.append(si)
+                continue
+            elif '0375' in items or '0376' in items or '0377' in items or '0378' in items:
+                asos.append(si)
+                continue
+            elif '0379' in items or '0372' in items or '0373' in items or '0374' in items:
+                asos.append(si)
+                continue
+            else:
+                neither_counter += 1
+        else:
+            neither_counter += 1
+
+    print(f"\n{len(sirnas)=}, {len(asos)=}, {neither_counter=}, total={len(sirnas) + len(asos) + neither_counter}\n")
+    currencies = ['CHF', 'EUR', 'USD', 'SEK']
+    sirna_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
+    aso_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
+    print("classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;company;product_type;items")
+
+    for si in sirnas:
+        sirna_totals[si['currency']] += si['total']
+        print(f"siRNA;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{si['items']}")
+
+    for si in asos:
+        aso_totals[si['currency']] += si['total']
+        print(f"ASO;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{si['items']}")
+
+    for c in currencies:
+        total_string = f"{sirna_totals[c]:,.2f}".replace(",", "'")
+        print(f"siRNA: {total_string} {c}")
+        total_string = f"{aso_totals[c]:,.2f}".replace(",", "'")
+        print(f"ASO: {total_string} {c}\n")
+
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"\n{datetime.now()}: Finished calculate_therapeutic_oligo_sales after {elapsed_time} hh:mm:ss.")

@@ -121,6 +121,11 @@ frappe.ui.form.on('Quotation', {
         } else {
             frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
+    },
+    
+    on_submit(frm) {
+        // this is a hack to prevent not allowed to change discount amount after submit because the form has an unrounded value on an item
+        cur_frm.reload_doc();
     }
 });
 
@@ -163,7 +168,7 @@ function pull_item_service_specification(item_code, quotation_group) {
                         for (var i = 0; i < cur_frm.doc.quotations_groups.length; i++) {
                             if (quotation_group == cur_frm.doc.quotations_groups[i].group_name) {
                                 if (!cur_frm.doc.quotations_groups[i].service_description || !cur_frm.doc.quotations_groups[i].service_description.includes(item.service_description)) {
-                                    // add service description to item_group
+                                    // add service description to Quotation Groups
                                     frappe.model.set_value(cur_frm.doc.quotations_groups[i].doctype,
                                                             cur_frm.doc.quotations_groups[i].name,
                                                             "service_description",

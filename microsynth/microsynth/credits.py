@@ -1,9 +1,9 @@
-# Copyright (c) 2021-2023, libracore and Contributors
+# Copyright (c) 2021-2024, Microsynth, libracore and contributors
 # License: GNU General Public License v3. See license.txt
 
 import frappe
-from datetime import datetime
-
+from datetime import date, datetime, timedelta
+from frappe.utils.data import today
 from frappe.utils import flt, cint
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
@@ -156,16 +156,17 @@ def allocate_credits_to_invoice(sales_invoice):
     sales_invoice.save()
 
 
-@frappe.whitelist()
-def book_credit(sales_invoice):
+def book_credit(sales_invoice, event=None):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
 
-    run
     bench execute microsynth.microsynth.credits.book_credit --kwargs "{'sales_invoice': 'SI-BAL-23000538'}"
     """
-
-    sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    if type(sales_invoice) == str:
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    if sales_invoice.total_customer_credit <= 0:            # if this invoice has no applied customer credit, skip
+        return None
+        
     credit_item = frappe.get_doc("Item", 
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
@@ -219,21 +220,24 @@ def book_credit(sales_invoice):
     return jv.name
 
 
-@frappe.whitelist()
-def cancel_credit_journal_entry(sales_invoice):
+def cancel_credit_journal_entry(sales_invoice, event=None):
     """
     Cancel the journal entry used for booking credits from the credit account with the book_credit function    
 
-    run
     bench execute microsynth.microsynth.credits.cancel_credit_journal_entry --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
     """
-     
+    if type(sales_invoice) == str:
+        sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
+    
+    if flt(sales_invoice.total_customer_credit) <= 0:            # if this invoice has no applied customer credit, skip
+        return None
+        
     journal_entries = frappe.get_all("Journal Entry",
-        filters={'user_remark': "Credit from {0}".format(sales_invoice)},
+        filters={'user_remark': "Credit from {0}".format(sales_invoice.name)},
         fields=['name'])
 
     if len(journal_entries) != 1:
-        msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice)
+        msg = "Cannot cancel credit Journal Entry for Sales Invoice {0}:\nNone or multiple Journal Entries found".format(sales_invoice.name)
         frappe.log_error(msg, "credits.cancel_credit_journal_entry")
         print(msg)
         return None
@@ -303,8 +307,9 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     Debug function to find customer credit transactions per day
 
     run
-    bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kargs "{'currency': 'EUR', 'date': '2023-06-15'}"
+    bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kwargs "{'currency': 'EUR', 'date': '2023-06-15'}"
     """
+    results = []
     for d in frappe.db.sql("""
         SELECT
             `raw`.`type` AS `type`,
@@ -360,7 +365,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
         ) AS `raw`
         WHERE `raw`.`net_amount` != 0
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date, company=company), as_dict=True):
-        print("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
+        results.append("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
             d['date'],
             d['customer'],
             d['customer_name'],
@@ -370,4 +375,93 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
             d['status'],
             d['reference'],
             d['currency']))
-            
+    return results
+
+
+def get_total_credit_difference(company, currency, account, to_date):
+    """
+    Returns the difference between the Outstanding sum from the Customer Credits report and the Closing Balance in the General Ledger.
+
+    bench execute microsynth.microsynth.credits.get_total_credit_difference --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'to_date': '2024-09-23'}"
+    """
+    from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
+
+    def get_closing(company, account, to_date):
+        from erpnext.accounts.report.general_ledger.general_ledger import get_gl_entries, initialize_gle_map, get_accountwise_gle
+        gl_filters=frappe._dict({'company': company, 'from_date': to_date, 'to_date': to_date, 'account': account})
+        gl_entries = get_gl_entries(gl_filters)
+        gle_map = initialize_gle_map(gl_entries, gl_filters)
+        totals, _ = get_accountwise_gle(gl_filters, gl_entries, gle_map)
+        closing = totals.get('closing')
+        return closing.get('debit_in_account_currency') - closing.get('credit_in_account_currency')
+
+    if type(to_date) == str:
+        to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+    credit_filters=frappe._dict({'company': company, 'to_date': to_date, 'currency': currency})
+    credits = get_customer_credits(credit_filters)
+    total_outstanding = 0
+    for credit in credits:
+        total_outstanding += credit['outstanding']
+    gl_closing = get_closing(company, account, to_date)
+    diff = gl_closing + total_outstanding
+    return diff
+
+
+def daterange(from_date: date, to_date: date):
+    days = int((to_date - from_date).days)
+    for n in range(days):
+        yield from_date + timedelta(n)
+
+
+def print_total_credit_differences(company, currency, account, from_date, to_date):
+    """
+    Calls get_total_credit_difference for each day from the given date till today and prints the results.
+
+    bench execute microsynth.microsynth.credits.print_total_credit_differences --kwargs "{'company': 'Microsynth AG', 'currency': 'EUR', 'account': '2020 - Anzahlungen von Kunden EUR - BAL', 'from_date': '2023-12-31', 'to_date': '2024-09-25'}"
+    """
+    from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+    to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+    for single_date in daterange(from_date, to_date):
+        diff = get_total_credit_difference(company, currency, account, single_date)
+        diff_str = f"{diff:,.2f}".replace(",", "'")
+        print(f"{single_date.strftime('%d.%m.%Y')}: {diff_str} {currency}")
+
+
+def get_and_check_diff(company, currency, account, my_date, previous_diff):
+    diff = get_total_credit_difference(company, currency, account, my_date)
+    if abs(diff - previous_diff) >= 0.01:
+        credit_transactions = get_customer_credit_transactions(currency, my_date, company)
+        diff_str = f"{diff:,.2f}".replace(",", "'")
+        print(f"\n{company}, {currency}, {account}: {my_date.strftime('%d.%m.%Y')}: {diff_str} {currency}")
+        if len(credit_transactions) > 0 and my_date != date(2023, 12, 31):
+            print(f"Transactions from {my_date.strftime('%d.%m.%Y')}:")
+            for transaction in credit_transactions:
+                print(transaction)
+    return diff
+
+
+def check_credit_balance(single_date=today()):
+    """
+    Should be run by a daily cronjob or moved to a new report to use an Auto Email report.
+
+    bench execute microsynth.microsynth.credits.check_credit_balance --kwargs "{'date': '2024-09-20'}"
+    """
+    # get Credit Item from Microsynth Settings
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    credit_item = frappe.get_doc("Item", credit_item_code)
+    # iterate over item_defaults
+    for default in credit_item.item_defaults:
+        previous_diff = 0
+        company = default.company
+        account = default.income_account
+        currency = frappe.get_value("Account", account, "account_currency")
+        for single_date in daterange(date(2023, 12, 31), datetime.today().date()):
+            diff = get_and_check_diff(company, currency, account, single_date, previous_diff)
+            previous_diff = diff
+        for currency in ['USD', 'EUR', 'CHF']:
+            alternative_account = get_alternative_account(account, currency)
+            if alternative_account != account:
+                previous_diff = 0
+                for single_date in daterange(date(2023, 12, 31), datetime.today().date()):
+                    diff = get_and_check_diff(company, currency, alternative_account, single_date, previous_diff)
+                    previous_diff = diff

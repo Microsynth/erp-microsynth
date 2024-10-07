@@ -71,6 +71,7 @@ frappe.query_reports["Compare Price Lists"] = {
                 }
             });
         }
+        hide_chart_buttons();
     }
 };
 

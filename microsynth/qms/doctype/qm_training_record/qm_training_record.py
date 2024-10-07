@@ -26,13 +26,13 @@ def create_training_record(trainee, dt, dn, due_date):
         })
     record.save(ignore_permissions = True)
     frappe.db.commit()
-
+    full_name = frappe.get_value("User", trainee, "full_name")
     # create assignment to user
     add({
         'doctype': "QM Training Record",
         'name': record.name,
         'assign_to': trainee,
-        'description': "You are welcome to attend the document training.",
+        'description': f"Dear {full_name},<br>You are welcome to attend the document training.",
         'notify': True
     })
 

@@ -38,38 +38,71 @@ def get_columns(filters):
 def get_data(filters, short=False):
     sql_query = ""
     if filters.get("version") == "AT":
-        sql_query = """
-        SELECT
-            0 AS `entry_type`,
-            (SELECT
-                SUBSTRING(`tabSales Invoice Item`.`income_account`, 1, 4)
-             FROM `tabSales Invoice Item`
-             WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-             ORDER BY `tabSales Invoice Item`.`idx` ASC
-             LIMIT 1) AS `account`,
-            "Sales Invoice" AS `document_type`,
-            `tabSales Invoice`.`name` as `document`,
-            `tabSales Invoice`.`posting_date` as `date`,
-            "AR" AS `book_symbol`,
-            "" AS `book_code`,
-            ROUND(100 * `tabSales Invoice`.`total_taxes_and_charges` / `tabSales Invoice`.`net_total`, 1) AS `vat_percent`,
-            `tabSales Invoice`.`grand_total` AS `gross_amount`,
-            (-1) * `tabSales Invoice`.`total_taxes_and_charges` AS `vat_amount`,
-            "Rechnung" AS `description`,
-            `tabSales Invoice`.`customer` AS `customer`,
-            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`
-        FROM `tabSales Invoice`
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
-        WHERE 
-            `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`company` = "{company}"
-            AND `tabSales Invoice`.`posting_date` >= "{from_date}"
-            AND `tabSales Invoice`.`posting_date` <= "{to_date}"
-        """.format(
-            company=filters.get("company"), 
-            from_date=filters.get("from_date"), 
-            to_date=filters.get("to_date"))
-
+        if filters.get("transactions") == "Debtors":
+            sql_query = """
+                SELECT
+                    0 AS `entry_type`,
+                    (SELECT
+                        SUBSTRING(`tabSales Invoice Item`.`income_account`, 1, 4)
+                     FROM `tabSales Invoice Item`
+                     WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                     ORDER BY `tabSales Invoice Item`.`idx` ASC
+                     LIMIT 1) AS `account`,
+                    "Sales Invoice" AS `document_type`,
+                    `tabSales Invoice`.`name` as `document`,
+                    `tabSales Invoice`.`posting_date` as `date`,
+                    "AR" AS `book_symbol`,
+                    "" AS `book_code`,
+                    ROUND(100 * `tabSales Invoice`.`total_taxes_and_charges` / `tabSales Invoice`.`net_total`, 1) AS `vat_percent`,
+                    `tabSales Invoice`.`grand_total` AS `gross_amount`,
+                    (-1) * `tabSales Invoice`.`total_taxes_and_charges` AS `vat_amount`,
+                    "Rechnung" AS `description`,
+                    `tabSales Invoice`.`customer` AS `customer`,
+                    `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`
+                FROM `tabSales Invoice`
+                LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
+                WHERE 
+                    `tabSales Invoice`.`docstatus` = 1
+                    AND `tabSales Invoice`.`company` = "{company}"
+                    AND `tabSales Invoice`.`posting_date` >= "{from_date}"
+                    AND `tabSales Invoice`.`posting_date` <= "{to_date}"
+            """.format(
+                company=filters.get("company"), 
+                from_date=filters.get("from_date"), 
+                to_date=filters.get("to_date"))
+        
+        elif filters.get("transactions") == "Creditors":
+            sql_query = """
+                SELECT
+                    0 AS `entry_type`,
+                    (SELECT
+                        SUBSTRING(`tabPurchase Invoice Item`.`expense_account`, 1, 4)
+                     FROM `tabPurchase Invoice Item`
+                     WHERE `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
+                     ORDER BY `tabPurchase Invoice Item`.`idx` ASC
+                     LIMIT 1) AS `account`,
+                    "Purchase Invoice" AS `document_type`,
+                    `tabPurchase Invoice`.`name` as `document`,
+                    `tabPurchase Invoice`.`posting_date` as `date`,
+                    "ER" AS `book_symbol`,
+                    "" AS `book_code`,
+                    ROUND(100 * `tabPurchase Invoice`.`total_taxes_and_charges` / `tabPurchase Invoice`.`net_total`, 1) AS `vat_percent`,
+                    `tabPurchase Invoice`.`grand_total` AS `gross_amount`,
+                    (-1) * `tabPurchase Invoice`.`total_taxes_and_charges` AS `vat_amount`,
+                    "Rechnung" AS `description`,
+                    `tabPurchase Invoice`.`supplier` AS `customer`,
+                    `tabSupplier`.`ext_creditor_id` AS `ext_debitor_number`
+                FROM `tabPurchase Invoice`
+                LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier` 
+                WHERE 
+                    `tabPurchase Invoice`.`docstatus` = 1
+                    AND `tabPurchase Invoice`.`company` = "{company}"
+                    AND `tabPurchase Invoice`.`posting_date` >= "{from_date}"
+                    AND `tabPurchase Invoice`.`posting_date` <= "{to_date}"
+            """.format(
+                company=filters.get("company"), 
+                from_date=filters.get("from_date"), 
+                to_date=filters.get("to_date"))
     data = frappe.db.sql(sql_query, as_dict=True)
     
     return data
@@ -92,6 +125,12 @@ def pdf_export(filters):
                 dt=d.get("document_type"), 
                 dn=d.get("document"), 
                 print_format=settings.pdf_print_format
+            )
+        
+        elif d.get("document_type") == "Purchase Invoice":
+            download_pdf(path=settings.pdf_export_path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document")
             )
 
     return
@@ -127,7 +166,18 @@ def xml_export(filters):
             file_path = "{0}/{1}.xml".format(path, d.get("document"))
             with open(file_path, mode='w') as file:
                 file.write(content_xml)
+        
+        elif d.get("document_type") == "Purchase Invoice":
+            #xml = create_zugferd_xml(sales_invoice = d.get("document"), verify = True )         # TODO: this will not work for purchase invoices
+            
+            supplier_node = "<ram:ID>{0}</ram:ID>".format(d.get("customer"))
+            creditor_node = "<ram:ID>{0}</ram:ID>".format(d.get("ext_debitor_number") if d.get("ext_debitor_number") else 99999)
 
+            #content_xml = xml.replace(supplier_node, creditor_node)
+            #file_path = "{0}/{1}.xml".format(path, d.get("document"))
+            #with open(file_path, mode='w') as file:
+            #    file.write(content_xml)
+                
     return
 
 @frappe.whitelist()
@@ -150,12 +200,30 @@ def create_pdf(path, dt, dn, print_format):
         file.write(content_pdf)
     return file_name
     
+
+def download_pdf(path, dt, dn):
+    file_name = "{0}.pdf".format(dn)
+    content_file_name = "{0}/{1}".format(path, file_name)
+    # find attachment and copy to output
+    attachments = frappe.get_all(
+        "File", 
+        filters={'attached_to_doctype': dt, 'attached_to_name': dn}, 
+        fields=['name', 'file_url'],
+        order_by='creation DESC'
+    )
+    if attachments and len(attachments) > 0:
+        source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], attachments[0]['file_url'][1:])
+        os.system("cp {0} {1}".format(source_file, content_file_name))
+        
+    return file_name
+
+
 def create_datev_xml(path, dt, dn):
     # pre-process document to prevent datev errors
     doc = frappe.get_doc(dt, dn).as_dict()
     for item in doc['items']:
         item['item_name'] = escape_strip_cut(item['item_name'], length=20)     # drop html entitites from item name, if cropped, they become invalid
-    doc['customer_name'] = escape_strip_cut(doc['customer_name'], length=50)
+    doc['customer_name'] = escape_strip_cut(doc.get('customer_name') or doc.get('supplier_name'), length=50)
     
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
         'doc': doc
@@ -186,7 +254,7 @@ def package_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
-    path = "{0}/{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
+    path = "{0}/{1}_{2}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"), filters.get("transactions"))
     if not os.path.exists(path):
         os.mkdir(path)
 
@@ -212,7 +280,23 @@ def package_export(filters):
                 'xml_filename': xml_file,
                 'pdf_filename': pdf_file
             })
+        
+        elif d.get("document_type") == "Purchase Invoice" and d.get("gross_amount") != 0:
+            # create pdf
+            pdf_file = download_pdf(path=path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document")
+            )
+            xml_file = create_datev_xml(path=path, 
+                dt=d.get("document_type"), 
+                dn=d.get("document")
+            )
             
+            document['documents'].append({
+                'xml_filename': xml_file,
+                'pdf_filename': pdf_file
+            })
+        
     create_datev_summary_xml(path, document)
 
     return

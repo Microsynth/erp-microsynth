@@ -44,6 +44,9 @@ frappe.query_reports["Pricing Configurator"] = {
         report.page.add_inner_button(__('Customers'), function () {
            frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value, "disabled": 0});
         });
+        report.page.add_inner_button(__("Standing Quotations"), function() {
+            frappe.set_route("List", "Standing Quotation", {"price_list": frappe.query_report.filters[0].value});
+        });
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;
             
@@ -92,6 +95,7 @@ frappe.query_reports["Pricing Configurator"] = {
                 }
             });
         }
+        hide_chart_buttons();
     }
 };
 

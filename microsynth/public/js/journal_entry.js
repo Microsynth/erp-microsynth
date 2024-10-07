@@ -7,6 +7,19 @@ frappe.ui.form.on('Journal Entry', {
                 create_accounting_note(frm);
             });
         }
+
+        var pe_matches = frm.doc.user_remark.match(/\bPE-\d{5}\b/g);
+        if (pe_matches && pe_matches.length > 0) {
+            frm.add_custom_button(__("Open Payment Entry"), function() {
+                frappe.set_route("Form", "Payment Entry", pe_matches[0]);
+            });
+        }
+        var si_matches = frm.doc.user_remark.match(/\bSI-(BAL|GOE|LYO|WIE)-\d{8}\b/g);
+        if (si_matches && si_matches.length > 0) {
+            frm.add_custom_button(__("Open Sales Invoice"), function() {
+                frappe.set_route("Form", "Sales Invoice", si_matches[0]);
+            });
+        }
     }
 });
 

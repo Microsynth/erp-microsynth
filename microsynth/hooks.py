@@ -84,8 +84,14 @@ jenv = {
         "get_effectiveness_checks:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_effectiveness_checks",
         "get_qm_changes:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_qm_changes",
         "get_nc_attachments:microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_nc_attachments",
+        "get_cc_impact_assessments:microsynth.qms.doctype.qm_change.qm_change.get_cc_impact_assessments",
+        "get_cc_actions:microsynth.qms.doctype.qm_change.qm_change.get_cc_actions",
+        "get_cc_effectiveness_checks:microsynth.qms.doctype.qm_change.qm_change.get_cc_effectiveness_checks",
+        "get_qm_decisions:microsynth.qms.doctype.qm_change.qm_change.get_qm_decisions",
+        "get_cc_attachments:microsynth.qms.doctype.qm_change.qm_change.get_cc_attachments",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
-        "get_html_message:microsynth.microsynth.payment_reminder.get_html_message"
+        "get_html_message:microsynth.microsynth.payment_reminder.get_html_message",
+        "fetch_quotation:microsynth.microsynth.utils.fetch_quotation"
     ]
 }
 
@@ -156,13 +162,16 @@ doc_events = {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     },
     "Sales Order": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
+        "on_submit": "microsynth.microsynth.utils.check_sales_order"
     },
     "Delivery Note": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     },
     "Sales Invoice": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
+        "on_submit": "microsynth.microsynth.credits.book_credit",
+        "on_cancel": "microsynth.microsynth.credits.cancel_credit_journal_entry"
     },
     "Communication": {
         "after_insert": "microsynth.microsynth.email_handler.communication_on_insert"
@@ -170,6 +179,9 @@ doc_events = {
     "Supplier": {
         "before_save": "microsynth.microsynth.purchasing.set_default_payable_accounts"
     }
+    #"Abacus Export File": {
+    #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
+    #}
 }
 
 

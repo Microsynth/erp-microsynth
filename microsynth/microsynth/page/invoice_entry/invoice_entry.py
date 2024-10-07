@@ -34,10 +34,14 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,
             `tabPurchase Invoice Item`.`cost_center`,
+            `tabSupplier`.`iban`,
+            `tabSupplier`.`esr_participation_number`,
+            `tabSupplier`.`default_payment_method`,
             `tabPurchase Invoice`.`approver`,
             `tabPurchase Invoice`.`remarks`
         FROM `tabPurchase Invoice`
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
+        LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
         WHERE
             `tabPurchase Invoice`.`docstatus` = 0
             AND `tabPurchase Invoice`.`name` NOT IN (

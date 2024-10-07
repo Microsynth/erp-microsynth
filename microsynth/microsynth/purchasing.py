@@ -212,7 +212,8 @@ def set_default_payable_accounts(supplier, event):
             entry = {
                 'company': company['name'],
                 'account': account
-                # TODO: default_tax_template?
+                # set_default_payable_accounts should not set the default_tax_template.
+                # An algorithm cannot be defined to set the default value. (requires classification of the supplier)
             }
             supplier.append("accounts", entry)
             print(f"appended {entry=}")

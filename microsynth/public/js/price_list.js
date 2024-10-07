@@ -9,6 +9,10 @@ frappe.ui.form.on('Price List', {
             frm.add_custom_button(__("Customers"), function() {
                 frappe.set_route("List", "Customer", {"default_price_list": frm.doc.name, "disabled": 0});
             });
+            // show Standing Quotations with this price list
+            frm.add_custom_button(__("Standing Quotations"), function() {
+                frappe.set_route("List", "Standing Quotation", {"price_list": frm.doc.name});
+            });
         }
     }
 });

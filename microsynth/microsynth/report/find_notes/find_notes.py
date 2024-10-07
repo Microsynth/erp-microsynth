@@ -8,9 +8,9 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("Note ID"), "fieldname": "note_id", "fieldtype": "Link", "options": "Contact Note", "width": 100 },
+        {"label": _("Note ID"), "fieldname": "name", "fieldtype": "Link", "options": "Contact Note", "width": 100 },
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75 },
-        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 65 },
+        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65 },
         {"label": _("First Name"), "fieldname": "first_name", "fieldtype": "Data", "width": 80 },
         {"label": _("Last Name"), "fieldname": "last_name", "fieldtype": "Data", "width": 100 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 130 },
@@ -23,8 +23,8 @@ def get_columns(filters):
         {"label": _("Institute Key"), "fieldname": "institute_key", "fieldtype": "Data", "width": 100 },
         #{"label": _("Department"), "fieldname": "department", "fieldtype": "Data", "width": 125 },
         {"label": _("Group Leader"), "fieldname": "group_leader", "fieldtype": "Data", "width": 100 },
-        {"label": _("Creator"), "fieldname": "creator", "fieldtype": "Data", "options": "User", "width": 100 },
-        {"label": _("Note Type"), "fieldname": "note_type", "fieldtype": "Data", "width": 80 },
+        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Data", "options": "User", "width": 100 },
+        {"label": _("Note Type"), "fieldname": "contact_note_type", "fieldtype": "Data", "width": 80 },
         {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "options": "Notes", "width": 200 },
     ]
 
@@ -33,9 +33,9 @@ def get_notes(sql_conditions, indent):
     query = f"""
             SELECT
                 {indent} AS `indent`,
-                `tabContact Note`.`name` AS `note_id`,
+                `tabContact Note`.`name`,
                 `tabContact Note`.`date`,
-                `tabContact Note`.`contact_person` AS `contact`,
+                `tabContact Note`.`contact_person`,
                 `tabContact Note`.`first_name`,
                 `tabContact Note`.`last_name`,
                 `tabCustomer`.`customer_name`,
@@ -48,8 +48,8 @@ def get_notes(sql_conditions, indent):
                 `tabContact`.`institute_key`,
                 `tabContact`.`department`,
                 `tabContact`.`group_leader`,
-                `tabContact Note`.`owner` AS `creator`,
-                `tabContact Note`.`contact_note_type` AS `note_type`,
+                `tabContact Note`.`owner`,
+                `tabContact Note`.`contact_note_type`,
                 `tabContact Note`.`notes`
             FROM `tabContact Note`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabContact Note`.`contact_person`
@@ -113,8 +113,9 @@ def get_data(filters):
     enriched = []
     for note in raw_notes:
         enriched.append(note)
-        sql_conditions = f" AND `tabContact Note`.`name` != '{note['note_id']}'"
-        sql_conditions += f" AND `tabContact Note`.`contact_person` = '{note['contact']}'"
+        sql_conditions = f" AND `tabContact Note`.`name` != '{note['name']}'"
+        sql_conditions += f" AND `tabContact Note`.`contact_person` = '{note['contact_person']}'"
+        sql_conditions += f" AND `tabContact Note`.`date` <= '{note['date']}'"
         previous_notes = get_notes(sql_conditions, 1)        
 
         for i, previous_note in enumerate(previous_notes):
@@ -140,23 +141,55 @@ def create_pdf(filters):
     import io
     import json
     from datetime import datetime
+    from collections import OrderedDict
+    from frappe.utils.pdf import get_pdf
     from PyPDF2 import PdfFileMerger, PdfFileReader  # JPe: I've checked that PyPDF is available on the server. It was also used in microsynth/report/fiscal_representation_export/fiscal_representation_export.py
 
     if type(filters) == str:
         filters = json.loads(filters)
-    data = get_data(filters)
+    raw_data = get_data(filters)
     merger = PdfFileMerger()
+    enriched_data = OrderedDict()
 
-    for note in data:
-        #contact_note = frappe.get_doc("Contact Note", note['note_id'])
-        pdf = frappe.get_print(
-                    doctype="Contact Note",
-                    name=note['note_id'],
-                    print_format="Contact Note",
-                    as_pdf=True
-                )
+    for i, note in enumerate(raw_data):
+        if not note['contact_person']:
+            continue  # should never happen
+        if not note['contact_person'] in enriched_data:
+            enriched_data[note['contact_person']] = note
+        else:
+            note_content = enriched_data[note['contact_person']]['notes']
+            url = f'<a href="https://erp.microsynth.local/desk#Form/Contact%20Note/{note["name"]}"><b>{note["name"]}</b></a>'
+            note_content += f"<br>Contact Note {url} <b>({note['contact_note_type']})</b> from <b>{note['date'].strftime('%d.%m.%Y')}</b> created by <b>{note['owner']}:</b><p>{note['notes']}</p>"
+            enriched_data[note['contact_person']]['notes'] = note_content
+    data = list(enriched_data.values())
+
+    for i, note in enumerate(data):
+        note_doc = frappe.get_doc("Contact Note", note['name'])
+        note_doc.notes = note['notes']
+        css = frappe.get_value('Print Format', 'Contact Note', 'css')
+        raw_html = frappe.get_value('Print Format', 'Contact Note', 'html')
+        # create html
+        css_html = f"<style>{css}</style>{raw_html}"
+        rendered_html = frappe.render_template(
+            css_html,
+            {
+                'doc': note_doc,
+                'my_idx': (i+1),
+                'customer_id': note['customer_id']
+            }
+        )
+        # need to load the styles and tags
+        content = frappe.render_template(
+            'microsynth/templates/pages/print.html',
+            {'html': rendered_html}
+        )
+        options = {
+            'disable-smart-shrinking': ''
+        }
+        pdf = get_pdf(content, options)
         merger.append(PdfFileReader(io.BytesIO(pdf)))
-    # https://gist.github.com/vijaywm/d6b7d1a54274838cd25acd1e3dd31740#pypdf2-pdffilemerger-to-merge-pdfs
+        # https://gist.github.com/vijaywm/d6b7d1a54274838cd25acd1e3dd31740#pypdf2-pdffilemerger-to-merge-pdfs
+
     out = io.BytesIO()
     merger.write(out)
     file = frappe.get_doc(
@@ -168,7 +201,6 @@ def create_pdf(filters):
         })
     file.save()
     merger.close()
-    #return file.name
     return file.file_url
 
 

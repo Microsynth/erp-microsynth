@@ -3,6 +3,17 @@ frappe.ui.form.on('Delivery Note', {
     refresh(frm) {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
+
+        // show a warning if is_punchout
+        if (frm.doc.docstatus == 0 && frm.doc.is_punchout == 1) {
+            frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
+        }
+
+        if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
+            frm.add_custom_button(__("Search valid version"), function() {
+                frappe.set_route("List", "Delivery Note", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
+            });
+        }
         
         hide_in_words();
 

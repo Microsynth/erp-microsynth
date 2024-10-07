@@ -393,6 +393,7 @@ frappe.ui.form.on('QM Nonconformity', {
                     'args': {
                         'doc': frm.doc.name
                     },
+                    'async': false,
                     'callback': function(response) {
                         if (!response.message.has_corrective_action) {
                             allowed = true;
@@ -474,6 +475,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                         'args': {
                                             'doc': frm.doc.name
                                         },
+                                        'async': false,
                                         'callback': function(response) {
                                             if (!response.message.has_corrective_action) {
                                                 allowed = true;
