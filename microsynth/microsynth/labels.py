@@ -206,9 +206,32 @@ def print_oligo_order_labels(sales_orders):
             
             print_raw(settings.label_printer_ip, settings.label_printer_port, content)
             sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            sales_order.save()    
+            sales_order.save()
             frappe.db.commit()
         except Exception as err:
             if str(err) != '[Errno 111] Connection refused':
                 frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")
     return
+
+
+@frappe.whitelist()
+def create_ups_batch_file(sales_orders):
+    """
+    bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
+    """
+    with open(f"/mnt/erp_share/JPe/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
+        for o in sales_orders:
+            try:
+                sales_order = frappe.get_doc("Sales Order", o)
+                label_data = get_label_data(sales_order)
+                if label_data['shipping_service'] != 'UPS':
+                    continue
+                address = frappe.get_doc("Address", sales_order.shipping_address_name)
+                country_code = frappe.get_value("Country", address.country, "code")
+                # TODO: Check if all values exist
+                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,1,,,,,,,Nukleotides,,,,{'74' if country_code == 'de' else '07'},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
+                sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sales_order.save()
+            except Exception as err:
+                if str(err) != '[Errno 111] Connection refused':
+                    frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")

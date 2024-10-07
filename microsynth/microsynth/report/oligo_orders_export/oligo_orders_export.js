@@ -3,19 +3,27 @@
 /* eslint-disable */
 
 frappe.query_reports["Oligo Orders Export"] = {
-	"filters": [
+    "filters": [
 
-	],
-	"onload": (report) => {
-		report.page.add_inner_button(__("Print Shipping Labels"), function () {
-			frappe.call({
-				'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.print_labels",
-				'callback': function(response){
-					frappe.show_alert( __("Started"))
-				}
-			});
-		});
-	}
+    ],
+    "onload": (report) => {
+        report.page.add_inner_button(__("Print Shipping Labels"), function () {
+            frappe.call({
+                'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.print_labels",
+                'callback': function(response){
+                    frappe.show_alert( __("Started"))
+                }
+            });
+        });
+        report.page.add_inner_button(__("Create UPS Batch File"), function () {
+            frappe.call({
+                'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.create_batch_file",
+                'callback': function(response){
+                    frappe.show_alert( __("Started"))
+                }
+            });
+        });
+    }
 };
 
 function queue_builder() {
@@ -35,28 +43,28 @@ function queue_builder() {
 }
 
 function process_queue() {
-	if (locals.order_queue.length > 0) {
-		order = locals.order_queue[0];
-		// frappe.show_alert(locals.order_queue[0].sales_order);
-		frappe.call({
-			"method": "microsynth.microsynth.labels.print_address_template",
-			"args": {
-				"sales_order_id": locals.order_queue[0].sales_order,
-				"printer_ip":"192.0.1.72"
-			}
-		});
-		frappe.call({
-			"method": "microsynth.microsynth.utils.set_order_label_printed",
-			"args": {
-				"sales_orders": [ locals.order_queue[0].sales_order ]
-			},
-			'callback': function(r)
-			{
-				frappe.query_report.refresh();
-			}
-		});
-	}
-	// kick first order out and resume
-	locals.order_queue.shift();
-	process_queue();
+    if (locals.order_queue.length > 0) {
+        order = locals.order_queue[0];
+        // frappe.show_alert(locals.order_queue[0].sales_order);
+        frappe.call({
+            "method": "microsynth.microsynth.labels.print_address_template",
+            "args": {
+                "sales_order_id": locals.order_queue[0].sales_order,
+                "printer_ip":"192.0.1.72"
+            }
+        });
+        frappe.call({
+            "method": "microsynth.microsynth.utils.set_order_label_printed",
+            "args": {
+                "sales_orders": [ locals.order_queue[0].sales_order ]
+            },
+            'callback': function(r)
+            {
+                frappe.query_report.refresh();
+            }
+        });
+    }
+    // kick first order out and resume
+    locals.order_queue.shift();
+    process_queue();
 }
