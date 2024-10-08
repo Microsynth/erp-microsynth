@@ -2,6 +2,7 @@ DocType: Sales Invoice,Your reference,Ihr Zeichen
 DocType: Sales Invoice,Your Reference,Ihr Zeichen
 DocType: Sales Invoice,Your Contact,Ihr Kontakt
 DocType: Sales Invoice,Invoice,Rechnung
+DocType: Sales Invoice,Credit Note,Gutschrift
 DocType: Sales Invoice,Delivery Address,Lieferadresse
 DocType: Sales Invoice,Customer ID,Kunden-ID
 DocType: Sales Invoice,Total,Total
