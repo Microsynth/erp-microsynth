@@ -219,19 +219,43 @@ def create_ups_batch_file(sales_orders):
     """
     bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
     """
-    with open(f"/mnt/erp_share/JPe/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
+    with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
         for o in sales_orders:
             try:
                 sales_order = frappe.get_doc("Sales Order", o)
                 label_data = get_label_data(sales_order)
-                if label_data['shipping_service'] != 'UPS':
+                if not label_data or not label_data['shipping_service'] or label_data['shipping_service'] != 'UPS':
                     continue
                 address = frappe.get_doc("Address", sales_order.shipping_address_name)
+                # Check if all values exist
+                if not address.country:
+                    frappe.log_error(f"country missing on Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
                 country_code = frappe.get_value("Country", address.country, "code")
-                # TODO: Check if all values exist
-                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,1,,,,,,,Nukleotides,,,,{'74' if country_code == 'de' else '07'},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
-                sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                sales_order.save()
+                if not country_code:
+                    frappe.log_error(f"country code missing on Country '{address.country}' of Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not sales_order.contact_display:
+                    frappe.log_error(f"contact_display missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not sales_order.customer_name:
+                    frappe.log_error(f"customer_name missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not address.address_line1:
+                    frappe.log_error(f"address_line1 missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not address.city:
+                    frappe.log_error(f"city missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not address.pincode:
+                    frappe.log_error(f"pincode missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                if not sales_order.contact_phone:
+                    frappe.log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+                    continue
+                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,2,,,,,,,Nukleotides,,,,86,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
+                #sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                #sales_order.save()
             except Exception as err:
                 if str(err) != '[Errno 111] Connection refused':
-                    frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")
+                    frappe.log_error(f"Error printing label for '{sales_order.name}':\n{err}", "create_ups_batch_file")
