@@ -87,6 +87,9 @@ frappe.ui.form.on('Sales Invoice', {
                 download_zugferd_xml(frm);
             });
         }
+        if (!frm.doc.__islocal) {
+            fetch_accounting_notes(frm);
+        }
 
         if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
             frm.add_custom_button(__("Search valid version"), function() {
@@ -437,4 +440,16 @@ function create_accounting_note(frm) {
             }
         });
     }
+}
+
+function fetch_accounting_notes(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.doctype.accounting_note.accounting_note.get_accounting_notes_html',
+        'args': {
+            'reference_name': frm.doc.name
+        },
+        'callback': function (response) {
+            frm.dashboard.add_comment(response.message, 'yellow', true);
+        }
+    });
 }

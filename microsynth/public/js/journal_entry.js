@@ -8,6 +8,10 @@ frappe.ui.form.on('Journal Entry', {
             });
         }
 
+        if (!frm.doc.__islocal) {
+            fetch_accounting_notes(frm);
+        }
+
         var pe_matches = frm.doc.user_remark.match(/\bPE-\d{5}\b/g);
         if (pe_matches && pe_matches.length > 0) {
             frm.add_custom_button(__("Open Payment Entry"), function() {
@@ -51,4 +55,16 @@ function create_accounting_note(frm) {
             }
         });
     }
+}
+
+function fetch_accounting_notes(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.doctype.accounting_note.accounting_note.get_accounting_notes_html',
+        'args': {
+            'reference_name': frm.doc.name
+        },
+        'callback': function (response) {
+            frm.dashboard.add_comment(response.message, 'yellow', true);
+        }
+    });
 }
