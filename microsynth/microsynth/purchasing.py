@@ -225,3 +225,181 @@ def set_and_save_default_payable_accounts(supplier):
         supplier = frappe.get_doc("Supplier", supplier)
     supplier.save()
     #frappe.db.commit()
+
+
+def import_suppliers(file_path, expected_line_length=41):
+    """
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Lieferantenexport_Seqlab.csv'}"
+    """
+    import csv
+    country_code_mapping = {
+        'DE': 'Germany',
+        'AT': 'Austria',
+        'CH': 'Switzerland',
+        'UK': 'United Kingdom',
+        'US': 'United States',
+        'SI': 'Slovenia'
+    }
+    payment_terms_mapping = {
+        '10': '10 days net',
+        '30': '30 days net'
+    }
+
+    with open(file_path) as file:
+        print(f"Parsing Suppliers from '{file_path}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
+                continue
+
+            # parse values
+            ext_customer_id = line[0].strip()  # remove leading and trailing whitespaces
+            salutation = line[1].strip()
+            first_name = line[2].strip()
+            last_name = line[3].strip()
+            company = line[4].strip()
+            company_addition = line[5].strip()
+            post_box = line[6].strip()
+            address_line1 = line[7].strip()
+            country_code = line[8].strip()
+            pincode = line[9].strip()
+            city = line[10].strip()
+            phone = line[11].strip() + line[12].strip()
+            email = line[13].strip()
+            web_url = line[14].strip()
+            web_username = line[15].strip()
+            # web_pwd = line[16].strip()  will be entered directly into a protected field
+            supplier_tax_id = line[17].strip()
+            skonto = line[18].strip()
+            payment_days = str(line[19].strip())
+            currency = line[20].strip()
+            ontime_delivery = line[21].strip()
+            phone_note = line[22].strip()
+            notes = line[23].strip()
+            bic = line[24].strip()
+            iban = line[25].strip()
+            bank_name = line[26].strip()
+            contact_person_1 = line[27].strip()
+            email_1 = line[28].strip()
+            notes_1 = line[29].strip()
+            contact_person_2 = line[30].strip()
+            email_2 = line[31].strip()
+            notes_2 = line[32].strip()
+            contact_person_3 = line[33].strip()
+            email_3 = line[34].strip()
+            notes_3 = line[35].strip()
+            discount = line[36].strip()
+            threshold = line[37].strip()
+            small_qty_surcharge = line[38].strip()
+            transportation_costs = line[39].strip()
+            ext_debitor_number = line[40].strip()
+
+            # combine some values
+            if company_addition and company:
+                company = f"{company} - {company_addition}"
+            elif company_addition:
+                company = company_addition
+            if phone_note and notes:
+                notes = f"Phone Note: {phone_note}\n\nNotes: {notes}"
+            elif phone_note:
+                notes = phone_note
+            
+            # check some values
+            if country_code not in country_code_mapping:
+                print(f"Unknown country code '{country_code}', going to skip.")
+                continue
+            if payment_days not in payment_terms_mapping:
+                print(f"There exists no Payment Terms Template for '{payment_days}', going to skip.")
+            
+            new_supplier = frappe.get_doc({
+                'doctype': 'Supplier',
+                'supplier_name': company,
+                'website': web_url,
+                'tax_id': supplier_tax_id,
+                'default_currency': currency,
+                'payment_terms': payment_terms_mapping[payment_days],
+                'bic': bic,
+                'iban': iban,
+                'supplier_details': notes
+            })
+            new_supplier.insert()
+            # TODO: Supplier needs a billing address to insert, but supplier needs to be inserted to have a name to link the billing address to
+
+            if (address_line1 or post_box) and city and country_code:
+                new_address = frappe.get_doc({
+                    'doctype': 'Address',
+                    'address_title': f"{company} - {address_line1 or post_box}",
+                    'is_primary_address': 1,
+                    'address_type': 'Billing',
+                    'address_line1': address_line1 or post_box,
+                    'country': country_code_mapping[country_code],
+                    'pincode': pincode,
+                    'city': city
+                })
+                new_address.insert()
+                new_address.append("links", {
+                    'link_doctype': 'Supplier',
+                    'link_name': new_supplier.name
+                })
+                new_address.save()
+            else:
+                print(f"Missing required information to create an address for Supplier {new_supplier.name}.")
+            
+            if first_name or last_name or phone or email:
+                new_contact = frappe.get_doc({
+                    'doctype': 'Contact',
+                    'first_name': first_name or last_name or company,
+                    'last_name': last_name if first_name else None,
+                    'salutation': salutation
+                })
+                new_contact.insert()
+                new_contact.append("links", {
+                    'link_doctype': 'Supplier',
+                    'link_name': new_supplier.name
+                })
+                if phone:
+                    new_contact.append("phone_nos", {
+                        'phone': phone,
+                        'is_primary_phone': 1
+                    })
+                if email:
+                    new_contact.append("email_ids", {
+                        'email_id': email,
+                        'is_primary': 1
+                    })
+                new_contact.save()
+            
+            if contact_person_1:
+                new_contact_1 = frappe.get_doc({
+                    'doctype': 'Contact',
+                    'first_name': contact_person_1
+                })
+                new_contact_1.insert()
+            elif email_1:
+                print(f"Got the Email 1 '{email_1}', but no corresponding Contact name.")
+            elif notes_1:
+                print(f"Got the Notes 1 '{notes_1}', but no corresponding Contact name.")
+            
+            if contact_person_2:
+                new_contact_2 = frappe.get_doc({
+                    'doctype': 'Contact',
+                    'first_name': contact_person_2
+                })
+                new_contact_2.insert()
+            elif email_2:
+                print(f"Got the Email 2 '{email_2}', but no corresponding Contact name.")
+            elif notes_2:
+                print(f"Got the Notes 2 '{notes_2}', but no corresponding Contact name.")
+            
+            if contact_person_3:
+                new_contact_3 = frappe.get_doc({
+                    'doctype': 'Contact',
+                    'first_name': contact_person_3
+                })
+                new_contact_3.insert()
+            elif email_3:
+                print(f"Got the Email 3 '{email_3}', but no corresponding Contact name.")
+            elif notes_3:
+                print(f"Got the Notes 3 '{notes_3}', but no corresponding Contact name.")
