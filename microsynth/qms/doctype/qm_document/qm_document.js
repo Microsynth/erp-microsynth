@@ -716,7 +716,18 @@ function change_creator() {
         ],
         function(values){
             cur_frm.set_value("created_by", values.new_creator);
-            cur_frm.save();
+            cur_frm.save_or_update();
+            // notify the new creator
+            frappe.call({
+                'method': 'microsynth.qms.doctype.qm_document.qm_document.notify_new_creator',
+                'args': {
+                    'qm_document': cur_frm.doc.name,
+                    'new_creator': values.new_creator
+                },
+                'callback': function(response) {
+                    cur_frm.reload_doc();
+                }
+            });
         },
         __('Set new creator'),
         __('Set')

@@ -296,6 +296,19 @@ def find_first_number_gap(base_name, length):
 
 
 @frappe.whitelist()
+def notify_new_creator(qm_document, new_creator):
+    if type(qm_document) == str:
+        qm_document = frappe.get_doc("QM Document", qm_document)
+    # send a notification to the new creator
+    add({
+        'doctype': "QM Document",
+        'name': qm_document.name,
+        'assign_to': new_creator,
+        'description': f"You are assigned as the new creator of QM Document '{qm_document.name}'."
+    })
+
+
+@frappe.whitelist()
 def invalidate_document(qm_document):
     if type(qm_document) == str:
         qm_document = frappe.get_doc("QM Document", qm_document)
