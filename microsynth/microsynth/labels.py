@@ -253,7 +253,8 @@ def create_ups_batch_file(sales_orders):
                 if not sales_order.contact_phone:
                     frappe.log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
                     continue
-                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,2,,,,,,,Nukleotides,,,,86,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
+                weight = '"0,1"'
+                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,2,,{weight},,,,,Nukleotides,,,,86,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
                 #sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 #sales_order.save()
             except Exception as err:
