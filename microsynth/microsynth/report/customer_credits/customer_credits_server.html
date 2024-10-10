@@ -40,18 +40,18 @@
     <p id="subject"><strong>{{ _("Customer Credits Overview") }}</strong></p>
     <table id="meta" style="width: 100%; font-size: 14px;">
         <tr>
-            <td style="width: 23%;">{{ _("Customer ID") }}:</td>
+            <td style="width: 23%;"><strong>{{ _("Customer ID") }}</strong></td>
             <td style="width: 23%;">{{ filters.customer }}</td>
             <td style="width:  8%;"></td>
             <td style="width: 23%;"></td>
             <td style="width: 23%;"></td>
         </tr>
         <tr>
-            <td>{{ _("Date") }}:</td>
+            <td><strong>{{ _("Date") }}</strong></td>
             <td>{{ frappe.format_value(frappe.utils.now(), {'fieldtype': 'Date'}) }}</td>
             <td></td>
-            <td><strong>{{ _("Remaining credit") }}:</strong></td>
-            <td><strong>{{ pf.remaining_credit|round(2) }} {{ pf.currency }}</strong></td>
+            <td><strong>{{ _("Remaining credit") }}</strong></td>
+            <td>{{ pf.remaining_credit|round(2) }} {{ pf.currency }}</td>
         </tr>
     </table>
     <p><br></p>
@@ -68,7 +68,7 @@
         </tr>
     {% for d in data %}
         <tr>
-            <td style="padding: 1px !important; text-align: left">{{ d.date }}</td>
+            <td style="padding: 1px !important; text-align: left">{{ d.date.strftime('%d.%m.%Y') }}</td>
             <td style="padding: 1px !important; ">{{ d.sales_invoice }}</td>
             <td style="padding: 1px !important; ">{{ d.contact_name }} ({{ d.contact_person }})</td>
             <td style="padding: 1px !important; text-align: right; ">{% if not "-" in d.reference or d.net_amount > 0  %}
