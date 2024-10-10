@@ -819,6 +819,27 @@ def get_overview_wrapper(doc_name):
     return self.get_overview()
 
 
+@frappe.whitelist()
+def get_valid_sops(qm_process_assignments):
+    """
+    """
+    import json
+    qm_process_assignments = json.loads(qm_process_assignments)
+    conditions = ''
+    for assignment in qm_process_assignments:
+        #frappe.throw(f"{type(assignment)=}; {assignment=}")
+        conditions += f"OR (`qm_process` = '{assignment.get('qm_process')}' AND ({assignment.get('all_chapters')} = 1 OR `chapter` = {assignment.get('chapter')}) AND (`company` IS NULL OR `company` = '{assignment.get('company')}'))"
+
+    valid_docs = frappe.db.sql(f"""
+        SELECT `name`, `title`
+        FROM `tabQM Document`
+        WHERE `document_type` = 'SOP'
+            AND `status` = 'Valid'
+            AND (FALSE {conditions});
+        """, as_dict=True)
+    return valid_docs
+
+
 def find_duplicate_valid_documents():
     """
     Find duplicate valid QM Documents ignoring the version.
