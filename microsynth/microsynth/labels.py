@@ -217,13 +217,17 @@ def print_oligo_order_labels(sales_orders):
 @frappe.whitelist()
 def create_ups_batch_file(sales_orders):
     """
+    TODO: Check to include this functionality in the button "Print Shipping Labels" on the report "Oligo Orders Export"
+
     bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
     """
+    import re
     with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
         for o in sales_orders:
             try:
                 sales_order = frappe.get_doc("Sales Order", o)
                 label_data = get_label_data(sales_order)
+                # TODO: Store a mapping from Shipping Item Codes to UPS Service Types somewhere in the ERP settings
                 if not label_data or not label_data['shipping_service'] or label_data['shipping_service'] != 'UPS':
                     continue
                 address = frappe.get_doc("Address", sales_order.shipping_address_name)
@@ -253,10 +257,9 @@ def create_ups_batch_file(sales_orders):
                 if not sales_order.contact_phone:
                     frappe.log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
                     continue
+                phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
                 weight = '"0,1"'
-                file.write(f"{sales_order.contact_display.replace(',', '')},{sales_order.customer_name.replace(',', '')},{country_code.upper()},{address.address_line1.replace(',', '')},,,{address.city.replace(',', '')},,{address.pincode.replace(',', '')},{sales_order.contact_phone.replace(',', '')},,,,2,,{weight},,,,,Nukleotides,,,,86,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
-                #sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                #sales_order.save()
+                file.write(f"{sales_order.contact_display.replace(',', '')[:35]},{sales_order.customer_name.replace(',', '')[:35]},{country_code.upper()},{address.address_line1.replace(',', '')[:35]},,,{address.city.replace(',', '')[:30]},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,11,,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
             except Exception as err:
                 if str(err) != '[Errno 111] Connection refused':
                     frappe.log_error(f"Error printing label for '{sales_order.name}':\n{err}", "create_ups_batch_file")
