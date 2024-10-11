@@ -15,14 +15,14 @@ frappe.query_reports["Oligo Orders Export"] = {
                 }
             });
         });
-        report.page.add_inner_button(__("Create UPS Batch File"), function () {
-            frappe.call({
-                'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.create_batch_file",
-                'callback': function(response){
-                    frappe.show_alert( __("Started"))
-                }
-            });
-        });
+        // report.page.add_inner_button(__("Create UPS Batch File"), function () {
+        //     frappe.call({
+        //         'method': "microsynth.microsynth.report.oligo_orders_export.oligo_orders_export.create_batch_file",
+        //         'callback': function(response){
+        //             frappe.show_alert( __("Started"))
+        //         }
+        //     });
+        // });
     }
 };
 
