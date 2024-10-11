@@ -312,6 +312,7 @@ def import_suppliers(file_path, expected_line_length=41):
                 continue
             if payment_days not in payment_terms_mapping:
                 print(f"There exists no Payment Terms Template for '{payment_days}', going to skip.")
+                continue
             
             new_supplier = frappe.get_doc({
                 'doctype': 'Supplier',
@@ -345,9 +346,12 @@ def import_suppliers(file_path, expected_line_length=41):
                 })
                 new_address.save()
             else:
-                print(f"Missing required information to create an address for Supplier {new_supplier.name}.")
+                print(f"Missing required information to create an address for Supplier {new_supplier.name} ({ext_debitor_number}).")
             
             if first_name or last_name or phone or email:
+                if not (first_name or last_name or company):
+                    print(f"Got no first name, no second name and no company for Supplier {new_supplier.name} ({ext_debitor_number}). Unable to import, going to continue.")
+                    continue
                 new_contact = frappe.get_doc({
                     'doctype': 'Contact',
                     'first_name': first_name or last_name or company,
