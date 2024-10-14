@@ -57,6 +57,8 @@
   {
    "fieldname": "web_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Web ID",
    "read_only": 1
   },
@@ -84,6 +86,8 @@
   {
    "fieldname": "sequencing_label",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Barcode Label",
    "options": "Sequencing Label"
   },
@@ -91,12 +95,14 @@
    "fetch_from": "sequencing_label.label_id",
    "fieldname": "sequencing_label_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Barcode number",
    "read_only": 1
   }
  ],
- "modified": "2022-12-16 10:33:25.452098",
- "modified_by": "Administrator",
+ "modified": "2024-10-14 15:34:28.661164",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Sample",
  "owner": "Administrator",
