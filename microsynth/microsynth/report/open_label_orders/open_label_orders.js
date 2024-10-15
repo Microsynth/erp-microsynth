@@ -292,7 +292,7 @@ function are_labels_available(item_code, from_barcode, to_barcode) {
                 process_queue()
             } else {
                 // labels have already been used -> stop
-                frappe.msgprint("labels already used");
+                frappe.msgprint("At least one of the labels from " + Number(from_barcode) + " to " + to_barcode + " is already used.");
             }
         }
     });
