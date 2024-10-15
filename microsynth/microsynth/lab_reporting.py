@@ -313,10 +313,8 @@ def send_reports(recipient, cc_mails, analysis_reports):
                 cc = ", ".join(cc_mails),
                 subject = email_template.subject + f"{'s' if len(all_attachments) > 1 else ''}",  # TODO: Better subject? Your Microsynth Analysis report
                 content = email_template.response,
-                # content = f"Dear Microsynth Customer,<br><br>please find attached your analysis {'reports' if len(all_attachments) > 1 else 'report'}."
-                #             f"<br><br>Kind regards,<br>Your Microsynth lab team",  # TODO: Better message
-                send_email = True,
-                attachments = all_attachments
+                send_email = True
+                # attachments = all_attachments
             )
         # print(f"Send an email with the following attachment to '{recipient}': {all_attachments=}")
         # print(f"{email_template.response=}")
