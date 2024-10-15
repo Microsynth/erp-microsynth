@@ -256,19 +256,33 @@ def create_analysis_report(content=None):
 def create_pdf_attachment(analysis_report):
     """
     Creates the PDF file for a given Analysis Report name and attaches the file to the record in the ERP.
+
+    bench execute microsynth.microsynth.lab_reporting.create_pdf_attachment --kwargs "{'analysis_report': 'AR-2400001'}"
     """
     doctype = format = "Analysis Report"
-    name = analysis_report
-    #frappe.local.lang = frappe.db.get_value("Analysis Report", name, "language") or 'en'
-    title = frappe.db.get_value(doctype, name, "name")
+    analysis_report_doc = frappe.get_doc("Analysis Report", analysis_report)
+    if len(analysis_report_doc.sample_details) == 1:
+        sample = analysis_report_doc.sample_details[0].sample
+        sample_name = frappe.get_value("Sample", sample, "sample_name")
+        print(f"{sample_name=}")
+    elif len(analysis_report_doc.sample_details) > 1:
+        msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
+        frappe.log_error(msg, "lab_reporting.create_pdf_attachment")
+        frappe.throw(msg)
+    else:
+        msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
+        frappe.log_error(msg, "lab_reporting.create_pdf_attachment")
+        frappe.throw(msg)
     doctype_folder = create_folder(doctype, "Home")
-    title_folder = create_folder(title, doctype_folder)
-    filecontent = frappe.get_print(doctype, name, format, doc=None, as_pdf=True, no_letterhead=False)
+    title_folder = create_folder(sample_name, doctype_folder)
+    print(f"{title_folder=}")
+    # TODO: How to set the file name to sample_name?
+    filecontent = frappe.get_print(doctype, analysis_report, format, doc=None, as_pdf=True, no_letterhead=False)
 
     save_and_attach(
         content = filecontent,
         to_doctype = doctype,
-        to_name = name,
+        to_name = analysis_report,
         folder = title_folder,
         hashname = None,
         is_private = True)
