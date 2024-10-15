@@ -537,15 +537,3 @@ function delete_row_in_childtbl(table, idx) {
 
     frappe.run_serially(tasks);
 }
-
-function fetch_accounting_notes(frm) {
-    frappe.call({
-        'method': 'microsynth.microsynth.doctype.accounting_note.accounting_note.get_accounting_notes_html',
-        'args': {
-            'reference_name': frm.doc.name
-        },
-        'callback': function (response) {
-            frm.dashboard.add_comment(response.message, 'yellow', true);
-        }
-    });
-}
