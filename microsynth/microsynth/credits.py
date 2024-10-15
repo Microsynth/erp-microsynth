@@ -164,7 +164,7 @@ def book_credit(sales_invoice, event=None):
     """
     if type(sales_invoice) == str:
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
-    if sales_invoice.total_customer_credit <= 0:            # if this invoice has no applied customer credit, skip
+    if not sales_invoice or not sales_invoice.total_customer_credit or sales_invoice.total_customer_credit <= 0:  # if this invoice has no applied customer credit, skip
         return None
         
     credit_item = frappe.get_doc("Item", 
