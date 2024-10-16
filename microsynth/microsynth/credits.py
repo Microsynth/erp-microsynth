@@ -5,6 +5,7 @@ import frappe
 from datetime import date, datetime, timedelta
 from frappe.utils.data import today
 from frappe.utils import flt, cint
+from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account)
 
@@ -440,12 +441,13 @@ def get_and_check_diff(company, currency, account, my_date, previous_diff):
     return diff
 
 
-def check_credit_balance(single_date=today()):
+def check_credit_balance(from_date, to_date=today()):
     """
-    Should be run by a daily cronjob or moved to a new report to use an Auto Email report.
-
-    bench execute microsynth.microsynth.credits.check_credit_balance --kwargs "{'date': '2024-09-20'}"
+    bench execute microsynth.microsynth.credits.check_credit_balance --kwargs "{'from_date': '2023-12-31', 'to_date': '2024-10-15'}"
     """
+    from_date = datetime.strptime(from_date, '%Y-%m-%d').date()
+    if type(to_date) == str:
+        to_date = datetime.strptime(to_date, '%Y-%m-%d').date()
     # get Credit Item from Microsynth Settings
     credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     credit_item = frappe.get_doc("Item", credit_item_code)
@@ -455,13 +457,55 @@ def check_credit_balance(single_date=today()):
         company = default.company
         account = default.income_account
         currency = frappe.get_value("Account", account, "account_currency")
-        for single_date in daterange(date(2023, 12, 31), datetime.today().date()):
+        print(f"\n{company=}; {account=}; {currency=}")
+        for single_date in daterange(from_date, to_date):
             diff = get_and_check_diff(company, currency, account, single_date, previous_diff)
             previous_diff = diff
         for currency in ['USD', 'EUR', 'CHF']:
             alternative_account = get_alternative_account(account, currency)
             if alternative_account != account:
+                print(f"\n{company=}; {alternative_account=}; {currency=}")
                 previous_diff = 0
-                for single_date in daterange(date(2023, 12, 31), datetime.today().date()):
+                for single_date in daterange(from_date, to_date):
                     diff = get_and_check_diff(company, currency, alternative_account, single_date, previous_diff)
                     previous_diff = diff
+
+
+def report_credit_balance_diff():
+    """
+    Should be run by a daily cronjob in the evening or moved to a new report to use an Auto Email report.
+
+    bench execute microsynth.microsynth.credits.report_credit_balance_diff
+    """
+    # get Credit Item from Microsynth Settings
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    credit_item = frappe.get_doc("Item", credit_item_code)
+    diffs = []
+    # iterate over item_defaults
+    for default in credit_item.item_defaults:
+        company = default.company
+        account = default.income_account
+        currency = frappe.get_value("Account", account, "account_currency")
+        diff = get_total_credit_difference(company, currency, account, today())
+        if abs(diff) >= 0.01:
+            diffs.append(f"{company}: Account {account}: {diff:.2f} {currency}")
+        for currency in ['USD', 'EUR', 'CHF']:
+            alternative_account = get_alternative_account(account, currency)
+            if alternative_account != account:
+                diff = get_total_credit_difference(company, currency, alternative_account, today())
+                if abs(diff) >= 0.01:
+                    diffs.append(f"{company}: Account {alternative_account}: {diff:.2f} {currency}")
+
+    if len(diffs) > 0:
+        email_template = frappe.get_doc("Email Template", "Credit Balance Difference")  # TODO: Create an Email Template with the name "Credit Balance Difference"
+        content = email_template.response  # "There is a difference between the Outstanding sum from the Customer Credits report and the Closing Balance in the General Ledger for the following accounts:"
+        for diff in diffs:
+            content += diff
+        make(
+                recipients = email_template.recipients,
+                sender = email_template.sender,
+                sender_full_name = email_template.sender_full_name,
+                subject = email_template.subject,
+                content = content,
+                send_email = True
+            )
