@@ -1376,7 +1376,7 @@ def get_label_status(labels):
                 })
                 continue
             elif len(sequencing_labels) == 0:
-                frappe.log_error(f"Found no label for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
+                #frappe.log_error(f"Found no label for the given barcode {label['barcode']}{item_string}.", "webshop.get_label_status")
                 messages_to_return.append({
                     'query': label,
                     'label': None,
