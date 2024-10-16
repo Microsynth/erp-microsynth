@@ -1152,15 +1152,12 @@ def transmit_sales_invoice(sales_invoice_id):
             frappe.log_error(f"Found no Invoice To Contact for Sales Invoice '{sales_invoice_id}'.", "invoicing.transmit_sales_invoice")
             return
 
-        #for k,v in sales_order.as_dict().items():
-        #    print ( "%s: %s" %(k,v))
-
-        # TODO: comment-in after development to handle invoice paths other than ariba
-        
         # The invoice was already sent. Do not send again.
-        # if sales_invoice.invoice_sent_on:
-        #     print("Invoice '{0}' was already sent on: {1}".format(sales_invoice.name, sales_invoice.invoice_sent_on))
-        #     return
+        if sales_invoice.invoice_sent_on:
+            msg = f"Sales Invoice '{sales_invoice_id}' has Invoice sent on '{sales_invoice.invoice_sent_on}'. Going to not transmit it (again). Please check manually."
+            print(msg)
+            frappe.log_error(msg)
+            return
 
         # Do not send any invoice if the items are free of charge
         if sales_invoice.total == 0:
