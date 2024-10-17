@@ -304,8 +304,32 @@ def notify_new_creator(qm_document, new_creator):
         'doctype': "QM Document",
         'name': qm_document.name,
         'assign_to': new_creator,
-        'description': f"You are assigned as the new creator of QM Document '{qm_document.name}'."
+        'description': f"You are assigned as the new creator of QM Document '{qm_document.name}'.",
+        'notify': True
     })
+
+
+def notify_pvs_about_valid_status(qm_document):
+    if qm_document.company:
+        companies = [qm_document.company]
+    else:
+        all_companies = frappe.get_all("Company", fields=['name'])
+        companies = [company['name'] for company in all_companies]
+    pvs = set()
+    for company in companies:
+        all_pvs = frappe.db.get_all("QM Process Owner", filters={'qm_process': qm_document.qm_process, 'company': company}, fields=['name', 'company', 'process_owner'])
+        for pv in all_pvs:
+            pvs.add(pv['process_owner'])
+    if len(pvs) == 0:
+        frappe.log_error(f"Found no PV for QM Document '{qm_document.name}' with QM Process '{qm_document.qm_process}' and Company '{qm_document.company}'.", "qm_document.notify_pvs_about_valid_status")
+    for pv in pvs:
+        add({
+            'doctype': "QM Document",
+            'name': qm_document.name,
+            'assign_to': pv,
+            'description': f"The QM Document '{qm_document.name}' of your QM Process '{qm_document.qm_process}' {f'({qm_document.company})' if qm_document.company else ''} has been set to Valid.",
+            'notify': True
+        })
 
 
 @frappe.whitelist()
@@ -319,8 +343,9 @@ def invalidate_document(qm_document):
     add({
         'doctype': "QM Document",
         'name': qm_document.name,
-        'assign_to': frappe.get_value("QM Document", qm_document.name, "created_by"),
-        'description': f"Your QM Document '{qm_document.name}' has been set to Invalid."
+        'assign_to': qm_document.created_by,
+        'description': f"Your QM Document '{qm_document.name}' has been set to Invalid.",
+        'notify': True
     })
 
 
@@ -365,6 +390,7 @@ def set_valid_document(qm_docname):
     update_status(qm_doc.name, "Released")
     # set document valid
     update_status(qm_doc.name, "Valid")
+    notify_pvs_about_valid_status(qm_doc)
     return True
 
 
