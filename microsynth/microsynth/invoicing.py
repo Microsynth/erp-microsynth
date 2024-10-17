@@ -1657,7 +1657,7 @@ def process_daily_invoices():
     for testing: run
     bench execute microsynth.microsynth.invoicing.process_daily_invoices
     """
-    for company in frappe.db.get_all('Company', fields=['name']):  #['Microsynth AG', 'Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS', 'Ecogenics GmbH']:
+    for company in frappe.db.get_all('Company', fields=['name']):
         for mode in ['Electronic']:
             async_create_invoices(mode, company['name'], None)
 
@@ -1670,18 +1670,15 @@ def process_collective_invoices_monthly():
 
     bench execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
     """
-    # TODO: split up collective invoices into Post and electronic invoices
-    return
+    def is_last_day_of_month(dt):
+        todays_month = dt.month
+        tomorrows_month = (dt + timedelta(days=1)).month
+        return tomorrows_month != todays_month
 
-    # def is_last_day_of_month(dt):
-    #     todays_month = dt.month
-    #     tomorrows_month = (dt + datetime.timedelta(days=1)).month
-    #     return tomorrows_month != todays_month
-
-    # if is_last_day_of_month(datetime.datetime.now()):
-    #     companies = frappe.get_all("Company", fields=['name'])
-    #     for company in companies:
-    #         create_invoices("Collective", company['name'], None)
+    if is_last_day_of_month(datetime.now()):
+        companies = frappe.get_all("Company", fields=['name'])
+        for company in companies:
+            create_invoices("Collective", company['name'], None)
 
 
 def check_invoice_sent_on(days=0):
