@@ -283,7 +283,8 @@ def async_create_invoices(mode, company, customer):
         for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
             if len(warnings) < 1:
                 continue
-            subject = f"Insufficient credit: Customer {dn_customer} at {company}"
+            email_template = frappe.get_doc("Email Template", "Insufficient credit - internal notification")
+            rendered_subject = frappe.render_template(email_template.subject, {'dn_customer': dn_customer, 'company': company})
             dn_details = ""
 
             for delivery_note, values in warnings.items():
@@ -292,19 +293,22 @@ def async_create_invoices(mode, company, customer):
                 customer_name = values['customer_name']
                 credit = values['credit']
 
-            message = f"Dear Administration,<br><br>this is an automatic email to inform you that Customer '{dn_customer}' ({customer_name}) "
-            message += f"has a credit balance of {credit} {currency} at {company} and therefore not enough to invoice the following Delivery Note(s):<br><br>"
-            message += dn_details
-            message += f"<br>Please request the Customer to recharge the credit account or close it.<br><br>Best regards,<br>Jens"
-            #non_html_message = message.replace("<br>", "\n")
-            #frappe.log_error(non_html_message, subject)
-            #print(non_html_message)
+            values_to_render = {
+                'dn_customer': dn_customer,
+                'customer_name': customer_name,
+                'credit': credit,
+                'currency': currency,
+                'company': company,
+                'dn_details': dn_details
+            }
+            rendered_message = frappe.render_template(email_template.response, values_to_render)            
             make(
-                recipients = "info@microsynth.ch",
-                sender = "jens.petermann@microsynth.ch",
-                #cc = "rolf.suter@microsynth.ch",
-                subject = "[ERP] " + subject,
-                content = message,
+                recipients = email_template.recipients,
+                cc = email_template.cc_recipients,
+                sender = email_template.sender,
+                sender_full_name = email_template.sender_full_name,
+                subject = rendered_subject,
+                content = rendered_message,
                 send_email = True
             )
 
