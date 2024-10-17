@@ -160,9 +160,9 @@ def check_sales_order_completion(sales_orders):
                 if item.qty > 0:
                     keep_items.append(item)
 
-            # if there are no items left or only the shipping item, close the order and exit with an error trace.
+            # if all Oligos are cancelled, there are no items left or only the shipping item -> close the order
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
-                frappe.log_error("No items left in {0}. Cannot create a delivery note.".format(sales_order), "Production: sales order complete")
+                print(f"No items left in {sales_order}. Cannot create a delivery note. Going to close the Sales Order.")
                 close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
                 continue
 
