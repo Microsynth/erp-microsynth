@@ -322,7 +322,7 @@ def notify_q_releasable(qm_document):
             sender = 'erp@microsynth.ch',
             sender_full_name = 'Microsynth ERP',
             subject = f"Releasable: {qm_document.name}",
-            content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form("QM Document", qm_document.name)}",
+            content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form('QM Document', qm_document.name)}",
             send_email = True
         )
 

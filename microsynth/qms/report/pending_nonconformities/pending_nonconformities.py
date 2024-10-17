@@ -9,9 +9,10 @@ from microsynth.microsynth.utils import user_has_role
 
 def get_columns(filters):
     return [
-        {"label": _("Title"), "fieldname": "title", "fieldtype": "Data", "width": 160 },
-        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100 },
-        {"label": _("Creator"), "fieldname": "created_by", "fieldtype": "Link", "options":"User", "width": 200 }
+        {"label": _("ID"), "fieldname": "name", "fieldtype": "Link", "options": "QM Nonconformity", "width": 80},
+        {"label": _("Title"), "fieldname": "title", "fieldtype": "Data", "width": 300},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
+        {"label": _("Creator"), "fieldname": "created_by", "fieldtype": "Link", "options": "User", "width": 200}
     ]
 
 
