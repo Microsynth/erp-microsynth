@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "disabled",
   "user",
   "quality_management_section",
   "qm_process_assignments",
@@ -35,10 +36,16 @@
    "fieldname": "printers_section",
    "fieldtype": "Section Break",
    "label": "Printers"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
   }
  ],
- "modified": "2024-06-06 08:20:44.001526",
- "modified_by": "Administrator",
+ "modified": "2024-10-17 11:12:52.637881",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Settings",
  "owner": "rolf.suter@microsynth.ch",
