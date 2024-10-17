@@ -581,10 +581,10 @@ def validate_sales_order_status(sales_order):
     so = frappe.get_doc("Sales Order", sales_order)
 
     if so.docstatus != 1:
-        frappe.log_error(f"Sales Order {so.name} is not submitted. Cannot create a delivery note.", "utils.validate_sales_order")
+        frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
 
-    if so.status in ['Completed', 'Canceled', 'Closed']:
+    if so.status in ['Completed', 'Cancelled', 'Closed']:
         frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order")
         return False
 
@@ -673,7 +673,7 @@ def clean_up_delivery_notes(sales_order_id):
 
 def clean_up_all_delivery_notes():
     """
-    Finds sales orders with multiple delivery notes that are not canceled.
+    Finds sales orders with multiple delivery notes that are not cancelled.
     Deletes all delivery notes in draft mode but the latest one.
 
     run
