@@ -9,8 +9,11 @@ from frappe.utils import cint, get_url_to_form
 from datetime import datetime, date
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
+from frappe.core.doctype.communication.email import make
+
 
 document_types_with_review = ['SOP', 'FLOW', 'QMH']
+
 
 naming_patterns = {
     "Code1": {
@@ -249,12 +252,15 @@ def update_status(qm_document, status):
         (qm_doc.status == "Released" and status == "Valid") or
         (qm_doc.status == "Valid" and status == "Invalid")
         ):
-
             qm_doc.status = status
             qm_doc.save()
             frappe.db.commit()
     else: 
         frappe.throw(f"Update QM Document Status: Status transition is not allowed {qm_doc.status} --> {status}")
+    
+    if status == "Reviewed" or (status == "Created" and qm_doc.document_type not in document_types_with_review):
+        # notify Q about a new releasable document.
+        notify_q_releasable(qm_doc)
     return
 
 
@@ -307,6 +313,18 @@ def notify_new_creator(qm_document, new_creator):
         'description': f"You are assigned as the new creator of QM Document '{qm_document.name}'.",
         'notify': True
     })
+
+
+def notify_q_releasable(qm_document):
+    # send a notification to qm
+    make(
+            recipients = 'qm@microsynth.ch',
+            sender = 'erp@microsynth.ch',
+            sender_full_name = 'Microsynth ERP',
+            subject = f"Releasable: {qm_document.name}",
+            content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form("QM Document", qm_document.name)}",
+            send_email = True
+        )
 
 
 def notify_pvs_about_valid_status(qm_document):
