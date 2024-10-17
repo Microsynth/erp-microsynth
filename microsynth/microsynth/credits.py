@@ -473,7 +473,8 @@ def check_credit_balance(from_date, to_date=today()):
 
 def report_credit_balance_diff():
     """
-    Should be run by a daily cronjob in the evening or moved to a new report to use an Auto Email report.
+    Should be run by a daily cronjob in the evening:
+    25 16 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.credits.report_credit_balance_diff
 
     bench execute microsynth.microsynth.credits.report_credit_balance_diff
     """
@@ -497,12 +498,13 @@ def report_credit_balance_diff():
                     diffs.append(f"{company}: Account {alternative_account}: {diff:.2f} {currency}")
 
     if len(diffs) > 0:
-        email_template = frappe.get_doc("Email Template", "Credit Balance Difference")  # TODO: Create an Email Template with the name "Credit Balance Difference"
-        content = email_template.response  # "There is a difference between the Outstanding sum from the Customer Credits report and the Closing Balance in the General Ledger for the following accounts:"
+        email_template = frappe.get_doc("Email Template", "Credit Balance Difference")
+        content = email_template.response
         for diff in diffs:
             content += diff
         make(
                 recipients = email_template.recipients,
+                cc = email_template.cc_recipients,
                 sender = email_template.sender,
                 sender_full_name = email_template.sender_full_name,
                 subject = email_template.subject,
