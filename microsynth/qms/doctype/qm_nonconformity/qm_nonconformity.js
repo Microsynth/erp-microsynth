@@ -257,6 +257,8 @@ frappe.ui.form.on('QM Nonconformity', {
                         __("Submit to QAU"),
                         function() {
                             submit();
+                            // Notify Q
+                            send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " was submitted by " + frappe.session.user + ". Please check the classification:");
                         }
                     );
                 }
@@ -287,6 +289,10 @@ frappe.ui.form.on('QM Nonconformity', {
                         __("Confirm Classification"),
                         function() {
                             confirm_classification();  // -> status "Investigation"
+                            if (frappe.session.user != frm.doc.created_by) {
+                                // Assign and notify the creator
+                                send_notification(true, frm.doc.created_by, "The Classification for your QM Nonconformity " + frm.doc.name + " was confirmed by QAU. Please proceed.");
+                            }
                         }
                     );
                 } else {
@@ -364,16 +370,8 @@ frappe.ui.form.on('QM Nonconformity', {
                                 __("Submit Action Plan to QAU"),
                                 function() {
                                     set_status('Plan Approval');
-                                    // Call function that sends an email to Q
-                                    frappe.call({
-                                        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.notify_q_about_action_plan',
-                                        'args': {
-                                            'doc': cur_frm.doc.name
-                                        },
-                                        'callback': function(response) {
-                                            // nothing to do?
-                                        }
-                                    });
+                                    // Notify Q
+                                    send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " was handed over to you by " + frappe.session.user + " for Plan Approval:");
                                 }
                             );
                         }
@@ -407,16 +405,25 @@ frappe.ui.form.on('QM Nonconformity', {
                     __("Confirm Action Plan"),
                     function() {
                         set_status('Implementation');
+                        if (frappe.session.user != frm.doc.created_by) {
+                            // Assign and notify the creator
+                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " was confirmed by QAU. Please proceed with the Implementation.");
+                        }
                     }
                 );
                 cur_frm.add_custom_button(
                     __("Reject Action Plan"),
                     function() {
                         set_status('Planning');
+                        if (frappe.session.user != frm.doc.created_by) {
+                            // Assign and notify the creator about rejection
+                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " was rejected by QAU. Please rework it.");
+                        }
                     }
                 );
             } else {
                 cur_frm.set_df_property('plan_approval', 'read_only', true);
+                frm.dashboard.add_comment( __("Waiting for Plan Approval"), 'yellow', true);
             }
         } else {
             cur_frm.set_df_property('plan_approval', 'read_only', true);
@@ -497,6 +504,15 @@ frappe.ui.form.on('QM Nonconformity', {
                                     }
                                 } else {
                                     frm.dashboard.add_comment( __("This Nonconformity needs to be processed by QAU or its creator (non-GMP Event with no Corrective Actions)."), 'blue', true);
+                                    if (frappe.session.user === frm.doc.created_by) {
+                                        cur_frm.page.set_primary_action(
+                                            __("Handover to QAU"),
+                                            function() {
+                                                // Notify Q
+                                                send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " is completed and was handed over to you by " + frappe.session.user + ":");
+                                            }
+                                        );
+                                    }
                                 }                                
                             }
                         });
@@ -654,6 +670,18 @@ function confirm_classification(frm) {
         'async': false,
         'callback': function(response) {
             cur_frm.reload_doc();
+        }
+    });
+}
+
+function send_notification(assign, recipient, message) {
+    frappe.call({
+        'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.send_notification',
+        'args': {
+            'assign': assign,
+            'doc_name': cur_frm.doc.name,
+            'recipient': recipient,
+            'message': message
         }
     });
 }

@@ -3,14 +3,18 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+from datetime import date
+
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.utils import get_url_to_form
 from frappe.desk.form.assign_to import add
+from frappe.core.doctype.communication.email import make
+
 from microsynth.microsynth.utils import user_has_role
-from datetime import date
-from frappe import _
+
 
 class QMNonconformity(Document):
     def get_classification_wizard(self, visible):
@@ -144,18 +148,26 @@ def update_status(nc, status):
 
 
 @frappe.whitelist()
-def notify_q_about_action_plan(doc):
-    """
-    Notify QAU about an Action Plan submitted to them for Approval.
-    """
-    return
-    add({
-        'doctype': "QM Nonconformity",
-        'name': doc,
-        'assign_to': '...@microsynth.ch',  # TODO: Not possible, because ...@microsynth.ch is not an ERP User. Wait for Task #16017)
-        'description': f"The QM Nonconformity '{doc}' has been submitted to QAU for Action Plan Approval.",
-        'notify': True
-    })
+def send_notification(assign, doc_name, recipient, message):
+    if assign == 'true':
+        # Assign the given recipient to the given QM Nonconformity with the given message
+        add({
+            'doctype': "QM Nonconformity",
+            'name': doc_name,
+            'assign_to': recipient,
+            'description': message,
+            'notify': True
+        })
+    else:
+        # Send an email to the given recipient with the given message
+        make(
+            recipients = recipient,
+            sender = 'erp@microsynth.ch',
+            sender_full_name = 'Microsynth ERP',
+            subject = f"Action required for {doc_name}",
+            content = f"{message}<br>{get_url_to_form('QM Nonconformity', doc_name)}",
+            send_email = True
+        )
 
 
 @frappe.whitelist()
