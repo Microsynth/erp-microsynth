@@ -343,6 +343,21 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
             web_order_id = report_doc.web_order_id
         if not web_order_id:
             frappe.throw(f"Got no Web Order ID and Analysis Report '{analysis_report}' has no Web Order ID. Unable to create a folder.")
+
+        analysis_report_doc = frappe.get_doc("Analysis Report", analysis_report)
+        if len(analysis_report_doc.sample_details) == 1:
+            sample = analysis_report_doc.sample_details[0].sample
+            sample_name = frappe.get_value("Sample", sample, "sample_name")
+            print(f"{sample_name=}")
+        elif len(analysis_report_doc.sample_details) > 1:
+            msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
+            frappe.log_error(msg, "lab_reporting.webshop_upload")
+            frappe.throw(msg)
+        else:
+            msg = f"Analysis Report '{analysis_report}' has no sample details, but the file naming is only defined for reports with exactly one sample."
+            frappe.log_error(msg, "lab_reporting.webshop_upload")
+            frappe.throw(msg)
+
         content_pdf = frappe.get_print(
             "Analysis Report", 
             analysis_report, 
@@ -351,7 +366,7 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
         path = f"{export_path}/{contact_id}/{web_order_id}"
         if not os.path.exists(path):
             os.makedirs(path)
-        file_path = f"{path}/{analysis_report}.pdf"
+        file_path = f"{path}/{sample_name}.pdf"
         with open(file_path, mode='wb') as file:
             file.write(content_pdf)
 
