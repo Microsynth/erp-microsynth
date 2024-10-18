@@ -8,6 +8,7 @@ from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from frappe.desk.form.load import get_attachments
 from frappe.core.doctype.communication.email import make
 import os
+import re
 
 
 def find_sales_orders(web_order_id):
@@ -331,6 +332,21 @@ def send_reports(recipient, cc_mails, analysis_reports):
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
 
 
+def clean_filename(filename):
+    """
+    Remove leading and trailing spaces.
+    Convert other spaces and any character that is not
+    dash, word character [a-zA-Z0-9_] or dot to underscores.
+
+    bench execute microsynth.microsynth.lab_reporting.clean_filename --kwargs "{'filename': 'My#fäncy/Sample*nameç1.pdf'}"
+    """
+    s = filename.strip().replace(" ", "_")
+    s = re.sub("[^-a-zA-Z0-9_.]", "_", s)
+    if s in ['', '.', '..']:
+        return '_'
+    return s
+
+
 def webshop_upload(contact_id, web_order_id, analysis_reports):
     """
     Write the given Analysis Reports to the path specified in the Microsynth Settings to enable Webshop upload.
@@ -366,7 +382,11 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
         path = f"{export_path}/{contact_id}/{web_order_id}"
         if not os.path.exists(path):
             os.makedirs(path)
-        file_path = f"{path}/{sample_name}.pdf"
+        file_path = f"{path}/{clean_filename(sample_name)}.pdf"
+        if os.path.is_file(file_path):
+            file_path = f"{path}/{clean_filename(sample_name)}_{analysis_report}.pdf"
+        if os.path.is_file(file_path):
+            frappe.throw(f"The file '{file_path}' does already exist.")
         with open(file_path, mode='wb') as file:
             file.write(content_pdf)
 
