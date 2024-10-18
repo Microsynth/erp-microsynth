@@ -295,9 +295,13 @@ def send_reports(recipient, cc_mails, analysis_reports):
     if not recipient:
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
     try:
+        report_types = set()
         # Create attachments for the given analysis_reports
         all_attachments = []
         for analysis_report in analysis_reports:
+            report_type = frappe.get_value("Analysis Report", analysis_report, "report_type")
+            if report_type:
+                report_types.add(report_type)
             create_pdf_attachment(analysis_report)
             attachments = get_attachments("Analysis Report", analysis_report)
             fid = None
@@ -305,19 +309,23 @@ def send_reports(recipient, cc_mails, analysis_reports):
                 fid = a['name']
             all_attachments.append({'fid': fid})
             frappe.db.commit()
-        email_template = frappe.get_doc("Email Template", "Analysis Report")  # TODO: Create an Email Template with the name "Analysis Report"
+        if len(report_types) > 1:
+            return {'success': False, 'message': f"The given reports have the following {len(report_types)} different Report Types: {report_types}"}
+        elif len(report_types) == 0:
+            return {'success': False, 'message': "None of the given report(s) have a Report Type. Unable to determine an Email Template."}
+        else:
+            [report_type] = report_types  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
+            email_template = frappe.get_doc("Email Template", report_type)
         make(
                 recipients = recipient,
                 sender = email_template.sender,
                 sender_full_name = email_template.sender_full_name,
                 cc = ", ".join(cc_mails),
-                subject = email_template.subject + f"{'s' if len(all_attachments) > 1 else ''}",  # TODO: Better subject? Your Microsynth Analysis report
+                subject = email_template.subject,
                 content = email_template.response,
                 send_email = True
                 # attachments = all_attachments
             )
-        # print(f"Send an email with the following attachment to '{recipient}': {all_attachments=}")
-        # print(f"{email_template.response=}")
     except Exception as err:
         return {'success': False, 'message': f"Got the following error: {err}"}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
