@@ -158,8 +158,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-05 10:21:14.397401",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-10-18 16:08:23.870319",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report",
  "owner": "Administrator",
@@ -175,6 +175,17 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Robot",
    "share": 1,
    "submit": 1,
    "write": 1
