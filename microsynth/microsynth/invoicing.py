@@ -1668,9 +1668,7 @@ def process_daily_invoices():
 
 def process_collective_invoices_monthly():
     """
-    Executed by a Cron job every month to transmit collective sales invoices.
-    Should be run by a cronjob on the last day of each month:
-    30 18 28-31 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
+    Executed by a cronjob at 16:35 on day 28-31 of each month to transmit collective sales invoices.
 
     bench execute microsynth.microsynth.invoicing.process_collective_invoices_monthly
     """

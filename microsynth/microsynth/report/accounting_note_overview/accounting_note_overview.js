@@ -8,7 +8,7 @@ frappe.query_reports["Accounting Note Overview"] = {
             "fieldname":"from_date",
             "label": __("From Date"),
             "fieldtype": "Date",
-            "default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+            "default": frappe.datetime.add_months(frappe.datetime.get_today(), -4),
             "reqd": 1
         },
         {
@@ -28,7 +28,8 @@ frappe.query_reports["Accounting Note Overview"] = {
             "fieldname":"status",
             "label": __("Status"),
             "fieldtype": "Select",
-            "options": "\nOpen\nClosed"
+            "options": "\nOpen\nClosed",
+            "default": "Open"
         }
     ],
     "onload": (report) => {
