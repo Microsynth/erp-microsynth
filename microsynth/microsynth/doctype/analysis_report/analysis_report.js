@@ -2,9 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Analysis Report', {
-    // refresh: function(frm) {
-
-    // }
+    refresh: function(frm) {
+        if (!frm.doc.__islocal) {
+            // Disable removing attachments
+            access_protection();
+        }
+    },
     address: function() {
         if(cur_frm.doc.address) {
             frappe.call({
