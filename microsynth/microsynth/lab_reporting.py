@@ -1,14 +1,17 @@
 # Copyright (c) 2024, Microsynth
 # For license information, please see license.txt
 
-import frappe
-from frappe.contacts.doctype.address.address import get_address_display
-from microsynth.microsynth.utils import get_customer
-from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
-from frappe.desk.form.load import get_attachments
-from frappe.core.doctype.communication.email import make
 import os
 import re
+import frappe
+from frappe.core.doctype.communication.email import make
+from frappe.contacts.doctype.address.address import get_address_display
+from frappe.desk.form.load import get_attachments
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.utils import get_customer
+from microsynth.microsynth.utils import validate_sales_order
 
 
 def find_sales_orders(web_order_id):
@@ -383,9 +386,9 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
         if not os.path.exists(path):
             os.makedirs(path)
         file_path = f"{path}/{clean_filename(sample_name)}.pdf"
-        if os.path.is_file(file_path):
+        if os.path.isfile(file_path):
             file_path = f"{path}/{clean_filename(sample_name)}_{analysis_report}.pdf"
-        if os.path.is_file(file_path):
+        if os.path.isfile(file_path):
             frappe.throw(f"The file '{file_path}' does already exist.")
         with open(file_path, mode='wb') as file:
             file.write(content_pdf)
