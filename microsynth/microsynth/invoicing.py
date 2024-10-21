@@ -244,7 +244,9 @@ def async_create_invoices(mode, company, customer):
                         insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
                                                                                  'currency': dn.get('currency'),
                                                                                  'credit': round(credit, 2),
-                                                                                 'customer_name': dn.get('customer_name')}
+                                                                                 'customer_name': dn.get('customer_name'),
+                                                                                 'web_order_id': dn.get('web_order_id'),
+                                                                                 'language': dn.get('language')}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
@@ -281,36 +283,51 @@ def async_create_invoices(mode, company, customer):
                 #print(message)
 
         for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
-            if len(warnings) < 1:
-                continue
-            email_template = frappe.get_doc("Email Template", "Insufficient credit - internal notification")
-            rendered_subject = frappe.render_template(email_template.subject, {'dn_customer': dn_customer, 'company': company})
-            dn_details = ""
+            try:
+                if len(warnings) < 1:
+                    continue
+                language = 'en'
+                dn_details = ""
 
-            for delivery_note, values in warnings.items():
-                currency = values['currency']
-                dn_details += f"{delivery_note}: {values['total']} {currency}<br>"
-                customer_name = values['customer_name']
-                credit = values['credit']
+                for delivery_note, values in warnings.items():
+                    currency = values['currency']
+                    dn_details += f"{f'Web Order ID {values['web_order_id']} / ' if values['web_order_id'] else ''}{delivery_note}: {values['total']} {currency}<br>"
+                    customer_name = values['customer_name']
+                    credit = values['credit']
+                    language = values['language']  # This will take the language of the arbitrary last Delivery Note, but we do not support multiple languages at once.
+                
+                if language == 'de':
+                    email_template = frappe.get_doc("Email Template", "Aufgebrauchtes Guthaben")
+                elif language == 'en':
+                    email_template = frappe.get_doc("Email Template", "Insufficient credit")
+                elif language == 'fr':
+                    email_template = frappe.get_doc("Email Template", "Crédit utilisé")
+                else:
+                    email_template = frappe.get_doc("Email Template", "Insufficient credit")
 
-            values_to_render = {
-                'dn_customer': dn_customer,
-                'customer_name': customer_name,
-                'credit': credit,
-                'currency': currency,
-                'company': company,
-                'dn_details': dn_details
-            }
-            rendered_message = frappe.render_template(email_template.response, values_to_render)            
-            make(
-                recipients = email_template.recipients,
-                cc = email_template.cc_recipients,
-                sender = email_template.sender,
-                sender_full_name = email_template.sender_full_name,
-                subject = rendered_subject,
-                content = rendered_message,
-                send_email = True
-            )
+                #email_template = frappe.get_doc("Email Template", "Insufficient credit - internal notification")
+                rendered_subject = frappe.render_template(email_template.subject, {'customer_id': dn_customer, 'company': company})
+
+                values_to_render = {
+                    'customer_id': dn_customer,
+                    'customer_name': customer_name,
+                    'credit': credit,
+                    'currency': currency,
+                    'company': company,
+                    'dn_details': dn_details
+                }
+                rendered_message = frappe.render_template(email_template.response, values_to_render)            
+                make(
+                    recipients = email_template.recipients,
+                    cc = email_template.cc_recipients,
+                    sender = email_template.sender,
+                    sender_full_name = email_template.sender_full_name,
+                    subject = rendered_subject,
+                    content = rendered_message,
+                    send_email = True
+                )
+            except Exception as e:
+                frappe.log_error(f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}")
 
     elif mode == "CarloErba":
         invoices = make_carlo_erba_invoices(company = company)
