@@ -291,7 +291,7 @@ def async_create_invoices(mode, company, customer):
 
                 for delivery_note, values in warnings.items():
                     currency = values['currency']
-                    dn_details += f"{f'Web Order ID {values['web_order_id']} / ' if values['web_order_id'] else ''}{delivery_note}: {values['total']} {currency}<br>"
+                    dn_details += f"""{f"Web Order ID {values['web_order_id']} / " if values['web_order_id'] else ''}{delivery_note}: {values['total']} {currency}<br>"""
                     customer_name = values['customer_name']
                     credit = values['credit']
                     language = values['language']  # This will take the language of the arbitrary last Delivery Note, but we do not support multiple languages at once.
@@ -316,7 +316,7 @@ def async_create_invoices(mode, company, customer):
                     'company': company,
                     'dn_details': dn_details
                 }
-                rendered_message = frappe.render_template(email_template.response, values_to_render)            
+                rendered_message = frappe.render_template(email_template.response, values_to_render)
                 make(
                     recipients = email_template.recipients,
                     cc = email_template.cc_recipients,
