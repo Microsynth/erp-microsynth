@@ -319,7 +319,7 @@ def send_reports(recipient, cc_mails, analysis_reports):
             return {'success': False, 'message': "None of the given report(s) have a Report Type. Unable to determine an Email Template."}
         else:
             [report_type] = report_types  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
-            email_template = frappe.get_doc("Email Template", report_type)
+            email_template = frappe.get_doc("Email Template", f"Analysis Report {report_type}")
         make(
                 recipients = recipient,
                 sender = email_template.sender,
@@ -470,3 +470,71 @@ def set_sample_labels_processed(samples):
     except Exception as err:
         return {'success': False, 'message': f"Got the following error: {err}"}
     return {'success': True, 'message': 'OK'}
+
+
+def check_mycoplasma_sales_order_completion():
+    """
+    Find Mycoplasma Sales Orders that have no Delivery Note and are not Closed or Cancelled.
+    Check if all their Samples are Processed. If yes, create a Delivery Note in Draft status.
+
+    bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
+    """
+    open_mycoplasma_sales_orders = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabSales Order`
+        LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+        WHERE `docstatus` = 1
+          AND `status` NOT IN ("Closed", "Completed")
+          AND `product_type` = "Genetic Analysis"
+          AND `per_delivered` < 100
+          AND `tabSales Order Item`.`item_code` IN ('6032', '6033');
+    """, as_dict=True)
+
+    # check completion of each Mycoplasma Sales Order: Sequencing Labels of this order on processed
+    for sales_order in open_mycoplasma_sales_orders:
+        if not validate_sales_order(sales_order['name']):
+            # validate_sales_order writes to the error log in case of an issue
+            continue
+        try:
+            samples = frappe.db.sql(f"""
+                SELECT 
+                    `tabSample`.`name`,
+                    `tabSequencing Label`.`status`
+                FROM `tabSample Link`
+                LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
+                WHERE
+                    `tabSample Link`.`parent` = "{sales_order['name']}"
+                    AND `tabSample Link`.`parenttype` = "Sales Order"
+                ;""", as_dict=True)
+
+            pending_samples = False
+            # check status of label assigned to each sample
+            for sample_label in samples:
+                if sample_label['status'] != 'processed':
+                    pending_samples = True
+                    break
+            if pending_samples:
+                continue
+
+            # all processed: create delivery
+            customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
+            customer = frappe.get_doc("Customer", customer_name)
+
+            if customer.disabled:
+                frappe.log_error(f"Customer '{customer.name}' of Sales Order '{sales_order['name']}' is disabled. Cannot create a Delivery Note.", "lab_reporting.check_mycoplasma_sales_order_completion")
+                return
+            
+            # create Delivery Note (leave on draft: submitted in a batch process later on)
+            dn_content = make_delivery_note(sales_order['name'])
+            dn = frappe.get_doc(dn_content)
+            company = frappe.get_value("Sales Order", sales_order, "company")
+            dn.naming_series = get_naming_series("Delivery Note", company)
+
+            # insert record
+            dn.flags.ignore_missing = True
+            dn.insert(ignore_permissions=True)
+            frappe.db.commit()
+
+        except Exception as err:
+            frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}", "lab_reporting.check_mycoplasma_sales_order_completion")
