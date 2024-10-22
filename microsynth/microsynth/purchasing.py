@@ -157,7 +157,7 @@ def fetch_billing_address(supplier_id):
     if len(addresses) == 1:
         return addresses[0]
     else: 
-        frappe.throw(f"Found {len(addresses)} billing addresses for Supplier '{supplier_id}'", "fetch_billing_address")
+        return None # frappe.throw(f"Found {len(addresses)} billing addresses for Supplier '{supplier_id}'", "fetch_billing_address")
 
 
 def set_default_payable_accounts(supplier, event):
@@ -185,6 +185,8 @@ def set_default_payable_accounts(supplier, event):
                 account = "2000 - Kreditoren - BAL"
         elif company['name'] == "Microsynth Austria GmbH":
             billing_address = fetch_billing_address(supplier.name)
+            if not billing_address:
+                continue
             country = billing_address['country']
             country_doc = frappe.get_doc("Country", country)
             if country_doc.name == "Austria":
