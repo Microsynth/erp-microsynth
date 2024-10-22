@@ -300,33 +300,47 @@ def send_reports(recipient, cc_mails, analysis_reports):
         return {'success': False, 'message': 'Found no recipient. Unable to send Analysis Reports.'}
     try:
         report_types = set()
+        web_order_ids = set()
+        contact_names = set()
         # Create attachments for the given analysis_reports
         all_attachments = []
-        for analysis_report in analysis_reports:
-            report_type = frappe.get_value("Analysis Report", analysis_report, "report_type")
-            if report_type:
-                report_types.add(report_type)
-            create_pdf_attachment(analysis_report)
-            attachments = get_attachments("Analysis Report", analysis_report)
+        for analysis_report_id in analysis_reports:
+            analysis_report = frappe.get_doc("Analysis Report", analysis_report_id)
+            if analysis_report.report_type:
+                report_types.add(analysis_report.report_type)
+            if analysis_report.web_order_id:
+                web_order_ids.add(analysis_report.web_order_id)
+            if analysis_report.contact_display:
+                contact_names.add(analysis_report.contact_display)
+            create_pdf_attachment(analysis_report.name)
+            attachments = get_attachments("Analysis Report", analysis_report.name)
             fid = None
             for a in attachments:
                 fid = a['name']
             all_attachments.append({'fid': fid})
             frappe.db.commit()
+        if len(contact_names) > 1:
+            return {'success': False, 'message': f"The given reports have the following {len(contact_names)} different Contact Persons: {contact_names}"}
+        elif len(contact_names) == 0:
+            return {'success': False, 'message': "None of the given report(s) have a Contact Person (contact_display)."}
         if len(report_types) > 1:
             return {'success': False, 'message': f"The given reports have the following {len(report_types)} different Report Types: {report_types}"}
         elif len(report_types) == 0:
             return {'success': False, 'message': "None of the given report(s) have a Report Type. Unable to determine an Email Template."}
         else:
             [report_type] = report_types  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
+            [contact_display] = contact_names
+            web_order_id = " / ".join(list(web_order_ids))
             email_template = frappe.get_doc("Email Template", f"Analysis Report {report_type}")
+            rendered_subject = frappe.render_template(email_template.subject, {'web_order_id': web_order_id})
+            rendered_message = frappe.render_template(email_template.response, {'contact_display': contact_display})
         make(
                 recipients = recipient,
                 sender = email_template.sender,
                 sender_full_name = email_template.sender_full_name,
                 cc = ", ".join(cc_mails),
-                subject = email_template.subject,
-                content = email_template.response,
+                subject = rendered_subject,
+                content = rendered_message,
                 send_email = True
                 # attachments = all_attachments
             )
