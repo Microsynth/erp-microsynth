@@ -171,7 +171,7 @@ def set_default_payable_accounts(supplier, event):
     companies = frappe.get_all("Company", fields = ['name', 'default_currency'])
 
     for company in companies:
-        print(f"Processing {company['name']} ...")
+        #print(f"Processing {company['name']} ...")
         if company['name'] == "Microsynth Seqlab GmbH":
             account = "1600 - Verb. aus Lieferungen und Leistungen - GOE"
         elif company['name'] == "Microsynth France SAS":
@@ -218,7 +218,7 @@ def set_default_payable_accounts(supplier, event):
                 # An algorithm cannot be defined to set the default value. (requires classification of the supplier)
             }
             supplier.append("accounts", entry)
-            print(f"appended {entry=}")
+            #print(f"appended {entry=}")
     # Do not save since function is called in before_save server hook    
 
 
@@ -246,7 +246,7 @@ def import_suppliers(file_path, expected_line_length=41):
         '10': '10 days net',
         '30': '30 days net'
     }
-
+    imported_counter = 0
     with open(file_path) as file:
         print(f"Parsing Suppliers from '{file_path}' ...")
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
@@ -272,17 +272,17 @@ def import_suppliers(file_path, expected_line_length=41):
             email = line[13].strip()
             web_url = line[14].strip()
             web_username = line[15].strip()
-            # web_pwd = line[16].strip()  will be entered directly into a protected field
+            # web_pwd = line[16].strip()  might be entered directly into a protected field
             supplier_tax_id = line[17].strip()
             skonto = line[18].strip()
             payment_days = str(line[19].strip())
             currency = line[20].strip()
-            ontime_delivery = line[21].strip()
+            reliability = line[21].strip()
             phone_note = line[22].strip()
             notes = line[23].strip()
             bic = line[24].strip()
             iban = line[25].strip()
-            bank_name = line[26].strip()
+            bank_name = line[26].strip()  # necessary?
             contact_person_1 = line[27].strip()
             email_1 = line[28].strip()
             notes_1 = line[29].strip()
@@ -297,6 +297,7 @@ def import_suppliers(file_path, expected_line_length=41):
             small_qty_surcharge = line[38].strip()
             transportation_costs = line[39].strip()
             ext_debitor_number = line[40].strip()
+            print(f"Processing Index {ext_debitor_number} (external debitor number) ...")
 
             # combine some values
             if company_addition and company:
@@ -310,15 +311,23 @@ def import_suppliers(file_path, expected_line_length=41):
             
             # check some values
             if country_code not in country_code_mapping:
-                print(f"Unknown country code '{country_code}', going to skip.")
+                print(f"Unknown country code '{country_code}', going to skip {ext_debitor_number}.")
                 continue
             if payment_days not in payment_terms_mapping:
-                print(f"There exists no Payment Terms Template for '{payment_days}', going to skip.")
+                print(f"There exists no Payment Terms Template for '{payment_days}', going to skip {ext_debitor_number}.")
+                continue
+            if len(address_line1) > 140:
+                print(f"Column 'Strasse' has {len(address_line1)} > 140 characters, going to skip {ext_debitor_number}.")
                 continue
             
+            if len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
+                print(f"There exists already a Supplier with the Supplier Name '{company}', going to skip {ext_debitor_number}.")
+                continue
+
             new_supplier = frappe.get_doc({
                 'doctype': 'Supplier',
                 'supplier_name': company,
+                'supplier_group': 'All Supplier Groups',  # TODO?
                 'website': web_url,
                 'tax_id': supplier_tax_id,
                 'default_currency': currency,
@@ -328,12 +337,16 @@ def import_suppliers(file_path, expected_line_length=41):
                 'supplier_details': notes
             })
             new_supplier.insert()
-            # TODO: Supplier needs a billing address to insert, but supplier needs to be inserted to have a name to link the billing address to
+            imported_counter += 1
 
             if (address_line1 or post_box) and city and country_code:
+                address_title = f"{company} - {address_line1 or post_box}"
+                if len(address_title) > 100:
+                    print(f"The Address Title '{address_title}' is too long, going to skip {ext_debitor_number}.")
+                    continue
                 new_address = frappe.get_doc({
                     'doctype': 'Address',
-                    'address_title': f"{company} - {address_line1 or post_box}",
+                    'address_title': address_title,
                     'is_primary_address': 1,
                     'address_type': 'Billing',
                     'address_line1': address_line1 or post_box,
@@ -347,12 +360,13 @@ def import_suppliers(file_path, expected_line_length=41):
                     'link_name': new_supplier.name
                 })
                 new_address.save()
+                new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
             else:
                 print(f"Missing required information to create an address for Supplier {new_supplier.name} ({ext_debitor_number}).")
             
             if first_name or last_name or phone or email:
                 if not (first_name or last_name or company):
-                    print(f"Got no first name, no second name and no company for Supplier {new_supplier.name} ({ext_debitor_number}). Unable to import, going to continue.")
+                    print(f"Got no first name, no second name and no company for Supplier {new_supplier.name} ({ext_debitor_number}). Unable to import a Contact, going to continue.")
                     continue
                 new_contact = frappe.get_doc({
                     'doctype': 'Contact',
@@ -377,35 +391,44 @@ def import_suppliers(file_path, expected_line_length=41):
                     })
                 new_contact.save()
             
-            if contact_person_1:
-                new_contact_1 = frappe.get_doc({
-                    'doctype': 'Contact',
-                    'first_name': contact_person_1
-                })
-                new_contact_1.insert()
-            elif email_1:
-                print(f"Got the Email 1 '{email_1}', but no corresponding Contact name.")
-            elif notes_1:
-                print(f"Got the Notes 1 '{notes_1}', but no corresponding Contact name.")
-            
-            if contact_person_2:
-                new_contact_2 = frappe.get_doc({
-                    'doctype': 'Contact',
-                    'first_name': contact_person_2
-                })
-                new_contact_2.insert()
-            elif email_2:
-                print(f"Got the Email 2 '{email_2}', but no corresponding Contact name.")
-            elif notes_2:
-                print(f"Got the Notes 2 '{notes_2}', but no corresponding Contact name.")
-            
-            if contact_person_3:
-                new_contact_3 = frappe.get_doc({
-                    'doctype': 'Contact',
-                    'first_name': contact_person_3
-                })
-                new_contact_3.insert()
-            elif email_3:
-                print(f"Got the Email 3 '{email_3}', but no corresponding Contact name.")
-            elif notes_3:
-                print(f"Got the Notes 3 '{notes_3}', but no corresponding Contact name.")
+            create_and_fill_contact(1, contact_person_1, email_1, notes_1)
+            create_and_fill_contact(2, contact_person_2, email_2, notes_2)
+            create_and_fill_contact(3, contact_person_3, email_3, notes_3)
+            print(f"Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
+        print(f"Successfully imported {imported_counter} Suppliers.")
+
+
+def create_and_fill_contact(idx, first_name, email, notes, last_name=None):
+    if first_name:
+        if last_name:
+            new_contact = frappe.get_doc({
+                'doctype': 'Contact',
+                'first_name': first_name,
+                'last_name': last_name
+            })
+        else:
+            new_contact = frappe.get_doc({
+                'doctype': 'Contact',
+                'first_name': first_name
+            })
+        new_contact.insert()
+        if email:
+            new_contact.append("email_ids", {
+                'email_id': email,
+                'is_primary': 1
+            })
+        if notes:
+            new_comment = frappe.get_doc({
+                'doctype': 'Comment',
+                'comment_type': "Comment",
+                'subject': new_contact.name,
+                'content': notes,
+                'reference_doctype': "Sales Invoice",
+                'status': "Linked",
+                'reference_name': new_contact.name
+            })
+            # new_comment.insert(ignore_permissions=True)  # TODO: LinkValidationError: Could not find Reference Name
+    elif email:
+        print(f"Got the Email {idx} '{email}', but no corresponding Contact name.")
+    elif notes:
+        print(f"Got the Notes {idx} '{notes}', but no corresponding Contact name.")
