@@ -32,7 +32,7 @@ def create_impact_assessment(dt, dn, title, qm_process, creator, due_date):
             'due_date': due_date,
             'created_on': today(),
             'created_by': creator,
-            'status': 'Requested',
+            'status': 'Draft',
         })
     assessment.save(ignore_permissions = True)
     frappe.db.commit()

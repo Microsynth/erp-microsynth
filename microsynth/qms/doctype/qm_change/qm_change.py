@@ -87,6 +87,12 @@ class QMChange(Document):
             if not potential_impact.impact_answer:
                 return False
         return True
+    
+    def has_impact(self):
+        for potential_impact in self.impact:
+            if potential_impact.impact_answer == 'Yes':
+                return True
+        return False
 
 
 @frappe.whitelist()

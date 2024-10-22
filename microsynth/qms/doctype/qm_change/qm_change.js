@@ -43,10 +43,17 @@ frappe.ui.form.on('QM Change', {
         // fetch classification wizard
         if (["Draft", "Created"].includes(frm.doc.status)) {
             if ((locals.classification_wizard && locals.classification_wizard=="closed") || frm.doc.cc_type) {
-                var visible = false;
-                load_wizard(visible);
-                setTimeout(function () {
-                    add_restart_wizard_button();}, 300);
+                if (!(frm.doc.cc_type
+                    && frm.doc.qm_process
+                    && frm.doc.title
+                    && frm.doc.company
+                    && frm.doc.description && frm.doc.description != "<div><br></div>"
+                    && frm.doc.current_state && frm.doc.current_state != "<div><br></div>")) {
+                        var visible = false;
+                        load_wizard(visible);
+                        setTimeout(function () {
+                            add_restart_wizard_button();}, 300);
+                    }
             } else {
                 var visible = true;
                 load_wizard(visible);
@@ -117,7 +124,7 @@ frappe.ui.form.on('QM Change', {
         }
 
         if (!["Closed", "Cancelled"].includes(frm.doc.status)
-            && frappe.user.has_role('QAU')) {
+            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')) {
             cur_frm.set_df_property('impact_description', 'read_only', false);
         } else {
             cur_frm.set_df_property('impact_description', 'read_only', true);
@@ -242,7 +249,11 @@ frappe.ui.form.on('QM Change', {
                 }
             } else {
                 frm.dashboard.clear_comment();
-                frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to submit this QM Change to QAU."), 'red', true);
+                if (frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short') {
+                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to proceed."), 'red', true);
+                } else {
+                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to submit this QM Change to QAU."), 'red', true);
+                }
             }
         }
 
@@ -261,12 +272,27 @@ frappe.ui.form.on('QM Change', {
                         'callback': function (response) {
                             if (response.message) {
                                 // all questions answered
-                                continue_checks = true;
-                                console.log("259");
+                                if (frm.doc.risk_classification == 'minor') {
+                                    // check that no impact question is answered with yes
+                                    frappe.call({
+                                        'method': 'has_impact',
+                                        'doc': cur_frm.doc,
+                                        'async': false,
+                                        'callback': function (response) {
+                                            if (response.message) {
+                                                frm.dashboard.add_comment( __("There is an impact. The risk classification has to be changed to major to continue."), 'red', true);
+                                                continue_checks = false;
+                                            } else {
+                                                continue_checks = true;
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    continue_checks = true;
+                                }
                             } else {
                                 frm.dashboard.add_comment( __("Please answer all potential impacts."), 'red', true);
                                 continue_checks = false;
-                                console.log("263");
                             }
                         }
                     });
@@ -641,10 +667,10 @@ function create_qm_decision(decision, from_status, to_status) {
                                 'callback': function (r) {
                                 }
                             });
-                            if (decision === "Approve") {
-                                set_status(to_status);
-                            } else {
+                            if (decision == "Reject") {
                                 frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator");
+                            } else {
+                                set_status(to_status);
                             }
                         }
                     }
