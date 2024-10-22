@@ -127,7 +127,7 @@ def get_billing_address(customer):
         customer = frappe.get_doc("Customer", customer)
     invoice_to_contact = customer.invoice_to
     if not invoice_to_contact:
-        frappe.log_error(f"Customer '{customer.name}' has no Invoice To Contact.", "utils.get_billing_address")
+        #frappe.log_error(f"Customer '{customer.name}' has no Invoice To Contact.", "utils.get_billing_address")
         return find_billing_address(customer.name)
     billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
     if not billing_address:
@@ -191,7 +191,7 @@ def find_billing_address(customer_id):
         return addresses[0]
     else:
         #frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
-        frappe.log_error("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
+        frappe.log_error(f"Found {len(addresses)} billing addresses for Customer '{customer_id}'", "find_billing_address")
         return None
 
 
