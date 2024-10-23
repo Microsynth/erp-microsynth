@@ -4085,7 +4085,7 @@ def find_oligo_orders_without_shipping_item(from_date):
     orders = frappe.db.get_all("Sales Order",
                                filters=[['docstatus', '=', 1],
                                         ['product_type', '=', 'Oligos'],
-                                        ['transaction_date', '=>', from_date]],
+                                        ['transaction_date', '>=', from_date]],
                                fields=['name'])
     print(f"Sales Order;Is Punchout;Date;Web Order ID;Status;Customer;Customer Name;Grand Total;Currency;Creator")
     for i, order in enumerate(orders):
@@ -4356,57 +4356,57 @@ def find_users_without_user_settings():
             print(f"There are no User Settings for {user['email']}")
 
 
-def clean_phone_number(number):
-    number = number.strip()
-    # replace leading + by 00
-    if number[0] == '+':
-        if number.count('+') == 1:
-            number = number.replace('+', '00')
-    number.replace('(0)', '')
-    return re.sub('[ \+.\-\/]', '', number)
+# def clean_phone_number(number):
+#     number = number.strip()
+#     # replace leading + by 00
+#     if number[0] == '+':
+#         if number.count('+') == 1:
+#             number = number.replace('+', '00')
+#     number.replace('(0)', '')
+#     return re.sub('[ \+.\-\/]', '', number)
 
 
-def clean_all_phone_numbers():
-    """
-    bench execute microsynth.microsynth.migration.clean_all_phone_numbers
-    """
-    sql_query = f"""
-        SELECT `tabContact`.`name`
-        FROM `tabContact`
-        WHERE `tabContact`.`status` != 'Disabled'
-            AND `tabContact`.`contact_classification` = 'Buyer'
-            AND `tabContact`.`phone` IS not NULL
-            AND `tabContact`.`phone` != ''
-            AND `tabContact`.`phone` NOT REGEXP '^[0-9]+$';
-        """
-    contacts = frappe.db.sql(sql_query, as_dict=True)
+# def clean_all_phone_numbers():
+#     """
+#     bench execute microsynth.microsynth.migration.clean_all_phone_numbers
+#     """
+#     sql_query = f"""
+#         SELECT `tabContact`.`name`
+#         FROM `tabContact`
+#         WHERE `tabContact`.`status` != 'Disabled'
+#             AND `tabContact`.`contact_classification` = 'Buyer'
+#             AND `tabContact`.`phone` IS not NULL
+#             AND `tabContact`.`phone` != ''
+#             AND `tabContact`.`phone` NOT REGEXP '^[0-9]+$';
+#         """
+#     contacts = frappe.db.sql(sql_query, as_dict=True)
 
-    print(f"{len(contacts)=}")
-    for i, contact in enumerate(contacts):
-        if i > 100:
-            break
-        continued = False
-        contact_doc = frappe.get_doc("Contact", contact['name'])
-        for number in contact_doc.phone_nos:
-            if number.is_primary_phone:
-                original_number = number.phone
-                if len(original_number) > 20:
-                    print(f"{len(original_number)=}: {original_number} (Contact {contact_doc.name}), please process manually, going to continue")
-                    continued = True
-                    continue
-                number.phone = clean_phone_number(number.phone)
-                #print(f"{original_number=}, cleaned_number={number.phone}")
-                if len(number.phone) > 15:
-                    print(f"The cleaned phone number is too long for UPS (length > 15): {number.phone} (Contact {contact_doc.name})")
-                contact_doc.phone = number.phone
-                break
-        if continued:
-            continue        
-        contact_doc.append("phone_nos", {
-                'phone': original_number,
-                'is_primary_phone': 0
-            })
-        contact_doc.save()
-        if not contact_doc.phone.isnumeric():
-            print(f"There are still non-numeric characters in the phone number '{contact_doc.phone}' of Contact {contact_doc.name}. Please process manually.")
+#     print(f"{len(contacts)=}")
+#     for i, contact in enumerate(contacts):
+#         if i > 100:
+#             break
+#         continued = False
+#         contact_doc = frappe.get_doc("Contact", contact['name'])
+#         for number in contact_doc.phone_nos:
+#             if number.is_primary_phone:
+#                 original_number = number.phone
+#                 if len(original_number) > 20:
+#                     print(f"{len(original_number)=}: {original_number} (Contact {contact_doc.name}), please process manually, going to continue")
+#                     continued = True
+#                     continue
+#                 number.phone = clean_phone_number(number.phone)
+#                 #print(f"{original_number=}, cleaned_number={number.phone}")
+#                 if len(number.phone) > 15:
+#                     print(f"The cleaned phone number is too long for UPS (length > 15): {number.phone} (Contact {contact_doc.name})")
+#                 contact_doc.phone = number.phone
+#                 break
+#         if continued:
+#             continue        
+#         contact_doc.append("phone_nos", {
+#                 'phone': original_number,
+#                 'is_primary_phone': 0
+#             })
+#         contact_doc.save()
+#         if not contact_doc.phone.isnumeric():
+#             print(f"There are still non-numeric characters in the phone number '{contact_doc.phone}' of Contact {contact_doc.name}. Please process manually.")
 
