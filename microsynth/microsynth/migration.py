@@ -811,6 +811,8 @@ def update_contact(contact_data):
         contact.unsubscribed = 1
     if 'room' in contact_data:
         contact.room = contact_data['room']
+    if 'source' in contact_data:
+        contact.source = contact_data['source']
     if 'punchout_identifier' in contact_data:
         contact.punchout_identifier = contact_data['punchout_identifier']
     if 'newsletter_registration_state' in contact_data:
@@ -900,6 +902,8 @@ def update_address(address_data, is_deleted=False, customer_id=None):
         address.city = address_data['city']
     if 'country' in address_data:
         address.country = robust_get_country(address_data['country'])
+    if 'source' in address_data:
+        address.source = address_data['source']
     if customer_id or 'customer_id' in address_data:
         address.links = []
         if not is_deleted:
