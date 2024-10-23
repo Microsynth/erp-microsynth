@@ -1178,7 +1178,7 @@
    "modified_by": "rolf.suter@microsynth.ch",
    "name": "Contact-source",
    "no_copy": 0,
-   "options": "\nWebshop\nImpersonation\nPunchout\nManual",
+   "options": "\nWebshop\nImpersonation\nPunchout\nRegistration\nManual",
    "owner": "rolf.suter@microsynth.ch",
    "parent": null,
    "parentfield": null,
