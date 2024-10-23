@@ -241,12 +241,13 @@ def async_create_invoices(mode, company, customer):
                         dn_customer = dn.get('customer')                
                         if not dn_customer in insufficient_credit_warnings:
                             insufficient_credit_warnings[dn_customer] = {}
+                        dn_doc = frappe.get_doc("Delivery Note", dn.get('name'))  # necessary to get the language and web_order_id
                         insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
                                                                                  'currency': dn.get('currency'),
                                                                                  'credit': round(credit, 2),
                                                                                  'customer_name': dn.get('customer_name'),
-                                                                                 'web_order_id': dn.get('web_order_id'),
-                                                                                 'language': dn.get('language')}
+                                                                                 'web_order_id': dn_doc.web_order_id,
+                                                                                 'language': dn_doc.language}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
@@ -305,9 +306,7 @@ def async_create_invoices(mode, company, customer):
                 else:
                     email_template = frappe.get_doc("Email Template", "Insufficient credit")
 
-                #email_template = frappe.get_doc("Email Template", "Insufficient credit - internal notification")
                 rendered_subject = frappe.render_template(email_template.subject, {'customer_id': dn_customer, 'company': company})
-
                 values_to_render = {
                     'customer_id': dn_customer,
                     'customer_name': customer_name,
