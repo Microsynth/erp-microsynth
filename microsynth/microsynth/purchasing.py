@@ -243,7 +243,7 @@ def import_suppliers(file_path, expected_line_length=41):
         'SI': 'Slovenia'
     }
     payment_terms_mapping = {
-        '10': '10 days net',
+        '10': '10 days net',  # TODO: Create Template "10 days net" and maybe also "20 days net"
         '30': '30 days net'
     }
     imported_counter = 0
@@ -297,13 +297,14 @@ def import_suppliers(file_path, expected_line_length=41):
             small_qty_surcharge = line[38].strip()
             transportation_costs = line[39].strip()
             ext_debitor_number = line[40].strip()
-            print(f"Processing Index {ext_debitor_number} (external debitor number) ...")
+            #print(f"Processing Supplier with Index {ext_debitor_number} (external debitor number) ...")
 
-            # combine some values
+            # combine/edit some values
             if company_addition and company:
                 company = f"{company} - {company_addition}"
             elif company_addition:
                 company = company_addition
+            company = company.replace('\n', ' ').replace('\r', '')
             if phone_note and notes:
                 notes = f"Phone Note: {phone_note}\n\nNotes: {notes}"
             elif phone_note:
@@ -319,7 +320,10 @@ def import_suppliers(file_path, expected_line_length=41):
             if len(address_line1) > 140:
                 print(f"Column 'Strasse' has {len(address_line1)} > 140 characters, going to skip {ext_debitor_number}.")
                 continue
-            
+            if not company:
+                print(f"Column 'Firma' is mandatory, going to skip {ext_debitor_number}.")
+                continue
+            #company = f"{company} 2"  # Only for testing
             if len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
                 print(f"There exists already a Supplier with the Supplier Name '{company}', going to skip {ext_debitor_number}.")
                 continue
@@ -339,10 +343,10 @@ def import_suppliers(file_path, expected_line_length=41):
             new_supplier.insert()
             imported_counter += 1
 
-            if (address_line1 or post_box) and city and country_code:
+            if (address_line1 or post_box) and city and country_code and country_code in country_code_mapping:
                 address_title = f"{company} - {address_line1 or post_box}"
                 if len(address_title) > 100:
-                    print(f"The Address Title '{address_title}' is too long, going to skip {ext_debitor_number}.")
+                    print(f"The Address Title '{address_title}' is too long, going to skip {ext_debitor_number}. Please shorten 'Strasse' or 'Firma'.")
                     continue
                 new_address = frappe.get_doc({
                     'doctype': 'Address',
@@ -361,12 +365,17 @@ def import_suppliers(file_path, expected_line_length=41):
                 })
                 new_address.save()
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
+            elif country_code not in country_code_mapping:
+                if not country_code:
+                    pass
+                else:
+                    print(f"Unknown country code '{country_code}'. Unable to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
             else:
-                print(f"Missing required information to create an address for Supplier {new_supplier.name} ({ext_debitor_number}).")
+                print(f"Missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
             
             if first_name or last_name or phone or email:
                 if not (first_name or last_name or company):
-                    print(f"Got no first name, no second name and no company for Supplier {new_supplier.name} ({ext_debitor_number}). Unable to import a Contact, going to continue.")
+                    print(f"Got no first name, no second name and no company for Supplier with Index {ext_debitor_number} (external debitor number). Unable to import a Contact, going to continue.")
                     continue
                 new_contact = frappe.get_doc({
                     'doctype': 'Contact',
@@ -391,14 +400,14 @@ def import_suppliers(file_path, expected_line_length=41):
                     })
                 new_contact.save()
             
-            create_and_fill_contact(1, contact_person_1, email_1, notes_1)
-            create_and_fill_contact(2, contact_person_2, email_2, notes_2)
-            create_and_fill_contact(3, contact_person_3, email_3, notes_3)
-            print(f"Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
+            create_and_fill_contact(1, contact_person_1, email_1, notes_1, ext_debitor_number)
+            create_and_fill_contact(2, contact_person_2, email_2, notes_2, ext_debitor_number)
+            create_and_fill_contact(3, contact_person_3, email_3, notes_3, ext_debitor_number)
+            #print(f"Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
         print(f"Successfully imported {imported_counter} Suppliers.")
 
 
-def create_and_fill_contact(idx, first_name, email, notes, last_name=None):
+def create_and_fill_contact(idx, first_name, email, notes, ext_debitor_number, last_name=None):
     if first_name:
         if last_name:
             new_contact = frappe.get_doc({
@@ -429,6 +438,6 @@ def create_and_fill_contact(idx, first_name, email, notes, last_name=None):
             })
             # new_comment.insert(ignore_permissions=True)  # TODO: LinkValidationError: Could not find Reference Name
     elif email:
-        print(f"Got the Email {idx} '{email}', but no corresponding Contact name.")
+        print(f"Got the Email {idx} '{email}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
     elif notes:
-        print(f"Got the Notes {idx} '{notes}', but no corresponding Contact name.")
+        print(f"Got the Notes {idx} '{notes}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
