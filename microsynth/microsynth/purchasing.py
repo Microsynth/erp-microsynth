@@ -231,20 +231,24 @@ def set_and_save_default_payable_accounts(supplier):
 
 def import_suppliers(file_path, expected_line_length=41):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Lieferantenexport_Seqlab.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241023_Lieferantenexport_Seqlab.csv'}"
     """
     import csv
     country_code_mapping = {
-        'DE': 'Germany',
         'AT': 'Austria',
         'CH': 'Switzerland',
-        'UK': 'United Kingdom',
-        'US': 'United States',
-        'SI': 'Slovenia'
+        'CN': 'China',
+        'DE': 'Germany',
+        'GB': 'United Kingdom',
+        'UK': 'United Kingdom',  # TODO: Use only GB for United Kingdom in FileMaker and use them directly to search the Country in the ERP without this mapping
+        'IN': 'India',
+        'IT': 'Italy',
+        'NL': 'Netherlands',
+        'SI': 'Slovenia',
+        'US': 'United States'
     }
     payment_terms_mapping = {
-        '10': '10 days net',  # TODO: Create Template "10 days net" and maybe also "20 days net"
-        '30': '30 days net'
+        '30': '30 days net'  # TODO: Create Template "10 days net" and maybe also "20 days net"
     }
     imported_counter = 0
     with open(file_path) as file:
@@ -265,7 +269,7 @@ def import_suppliers(file_path, expected_line_length=41):
             company_addition = line[5].strip()
             post_box = line[6].strip()
             address_line1 = line[7].strip()
-            country_code = line[8].strip()
+            country_code = line[8].strip().upper()
             pincode = line[9].strip()
             city = line[10].strip()
             phone = line[11].strip() + line[12].strip()
@@ -309,6 +313,8 @@ def import_suppliers(file_path, expected_line_length=41):
                 notes = f"Phone Note: {phone_note}\n\nNotes: {notes}"
             elif phone_note:
                 notes = phone_note
+            if post_box and not "Postfach" in post_box:
+                post_box = f"Postfach {post_box}"
             
             # check some values
             if country_code not in country_code_mapping:
@@ -370,7 +376,7 @@ def import_suppliers(file_path, expected_line_length=41):
                     pass
                 else:
                     print(f"Unknown country code '{country_code}'. Unable to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
-            else:
+            elif city or pincode or address_line1 or post_box:
                 print(f"Missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
             
             if first_name or last_name or phone or email:
