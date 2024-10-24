@@ -234,19 +234,7 @@ def import_suppliers(file_path, expected_line_length=41):
     bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241023_Lieferantenexport_Seqlab.csv'}"
     """
     import csv
-    country_code_mapping = {
-        'AT': 'Austria',
-        'CH': 'Switzerland',
-        'CN': 'China',
-        'DE': 'Germany',
-        'GB': 'United Kingdom',
-        'UK': 'United Kingdom',  # TODO: Use only GB for United Kingdom in FileMaker and use them directly to search the Country in the ERP without this mapping
-        'IN': 'India',
-        'IT': 'Italy',
-        'NL': 'Netherlands',
-        'SI': 'Slovenia',
-        'US': 'United States'
-    }
+    country_code_mapping = {}
     payment_terms_mapping = {
         '30': '30 days net'  # TODO: Create Template "10 days net" and maybe also "20 days net"
     }
@@ -275,18 +263,18 @@ def import_suppliers(file_path, expected_line_length=41):
             phone = line[11].strip() + line[12].strip()
             email = line[13].strip()
             web_url = line[14].strip()
-            web_username = line[15].strip()
-            # web_pwd = line[16].strip()  might be entered directly into a protected field
+            web_username = line[15].strip()  # might be imported later
+            web_pwd = line[16].strip()  # might be entered directly into a protected field
             supplier_tax_id = line[17].strip()
-            skonto = line[18].strip()
+            skonto = line[18].strip()  # will be imported manually
             payment_days = str(line[19].strip())
             currency = line[20].strip()
-            reliability = line[21].strip()
+            reliability = line[21].strip()  # import later
             phone_note = line[22].strip()
             notes = line[23].strip()
             bic = line[24].strip()
             iban = line[25].strip()
-            bank_name = line[26].strip()  # necessary?
+            bank_name = line[26].strip()  # do not import
             contact_person_1 = line[27].strip()
             email_1 = line[28].strip()
             notes_1 = line[29].strip()
@@ -309,17 +297,34 @@ def import_suppliers(file_path, expected_line_length=41):
             elif company_addition:
                 company = company_addition
             company = company.replace('\n', ' ').replace('\r', '')
-            if phone_note and notes:
-                notes = f"Phone Note: {phone_note}\n\nNotes: {notes}"
-            elif phone_note:
-                notes = phone_note
+            details = ""
+            if phone_note:
+                details += f"Phone Note: {phone_note}\n"
+            if notes:
+                details += f"Notes: {notes}"
+            if discount:
+                details += f"\nKundenrabatt: {discount}"
+            if threshold:
+                details += f"\nKleinmengenzuschlag bis Bestellwert {threshold}"
+            if small_qty_surcharge:
+                details += f"\nKleinmengenzuschlag (Betrag): {small_qty_surcharge}"
+            if transportation_costs:
+                details += f"\nTransportkosten: {transportation_costs}"
             if post_box and not "Postfach" in post_box:
                 post_box = f"Postfach {post_box}"
             
             # check some values
             if country_code not in country_code_mapping:
-                print(f"Unknown country code '{country_code}', going to skip {ext_debitor_number}.")
-                continue
+                countries = frappe.get_all("Country", filters={'code': country_code}, fields=['name'])
+                if len(countries) == 0:
+                    print(f"Unknown country code '{country_code}', going to skip {ext_debitor_number}.")
+                    continue
+                elif len(countries) > 1:
+                    print(f"Found the following {len(countries)} Countries for country code '{country_code}' in the ERP, going to skip {ext_debitor_number}: {countries}")
+                    continue
+                else:
+                    country = countries[0]['name']
+                    country_code_mapping[country_code] = country
             if payment_days not in payment_terms_mapping:
                 print(f"There exists no Payment Terms Template for '{payment_days}', going to skip {ext_debitor_number}.")
                 continue
@@ -344,7 +349,7 @@ def import_suppliers(file_path, expected_line_length=41):
                 'payment_terms': payment_terms_mapping[payment_days],
                 'bic': bic,
                 'iban': iban,
-                'supplier_details': notes
+                'supplier_details': details
             })
             new_supplier.insert()
             imported_counter += 1
@@ -371,11 +376,6 @@ def import_suppliers(file_path, expected_line_length=41):
                 })
                 new_address.save()
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
-            elif country_code not in country_code_mapping:
-                if not country_code:
-                    pass
-                else:
-                    print(f"Unknown country code '{country_code}'. Unable to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
             elif city or pincode or address_line1 or post_box:
                 print(f"Missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
             
@@ -406,14 +406,14 @@ def import_suppliers(file_path, expected_line_length=41):
                     })
                 new_contact.save()
             
-            create_and_fill_contact(1, contact_person_1, email_1, notes_1, ext_debitor_number)
-            create_and_fill_contact(2, contact_person_2, email_2, notes_2, ext_debitor_number)
-            create_and_fill_contact(3, contact_person_3, email_3, notes_3, ext_debitor_number)
+            create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_debitor_number)
+            create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_debitor_number)
+            create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_debitor_number)
             #print(f"Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
         print(f"Successfully imported {imported_counter} Suppliers.")
 
 
-def create_and_fill_contact(idx, first_name, email, notes, ext_debitor_number, last_name=None):
+def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debitor_number, last_name=None):
     if first_name:
         if last_name:
             new_contact = frappe.get_doc({
@@ -426,23 +426,29 @@ def create_and_fill_contact(idx, first_name, email, notes, ext_debitor_number, l
                 'doctype': 'Contact',
                 'first_name': first_name
             })
-        new_contact.insert()
+        new_contact.append("links", {
+            'link_doctype': 'Supplier',
+            'link_name': supplier_id
+        })
         if email:
             new_contact.append("email_ids", {
                 'email_id': email,
                 'is_primary': 1
             })
+        new_contact.insert()
         if notes:
+            if not frappe.db.exists("Contact", new_contact.name):
+                frappe.throw(f"Contact '{new_contact.name}' does not exist.")
             new_comment = frappe.get_doc({
                 'doctype': 'Comment',
                 'comment_type': "Comment",
                 'subject': new_contact.name,
                 'content': notes,
-                'reference_doctype': "Sales Invoice",
+                'reference_doctype': "Contact",
                 'status': "Linked",
                 'reference_name': new_contact.name
             })
-            # new_comment.insert(ignore_permissions=True)  # TODO: LinkValidationError: Could not find Reference Name
+            new_comment.insert(ignore_permissions=True)
     elif email:
         print(f"Got the Email {idx} '{email}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
     elif notes:
