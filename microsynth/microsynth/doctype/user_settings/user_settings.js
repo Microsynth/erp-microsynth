@@ -44,7 +44,8 @@ function request_sop_training(frm) {
                         'label': 'QM Document',
                         'options': 'QM Document',
                         'in_list_view': 1,
-                        'reqd': 1  // TODO: How to increase the width of this column?
+                        'reqd': 1,
+                        'columns': 3  // increase the width of this column (total should be < 11)
                     },
                     {
                         'fieldname': 'title',
