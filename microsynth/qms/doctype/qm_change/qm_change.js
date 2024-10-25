@@ -41,7 +41,7 @@ frappe.ui.form.on('QM Change', {
         }
 
         // fetch classification wizard
-        if (["Draft", "Created"].includes(frm.doc.status)) {
+        if (["Draft", "Created"].includes(frm.doc.status) && !frm.doc.in_approval) {
             if ((locals.classification_wizard && locals.classification_wizard=="closed") || frm.doc.cc_type) {
                 if (!(frm.doc.cc_type
                     && frm.doc.qm_process
@@ -72,7 +72,7 @@ frappe.ui.form.on('QM Change', {
 
         // FIELDS LOCKING
 
-        // TODO: Allow only QAU in status "Assessment & Classification" to edit the Impact table
+        // TODO: Allow only QAU in status "Assessment & Classification" to edit the Impact table (Task #17756 KB ERP)
 
         if (((["Draft", "Created"].includes(frm.doc.status) || frm.doc.docstatus == 0) && frappe.user.has_role('QAU'))
             || (["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)) {
@@ -214,7 +214,8 @@ frappe.ui.form.on('QM Change', {
         }
 
         // add buttons to request CC Action and Effectiveness Check
-        if (frm.doc.status == 'Planning' && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        if (frm.doc.status == 'Planning'
+            && (frappe.user.has_role('QAU') || (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
                 request_qm_action('Change Control Action');
             }).addClass("btn-primary");
@@ -242,6 +243,34 @@ frappe.ui.form.on('QM Change', {
                         __("Proceed"),
                         function() {
                             set_status("Assessment & Classification");
+                            frappe.call({
+                                'method': 'set_in_approval',
+                                'doc': cur_frm.doc,
+                                'args': {
+                                    'in_approval': 0
+                                },
+                                'async': false,
+                                'callback': function (r) {
+                                }
+                            });
+                            cur_frm.reload_doc();
+                        }
+                    );
+                } else if (!frm.doc.in_approval) {
+                    cur_frm.page.set_primary_action(
+                        __("Send to Approval"),
+                        function() {
+                            frappe.call({
+                                'method': 'set_in_approval',
+                                'doc': cur_frm.doc,
+                                'args': {
+                                    'in_approval': 1
+                                },
+                                'async': false,
+                                'callback': function (r) {
+                                }
+                            });
+                            cur_frm.reload_doc();
                         }
                     );
                 } else {
@@ -347,7 +376,7 @@ frappe.ui.form.on('QM Change', {
         if (frm.doc.status == 'Trial'
             && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
             if (frm.doc.summary_test_trial_results) {
-                if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
+                if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU') && frm.doc.in_approval) {
                     // Add Approve and Reject buttons
                     cur_frm.page.set_primary_action(
                         __("Approve"),
@@ -369,7 +398,6 @@ frappe.ui.form.on('QM Change', {
                     cur_frm.page.set_primary_action(
                         __("Send to Approval"),
                         function() {
-                            //cur_frm.set_value("in_approval", 1);
                             frappe.call({
                                 'method': 'set_in_approval',
                                 'doc': cur_frm.doc,
@@ -403,7 +431,7 @@ frappe.ui.form.on('QM Change', {
                 'callback': function(response) {
                     if (response.message) {
                         if (frm.doc.action_plan_summary) {
-                            if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU')) {
+                            if (frm.doc.cc_type == 'full' && frappe.user.has_role('QAU') && frm.doc.in_approval) {
                                 // Add Approve and Reject buttons
                                 cur_frm.page.set_primary_action(
                                     __("Approve"),
@@ -425,7 +453,6 @@ frappe.ui.form.on('QM Change', {
                                 cur_frm.page.set_primary_action(
                                     __("Send to Approval"),
                                     function() {
-                                        //cur_frm.set_value("in_approval", 1);
                                         frappe.call({
                                             'method': 'set_in_approval',
                                             'doc': cur_frm.doc,
@@ -464,7 +491,7 @@ frappe.ui.form.on('QM Change', {
                     // Check, that all actions are finished
                     if (response.message) {
                         frm.dashboard.add_comment( __("Please complete all Change Control Actions and reload this QM Change to finish the Implementation."), 'red', true);
-                    } else if (frappe.user.has_role('QAU')) {
+                    } else if (frappe.user.has_role('QAU') && frm.doc.in_approval) {
                         // Add Approve and Reject buttons
                         cur_frm.page.set_primary_action(
                             __("Approve"),
@@ -475,11 +502,10 @@ frappe.ui.form.on('QM Change', {
                         frm.add_custom_button(__("Reject"), function() {
                             create_qm_decision("Reject", frm.doc.status, "Completed");
                         }).addClass("btn-danger");
-                    } else if (!frm.doc.in_approval) {
+                    } else if (!frm.doc.in_approval) {  //  && frappe.session.user === frm.doc.created_by
                         cur_frm.page.set_primary_action(
                             __("Send to Approval"),
                             function() {
-                                //cur_frm.set_value("in_approval", 1);
                                 frappe.call({
                                     'method': 'set_in_approval',
                                     'doc': cur_frm.doc,
@@ -493,8 +519,10 @@ frappe.ui.form.on('QM Change', {
                                 cur_frm.reload_doc();
                             }
                         );
-                    } else {
+                    } else if (frm.doc.in_approval) {
                         frm.dashboard.add_comment( __("In Approval"), 'yellow', true);
+                    } else {
+                        frm.dashboard.add_comment( __("Rejected. The Creator was notified, has to revise and resend it to Approval."), 'yellow', true);
                     }
                 }
             });
