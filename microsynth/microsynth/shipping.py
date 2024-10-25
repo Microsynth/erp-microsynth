@@ -305,4 +305,4 @@ def add_shipping_items_to_countries(country_to_code, code_to_rate, threshold, pr
         rate = code_to_rate[item_code]
         added = add_shipping_item_to_country(country, item_code, rate, threshold, preferred_express)
         if added:
-            print(f"Successfully added Shipping Item {item_code} with rate {rate}, threshold {threshold} and {preferred_express=}.")
+            print(f"Successfully added Shipping Item {item_code} with rate {rate}, threshold {threshold} and {preferred_express=} to Country {country}.")
