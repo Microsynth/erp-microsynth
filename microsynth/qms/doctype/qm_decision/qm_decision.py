@@ -8,6 +8,7 @@ from frappe import _
 from frappe.desk.form.assign_to import add
 from microsynth.qms.signing import sign
 from frappe.model.document import Document
+from frappe.utils import get_url_to_form
 from datetime import date
 
 
@@ -32,12 +33,17 @@ def create_decision(approver, decision, dt, dn, from_status, to_status, comments
 
     decision_doc.save(ignore_permissions = True)
     if refdoc_creator:
+        url = get_url_to_form(dt, dn)
+        url_string = f"<a href={url}>{dn}</a>"
+        description = f"Your {dt} {url_string} has been {'rejected' if decision == 'Reject' else 'approved'} by {approver} for status transition {from_status} -> {to_status}."
+        if comments:
+            description += f"<br><br>Rational: {comments}"
         # Assign creator of linked document
         add({
-            'doctype': "QM Decision",
-            'name': decision_doc.name,
+            'doctype': dt,
+            'name': dn,
             'assign_to': refdoc_creator,
-            'description': f"Your {dt} {dn} has been {'rejected' if decision == 'Reject' else 'approved'} by {approver} for status transition {from_status} -> {to_status}.",
+            'description': description,
             'notify': True
         })
     frappe.db.commit()
