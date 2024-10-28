@@ -231,12 +231,14 @@ def set_and_save_default_payable_accounts(supplier):
 
 def import_suppliers(file_path, expected_line_length=41):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241023_Lieferantenexport_Seqlab.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241028_Lieferantenexport_Seqlab.csv'}"
     """
     import csv
     country_code_mapping = {}
     payment_terms_mapping = {
-        '30': '30 days net'  # TODO: Create Template "10 days net" and maybe also "20 days net"
+        '10': '10 days net',
+        '20': '20 days net',
+        '30': '30 days net'
     }
     imported_counter = 0
     with open(file_path) as file:
@@ -435,7 +437,11 @@ def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debi
                 'email_id': email,
                 'is_primary': 1
             })
-        new_contact.insert()
+        try:
+            new_contact.insert()
+        except Exception as err:
+            print(f"Got the following error while trying to insert 'Ansprechpartner {idx}' of Supplier with Index {ext_debitor_number}: {err}")
+            return
         if notes:
             if not frappe.db.exists("Contact", new_contact.name):
                 frappe.throw(f"Contact '{new_contact.name}' does not exist.")
