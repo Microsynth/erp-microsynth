@@ -52,6 +52,8 @@ def get_overview(qm_training_record):
 def set_signed_on(doc):
     record = frappe.get_doc("QM Training Record", doc)
     record.signed_on = datetime.today()
+    # clear assignment
+    clear("QM Training Record", doc)
     record.save(ignore_permissions = True)
     frappe.db.commit()    
 

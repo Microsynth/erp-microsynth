@@ -318,12 +318,12 @@ def notify_new_creator(qm_document, new_creator):
 def notify_q_releasable(qm_document):
     # send a notification to qm
     make(
-            recipients = 'qm@microsynth.ch',
-            sender = 'erp@microsynth.ch',
-            sender_full_name = 'Microsynth ERP',
-            subject = f"Releasable: {qm_document.name}",
-            content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form('QM Document', qm_document.name)}",
-            send_email = True
+        recipients = 'qm@microsynth.ch',
+        sender = 'erp@microsynth.ch',
+        sender_full_name = 'Microsynth ERP',
+        subject = f"Releasable: {qm_document.name}",
+        content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form('QM Document', qm_document.name)}",
+        send_email = True
         )
 
 
@@ -340,14 +340,16 @@ def notify_pvs_about_valid_status(qm_document):
             pvs.add(pv['process_owner'])
     if len(pvs) == 0:
         frappe.log_error(f"Found no PV for QM Document '{qm_document.name}' with QM Process '{qm_document.qm_process}' and Company '{qm_document.company}'.", "qm_document.notify_pvs_about_valid_status")
-    for pv in pvs:
-        add({
-            'doctype': "QM Document",
-            'name': qm_document.name,
-            'assign_to': pv,
-            'description': f"The QM Document '{qm_document.name}' of your QM Process '{qm_document.qm_process}' {f'({qm_document.company})' if qm_document.company else ''} has been set to Valid.",
-            'notify': True
-        })
+
+    url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
+    make(
+        recipients = pvs,
+        sender = 'erp@microsynth.ch',
+        sender_full_name = 'Microsynth ERP',
+        subject = f"Validated {qm_document.name}",
+        content = f"The QM Document {url_string} ({qm_document.title}) of your QM Process '{qm_document.qm_process}' {f'({qm_document.company})' if qm_document.company else ''} has been set to Valid.",
+        send_email = True
+    )
 
 
 @frappe.whitelist()
@@ -358,13 +360,15 @@ def invalidate_document(qm_document):
     # clear any assignments
     clear("QM Document", qm_document.name)
     # send a notification to the creator
-    add({
-        'doctype': "QM Document",
-        'name': qm_document.name,
-        'assign_to': qm_document.created_by,
-        'description': f"Your QM Document '{qm_document.name}' has been set to Invalid.",
-        'notify': True
-    })
+    url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
+    make(
+        recipients = qm_document.created_by,
+        sender = 'erp@microsynth.ch',
+        sender_full_name = 'Microsynth ERP',
+        subject = f"Invalidated {qm_document.name}",
+        content = f"Your QM Document {url_string} ({qm_document.title}) has been set to Invalid.",
+        send_email = True
+        )
 
 
 @frappe.whitelist()
