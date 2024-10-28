@@ -241,7 +241,7 @@ def async_create_invoices(mode, company, customer):
                         dn_customer = dn.get('customer')                
                         if not dn_customer in insufficient_credit_warnings:
                             insufficient_credit_warnings[dn_customer] = {}
-                        dn_doc = frappe.get_doc("Delivery Note", dn.get('name'))  # necessary to get the language and web_order_id
+                        dn_doc = frappe.get_doc("Delivery Note", delivery_note)  # necessary to get the language and web_order_id
                         insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
                                                                                  'currency': dn.get('currency'),
                                                                                  'credit': round(credit, 2),
