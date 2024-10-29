@@ -1,5 +1,6 @@
 import frappe
 from datetime import datetime
+from frappe import _
 
 
 def find_tax_template(company, customer, shipping_address, category):
@@ -130,3 +131,77 @@ def find_dated_tax_template(company, customer, shipping_address, category, date)
     template = find_tax_template(company, customer, shipping_address, category)
     alternative_template = get_alternative_tax_template(template, date)
     return alternative_template
+
+
+
+def sales_order_before_save(doc, event):
+    """
+    This is a wrapper function for the hooked Sales Order:before save trigger
+    """
+    update_taxes(doc, event)
+    set_alternative_tax_template(doc, event)
+    return
+
+
+def quotation_before_save(doc, event):
+    """
+    This is a wrapper function for the hooked Quotation:before save trigger
+    """
+    update_taxes(doc, event)
+    set_alternative_tax_template(doc, event)
+    return
+
+
+def update_taxes(doc, event=None):
+    """
+    This function will update the tax template and child table of a Quotation, Sales Order to assure they correspond to the stored templates
+    
+    It is triggered from the document hook.
+    """
+    
+    # parametrisation from the document
+    if doc.doctype == "Sales Order":
+        customer = doc.customer
+        address = doc.shipping_address_name
+        date = doc.delivery_date
+    elif doc.doctype == "Quotation":
+        if not doc.shipping_address_name:
+            frappe.msgprint(_("Check shipping address"), _("Quotation"))
+            return            # cannot determine tax template without the destination address
+        customer = doc.party_name
+        address = doc.shipping_address_name
+        date = doc.transaction_date
+    else:
+        frappe.throw(f"For this doctype {doc.doctype} this is not yet implemented")
+    
+    if doc.get('product_type') in ["Oligos", "Material"]:
+        category = "Material"
+    else:
+        category = "Service"
+
+    if doc.get('oligos') and len(doc.get('oligos')) > 0:
+        category = "Material"
+            
+    taxes = find_dated_tax_template(
+        company=doc.company,
+        customer=customer,
+        shipping_address=address,
+        category=category,
+        date=date
+    )
+    
+    doc.taxes_and_charges = taxes
+
+    tax_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+    
+    doc.taxes = []
+    for t in tax_template.taxes:
+        doc.append("taxes", {
+            'charge_type': t.charge_type,
+            'account_head': t.account_head,
+            'description': t.description,
+            'cost_center': t.cost_center,
+            'rate': t.rate,
+        })
+        
+    return

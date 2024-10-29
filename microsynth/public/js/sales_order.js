@@ -92,15 +92,16 @@ frappe.ui.form.on('Sales Order', {
         }
     },
     before_save(frm) {
-        if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
+        /*if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
             var category = "Material";
         } else {
             var category = "Service";
         };
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
-        };         
-        update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
+        };  */  
+        // update taxes was moved to the server-side trigger (see hooks.py)
+        //update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
     company(frm) {
         if (frm.doc.__islocal) {

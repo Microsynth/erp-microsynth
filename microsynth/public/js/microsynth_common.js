@@ -53,7 +53,7 @@ function sleep(milliseconds) {
 }
 
 // Set the taxes from the tax template 
-function update_taxes(company, customer, address, category, date) {
+/*function update_taxes(company, customer, address, category, date) {
     frappe.call({
         "method": "microsynth.microsynth.taxes.find_dated_tax_template",
         "args": {
@@ -92,7 +92,7 @@ function update_taxes(company, customer, address, category, date) {
             });
         }
     });
-}
+}*/
 
 
 // hide chart buttons on reports

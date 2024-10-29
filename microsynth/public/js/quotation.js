@@ -102,24 +102,9 @@ frappe.ui.form.on('Quotation', {
     },
     
     before_save(frm) {
-        if (frm.doc.product_type == "Oligos" || frm.doc.product_type == "Material") {
-            var category = "Material";
-        } else {
-            var category = "Service";
-        };
-        if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
-            category = "Material";
-        }; 
-        
         // assert customer master fields on initial save
         if (frm.doc.__islocal) {
             assert_customer_fields(frm);
-        }
-        
-        if (frm.doc.shipping_address_name && frm.doc.shipping_address_name != "") {
-            update_taxes(frm.doc.company, frm.doc.party_name, frm.doc.shipping_address_name, category, frm.doc.transaction_date);
-        } else {
-            frappe.msgprint(__("Check shipping address"), __("Quotation"));
         }
     },
     

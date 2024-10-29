@@ -159,10 +159,10 @@ doc_events = {
         "on_submit": "microsynth.microsynth.payment_reminder.transmit_payment_reminder"
     },
     "Quotation": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
+        "before_save": "microsynth.microsynth.taxes.quotation_before_save"
     },
     "Sales Order": {
-        "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
+        "before_save": "microsynth.microsynth.taxes.sales_order_before_save",
         "on_submit": "microsynth.microsynth.utils.check_sales_order"
     },
     "Delivery Note": {
