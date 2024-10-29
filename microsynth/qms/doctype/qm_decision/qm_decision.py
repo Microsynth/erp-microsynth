@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.desk.form.assign_to import add
+from frappe.desk.form.assign_to import add, clear
 from microsynth.qms.signing import sign
 from frappe.model.document import Document
 from frappe.utils import get_url_to_form
@@ -38,6 +38,8 @@ def create_decision(approver, decision, dt, dn, from_status, to_status, comments
         description = f"Your {dt} {url_string} has been {'rejected' if decision == 'Reject' else 'approved'} by {approver} for status transition {from_status} -> {to_status}."
         if comments:
             description += f"<br><br>Rational: {comments}"
+        # Delete existing assignments (otherwise leading to an error)
+        clear(dt, dn)
         # Assign creator of linked document
         add({
             'doctype': dt,
