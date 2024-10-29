@@ -90,7 +90,7 @@ class QMChange(Document):
     
     def has_impact(self):
         for potential_impact in self.impact:
-            if potential_impact.impact_answer == 'Yes':
+            if potential_impact.impact_answer == 'yes':
                 return True
         return False
 
