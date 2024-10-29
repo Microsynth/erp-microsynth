@@ -3,7 +3,9 @@
 
 import os
 import re
+from datetime import datetime
 import frappe
+from frappe.utils import get_url_to_form
 from frappe.core.doctype.communication.email import make
 from frappe.contacts.doctype.address.address import get_address_display
 from frappe.desk.form.load import get_attachments
@@ -494,13 +496,13 @@ def check_mycoplasma_sales_order_completion():
     bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
     """
     open_mycoplasma_sales_orders = frappe.db.sql("""
-        SELECT `name`
+        SELECT `tabSales Order`.`name`
         FROM `tabSales Order`
         LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
-        WHERE `docstatus` = 1
-          AND `status` NOT IN ("Closed", "Completed")
-          AND `product_type` = "Genetic Analysis"
-          AND `per_delivered` < 100
+        WHERE `tabSales Order`.`docstatus` = 1
+          AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
+          AND `tabSales Order`.`product_type` = "Genetic Analysis"
+          AND `tabSales Order`.`per_delivered` < 100
           AND `tabSales Order Item`.`item_code` IN ('6032', '6033');
     """, as_dict=True)
 
@@ -552,3 +554,92 @@ def check_mycoplasma_sales_order_completion():
 
         except Exception as err:
             frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}", "lab_reporting.check_mycoplasma_sales_order_completion")
+
+
+def check_submit_mycoplasma_delivery_note(delivery_note):
+    """
+    Check if the delivery note is eligible for autocompletion and submit it.
+
+    run
+    bench execute microsynth.microsynth.lab_reporting.check_submit_mycoplasma_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508'}"
+    """
+    try:
+        delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+
+        if delivery_note.docstatus != 0:
+            msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
+            print(msg)
+            frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+            return
+
+        sales_orders = []
+        for i in delivery_note.items:
+            if i.item_code not in ['6032', '6033']:
+                print(f"Delivery Note '{delivery_note.name}': Item '{i.item_code}' is not allowed for autocompletion")
+                return
+            if i.against_sales_order and (i.against_sales_order not in sales_orders):
+                sales_orders.append(i.against_sales_order)
+
+        if len(sales_orders) != 1:
+            msg = f"Delivery Note '{delivery_note.name}' is derived from {len(sales_orders)} Sales Orders"
+            print(msg)
+            frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+            return
+
+        # Check that the delivery note was created at least 7 days ago
+        time_between_insertion = datetime.today() - delivery_note.creation
+        if time_between_insertion.days <= 7:
+            print(f"Delivery Note '{delivery_note.name}' is not older than 7 days and was created on {delivery_note.creation}")
+            return
+
+        # Check that the Delivery Note does not contain a Sample with a Barcode Label associated with more than one Sample
+        for sample in delivery_note.samples:
+            barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
+            samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
+            if len(samples) > 1:
+                # Only log an error
+                sample_details = ""
+                for s in samples:
+                    url = get_url_to_form("Sample", s['name'])
+                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
+                frappe.log_error(f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}")
+                # Create Email Template with the Name and Subject "Mycoplasma Barcode used multiple times", Sender erp@microsynth.ch,
+                # Sender Full Name "Microsynth ERP", Recipients SWö, CC Recipients RSu, JPe and the following response?:
+                """
+                Dear Stefan,
+
+                this is an automatic email to inform you that Delivery Note '{{ delivery_note_name }}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{{ barcode_label }}' that is used for {{ len_samples }} different Samples:
+
+                {{ sample_details }}
+
+                Please check these Samples. If you are sure that there is no problem, please submit '{{ delivery_note_name }}' manually in the ERP.
+                If one of those Samples is on a Sales Order that was not processed and will not be processed, please comment and cancel this Sales Order.
+
+                Best regards,
+                Jens
+                """
+                # email_template = frappe.get_doc("Email Template", "Mycoplasma Barcode used multiple times")
+                # values_to_render = {
+                #     'delivery_note_name': delivery_note.name,
+                #     'barcode_label': barcode_label,
+                #     'len_samples': len(samples),
+                #     'sample_details': sample_details
+                # }
+                # rendered_message = frappe.render_template(email_template.response, values_to_render)
+                # #non_html_message = rendered_message.replace("<br>","\n")
+                # #print(non_html_message)
+                # make(
+                #     recipients = email_template.recipients,
+                #     sender = email_template.sender,
+                #     sender_full_name = email_template.sender_full_name,
+                #     cc = email_template.cc_recipients,
+                #     subject = email_template.subject,
+                #     content = rendered_message,
+                #     send_email = True
+                #     )
+                return
+
+        delivery_note.submit()
+
+    except Exception as err:
+        frappe.log_error(f"Cannot process Delivery Note '{delivery_note.name}': \n{err}", "lab_reporting.check_submit_mycoplasma_delivery_note")
