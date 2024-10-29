@@ -1176,7 +1176,7 @@ def transmit_sales_invoice(sales_invoice_id):
         if sales_invoice.invoice_sent_on:
             msg = f"Sales Invoice '{sales_invoice_id}' has Invoice sent on '{sales_invoice.invoice_sent_on}'. Going to not transmit it (again). Please check manually."
             print(msg)
-            frappe.log_error(msg)
+            frappe.log_error(msg, "invoicing.transmit_sales_invoice")
             return
 
         # Do not send any invoice if the items are free of charge
