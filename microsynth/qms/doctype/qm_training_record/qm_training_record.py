@@ -4,9 +4,11 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils.data import today
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
 from frappe.desk.form.load import get_attachments
+from frappe.core.doctype.communication.email import make
 from datetime import datetime
 
 
@@ -66,3 +68,25 @@ def get_training_records(qm_document):
     return frappe.get_all("QM Training Record",
             filters = [['document_name', '=', qm_document], ['docstatus', '=', 1]],
             fields = ['name', 'trainee', 'signed_on', 'signature'])
+
+
+def send_reminder_on_due_date():
+    """
+    Send a reminder to trainees whose QM Training Record is due today.
+    Should be run by a daily cronjob.
+
+    bench execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
+    """
+    qmtr_drafts_due_today = frappe.get_all("QM Training Record",
+            filters = [['due_date', '=', f'{today()}'], ['docstatus', '=', 0]],
+            fields = ['name', 'trainee', 'document_type', 'document_name'])
+    for qmtr in qmtr_drafts_due_today:
+        make(
+            recipients = qmtr['trainee'],
+            cc = "qm@microsynth.ch",
+            sender = "qm@microsynth.ch",
+            sender_full_name = "QAU",
+            subject = "Reminder: Your QM Training Record is due today",
+            content = "Your QM Training Record is due today. Please sign it or contact QAU.",
+            send_email = True
+        )
