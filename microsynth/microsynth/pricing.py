@@ -872,3 +872,96 @@ def disable_price_list(price_list):
     price_list_doc = frappe.get_doc("Price List", price_list)
     price_list_doc.enabled = 0
     price_list_doc.save()
+
+
+def find_price_lists_differing_from_reference(items):
+    """
+    bench execute microsynth.microsynth.pricing.find_price_lists_differing_from_reference --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212']}"
+    """
+    old_reference_rates = {
+        '6200': {
+            'CHF':  69.00,
+            'EUR':  57.50,
+            'SEK': 603.75,
+            'USD':  69.00
+        },
+        '6202': {
+            'CHF': 218.75,
+            'EUR': 182.31,
+            'SEK':1914.26,
+            'USD': 218.75
+        },
+        '6210': {
+            'CHF':  86.25,
+            'EUR':  71.88,
+            'SEK': 754.74,
+            'USD':  86.25
+        },
+        '6211': {
+            'CHF': 181.25,
+            'EUR': 151.06,
+            'SEK':1586.13,
+            'USD': 181.25
+        },
+        '6212': {
+            'CHF': 275.00,
+            'EUR': 229.19,
+            'SEK':2406.50,
+            'USD': 275.00
+        }
+    }  # TODO: Generalize by deleting the old reference rates
+    affected_price_lists = dict()
+    affected_sales_managers = set()
+    #print("price_list;item_code;min_qty;rate;currency;item_price_id;customer_id;customer_name;sales_manager")
+    for item in items:
+        if not item in old_reference_rates:
+            print(f"Old reference rates for Item {item} are unknown, going to skip.")
+        for currency in ['USD', 'SEK', 'EUR', 'CHF']:
+            if not currency in old_reference_rates[item]:
+                print(f"Got no old reference rates for Item {item} and currency {currency}, going to skip.")
+            old_reference_rate = old_reference_rates[item][currency]
+            reference_price_list = f"Sales Prices {currency}"
+            reference_rate = get_rate_or_none(item, reference_price_list, 1)
+            sql_query = f"""
+                SELECT
+                    `tabItem Price`.`name`,
+                    `tabItem Price`.`item_code`,
+                    `tabItem`.`item_group`,
+                    `tabItem`.`stock_uom` AS `uom`,
+                    `tabItem Price`.`item_name`,
+                    `tabItem Price`.`min_qty`,
+                    `tabItem Price`.`price_list_rate` AS `rate`,
+                    `tabItem Price`.`currency`,
+                    `tabItem Price`.`price_list`,
+                    `tabCustomer`.`name` AS `customer_id`,
+                    `tabCustomer`.`customer_name` AS `customer_name`,
+                    `tabCustomer`.`account_manager` AS `account_manager`
+                FROM `tabItem Price`        
+                LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
+                LEFT JOIN `tabCustomer` ON `tabCustomer`.`default_price_list` = `tabItem Price`.`price_list`
+                WHERE `tabItem Price`.`reference_price_list` = "{reference_price_list}"
+                    AND `tabItem Price`.`price_list_rate` != {reference_rate}
+                    AND `tabItem Price`.`price_list_rate` != {old_reference_rate}
+                    AND `tabItem Price`.`item_code` = "{item}"
+                    AND `tabItem Price`.`currency` = "{currency}"
+                    AND `tabItem`.`disabled` = 0
+                    AND (`tabItem Price`.`valid_from` IS NULL OR `tabItem Price`.`valid_from` <= CURDATE())
+                    AND (`tabItem Price`.`valid_upto` IS NULL OR `tabItem Price`.`valid_upto` >= CURDATE())
+                    AND `tabCustomer`.`disabled` = 0
+                ORDER BY `tabItem Price`.`price_list`;
+                """
+            data = frappe.db.sql(sql_query, as_dict=True)
+            for d in data:
+                if not d['price_list'] in affected_price_lists:
+                    affected_price_lists[d['price_list']] = set()
+                affected_price_lists[d['price_list']].add(d['account_manager'] or f"Customer '{d['customer_id']}' without a Sales Manager")
+                affected_sales_managers.add(d['account_manager'] or f"Customer '{d['customer_id']}' without a Sales Manager")
+                #print(f"{d['price_list']};{d['item_code']};{d['min_qty']};{d['rate']};{currency};{d['name']};{d['customer_id']};{d['customer_name']};{d['account_manager']}")
+    price_list_counter = 0
+    print("\nprice_list;sales_managers")
+    for price_list, sales_managers in affected_price_lists.items():
+        print(f"{price_list};{','.join(sm for sm in sales_managers)}")
+        price_list_counter += 1
+    print(f"\n{price_list_counter=}")
+    print(f"\nAffected Sales Managers: {'; '.join(sales_manager for sales_manager in affected_sales_managers)}")
+
