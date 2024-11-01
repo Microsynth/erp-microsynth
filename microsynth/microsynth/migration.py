@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022-2023, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 from email.policy import default
@@ -4410,3 +4410,46 @@ def find_users_without_user_settings():
 #         if not contact_doc.phone.isnumeric():
 #             print(f"There are still non-numeric characters in the phone number '{contact_doc.phone}' of Contact {contact_doc.name}. Please process manually.")
 
+def check_clean_docstatus_deviations():
+    """
+    This function will find and resolve deviations in child docstati (when the document has e.g. status 2, but the child node don't)
+    
+    bench execute microsynth.microsynth.migration.check_clean_docstatus_deviations
+    """
+    # find all submittable doctypes
+    submittable_doctypes = frappe.get_all("DocType", filters={'is_submittable': 1}, fields=['name'])
+    # for each doctype, find children doctypes
+    for doctype in submittable_doctypes:
+        dt = doctype['name']
+        print("Analysing {0}...".format(dt))
+        for f in frappe.get_meta(dt).fields:
+            if f.fieldtype == "Table":
+                # find deviations:
+                deviations = frappe.db.sql("""
+                    SELECT
+                        "{dt}" AS `doctype`,
+                        "{child_dt}" AS `child_doctype`,
+                        `tab{dt}`.`name` AS `docname`,
+                        `tab{dt}`.`docstatus` AS `docstatus`,
+                        `tab{child_dt}`.`name` AS `childname`,
+                        `tab{child_dt}`.`docstatus` AS `child_docstatus`
+                    FROM `tab{dt}`
+                    LEFT JOIN `tab{child_dt}` ON `tab{child_dt}`.`parent` = `tab{dt}`.`name` 
+                                                 AND `tab{child_dt}`.`parenttype` = "{dt}"
+                    WHERE `tab{dt}`.`docstatus` != `tab{child_dt}`.`docstatus`
+                    ;
+                """.format(dt=dt, child_dt=f.options), as_dict=True)
+                for d in deviations:
+                    frappe.db.sql("""
+                        UPDATE `tab{child_dt}`
+                        SET `docstatus` = {parent_docstatus}
+                        WHERE `name` = "{child_name}";
+                        """.format(
+                            child_dt=d['child_doctype'], 
+                            child_name=d['childname'], 
+                            parent_docstatus=d['docstatus']
+                        ), as_dict=True
+                    )
+                    print("{0}".format(d))
+                frappe.db.commit()
+    return

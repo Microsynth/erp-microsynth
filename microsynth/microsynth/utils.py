@@ -2278,18 +2278,15 @@ def force_cancel(dt, dn):
         meta = frappe.get_meta(dt)
         if meta.has_field('status'):
             status_update = """, `status` = "Cancelled" """
+            set_record_cancelled(dt, dn, status_update=status_update, key="name")
         else:
-            status_update = ""
-            
-        frappe.db.sql("""
-            UPDATE `tab{dt}`
-            SET 
-                `docstatus` = 2
-                {status}
-            WHERE
-                `name` = "{dn}"
-                AND `docstatus` = 0;
-        """.format(dt=dt, dn=dn, status=status_update))
+            set_record_cancelled(dt, dn, status_update="", key="name")
+        
+        # recurse into child tables
+        for f in meta.fields:
+            if f.fieldtype == "Table":
+                set_record_cancelled(f.options, dn, status_update="", key="parent", parent_dt=dt)
+
         frappe.db.commit()
     except Exception as err:
         frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
@@ -2306,6 +2303,24 @@ def force_cancel(dt, dn):
         new_comment.insert(ignore_permissions=True)
     return
 
+def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
+    frappe.db.sql("""
+        UPDATE `tab{dt}`
+        SET 
+            `docstatus` = 2
+            {status}
+        WHERE
+            `{key}` = "{dn}"
+            AND `docstatus` = 0
+            {parent};
+    """.format(
+        dt=dt, 
+        dn=dn, 
+        status=status_update, 
+        key=key, 
+        parent=""" AND `parenttype` = "{0}" """.format(parent_dt) if parent_dt else "")
+    )
+    return
 
 def user_has_role(user, role):
     """
