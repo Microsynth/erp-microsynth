@@ -9,12 +9,14 @@
   "document_identification_section",
   "cc_type",
   "qm_process",
+  "hierarchy_1",
   "company",
   "document_type",
   "amended_from",
   "column_break_3",
   "title",
   "status",
+  "hierarchy_2",
   "document_name",
   "date",
   "in_approval",
@@ -283,10 +285,22 @@
    "hidden": 1,
    "label": "In Approval",
    "read_only": 1
+  },
+  {
+   "fieldname": "hierarchy_1",
+   "fieldtype": "Link",
+   "label": "Hierarchy 1",
+   "options": "QM Classification Hierarchy"
+  },
+  {
+   "fieldname": "hierarchy_2",
+   "fieldtype": "Link",
+   "label": "Hierarchy 2",
+   "options": "QM Classification Hierarchy"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-20 16:01:28.385280",
+ "modified": "2024-11-04 15:47:39.969368",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

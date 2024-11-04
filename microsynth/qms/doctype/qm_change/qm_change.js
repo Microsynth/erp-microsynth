@@ -8,6 +8,14 @@ frappe.ui.form.on('QM Change', {
             frappe.validated = false;
         }
     },
+    qm_process: function(frm) {
+        // clear affected hierarchy 1 field when process has changed to prevent invalid values
+        cur_frm.set_value("hierarchy_1", null);
+    },
+    hierarchy_1: function(frm) {
+        // clear affected hierarchy 2 field
+        cur_frm.set_value("hierarchy_2", null);
+    },
     refresh: function(frm) {
         // remove option to attach files depending on status
         if (["Closed", "Cancelled"].includes(frm.doc.status) || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
@@ -567,6 +575,24 @@ frappe.ui.form.on('QM Change', {
                     filters: [
                         ["status", "=", "Valid"]
                 ]
+            };
+        };
+
+        // filters for hierarchy fields
+        frm.fields_dict.hierarchy_1.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_process',
+                'filters': {
+                    'process': cur_frm.doc.qm_process
+                }
+            };
+        };
+        frm.fields_dict.hierarchy_2.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_allowed_classification_for_hierarchy',
+                'filters': {
+                    'hierarchy': cur_frm.doc.hierarchy_1
+                }
             };
         };
     }
