@@ -713,7 +713,7 @@
    "_user_tags": null,
    "amend": 0,
    "cancel": 0,
-   "create": 0,
+   "create": 1,
    "creation": "2013-01-10 16:34:11",
    "delete": 0,
    "docstatus": 0,
