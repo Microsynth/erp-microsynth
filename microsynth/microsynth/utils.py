@@ -131,7 +131,8 @@ def get_billing_address(customer):
         return find_billing_address(customer.name)
     billing_address = frappe.get_value("Contact", invoice_to_contact, "address")
     if not billing_address:
-        frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
+        if invoice_to_contact.isnumeric():
+            frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
         return find_billing_address(customer.name)
     addresses = frappe.db.sql(f"""
             SELECT 
@@ -191,7 +192,8 @@ def find_billing_address(customer_id):
         return addresses[0]
     else:
         #frappe.throw("None or multiple billing addresses found for customer '{0}'".format(customer_id), "find_billing_address")
-        frappe.log_error(f"Found {len(addresses)} billing addresses for Customer '{customer_id}'", "find_billing_address")
+        if customer_id.isnumeric():
+            frappe.log_error(f"Found {len(addresses)} billing addresses for Customer '{customer_id}'", "find_billing_address")
         return None
 
 
@@ -1035,7 +1037,8 @@ def set_debtor_accounts(customer):
     address = get_billing_address(customer.name)
 
     if not address:
-        frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", "utils.set_debtor_accounts")
+        if customer.name.isnumeric():
+            frappe.log_error(f"Customer {customer.name} has no Preferred Billing Address. Unable to set Accounts.", "utils.set_debtor_accounts")
         return
 
     for company in companies:
