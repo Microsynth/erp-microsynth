@@ -874,54 +874,60 @@ def disable_price_list(price_list):
     price_list_doc.save()
 
 
+old_reference_rates = {
+    '6200': {
+        'CHF':  69.00,
+        'EUR':  57.50,
+        'SEK': 603.75,
+        'USD':  69.00
+    },
+    '6202': {
+        'CHF': 218.75,
+        'EUR': 182.31,
+        'SEK':1914.26,
+        'USD': 218.75
+    },
+    '6210': {
+        'CHF':  86.25,
+        'EUR':  71.88,
+        'SEK': 754.74,
+        'USD':  86.25
+    },
+    '6211': {
+        'CHF': 181.25,
+        'EUR': 151.06,
+        'SEK':1586.13,
+        'USD': 181.25
+    },
+    '6212': {
+        'CHF': 275.00,
+        'EUR': 229.19,
+        'SEK':2406.50,
+        'USD': 275.00
+    }
+}
+
 def find_price_lists_differing_from_reference(items):
     """
     bench execute microsynth.microsynth.pricing.find_price_lists_differing_from_reference --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212']}"
     """
-    old_reference_rates = {
-        '6200': {
-            'CHF':  69.00,
-            'EUR':  57.50,
-            'SEK': 603.75,
-            'USD':  69.00
-        },
-        '6202': {
-            'CHF': 218.75,
-            'EUR': 182.31,
-            'SEK':1914.26,
-            'USD': 218.75
-        },
-        '6210': {
-            'CHF':  86.25,
-            'EUR':  71.88,
-            'SEK': 754.74,
-            'USD':  86.25
-        },
-        '6211': {
-            'CHF': 181.25,
-            'EUR': 151.06,
-            'SEK':1586.13,
-            'USD': 181.25
-        },
-        '6212': {
-            'CHF': 275.00,
-            'EUR': 229.19,
-            'SEK':2406.50,
-            'USD': 275.00
-        }
-    }  # TODO: Generalize by deleting the old reference rates
+    # TODO: Generalize by deleting the old reference rates
     affected_price_lists = dict()
     affected_sales_managers = set()
-    #print("price_list;item_code;min_qty;rate;currency;item_price_id;customer_id;customer_name;sales_manager")
     for item in items:
         if not item in old_reference_rates:
             print(f"Old reference rates for Item {item} are unknown, going to skip.")
+            continue
         for currency in ['USD', 'SEK', 'EUR', 'CHF']:
             if not currency in old_reference_rates[item]:
                 print(f"Got no old reference rates for Item {item} and currency {currency}, going to skip.")
+                continue
             old_reference_rate = old_reference_rates[item][currency]
             reference_price_list = f"Sales Prices {currency}"
             reference_rate = get_rate_or_none(item, reference_price_list, 1)
+            if not reference_rate:
+                print(f"Got no reference rate for Item {item} with min_qty 1 on reference Price List '{reference_price_list}', going to skip.")
+                continue
             sql_query = f"""
                 SELECT
                     `tabItem Price`.`name`,
@@ -956,7 +962,6 @@ def find_price_lists_differing_from_reference(items):
                     affected_price_lists[d['price_list']] = set()
                 affected_price_lists[d['price_list']].add(d['account_manager'] or f"Customer '{d['customer_id']}' without a Sales Manager")
                 affected_sales_managers.add(d['account_manager'] or f"Customer '{d['customer_id']}' without a Sales Manager")
-                #print(f"{d['price_list']};{d['item_code']};{d['min_qty']};{d['rate']};{currency};{d['name']};{d['customer_id']};{d['customer_name']};{d['account_manager']}")
     price_list_counter = 0
     print("\nprice_list;sales_managers")
     for price_list, sales_managers in affected_price_lists.items():
@@ -965,3 +970,65 @@ def find_price_lists_differing_from_reference(items):
     print(f"\n{price_list_counter=}")
     print(f"\nAffected Sales Managers: {'; '.join(sales_manager for sales_manager in affected_sales_managers)}")
 
+
+def change_customer_prices(items):
+    """
+    bench execute microsynth.microsynth.pricing.change_customer_prices --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212']}"
+    """
+    counter = 0
+    price_lists_with_standing_quotations = set()
+    for item in items:
+        if not item in old_reference_rates:
+            print(f"Old reference rates for Item {item} are unknown, going to skip.")
+            continue
+        for currency in ['USD', 'SEK', 'EUR', 'CHF']:
+            if not currency in old_reference_rates[item]:
+                print(f"Got no old reference rates for Item {item} and currency {currency}, going to skip.")
+                continue
+            old_reference_rate = old_reference_rates[item][currency]
+            reference_price_list = f"Sales Prices {currency}"
+            reference_rate = get_rate_or_none(item, reference_price_list, 1)
+            if not reference_rate:
+                print(f"Got no reference rate for Item {item} with min_qty 1 on reference Price List '{reference_price_list}', going to skip.")
+                continue
+            sql_query = f"""
+                SELECT
+                    `tabItem Price`.`name`,
+                    `tabItem Price`.`item_code`,
+                    `tabItem Price`.`item_name`,
+                    `tabItem Price`.`min_qty`,
+                    `tabItem Price`.`price_list_rate` AS `rate`,
+                    `tabItem Price`.`currency`,
+                    `tabItem Price`.`price_list`
+                FROM `tabItem Price`        
+                LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
+                LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
+                WHERE `tabItem Price`.`reference_price_list` = "{reference_price_list}"
+                    AND `tabItem Price`.`price_list_rate` != {reference_rate}
+                    AND `tabItem Price`.`price_list_rate` = {old_reference_rate}
+                    AND `tabItem Price`.`item_code` = "{item}"
+                    AND `tabItem Price`.`currency` = "{currency}"
+                    AND `tabItem`.`disabled` = 0
+                    AND `tabPrice List`.`enabled` = 1
+                """
+            data = frappe.db.sql(sql_query, as_dict=True)
+            for d in data:
+                # check if there is a submitted Standing Quotation
+                if d['price_list'] in price_lists_with_standing_quotations:
+                    continue
+                sqs = frappe.get_all("Standing Quotation", filters=[['docstatus', '=', '1'], ['price_list', '=', d['price_list']]], fields=['name'])
+                if len(sqs) > 0:
+                    price_lists_with_standing_quotations.add(d['price_list'])
+                    print(f"There are {len(sqs)} submitted Standing Quotations for Price List '{d['price_list']}', going to skip.")
+                    continue
+                # no Standing Quotation -> change rate
+                item_price_doc = frappe.get_doc("Item Price", d['name'])
+                if item_price_doc.min_qty != 1:
+                    print(f"Unable to change rate of Item Price {d['name']} on Price List {d['price_list']} because it has min_qty {item_price_doc.min_qty}.")
+                    continue
+                item_price_doc.rate = reference_rate
+                item_price_doc.save()
+                counter += 1
+                print(f"Changed rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
+
+    print(f"\nSuccessfully changed {counter} Item Price rates.")
