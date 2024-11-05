@@ -214,8 +214,9 @@ frappe.ui.form.on('QM Change', {
         }
 
         // add buttons to request CC Action and Effectiveness Check
-        if (frm.doc.status == 'Planning'
-            && (frappe.user.has_role('QAU') || (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval))) {
+        if ((frm.doc.status == 'Planning'
+            && (frappe.user.has_role('QAU') || (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval)))
+            || (frm.doc.status == 'Implementation' && frm.doc.in_approval && frm.doc.cc_type == 'short' && frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
                 request_qm_action('Change Control Action');
             }).addClass("btn-primary");
