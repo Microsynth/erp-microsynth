@@ -88,4 +88,8 @@ def disable_hot_config_in_dev():
         slims_config.endpoint = (slims_config.endpoint or "").replace(".63",".64")
         slims_config.save()
 
+        print("Set Flushbox settings...")
+        flushbox_settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
+        flushbox_settings.pdf_path = (flushbox_settings.pdf_path or "").replace("/erp_share/", "/erp_share_test/")
+        flushbox_settings.save()
     return
