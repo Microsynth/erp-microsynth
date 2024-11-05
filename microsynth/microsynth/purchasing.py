@@ -229,9 +229,9 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_suppliers(file_path, expected_line_length=41):
+def import_suppliers(file_path, expected_line_length=41, update_countries=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241028_Lieferantenexport_Seqlab.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241105_Lieferantenexport_Seqlab.csv', 'update_countries': True}"
     """
     import csv
     country_code_mapping = {}
@@ -337,8 +337,20 @@ def import_suppliers(file_path, expected_line_length=41):
                 print(f"Column 'Firma' is mandatory, going to skip {ext_debitor_number}.")
                 continue
             #company = f"{company} 2"  # Only for testing
-            if len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
+            if (not update_countries) and len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
                 print(f"There exists already a Supplier with the Supplier Name '{company}', going to skip {ext_debitor_number}.")
+                continue
+
+            if update_countries:
+                suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])
+                if len(suppliers) != 1:
+                    print(f"Found {len(suppliers)} with Supplier Name '{company}', going to skip {ext_debitor_number}.")
+                    continue
+                supplier_doc = frappe.get_doc("Supplier", suppliers[0]['name'])
+                old_country = supplier_doc.country
+                supplier_doc.country = country_code_mapping[country_code]
+                supplier_doc.save()
+                print(f"Supplier {supplier_doc.name} (Index {ext_debitor_number}): Changed country from {old_country} to {supplier_doc.country}.")
                 continue
 
             new_supplier = frappe.get_doc({
@@ -351,7 +363,8 @@ def import_suppliers(file_path, expected_line_length=41):
                 'payment_terms': payment_terms_mapping[payment_days],
                 'bic': bic,
                 'iban': iban,
-                'supplier_details': details
+                'supplier_details': details,
+                'country': country_code_mapping[country_code]
             })
             new_supplier.insert()
             imported_counter += 1
