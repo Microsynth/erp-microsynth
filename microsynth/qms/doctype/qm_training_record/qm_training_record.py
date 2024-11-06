@@ -5,6 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.utils.data import today
+from frappe.utils import get_url_to_form
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
 from frappe.desk.form.load import get_attachments
@@ -73,7 +74,8 @@ def get_training_records(qm_document):
 def send_reminder_on_due_date():
     """
     Send a reminder to trainees whose QM Training Record is due today.
-    Should be run by a daily cronjob.
+    Should be run by a daily cronjob in the early morning:
+    45 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
 
     bench execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
     """
@@ -81,12 +83,14 @@ def send_reminder_on_due_date():
             filters = [['due_date', '=', f'{today()}'], ['docstatus', '=', 0]],
             fields = ['name', 'trainee', 'document_type', 'document_name'])
     for qmtr in qmtr_drafts_due_today:
+        first_name = frappe.get_value("User", qmtr['trainee'], "first_name")
+        url = get_url_to_form("QM Training Record", qmtr['name'])
         make(
             recipients = qmtr['trainee'],
             cc = "qm@microsynth.ch",
             sender = "qm@microsynth.ch",
             sender_full_name = "QAU",
-            subject = "Reminder: Your QM Training Record is due today",
-            content = "Your QM Training Record is due today. Please sign it or contact QAU.",
+            subject = "Last Reminder: Your QM Training Record is due today",
+            content = f"Dear {first_name},<br><br>Your QM Training Record <a href={url}>{qmtr['name']}</a> is due today. Please sign it or contact QAU.",
             send_email = True
         )
