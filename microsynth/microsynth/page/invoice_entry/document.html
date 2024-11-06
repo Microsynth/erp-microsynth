@@ -73,6 +73,10 @@
                                 <td>{{ _("Remarks") }}</td>
                                 <td><div id="remarks_{{ name }}"></div></td>
                             </tr>
+                            <tr>
+                                <td></td>
+                                <td><button class="btn btn-sm btn-primary" id="btn_save_{{ name }}">{{ _("Save") }}</button></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -87,7 +91,6 @@
                 {% for a in attachments %}
                     <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
-                <button class="btn btn-sm btn-primary" id="btn_save_{{ name }}">{{ _("Save") }}</button>
                 <button class="btn btn-sm btn-primary" id="btn_assign_{{ name }}">{{ _("Assign to Approver") }}</button>
             </td>
         </tr>
