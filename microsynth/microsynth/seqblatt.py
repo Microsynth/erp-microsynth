@@ -325,17 +325,17 @@ def submit_seq_primer_dns():
         frappe.db.commit()
 
 
-def close_partly_delivered_orders(days=60, dry_run=True):
+def close_partly_delivered_paid_orders(dry_run=True):
     """
-    Find Sequencing Sales Orders that are at least partly delivered and invoiced
-    and created more than :param days ago. Close these Sales Orders.
+    Find Sequencing Sales Orders that are at least partly delivered, paid
+    and created more than :param days ago. Close and tag these Sales Orders.
+    Should be run by a daily cronjob in the early morning:
+    30 5 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.seqblatt.close_partly_delivered_paid_orders --kwargs "{'dry_run': False}"
 
-    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_orders --kwargs "{'days': 60, 'dry_run': True}"
+    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_paid_orders --kwargs "{'dry_run': False}"
     """
     from frappe.desk.tags import add_tag
-
     counter = 0
-    diffs = []
     sales_orders = frappe.db.sql(f"""
         SELECT * FROM
             (SELECT `tabSales Order`.`name`,
@@ -348,12 +348,14 @@ def close_partly_delivered_orders(days=60, dry_run=True):
                 `tabSales Order`.`product_type`,
                 `tabSales Order`.`company`,
                 `tabSales Order`.`owner`,
-                (SELECT COUNT(`tabSales Invoice Item`.`name`) 
+                (SELECT COUNT(`tabSales Invoice Item`.`name`)
                     FROM `tabSales Invoice Item`
+                    LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
                     WHERE `tabSales Invoice Item`.`docstatus` = 1
                         AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
-                ) AS `si_items`,
-                (SELECT COUNT(`tabDelivery Note Item`.`name`) 
+                        AND `tabSales Invoice`.`status` = 'Paid'
+                ) AS `paid_si_items`,
+                (SELECT COUNT(`tabDelivery Note Item`.`name`)
                     FROM `tabDelivery Note Item`
                     WHERE `tabDelivery Note Item`.`docstatus` = 1
                         AND `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
@@ -364,69 +366,59 @@ def close_partly_delivered_orders(days=60, dry_run=True):
                 AND `tabSales Order`.`per_delivered` < 100
                 AND `tabSales Order`.`docstatus` = 1
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
-                AND `tabSales Order`.`billing_status` NOT IN ('Closed', 'Not Billed')
-                AND `tabSales Order`.`creation` < DATE_ADD(NOW(), INTERVAL -{days} DAY)
-                AND `tabSales Order`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -{days} DAY)
+                AND `tabSales Order`.`per_billed` > 0
+                AND `tabSales Order`.`billing_status` != 'Not Billed'
             ) AS `raw`
-        WHERE `raw`.`si_items` > 0
+        WHERE `raw`.`paid_si_items` > 0
             AND `raw`.`dn_items` > 0
         ORDER BY `raw`.`transaction_date`
         ;""", as_dict=True)
-    
+
     print(f"Going to process {len(sales_orders)} Sales Orders.")
     
     for i, so in enumerate(sales_orders):
         so_doc = frappe.get_doc("Sales Order", so['name'])
-
-        if so_doc.web_order_id:
-            dn_web_order_id = f"AND `tabDelivery Note`.`web_order_id` = {so_doc.web_order_id}"
-            #si_web_order_id = f"AND `tabSales Invoice`.`web_order_id` = {so_doc.web_order_id}"
-        else:
-            print(f"Sales Order {so_doc.name} has no Web Order ID.")
-        
+        if not so_doc.web_order_id:
+            msg = f"Sales Order {so_doc.name} has no Web Order ID. Please check to close it manually."
+            print(msg)
+            frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+            continue
+        # check that there is exactly one submitted Delivery Note with a matching Web Order ID
         delivery_notes = frappe.db.sql(f"""
             SELECT DISTINCT `tabDelivery Note Item`.`parent` AS `name`,
                 `tabDelivery Note`.`total`
             FROM `tabDelivery Note Item`
             LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-            WHERE (`tabDelivery Note Item`.`against_sales_order` = '{so_doc.name}'
-                AND `tabDelivery Note Item`.`docstatus` = 1)
-                {dn_web_order_id};
-            """, as_dict=True)
+            WHERE `tabDelivery Note Item`.`docstatus` = 1)
+                AND `tabDelivery Note`.`web_order_id` = {so_doc.web_order_id}
+            ;""", as_dict=True)
 
-        # sales_invoices = frappe.db.sql(f"""
-        #     SELECT DISTINCT `tabSales Invoice Item`.`parent` AS `name`,
-        #         `tabSales Invoice`.`total`
-        #     FROM `tabSales Invoice Item`
-        #     LEFT JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
-        #     WHERE (`tabSales Invoice Item`.`sales_order` = '{so_doc.name}'
-        #         AND `tabSales Invoice Item`.`docstatus` = 1)
-        #         {si_web_order_id};
-        #     """, as_dict=True)
-        
         if len(delivery_notes) > 0:
             if len(delivery_notes) == 1:
-                dn_total = delivery_notes[0]['total']
-                so_total = so_doc.total
-                diff = round(dn_total-so_total,2)
-                diffs.append((diff, so_doc.currency, so_doc.name))
                 if dry_run:
                     print(f"Would close {so_doc.name} created {so_doc.creation}")
+                    counter += 1
                 else:
-                    add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
-                    # set Sales Order status to Closed
-                    so_doc.update_status('Closed')
-                    so_doc.save()
-                    print(f"{i}/{len(sales_orders)}: Tagged and closed {so_doc.name} created {so_doc.creation}")
-                counter += 1
+                    try:
+                        add_tag(tag="partly_delivered", dt="Sales Order", dn=so_doc.name)
+                        # set Sales Order status to Closed
+                        so_doc.update_status('Closed')
+                        so_doc.save()
+                    except Exception as err:
+                        msg = f"Unable to close Sales Order {so_doc.name} due to the following error:\n{err}"
+                        print(msg)
+                        frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
+                    else:
+                        print(f"{i+1}/{len(sales_orders)}: Tagged and closed {so_doc.name} created {so_doc.creation}")
+                        counter += 1
             else:
-                print(f"--- Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Notes: {delivery_notes}")
+                msg = f"Sales Order {so_doc.name} has the following {len(delivery_notes)} submitted Delivery Notes: {delivery_notes}"
+                print(msg)
+                frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
         else:
-            print(f"##### Found no Delivery Note for Sales Order {so_doc.name} with Web Order ID '{so_doc.web_order_id}'.")
-    
-    diffs.sort()  # sorted by the first element of contained triples by default
-    for diff in diffs:
-        print(f"{diff[0]} {diff[1]}: {diff[2]}")
+            msg = f"Found no Delivery Note for Sales Order {so_doc.name} with Web Order ID '{so_doc.web_order_id}'."
+            print(msg)
+            frappe.log_error(msg, "seqblatt.close_partly_delivered_paid_orders")
 
     if dry_run:
         print(f"\nWould have closed {counter} Sales Orders.")

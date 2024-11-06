@@ -75,7 +75,7 @@ def send_reminder_on_due_date():
     """
     Send a reminder to trainees whose QM Training Record is due today.
     Should be run by a daily cronjob in the early morning:
-    45 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
+    40 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
 
     bench execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
     """
