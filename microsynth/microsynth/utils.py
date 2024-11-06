@@ -1775,7 +1775,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
                 'account': intermediate_account,
                 'account_currency': intermediate_currency,
                 'debit_in_account_currency': amount,
-                'debit': round(amount * current_exchange_rate, 2),
+                'debit': rounded(amount * current_exchange_rate, 2),
                 'exchange_rate': current_exchange_rate,
                 'cost_center': cost_center
             }
@@ -1800,7 +1800,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
             'reference_type': 'Sales Invoice',
             'reference_name': invoice.get('sales_invoice'),
             'credit_in_account_currency': invoice.get('outstanding_amount'),
-            'credit': round((invoice.get('outstanding_amount') or 0) * (exchange_rate or 1), 2),
+            'credit': rounded((invoice.get('outstanding_amount') or 0) * (exchange_rate or 1), 2),
             'cost_center': cost_center
         })
         base_total_credit += (invoice.get('outstanding_amount') or 0) * (exchange_rate or 1)
@@ -1812,6 +1812,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
         jv.append('accounts', {
             'account': currency_deviation_account,
             'credit': currency_deviation,
+            'credit_in_account_currency': currency_deviation,
             'account_currency': frappe.get_cached_value("Account", currency_deviation_account, "account_currency"),
             'cost_center': cost_center
         })
