@@ -575,9 +575,12 @@ function request_training_prompt(trainees) {
             {'fieldname': 'user_name', 
              'fieldtype': 'Link', 
              'label': 'Trainee', 
-             'options': 'User', 
+             'options': 'Signature',
              'in_list_view': 1,
-             'reqd': 1} ],
+             'reqd': 1,
+             'get_query': function() { return { filters: {'name': ['LIKE', '%@microsynth%'] } } }
+            }
+          ],
 
          'data': filtered_trainees,
          'get_data': () => { return trainees;}
