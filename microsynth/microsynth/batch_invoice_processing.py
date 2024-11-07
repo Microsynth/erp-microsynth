@@ -75,16 +75,31 @@ def create_invoice(file_name, invoice, settings):
         pinv_doc.payment_type = "ESR"
         
     # find taxes and charges
-    taxes_and_charges_template = frappe.db.sql("""
-        SELECT `tabPurchase Taxes and Charges Template`.`name`
-        FROM `tabPurchase Taxes and Charges`
-        LEFT JOIN `tabPurchase Taxes and Charges Template` ON `tabPurchase Taxes and Charges Template`.`name` = `tabPurchase Taxes and Charges`.`parent`
-        WHERE 
-            `tabPurchase Taxes and Charges Template`.`company` = "{company}"
-            AND `tabPurchase Taxes and Charges`.`rate` = {tax_rate}
-        ;""".format(company=settings.company, tax_rate=flt(invoice.get('tax_rate'))), as_dict=True)
-    if len(taxes_and_charges_template) > 0:
-        pinv_doc.taxes_and_charges = taxes_and_charges_template[0]['name']
+    # prio 1: supplier default tax
+    supplier_default_taxes = frappe.db.sql("""
+        SELECT `default_tax_template`
+        FROM `tabParty Account`
+        WHERE
+            `parentfield` = "accounts"
+            AND `parenttype` = "Supplier"
+            AND `parent` = "{supplier}"
+            AND `company` = "{company}";
+        """.format(supplier=invoice.get('supplier'), company=settings.company), as_dict=True)
+    if len(supplier_default_taxes) > 0:
+        pinv_doc.taxes_and_charges = supplier_default_taxes[0]['default_tax_template']
+    else:
+        # prio 2: find tax template by tax rate
+        taxes_and_charges_template = frappe.db.sql("""
+            SELECT `tabPurchase Taxes and Charges Template`.`name`
+            FROM `tabPurchase Taxes and Charges`
+            LEFT JOIN `tabPurchase Taxes and Charges Template` ON `tabPurchase Taxes and Charges Template`.`name` = `tabPurchase Taxes and Charges`.`parent`
+            WHERE 
+                `tabPurchase Taxes and Charges Template`.`company` = "{company}"
+                AND `tabPurchase Taxes and Charges`.`rate` = {tax_rate}
+            ;""".format(company=settings.company, tax_rate=flt(invoice.get('tax_rate'))), as_dict=True)
+        if len(taxes_and_charges_template) > 0:
+            pinv_doc.taxes_and_charges = taxes_and_charges_template[0]['name']
+    if pinv_doc.taxes_and_charge:
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", taxes_and_charges_template[0]['name'])
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
