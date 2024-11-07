@@ -389,7 +389,7 @@ def close_partly_delivered_paid_orders(dry_run=True):
                 `tabDelivery Note`.`total`
             FROM `tabDelivery Note Item`
             LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-            WHERE `tabDelivery Note Item`.`docstatus` = 1)
+            WHERE `tabDelivery Note Item`.`docstatus` = 1
                 AND `tabDelivery Note`.`web_order_id` = {so_doc.web_order_id}
             ;""", as_dict=True)
 
