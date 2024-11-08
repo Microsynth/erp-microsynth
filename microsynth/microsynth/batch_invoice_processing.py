@@ -1,6 +1,10 @@
 # Copyright (c) 2024, libracore, Microsynth and contributors
 # License: GNU General Public License v3. See license.txt
-
+#
+# Run using (also for cron; note: enable in batch processing settings)
+#
+#  $ bench execute microsynth.microsynth.batch_invoice_processing.process_files
+#
 import frappe
 from frappe.utils import cint, flt, get_link_to_form, get_url_to_form
 from frappe.utils.file_manager import save_file
@@ -99,7 +103,7 @@ def create_invoice(file_name, invoice, settings):
             ;""".format(company=settings.company, tax_rate=flt(invoice.get('tax_rate'))), as_dict=True)
         if len(taxes_and_charges_template) > 0:
             pinv_doc.taxes_and_charges = taxes_and_charges_template[0]['name']
-    if pinv_doc.taxes_and_charge:
+    if pinv_doc.taxes_and_charges:
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", taxes_and_charges_template[0]['name'])
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
