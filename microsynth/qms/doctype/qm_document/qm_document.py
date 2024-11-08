@@ -344,7 +344,7 @@ def notify_pvs_about_valid_status(qm_document):
 
     url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
     make(
-        recipients = pvs,
+        recipients = ','.join(list(pvs)),
         sender = 'erp@microsynth.ch',
         sender_full_name = 'Microsynth ERP',
         subject = f"Validated {qm_document.name}",
