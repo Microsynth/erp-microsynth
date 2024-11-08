@@ -11,7 +11,7 @@ import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, get_url_to_form
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
 from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
 from frappe.utils.file_manager import save_file
@@ -1720,7 +1720,8 @@ def check_invoice_sent_on(days=0):
                 f"{ f'and are dated more than {days} days in the past' if days > 0 else ''}:<br><br>"
         
         for si in invoices:
-            message += f"{si['name']} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
+            url_string = f"<a href={get_url_to_form('Sales Invoice', si['name'])}>{si['name']}</a>"
+            message += f"{url_string} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
 
         message += f"<br>Please ensure that they are transmitted and enter the Invoice sent on date.<br><br>Best regards,<br>Jens"
         make(

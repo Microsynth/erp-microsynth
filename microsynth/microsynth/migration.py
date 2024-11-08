@@ -9,7 +9,7 @@ from frappe import _
 import pandas as pd
 import numpy as np
 import json
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, get_url_to_form
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
@@ -1359,7 +1359,8 @@ def disable_customers_without_contacts():
 
             if len(quotations) != 0 or len(sales_orders) != 0 or len(delivery_notes) != 0 or len(sales_invoices) != 0:
                 skipped += 1
-                message = f"Customer {c['name']} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices."
+                url_string = f"<a href={get_url_to_form('Sales Invoice', c['name'])}>{c['name']}</a>"
+                message = f"Customer {url_string} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices."
                 #print(message)
                 customers_to_report.append(message)
                 continue

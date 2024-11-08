@@ -258,7 +258,8 @@ def check_submit_delivery_note(delivery_note):
                     recipient = 'katja.laengle@microsynth.ch'
                     person = 'Katja'
                 subject = f"Barcode label {barcode_label} used multiple times"
-                message = f"Dear {person},<br><br>this is an automatic email to inform you that Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:<br>"
+                url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
+                message = f"Dear {person},<br><br>this is an automatic email to inform you that Delivery Note {url_string} won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:<br>"
                 for s in samples:
                     url = get_url_to_form("Sample", s['name'])
                     message += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"

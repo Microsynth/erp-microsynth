@@ -316,13 +316,14 @@ def notify_new_creator(qm_document, new_creator):
 
 
 def notify_q_releasable(qm_document):
+    url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
     # send a notification to qm
     make(
         recipients = 'qm@microsynth.ch',
         sender = 'erp@microsynth.ch',
         sender_full_name = 'Microsynth ERP',
         subject = f"Releasable: {qm_document.name}",
-        content = f"The QM Document {qm_document.name} ({qm_document.title}) is now releasable:<br>{get_url_to_form('QM Document', qm_document.name)}",
+        content = f"Dear QAU,<br>the QM Document {url_string} ({qm_document.title}) is now releasable.",
         send_email = True
         )
 
@@ -361,14 +362,15 @@ def invalidate_document(qm_document):
     clear("QM Document", qm_document.name)
     # send a notification to the creator
     url_string = f"<a href={get_url_to_form('QM Document', qm_document.name)}>{qm_document.name}</a>"
-    make(
-        recipients = qm_document.created_by,
-        sender = 'erp@microsynth.ch',
-        sender_full_name = 'Microsynth ERP',
-        subject = f"Invalidated {qm_document.name}",
-        content = f"Your QM Document {url_string} ({qm_document.title}) has been set to Invalid.",
-        send_email = True
-        )
+    if qm_document.created_by:  # do not try to send an email to a non-existing creator (can only happen for imported QM Documents)
+        make(
+            recipients = qm_document.created_by,
+            sender = 'erp@microsynth.ch',
+            sender_full_name = 'Microsynth ERP',
+            subject = f"Invalidated {qm_document.name}",
+            content = f"Your QM Document {url_string} ({qm_document.title}) has been set to Invalid.",
+            send_email = True
+            )
 
 
 @frappe.whitelist()
