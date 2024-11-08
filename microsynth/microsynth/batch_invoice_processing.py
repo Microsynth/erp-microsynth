@@ -104,7 +104,7 @@ def create_invoice(file_name, invoice, settings):
         if len(taxes_and_charges_template) > 0:
             pinv_doc.taxes_and_charges = taxes_and_charges_template[0]['name']
     if pinv_doc.taxes_and_charges:
-        taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", taxes_and_charges_template[0]['name'])
+        taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
     
