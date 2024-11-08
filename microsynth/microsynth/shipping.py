@@ -41,7 +41,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1105': "EMS",    
         '1106': "Germany",
         '1107': "DryIce",
-        '1108': "UPS",
+        '1108': "UPS EXP DE",
         '1110': "Abholung",
         '1112': "Germany",
         '1113': "DryIce",
@@ -63,6 +63,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1166': "UPS EXP",
         '1167': "UPS EXP"
     }
+    # TODO: Move settings to a new DocType (Task #17847)
 
     try: 
         sh_serv = SHIPPING_SERVICES[item_code]
