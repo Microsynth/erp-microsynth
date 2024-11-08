@@ -32,13 +32,14 @@ def get_email_subject(prm):
     if type(prm) == str:
         prm = frappe.get_doc("Payment Reminder", prm)
     frappe.local.lang = frappe.db.get_value("Payment Reminder", prm.name, "language")
+    subject_addition = " " + prm.name + " | " + _("Customer ID") + " " + prm.customer
     if (prm.language == "de"):
         if (prm.highest_level == 1):
-            subject = _("Microsynth Zahlungserinnerung") + " " + prm.name
+            subject = _("Microsynth Zahlungserinnerung") + subject_addition
         elif (prm.highest_level >= 2):
-            subject = _("Microsynth Mahnung") + " " + prm.name
+            subject = _("Microsynth Mahnung") + " " + subject_addition
     else:
-        subject = _("Microsynth Payment Reminder") + " " + prm.name
+        subject = _("Microsynth Payment Reminder") + " " + subject_addition
     return subject
 
 
