@@ -78,8 +78,8 @@ def disable_hot_config_in_dev():
         seq_config.save()
 
         print("Set test webshop...")
-        config.url = (config.url or "").replace("srvweb.", "srvweb-test.")
-        config.webshop_url = (config.webshop_url or "").replace("srvweb.", "srvweb-test.")
+        config.url = (config.url or "").replace("shop.", "shop-test.")
+        config.webshop_url = (config.webshop_url or "").replace("shop.", "shop-test.")
         config.webshop_result_files = (config.webshop_result_files or "").replace("webshop/", "webshop-test/")
         config.save()
 
