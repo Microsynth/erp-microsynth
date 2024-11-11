@@ -85,7 +85,7 @@ def disable_hot_config_in_dev():
 
         print("Set Slims test server...")
         slims_config = frappe.get_doc("SLIMS Settings", "SLIMS Settings")
-        slims_config.endpoint = (slims_config.endpoint or "").replace(".63",".64")
+        slims_config.endpoint = (slims_config.endpoint or "").replace(".78",".22")
         slims_config.save()
 
         print("Set Flushbox settings...")
