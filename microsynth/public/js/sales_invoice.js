@@ -130,16 +130,23 @@ frappe.ui.form.on('Sales Invoice', {
             cur_frm.remove_custom_button(__("Maintenance Schedule"), __("Create"));
             cur_frm.remove_custom_button(__("Subscription"), __("Create"));
         }, 500);
-        
+
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
             frm.add_custom_button(__("Force Cancel"), function() {
                 force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
             });
         }
+
+        // prepare for company validation
+        if (frm.doc.docstatus === 0) {
+            cache_company_key(frm);
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
+
+        cache_company_key(frm);                 // prepare for company validation
     },
     before_save(frm) {
         set_income_accounts(frm);
@@ -159,6 +166,8 @@ frappe.ui.form.on('Sales Invoice', {
             frappe.validated=false;
         }
         validate_credit_item_not_using_credits(frm);
+
+        validate_company_references(frm);
     }
 });
 
@@ -409,6 +418,54 @@ function validate_credit_item_not_using_credits(frm) {
     }
 }
 
+function validate_company_references(frm) {
+    if (locals.company_key) {
+        let suffix = " - " + locals.company_key;
+        // verify income & expense accounts, cost center and warehouse
+        if (frm.doc.items) {
+            for (let i = 0; i < frm.doc.items.length; i++) {
+                if (!frm.doc.items[i].income_account.endsWith(suffix)) {
+                    frappe.msgprint( __("Invalid income account: {0} does not belong to ").replace("{0}", frm.doc.items[i].income_account) + frm.doc.company, __("Company Validaton") );
+                    frappe.validated = false;
+                }
+                if (!frm.doc.items[i].expense_account.endsWith(suffix)) {
+                    frappe.msgprint( __("Invalid expense account: {0} does not belong to ").replace("{0}", frm.doc.items[i].expense_account) + frm.doc.company, __("Company Validaton") );
+                    frappe.validated = false;
+                }
+                if (!frm.doc.items[i].cost_center.endsWith(suffix)) {
+                    frappe.msgprint( __("Invalid cost center: {0} does not belong to ").replace("{0}", frm.doc.items[i].cost_center) + frm.doc.company, __("Company Validaton") );
+                    frappe.validated = false;
+                }
+                if (!frm.doc.items[i].warehouse.endsWith(suffix)) {
+                    frappe.msgprint( __("Invalid warehouse: {0} does not belong to ").replace("{0}", frm.doc.items[i].warehouse) + frm.doc.company, __("Company Validaton") );
+                    frappe.validated = false;
+                }
+            }
+        }
+
+        // verify taxes and charges
+        if ((frm.doc.taxes_and_charges) && (!frm.doc.taxes_and_charges.endsWith(suffix))) {
+            frappe.msgprint( __("Invalid taxes and charges template: {0} does not belong to ").replace("{0}", frm.doc.taxes_and_charges) + frm.doc.company, __("Company Validaton") );
+            frappe.validated = false;
+        }
+        if (frm.doc.taxes) {
+            for (let i = 0; i < frm.doc.taxes.length; i++) {
+                if (!frm.doc.taxes[i].account_head.endsWith(suffix)) {
+                    frappe.msgprint( __("Invalid tax account: {0} does not belong to ").replace("{0}", frm.doc.taxes[i].account_head) + frm.doc.company, __("Company Validaton") );
+                    frappe.validated = false;
+                }
+            }
+        }
+        // verify debtor
+        if ((frm.doc.debit_to) && (!frm.doc.debit_to.endsWith(suffix))) {
+            frappe.msgprint( __("Invalid debit to account {0}: does not belong to ").replace("{0}", frm.doc.debit_to) + frm.doc.company, __("Company Validaton") );
+            frappe.validated = false;
+        }
+    } else {
+        console.log("Company reference validation not possible: company key missing (this should not happen)");
+    }
+}
+
 function contains_credit_item(frm) {
     for (var i = 0; i < (frm.doc.items || []).length; i++) {
         if (frm.doc.items[i].item_code === "6100") {
@@ -437,6 +494,22 @@ function create_accounting_note(frm) {
                 var doc = r.message;
                 frappe.model.sync(doc);
                 frappe.set_route("Form", doc.doctype, doc.name);
+            }
+        });
+    }
+}
+
+function cache_company_key(frm) {
+    if (frm.doc.company) {
+        frappe.call({
+            'method': "frappe.client.get",
+            'args': {
+                'doctype': 'Company',
+                'name': frm.doc.company
+            },
+            'callback': function(r)
+            {
+                locals.company_key = r.message.abbr;
             }
         });
     }
