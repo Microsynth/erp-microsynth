@@ -1,4 +1,20 @@
 <script>
+    function is_procurement() {
+        cur_frm.set_value("cc_type", "procurement");
+        cur_frm.set_value("risk_classification", "N/A");
+        clicked("btn_procurement");
+        document.getElementById("btn_no_procurement").disabled = true;
+        document.getElementById("step_reset").style.display = "block";
+        document.getElementById("step_confirm").style.display = "block";
+    }
+
+    function no_procurement() {
+        clicked("btn_no_procurement");
+        document.getElementById("btn_procurement").disabled = true;
+        document.getElementById("step_gmp").style.display = "block";
+        document.getElementById("step_reset").style.display = "block";
+    }
+
     function is_gmp() {
         cur_frm.set_value("cc_type", "full");
         cur_frm.set_value("regulatory_classification", "GMP");
@@ -62,9 +78,12 @@
     }
 
     function wizard_reset() {
-        document.getElementById("step_gmp").style.display = "block";
+        document.getElementById("step_procurement").style.display = "block";
+        document.getElementById("step_gmp").style.display = "none";
         document.getElementById("step_no_gmp").style.display = "none";
         document.getElementById("step_confirm").style.display = "none";
+        reset_button("btn_procurement");
+        reset_button("btn_no_procurement");
         reset_button("btn_gmp");
         reset_button("btn_no_gmp");
         reset_button("btn_major");
@@ -77,7 +96,13 @@
 
 <div id="wizard_container" {% if visible %}style="display: block;"{% else %}style="display: none;"{% endif %}>
     <h4>Questions to determine the Change Control Type</h4>
-    <div id="step_gmp">
+    <div id="step_procurement">
+        <p>Is it a purchase of a new instrument/device/plant?</p>
+        <button id="btn_procurement" class="btn btn-secondary" onclick="is_procurement()"; style="margin-bottom: 20px;">Yes</button>
+        <button id="btn_no_procurement" class="btn btn-secondary" onclick="no_procurement()"; style="margin-bottom: 20px;">No</button>
+    </div>
+
+    <div id="step_gmp" style="display: none;">
         <p>Is it a <b>GMP</b> relevant change (process, analytical procedure, instruments)?</p>
         <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Yes</button>
         <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">No</button>

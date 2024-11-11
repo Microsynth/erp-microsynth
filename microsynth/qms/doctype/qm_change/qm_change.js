@@ -221,9 +221,11 @@ frappe.ui.form.on('QM Change', {
                 request_qm_action('Change Control Action');
             }).addClass("btn-primary");
 
-            frm.add_custom_button(__("Request Effectiveness Check"), function() {
-                request_qm_action("CC Effectiveness Check");
-            });
+            if (frm.doc.cc_type != "procurement") {
+                frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                    request_qm_action("CC Effectiveness Check");
+                });
+            }
         }
 
 
@@ -449,7 +451,7 @@ frappe.ui.form.on('QM Change', {
                                 frm.add_custom_button(__("Reject"), function() {
                                     create_qm_decision("Reject", frm.doc.status, "Implementation");
                                 }).addClass("btn-danger");
-                            } else if (frm.doc.cc_type == 'short') {
+                            } else if (frm.doc.cc_type == 'short' || (frm.doc.cc_type == 'procurement' && frappe.user.has_role('QAU'))) {
                                 cur_frm.page.set_primary_action(
                                     __("Finish Planning"),
                                     function() {
