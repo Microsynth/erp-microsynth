@@ -496,7 +496,7 @@ frappe.ui.form.on('QM Change', {
                 },
                 'callback': function(response) {
                     // Check, that all actions are finished
-                    if (response.message) {
+                    if (response.message && !frm.doc.in_approval) {
                         frm.dashboard.add_comment( __("Please complete all Change Control Actions and reload this QM Change to finish the Implementation."), 'red', true);
                     } else if (frappe.user.has_role('QAU') && frm.doc.in_approval) {
                         // Add Approve and Reject buttons
