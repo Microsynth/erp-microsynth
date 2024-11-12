@@ -55,7 +55,7 @@ def parse_file(file_name, company, company_settings, debug=True):
             if debug:
                 print("INFO: extract supplier from pdf")
             invoice.update({
-                'supplier': find_supplier_from_pdf(file_name),
+                'supplier': find_supplier_from_pdf(file_name, company),
                 'items': [{
                     'item_code': company_settings.default_item,
                     'qty': 1,
