@@ -71,8 +71,15 @@ def parse_file(file_name, company, company_settings, debug=True):
     
     # currency: if so far not defined, get company default currency
     if 'currency' not in invoice or not invoice['currency']:
-        invoice['currency'] = frappe.get_value("Company", company, "default_currency")
+        if invoice.get("supplier"):
+            # use supplier currency
+            invoice['currency'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_currency")
+        if not invoice['currency']:
+            # company default currency (last resort)
+            invoice['currency'] = frappe.get_value("Company", company, "default_currency")
 
+    # TODO: reference price list
+    
     if debug:
         print("INFO: supplier {0}".format(invoice['supplier']))
         
