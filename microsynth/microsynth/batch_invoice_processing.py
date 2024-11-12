@@ -1,10 +1,6 @@
 # Copyright (c) 2024, libracore, Microsynth and contributors
 # License: GNU General Public License v3. See license.txt
-#
-# Run using (also for cron; note: enable in batch processing settings)
-#
-#  $ bench execute microsynth.microsynth.batch_invoice_processing.process_files
-#
+
 import frappe
 from frappe.utils import cint, flt, get_link_to_form, get_url_to_form
 from frappe.utils.file_manager import save_file
@@ -13,7 +9,13 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 
+
 def process_files(debug=True):
+    """
+    Run using (also for cron; note: enable in batch processing settings)
+
+    bench execute microsynth.microsynth.batch_invoice_processing.process_files
+    """
     settings = frappe.get_doc("Batch Invoice Processing Settings", "Batch Invoice Processing Settings")
     if cint(settings.enabled) == 0:
         return
