@@ -78,7 +78,9 @@ def parse_file(file_name, company, company_settings, debug=True):
             # company default currency (last resort)
             invoice['currency'] = frappe.get_value("Company", company, "default_currency")
 
-    # TODO: reference price list
+    # apply price list from supplier
+    if invoice.get("supplier"):
+        invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list") 
     
     if debug:
         print("INFO: supplier {0}".format(invoice['supplier']))
@@ -100,6 +102,9 @@ def create_invoice(file_name, invoice, settings):
         'bill_no': invoice.get('doc_id'),
         'terms': invoice.get('terms')
     })
+
+    if invoice.get("price_list"):
+        pinv_doc.buying_price_list = invoice.get("price_list")
 
     pinv_doc.bill_date = invoice.get('posting_date')
     pinv_doc.due_date = invoice.get('due_date')
