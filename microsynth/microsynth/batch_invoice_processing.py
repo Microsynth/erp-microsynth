@@ -46,7 +46,13 @@ def parse_file(file_name, company, company_settings, debug=True):
         invoice = get_content_from_zugferd(xml_content)
     else:
         # zugferd failed, fall back to qr-reader
-        qr_content = find_qr_content_from_pdf(file_name)
+        try:
+            qr_content = find_qr_content_from_pdf(file_name)
+        except Exception as err:
+            if debug:
+                print("ERROR: {0}".format(err))
+            qr_content = None
+
         if qr_content:
             if debug:
                 print("INFO: QR invoice detected")
