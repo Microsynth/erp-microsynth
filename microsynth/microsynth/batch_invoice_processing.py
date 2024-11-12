@@ -85,7 +85,7 @@ def parse_file(file_name, company, company_settings, debug=True):
         invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list") 
     
     if debug:
-        print("INFO: supplier {0}".format(invoice['supplier']))
+        print("INFO: supplier {0}".format(invoice.get('supplier')))
         
     # create invoice record
     create_invoice(file_name, invoice, company_settings)
