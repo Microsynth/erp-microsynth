@@ -13,37 +13,45 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 
-def process_files():
+def process_files(debug=True):
     settings = frappe.get_doc("Batch Invoice Processing Settings", "Batch Invoice Processing Settings")
     if cint(settings.enabled) == 0:
         return
     if not settings.company_settings:
         return
     for company in settings.company_settings:
-        read_company(company.company, company.input_path, company)
+        read_company(company.company, company.input_path, company, debug)
 
 
-def read_company(company, input_path, company_settings):
+def read_company(company, input_path, company_settings, debug=True):
     if not input_path:
         return
     for f in os.listdir(input_path):
         if f.lower().endswith(".pdf"):
-            parse_file(os.path.join(input_path, f), company, company_settings)
+            parse_file(os.path.join(input_path, f), company, company_settings, debug)
 
 
-def parse_file(file_name, company, company_settings):
+def parse_file(file_name, company, company_settings, debug=True):
+    if debug:
+        print("INFO: Parsing {0} for {1}...".format(file_name, company))
     # try to fetch data from zugferd
     xml_content = get_xml(file_name)
     invoice = {}
     supplier = None
     if xml_content:
+        if debug:
+            print("INFO: electronic invoice detected")
         invoice = get_content_from_zugferd(xml_content)
     else:
         # zugferd failed, fall back to qr-reader
         qr_content = find_qr_content_from_pdf(file_name)
         if qr_content:
+            if debug:
+                print("INFO: QR invoice detected")
             invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
         else:
+            if debug:
+                print("INFO: extract supplier from pdf")
             invoice.update({
                 'supplier': find_supplier_from_pdf(file_name),
                 'items': [{
@@ -52,6 +60,9 @@ def parse_file(file_name, company, company_settings):
                     'rate': 0
                 }]
             })
+    
+    if debug:
+        print("INFO: supplier {0}".format(invoice['supplier']))
         
     # create invoice record
     create_invoice(file_name, invoice, company_settings)
