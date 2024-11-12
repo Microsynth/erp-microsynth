@@ -70,6 +70,8 @@ def parse_file(file_name, company, company_settings, debug=True):
             })
     
     # currency: if so far not defined, get company default currency
+    if not invoice:
+        invoice = {}
     if 'currency' not in invoice or not invoice.get('currency'):
         if invoice.get("supplier"):
             # use supplier currency
