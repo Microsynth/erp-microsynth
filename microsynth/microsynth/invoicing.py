@@ -1396,19 +1396,19 @@ Your administration team<br><br>{footer}"
         frappe.db.commit()
 
     except Exception as err:
-        subject = f"[ERP] Unable to send {sales_invoice_id}"
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Sales Invoice {sales_invoice_id} " \
-                    f"could not be transmitted due to the following error:<br>{err}<br>" \
-                    f"Please try to solve this issue and transmit the Sales Invoice again.<br><br>Best regards,<br>Jens"
+        email_template = frappe.get_doc("Email Template", "Unable to transmit Sales Invoice")
+        rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice_id})
+        rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice_id, 'err': err})
         make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = subject,
-            content = message,
+            recipients = email_template.recipients,
+            cc = email_template.cc_recipients,
+            sender = email_template.sender,
+            sender_full_name = email_template.sender_full_name,
+            subject = rendered_subject,
+            content = rendered_content,
             send_email = True
             )
-        msg = message.replace('<br>','\n')
-        frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{msg}",
+        frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
                          "invoicing.transmit_sales_invoice")
     return
 
