@@ -17,7 +17,8 @@ def get_columns():
         {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 105},
         {"label": _("Quotation Type"), "fieldname": "quotation_type", "fieldtype": "Data", "width": 118},
         {"label": _("Net Total"), "fieldname": "net_total", "fieldtype": "Currency", "options": "currency", "width": 105},
-        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 160 }
+        {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "options": "User", "width": 160 },
+        {"label": _("Unlinked Sales Order(s)"), "fieldname": "unlinked_sales_order", "fieldtype": "Data", "options": "Sales Order", "width": 150 }
     ]
 
 
@@ -29,7 +30,7 @@ def get_data(filters=None):
         filter_conditions += f"AND `tabQuotation`.`sales_manager` = '{filters.get('sales_manager')}'"
     if filters.get('company'):
         filter_conditions += f"AND `tabQuotation`.`company` = '{filters.get('company')}'"
-    if not filters.get('include_expired'):
+    if filters.get('search_mode') != "Include Expired Quotations":
         filter_conditions += f"AND `tabQuotation`.`valid_till` >= '{date.today()}'"
     if filters.get('item_codes'):
         item_join = "LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`"
@@ -58,6 +59,17 @@ def get_data(filters=None):
         ORDER BY
             `tabQuotation`.`transaction_date` DESC;
     """, as_dict=True)
+
+    if filters.get('search_mode') == "Include unlinked orders (slow)":
+        for open_quotation in open_quotations:
+            comment_field_results = frappe.get_all("Sales Order", filters=[['comment', 'LIKE', f"%{open_quotation['name']}%"]], fields=['name'])
+            # comment_doctype_results = frappe.get_all("Comment", filters=[['content', 'LIKE', f"%{open_quotation['name']}%"]], fields=['reference_name'])
+            # unlinked_sales_orders = set()
+            # for so in comment_field_results:
+            #     unlinked_sales_orders.add(so['name'])
+            # for so in comment_doctype_results:
+            #     unlinked_sales_orders.add(so['reference_name'])
+            open_quotation['unlinked_sales_order'] = ', '.join(uso['name'] for uso in comment_field_results)
     
     return open_quotations
 
