@@ -760,6 +760,9 @@ def place_order(content, client="webshop"):
 
     order_customer = None
 
+    if not 'product_type' in content or not content['product_type']:
+        return {'success': False, 'message': "Product Type is mandatory but not given.", 'reference': None}
+
     # Distributor workflow
     if 'product_type' in content:
         for distributor in customer.distributors:
