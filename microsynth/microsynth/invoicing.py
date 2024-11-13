@@ -1744,17 +1744,19 @@ def report_sales_invoice_drafts():
     """
     sales_invoice_drafts = frappe.get_all("Sales Invoice", filters=[['docstatus', '=', '0']], fields=['name', 'title', 'owner'])
     if len(sales_invoice_drafts):
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that there is/are "
-        message += f"the following Sales Invoice(s) in Draft status in the ERP:<br>"
+        si_draft_details = ""
         for si in sales_invoice_drafts:
             url = f"https://erp.microsynth.local/desk#Form/Sales%20Invoice/{si['name']}"
-            message += f"<br><a href={url}>{si['name']}</a>: {si['title']}, created by {si['owner']}"
-        message += f"<br><br>Please consider to submit these Sales Invoice(s).<br><br>Best regards,<br>Jens"
+            si_draft_details += f"<br><a href={url}>{si['name']}</a>: {si['title']}, created by {si['owner']}"
+
+        email_template = frappe.get_doc("Email Template", "Sales Invoice Drafts to be submitted")
+        rendered_content = frappe.render_template(email_template.response, {'si_draft_details': si_draft_details})
         make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = "[ERP] Sales Invoice Drafts to be submitted",
-            content = message,
+            recipients = email_template.recipients,
+            cc = email_template.cc_recipients,
+            sender = email_template.sender,
+            sender_full_name = email_template.sender_full_name,
+            subject = email_template.subject,
+            content = rendered_content,
             send_email = True
         )
-        #print(message.replace('<br>', '\n'))
