@@ -30,6 +30,11 @@ frappe.query_reports["Open Quotations"] = {
             "fieldtype": "Link",
             "options": "Company"
         },
+        {
+            "fieldname": "item_codes",
+            "label": __("Item Codes (comma separated)"),
+            "fieldtype": "Data"
+        },
 		{
 			"fieldname": "include_expired",
 			"label": __("Include Expired"),

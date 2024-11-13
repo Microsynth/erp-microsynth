@@ -24,16 +24,21 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
     filter_conditions = ''
-
+    item_join = ""
     if filters.get('sales_manager'):
         filter_conditions += f"AND `tabQuotation`.`sales_manager` = '{filters.get('sales_manager')}'"
     if filters.get('company'):
         filter_conditions += f"AND `tabQuotation`.`company` = '{filters.get('company')}'"
     if not filters.get('include_expired'):
         filter_conditions += f"AND `tabQuotation`.`valid_till` >= '{date.today()}'"
+    if filters.get('item_codes'):
+        item_join = "LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`"
+        item_codes = filters.get('item_codes').split(',')
+        item_code_list = ','.join(f'"{item_code.strip()}"' for item_code in item_codes)
+        filter_conditions += f"AND `tabQuotation Item`.`item_code` IN ({item_code_list})"
 
     open_quotations = frappe.db.sql(f"""
-        SELECT
+        SELECT DISTINCT
             `tabQuotation`.`name`,
             `tabQuotation`.`title`,
             IF(`tabQuotation`.`valid_till` < '{date.today()}', 'Expired', `tabQuotation`.`status`) as `status`,
@@ -45,6 +50,7 @@ def get_data(filters=None):
             `tabQuotation`.`currency`,
             `tabQuotation`.`sales_manager`
         FROM `tabQuotation`
+        {item_join}
         WHERE `tabQuotation`.`docstatus` = 1
             AND `tabQuotation`.`status` NOT IN ('Ordered', 'Cancelled', 'Lost')
             AND `tabQuotation`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
