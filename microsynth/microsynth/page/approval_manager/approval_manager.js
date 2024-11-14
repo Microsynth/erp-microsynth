@@ -24,6 +24,11 @@ frappe.approval_manager = {
         me.body = $('<div></div>').appendTo(me.page.main);
         var data = "";
         $(frappe.render_template('approval_manager', data)).appendTo(me.body);
+        // attach event handlers
+        this.page.main.find("#reload").on('click', function() {
+            // Reload page
+            location.reload();
+        });
     },
     run: function() { 
         // prepare user
