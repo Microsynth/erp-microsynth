@@ -61,7 +61,6 @@ def get_approvals(user):
 
 @frappe.whitelist()
 def approve(pinv, user):
-    add_comment(pinv, _("Approval"), _("Approved"), user)
     # clear assignment
     clear("Purchase Invoice", pinv)
     # submit document
@@ -71,6 +70,7 @@ def approve(pinv, user):
         pinv_doc.is_proposed = 1
         pinv_doc.save()
     pinv_doc.submit()
+    add_comment(pinv, _("Approval"), _("Approved"), user)
     frappe.db.commit()
 
 
