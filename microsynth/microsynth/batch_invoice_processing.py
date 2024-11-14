@@ -205,7 +205,7 @@ def create_invoice(file_name, invoice, settings):
                     'rate': 0
                 })
         
-        if not pinv_doc.items or len(pinv.items) == 0:
+        if not pinv_doc.get("items") or len(pinv.items) == 0:
             # use this company's default item (see batch processing settings)
             pinv_doc.append("items", {
                 'item_code': settings.get('default_item'),
@@ -217,7 +217,10 @@ def create_invoice(file_name, invoice, settings):
     cost_center = frappe.get_value("Company", settings.company, "cost_center")
     for i in pinv_doc.items:
         i.cost_center = cost_center
-        
+        i.uom = frappe.get_value("Item", i.item_code, "stock_uom")
+        if not i.conversion_factor:
+            i.conversion_factor = 1
+    
     pinv_doc.flags.ignore_mandatory = True
     pinv_doc.insert()
     frappe.db.commit()
