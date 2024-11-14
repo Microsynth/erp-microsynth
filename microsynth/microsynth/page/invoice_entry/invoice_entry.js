@@ -52,6 +52,7 @@ frappe.invoice_entry = {
             frappe.invoice_entry.attach_assign_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_edit_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_close_handler(purchase_invoice_drafts[i].name);
+            frappe.invoice_entry.attach_delete_handler(purchase_invoice_drafts[i].name);
         }
     },
     create_fields: function(purchase_invoice) {
@@ -94,6 +95,10 @@ frappe.invoice_entry = {
     attach_close_handler: function(purchase_invoice_name) {
         let btn_close = document.getElementById("btn_close_" + purchase_invoice_name);
         btn_close.onclick = frappe.invoice_entry.close_document.bind(this, purchase_invoice_name);
+    },
+    attach_delete_handler: function(purchase_invoice_name) {
+        let btn_delete = document.getElementById("btn_delete_" + purchase_invoice_name);
+        btn_delete.onclick = frappe.invoice_entry.delete_document.bind(this, purchase_invoice_name);
     },
     save_document: function(purchase_invoice_name) {
         let doc = {
@@ -160,6 +165,26 @@ frappe.invoice_entry = {
         form_frame.innerHTML = "";
         */
         location.reload();
+    },
+    delete_document: function(purchase_invoice_name) {
+        // let the user confirm the deletion
+        frappe.confirm('Are you sure you want to <b>delete</b> ' + purchase_invoice_name + '? This cannot be undone.',
+        () => {
+            frappe.call({
+                'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.delete_document',
+                'args': {
+                    'purchase_invoice_name': purchase_invoice_name
+                },
+                'freeze': true,
+                'freeze_message': __("Deleting ..."),
+                'callback': function(response) {
+                    frappe.show_alert(response.message);
+                    setTimeout(function () {location.reload();}, 100);
+                }
+            })
+        }, () => {
+            frappe.show_alert('Did <b>not</b> delete' + purchase_invoice_name + '.');
+        });
     },
     remove_clearfix_nodes: function() {
         console.log("remove")

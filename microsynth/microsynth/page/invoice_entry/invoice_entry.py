@@ -124,4 +124,14 @@ def save_document(doc):
         return "Saved."
     except Exception as err:
         return err
-        
+
+
+@frappe.whitelist()
+def delete_document(purchase_invoice_name):    
+    doc = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
+    try:
+        doc.delete()
+        frappe.db.commit()
+        return f"Deleted {purchase_invoice_name}. Reloading page ..."
+    except Exception as err:
+        return err
