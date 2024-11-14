@@ -144,7 +144,13 @@ def create_invoice(file_name, invoice, settings):
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
-    
+    else:
+        # fallback to default taxes
+        pinv_doc.taxes_and_charges = settings.get('default_tax')
+        taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
+        for t in taxes_template.taxes:
+            pinv_doc.append("taxes", t)
+            
     if invoice.get("items"):
         for item in invoice.get("items"):
             if not item.get('item_code'):
