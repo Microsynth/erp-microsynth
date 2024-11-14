@@ -44,7 +44,7 @@
         </tr>
         <tr>
             <td>{{ _("Expense Account / Cost Center") }}</td>
-            <td>{{ (expense_account or "")[0:4] }} / {{ (cost_center or "0").split(" ")[0] }}</td>
+            <td>{{ (expense_account or "") }} / {{ (cost_center or "-") }}</td>
         </tr>
         <tr>
             <td>{{ _("Remarks") }}</td>
