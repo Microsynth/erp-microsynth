@@ -82,11 +82,12 @@ def reject(pinv, user, reason, new_assignee):
     pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
     pinv_doc.approver = new_assignee
     pinv_doc.save()
+    description = f"Reason: {reason}" if reason else ""
     add({
             'doctype': "Purchase Invoice",
             'name': pinv,
             'assign_to': new_assignee,
-            #'description': f"",
+            'description': f'{description}\nPlease check it in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
             'notify': True
         })
 
