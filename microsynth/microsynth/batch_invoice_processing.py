@@ -12,7 +12,10 @@ from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 
 def process_files(debug=True):
     """
-    Run using (also for cron; note: enable in batch processing settings)
+    Create Purchase Invoices from PDF files in the paths defined in Batch Invoice Processing Settings
+
+    Run by a hourly cronjob from 05:30 to 17:30 if Batch Invoice Processing Settings are enabled:
+    30 5-17 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.batch_invoice_processing.process_files
 
     bench execute microsynth.microsynth.batch_invoice_processing.process_files
     """
