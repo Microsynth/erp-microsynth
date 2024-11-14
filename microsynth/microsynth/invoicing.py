@@ -18,7 +18,7 @@ from frappe.utils.file_manager import save_file
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_name_line, get_posting_datetime, replace_none
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
 from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -1399,15 +1399,7 @@ Your administration team<br><br>{footer}"
         email_template = frappe.get_doc("Email Template", "Unable to transmit Sales Invoice")
         rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice_id})
         rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice_id, 'err': err})
-        make(
-            recipients = email_template.recipients,
-            cc = email_template.cc_recipients,
-            sender = email_template.sender,
-            sender_full_name = email_template.sender_full_name,
-            subject = rendered_subject,
-            content = rendered_content,
-            send_email = True
-            )
+        send_email_from_template(email_template, rendered_content, rendered_subject)
         frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
                          "invoicing.transmit_sales_invoice")
     return
@@ -1723,16 +1715,7 @@ def check_invoice_sent_on(days=0):
         
         email_template = frappe.get_doc("Email Template", "Missing Invoice sent on date")
         rendered_content = frappe.render_template(email_template.response, {'si_details': si_details})
-
-        make(
-            recipients = email_template.recipients,
-            cc = email_template.cc_recipients,
-            sender = email_template.sender,
-            sender_full_name = email_template.sender_full_name,
-            subject = email_template.subject,
-            content = rendered_content,
-            send_email = True
-        )
+        send_email_from_template(email_template, rendered_content)
 
 
 def report_sales_invoice_drafts():
@@ -1752,12 +1735,4 @@ def report_sales_invoice_drafts():
 
         email_template = frappe.get_doc("Email Template", "Sales Invoice Drafts to be submitted")
         rendered_content = frappe.render_template(email_template.response, {'si_draft_details': si_draft_details})
-        make(
-            recipients = email_template.recipients,
-            cc = email_template.cc_recipients,
-            sender = email_template.sender,
-            sender_full_name = email_template.sender_full_name,
-            subject = email_template.subject,
-            content = rendered_content,
-            send_email = True
-        )
+        send_email_from_template(email_template, rendered_content)

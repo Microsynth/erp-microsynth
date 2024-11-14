@@ -2629,3 +2629,19 @@ def calculate_therapeutic_oligo_sales():
 
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"\n{datetime.now()}: Finished calculate_therapeutic_oligo_sales after {elapsed_time} hh:mm:ss.")
+
+
+def send_email_from_template(email_template, rendered_content, rendered_subject=None):
+    """
+    Takes an Email Template object, the rendered content (message) and optionally a rendered subjects
+    and triggers the sending of the corresponding email.
+    """
+    make(
+            recipients = email_template.recipients,
+            cc = email_template.cc_recipients,
+            sender = email_template.sender,
+            sender_full_name = email_template.sender_full_name,
+            subject = rendered_subject if rendered_subject else email_template.subject,
+            content = rendered_content,
+            send_email = True
+        )
