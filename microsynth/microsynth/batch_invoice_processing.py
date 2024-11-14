@@ -205,7 +205,7 @@ def create_invoice(file_name, invoice, settings):
                     'rate': 0
                 })
         
-        if not pinv_doc.items or len(pinv.items) == 0:
+        if not pinv_doc.items or len(pinv_doc.items) == 0:
             # use this company's default item (see batch processing settings)
             pinv_doc.append("items", {
                 'item_code': settings.get('default_item'),
