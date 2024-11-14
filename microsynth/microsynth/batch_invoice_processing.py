@@ -188,14 +188,16 @@ def create_invoice(file_name, invoice, settings):
                 'item_code': item.get('item_code'),
                 'item_name': item.get('item_name'),
                 'qty': flt(item.get("qty")),
-                'rate': flt(item.get("net_price"))
+                'rate': flt(item.get("net_price")),
+                'cost_center': frappe.get_value("Company", settings.company, "cost_center")
             })
     else:
         # no items found, use this company's default item (see batch proxessing settings)
         pinv_doc.append("items", {
             'item_code': settings.get('default_item'),
             'qty': 1,
-            'rate': 0
+            'rate': 0,
+            'cost_center': frappe.get_value("Company", settings.company, "cost_center")
         })
         
     pinv_doc.flags.ignore_mandatory = True
