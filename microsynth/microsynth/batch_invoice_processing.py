@@ -147,7 +147,13 @@ def create_invoice(file_name, invoice, settings):
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
-    
+    else:
+        # fallback to default taxes
+        pinv_doc.taxes_and_charges = settings.get('default_tax')
+        taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
+        for t in taxes_template.taxes:
+            pinv_doc.append("taxes", t)
+            
     if invoice.get("items"):
         for item in invoice.get("items"):
             if not item.get('item_code'):
@@ -187,7 +193,14 @@ def create_invoice(file_name, invoice, settings):
                 'qty': flt(item.get("qty")),
                 'rate': flt(item.get("net_price"))
             })
-    
+    else:
+        # no items found, use this company's default item (see batch proxessing settings)
+        pinv_doc.append("items", {
+            'item_code': settings.get('default_item'),
+            'qty': 1,
+            'rate': 0
+        })
+        
     pinv_doc.flags.ignore_mandatory = True
     pinv_doc.insert()
     frappe.db.commit()
