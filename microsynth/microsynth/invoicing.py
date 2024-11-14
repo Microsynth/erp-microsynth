@@ -1716,22 +1716,23 @@ def check_invoice_sent_on(days=0):
         """
     invoices = frappe.db.sql(sql_query, as_dict=True)
     if len(invoices) > 0:
-        message = f"Dear Administration,<br><br>the following Unpaid Sales Invoices have no Invoice sent on date"\
-                f"{ f'and are dated more than {days} days in the past' if days > 0 else ''}:<br><br>"
-        
+        si_details = ""
         for si in invoices:
             url_string = f"<a href={get_url_to_form('Sales Invoice', si['name'])}>{si['name']}</a>"
-            message += f"{url_string} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
+            si_details += f"{url_string} ({si['title']}) from {si['posting_date']}: {si['grand_total']} {si['currency']}<br>"
+        
+        email_template = frappe.get_doc("Email Template", "Missing Invoice sent on date")
+        rendered_content = frappe.render_template(email_template.response, {'si_details': si_details})
 
-        message += f"<br>Please ensure that they are transmitted and enter the Invoice sent on date.<br><br>Best regards,<br>Jens"
         make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = "[ERP] Unpaid Sales Invoice: Missing Invoice sent on date",
-            content = message,
+            recipients = email_template.recipients,
+            cc = email_template.cc_recipients,
+            sender = email_template.sender,
+            sender_full_name = email_template.sender_full_name,
+            subject = email_template.subject,
+            content = rendered_content,
             send_email = True
-            )
-        #print(message.replace('<br>', '\n'))
+        )
 
 
 def report_sales_invoice_drafts():
