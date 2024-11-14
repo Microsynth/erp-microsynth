@@ -154,7 +154,7 @@ def create_invoice(file_name, invoice, settings):
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
             
-    if invoice.get("items"):
+    if invoice.get("items"):            # invoice with items (source ZUGFeRD)
         for item in invoice.get("items"):
             if not item.get('item_code'):
                 # get item from seller_item_code
@@ -191,17 +191,32 @@ def create_invoice(file_name, invoice, settings):
                 'item_code': item.get('item_code'),
                 'item_name': item.get('item_name'),
                 'qty': flt(item.get("qty")),
-                'rate': flt(item.get("net_price")),
-                'cost_center': frappe.get_value("Company", settings.company, "cost_center")
+                'rate': flt(item.get("net_price"))
             })
     else:
-        # no items found, use this company's default item (see batch proxessing settings)
-        pinv_doc.append("items", {
-            'item_code': settings.get('default_item'),
-            'qty': 1,
-            'rate': 0,
-            'cost_center': frappe.get_value("Company", settings.company, "cost_center")
-        })
+        # no items found (QR- or PDF- invoices)
+        if pinv_doc.supplier:
+            # try to use suplier default item
+            supplier_default_item = frappe.get_value("Supplier", pinv_doc.supplier, "default_item")
+            if supplier_default_item:
+                pinv_doc.append("items", {
+                    'item_code': supplier_default_item,
+                    'qty': 1,
+                    'rate': 0
+                })
+        
+        if not pinv_doc.items or len(pinv.items) == 0:
+            # use this company's default item (see batch processing settings)
+            pinv_doc.append("items", {
+                'item_code': settings.get('default_item'),
+                'qty': 1,
+                'rate': 0
+            })
+    
+    # apply cost center
+    cost_center = frappe.get_value("Company", settings.company, "cost_center")
+    for i in pinv_doc.items:
+        i.cost_center = cost_center
         
     pinv_doc.flags.ignore_mandatory = True
     pinv_doc.insert()
