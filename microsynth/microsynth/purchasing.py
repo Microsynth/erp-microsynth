@@ -91,7 +91,7 @@ def create_approval_request(assign_to, dt, dn):
             'doctype': dt,
             'name': dn,
             'assign_to': assign_to,
-            'description': f"Please check the {dt} {dn}. Submit {dn} to approve.",
+            'description': f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
             'notify': True  # Send email
         })
         if dt == "Purchase Invoice":
