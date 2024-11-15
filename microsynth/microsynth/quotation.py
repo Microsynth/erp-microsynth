@@ -33,6 +33,7 @@ def make_quotation(contact_name):
     invoice_to = customer.invoice_to
     doc.customer_address = frappe.get_value('Contact', invoice_to, 'address')
     doc.shipping_address_name = frappe.get_value('Contact', doc.contact_person, 'address')
+    doc.source = None   # Prevent inserting Contact.source or Address.source to the Quotation.source field
     return doc
 
 
