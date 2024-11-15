@@ -123,7 +123,6 @@ frappe.ui.form.on('QM Action', {
                 __("Complete"),
                 function() {
                     set_status('Completed');
-                    cur_frm.set_value("completion_date", frappe.datetime.get_today());
                     cur_frm.reload_doc();
                 }
             );

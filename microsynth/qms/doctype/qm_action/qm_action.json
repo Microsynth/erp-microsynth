@@ -116,9 +116,11 @@
    "options": "QM Process"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "completion_date",
    "fieldtype": "Date",
-   "label": "Completion Date"
+   "label": "Completion Date",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -136,7 +138,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-10-21 15:33:25.072264",
+ "modified": "2024-11-15 10:55:53.901167",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Action",

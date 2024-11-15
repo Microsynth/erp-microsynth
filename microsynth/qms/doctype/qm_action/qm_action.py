@@ -67,6 +67,8 @@ def update_status(action, status):
         (action.status == 'Created' and status == 'Work in Progress') or
         (action.status == 'Work in Progress' and status == 'Completed')
        ):
+        if status == 'Completed':
+            action.completion_date = today()
         action.status = status
         action.save()
         frappe.db.commit()
