@@ -64,12 +64,7 @@ def parse_file(file_name, company, company_settings, debug=True):
             if debug:
                 print("INFO: extract supplier from pdf")
             invoice.update({
-                'supplier': find_supplier_from_pdf(file_name, company),
-                'items': [{
-                    'item_code': company_settings.default_item,
-                    'qty': 1,
-                    'rate': 0
-                }]
+                'supplier': find_supplier_from_pdf(file_name, company)
             })
     
     # currency: if so far not defined, get company default currency
@@ -154,7 +149,7 @@ def create_invoice(file_name, invoice, settings):
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
             
-    if invoice.get("items"):            # invoice with items (source ZUGFeRD)
+    if invoice.get("items"):            # invoice with items (source ZUGFeRD or QR)
         for item in invoice.get("items"):
             if not item.get('item_code'):
                 # get item from seller_item_code
@@ -194,7 +189,7 @@ def create_invoice(file_name, invoice, settings):
                 'rate': flt(item.get("net_price"))
             })
     else:
-        # no items found (QR- or PDF- invoices)
+        # no items found (PDF- invoices)
         if pinv_doc.supplier:
             # try to use suplier default item
             supplier_default_item = frappe.get_value("Supplier", pinv_doc.supplier, "default_item")
