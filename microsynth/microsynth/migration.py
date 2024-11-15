@@ -1381,20 +1381,11 @@ def disable_customers_without_contacts():
     #print(f"Disabled {disabled} Customers, failed {failed} times, skipped {skipped} Customers.")
     frappe.db.commit()
     if len(customers_to_report) > 0:
-        from frappe.core.doctype.communication.email import make
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the following enabled Customer(s) "
-        message += f"has/have no Contacts with a Shipping Address but linked documents that are not Cancelled:<br>"
-        for msg in customers_to_report:
-            message += "<br>" + msg
-        message += f"<br><br>Please consider to disable the Customer, add a Contact with a Shipping Address to it "
-        message += "or Cancel the linked documents.<br><br>Best regards,<br>Jens"
-        make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = "[ERP] Enabled Customers without a Shipping Address but linked documents (not cancelled)",
-            content = message,
-            send_email = True
-        )
+        from microsynth.microsynth.utils import send_email_from_template
+        customers_to_report_msg = "<br>".join(customers_to_report)
+        email_template = frappe.get_doc("Email Template", "Enabled Customers without a Shipping Address but linked documents")
+        rendered_content = frappe.render_template(email_template.response, {'customers_to_report_msg': customers_to_report_msg})
+        send_email_from_template(email_template, rendered_content)
         #print(message.replace('<br>', '\n'))
 
 
