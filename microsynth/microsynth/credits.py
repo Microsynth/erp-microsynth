@@ -5,9 +5,9 @@ import frappe
 from datetime import date, datetime, timedelta
 from frappe.utils.data import today
 from frappe.utils import flt, cint
-from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import (get_alternative_account,
-                                         get_alternative_income_account)
+                                         get_alternative_income_account,
+                                         send_email_from_template)
 
 
 def get_available_credits(customer, company, credit_type):
@@ -503,12 +503,4 @@ def report_credit_balance_diff():
         for diff in diffs:
             details += diff
         rendered_content = frappe.render_template(email_template.response, {'details': details})
-        make(
-                recipients = email_template.recipients,
-                cc = email_template.cc_recipients,
-                sender = email_template.sender,
-                sender_full_name = email_template.sender_full_name,
-                subject = email_template.subject,
-                content = rendered_content,
-                send_email = True
-            )
+        send_email_from_template(email_template, rendered_content)

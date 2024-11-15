@@ -316,15 +316,7 @@ def async_create_invoices(mode, company, customer):
                     'dn_details': dn_details
                 }
                 rendered_message = frappe.render_template(email_template.response, values_to_render)
-                make(
-                    recipients = email_template.recipients,
-                    cc = email_template.cc_recipients,
-                    sender = email_template.sender,
-                    sender_full_name = email_template.sender_full_name,
-                    subject = rendered_subject,
-                    content = rendered_message,
-                    send_email = True
-                )
+                send_email_from_template(email_template, rendered_message, rendered_subject)
             except Exception as e:
                 frappe.log_error(f"Unable to send an email about insufficient Customer Credits to Customer '{dn_customer}' due to the following error:\n{e}\n\n{warnings=}")
 
@@ -1216,18 +1208,11 @@ def transmit_sales_invoice(sales_invoice_id):
 
             recipient = invoice_contact.email_id
             if not recipient:
-                subject = f"[ERP] Unable to send {sales_invoice.name} to Contact {invoice_contact.name}: no email address found."
-                message = f"Dear Administration,<br><br>this is an automatic email to inform you that the ERP did not found an email address " \
-                            f"to send '{sales_invoice.name}' to Contact '{invoice_contact.name}'.<br>" \
-                            f"Please try to determine the email address and enter it at the appropriate place. <br><br>Best regards,<br>Jens"
-                frappe.log_error(message.replace("<br>","\n"), "Sending invoice email failed")
-                make(
-                    recipients = "info@microsynth.ch",
-                    sender = "jens.petermann@microsynth.ch",
-                    subject = subject,
-                    content = message,
-                    send_email = True
-                    )
+                email_template = frappe.get_doc("Email Template", "Missing email address to send Sales Invoice")
+                rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice.name, 'contact_id ': invoice_contact.name})
+                rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'contact_id ': invoice_contact.name})
+                send_email_from_template(email_template, rendered_content, rendered_subject)
+                frappe.log_error(rendered_subject, "Sending invoice email failed")
                 return
 
             if sales_invoice.company == "Microsynth AG":
