@@ -1972,24 +1972,14 @@ def check_new_customers_taxid(delta_days=7):
                                     'customer_name': nc['customer_name'],
                                     'tax_id': nc['tax_id']})
     if len(invalid_tax_ids) > 0:
-        subject = f"[ERP] Invalid Tax IDs of new Customers"
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the following " \
-                  f"new Customers that are created in the last {delta_days} days seem to have invalid Tax IDs:<br><br>"
-
+        invalid_tax_id_msg = ""
         for iti in invalid_tax_ids:
             url_string = f"<a href={get_url_to_form('Customer', iti['customer_id'])}>{iti['customer_id']}</a>"
-            message += f"Customer {url_string} ({iti['customer_name']}): Tax ID '{iti['tax_id']}'<br>"
+            invalid_tax_id_msg += f"Customer {url_string} ({iti['customer_name']}): Tax ID '{iti['tax_id']}'<br>"
 
-        vies_url_string = f'<a href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation">https://ec.europa.eu/taxation_customs/vies/#/vat-validation</a>'
-        message += f"<br>Please check the Tax IDs using {vies_url_string} and correct them if necessary.<br><br>Best regards,<br>Jens"
-        make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = subject,
-            content = message,
-            send_email = True
-            )
-        #print(message.replace('<br>','\n'))
+        email_template = frappe.get_doc("Email Template", "Invalid Tax IDs of new Customers")
+        rendered_content = frappe.render_template(email_template.response, {'invalid_tax_id_msg': invalid_tax_id_msg, 'delta_days': delta_days })
+        send_email_from_template(email_template, rendered_content)
 
 
 def find_same_ext_dnr_diff_taxid():
@@ -2174,7 +2164,7 @@ def find_orders_with_missing_tax_id():
         sender = "jens.petermann@microsynth.ch",
         subject = "[ERP] New Sales Order(s) from Customer(s) with missing Tax ID",
         content = message,
-        send_email = True
+        send_email = True # TODO
         )
     #print(message.replace('<br>', '\n'))
 
