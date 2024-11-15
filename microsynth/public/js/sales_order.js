@@ -18,6 +18,10 @@ frappe.ui.form.on('Sales Order', {
             $(target).parent().parent().remove();
         }
 
+        if (!frm.doc.product_type && cur_frm.doc.docstatus == 0 && !frm.doc.__islocal) {
+            frappe.msgprint( __("Please set a Product Type"), __("Validation") );
+        }
+
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({
