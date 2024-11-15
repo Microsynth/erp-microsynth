@@ -68,6 +68,11 @@ frappe.ui.form.on('QM Document', {
         if (["Invalid"].includes(frm.doc.status)) {
             cur_frm.set_df_property('valid_till', 'read_only', true);
             cur_frm.set_df_property('linked_documents', 'read_only', true);
+            // Add button to search valid version
+            cur_frm.dashboard.add_comment( __("<b>Invalid</b> document: Do <b>not</b> use the attachments anymore!"), 'red', true);
+            frm.add_custom_button(__("Search valid version"), function() {
+                frappe.set_route("List", "QM Document", {"name": cur_frm.doc.name.split("-")[0], "status": "Valid"});
+            }).addClass("btn-primary");
         } else {
             if (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')) {
                 cur_frm.set_df_property('valid_till', 'read_only', false);
@@ -125,7 +130,7 @@ frappe.ui.form.on('QM Document', {
 
         // allow to create new versions from valid documents
         if (frm.doc.docstatus > 0) {
-            frm.add_custom_button(__("New version"), function() {
+            frm.add_custom_button(__("Create new version"), function() {
                 create_new_version(frm);
             });
         }
