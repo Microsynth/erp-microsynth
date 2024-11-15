@@ -22,6 +22,12 @@ frappe.ui.form.on('Sales Order', {
             frappe.msgprint( __("Please set a Product Type"), __("Validation") );
         }
 
+        // emphasize the usage of a manually created Customer
+        if (!frm.doc.__islocal && frm.doc.docstatus == 0 && !(/^\d+$/.test(frm.doc.customer))) {
+            cur_frm.dashboard.clear_comment();
+            frm.dashboard.add_comment( __("Are you sure to continue with a <b>manually created Customer</b>? Please check to change for a Customer created by the webshop with a numeric ID."), 'red', true);
+        }
+
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Print Delivery Label"), function() {
                 frappe.call({
