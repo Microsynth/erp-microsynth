@@ -75,4 +75,8 @@ def sign_revision(doc, user, password):
     # get document
     if type(doc) == str:
         doc = frappe.get_doc("QM Revision", doc)
-    return sign("QM Revision", doc.get("name"), user, password)
+    signed = sign("QM Revision", doc.get("name"), user, password)
+    if signed:
+        # clear assignment
+        clear("QM Revision", doc.name)
+    return signed

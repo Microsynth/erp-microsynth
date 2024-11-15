@@ -69,6 +69,8 @@ def update_status(action, status):
        ):
         if status == 'Completed':
             action.completion_date = today()
+            # clear assignment
+            clear("QM Action", action.name)
         action.status = status
         action.save()
         frappe.db.commit()

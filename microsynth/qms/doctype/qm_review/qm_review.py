@@ -106,7 +106,11 @@ def sign_review(doc, user, password):
         frappe.throw( _("Invalid reviewer. Please select a reviewer different from the document creator."), _("Review failed") )
         return False
     else:
-        return sign("QM Review", doc.get("name"), user, password)
+        signed = sign("QM Review", doc.get("name"), user, password)
+        if signed:
+            # clear assignment
+            clear("QM Review", doc.name)
+        return signed
 
 
 def get_qm_reviews(qm_document):
