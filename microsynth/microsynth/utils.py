@@ -2151,22 +2151,14 @@ def find_orders_with_missing_tax_id():
 
     if len(sales_orders) == 0:
         return  # early abort
-    
-    message = f"Dear Denise,<br><br>the following new Sales Order(s) with Product Type Oligos or Material "\
-              f"has/have a Shipping Address in the EU, but the Customer has no Tax ID in the ERP:<br><br>"
-        
-    for so in sales_orders:
-        message += f"{so['sales_order']} from {so['transaction_date']} with Shipping Address in {so['country']}: Customer {so['customer']} ('{so['customer_name']}')<br>"
 
-    message += f"<br>Please try to add the Tax ID to the Customer before the Sales Invoice is created.<br><br>Best regards,<br>Jens"
-    make(
-        recipients = "d.schmidheini@microsynth.ch",
-        sender = "jens.petermann@microsynth.ch",
-        subject = "[ERP] New Sales Order(s) from Customer(s) with missing Tax ID",
-        content = message,
-        send_email = True # TODO
-        )
-    #print(message.replace('<br>', '\n'))
+    sales_order_details = ""
+    for so in sales_orders:
+        sales_order_details += f"{so['sales_order']} from {so['transaction_date']} with Shipping Address in {so['country']}: Customer {so['customer']} ('{so['customer_name']}')<br>"
+
+    email_template = frappe.get_doc("Email Template", "New Sales Orders from Customers with missing Tax ID")
+    rendered_content = frappe.render_template(email_template.response, {'sales_order_details': sales_order_details })
+    send_email_from_template(email_template, rendered_content)
 
 
 def get_yearly_order_volume(customer_id):
