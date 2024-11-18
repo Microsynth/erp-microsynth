@@ -37,3 +37,19 @@ def create_impact_assessment(dt, dn, title, qm_process, creator, due_date):
     assessment.save(ignore_permissions = True)
     frappe.db.commit()
     return assessment.name
+
+
+@frappe.whitelist()
+def cancel(impact_assessment):
+    from microsynth.microsynth.utils import force_cancel
+    impact_assessment_doc = frappe.get_doc("QM Impact Assessment", impact_assessment)
+    if impact_assessment_doc.status == "Draft":
+        force_cancel("QM Impact Assessment", impact_assessment_doc.name)
+    else:
+        try:
+            impact_assessment_doc.status = 'Cancelled'
+            impact_assessment_doc.save()
+            impact_assessment_doc.cancel()
+            frappe.db.commit()
+        except Exception as err:
+            force_cancel("QM Impact Assessment", impact_assessment_doc.name)

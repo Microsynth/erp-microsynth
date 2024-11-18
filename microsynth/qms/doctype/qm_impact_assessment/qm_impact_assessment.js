@@ -40,6 +40,13 @@ frappe.ui.form.on('QM Impact Assessment', {
                 frm.dashboard.add_comment( __("Please enter and save an Assessment Summary to submit this QM Impact Assessment."), 'red', true);
             }
         }
+
+        // allow QAU to cancel
+        if (!frm.doc.__islocal && frm.doc.docstatus < 2 && frappe.user.has_role('QAU') && frm.doc.status != 'Completed') {
+            frm.add_custom_button(__("Cancel"), function() {
+                cancel(frm);
+            }).addClass("btn-danger");
+        }
     }
 });
 
@@ -61,4 +68,22 @@ function change_creator() {
         __('Set new creator'),
         __('Set')
     );
+}
+
+function cancel(frm) {
+    frappe.confirm("Are you sure you want to <b>cancel</b> QM Impact Assessment '<b>" + frm.doc.name + "</b>'? This cannot be undone.",
+    () => {
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_impact_assessment.qm_impact_assessment.cancel',
+            'args': {
+                'impact_assessment': cur_frm.doc.name
+            },
+            'async': false,
+            'callback': function(response) {
+                cur_frm.reload_doc();
+            }
+        });
+    }, () => {
+        // nothing
+    });
 }
