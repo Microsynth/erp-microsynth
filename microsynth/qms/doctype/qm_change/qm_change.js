@@ -306,7 +306,7 @@ frappe.ui.form.on('QM Change', {
                             'callback': function (response) {
                                 if (response.message) {
                                     // all questions answered
-                                    if (frm.doc.risk_classification == 'minor') {
+                                    if (frm.doc.risk_classification != 'major') {
                                         // check that no impact question is answered with yes
                                         frappe.call({
                                             'method': 'has_impact',
