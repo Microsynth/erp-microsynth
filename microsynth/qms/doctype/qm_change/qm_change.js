@@ -727,7 +727,8 @@ function create_qm_decision(decision, from_status, to_status) {
                                 }
                             });
                             if (decision == "Reject") {
-                                frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator");
+                                frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator.");
+                                cur_frm.reload_doc();
                             } else {
                                 set_status(to_status);
                             }
