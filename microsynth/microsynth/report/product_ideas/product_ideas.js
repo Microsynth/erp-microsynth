@@ -33,5 +33,8 @@ frappe.query_reports["Product Ideas"] = {
 			"label": "Rating",
 			"options": "\n0\n1\n2\n3\n4\n5"
 		}
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

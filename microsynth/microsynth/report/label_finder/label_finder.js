@@ -48,5 +48,8 @@ frappe.query_reports["Label Finder"] = {
             "label": __("Web Order ID"),
             "fieldtype": "Data"
         }
-    ]
+    ],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

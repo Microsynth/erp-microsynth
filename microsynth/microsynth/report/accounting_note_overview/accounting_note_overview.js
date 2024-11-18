@@ -33,6 +33,7 @@ frappe.query_reports["Accounting Note Overview"] = {
         }
     ],
     "onload": (report) => {
+        hide_chart_buttons();
         report.page.add_inner_button( __("New"), function() {
             var d = new frappe.ui.Dialog({
                 'fields': [

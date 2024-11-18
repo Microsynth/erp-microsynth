@@ -21,5 +21,8 @@ frappe.query_reports["Training Confirmations"] = {
             "label": __("Limit to valid Documents"),
             "fieldtype": "Check"
         }
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

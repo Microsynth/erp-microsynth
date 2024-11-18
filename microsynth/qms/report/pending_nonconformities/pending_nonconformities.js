@@ -39,5 +39,8 @@ frappe.query_reports["Pending Nonconformities"] = {
             "fieldtype": "Link",
             "options": "QM Process"
         }
-    ]
+    ],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

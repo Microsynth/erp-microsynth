@@ -16,5 +16,8 @@ frappe.query_reports["Releasable Documents"] = {
             "fieldtype": "Link",
             "options": "User"
         }
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

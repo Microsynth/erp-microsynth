@@ -42,5 +42,8 @@ frappe.query_reports["Open Quotations"] = {
             "options": "Open Quotations\nInclude unlinked orders (slow)\nInclude Expired Quotations",
             "default": "Open Quotations"
         }
-    ]
+    ],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

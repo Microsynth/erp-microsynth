@@ -10,5 +10,8 @@ frappe.query_reports["Revision Required"] = {
             "fieldtype": "Select",
             "options": "\nSOP\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
         }
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

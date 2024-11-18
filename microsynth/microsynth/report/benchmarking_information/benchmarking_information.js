@@ -32,5 +32,8 @@ frappe.query_reports["Benchmarking Information"] = {
 			"fieldtype": "Data",
 			"label": "Competitor"
 		}
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };

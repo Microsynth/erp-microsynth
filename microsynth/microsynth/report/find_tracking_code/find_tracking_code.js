@@ -33,5 +33,8 @@ frappe.query_reports["Find Tracking Code"] = {
             "fieldtype": "Link",
             "options": "Delivery Note"
         },
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };
