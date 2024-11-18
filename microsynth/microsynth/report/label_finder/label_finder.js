@@ -47,6 +47,17 @@ frappe.query_reports["Label Finder"] = {
             "fieldname": "web_order_id",
             "label": __("Web Order ID"),
             "fieldtype": "Data"
+        },
+        {
+            "fieldname": "item_code",
+            "label": __("Item Code"),
+            "fieldtype": "Link",
+            "options": "Item"
+        },
+        {
+            "fieldname": "registered",
+            "label": __("Registered"),
+            "fieldtype": "Check"
         }
     ],
     "onload": (report) => {

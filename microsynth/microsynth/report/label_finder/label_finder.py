@@ -40,6 +40,10 @@ def get_data(filters):
         conditions += f"AND `tabSequencing Label`.`sales_order` = '{filters.get('sales_order')}'"
     if filters.get('web_order_id'):
         conditions += f"AND `tabSales Order`.`web_order_id` = '{filters.get('web_order_id')}'"
+    if filters.get('item_code'):
+        conditions += f"AND `tabSequencing Label`.`item` = '{filters.get('item_code')}'"
+    if filters.get('registered'):
+        conditions += f"AND `tabSequencing Label`.`registered` = 1"
     if filters.get('from_barcode') and filters.get('to_barcode'):
         if filters.get('from_barcode').isnumeric() and filters.get('to_barcode').isnumeric():
             conditions += f"AND `tabSequencing Label`.`label_id` BETWEEN '{filters.get('from_barcode')}' AND '{filters.get('to_barcode')}'"
