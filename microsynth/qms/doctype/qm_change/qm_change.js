@@ -255,10 +255,10 @@ frappe.ui.form.on('QM Change', {
                                     },
                                     'async': false,
                                     'callback': function (r) {
+                                        cur_frm.reload_doc();
                                     }
                                 });
-                                cur_frm.reload_doc();
-                            }, 400);
+                            }, 500);
                         }
                     );
                 } else if (!frm.doc.in_approval) {
