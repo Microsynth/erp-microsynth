@@ -31,9 +31,11 @@ frappe.ui.form.on('QM Impact Assessment', {
         }
 
         if (!frm.doc.__islocal) {
-            if (!frm.doc.assessment_summary) {
+            if (frappe.session.user != frm.doc.created_by || !frm.doc.assessment_summary) {
                 cur_frm.page.clear_primary_action();
                 cur_frm.page.clear_secondary_action();
+            }
+            if (!frm.doc.assessment_summary) {
                 frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please enter and save an Assessment Summary to submit this QM Impact Assessment."), 'red', true);
             }
