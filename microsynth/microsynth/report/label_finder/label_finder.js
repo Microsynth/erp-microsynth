@@ -51,5 +51,37 @@ frappe.query_reports["Label Finder"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
+        report.page.add_inner_button( __("Lock Labels"), function() {
+            // check that all labels are unused
+            all_labels_unused = true;
+            for (var i = 0; i < frappe.query_report.data.length; i++) {
+                if (frappe.query_report.data[i].status != "unused") {
+                    frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'locked'. No Label status was changed. Please contact IT App if you have a valid use case.");
+                    all_labels_unused = false;
+                    break;
+                }
+            }
+            if (all_labels_unused) {
+                // TODO: ask for a reason
+                frappe.msgprint("This functionality is not yet implemented.");
+            }
+            // TODO: trigger label locking
+        });
+        report.page.add_inner_button( __("Set Labels unused"), function() {
+            // check that all labels are locked
+            all_labels_locked = true;
+            for (var i = 0; i < frappe.query_report.data.length; i++) {
+                if (frappe.query_report.data[i].status != "locked") {
+                    frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'unused'. No Label status was changed. Please contact IT App if you have a valid use case.");
+                    all_labels_locked = false;
+                    break;
+                }
+            }
+            if (all_labels_locked) {
+                // TODO: ask for a reason
+                frappe.msgprint("This functionality is not yet implemented.");
+            }
+            // TODO: set Labels to status unused
+        });
     }
 };
