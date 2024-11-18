@@ -502,12 +502,14 @@ frappe.ui.form.on('QM Change', {
                         frm.dashboard.add_comment( __("Please complete all Change Control Actions and reload this QM Change to finish the Implementation."), 'red', true);
                     } else if (frappe.user.has_role('QAU') && frm.doc.in_approval) {
                         // Add Approve and Reject buttons
-                        cur_frm.page.set_primary_action(
-                            __("Approve"),
-                            function() {
-                                create_qm_decision("Approve", frm.doc.status, "Completed");
-                            }
-                        );
+                        if (!response.message) {
+                            cur_frm.page.set_primary_action(
+                                __("Approve"),
+                                function() {
+                                    create_qm_decision("Approve", frm.doc.status, "Completed");
+                                }
+                            );
+                        }
                         frm.add_custom_button(__("Reject"), function() {
                             create_qm_decision("Reject", frm.doc.status, "Completed");
                         }).addClass("btn-danger");
