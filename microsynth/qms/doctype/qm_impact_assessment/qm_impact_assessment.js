@@ -31,7 +31,7 @@ frappe.ui.form.on('QM Impact Assessment', {
         }
 
         if (!frm.doc.__islocal) {
-            if (frappe.session.user != frm.doc.created_by || !frm.doc.assessment_summary) {
+            if ((frappe.session.user != frm.doc.created_by && !frappe.user.has_role('QAU')) || !frm.doc.assessment_summary) {
                 cur_frm.page.clear_primary_action();
                 cur_frm.page.clear_secondary_action();
             }
