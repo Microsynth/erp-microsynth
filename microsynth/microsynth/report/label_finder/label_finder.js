@@ -52,36 +52,82 @@ frappe.query_reports["Label Finder"] = {
     "onload": (report) => {
         hide_chart_buttons();
         report.page.add_inner_button( __("Lock Labels"), function() {
+            var labels_to_lock = [];
             // check that all labels are unused
-            all_labels_unused = true;
+            var all_labels_unused = true;
             for (var i = 0; i < frappe.query_report.data.length; i++) {
                 if (frappe.query_report.data[i].status != "unused") {
                     frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'locked'. No Label status was changed. Please contact IT App if you have a valid use case.");
                     all_labels_unused = false;
                     break;
                 }
+                labels_to_lock.push({
+                    'label_id': frappe.query_report.data[i].label_id,
+                    'item_code': frappe.query_report.data[i].item_code
+                });
             }
             if (all_labels_unused) {
                 // TODO: ask for a reason
                 frappe.msgprint("This functionality is not yet implemented.");
+                // trigger label locking
+                // frappe.confirm('Are you sure you want to <b>lock</b> the ' + frappe.query_report.data.length + ' Sequencing Labels selected in the Label Finder?',
+                //     () => {
+                //         frappe.call({
+                //             'method': "microsynth.microsynth.seqblatt.lock_labels",
+                //             'args':{
+                //                 'content': {'labels': labels_to_lock}
+                //             },
+                //             'freeze': true,
+                //             'freeze_message': __("Locking Labels ..."),
+                //             'callback': function(r)
+                //             {
+                //                 frappe.show_alert('Locked Labels');
+                //                 frappe.click_button('Refresh');
+                //             }
+                //         });
+                //     }, () => {
+                //         frappe.show_alert('No changes made');
+                // });
             }
-            // TODO: trigger label locking
         });
         report.page.add_inner_button( __("Set Labels unused"), function() {
+            var labels_to_set_unused = [];
             // check that all labels are locked
-            all_labels_locked = true;
+            var all_labels_locked = true;
             for (var i = 0; i < frappe.query_report.data.length; i++) {
                 if (frappe.query_report.data[i].status != "locked") {
                     frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'unused'. No Label status was changed. Please contact IT App if you have a valid use case.");
                     all_labels_locked = false;
                     break;
                 }
+                labels_to_set_unused.push({
+                    'label_id': frappe.query_report.data[i].label_id,
+                    'item_code': frappe.query_report.data[i].item_code
+                });
             }
             if (all_labels_locked) {
                 // TODO: ask for a reason
                 frappe.msgprint("This functionality is not yet implemented.");
+                // set Labels to status unused
+                // frappe.confirm('Are you sure you want to set the ' + frappe.query_report.data.length + ' Sequencing Labels selected in the Label Finder to status <b>unused</b>?',
+                //     () => {
+                //         frappe.call({
+                //             'method': "microsynth.microsynth.seqblatt.set_unused",
+                //             'args':{
+                //                 'content': {'labels': labels_to_set_unused}
+                //             },
+                //             'freeze': true,
+                //             'freeze_message': __("Setting Labels to unused ..."),
+                //             'callback': function(r)
+                //             {
+                //                 frappe.show_alert('Set Labels to unused');
+                //                 frappe.click_button('Refresh');
+                //             }
+                //         });
+                //     }, () => {
+                //         frappe.show_alert('No changes made');
+                // });
             }
-            // TODO: set Labels to status unused
         });
     }
 };
