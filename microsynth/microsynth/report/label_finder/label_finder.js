@@ -62,6 +62,7 @@ frappe.query_reports["Label Finder"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
+        hide_column_filters()
         report.page.add_inner_button( __("Lock Labels"), function() {
             var labels_to_lock = [];
             // check that all labels are unused
@@ -142,3 +143,16 @@ frappe.query_reports["Label Finder"] = {
         });
     }
 };
+
+function hide_column_filters() {
+    let container = document.getElementsByClassName("page-content");
+    const hide_column_filter_style = document.createElement("style");
+    hide_column_filter_style.innerHTML = `
+        .dt-header .dt-row[data-is-filter] {
+          display: none !important;
+        }
+    `
+    for (let i = 0; i < container.length; i++) {
+        container[i].appendChild(hide_column_filter_style);
+    }
+}
