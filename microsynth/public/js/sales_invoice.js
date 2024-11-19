@@ -424,19 +424,19 @@ function validate_company_references(frm) {
         // verify income & expense accounts, cost center and warehouse
         if (frm.doc.items) {
             for (let i = 0; i < frm.doc.items.length; i++) {
-                if (!frm.doc.items[i].income_account.endsWith(suffix)) {
+                if ((frm.doc.items[i].income_account) && (!frm.doc.items[i].income_account.endsWith(suffix))) {
                     frappe.msgprint( __("Invalid income account: {0} does not belong to ").replace("{0}", frm.doc.items[i].income_account) + frm.doc.company, __("Company Validaton") );
                     frappe.validated = false;
                 }
-                if (!frm.doc.items[i].expense_account.endsWith(suffix)) {
+                if ((frm.doc.items[i].expense_account) && (!frm.doc.items[i].expense_account.endsWith(suffix))) {
                     frappe.msgprint( __("Invalid expense account: {0} does not belong to ").replace("{0}", frm.doc.items[i].expense_account) + frm.doc.company, __("Company Validaton") );
                     frappe.validated = false;
                 }
-                if (!frm.doc.items[i].cost_center.endsWith(suffix)) {
+                if ((frm.doc.items[i].cost_center) && (!frm.doc.items[i].cost_center.endsWith(suffix))) {
                     frappe.msgprint( __("Invalid cost center: {0} does not belong to ").replace("{0}", frm.doc.items[i].cost_center) + frm.doc.company, __("Company Validaton") );
                     frappe.validated = false;
                 }
-                if (!frm.doc.items[i].warehouse.endsWith(suffix)) {
+                if ((frm.doc.items[i].warehouse) && (!frm.doc.items[i].warehouse.endsWith(suffix))) {
                     frappe.msgprint( __("Invalid warehouse: {0} does not belong to ").replace("{0}", frm.doc.items[i].warehouse) + frm.doc.company, __("Company Validaton") );
                     frappe.validated = false;
                 }
