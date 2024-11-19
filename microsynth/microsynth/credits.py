@@ -4,10 +4,11 @@
 import frappe
 from datetime import date, datetime, timedelta
 from frappe.utils.data import today
-from frappe.utils import flt, cint
+from frappe.utils import flt, cint, get_link_to_form
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
 
 def get_available_credits(customer, company, credit_type):
@@ -248,6 +249,34 @@ def cancel_credit_journal_entry(sales_invoice, event=None):
 
     return journal_entry.name
 
+
+@frappe.whitelist()
+def get_linked_customer_credit_bookings(sales_invoice):
+    """
+    Return linked customer credit booking records
+
+    bench execute microsynth.microsynth.credits.get_linked_customer_credit_bookings --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
+    """
+    if type(sales_invoice) == SalesInvoice:
+        sales_invoice = sales_invoice.name
+    
+    journal_entries = frappe.get_all("Journal Entry",
+        filters={
+            'user_remark': "Credit from {0}".format(sales_invoice),
+            'docstatus': 1
+        },
+        fields=['name'])
+    
+    if len(journal_entries) > 0:
+        links = []
+        for jv in journal_entries:
+            links.append(get_link_to_form("Journal Entry", jv['name']))
+        
+        html = frappe.render_template('microsynth/templates/includes/credit_booking_links.html', {'links': ", ".join(links)})
+        
+        return {'journal_entries': journal_entries, 'links': links, 'html': html}
+    else:
+        return None
 
 @frappe.whitelist()
 def close_invoice_against_expense(sales_invoice, account):

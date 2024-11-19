@@ -142,6 +142,14 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.docstatus === 0) {
             cache_company_key(frm);
         }
+        
+        // in case of customer credit bookings, display links in the customer credit section
+        if ((frm.doc.docstatus === 1) && (frm.doc.total_customer_credit > 0)) {
+            display_customer_credit_bookings(frm);
+        } else {
+            // reset form html, in case of opening the form after a previous credit
+            cur_frm.set_df_property('customer_credit_booking_html', 'options', "<div></div>");
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -513,4 +521,21 @@ function cache_company_key(frm) {
             }
         });
     }
+}
+
+function display_customer_credit_bookings(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.credits.get_linked_customer_credit_bookings',
+        'args': {
+            'sales_invoice': frm.doc.name
+        },
+        'callback': function (r) {
+            if (r.message) {
+                let html = r.message.html;
+                cur_frm.set_df_property('customer_credit_booking_html', 'options', html);
+            } else {
+                cur_frm.set_df_property('customer_credit_booking_html', 'options', "<div></div>");
+            }
+        }
+    });
 }
