@@ -139,6 +139,8 @@ frappe.ui.form.on('Contact', {
             }, __("Create"));
 
             frm.page.set_inner_btn_group_as_primary(__('Create'));
+        } else {
+            cur_frm.dashboard.add_comment(__('Please add a Link to a Customer in the Reference section.'), "red", true);
         }
     }
 });
