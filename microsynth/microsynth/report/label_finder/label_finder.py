@@ -58,7 +58,12 @@ def get_data(filters):
                 frappe.throw("From Barcode and To Barcode need to have the same length.")
             barcode_list = ','.join(f'"{to_prefix}{i:0{len(to_barcode)}d}"' for i in range(int(from_barcode), int(to_barcode) + 1))
             conditions += f"AND `tabSequencing Label`.`label_id` IN ({barcode_list})"
-
+    elif (filters.get('from_barcode') or filters.get('to_barcode')) and not conditions:
+        frappe.throw( _("For using from and to barcode, please set both filters.") )
+        return []
+    elif filters.get('from_barcode') or filters.get('to_barcode'):
+        frappe.msgprint( _("From and to barcode are both required, this filter is being ignored.") )
+        
     sql_query = f"""
         SELECT
             `tabSequencing Label`.`name`,
