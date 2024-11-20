@@ -41,7 +41,7 @@ frappe.invoice_entry = {
             html += purchase_invoice_drafts[i].html;
         }
         if (purchase_invoice_drafts.length == 0) {
-            html = "<h1>Nothing to do 😎</h1>"
+            html = "<h1>Nothing to do 😎</h1>"  // TODO: Add button "Load invoices" that triggers batch_invoice_processing.process_files
         }
         // insert content
         document.getElementById("pi_drafts_view").innerHTML = html;
@@ -61,7 +61,7 @@ frappe.invoice_entry = {
         frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'due_date', 'Due Date', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'bill_no', 'Supplier Invoice No', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'approver', 'Approver', 'User');
-        frappe.invoice_entry.create_field(purchase_invoice, 'Small Text', 'remarks', 'Remarks', '');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'remarks', 'Remarks', '');
         frappe.invoice_entry.remove_clearfix_nodes();
     },
     create_field: function(purchase_invoice, fieldtype, field_name, placeholder, options) {
@@ -108,9 +108,8 @@ frappe.invoice_entry = {
             'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
             'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
             'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
-            'remarks': document.querySelectorAll("textarea[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
+            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
         };
-        
         frappe.call({
             'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
             'args': {
@@ -120,10 +119,12 @@ frappe.invoice_entry = {
             'freeze_message': __("Saving..."),
             'callback': function(response) {
                 frappe.show_alert(response.message);
+                location.reload();
             }
         });
     },
-    assign_document: function(purchase_invoice_name) {        
+    assign_document: function(purchase_invoice_name) {
+        this.save_document(purchase_invoice_name);
         frappe.call({
             'method': 'microsynth.microsynth.purchasing.create_approval_request',
             'args': {
@@ -144,6 +145,27 @@ frappe.invoice_entry = {
         });
     },
     edit_document: function(purchase_invoice_name) {
+        // save without reload
+        let doc = {
+            'name': purchase_invoice_name,
+            'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
+            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
+            'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
+            'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
+            'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
+            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
+        };
+        frappe.call({
+            'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
+            'args': {
+                'doc': doc
+            },
+            'freeze': true,
+            'freeze_message': __("Saving..."),
+            'callback': function(response) {
+                frappe.show_alert(response.message);
+            }
+        });
         // toggle quick entry/form
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
         quick_entry.style.display = "None";
@@ -154,16 +176,7 @@ frappe.invoice_entry = {
         form_frame.innerHTML = "<iframe class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
     },
     close_document: function(purchase_invoice_name) {
-        /*
-        // toggle quick entry/form
-        let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
-        quick_entry.style.display = "Block";
-        let full_form = document.getElementById("full_form_" + purchase_invoice_name);
-        full_form.style.display = "None";
-        // unload form
-        let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
-        form_frame.innerHTML = "";
-        */
+        // TODO: Save document
         location.reload();
     },
     delete_document: function(purchase_invoice_name) {

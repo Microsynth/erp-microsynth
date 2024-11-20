@@ -15,6 +15,8 @@
                                 <td style="width: 50%; ">{{ _("Document") }}</td>
                                 <td>
                                     <a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a>
+                                    <button class="btn btn-sm btn-primary pull-right" id="btn_save_{{ name }}">{{ _("Save") }}</button>
+                                    <!-- TODO: add space between these two buttons -->
                                     <button class="btn btn-sm btn-primary pull-right" id="btn_edit_{{ name }}">{{ _("Edit") }}</button>
                                 </td>
                             <tr>
@@ -79,7 +81,7 @@
                             </tr>
                             <tr>
                                 <td><button class="btn btn-sm btn-danger" id="btn_delete_{{ name }}">{{ _("Delete") }}</button></td>
-                                <td><button class="btn btn-sm btn-primary" id="btn_save_{{ name }}">{{ _("Save") }}</button></td>
+                                <td></td>
                             </tr>
                         </tbody>
                     </table>
