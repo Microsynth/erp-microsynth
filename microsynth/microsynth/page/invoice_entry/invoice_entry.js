@@ -58,7 +58,7 @@ frappe.invoice_entry = {
         // clean help boxes to save some space below each input box
         let help_boxes = document.getElementsByClassName("help-box");
         for (let i = 0; i < help_boxes.length; i++) {
-          help_boxes[0].remove();
+            help_boxes[0].remove();
         }
     },
     create_fields: function(purchase_invoice) {

@@ -5,6 +5,7 @@
 
 import frappe
 from frappe.desk.form.assign_to import add
+from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import user_has_role
 
 
@@ -90,16 +91,24 @@ def create_approval_request(assign_to, dt, dn):
     if not is_already_assigned(dt, dn):
         if assign_to == frappe.session.user and not user_has_role(frappe.session.user, "Accounts Manager"):
             frappe.throw(f"You are not allowed to assign the {dt} {dn} to yourself. Please choose another Approver.")
+        # create an Assignment without an Email
         add({
             'doctype': dt,
             'name': dn,
             'assign_to': assign_to,
             'description': f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
-            'notify': True  # Send email
+            'notify': False  # Send email
         })
+        # create an Email without a direct link to the Document itself
+        make(
+            recipients = assign_to,
+            sender = frappe.session.user,
+            subject = f"Approval Request for {dt} {dn}",
+            content = f'Please check the {dt} {dn} in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a> and approve or reject it.',
+            send_email = True
+        )
         if dt == "Purchase Invoice":
             purchase_invoice = frappe.get_doc(dt, dn)
-            #if (not purchase_invoice.approver) or purchase_invoice.approver == '':
             purchase_invoice.approver = assign_to
             purchase_invoice.in_approval = 1
             purchase_invoice.save()
