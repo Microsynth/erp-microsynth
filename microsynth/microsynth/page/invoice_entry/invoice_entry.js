@@ -54,6 +54,12 @@ frappe.invoice_entry = {
             frappe.invoice_entry.attach_close_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_delete_handler(purchase_invoice_drafts[i].name);
         }
+        
+        // clean help boxes to save some space below each input box
+        let help_boxes = document.getElementsByClassName("help-box");
+        for (let i = 0; i < help_boxes.length; i++) {
+          help_boxes[0].remove();
+        }
     },
     create_fields: function(purchase_invoice) {
         frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'supplier', 'Supplier', 'Supplier');
