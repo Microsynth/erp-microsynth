@@ -27,6 +27,7 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`posting_date`,
             `tabPurchase Invoice`.`due_date`,
             `tabPurchase Invoice`.`net_total`,
+            `tabPurchase Invoice`.`total`,
             `tabPurchase Invoice`.`grand_total`,
             `tabPurchase Invoice`.`taxes_and_charges`,
             `tabPurchase Invoice`.`total_taxes_and_charges`,

@@ -38,16 +38,20 @@
                                 <td><div id="bill_no_{{ name }}"></div></td>
                             </tr>
                             <tr>
-                                <td>{{ _("Amount") }}</td>
+                                <td>{{ _("Net Total") }}</td>
+                                <td>{{ currency }} {{ "{:,.2f}".format(total).replace(",", "&apos;") }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Taxes") }}</td>
+                                <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Grand Total") }}</td>
                                 <td>{{ currency }} {{ "{:,.2f}".format(grand_total).replace(",", "&apos;") }}</td>
                             </tr>
                             <tr>
                                 <td>{{ _("Tax Template") }}</td>
                                 <td>{{ taxes_and_charges }}</td>
-                            </tr>
-                            <tr>
-                                <td>{{ _("Taxes") }}</td>
-                                <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
                             </tr>
                             <tr>
                                 <td>{{ _("Expense Account / Cost Center") }}</td>
