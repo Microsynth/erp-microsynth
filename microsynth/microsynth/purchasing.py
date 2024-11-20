@@ -5,6 +5,7 @@
 
 import frappe
 from frappe.desk.form.assign_to import add
+from microsynth.microsynth.utils import user_has_role
 
 
 def create_pi_from_si(sales_invoice):
@@ -87,6 +88,8 @@ def is_already_assigned(dt, dn):
 @frappe.whitelist()
 def create_approval_request(assign_to, dt, dn):
     if not is_already_assigned(dt, dn):
+        if assign_to == frappe.session.user and not user_has_role(frappe.session.user, "Accounts Manager"):
+            frappe.throw(f"You are not allowed to assign the {dt} {dn} to yourself. Please choose another Approver.")
         add({
             'doctype': dt,
             'name': dn,
