@@ -1911,30 +1911,33 @@ def is_valid_tax_id(tax_id):
     return valid
 
 
-def check_tax_id(tax_id, customer_id, customer_name):
-    """
-    Takes a Tax ID with its Customer ID and Customer name and
-    sends an email to the administration if the given Tax ID can be classified as invalid.
-    It is NOT checked if the Tax ID belongs to the given Customer name.
-    """
-    if not tax_id:
-        return
-    if tax_id[:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in tax_id:
-        # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
-        return
-    if not is_valid_tax_id(tax_id):
-        subject = f"[ERP] Invalid Tax ID '{tax_id}'"
-        vies_url_string = f'<a href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation">https://ec.europa.eu/taxation_customs/vies/#/vat-validation</a>'
-        message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Tax ID '{tax_id}' " \
-                    f"of Customer '{customer_id}' ('{customer_name}') seems to be invalid.<br>" \
-                    f"Please check the Tax ID using {vies_url_string} and correct it if necessary.<br><br>Best regards,<br>Jens"
-        make(
-            recipients = "info@microsynth.ch",
-            sender = "jens.petermann@microsynth.ch",
-            subject = subject,
-            content = message,
-            send_email = True
-            )
+
+# It seems that this function is never called
+# def check_tax_id(tax_id, customer_id, customer_name):
+#     """
+#     Takes a Tax ID with its Customer ID and Customer name and
+#     sends an email to the administration if the given Tax ID can be classified as invalid.
+#     It is NOT checked if the Tax ID belongs to the given Customer name.
+#     """
+#     if not tax_id:
+#         return
+#     if tax_id[:2] in ['CH', 'GB', 'IS', 'NO', 'TR'] and not 'NOT' in tax_id:
+#         # unable to check Tax ID from Great Britain, Iceland, Norway or Turkey
+#         return
+#     if not is_valid_tax_id(tax_id):
+#         subject = f"[ERP] Invalid Tax ID '{tax_id}'"
+#         vies_url_string = f'<a href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation">https://ec.europa.eu/taxation_customs/vies/#/vat-validation</a>'
+#         message = f"Dear Administration,<br><br>this is an automatic email to inform you that the Tax ID '{tax_id}' " \
+#                     f"of Customer '{customer_id}' ('{customer_name}') seems to be invalid.<br>" \
+#                     f"Please check the Tax ID using {vies_url_string} and correct it if necessary.<br><br>Best regards,<br>Jens"
+#         make(
+#             recipients = "info@microsynth.ch",
+#             sender = "jens.petermann@microsynth.ch",
+#             subject = subject,
+#             content = message,
+#             send_email = True
+#             )
+
 
 
 def check_new_customers_taxid(delta_days=7):
