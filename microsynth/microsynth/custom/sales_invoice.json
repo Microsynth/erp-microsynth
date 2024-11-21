@@ -840,7 +840,7 @@
    "allow_on_submit": 0,
    "bold": 0,
    "collapsible": 1,
-   "collapsible_depends_on": "",
+   "collapsible_depends_on": "eval:doc.total_customer_credit>0",
    "columns": 0,
    "creation": "2023-01-24 10:13:13.744587",
    "default": null,
