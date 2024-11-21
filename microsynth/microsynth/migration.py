@@ -1359,7 +1359,7 @@ def disable_customers_without_contacts():
 
             if len(quotations) != 0 or len(sales_orders) != 0 or len(delivery_notes) != 0 or len(sales_invoices) != 0:
                 skipped += 1
-                url_string = f"<a href={get_url_to_form('Sales Invoice', c['name'])}>{c['name']}</a>"
+                url_string = f"<a href={get_url_to_form('Customer', c['name'])}>{c['name']}</a>"
                 message = f"Customer {url_string} has no shipping contacts and {len(quotations)} Quotations, {len(sales_orders)} Sales Orders, {len(delivery_notes)} Delivery Notes and {len(sales_invoices)} Sales Invoices."
                 #print(message)
                 customers_to_report.append(message)
