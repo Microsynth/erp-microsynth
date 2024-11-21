@@ -16,11 +16,16 @@ frappe.ui.form.on('Purchase Invoice', {
         } else {
             cur_frm.set_df_property('approver', 'read_only', false);
         }
+
+        if (!cur_frm.doc.supplier_address) {
+            frappe.throw("Please set a Supplier Address on this Purchase Invoice.");
+            frappe.validated = false;
+        }
         
         hide_in_words();
     },
     before_submit() {
-        frappe.msgprint("Please use the Approval Manager to submit.")
+        frappe.msgprint("Please use the Approval Manager to submit.");
         frappe.validated = false;
     },
     company(frm) {

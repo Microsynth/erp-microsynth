@@ -125,7 +125,7 @@ frappe.invoice_entry = {
             'freeze_message': __("Saving..."),
             'callback': function(response) {
                 frappe.show_alert(response.message);
-                location.reload();
+                //location.reload();  // TODO: Only necessary if Supplier ID was changed
             }
         });
     },
@@ -152,26 +152,7 @@ frappe.invoice_entry = {
     },
     edit_document: function(purchase_invoice_name) {
         // save without reload
-        let doc = {
-            'name': purchase_invoice_name,
-            'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
-            'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
-            'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
-            'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
-            'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
-            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
-        };
-        frappe.call({
-            'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',
-            'args': {
-                'doc': doc
-            },
-            'freeze': true,
-            'freeze_message': __("Saving..."),
-            'callback': function(response) {
-                frappe.show_alert(response.message);
-            }
-        });
+        this.save_document(purchase_invoice_name);
         // toggle quick entry/form
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
         quick_entry.style.display = "None";
