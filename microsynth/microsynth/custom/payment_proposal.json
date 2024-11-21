@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Payment Proposal",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2024-11-21 16:04:37.305018",
+   "default_value": null,
+   "doc_type": "Payment Proposal",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "company",
+   "idx": 0,
+   "modified": "2024-11-21 16:04:37.305018",
+   "modified_by": "jens.petermann@microsynth.ch",
+   "name": "Payment Proposal-company-read_only",
+   "owner": "jens.petermann@microsynth.ch",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "read_only",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
+ "sync_on_migrate": 1
+}
