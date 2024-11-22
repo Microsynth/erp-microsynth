@@ -36,6 +36,12 @@ class QMNonconformity(Document):
                 'effectiveness_checks': get_effectiveness_checks(self.name)
             })
         return html
+    
+
+    def set_in_approval(self, in_approval):
+        self.in_approval = in_approval
+        self.save()
+        frappe.db.commit()
 
 
     def validate(self):

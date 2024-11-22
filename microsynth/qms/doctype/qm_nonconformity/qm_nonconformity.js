@@ -258,7 +258,7 @@ frappe.ui.form.on('QM Nonconformity', {
                         function() {
                             submit();
                             // Notify Q
-                            send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " was submitted by " + frappe.session.user + ". Please check the classification:");
+                            send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") was submitted by " + frappe.session.user + ". Please check the classification:");
                         }
                     );
                 }
@@ -291,7 +291,7 @@ frappe.ui.form.on('QM Nonconformity', {
                             confirm_classification();  // -> status "Investigation"
                             if (frappe.session.user != frm.doc.created_by) {
                                 // Assign and notify the creator
-                                send_notification(true, frm.doc.created_by, "The Classification for your QM Nonconformity " + frm.doc.name + " was confirmed by QAU. Please proceed.");
+                                send_notification(true, frm.doc.created_by, "The Classification for your QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") was confirmed by QAU. Please proceed.");
                             }
                         }
                     );
@@ -371,7 +371,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                 function() {
                                     set_status('Plan Approval');
                                     // Notify Q
-                                    send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " was handed over to you by " + frappe.session.user + " for Plan Approval:");
+                                    send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") was handed over to you by " + frappe.session.user + " for Plan Approval:");
                                 }
                             );
                         }
@@ -407,7 +407,7 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Implementation');
                         if (frappe.session.user != frm.doc.created_by) {
                             // Assign and notify the creator
-                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " was confirmed by QAU. Please proceed with the Implementation.");
+                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") was confirmed by QAU. Please proceed with the Implementation.");
                         }
                     }
                 );
@@ -417,7 +417,7 @@ frappe.ui.form.on('QM Nonconformity', {
                         set_status('Planning');
                         if (frappe.session.user != frm.doc.created_by) {
                             // Assign and notify the creator about rejection
-                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " was rejected by QAU. Please rework it.");
+                            send_notification(true, frm.doc.created_by, "The Action Plan for your QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") was rejected by QAU. Please rework it.");
                         }
                     }
                 );
@@ -504,14 +504,28 @@ frappe.ui.form.on('QM Nonconformity', {
                                     }
                                 } else {
                                     frm.dashboard.add_comment( __("This Nonconformity needs to be processed by QAU or its creator (non-GMP Event with no Corrective Actions)."), 'blue', true);
-                                    if (frappe.session.user === frm.doc.created_by) {
+                                    if (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval) {
                                         cur_frm.page.set_primary_action(
                                             __("Handover to QAU"),
                                             function() {
                                                 // Notify Q
-                                                send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " is completed and was handed over to you by " + frappe.session.user + ":");
+                                                send_notification(false, "qm@microsynth.ch", "The QM Nonconformity " + frm.doc.name + " (" + frm.doc.title + ") is completed and was handed over to you by " + frappe.session.user + ":");
+                                                frappe.call({
+                                                    'method': 'set_in_approval',
+                                                    'doc': cur_frm.doc,
+                                                    'args': {
+                                                        'in_approval': 1
+                                                    },
+                                                    'async': false,
+                                                    'callback': function (r) {
+                                                        cur_frm.reload_doc();
+                                                    }
+                                                });
                                             }
                                         );
+                                    } else if (frm.doc.in_approval) {
+                                        frm.dashboard.clear_comment();
+                                        frm.dashboard.add_comment( __("Waiting for QAU to be closed."), 'yellow', true);
                                     }
                                 }                                
                             }
@@ -725,10 +739,22 @@ function sign_and_close(frm) {
                                 'doc': cur_frm.doc.name,
                                 'user': frappe.session.user
                             },
-                            'async': false
+                            'async': false,
+                            'callback': function(response) {
+                                frappe.call({
+                                    'method': 'set_in_approval',
+                                    'doc': cur_frm.doc,
+                                    'args': {
+                                        'in_approval': 0
+                                    },
+                                    'async': false,
+                                    'callback': function (r) {
+                                        cur_frm.reload_doc();
+                                    }
+                                });
+                            }
                         });
                     }
-                    cur_frm.reload_doc();
                 }
             });
         },

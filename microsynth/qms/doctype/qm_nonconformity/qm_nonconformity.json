@@ -10,6 +10,7 @@
   "title",
   "date",
   "qm_process",
+  "in_approval",
   "col_main_1",
   "nc_type",
   "company",
@@ -446,10 +447,19 @@
    "fieldtype": "Link",
    "label": "Hierarchy 2",
    "options": "QM Classification Hierarchy"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "in_approval",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "In Approval",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-11 13:19:09.034736",
+ "modified": "2024-11-22 09:51:20.607444",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
