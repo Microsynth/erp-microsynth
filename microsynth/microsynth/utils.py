@@ -2449,9 +2449,12 @@ def check_sales_order(sales_order, event):
         frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
 
 
-def calculate_therapeutic_oligo_sales():
+def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     """
-    bench execute microsynth.microsynth.utils.calculate_therapeutic_oligo_sales
+    Run by a monthly cronjob on the first of each month:
+    40 0 1 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.utils.report_therapeutic_oligo_sales
+
+    bench execute microsynth.microsynth.utils.report_therapeutic_oligo_sales --kwargs "{'from_date': '2024-10-01', 'to_date': '2024-10-31'}"
     """
     start_ts = datetime.now()
     _0672_to_0679 = set(['0672', '0673', '0674', '0677', '0678', '0679'])
@@ -2466,7 +2469,14 @@ def calculate_therapeutic_oligo_sales():
     sirna_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
     aso_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
 
-    item_query = """
+    yesterday = datetime.now() - timedelta(days=1)
+    if not from_date:
+        from_date = f"{yesterday.year}-{yesterday.month}-01"
+    if not to_date:
+        to_date = f"{yesterday.year}-{yesterday.month}-{yesterday.day}" # yesterday.date()    
+    print(f"{from_date=}; {to_date=}")
+
+    item_query = f"""
         SELECT 
             `tabSales Invoice`.`name`,
             `tabSales Invoice Item`.`base_amount` AS `total`,
@@ -2486,6 +2496,7 @@ def calculate_therapeutic_oligo_sales():
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice Item`.`docstatus` = 1
             AND `tabSales Invoice Item`.`item_code` IN ('0640', '0650', '0660', '0670', '0671', '0652', '0653', '0655', '0665')
+            AND `tabSales Invoice`.`posting_date` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
         """
     si_rna_items = frappe.db.sql(item_query, as_dict=True)
 
@@ -2493,10 +2504,11 @@ def calculate_therapeutic_oligo_sales():
         if si_rna_item['company'] != 'Microsynth AG':
             frappe.throw(f"Company = {si_rna_item['company']} on {si_rna_item['name']}")
         sirnas.append(si_rna_item)
+        si_rna_item['items'] = set([si_rna_item['items']])
         si_rna_item['delivery_notes'] = set([si_rna_item['delivery_note']])
         sirna_totals[si_rna_item['currency']] += si_rna_item['total']
 
-    query = """
+    query = f"""
             SELECT 
                 `tabSales Invoice`.`name`,
                 `tabSales Invoice`.`base_total` AS `total`,
@@ -2513,6 +2525,7 @@ def calculate_therapeutic_oligo_sales():
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` IN ('0352', '0353', '0354', '0355', '0372', '0373', '0374', '0379', '0380', '0381', '0382', '0383', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0570', '0571', '0572', '0573', '0574', '0575', '0576', '0600', '0601', '0602', '0605', '0606', '0607', '0608', '0672', '0673', '0674', '0677', '0678', '0679', '0820', '0821', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0845', '0860', '0861', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890' )
+                AND `tabSales Invoice`.`posting_date` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
             GROUP BY `tabSales Invoice`.`name`
             """
     potential_sales_invoices = frappe.db.sql(query, as_dict=True)
@@ -2520,7 +2533,9 @@ def calculate_therapeutic_oligo_sales():
 
     for si in potential_sales_invoices:
         if si['company'] != 'Microsynth AG':
-            frappe.throw(f"Company = {si['company']} on {si['name']}")
+            msg = f"Company = {si['company']} on {si['name']}"
+            print(msg)
+            frappe.log_error(msg, "utils.report_therapeutic_oligo_sales")
         si_doc = frappe.get_doc("Sales Invoice", si['name'])
         items = set()
         delivery_notes = set()
@@ -2594,29 +2609,47 @@ def calculate_therapeutic_oligo_sales():
             neither_counter += 1
 
     print(f"\n{len(sirnas)=}, {len(asos)=}, {neither_counter=}, total={len(sirnas) + len(asos) + neither_counter}\n")
-    print("classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;company;product_type;items;is_collective")
+
+    file_content = ""
+    file_content += "classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;company;product_type;items;is_collective\n"
 
     for si in sirnas:
         sirna_totals[si['currency']] += si['total']
         is_collective = len(si['delivery_notes']) > 1
-        print(f"siRNA;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{si['items']};{is_collective}")
+        items_string = ",".join(list(si['items']))
+        file_content += f"siRNA;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
 
     for si in asos:
         aso_totals[si['currency']] += si['total']
         is_collective = len(si['delivery_notes']) > 1
-        print(f"ASO;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{si['items']};{is_collective}")
+        items_string = ",".join(list(si['items']))
+        file_content += f"ASO;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
 
+    summary = ""
     for c in currencies:
         total_string = f"{sirna_totals[c]:,.2f}".replace(",", "'")
-        print(f"\nsiRNA: {total_string} {c}")
+        summary += f"\nsiRNA: {total_string} {c}"
         total_string = f"{aso_totals[c]:,.2f}".replace(",", "'")
-        print(f"ASO: {total_string} {c}")
-
+        summary += f"\nASO: {total_string} {c}\n"
+    
+    print(summary)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"\n{datetime.now()}: Finished calculate_therapeutic_oligo_sales after {elapsed_time} hh:mm:ss.")
 
+    file = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": f"ASO_siRNA_sales_from_{from_date}_to_{to_date}_created_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv",
+            "is_private": 1,
+            "content": file_content,
+        })
+    file.save()
+    email_template = frappe.get_doc("Email Template", "ASO and siRNA Sales Export")
+    rendered_content = frappe.render_template(email_template.response, {'from_date': from_date, 'to_date': to_date, 'summary': summary})
+    send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=file.file_url)
 
-def send_email_from_template(email_template, rendered_content, rendered_subject=None):
+
+def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None):
     """
     Takes an Email Template object, the rendered content (message) and optionally a rendered subjects
     and triggers the sending of the corresponding email.
@@ -2628,5 +2661,6 @@ def send_email_from_template(email_template, rendered_content, rendered_subject=
             sender_full_name = email_template.sender_full_name,
             subject = rendered_subject if rendered_subject else email_template.subject,
             content = rendered_content,
+            attachments = attachments,
             send_email = True
         )
