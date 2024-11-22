@@ -2489,9 +2489,11 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
             `tabSales Invoice`.`company`,
             `tabSales Invoice`.`product_type`,
             `tabSales Invoice Item`.`item_code` AS `items`,
-            `tabSales Invoice Item`.`delivery_note`
+            `tabSales Invoice Item`.`delivery_note`,
+            `tabCustomer`.`account_manager` AS `sales_manager`
         FROM `tabSales Invoice Item`
         LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
         WHERE 
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice Item`.`docstatus` = 1
@@ -2519,9 +2521,11 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
                 `tabSales Invoice`.`customer_name`,
                 `tabSales Invoice`.`contact_person`,
                 `tabSales Invoice`.`company`,
-                `tabSales Invoice`.`product_type`
+                `tabSales Invoice`.`product_type`,
+                `tabCustomer`.`account_manager` AS `sales_manager`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` IN ('0352', '0353', '0354', '0355', '0372', '0373', '0374', '0379', '0380', '0381', '0382', '0383', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0570', '0571', '0572', '0573', '0574', '0575', '0576', '0600', '0601', '0602', '0605', '0606', '0607', '0608', '0672', '0673', '0674', '0677', '0678', '0679', '0820', '0821', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0845', '0860', '0861', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890' )
@@ -2611,19 +2615,19 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     print(f"\n{len(sirnas)=}, {len(asos)=}, {neither_counter=}, total={len(sirnas) + len(asos) + neither_counter}\n")
 
     file_content = ""
-    file_content += "classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;company;product_type;items;is_collective\n"
+    file_content += "classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;sales_manager;company;product_type;items;is_collective\n"
 
     for si in sirnas:
         sirna_totals[si['currency']] += si['total']
         is_collective = len(si['delivery_notes']) > 1
         items_string = ",".join(list(si['items']))
-        file_content += f"siRNA;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
+        file_content += f"siRNA;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['sales_manager']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
 
     for si in asos:
         aso_totals[si['currency']] += si['total']
         is_collective = len(si['delivery_notes']) > 1
         items_string = ",".join(list(si['items']))
-        file_content += f"ASO;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
+        file_content += f"ASO;{si['name']};{si['total']};{si['currency']};{si['date']};{si['web_order_id']};{si['customer']};{si['customer_name']};{si['contact_person']};{si['sales_manager']};{si['company']};{si['product_type']};{items_string};{is_collective}\n"
 
     summary = ""
     for c in currencies:
@@ -2644,6 +2648,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
             "content": file_content,
         })
     file.save()
+    return
     email_template = frappe.get_doc("Email Template", "ASO and siRNA Sales Export")
     rendered_content = frappe.render_template(email_template.response, {'from_date': from_date, 'to_date': to_date, 'summary': summary})
     send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=file.file_url)
