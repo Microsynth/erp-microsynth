@@ -1,0 +1,163 @@
+{
+ "creation": "2024-11-25 16:11:41.371216",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "contact",
+  "customer",
+  "from_barcode",
+  "sales_order",
+  "item_code",
+  "from_status",
+  "reason",
+  "column_break_8",
+  "registered_to",
+  "customer_name",
+  "to_barcode",
+  "web_order_id",
+  "user",
+  "to_status",
+  "registered",
+  "section_break_16",
+  "description",
+  "labels"
+ ],
+ "fields": [
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "registered_to",
+   "fieldtype": "Link",
+   "label": "Registered To",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "from_barcode",
+   "fieldtype": "Data",
+   "label": "From Barcode"
+  },
+  {
+   "fieldname": "to_barcode",
+   "fieldtype": "Data",
+   "label": "To Barcode"
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "label": "Sales Order",
+   "options": "Sales Order"
+  },
+  {
+   "fieldname": "web_order_id",
+   "fieldtype": "Data",
+   "label": "Web Order ID"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "default": "0",
+   "fieldname": "registered",
+   "fieldtype": "Check",
+   "label": "Registered"
+  },
+  {
+   "fieldname": "from_status",
+   "fieldtype": "Select",
+   "label": "From Status",
+   "options": "\nunknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
+  },
+  {
+   "fieldname": "to_status",
+   "fieldtype": "Select",
+   "label": "To Status",
+   "options": "\nunknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reason",
+   "options": "\nPayment of additional reactions\nLost\nArrived at Customer after considered lost",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "labels",
+   "fieldtype": "Text",
+   "label": "Labels"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "modified": "2024-11-25 16:56:53.430333",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Label Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
