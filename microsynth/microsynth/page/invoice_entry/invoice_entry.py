@@ -33,13 +33,15 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice`.`total_taxes_and_charges`,
             `tabPurchase Invoice`.`currency`,
             `tabPurchase Invoice`.`bill_no`,
+            `tabPurchase Invoice`.`reject_message`,
             `tabPurchase Invoice Item`.`expense_account`,
             `tabPurchase Invoice Item`.`cost_center`,
             `tabSupplier`.`iban`,
             `tabSupplier`.`esr_participation_number`,
             `tabSupplier`.`default_payment_method`,
             `tabPurchase Invoice`.`approver`,
-            `tabPurchase Invoice`.`remarks`
+            `tabPurchase Invoice`.`remarks`,
+            CURDATE() AS `curdate`
         FROM `tabPurchase Invoice`
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`

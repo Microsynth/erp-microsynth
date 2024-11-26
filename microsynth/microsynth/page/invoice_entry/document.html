@@ -30,7 +30,7 @@
                                 <td>{{ _("Posting Date") }}</td>
                                 <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
                             </tr>
-                            <tr>
+                            <tr {% if due_date <= curdate %}style="background-color: #F6CDCE; "{% endif %} >
                                 <td>{{ _("Due Date") }}</td>
                                 <td><div id="due_date_{{ name }}"></div></td>
                             </tr>
@@ -97,6 +97,9 @@
                     <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
                 <button class="btn btn-sm btn-primary" id="btn_assign_{{ name }}">{{ _("Assign to Approver") }}</button>
+                {% if reject_message %}
+                    <p style="background-color: #F6CDCE; padding: 3px; "><b>{{ _("Reject message") }}:</b><br>{{ reject_message }}</p>
+                {% endif %}
             </td>
         </tr>
     <tbody>

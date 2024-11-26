@@ -75,8 +75,8 @@ def approve(pinv, user):
 
 
 @frappe.whitelist()
-def reject(pinv, user, reason, new_assignee):
-    add_comment(pinv, _("Reject"), reason, user)
+def reassign(pinv, user, reason, new_assignee):
+    add_comment(pinv, _("Reassign"), reason, user)
     # clear assignment
     clear("Purchase Invoice", pinv)
     pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
@@ -90,6 +90,17 @@ def reject(pinv, user, reason, new_assignee):
             'description': f'{description}\nPlease check it in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
             'notify': True
         })
+
+
+@frappe.whitelist()
+def reject(pinv, user, reason):
+    add_comment(pinv, _("Reject"), reason, user)
+    # clear assignment
+    clear("Purchase Invoice", pinv)
+    pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
+    pinv_doc.reject_message = reason
+    pinv_doc.save()
+    return
 
 
 def add_comment(pinv, subject, comment, user):
