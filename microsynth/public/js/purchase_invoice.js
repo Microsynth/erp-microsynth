@@ -17,9 +17,13 @@ frappe.ui.form.on('Purchase Invoice', {
             cur_frm.set_df_property('approver', 'read_only', false);
         }
 
-        if (!cur_frm.doc.supplier_address) {
+        if (!frm.doc.supplier_address) {
             frappe.throw("Please set a Supplier Address on this Purchase Invoice.");
             frappe.validated = false;
+        }
+
+        if (frm.doc.due_date < frappe.datetime.get_today()) {
+            frm.dashboard.add_comment('Due date <b>exceeded</b>', 'red', true);
         }
         
         hide_in_words();
