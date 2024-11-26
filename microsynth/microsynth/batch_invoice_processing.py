@@ -39,55 +39,58 @@ def read_company(company, input_path, company_settings, debug=True):
 def parse_file(file_name, company, company_settings, debug=True):
     if debug:
         print("INFO: Parsing {0} for {1}...".format(file_name, company))
-    # try to fetch data from zugferd
-    xml_content = get_xml(file_name)
-    invoice = {}
-    supplier = None
-    if xml_content:
-        if debug:
-            print("INFO: electronic invoice detected")
-        invoice = get_content_from_zugferd(xml_content)
-    else:
-        # zugferd failed, fall back to qr-reader
-        try:
-            qr_content = find_qr_content_from_pdf(file_name)
-        except Exception as err:
-            if debug:
-                print("ERROR: {0}".format(err))
-            qr_content = None
-
-        if qr_content:
-            if debug:
-                print("INFO: QR invoice detected")
-            invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
-        else:
-            if debug:
-                print("INFO: extract supplier from pdf")
-            invoice.update({
-                'supplier': find_supplier_from_pdf(file_name, company)
-            })
-    
-    # currency: if so far not defined, get company default currency
-    if not invoice:
+    try:
+        # try to fetch data from zugferd
+        xml_content = get_xml(file_name)
         invoice = {}
-    if 'currency' not in invoice or not invoice.get('currency'):
-        if invoice.get("supplier"):
-            # use supplier currency
-            invoice['currency'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_currency")
-        if not invoice.get('currency'):
-            # company default currency (last resort)
-            invoice['currency'] = frappe.get_value("Company", company, "default_currency")
+        supplier = None
+        if xml_content:
+            if debug:
+                print("INFO: electronic invoice detected")
+            invoice = get_content_from_zugferd(xml_content)
+        else:
+            # zugferd failed, fall back to qr-reader
+            try:
+                qr_content = find_qr_content_from_pdf(file_name)
+            except Exception as err:
+                if debug:
+                    print("ERROR: {0}".format(err))
+                qr_content = None
 
-    # apply price list from supplier
-    if invoice.get("supplier"):
-        invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list") 
-    
-    if debug:
-        print("INFO: supplier {0}".format(invoice.get('supplier')))
+            if qr_content:
+                if debug:
+                    print("INFO: QR invoice detected")
+                invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
+            else:
+                if debug:
+                    print("INFO: extract supplier from pdf")
+                invoice.update({
+                    'supplier': find_supplier_from_pdf(file_name, company)
+                })
         
-    # create invoice record
-    create_invoice(file_name, invoice, company_settings)
+        # currency: if so far not defined, get company default currency
+        if not invoice:
+            invoice = {}
+        if 'currency' not in invoice or not invoice.get('currency'):
+            if invoice.get("supplier"):
+                # use supplier currency
+                invoice['currency'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_currency")
+            if not invoice.get('currency'):
+                # company default currency (last resort)
+                invoice['currency'] = frappe.get_value("Company", company, "default_currency")
 
+        # apply price list from supplier
+        if invoice.get("supplier"):
+            invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list") 
+        
+        if debug:
+            print("INFO: supplier {0}".format(invoice.get('supplier')))
+            
+        # create invoice record
+        create_invoice(file_name, invoice, company_settings)
+    except Exception as err:
+        frappe.log_error("Error: {err}\nFile: {file_name}".format(err=err, file_name=file_name), "Batch processing parse file error")
+    return
 
 def create_invoice(file_name, invoice, settings):
     if not invoice.get('supplier'):
