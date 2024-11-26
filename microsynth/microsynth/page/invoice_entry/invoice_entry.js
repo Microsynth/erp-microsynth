@@ -12,6 +12,13 @@ frappe.pages['invoice_entry'].on_page_load = function(wrapper) {
     frappe.breadcrumbs.add("Microsynth");
 }
 
+// iframe interaction handler
+window.onmessage = function(e) {
+    if (e.data == "iframe_saved") {
+        location.reload();
+    }
+}
+
 frappe.invoice_entry = {
     start: 0,
     make: function(page) {
@@ -160,11 +167,15 @@ frappe.invoice_entry = {
         full_form.style.display = "Block";
         // load full form
         let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
-        form_frame.innerHTML = "<iframe class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
+        form_frame.innerHTML = "<iframe id='iframe_" + purchase_invoice_name + "' class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
     },
     close_document: function(purchase_invoice_name) {
         // TODO: Save document
-        location.reload();
+        let iframe = document.getElementById("iframe_" + purchase_invoice_name);
+        if (iframe) {
+            iframe.contentWindow.postMessage("close_document", {});
+        }
+        //location.reload();
     },
     delete_document: function(purchase_invoice_name) {
         // let the user confirm the deletion

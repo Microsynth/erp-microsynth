@@ -55,7 +55,7 @@ def get_purchase_invoice_drafts():
                     AND `tabToDo`.`status` = "Open"
             )
         GROUP BY `tabPurchase Invoice`.`name`
-        ORDER BY `tabPurchase Invoice`.`due_date` ASC, `tabPurchase Invoice`.`name` ASC
+        ORDER BY `tabPurchase Invoice`.`name` ASC
         ;
         """, as_dict=True)
 
