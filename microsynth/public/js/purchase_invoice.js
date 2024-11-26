@@ -1,4 +1,18 @@
 /* Custom script extension for Purchase Invoice */
+// iframe interaction handler for invoice entry
+window.onmessage = function(e) {
+    if (e.data == "close_document") {
+        if (cur_frm.is_dirty()) {
+            cur_frm.save().then(function() {
+                window.top.postMessage("iframe_saved", {});
+            });
+        } else {
+            // all saved, signal can close
+            window.top.postMessage("iframe_saved", {});
+        }
+    }
+}
+
 frappe.ui.form.on('Purchase Invoice', {
     refresh(frm) {
         if (frm.doc.__islocal) {
