@@ -30,12 +30,24 @@ frappe.query_reports["Label Finder"] = {
         {
             "fieldname": "from_barcode",
             "label": __("From Barcode"),
-            "fieldtype": "Data"
+            "fieldtype": "Data",
+            "on_change": function() {
+                if ((frappe.query_report.get_filter_value("from_barcode")) && (!frappe.query_report.get_filter_value("to_barcode"))) {
+                    frappe.query_report.set_filter_value("to_barcode", frappe.query_report.get_filter_value("from_barcode"));
+                }
+                frappe.query_report.refresh();
+            }
         },
         {
             "fieldname": "to_barcode",
             "label": __("To Barcode"),
-            "fieldtype": "Data"
+            "fieldtype": "Data",
+            "on_change": function() {
+                if ((frappe.query_report.get_filter_value("to_barcode")) && (!frappe.query_report.get_filter_value("from_barcode"))) {
+                    frappe.query_report.set_filter_value("from_barcode", frappe.query_report.get_filter_value("to_barcode"));
+                }
+                frappe.query_report.refresh();
+            }
         },
         {
             "fieldname": "sales_order",
