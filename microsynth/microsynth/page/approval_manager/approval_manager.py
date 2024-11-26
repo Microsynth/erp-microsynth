@@ -76,18 +76,18 @@ def approve(pinv, user):
 
 @frappe.whitelist()
 def reassign(pinv, user, reason, new_assignee):
-    add_comment(pinv, _("Reassign"), reason, user)
+    add_comment(pinv, _("Reassign"), f"Reassigned to {new_assignee}<br>Reason: {reason}", user)
     # clear assignment
     clear("Purchase Invoice", pinv)
     pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
     pinv_doc.approver = new_assignee
     pinv_doc.save()
-    description = f"Reason: {reason}" if reason else ""
+    reason_string = f"Reason: {reason}" if reason else ""
     add({
             'doctype': "Purchase Invoice",
             'name': pinv,
             'assign_to': new_assignee,
-            'description': f'{description}\nPlease check it in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
+            'description': f'You are assigned to Purchase Invoice {pinv} by {user}.\n{reason_string}\nPlease check it in the <a href="https://erp.microsynth.local/desk#approval-manager">Approval Manager</a>.',
             'notify': True
         })
 

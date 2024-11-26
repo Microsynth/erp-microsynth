@@ -61,6 +61,8 @@ frappe.approval_manager = {
         for (var i = 0; i < approvals.length; i++) {
             var btn_reject = document.getElementById("btn_reject_" + approvals[i].name);
             btn_reject.onclick = frappe.approval_manager.reject.bind(this, approvals[i].name);
+            var btn_reassign = document.getElementById("btn_reassign_" + approvals[i].name);
+            btn_reassign.onclick = frappe.approval_manager.reassign.bind(this, approvals[i].name);
             var btn_approve = document.getElementById("btn_approve_" + approvals[i].name);
             btn_approve.onclick = frappe.approval_manager.approve.bind(this, approvals[i].name);
             frappe.approval_manager.remove_clearfix_nodes();
@@ -80,7 +82,7 @@ frappe.approval_manager = {
             }
         });
     },
-    reject: function(pinv) {
+    reassign: function(pinv) {
         // Show dialog for reason, allow to assign to a different person
         frappe.prompt([
             {'fieldname': 'new_assignee', 'fieldtype': 'Link', 'options': 'User', 'label': __('Assign to'), 'reqd': 1},
@@ -88,9 +90,9 @@ frappe.approval_manager = {
         ],
             function(values){
                 frappe.call({
-                    'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reject',
+                    'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reassign',
                     'freeze': true,
-                    'freeze_message': __("Rejecting & assigning ..."),
+                    'freeze_message': __("Reassigning ..."),
                     'args': {
                         'pinv': pinv,
                         'user': frappe.session.user,
@@ -103,7 +105,31 @@ frappe.approval_manager = {
                 });
             },
         __('Please reassign'),
-        __('Reject & assign')
+        __('Reassign')
+        );
+    },
+    reject: function(pinv) {
+        // Show dialog for reason, allow to assign to a different person
+        frappe.prompt([
+            {'fieldname': 'reason', 'fieldtype': 'Text', 'label': __('Reason'), 'reqd': 1}
+        ],
+            function(values){
+                frappe.call({
+                    'method': 'microsynth.microsynth.page.approval_manager.approval_manager.reject',
+                    'freeze': true,
+                    'freeze_message': __("Rejecting ..."),
+                    'args': {
+                        'pinv': pinv,
+                        'user': frappe.session.user,
+                        'reason': values.reason
+                    },
+                    'callback': function(r) {
+                        document.getElementById("row_" + pinv).style.display = "none";
+                    }
+                });
+            },
+        __('Please justify'),
+        __('Reject')
         );
     },
     remove_clearfix_nodes: function() {
