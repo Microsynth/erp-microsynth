@@ -425,3 +425,45 @@ def close_partly_delivered_paid_orders(dry_run=True):
         print(f"\nWould have closed {counter} Sales Orders.")
     else:
         print(f"\nClosed {counter} Sales Orders.")
+
+
+def check_sequencing_delivery_note_duplicates():
+    """
+    Monitoring function to check if there are any new Sequencing Sales Orders
+    with more than one non-cancelled Delivery Note.
+    Should be run by a daily cronjob:
+    30 1 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.seqblatt.check_sequencing_delivery_note_duplicates
+    """
+    sql_query = """
+        SELECT * FROM
+            (SELECT `tabSales Order`.`name` AS `sales_order`,
+                `tabSales Order`.`creation`,
+                ROUND(`tabSales Order`.`total`, 2) AS `total`,
+                `tabSales Order`.`currency`,
+                `tabSales Order`.`customer`,
+                `tabSales Order`.`customer_name`,
+                `tabSales Order`.`web_order_id`,
+                `tabSales Order`.`company`,
+                (SELECT COUNT(DISTINCT(`tabDelivery Note Item`.`parent`))
+                    FROM `tabDelivery Note Item`
+                    LEFT JOIN `tabDelivery Note` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                    WHERE `tabDelivery Note`.`docstatus` < 2
+                        AND `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                ) AS `valid_DNs`
+            FROM `tabSales Order`
+            WHERE   `tabSales Order`.`product_type` = 'Sequencing'
+                AND `tabSales Order`.`docstatus` = 1
+                AND `tabSales Order`.`creation` > DATE('2024-11-01')
+            ) AS `raw`
+        WHERE `raw`.`valid_DNs` > 1
+        ORDER BY `raw`.`creation`;
+        """
+    sales_orders = frappe.db.sql(sql_query, as_dict=True)
+    if len(sales_orders) > 0:
+        from microsynth.microsynth.utils import send_email_from_template
+        email_template = frappe.get_doc("Email Template", "Sequencing Sales Orders with more than one Delivery Note")
+        so_details = ""
+        for so in sales_orders:
+            so_details += f"<br>{so['sales_order']}, created on {so['creation']}"
+        rendered_content = frappe.render_template(email_template.response, {'so_details': so_details})
+        send_email_from_template(email_template, rendered_content)
