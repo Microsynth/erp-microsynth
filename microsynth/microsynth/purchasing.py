@@ -172,6 +172,17 @@ def fetch_billing_address(supplier_id):
         return None # frappe.throw(f"Found {len(addresses)} billing addresses for Supplier '{supplier_id}'", "fetch_billing_address")
 
 
+def set_purchase_invoice_title(purchase_invoice, event):
+    """
+    Set the title of the given Purchase Invoice to the Supplier Name if present
+    """
+    if type(purchase_invoice) == str:
+        purchase_invoice = frappe.get_doc("Purchase Invoice", purchase_invoice)
+    if purchase_invoice.supplier_name:
+        purchase_invoice.title = purchase_invoice.supplier_name
+    # Do not save since function is called in before_save server hook
+
+
 def set_default_payable_accounts(supplier, event):
     """
     Set the default payable accounts for the given supplier.
