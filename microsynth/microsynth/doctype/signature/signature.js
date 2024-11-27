@@ -7,9 +7,16 @@ frappe.ui.form.on('Signature', {
         if ((frappe.session.user === frm.doc.user) 
             || (frappe.user.has_role("System Manager")) 
             || (frappe.user.has_role("QAU"))) {
-            frm.add_custom_button(__("Change Approval Password"), function() {
-                change_approval_password(frm);
-            });
+            
+            if (!frm.doc.approval_password) {
+                frm.add_custom_button(__("Initialize Approval Password"), function() {
+                    initialize_approval_password(frm);
+                });
+            } else {
+                frm.add_custom_button(__("Change Approval Password"), function() {
+                    change_approval_password(frm);
+                });
+            }
         }
 
         // add button to reset Approval Password
@@ -22,6 +29,46 @@ frappe.ui.form.on('Signature', {
 });
 
 
+function initialize_approval_password(frm) {
+    frappe.prompt(
+        [
+            {
+                'fieldname': 'new_pw',
+                'fieldtype': 'Password',
+                'label': __('Approval Password'),
+                'reqd': 1
+            },
+            {
+                'fieldname': 'retype_new_pw',
+                'fieldtype': 'Password',
+                'label': __('Retype Approval Password'),
+                'reqd': 1
+            }
+        ],
+        function(values){
+            frappe.call({
+                'method': 'change_approval_password',
+                'doc': frm.doc,
+                'args': {
+                    'new_pw': values.new_pw,
+                    'retype_new_pw': values.retype_new_pw
+                },
+                'callback': function(response) {
+                    if (!response.message.error) {
+                        cur_frm.reload_doc();
+                        frappe.show_alert( __("Initially set Approval Password.") );
+                    } else {
+                        frappe.msgprint( response.message.error, __("Error") );
+                    }
+                }
+            });
+        },
+        __('Initialize Approval Password'),
+        __('Set initially')
+    )
+}
+
+
 function change_approval_password(frm) {
     frappe.prompt(
         [
@@ -29,7 +76,7 @@ function change_approval_password(frm) {
                 'fieldname': 'old_pw', 
                 'fieldtype': 'Password', 
                 'label': __('Old Approval Password'), 
-                'reqd': 0
+                'reqd': 1
             },
             {
                 'fieldname': 'new_pw', 
