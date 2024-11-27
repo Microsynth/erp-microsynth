@@ -2650,7 +2650,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     file.save()
     email_template = frappe.get_doc("Email Template", "ASO and siRNA Sales Export")
     rendered_content = frappe.render_template(email_template.response, {'from_date': from_date, 'to_date': to_date, 'summary': summary})
-    send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=file.file_url)
+    send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=[file])
 
 
 def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None):
