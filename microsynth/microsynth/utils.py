@@ -2640,17 +2640,19 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"\n{datetime.now()}: Finished calculate_therapeutic_oligo_sales after {elapsed_time} hh:mm:ss.")
 
-    file = frappe.get_doc(
+    _file = frappe.get_doc(
         {
             "doctype": "File",
             "file_name": f"ASO_siRNA_sales_from_{from_date}_to_{to_date}_created_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.csv",
             "is_private": 1,
             "content": file_content,
         })
-    file.save()
+    _file.save()
+    frappe.db.commit()
     email_template = frappe.get_doc("Email Template", "ASO and siRNA Sales Export")
     rendered_content = frappe.render_template(email_template.response, {'from_date': from_date, 'to_date': to_date, 'summary': summary})
-    send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=[file])
+    send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=[{'fid': _file.name}])
+    return
 
 
 def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None):
