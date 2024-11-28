@@ -58,7 +58,7 @@ def sign_decision(doc, user, password):
     if type(doc) == str:
         doc = frappe.get_doc("QM Decision", doc)
     return sign("QM Decision", doc.get("name"), user, password)
-        
+
 
 def get_qm_decisions(doc_name):
     """

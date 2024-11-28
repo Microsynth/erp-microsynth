@@ -313,8 +313,8 @@ def get_qm_decisions(qm_change):
             `tabQM Decision`.`signature`,
             `tabQM Decision`.`comments`
         FROM `tabQM Decision`
-        WHERE 
-            `tabQM Decision`.`document_type` = "QM Change"
+        WHERE `tabQM Decision`.`docstatus` = 1
+            AND `tabQM Decision`.`document_type` = "QM Change"
             AND `tabQM Decision`.`document_name` = "{qm_change}"
         ;""", as_dict=True)
     return decisions

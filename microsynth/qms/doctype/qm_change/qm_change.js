@@ -215,7 +215,7 @@ frappe.ui.form.on('QM Change', {
 
         // add buttons to request CC Action and Effectiveness Check
         if ((frm.doc.status == 'Planning'
-            && (frappe.user.has_role('QAU') || (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval)))
+            && (frappe.user.has_role('QAU') || (frappe.session.user === frm.doc.created_by && !frm.doc.in_approval && frm.doc.cc_type != 'procurement')))
             || (frm.doc.status == 'Implementation' && frm.doc.in_approval && frm.doc.cc_type == 'short' && frappe.user.has_role('QAU'))) {
             cur_frm.add_custom_button(__("Request Action"), function() {
                 request_qm_action('Change Control Action');
@@ -261,7 +261,7 @@ frappe.ui.form.on('QM Change', {
                             }, 500);
                         }
                     );
-                } else if (!frm.doc.in_approval) {
+                } else if (!frm.doc.in_approval  && frm.doc.cc_type != 'procurement') {
                     cur_frm.page.set_primary_action(
                         __("Send to Approval"),
                         function() {
@@ -690,53 +690,69 @@ function create_qm_decision(decision, from_status, to_status) {
         {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1},
         {'fieldname': 'comments', 'fieldtype': 'Text', 'label': __('Comments')}
     ],
-    function(values){
-        // Create QM Decision
+    function(values) {
+        // Check Approval Password
         frappe.call({
-            'method': 'microsynth.qms.doctype.qm_decision.qm_decision.create_decision',
+            'method': 'microsynth.qms.signing.check_approval_password',
             'args': {
-                'approver': frappe.session.user,
-                'decision': decision,
-                'dt': 'QM Change',
-                'dn': cur_frm.doc.name,
-                'from_status': from_status,
-                'to_status': to_status,
-                'comments': values.comments || "",
-                'refdoc_creator': cur_frm.doc.created_by
+                'user': frappe.session.user,
+                'password': values.password
             },
             "async": false,
             'callback': function(response) {
-                let qm_decision = response.message;
-                // check password and if correct, submit
-                frappe.call({
-                    'method': 'microsynth.qms.doctype.qm_decision.qm_decision.sign_decision',
-                    'args': {
-                        'doc': qm_decision,
-                        'user': frappe.session.user,
-                        'password': values.password
-                    },
-                    "callback": function(response) {
-                        if (response.message) {
-                            // reset in_approval flag
+                if (response.message) {
+                    // Correct Approval Password --> Create QM Decision
+                    frappe.call({
+                        'method': 'microsynth.qms.doctype.qm_decision.qm_decision.create_decision',
+                        'args': {
+                            'approver': frappe.session.user,
+                            'decision': decision,
+                            'dt': 'QM Change',
+                            'dn': cur_frm.doc.name,
+                            'from_status': from_status,
+                            'to_status': to_status,
+                            'comments': values.comments || "",
+                            'refdoc_creator': cur_frm.doc.created_by
+                        },
+                        "async": false,
+                        'callback': function(response) {
+                            let qm_decision = response.message;
+                            // check password and if correct, submit
                             frappe.call({
-                                'method': 'set_in_approval',
-                                'doc': cur_frm.doc,
+                                'method': 'microsynth.qms.doctype.qm_decision.qm_decision.sign_decision',
                                 'args': {
-                                    'in_approval': 0
+                                    'doc': qm_decision,
+                                    'user': frappe.session.user,
+                                    'password': values.password
                                 },
-                                'async': false,
-                                'callback': function (r) {
+                                "callback": function(response) {
+                                    if (response.message) {
+                                        // reset in_approval flag
+                                        frappe.call({
+                                            'method': 'set_in_approval',
+                                            'doc': cur_frm.doc,
+                                            'args': {
+                                                'in_approval': 0
+                                            },
+                                            'async': false,
+                                            'callback': function (r) {
+                                            }
+                                        });
+                                        if (decision == "Reject") {
+                                            frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator.");
+                                            cur_frm.reload_doc();
+                                        } else {
+                                            set_status(to_status);
+                                        }
+                                    }
                                 }
                             });
-                            if (decision == "Reject") {
-                                frappe.show_alert("Rejected with <a href='/desk#Form/QM Decision/" + qm_decision + "'>" + qm_decision + "</a> and notified creator.");
-                                cur_frm.reload_doc();
-                            } else {
-                                set_status(to_status);
-                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // wrong approval password or approval password not set
+                    frappe.msgprint( __("Invalid Approval Password or Approval Password not set on your Signature."), __("Validation") );
+                }
             }
         });
     },
