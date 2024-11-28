@@ -2632,9 +2632,9 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     summary = ""
     for c in currencies:
         total_string = f"{sirna_totals[c]:,.2f}".replace(",", "'")
-        summary += f"\nsiRNA: {total_string} {c}"
+        summary += f"<br>siRNA: {total_string} {c}"
         total_string = f"{aso_totals[c]:,.2f}".replace(",", "'")
-        summary += f"\nASO: {total_string} {c}\n"
+        summary += f"<br>ASO: {total_string} {c}<br>"
     
     print(summary)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
