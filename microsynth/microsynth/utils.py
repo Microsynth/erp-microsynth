@@ -2504,7 +2504,9 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
 
     for si_rna_item in si_rna_items:
         if si_rna_item['company'] != 'Microsynth AG':
-            frappe.throw(f"Company = {si_rna_item['company']} on {si_rna_item['name']}")
+            msg = f"Company = {si_rna_item['company']} on {si_rna_item['name']}"
+            print(msg)
+            frappe.log_error(msg, "utils.report_therapeutic_oligo_sales")
         sirnas.append(si_rna_item)
         si_rna_item['items'] = set([si_rna_item['items']])
         si_rna_item['delivery_notes'] = set([si_rna_item['delivery_note']])
@@ -2614,8 +2616,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
 
     print(f"\n{len(sirnas)=}, {len(asos)=}, {neither_counter=}, total={len(sirnas) + len(asos) + neither_counter}\n")
 
-    file_content = ""
-    file_content += "classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;sales_manager;company;product_type;items;is_collective\n"
+    file_content = "classification;name;total;currency;date;web_order_id;customer;customer_name;contact_person;sales_manager;company;product_type;items;is_collective\n"
 
     for si in sirnas:
         sirna_totals[si['currency']] += si['total']
@@ -2652,7 +2653,6 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     email_template = frappe.get_doc("Email Template", "ASO and siRNA Sales Export")
     rendered_content = frappe.render_template(email_template.response, {'from_date': from_date, 'to_date': to_date, 'summary': summary})
     send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=[{'fid': _file.name}])
-    return
 
 
 def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None):
