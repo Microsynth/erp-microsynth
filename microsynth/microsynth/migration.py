@@ -4402,6 +4402,7 @@ def find_users_without_user_settings():
 #         if not contact_doc.phone.isnumeric():
 #             print(f"There are still non-numeric characters in the phone number '{contact_doc.phone}' of Contact {contact_doc.name}. Please process manually.")
 
+
 def check_clean_docstatus_deviations():
     """
     This function will find and resolve deviations in child docstati (when the document has e.g. status 2, but the child node don't)
@@ -4444,4 +4445,67 @@ def check_clean_docstatus_deviations():
                     )
                     print("{0}".format(d))
                 frappe.db.commit()
-    return
+
+
+def lock_seq_label_duplicates(label_barcodes):
+    """
+    Takes a list of Label Barcodes.
+    For each Label Barcode:
+    1) Search Sequencing Labels
+    2) Check expectation: Exact 2 Sequencing Labels, one with status locked, one with status unused (if not, print an error and continue)
+    3) Set the status of the unused Sequencing Label to locked
+
+    bench execute microsynth.microsynth.migration.lock_seq_label_duplicates --kwargs "{'label_barcodes': ['27351', '27352', '27353']}"
+    """
+    disabled_customers = set()
+
+    for label_barcode in label_barcodes:
+        sequencing_labels = frappe.get_all("Sequencing Label", filters={'label_id': label_barcode}, fields=['name', 'status'])
+        if len(sequencing_labels) == 2:
+            locked_id = None
+            unused_id = None
+            for seq_label in sequencing_labels:
+                if seq_label['status'] == 'locked':
+                    locked_id = seq_label['name']
+                elif seq_label['status'] == 'unused':
+                    unused_id = seq_label['name']
+            if locked_id and unused_id:
+                # Set the status of the unused Sequencing Label to locked
+                seq_label_doc = frappe.get_doc("Sequencing Label", unused_id)
+                if seq_label_doc.status == 'unused':
+                    seq_label_doc.status = 'locked'
+                    try:
+                        seq_label_doc.save()
+                        print(f"Set status of Sequencing Label {seq_label_doc.name} with Label Barcode {seq_label_doc.label_id} from status unused to status {seq_label_doc.status}.")
+                    except Exception as err:
+                        print(f"Got the following exception when trying to save Sequencing Label {seq_label.name}: {err}. Trying to enable the Customer.")
+                        if seq_label_doc.customer:
+                            customer_doc = frappe.get_doc("Customer", seq_label_doc.customer)
+                            if customer_doc.disabled:
+                                # enable Customer
+                                customer_doc.disabled = 0
+                                customer_doc.save(ignore_permissions=True)
+                                disabled_customers.add(customer_doc.name)
+                                print(f"Enabled Customer '{customer_doc.name}'.")
+                            else:
+                                print(f"Customer '{customer_doc.name}' of Sequencing Label {seq_label_doc.name} is not disabled. Please check the error message above. Going to continue.")
+                                continue 
+                        else:
+                            print(f"Sequencing Label {seq_label_doc.name} has no Customer. Please check the error message above. Going to continue.")
+                            continue
+                else:
+                    print(f"This should not happen: Sequencing Label {seq_label_doc.name} has status {seq_label_doc.status} but expected status unused. Going to continue.")
+                    continue
+            else:
+                print(f"Found 2 Sequencing Labels for Label Barcode {label_barcode} but not 1 locked and 1 unused: {sequencing_labels}. Going to continue.")
+                continue
+        else:
+            print(f"Found {len(sequencing_labels)} Sequencing Labels for Label Barcode {label_barcode}: {sequencing_labels}. Going to continue.")
+            continue
+
+    # Disable Customers that were disabled before calling this function
+    for customer_to_disable in disabled_customers:
+        customer_doc = frappe.get_doc("Customer", customer_to_disable)
+        customer_doc.disabled = 1
+        customer_doc.save(ignore_permissions=True)
+        print(f"Disabled Customer '{customer_doc.name}'.")
