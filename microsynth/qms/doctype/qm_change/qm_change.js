@@ -157,9 +157,14 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('customers', 'read_only', true);
         }
 
-        // lock all fields except References if CC is Closed
-        if (["Closed", "Cancelled"].includes(frm.doc.status)
-            || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) {
+        // lock all fields (except References) of CC type "procurement" in status
+        // "Assessment & Classification" and "Planning" for all non-QAU users
+        if ((["Assessment & Classification", "Planning"].includes(frm.doc.status)
+            && frm.doc.cc_type == 'procurement'
+            && !(frappe.user.has_role('QAU')))
+            // lock all fields except References if CC is Closed
+            || (["Closed", "Cancelled"].includes(frm.doc.status)
+                || !(frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU')))) {
             cur_frm.set_df_property('cc_type', 'read_only', true);
             cur_frm.set_df_property('qm_documents', 'read_only', true);
             cur_frm.set_df_property('customers', 'read_only', true);
