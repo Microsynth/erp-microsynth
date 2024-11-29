@@ -1209,8 +1209,8 @@ def transmit_sales_invoice(sales_invoice_id):
             recipient = invoice_contact.email_id
             if not recipient:
                 email_template = frappe.get_doc("Email Template", "Missing email address to send Sales Invoice")
-                rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice.name, 'contact_id ': invoice_contact.name})
-                rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'contact_id ': invoice_contact.name})
+                rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice.name, 'contact_id': invoice_contact.name})
+                rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'contact_id': invoice_contact.name})
                 send_email_from_template(email_template, rendered_content, rendered_subject)
                 frappe.log_error(rendered_subject, "Sending invoice email failed")
                 return
