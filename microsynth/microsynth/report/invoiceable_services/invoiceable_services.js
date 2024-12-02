@@ -5,7 +5,7 @@
 frappe.query_reports["Invoiceable Services"] = {
     "filters": [
         {
-            "fieldname":"customer",
+            "fieldname": "customer",
             "label": __("Customer"),
             "fieldtype": "Link",
             "options": "Customer"
@@ -19,13 +19,19 @@ frappe.query_reports["Invoiceable Services"] = {
             "default": frappe.defaults.get_user_default("company") || frappe.defaults.get_global_default("company")
         },
         {
-            "fieldname":"exclude_punchout",
+            "fieldname": "exclude_punchout",
             "label": __("Exclude Punchout"),
             "fieldtype": "Check",
             "hidden": 1
         },
         {
-            "fieldname":"show_remaining_credits",
+            "fieldname": "collective_billing",
+            "label": __("Collective Billing"),
+            "fieldtype": "Check",
+            "hidden": 1
+        },
+        {
+            "fieldname": "show_remaining_credits",
             "label": __("Show remaining credits"),
             "fieldtype": "Check"
         }
