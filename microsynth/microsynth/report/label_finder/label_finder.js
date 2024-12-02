@@ -76,81 +76,153 @@ frappe.query_reports["Label Finder"] = {
         hide_chart_buttons();
         hide_column_filters()
         report.page.add_inner_button( __("Lock Labels"), function() {
-            var labels_to_lock = [];
-            // check that all labels are unused
-            var all_labels_unused = true;
-            for (var i = 0; i < frappe.query_report.data.length; i++) {
-                if (frappe.query_report.data[i].status != "unused") {
-                    frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'locked'. No Label status was changed. Please contact IT App if you have a valid use case.");
-                    all_labels_unused = false;
-                    break;
+            if (frappe.query_report.data.length == 0) {
+                frappe.msgprint("No Labels to lock.");
+            } else if (frappe.query_report.data.length > 1000) {
+                frappe.msgprint("Unable to lock more than 1000 Labels at once.");
+            } else {
+                var labels_to_lock = [];
+                // check that all labels are unused
+                var all_labels_unused = true;
+                for (var i = 0; i < frappe.query_report.data.length; i++) {
+                    if (frappe.query_report.data[i].status != "unused") {
+                        frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'locked'. No Label status was changed. Please contact IT App if you have a valid use case.");
+                        all_labels_unused = false;
+                        break;
+                    }
+                    labels_to_lock.push({
+                        'label_id': frappe.query_report.data[i].label_id,
+                        'item_code': frappe.query_report.data[i].item_code
+                    });
                 }
-                labels_to_lock.push({
-                    'label_id': frappe.query_report.data[i].label_id,
-                    'item_code': frappe.query_report.data[i].item_code
-                });
-            }
-            if (all_labels_unused) {
-                // TODO: ask for a reason
-                frappe.msgprint("This functionality is not yet implemented.");
-                // trigger label locking
-                // frappe.confirm('Are you sure you want to <b>lock</b> the ' + frappe.query_report.data.length + ' Sequencing Labels selected in the Label Finder?',
-                //     () => {
-                //         frappe.call({
-                //             'method': "microsynth.microsynth.seqblatt.lock_labels",
-                //             'args':{
-                //                 'content': {'labels': labels_to_lock}
-                //             },
-                //             'freeze': true,
-                //             'freeze_message': __("Locking Labels ..."),
-                //             'callback': function(r)
-                //             {
-                //                 frappe.show_alert('Locked Labels');
-                //                 frappe.click_button('Refresh');
-                //             }
-                //         });
-                //     }, () => {
-                //         frappe.show_alert('No changes made');
-                // });
+                if (all_labels_unused) {
+                    // ask for a reason
+                    frappe.prompt(
+                        [
+                            {
+                                'fieldname': 'user',
+                                'fieldtype': 'Link',
+                                'label': __('User'),
+                                'options': 'User',
+                                'default': frappe.session.user,
+                                'read_only': 1
+                            },
+                            {
+                                'fieldname': 'reason',
+                                'fieldtype': 'Select',
+                                'label': __('Reason'),
+                                'options': 'Payment of additional reactions\nLost',
+                                'description': 'Please contact IT App if additional reasons are required.',
+                                'reqd': 1
+                            },
+                            {
+                                'fieldname': 'description',
+                                'fieldtype': 'Text',
+                                'label': __('Description')
+                            }
+                        ],
+                        function(values) {
+                            var my_filters = {};
+                            for (var i = 0; i < frappe.query_report.filters.length; i++) {
+                                my_filters[frappe.query_report.filters[i].fieldname] = frappe.query_report.filters[i].value;
+                            }
+                            // trigger label locking
+                            frappe.call({
+                                'method': "microsynth.microsynth.report.label_finder.label_finder.lock_labels",
+                                'args':{
+                                    'content_str': {'labels': labels_to_lock},
+                                    'filters': my_filters,
+                                    'reason': values.reason,
+                                    'description': values.description || ''
+                                },
+                                'freeze': true,
+                                'freeze_message': __('Locking ' + frappe.query_report.data.length + ' Labels ...'),
+                                'callback': function(r)
+                                {
+                                    frappe.show_alert('Locked Labels');
+                                    frappe.click_button('Refresh');
+                                }
+                            });
+                        },
+                        __('Lock ' + frappe.query_report.data.length + ' Labels?'),
+                        __('Lock')
+                    )
+                }
             }
         });
         report.page.add_inner_button( __("Set Labels unused"), function() {
-            var labels_to_set_unused = [];
-            // check that all labels are locked
-            var all_labels_locked = true;
-            for (var i = 0; i < frappe.query_report.data.length; i++) {
-                if (frappe.query_report.data[i].status != "locked") {
-                    frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'unused'. No Label status was changed. Please contact IT App if you have a valid use case.");
-                    all_labels_locked = false;
-                    break;
+            if (frappe.query_report.data.length == 0) {
+                frappe.msgprint("No Labels to set unused.");
+            } else if (frappe.query_report.data.length > 100) {
+                frappe.msgprint("Unable to set more than 100 Labels at once to unused.");
+            } else {
+                var labels_to_set_unused = [];
+                // check that all labels are locked
+                var all_labels_locked = true;
+                for (var i = 0; i < frappe.query_report.data.length; i++) {
+                    if (frappe.query_report.data[i].status != "locked") {
+                        frappe.msgprint("The Sequencing Label " + frappe.query_report.data[i].name + " with Barcode " + frappe.query_report.data[i].label_id + " has Status " + frappe.query_report.data[i].status + ". Unable to set status to 'unused'. No Label status was changed. Please contact IT App if you have a valid use case.");
+                        all_labels_locked = false;
+                        break;
+                    }
+                    labels_to_set_unused.push({
+                        'label_id': frappe.query_report.data[i].label_id,
+                        'item_code': frappe.query_report.data[i].item_code
+                    });
                 }
-                labels_to_set_unused.push({
-                    'label_id': frappe.query_report.data[i].label_id,
-                    'item_code': frappe.query_report.data[i].item_code
-                });
-            }
-            if (all_labels_locked) {
-                // TODO: ask for a reason
-                frappe.msgprint("This functionality is not yet implemented.");
-                // set Labels to status unused
-                // frappe.confirm('Are you sure you want to set the ' + frappe.query_report.data.length + ' Sequencing Labels selected in the Label Finder to status <b>unused</b>?',
-                //     () => {
-                //         frappe.call({
-                //             'method': "microsynth.microsynth.seqblatt.set_unused",
-                //             'args':{
-                //                 'content': {'labels': labels_to_set_unused}
-                //             },
-                //             'freeze': true,
-                //             'freeze_message': __("Setting Labels to unused ..."),
-                //             'callback': function(r)
-                //             {
-                //                 frappe.show_alert('Set Labels to unused');
-                //                 frappe.click_button('Refresh');
-                //             }
-                //         });
-                //     }, () => {
-                //         frappe.show_alert('No changes made');
-                // });
+                if (all_labels_locked) {
+                    // ask for a reason
+                    frappe.prompt(
+                        [
+                            {
+                                'fieldname': 'user',
+                                'fieldtype': 'Link',
+                                'label': __('User'),
+                                'options': 'User',
+                                'default': frappe.session.user,
+                                'read_only': 1
+                            },
+                            {
+                                'fieldname': 'reason',
+                                'fieldtype': 'Select',
+                                'label': __('Reason'),
+                                'options': 'Arrived at Customer after considered lost',
+                                'description': 'Please contact IT App if additional reasons are required.',
+                                'reqd': 1
+                            },
+                            {
+                                'fieldname': 'description',
+                                'fieldtype': 'Text',
+                                'label': __('Description')
+                            }
+                        ],
+                        function(values) {
+                            var my_filters = {};
+                            for (var i = 0; i < frappe.query_report.filters.length; i++) {
+                                my_filters[frappe.query_report.filters[i].fieldname] = frappe.query_report.filters[i].value;
+                            }
+                            // set Labels to status unused
+                            frappe.call({
+                                'method': "microsynth.microsynth.report.label_finder.label_finder.set_labels_unused",
+                                'args':{
+                                    'content_str': {'labels': labels_to_set_unused},
+                                    'filters': my_filters,
+                                    'reason': values.reason,
+                                    'description': values.description || ''
+                                },
+                                'freeze': true,
+                                'freeze_message': __('Setting ' + frappe.query_report.data.length + ' Labels to unused ...'),
+                                'callback': function(r)
+                                {
+                                    frappe.show_alert('Set Labels to unused');
+                                    frappe.click_button('Refresh');
+                                }
+                            });
+                        },
+                        __('Set ' + frappe.query_report.data.length + ' Labels to unused?'),
+                        __('Set unused')
+                    )
+                }
             }
         });
     }

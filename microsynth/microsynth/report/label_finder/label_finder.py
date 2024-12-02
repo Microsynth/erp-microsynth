@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 import re
+import json
+from microsynth.microsynth.seqblatt import set_status
 
 
 def get_columns(filters):
@@ -91,3 +93,76 @@ def get_data(filters):
 def execute(filters):
     columns, data = get_columns(filters), get_data(filters)
     return columns, data
+
+
+def create_label_log(from_status, to_status, reason, description, content_str, filters):
+    label_log_doc = frappe.get_doc({
+        'doctype': 'Label Log',
+        'user': frappe.session.user,
+        'from_status': from_status,
+        'to_status': to_status,
+        'reason': reason,
+        'description': description,
+        'labels': content_str
+    })
+    label_log_doc.insert()
+    label_log_doc.update(filters)
+    # add Web Order ID from Sales Order if missing
+    if filters.get('sales_order') and not filters.get('web_order_id'):
+        label_log_doc.web_order_id = frappe.get_value("Sales Order", filters.get('sales_order'), 'web_order_id')
+    # add Customer from Sales Order if missing
+    if filters.get('sales_order') and not filters.get('customer'):
+        label_log_doc.customer = frappe.get_value("Sales Order", filters.get('sales_order'), 'customer')
+    # add Customer Name from Sales Order if missing
+    if filters.get('sales_order') and not filters.get('customer_name'):
+        label_log_doc.customer_name = frappe.get_value("Sales Order", filters.get('sales_order'), 'customer_name')
+    # add Item Code if missing
+    if not filters.get('item_code') and content_str:
+        content = json.loads(content_str)
+        labels = content.get('labels')
+        item_codes = set()
+        for l in labels:
+            item_codes.add(l.get('item_code'))
+        if len(item_codes) == 1:
+            [item_code] = item_codes  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
+            label_log_doc.item_code = item_code
+    label_log_doc.save()
+    frappe.db.commit()
+
+
+@frappe.whitelist()
+def lock_labels(content_str, filters, reason, description):
+    """
+    Set label status to 'locked'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    If locking was successfull, create a Label Log.
+    """
+    if type(content_str) == str:
+        content = json.loads(content_str)
+    else:
+        content = content_str
+    if type(filters) == str:
+        filters = json.loads(filters)
+    response = set_status("locked", content.get("labels"))
+    if response['success']:
+        create_label_log('unused', 'locked', reason, description, content_str, filters)
+    return response
+
+
+@frappe.whitelist()
+def set_labels_unused(content_str, filters, reason, description):
+    """
+    Set label status to 'unused'. Labels must be a list of dictionaries 
+    (see `set_status` function).
+    If setting to unused was successfull, create a Label Log.
+    """
+    if type(content_str) == str:
+        content = json.loads(content_str)
+    else:
+        content = content_str
+    if type(filters) == str:
+        filters = json.loads(filters)
+    response = set_status("unused", content.get("labels"))
+    if response['success']:
+        create_label_log('locked', 'unused', reason, description, content_str, filters)
+    return response
