@@ -74,7 +74,7 @@ frappe.query_reports["Label Finder"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
-        hide_column_filters()
+        hide_column_filters();
         report.page.add_inner_button( __("Lock Labels"), function() {
             if (frappe.query_report.data.length == 0) {
                 frappe.msgprint("No Labels to lock.");
@@ -149,7 +149,8 @@ frappe.query_reports["Label Finder"] = {
                     )
                 }
             }
-        });
+        }).addClass("btn-primary");
+
         report.page.add_inner_button( __("Set Labels unused"), function() {
             if (frappe.query_report.data.length == 0) {
                 frappe.msgprint("No Labels to set unused.");
@@ -224,7 +225,7 @@ frappe.query_reports["Label Finder"] = {
                     )
                 }
             }
-        });
+        }).addClass("btn-primary");
     }
 };
 
