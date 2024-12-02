@@ -4509,3 +4509,47 @@ def lock_seq_label_duplicates(label_barcodes):
         customer_doc.disabled = 1
         customer_doc.save(ignore_permissions=True)
         print(f"Disabled Customer '{customer_doc.name}'.")
+
+
+def change_default_company(old_company, new_company, countries_to_change, dry_run=True):
+    """
+    bench execute microsynth.microsynth.migration.change_default_company --kwargs "{'old_company': 'Microsynth Austria GmbH', 'new_company': 'Microsynth Seqlab GmbH', 'countries_to_change': ['Croatia', 'Hungary', 'Slovakia', 'Slovenia']}"
+    """
+    customers = frappe.db.get_all("Customer",
+                                filters=[['disabled', '=', '0']],
+                                fields=['name', 'customer_name'])
+    print(f"Going to check {len(customers)} enabled Customers ...")
+    for c in customers:
+        query = f"""
+            SELECT DISTINCT `tabAddress`.`country`
+            FROM `tabAddress`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                                AND `tDLA`.`parenttype` = "Address"
+                                                AND `tDLA`.`link_doctype` = "Customer"
+            WHERE `tDLA`.`link_name` = "{c['name']}";"""
+        
+        countries = frappe.db.sql(query, as_dict=True)
+        country_match = ""
+        for country in countries:
+            if country['country'] in countries_to_change:
+                country_match = country['country']
+                break
+        if country_match:
+            country_mismatches = set()
+            for country in countries:
+                if country['country'] not in countries_to_change:
+                    country_mismatches.add(country['country'])
+            if len(country_mismatches) > 0:
+                print(f"Enabled Customer '{c['name']}' ('{c['customer_name']}') has an Address in {country_match} but also Addresses in {country_mismatches}.")
+                continue
+            else:
+                customer_doc = frappe.get_doc("Customer", c['name'])
+                if customer_doc.default_company == old_company:
+                    if dry_run:
+                        print(f"Would change Default Company of enabled Customer '{c['name']}' ('{c['customer_name']}') with an Address in {country_match} from {customer_doc.default_company} to {new_company}.")
+                    else:
+                        customer_doc.default_company = new_company
+                        customer_doc.save()
+                        print(f"Changed Default Company of enabled Customer '{c['name']}' ('{c['customer_name']}') with an Address in {country_match} from {customer_doc.default_company} to {new_company}.")
+                else:
+                    print(f"Enabled Customer '{c['name']}' ('{c['customer_name']}') with an Address in {country_match} has Default Company {customer_doc.default_company}.")
