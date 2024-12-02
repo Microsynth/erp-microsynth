@@ -2451,10 +2451,10 @@ def check_sales_order(sales_order, event):
 
 def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     """
-    Run by a monthly cronjob on the first of each month:
+    Run by a monthly cronjob on the first of each month at 0:40:
     40 0 1 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.utils.report_therapeutic_oligo_sales
 
-    bench execute microsynth.microsynth.utils.report_therapeutic_oligo_sales --kwargs "{'from_date': '2024-10-01', 'to_date': '2024-10-31'}"
+    bench execute microsynth.microsynth.utils.report_therapeutic_oligo_sales --kwargs "{'from_date': '2023-01-01', 'to_date': '2024-11-30'}"
     """
     start_ts = datetime.now()
     _0672_to_0679 = set(['0672', '0673', '0674', '0677', '0678', '0679'])
@@ -2480,7 +2480,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         SELECT 
             `tabSales Invoice`.`name`,
             `tabSales Invoice Item`.`base_amount` AS `total`,
-            'CHF' AS `currency`,
+            `tabSales Invoice`.`currency` AS `currency`,
             `tabSales Invoice`.`posting_date` AS `date`,
             `tabSales Invoice`.`web_order_id`,
             `tabSales Invoice`.`customer`,
@@ -2516,7 +2516,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
             SELECT 
                 `tabSales Invoice`.`name`,
                 `tabSales Invoice`.`base_total` AS `total`,
-                'CHF' AS `currency`,
+                `tabSales Invoice`.`currency` AS `currency`,
                 `tabSales Invoice`.`posting_date` AS `date`,
                 `tabSales Invoice`.`web_order_id`,
                 `tabSales Invoice`.`customer`,
