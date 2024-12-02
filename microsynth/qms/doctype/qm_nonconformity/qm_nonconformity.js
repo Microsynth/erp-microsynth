@@ -730,6 +730,7 @@ function sign_and_close(frm) {
                     'password': values.password,
                     'submit': false
                 },
+                'async': false,
                 "callback": function(response) {
                     if (response.message) {
                         // signed, set signing date & close NC
