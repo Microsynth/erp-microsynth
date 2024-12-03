@@ -1418,6 +1418,20 @@ def transmit_sales_invoices_from_file(file):
     return
 
 
+def retransmit_sales_invoices(sales_invoice_ids):
+    """
+    Delete the "Invoice sent on" date of the given Sales Invoices.
+    Transmit them with the `transmit_sales_invoice` function.
+
+    bench execute microsynth.microsynth.invoicing.retransmit_sales_invoices --kwargs "{'sales_invoice_ids': [ 'SI-BAL-24031809', 'SI-BAL-24038615' ]}"
+    """
+    for si in sales_invoice_ids:
+        si_doc = frappe.get_doc("Sales Invoice", si)
+        si_doc.invoice_sent_on = ''
+        si_doc.save()
+        transmit_sales_invoice(si)
+
+
 def get_delivery_notes(sales_invoice):
     """
     run
