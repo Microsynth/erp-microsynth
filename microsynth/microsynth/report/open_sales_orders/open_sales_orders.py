@@ -18,8 +18,8 @@ def get_columns():
         {"label": _("First unlinked DN"), "fieldname": "unlinked_dn_name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
         {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 45},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
-        {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Integer", "width": 45},
-        {"label": _("Open Oligos"), "fieldname": "open_oligos", "fieldtype": "Integer", "width": 45},
+        {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Data", "width": 45},
+        {"label": _("Open Oligos"), "fieldname": "open_oligos", "fieldtype": "Data", "width": 45},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
@@ -49,7 +49,11 @@ def get_data(filters=None):
     if filters.get('to_date'):
         inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND '{filters.get('to_date')}'"
     else:
-        inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -14 DAY)"
+        # used for Auto Email Reports
+        if filters.get('product_type') == 'NGS':
+            inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -30 DAY)"
+        else:  # if filters.get('product_type') == 'Sequencing'
+            inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -14 DAY)"
 
     data = frappe.db.sql(f"""
         SELECT * FROM
@@ -68,6 +72,8 @@ def get_data(filters=None):
                 `tabSales Order`.`hold_invoice`,
                 `tabSales Order`.`is_punchout`,
                 `tabSales Order`.`owner`,
+                '-' AS `pending_samples`,
+                '-' AS `open_oligos`,
                 (SELECT COUNT(`tabSales Invoice Item`.`name`) 
                     FROM `tabSales Invoice Item`
                     WHERE `tabSales Invoice Item`.`docstatus` = 1
