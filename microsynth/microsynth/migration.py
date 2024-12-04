@@ -4511,6 +4511,30 @@ def lock_seq_label_duplicates(label_barcodes):
         print(f"Disabled Customer '{customer_doc.name}'.")
 
 
+def delete_seq_label_duplicates(sequencing_label_ids, dry_run=True):
+    """
+    Takes a list of Sequencing Label IDs.
+    For each Sequencing Label ID:
+    1) Get Sequencing Label Doc
+    2) Check expectation: Exact 2 Sequencing Labels with the Label Barcode of the Sequencing Label Doc (if not, print an error and continue)
+    3) Delete Sequencing Label Doc of the given ID
+
+    bench execute microsynth.microsynth.migration.delete_seq_label_duplicates --kwargs "{'sequencing_label_ids': ['SL003108894', 'SL003108895'], 'dry_run': False}"
+    """
+    for sequencing_label_id in sequencing_label_ids:
+        seq_label_doc = frappe.get_doc("Sequencing Label", sequencing_label_id)
+        sequencing_labels = frappe.get_all("Sequencing Label", filters={'label_id': seq_label_doc.label_id}, fields=['name'])
+        if len(sequencing_labels) > 1:
+            base_string = f"Sequencing Label {seq_label_doc.name} with Label Barcode {seq_label_doc.label_id}, Status {seq_label_doc.status}, Item {seq_label_doc.item}, Sales Order {seq_label_doc.sales_order}, Contact {seq_label_doc.contact} and Customer {seq_label_doc.customer}"
+            if not dry_run:
+                seq_label_doc.delete()
+                print(f"Deleted {base_string}.")
+            else:
+                print(f"Would delete {base_string}.")
+        else:
+            print(f"There is only one Sequencing Label with Label Barcode {seq_label_doc.label_id}. Not deleting {seq_label_doc.name}, going to continue.")
+
+
 def change_default_company(old_company, new_company, countries_to_change, dry_run=True):
     """
     bench execute microsynth.microsynth.migration.change_default_company --kwargs "{'old_company': 'Microsynth Austria GmbH', 'new_company': 'Microsynth Seqlab GmbH', 'countries_to_change': ['Croatia', 'Hungary', 'Slovakia', 'Slovenia']}"
