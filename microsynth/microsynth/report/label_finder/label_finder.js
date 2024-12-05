@@ -129,7 +129,7 @@ frappe.query_reports["Label Finder"] = {
                             // trigger label locking
                             frappe.call({
                                 'method': "microsynth.microsynth.report.label_finder.label_finder.lock_labels",
-                                'args':{
+                                'args': {
                                     'content_str': {'labels': labels_to_lock},
                                     'filters': my_filters,
                                     'reason': values.reason,
@@ -137,10 +137,13 @@ frappe.query_reports["Label Finder"] = {
                                 },
                                 'freeze': true,
                                 'freeze_message': __('Locking ' + frappe.query_report.data.length + ' Labels ...'),
-                                'callback': function(r)
-                                {
-                                    frappe.show_alert('Locked Labels');
-                                    frappe.click_button('Refresh');
+                                'callback': function(r) {
+                                    if (r.message.success) {
+                                        frappe.show_alert('Locked Labels');
+                                        frappe.click_button('Refresh');
+                                    } else {
+                                        frappe.throw('Unable to lock Labels:<br>' + r.message.message + '<br><br>No Labels were locked.');
+                                    }                                    
                                 }
                             });
                         },
