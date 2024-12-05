@@ -3,8 +3,8 @@
 <title>{{ title }}</title>
 </head>
 <body>
-<h1>Sammelausz&uuml;ge f&uuml;r die UID-Anmeldung {{ from_date }} - {{ to_date }}</h1>
-<table style="width: 100%; ">
+<h3>Sammelausz&uuml;ge f&uuml;r die UID-Anmeldung {{ from_date }} - {{ to_date }}</h3>
+<table style="width: 100%; font-size: 10px; ">
 <thead>
   <tr>
     <th>Nr.</th>
@@ -22,11 +22,11 @@
         <!-- uid sum -->
         <tr>
             <td></td>
-            <td colspan="2">Anzahl Rechnungen mit gleicher Steuernummer:</td>
-            <td>{{ vars['count'] }}</td>
-            <td style="text-align: right; ">{{ "{:.2f}".format(vars['net_total']) }}</td>
-            <td style="text-align: right; ">{{ "{:.2f}".format(vars['tax_total']) }}</td>
-            <td style="text-align: right; ">{{ "{:.2f}".format(vars['gross_total']) }}</td>
+            <td colspan="2"><b>Anzahl Rechnungen mit gleicher Steuernummer:</b></td>
+            <td><b>{{ vars['count'] }}</b></td>
+            <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['net_total']) }}</b></td>
+            <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['tax_total']) }}</b></td>
+            <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['gross_total']) }}</b></td>
         </tr>
         {% if vars.update({'last_uid': d['tax_id'], 'count': 1, 'net_total': d['net_amount'], 'tax_total': d['tax_amount'], 'gross_total': d['gross_amount']}) %}{% endif %}
     {% else %}
@@ -35,7 +35,7 @@
     <tr>
         <td>{{ d['customer'] }}</td>
         <td>{{ d['customer_name'] }}<br>{{ d['address'] }}</td>
-        <td>{{ d['tax_id'] }}</td>
+        <td>{% if (d['tax_id'] or "")|len > 16 %}{{ d['tax_id'][:15] }}&mldr;{% else %}{{ d['tax_id'] }}{% endif %}</td>
         <td>{{ d['sales_invoice'] }}</td>
         <td style="text-align: right; ">{{ "{:.2f}".format(d['net_amount']) }}</td>
         <td style="text-align: right; ">{{ "{:.2f}".format(d['tax_amount']) }}</td>
@@ -44,11 +44,11 @@
 {% endfor %}
     <tr>
         <td></td>
-        <td colspan="2">Anzahl Rechnungen mit gleicher Steuernummer:</td>
-        <td>{{ vars['count'] }}</td>
-        <td style="text-align: right; ">{{ "{:.2f}".format(vars['net_total']) }}</td>
-        <td style="text-align: right; ">{{ "{:.2f}".format(vars['tax_total']) }}</td>
-        <td style="text-align: right; ">{{ "{:.2f}".format(vars['gross_total']) }}</td>
+        <td colspan="2"><b>Anzahl Rechnungen mit gleicher Steuernummer:</b></td>
+        <td><b>{{ vars['count'] }}</b></td>
+        <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['net_total']) }}</b></td>
+        <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['tax_total']) }}</b></td>
+        <td style="text-align: right; "><b>{{ "{:.2f}".format(vars['gross_total']) }}</b></td>
     </tr>
 </table>
 
