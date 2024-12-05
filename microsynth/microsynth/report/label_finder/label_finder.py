@@ -48,7 +48,13 @@ def get_data(filters):
         conditions += f"AND `tabSequencing Label`.`registered` = 1"
     if filters.get('from_barcode') and filters.get('to_barcode'):
         if filters.get('from_barcode').isnumeric() and filters.get('to_barcode').isnumeric():
-            conditions += f"AND `tabSequencing Label`.`label_id` BETWEEN '{filters.get('from_barcode')}' AND '{filters.get('to_barcode')}'"
+            from_barcode = filters.get('from_barcode')
+            to_barcode = filters.get('to_barcode')
+            if len(from_barcode) != len(to_barcode):
+                frappe.throw("From Barcode and To Barcode need to have the same length. Please use leading zeros if necessary.")
+            barcode_list = ','.join(f'"{i:0{len(to_barcode)}d}"' for i in range(int(from_barcode), int(to_barcode) + 1))
+            conditions += f"AND `tabSequencing Label`.`label_id` IN ({barcode_list})"
+            #conditions += f"AND `tabSequencing Label`.`label_id` BETWEEN '{filters.get('from_barcode')}' AND '{filters.get('to_barcode')}'"  # leads to false positive search results
         else:
             from_prefix = ''.join([i for i in filters.get('from_barcode') if not i.isdigit()])
             to_prefix = ''.join([i for i in filters.get('to_barcode') if not i.isdigit()])
