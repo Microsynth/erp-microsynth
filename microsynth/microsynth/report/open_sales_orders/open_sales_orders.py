@@ -25,7 +25,8 @@ def get_columns():
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
         {"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
         {"label": _("Hold Inv."), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 70},
-        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Data", "options": "User", "width": 220}
+        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 220},
+        {"label": _("Items"), "fieldname": "items", "fieldtype": "Data", "width": 500}
     ]
 
 
@@ -78,13 +79,16 @@ def get_data(filters=None):
                     FROM `tabSales Invoice Item`
                     WHERE `tabSales Invoice Item`.`docstatus` = 1
                         AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
-                ) AS `has_sales_invoice`
+                ) AS `has_sales_invoice`,
+                GROUP_CONCAT(`tabSales Order Item`.`item_code`) AS `items`
             FROM `tabSales Order`
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
+            LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
             WHERE `tabSales Order`.`per_delivered` < 0.01
                 AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
                 AND NOT (`tabCustomer`.`invoicing_method` = 'Stripe Prepayment' AND `tabSales Order`.`hold_order` = 1)
                 {inner_conditions}
+            GROUP BY `tabSales Order`.`name`
             ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
             {outer_conditions}
