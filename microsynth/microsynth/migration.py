@@ -4455,7 +4455,7 @@ def lock_seq_label_duplicates(label_barcodes):
     2) Check expectation: Exact 2 Sequencing Labels, one with status locked, one with status unused (if not, print an error and continue)
     3) Set the status of the unused Sequencing Label to locked
 
-    bench execute microsynth.microsynth.migration.lock_seq_label_duplicates --kwargs "{'label_barcodes': ['27351', '27352', '27353']}"
+    bench execute microsynth.microsynth.migration.lock_seq_label_duplicates --kwargs "{'label_barcodes': ['27591', '27352', '27353']}"
     """
     disabled_customers = set()
 
@@ -4487,6 +4487,13 @@ def lock_seq_label_duplicates(label_barcodes):
                                 customer_doc.save(ignore_permissions=True)
                                 disabled_customers.add(customer_doc.name)
                                 print(f"Enabled Customer '{customer_doc.name}'.")
+                                try:
+                                    seq_label_doc = frappe.get_doc("Sequencing Label", unused_id)
+                                    seq_label_doc.status = 'locked'
+                                    seq_label_doc.save()
+                                    print(f"Set status of Sequencing Label {seq_label_doc.name} with Label Barcode {seq_label_doc.label_id} from status unused to status {seq_label_doc.status}.")
+                                except Exception as err:
+                                    print(f"### Got the following exception when trying to save Sequencing Label {seq_label.name}: {err}. Unable to save Sequencing Label. Going to continue.")
                             else:
                                 print(f"Customer '{customer_doc.name}' of Sequencing Label {seq_label_doc.name} is not disabled. Please check the error message above. Going to continue.")
                                 continue 
