@@ -283,7 +283,7 @@ def find_item_price_duplicates(outfile):
     List Item Prices with multiple occurrences on the same Price List, for the same Item and same Quantity.
 
     run
-    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-07-09.csv'}"
+    bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-12-09.csv'}"
     """
     sql_query = """
         SELECT 
@@ -387,18 +387,21 @@ def find_item_price_duplicates(outfile):
                         item_price_duplicates[i][1]['delete'] = 'delete'
             grouped_by_sales_managers[distinct_sales_managers][price_list][e['item_code']] = item_price_duplicates
 
-    with open(outfile, mode='w') as file:
-        file.write("Sales Manager;Price List;Item Code;Item Name;Minimum Quantity;Item Price ID;Delete?;Rate;Currency;Valid from date;Creation date;Creator;Last Modified date;Last Modified by\r\n")
-        for sales_manager, price_lists in grouped_by_sales_managers.items():
-            for price_list, items in price_lists.items():
-                for item_code, item_price_duplicates in items.items():
-                    for item_price_details in item_price_duplicates:
-                        e = item_price_details[-1]
-                        file.write(f"{sales_manager};{price_list};{item_code};'{e['item_name']}';{e['min_qty']};{e['name']};{e['delete']};{e['price_list_rate']};{e['currency']};{e['valid_from']};{e['creation']};{e['owner']};{e['modified']};{e['modified_by']}\r\n")
+    if len(grouped_by_sales_managers) > 0:
+        with open(outfile, mode='w') as file:
+            file.write("Sales Manager;Price List;Item Code;Item Name;Minimum Quantity;Item Price ID;Delete?;Rate;Currency;Valid from date;Creation date;Creator;Last Modified date;Last Modified by\r\n")
+            for sales_manager, price_lists in grouped_by_sales_managers.items():
+                for price_list, items in price_lists.items():
+                    for item_code, item_price_duplicates in items.items():
+                        for item_price_details in item_price_duplicates:
+                            e = item_price_details[-1]
+                            file.write(f"{sales_manager};{price_list};{item_code};'{e['item_name']}';{e['min_qty']};{e['name']};{e['delete']};{e['price_list_rate']};{e['currency']};{e['valid_from']};{e['creation']};{e['owner']};{e['modified']};{e['modified_by']}\r\n")
+                        file.write(";;;;;;;;;;;;\r\n")
                     file.write(";;;;;;;;;;;;\r\n")
                 file.write(";;;;;;;;;;;;\r\n")
             file.write(";;;;;;;;;;;;\r\n")
-        file.write(";;;;;;;;;;;;\r\n")
+    else:
+        print(f"\nNo duplicates found. No file written. Going to return.")
 
     price_list_duplicates = []
     for price_list, duplicates in grouped_by_price_lists.items():
@@ -451,14 +454,14 @@ def delete_item_price_duplicates(price_list, dry_run=True):
             print(f"{len(item_price_names)=} for {dup=}")
 
 
-def delete_item_prices(csv_file, dry_run=True):
+def delete_item_price_duplicates(csv_file, dry_run=True):
     """
     Takes a CSV file and deletes the Item Prices that are marked as to be deleted in the CSV file.
 
     Expected header of csv_file:
     0:Sales Manager; 1:Price List; 2:Item Code; 3:Item Name; 4:Minimum Quantity; 5:Item Price ID; 6:Delete?; 7:Rate; 8:Currency; 9:Valid from date; 10:Creation date; 11:Creator; 12:Last Modified date; 13:Last Modified by
     
-    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
+    bench execute microsynth.microsynth.pricing.delete_item_price_duplicates --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
     """
     import csv
     with open(csv_file) as file:
@@ -592,6 +595,67 @@ def delete_empty_disabled_price_lists(dry_run=True):
         print(f"{'Would have deleted' if dry_run else 'Deleted'} Price List '{dpl['name']}'.")
         counter += 1
     print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {counter} Price Lists.")
+
+
+def delete_redundant_staggered_prices(pricelists, dry_run=True):
+    """
+    Takes a list of Price Lists. For each Price List:
+    1) Call function clean_price_list
+    2) Find Item Prices with the same Item Code and rate
+    3) For each group of Item Prices with the same Price List, Item Code and rate:
+       Delete all Item Prices except the one with the smallest minimum quantity.
+
+    bench execute microsynth.microsynth.pricing.delete_redundant_staggered_prices --kwargs "{'pricelists': ['Projects CHF', 'Projects EUR', 'Projects USD'], 'dry_run': True}"
+    """
+    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import clean_price_list
+    for pl in pricelists:
+        clean_price_list(pl, None)
+        sql_query = f"""
+            SELECT 
+                CONCAT(`item_code`, ":", `price_list`, ":", `price_list_rate`) AS `key`,
+                `item_code`,
+                `price_list`,
+                `price_list_rate`,
+                GROUP_CONCAT(`min_qty`) AS `minimum_quantities`,
+                GROUP_CONCAT(`name`) AS `item_price_names`
+            FROM `tabItem Price`
+            WHERE `price_list` = '{pl}'
+            GROUP BY `key`
+            HAVING COUNT(`name`) > 1;
+            """
+        code_rate_duplicates = frappe.db.sql(sql_query, as_dict=True)
+        for group in code_rate_duplicates:
+            sql_query = f"""
+            SELECT `name`,
+                `item_code`,
+                `price_list`,
+                `price_list_rate`,
+                `min_qty`
+            FROM `tabItem Price`
+            WHERE `price_list` = '{pl}'
+                AND `item_code` = '{group['item_code']}'
+                AND `price_list_rate` = {group['price_list_rate']}
+            ORDER BY `min_qty` ASC;
+            """
+            ordered_duplicates = frappe.db.sql(sql_query, as_dict=True)
+            if len(ordered_duplicates) > 0:
+                item_price_to_keep = ordered_duplicates[0]
+                print(f"Going to keep Item Price {item_price_to_keep['name']} from Price List {item_price_to_keep['price_list']} with Item Code {item_price_to_keep['item_code']}, rate {item_price_to_keep['price_list_rate']} and minimum quantity {item_price_to_keep['min_qty']}.")
+            else:
+                print(f"This should not happen: {group=} Going to continue")
+                continue
+            for item_price in ordered_duplicates:
+                if item_price['name'] == item_price_to_keep['name']:
+                    continue
+                item_price_doc = frappe.get_doc("Item Price", item_price['name'])
+                base_string = f"Item Price {item_price_doc.name} from Price List {item_price_doc.price_list} with Item Code {item_price_doc.item_code}, rate {item_price_doc.price_list_rate} and minimum quantity {item_price_doc.min_qty}"
+                if not dry_run:
+                    item_price_doc.delete()
+                    print(f"Deleted {base_string}.")
+                else:
+                    print(f"Would have deleted {base_string}.")
+
+
 
 
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
