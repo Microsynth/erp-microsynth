@@ -18,10 +18,12 @@ from microsynth.microsynth.utils import user_has_role
 
 class QMNonconformity(Document):
     def get_classification_wizard(self, visible):
+        user_language = frappe.get_value("User", frappe.session.user, "language")
         html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/classification_wizard.html",
             {
                 'doc': self,
-                'visible': visible
+                'visible': visible,
+                'language': user_language
             })
         return html
 

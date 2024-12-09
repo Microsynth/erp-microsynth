@@ -136,47 +136,137 @@
 </script>
 
 <div id="wizard_container" {% if visible %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-    
-    <h4>Type determination</h4>
-    <div id="step_gmp">
-        <p>Is a <b>GMP</b> sample or order affected by this nonconfirmity?</p>
-        <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;"><b>Yes</b>, <b>GMP</b> sample/order affected</button>
-        <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;"><b>No</b>, <b>no GMP</b> sample/order affected</button>
-    </div>
 
-    <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
-        <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
-        <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
-    </div>
+    {% if language == "de" %}
 
-    <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
-        <p>Was an <b>incorrect result/product</b> delivered or is <b>safety</b> affected?</p>
-        <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
-    </div>
+        <h4>Klassifikation</h4>
+        <div id="step_gmp">
+            <p>Ist eine <b>GMP</b>-Probe oder ein <b>GMP</b>-Auftrag betroffen?</p>
+            <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;"><b>Ja</b>, <b>GMP</b>-Probe/Auftrag betroffen</button>
+            <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;"><b>Nein</b>, <b>keine GMP</b>-Probe/Auftrag betroffen</button>
+        </div>
 
-    <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
-        <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
-        <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No</button>
-    </div>
+        <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
+            <p>Wurde diese Nichtkonformität durch eine <b>Abweichung</b> von der SOP verursacht?</p>
+            <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Ja</button>
+            <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">Nein</button>
+        </div>
 
-    <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
-        <p>Was an <b>incorrect result/product</b> delivered or is <b>safety</b> affected?</p>
-        <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
-    </div>
+        <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
+            <p>Wurde ein <b>falsches Resultat/Produkt</b> geliefert oder ist die <b>Sicherheit</b> betroffen?</p>
+            <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Ja</button>
+            <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">Nein</button>
+        </div>
 
-    <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
-        <p>Is it an <b>out of specification</b> testing result (OOS) and system suitability testing (SST) criteria were met?</p>
-        <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
-        <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
-    </div>
+        <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
+            <p>Wurde diese Nichtkonformität durch eine <b>Abweichung</b> von der SOP verursacht?</p>
+            <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Ja</button>
+            <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">Nein</button>
+        </div>
 
-    <div id="step_reset" style="display: none; float: right;">
-        <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Clear answers</button>
-    </div>       
+        <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
+            <p>Wurde ein <b>falsches Resultat/Produkt</b> geliefert oder ist die <b>Sicherheit</b> betroffen?</p>
+            <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Ja</button>
+            <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">Nein</button>
+        </div>
+
+        <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
+            <p>Handelt es sich um ein "<b>Out of Specification</b>" des Testergebnis (OOS) und wurden die Kriterien für das "System Suitability Testing" (SST) erfüllt?</p>
+            <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Ja</button>
+            <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">Nein</button>
+        </div>
+
+        <div id="step_reset" style="display: none; float: right;">
+            <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Antworten zurücksetzen</button>
+        </div>
+
+    {% elif language == "fr" %}
+
+        <h4>Classification</h4>
+        <div id="step_gmp">
+            <p><b>Un échantillon ou un ordre GMP est-il concerné?</b></p>
+            <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;">Oui, échantillon/ordre GMP concerné</button>
+            <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;">Non, aucun échantillon ou de commande GMP concerné(e)</button>
+        </div>
+
+        <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
+            <p><b>Un déviance de la SOP est-elle la raison de la nonconformité?</b></p>
+            <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Qui</button>
+            <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">Non</button>
+        </div>
+
+        <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
+            <p><b>Un résultat/produit incorrect a été livré ou la sécurité est affectée?</b></p>
+            <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Qui</button>
+            <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">Non</button>
+        </div>
+
+        <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
+            <p><b>Un déviance de la SOP est-elle la raison de la nonconformité?</b></p>
+            <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Qui</button>
+            <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">Non</button>
+        </div>
+
+        <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
+            <p><b>Un résultat/produit incorrect a été livré ou la sécurité est affectée?</b></p>
+            <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Qui</button>
+            <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">Non</button>
+        </div>
+
+        <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
+            <p><b>Est ce que le résultat du test est «Out of Specification» (OOS), et les critères de «System Suitability Testing» (SST) sont-ils respectés?</b></p>
+            <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Qui</button>
+            <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">Non</button>
+        </div>
+
+        <div id="step_reset" style="display: none; float: right;">
+            <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Réinitialiser les réponses</button>
+        </div>
+
+    {% else %}
+
+        <h4>Type determination</h4>
+        <div id="step_gmp">
+            <p>Is a <b>GMP</b> sample or order affected by this nonconfirmity?</p>
+            <button id="btn_gmp" class="btn btn-secondary" onclick="is_gmp()"; style="margin-bottom: 20px;"><b>Yes</b>, <b>GMP</b> sample/order affected</button>
+            <button id="btn_no_gmp" class="btn btn-secondary" onclick="no_gmp()"; style="margin-bottom: 20px;"><b>No</b>, <b>no GMP</b> sample/order affected</button>
+        </div>
+
+        <div id="step_no_gmp_dev" style="display: none;"><!-- non-GMP: Deviation in process? -->
+            <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
+            <button id="btn_no_gmp_dev" class="btn btn-secondary" onclick="no_gmp_but_deviation()"; style="margin-bottom: 20px;">Yes</button>
+            <button id="btn_no_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+        </div>
+
+        <div id="step_no_gmp_safety" style="display: none;"><!-- non-GMP Deviation: Affects product / patient safety? -->
+            <p>Was an <b>incorrect result/product</b> delivered or is <b>safety</b> affected?</p>
+            <button id="btn_crit_dev" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+            <button id="btn_event" class="btn btn-secondary" onclick="set_event()"; style="margin-bottom: 20px;">No</button>
+        </div>
+
+        <div id="step_gmp_dev" style="display: none;"><!-- GMP: Deviation in process? -->
+            <p>Did a <b>deviation</b> from the SOP cause this nonconfirmity?</p>
+            <button id="btn_gmp_dev" class="btn btn-secondary" onclick="gmp_deviation()"; style="margin-bottom: 20px;">Yes</button>
+            <button id="btn_gmp_no_dev" class="btn btn-secondary" onclick="gmp_no_deviation()"; style="margin-bottom: 20px;">No</button>
+        </div>
+
+        <div id="step_gmp_safety" style="display: none;"><!-- GMP Deviation: Affects product / patient safety? -->
+            <p>Was an <b>incorrect result/product</b> delivered or is <b>safety</b> affected?</p>
+            <button id="btn_gmp_dev_safety" class="btn btn-secondary" onclick="set_critical_deviation()"; style="margin-bottom: 20px;">Yes</button>
+            <button id="btn_gmp_dev_no_safety" class="btn btn-secondary" onclick="set_non_critical_deviation()"; style="margin-bottom: 20px;">No</button>
+        </div>
+
+        <div id="step_gmp_oos" style="display: none;"><!-- GMP, no Deviation: OOS result? -->
+            <p>Is it an <b>out of specification</b> testing result (OOS) and system suitability testing (SST) criteria were met?</p>
+            <button id="btn_oos" class="btn btn-secondary" onclick="set_oos()"; style="margin-bottom: 20px;">Yes</button>
+            <button id="btn_gmp_tt" class="btn btn-secondary" onclick="set_track_and_trend()"; style="margin-bottom: 20px;">No</button>
+        </div>
+
+        <div id="step_reset" style="display: none; float: right;">
+            <button id="btn_reset" class="btn btn-danger" onclick="wizard_reset()"; style="margin-bottom: 10px;">Clear answers</button>
+        </div>
+
+    {% endif %}
 
     <div id="step_confirm" style="display: none;">
         <button id="btn_reset" class="btn btn-primary" onclick="wizard_confirm()"; style="margin-bottom: 10px;">OK</button>
