@@ -95,7 +95,7 @@ frappe.ui.form.on('Sales Order', {
 			});
 		}
 
-        if ((!frm.doc.__islocal) && frm.doc.docstatus < 2 && frm.doc.product_type == "Labels") {
+        if ((!frm.doc.__islocal) && frm.doc.docstatus < 2) {
             frm.add_custom_button(__("Link Quotation"), function() {
 				link_quote(cur_frm.doc.name);
 			});
