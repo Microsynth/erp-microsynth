@@ -41,7 +41,12 @@ def parse_file(file_name, company, company_settings, debug=True):
         print("INFO: Parsing {0} for {1}...".format(file_name, company))
     try:
         # try to fetch data from zugferd
-        xml_content = get_xml(file_name)
+        try:
+            xml_content = get_xml(file_name)
+        except Exception as err:
+            if debug:
+                print("ERROR: {0}".format(err))
+            xml_content = None
         invoice = {}
         supplier = None
         if xml_content:
@@ -168,6 +173,10 @@ def create_invoice(file_name, invoice, settings):
                     if len(supplier_item_matches) > 0:
                         item['item_code'] = supplier_item_matches[0]['parent']
                     else:
+                        # item not found: try to use the supplier default item and fall back to the settings item
+                        item['item_code'] = frappe.get_value("Supplier",  invoice['supplier'], "default_item") or settings.default_item
+
+                        """ 2024-12-10: do not create new items, but use default item
                         # create new item
                         _item = {
                             'doctype': "Item",
@@ -182,6 +191,7 @@ def create_invoice(file_name, invoice, settings):
                         item_doc = frappe.get_doc(_item)
                         item_doc.insert()
                         item['item_code'] = item_doc.name
+                        """
                 else:
                     item['item_code'] = item.get('seller_item_code')
             
