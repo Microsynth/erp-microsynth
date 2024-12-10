@@ -140,8 +140,11 @@ frappe.invoice_entry = {
             'freeze': true,
             'freeze_message': __("Saving..."),
             'callback': function(response) {
-                frappe.show_alert(response.message);
-                //location.reload();  // TODO: Only necessary if Supplier ID was changed
+                if (response.message.success) {
+                    location.reload();
+                } else {
+                    frappe.show_alert(response.message.message);
+                }                
             }
         });
     },

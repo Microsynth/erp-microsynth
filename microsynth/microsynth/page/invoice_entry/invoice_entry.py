@@ -139,9 +139,9 @@ def save_document(doc):
         if len(deviations) > 0:
             frappe.throw("Invalid input detected: {0}".format(deviations) )
 
-        return "Saved."
+        return {'success': True, 'message': 'Saved.'}
     except Exception as err:
-        return err
+        return {'success': False, 'message': err}
 
 
 @frappe.whitelist()
