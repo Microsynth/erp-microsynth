@@ -75,6 +75,9 @@ frappe.invoice_entry = {
         frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'bill_no', 'Supplier Invoice No', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'approver', 'Approver', 'User');
         frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'remarks', 'Remarks', '');
+        if (purchase_invoice.allow_edit_net_amount) {
+            frappe.invoice_entry.create_field(purchase_invoice, 'Currency', 'net_total', 'Total', '');
+        }
         frappe.invoice_entry.remove_clearfix_nodes();
     },
     create_field: function(purchase_invoice, fieldtype, field_name, placeholder, options) {
@@ -114,6 +117,11 @@ frappe.invoice_entry = {
         btn_delete.onclick = frappe.invoice_entry.delete_document.bind(this, purchase_invoice_name);
     },
     save_document: function(purchase_invoice_name) {
+        let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
+        let net_total = null;
+        if ((net_total_inputs) && (net_total_inputs.length > 0)) {
+            net_total = net_total_inputs[0].value;
+        }
         let doc = {
             'name': purchase_invoice_name,
             'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
@@ -121,7 +129,8 @@ frappe.invoice_entry = {
             'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
             'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,
             'approver': document.querySelectorAll("input[data-fieldname='approver_" + purchase_invoice_name + "']")[0].value,
-            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value
+            'remarks': document.querySelectorAll("input[data-fieldname='remarks_" + purchase_invoice_name + "']")[0].value,
+            'net_total': net_total
         };
         frappe.call({
             'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.save_document',

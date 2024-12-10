@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 import json
 from datetime import datetime
+from frappe.utils import flt
 
 FORMAT_MAPPER = {
     'dd.mm.yyyy': '%d.%m.%Y',
@@ -41,7 +42,9 @@ def get_purchase_invoice_drafts():
             `tabSupplier`.`default_payment_method`,
             `tabPurchase Invoice`.`approver`,
             `tabPurchase Invoice`.`remarks`,
-            CURDATE() AS `curdate`
+            CURDATE() AS `curdate`,
+            COUNT(`tabPurchase Invoice Item`.`name`) AS `item_count`,
+            SUM(`tabPurchase Invoice Item`.`qty`) AS `total_qty`
         FROM `tabPurchase Invoice`
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
@@ -69,6 +72,11 @@ def get_purchase_invoice_drafts():
                 AND `attached_to_name` = "{pinv}"
             ;""".format(pinv=pinv['name']), as_dict=True)
 
+        # define edit net flag from items and total qty
+        if pinv['item_count'] == 1 and pinv['total_qty'] == 1:
+            pinv['allow_edit_net_amount'] = 1
+        else:
+            pinv['allow_edit_net_amount'] = 0
         # render html
         pinv['html'] = frappe.render_template("microsynth/microsynth/page/invoice_entry/document.html", pinv)
 
@@ -113,6 +121,12 @@ def save_document(doc):
         'remarks': doc.get('remarks')
     }
     d.update(target_values)
+
+    if doc.get('net_total'):
+        rate = flt(doc.get('net_total').replace("'", "").replace(" ", ""))
+        #frappe.throw("{0}: {1} from {2}".format(rate, type(rate), doc.get('net_total')))
+        target_values['net_total'] = rate
+        d.items[0].rate = rate
 
     try:
         d.save()

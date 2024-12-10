@@ -40,7 +40,13 @@
                             </tr>
                             <tr>
                                 <td>{{ _("Net Total") }}</td>
-                                <td>{{ currency }} {{ "{:,.2f}".format(total).replace(",", "&apos;") }}</td>
+                                <td>
+                                    {% if allow_edit_net_amount %}
+                                        <div id="net_total_{{ name }}">
+                                    {% else %}
+                                        {{ currency }} {{ "{:,.2f}".format(total).replace(",", "&apos;") }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <td>{{ _("Taxes") }}</td>
