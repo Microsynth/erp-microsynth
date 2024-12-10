@@ -181,7 +181,8 @@ doc_events = {
         "before_save": "microsynth.microsynth.purchasing.set_default_payable_accounts"
     },
     "Purchase Invoice": {
-        "before_save": "microsynth.microsynth.purchasing.set_purchase_invoice_title"
+        "before_save": "microsynth.microsynth.purchasing.set_purchase_invoice_title",
+        "validate": "microsynth.microsynth.purchasing.validate_purchase_invoice"
     }
     #"Abacus Export File": {
     #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"

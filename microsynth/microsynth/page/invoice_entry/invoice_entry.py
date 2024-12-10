@@ -94,16 +94,17 @@ def add_comment(pinv, subject, comment, user):
 def save_document(doc):
     if type(doc) == str:
         doc = json.loads(doc)
-    
+
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
     d.supplier = doc.get('supplier')
+
     # date field: parse back from human-friendly format
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     # prepare document fields
     d.set_posting_time = 1
     d.payment_terms_template = None
     d.payment_schedule = []
-    
+
     target_values = {
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
         'due_date': datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d"),
@@ -112,18 +113,18 @@ def save_document(doc):
         'remarks': doc.get('remarks')
     }
     d.update(target_values)
-    
+
     try:
         d.save()
         frappe.db.commit()
-        
+
         deviations = []
         for k,v in target_values.items():
             if (d.get(k) or "") != target_values[k]:
                 deviations.append(k)
         if len(deviations) > 0:
             frappe.throw("Invalid input detected: {0}".format(deviations) )
-            
+
         return "Saved."
     except Exception as err:
         return err

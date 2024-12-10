@@ -7,7 +7,7 @@ import frappe
 from frappe.desk.form.assign_to import add
 from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import user_has_role
-
+import json
 
 def create_pi_from_si(sales_invoice):
     """
@@ -495,3 +495,29 @@ def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debi
         print(f"Got the Email {idx} '{email}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
     elif notes:
         print(f"Got the Notes {idx} '{notes}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
+
+
+def validate_purchase_invoice(doc, event):
+    validate_unique_bill_no(doc)
+    return
+
+
+def validate_unique_bill_no(doc):
+    if type(doc) == str:
+        doc = json.load(doc)
+
+    # validate unique exstance of bill_no
+    if doc.get("bill_no") and doc.get('supplier'):
+        same_bill_nos = frappe.get_all("Purchase Invoice",
+            filters=[
+                ['supplier', '=', doc.get('supplier')],
+                ['bill_no', '=', doc.get('bill_no')],
+                ['docstatus', '<', 2]
+            ],
+            fields=['name']
+        )
+        for pinv in same_bill_nos:
+            if pinv['name'] != doc.get('name'):
+                frappe.throw("The supplier invoice number '{0}' is already recorded in {1}.<br><br>No changes were saved.".format(doc.get("bill_no"), pinv['name']) )
+
+    return
