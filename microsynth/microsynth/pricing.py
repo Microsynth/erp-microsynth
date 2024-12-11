@@ -597,7 +597,7 @@ def delete_empty_disabled_price_lists(dry_run=True):
     print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {counter} Price Lists.")
 
 
-def delete_redundant_staggered_prices(pricelists, dry_run=True):
+def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=True):
     """
     Takes a list of Price Lists. For each Price List:
     1) Call function clean_price_list
@@ -605,7 +605,7 @@ def delete_redundant_staggered_prices(pricelists, dry_run=True):
     3) For each group of Item Prices with the same Price List, Item Code and rate:
        Delete all Item Prices except the one with the smallest minimum quantity.
 
-    bench execute microsynth.microsynth.pricing.delete_redundant_staggered_prices --kwargs "{'pricelists': ['Projects CHF', 'Projects EUR', 'Projects USD'], 'dry_run': True}"
+    bench execute microsynth.microsynth.pricing.delete_redundant_staggered_prices --kwargs "{'pricelists': ['Projects CHF', 'Projects EUR', 'Projects USD'], 'item_code_length': 5, 'dry_run': True}"
     """
     from microsynth.microsynth.report.pricing_configurator.pricing_configurator import clean_price_list
     for pl in pricelists:
@@ -625,6 +625,8 @@ def delete_redundant_staggered_prices(pricelists, dry_run=True):
             """
         code_rate_duplicates = frappe.db.sql(sql_query, as_dict=True)
         for group in code_rate_duplicates:
+            if len(group['item_code']) != item_code_length:
+                continue
             sql_query = f"""
             SELECT `name`,
                 `item_code`,
