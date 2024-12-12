@@ -41,7 +41,8 @@ def create_prm_for_all_companies():
     bench execute microsynth.microsynth.payment_reminder.create_prm_for_all_companies
     """
     for company in frappe.get_all("Company", fields=['name']):
-        enqueue_create_payment_reminders(company['name'])
+        if company['name'] != "Microsynth France SAS":
+            enqueue_create_payment_reminders(company['name'])
 
 
 @frappe.whitelist()
