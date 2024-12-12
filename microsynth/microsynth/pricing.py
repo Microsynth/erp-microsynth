@@ -608,6 +608,7 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
     bench execute microsynth.microsynth.pricing.delete_redundant_staggered_prices --kwargs "{'pricelists': ['Projects CHF', 'Projects EUR', 'Projects USD'], 'item_code_length': 5, 'dry_run': True}"
     """
     from microsynth.microsynth.report.pricing_configurator.pricing_configurator import clean_price_list
+    print(f"decision;item_price_id;price_list;item_code;rate;min_qty")
     for pl in pricelists:
         clean_price_list(pl, None)
         sql_query = f"""
@@ -642,7 +643,8 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
             ordered_duplicates = frappe.db.sql(sql_query, as_dict=True)
             if len(ordered_duplicates) > 0:
                 item_price_to_keep = ordered_duplicates[0]
-                print(f"Going to keep Item Price {item_price_to_keep['name']} from Price List {item_price_to_keep['price_list']} with Item Code {item_price_to_keep['item_code']}, rate {item_price_to_keep['price_list_rate']} and minimum quantity {item_price_to_keep['min_qty']}.")
+                #print(f"Going to keep Item Price {item_price_to_keep['name']} from Price List {item_price_to_keep['price_list']} with Item Code {item_price_to_keep['item_code']}, rate {item_price_to_keep['price_list_rate']} and minimum quantity {item_price_to_keep['min_qty']}.")
+                print(f"keep;{item_price_to_keep['name']};{item_price_to_keep['price_list']};{item_price_to_keep['item_code']};{item_price_to_keep['price_list_rate']};{item_price_to_keep['min_qty']}")
             else:
                 print(f"This should not happen: {group=} Going to continue")
                 continue
@@ -650,14 +652,13 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
                 if item_price['name'] == item_price_to_keep['name']:
                     continue
                 item_price_doc = frappe.get_doc("Item Price", item_price['name'])
-                base_string = f"Item Price {item_price_doc.name} from Price List {item_price_doc.price_list} with Item Code {item_price_doc.item_code}, rate {item_price_doc.price_list_rate} and minimum quantity {item_price_doc.min_qty}"
+                #base_string = f"Item Price {item_price_doc.name} from Price List {item_price_doc.price_list} with Item Code {item_price_doc.item_code}, rate {item_price_doc.price_list_rate} and minimum quantity {item_price_doc.min_qty}"
                 if not dry_run:
                     item_price_doc.delete()
-                    print(f"Deleted {base_string}.")
-                else:
-                    print(f"Would have deleted {base_string}.")
-
-
+                #     print(f"Deleted {base_string}.")
+                # else:
+                #     print(f"Would have deleted {base_string}.")
+                print(f"delete;{item_price_doc.name};{item_price_doc.price_list};{item_price_doc.item_code};{item_price_doc.price_list_rate};{item_price_doc.min_qty}")
 
 
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
