@@ -88,7 +88,12 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
                                 or "Jögeva" in ship_adr.city
                                 or "Ülenu" in ship_adr.city)
                                 ):
-        sh_serv = "Tartu"
+        if sh_serv == "UPS STD":
+            sh_serv = "Tartu UPS STD"
+        elif sh_serv == "UPS EXP":
+            sh_serv = "Tartu UPS EXP"
+        else:
+            sh_serv = "Tartu"
 
     return (sh_serv)
 
