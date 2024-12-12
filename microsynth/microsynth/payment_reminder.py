@@ -7,6 +7,7 @@ from frappe import _
 from frappe.core.doctype.communication.email import make
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from frappe.desk.form.load import get_attachments
+from erpnextswiss.erpnextswiss.doctype.payment_reminder.payment_reminder import enqueue_create_payment_reminders
 
 
 def extend_values(self, event):
@@ -25,6 +26,22 @@ def extend_values(self, event):
                 self.save()
                 frappe.db.commit()
     return
+
+
+@frappe.whitelist()
+def create_prm_for_all_companies():
+    """
+    Create Payment Reminders for all Companies.
+    If "Auto Submit" in the ERPNextSwiss Settings is activated,
+    Payment Reminders will be submitted and transmitted.
+
+    Run by a weekly cron job on mondays at 17:20:
+    20 17 * * 1  cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.payment_reminder.create_prm_for_all_companies
+
+    bench execute microsynth.microsynth.payment_reminder.create_prm_for_all_companies
+    """
+    for company in frappe.get_all("Company", fields=['name']):
+        enqueue_create_payment_reminders(company['name'])
 
 
 @frappe.whitelist()
