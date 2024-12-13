@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
 from frappe.utils.data import today
+from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import user_has_role
 
 
@@ -71,11 +72,31 @@ def update_status(action, status):
             action.completion_date = today()
             # clear assignment
             clear("QM Action", action.name)
+            # notify creator of Source Document Name
+            try:
+                msg = f"The QM Action {action.name} of your {action.document_type} {action.document_name} was completed by {frappe.session.user}."
+                notify_refdoc_creator(action, msg)
+            except Exception as err:
+                frappe.log_error(f"Unable to notify the creator of the source document of QM Action {action.name} upon Completion:\n{err}", "qm_action.update_status")
         action.status = status
         action.save()
         frappe.db.commit()
     else: 
         frappe.throw(f"Update QM Action: Status transition is not allowed {action.status} --> {status}")
+
+
+def notify_refdoc_creator(action, msg):
+    if action.document_name and action.document_type:
+        creator = frappe.get_value(action.document_type, action.document_name, "created_by")
+        if creator:
+            make(
+                recipients = creator,
+                sender = 'erp@microsynth.ch',
+                sender_full_name = 'Microsynth ERP',
+                subject = f"QM Action {action.name}",
+                content = msg,
+                send_email = True
+                )
 
 
 @frappe.whitelist()
