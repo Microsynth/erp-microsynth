@@ -111,6 +111,17 @@ frappe.ui.form.on('Quotation', {
     on_submit(frm) {
         // this is a hack to prevent not allowed to change discount amount after submit because the form has an unrounded value on an item
         cur_frm.reload_doc();
+    },
+
+    validate(frm) {
+        if (!frm.doc.quotation_type) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please set the Quotation Type.")
+            });
+            frappe.validated=false;
+        }
     }
 });
 

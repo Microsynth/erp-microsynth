@@ -138,7 +138,7 @@
    "modified_by": "Administrator",
    "name": "Quotation-quotation_type",
    "no_copy": 0,
-   "options": "Synthesis\nLabels\nSanger Sequencing\nGenetic Analysis",
+   "options": "\nSynthesis\nLabels\nSanger Sequencing\nGenetic Analysis",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
