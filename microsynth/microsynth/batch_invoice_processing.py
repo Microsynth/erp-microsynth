@@ -94,8 +94,23 @@ def parse_file(file_name, company, company_settings, debug=True):
         # create invoice record
         create_invoice(file_name, invoice, company_settings)
     except Exception as err:
-        frappe.log_error("Error: {err}\nFile: {file_name}".format(err=err, file_name=file_name), "Batch processing parse file error")
-    return
+        try:
+            msg = f"Error: {err}\nFile: {file_name}"
+            # Idea: Add an error path to each company setting in Batch Invoice Processing Settings?
+            parts = file_name.split("/")
+            pdf_name = parts[-1]
+            path = "/".join(parts[:(len(parts)-1)]) + "/Error"
+            # Move file to error folder
+            new_file_name = path + "/" + pdf_name
+            os.rename(file_name, new_file_name)
+            # Write error
+            txt_path = path + "/" + pdf_name[:-4] + ".txt"
+            with open(txt_path, 'w') as txt_file:
+                txt_file.write(msg)
+            frappe.log_error(msg, "Batch processing parse file error")
+        except Exception as e:
+            frappe.log_error(f"Got the following error during error handling:\n{e}", "Batch processing parse file error")
+
 
 def create_invoice(file_name, invoice, settings):
     if not invoice.get('supplier'):
