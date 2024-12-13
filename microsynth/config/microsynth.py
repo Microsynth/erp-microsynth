@@ -116,11 +116,12 @@ def get_data():
             "icon": "fa fa-tools",
             "items": [
                    {
-                       "type": "doctype",
-                       "name": "Sequencing Label",
-                       "label": _("Sequencing Label"),
-                       "description": _("Sequencing Label")
-                   },
+                        "type": "report",
+                        "name": "Label Manager",
+                        "label": _("Label Manager"),
+                        "doctype": "Sequencing Label",
+                        "is_query_report": True
+                    },
                    {
                         "type": "report",
                         "name": "Open Label Orders",
