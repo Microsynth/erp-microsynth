@@ -49,7 +49,8 @@ def get_data(filters):
         FROM `tabDelivery Note`
         LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
-        WHERE `tabDelivery Note Item`.`item_code` = '1100'
+        WHERE `tabDelivery Note`.`product_type` = 'Oligos'
+            AND `tabDelivery Note Item`.`item_code` = '1100'
             {conditions}
         GROUP BY `tabDelivery Note`.`name`
         ;"""
