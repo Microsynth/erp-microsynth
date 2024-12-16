@@ -54,6 +54,7 @@ def get_data(filters=None):
         WHERE 
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`status` != 'Closed'
             AND `tabCountry`.`name` <> 'Switzerland'
             AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
