@@ -8,6 +8,7 @@ import os
 from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_zugferd
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
+from microsynth.microsynth.utils import send_email_from_template
 
 
 def process_files(debug=True):
@@ -108,6 +109,10 @@ def parse_file(file_name, company, company_settings, debug=True):
             with open(txt_path, 'w') as txt_file:
                 txt_file.write(msg)
             frappe.log_error(msg, "Batch processing parse file error")
+            # Send an automatic email
+            email_template = frappe.get_doc("Email Template", "Batch invoice processing error")
+            rendered_content = frappe.render_template(email_template.response, {'file_name': file_name, 'err': err})
+            send_email_from_template(email_template, rendered_content)
         except Exception as e:
             frappe.log_error(f"Got the following error during error handling:\n{e}", "Batch processing parse file error")
 
