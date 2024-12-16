@@ -4,6 +4,12 @@
 
 frappe.query_reports["Oligo envelope sizes"] = {
 	"filters": [
-
+		{
+            "fieldname": "date",
+            "label": __("Date"),
+            "fieldtype": "Date",
+			"reqd": 1,
+			"default": frappe.datetime.get_today()
+        }
 	]
 };
