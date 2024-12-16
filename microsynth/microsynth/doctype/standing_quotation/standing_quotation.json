@@ -20,6 +20,8 @@
   "groups",
   "sec_items",
   "items",
+  "sec_shipping_items",
+  "shipping_items",
   "sec_descriptions",
   "description",
   "terms_template",
@@ -150,11 +152,24 @@
    "fieldtype": "Link",
    "label": "Terms Template",
    "options": "Terms and Conditions"
+  },
+  {
+   "fieldname": "sec_shipping_items",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Shipping Items"
+  },
+  {
+   "fieldname": "shipping_items",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Shipping Items",
+   "options": "Shipping Item"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-03-07 11:01:24.063239",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2024-12-16 16:14:01.759855",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",
  "owner": "Administrator",
