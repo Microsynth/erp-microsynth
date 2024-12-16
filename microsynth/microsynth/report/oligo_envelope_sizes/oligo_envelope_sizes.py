@@ -12,9 +12,9 @@ def get_columns(filters):
         {"label": _("Type"), "fieldname": "type", "fieldtype": "Data", "width": 70 },
         {"label": _("Oligos"), "fieldname": "oligo_count", "fieldtype": "Integer", "width": 55 },
         {"label": _("Envelope"), "fieldname": "envelope", "fieldtype": "Data", "width": 150 },
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
-        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200 },
-        {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 65 },
+        #{"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 300 },
+        #{"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 65 },
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
         {"label": _("Shipping Label printed on"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 160 }
@@ -27,7 +27,7 @@ def get_data(filters):
     conditions = ""
     
     if filters.get('date'):
-        conditions += f"AND `tabSales Order`.`label_printed_on` > DATE('{filters.get('date')}')"
+        conditions += f"AND DATE(`tabSales Order`.`label_printed_on`) = DATE('{filters.get('date')}')"
 
     sql_query = f"""
         SELECT
