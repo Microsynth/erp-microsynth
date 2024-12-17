@@ -84,8 +84,7 @@ def get_data(filters):
 
     summary_line = {
         'envelope': 'Summary:',
-        'customer_name': f"Standard: {standard_letters_b5} | Large: {large_letters} | Midi: {midi_letters_with_surcharge}",
-        'web_order_id': f"Own label: {own_label}"
+        'customer_name': f"Standard: {standard_letters_b5} | Large: {large_letters} | Midi: {midi_letters_with_surcharge} | Own label: {own_label}"
     }
     data.append(summary_line)
     return data
