@@ -21,7 +21,8 @@ def get_columns(filters):
         {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
         {"label": _("Registered"), "fieldname": "registered", "fieldtype": "Check", "width": 80 },
         {"label": _("Registered To"), "fieldname": "registered_to", "fieldtype": "Link", "options": "Contact", "width": 100 },
-        {"label": _("Sequencing Label"), "fieldname": "name", "fieldtype": "Link", "options": "Sequencing Label", "width": 115 }
+        {"label": _("Sequencing Label"), "fieldname": "name", "fieldtype": "Link", "options": "Sequencing Label", "width": 115 },
+        {"label": _("Created on"), "fieldname": "creation", "fieldtype": "Date", "width": 125 },
     ]
 
 
@@ -85,7 +86,8 @@ def get_data(filters):
             `tabSequencing Label`.`sales_order`,
             `tabSales Order`.`web_order_id`,
             `tabSequencing Label`.`contact`,
-            `tabSequencing Label`.`registered_to`
+            `tabSequencing Label`.`registered_to`,
+            `tabSequencing Label`.`creation`
         FROM `tabSequencing Label`
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSequencing Label`.`sales_order`
         WHERE TRUE
