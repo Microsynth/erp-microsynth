@@ -48,9 +48,8 @@ frappe.invoice_entry = {
             html += purchase_invoice_drafts[i].html;
         }
         if (purchase_invoice_drafts.length == 0) {
-            html = "<h1>Nothing to do 😎</h1>"  // TODO: Add button "Load invoices" that triggers batch_invoice_processing.process_files
-            //html += '<button class="btn btn-sm btn-primary" id="btn_import" onclick="import_invoices()">Import Invoices now</button>'
-            //frappe.invoice_entry.attach_import_handler();
+            html = "<h1>Nothing to do 😎</h1>"  // Add button "Load invoices" that triggers batch_invoice_processing.process_files
+            html += '<button class="btn btn-sm btn-primary" id="btn_import" onclick="import_invoices()">Import Invoices now</button>'
         }
         // insert content
         document.getElementById("pi_drafts_view").innerHTML = html;
@@ -98,10 +97,6 @@ frappe.invoice_entry = {
         link_field.refresh();
         link_field.set_value(purchase_invoice[field_name]);
     },
-    // attach_import_handler: function() {
-    //     let btn_import = document.getElementById("btn_import");
-    //     btn_import.onclick = frappe.invoice_entry.import_invoices.bind(this);
-    // },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
         btn_save.onclick = frappe.invoice_entry.save_document.bind(this, purchase_invoice_name);
@@ -121,17 +116,6 @@ frappe.invoice_entry = {
     attach_delete_handler: function(purchase_invoice_name) {
         let btn_delete = document.getElementById("btn_delete_" + purchase_invoice_name);
         btn_delete.onclick = frappe.invoice_entry.delete_document.bind(this, purchase_invoice_name);
-    },
-    import_invoices: function() {
-        console.log("Going to import ...");
-        frappe.call({
-            'method': 'microsynth.microsynth.batch_invoice_processing.process_files',
-            'freeze': true,
-            'freeze_message': __("Loading ..."),
-            'callback': function(response) {
-                location.reload();
-            }
-        });
     },
     save_document: function(purchase_invoice_name) {
         let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
@@ -235,3 +219,15 @@ frappe.invoice_entry = {
     }
 }
 
+
+function import_invoices() {
+    console.log("Going to import ...");
+        frappe.call({
+            'method': 'microsynth.microsynth.batch_invoice_processing.process_files',
+            'freeze': true,
+            'freeze_message': __("Loading ..."),
+            'callback': function(response) {
+                location.reload();
+            }
+        });
+}

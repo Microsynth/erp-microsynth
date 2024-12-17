@@ -11,6 +11,7 @@ from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 from microsynth.microsynth.utils import send_email_from_template
 
 
+@frappe.whitelist()
 def process_files(debug=True):
     """
     Create Purchase Invoices from PDF files in the paths defined in Batch Invoice Processing Settings
