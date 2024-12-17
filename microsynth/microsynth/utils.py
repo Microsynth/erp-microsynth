@@ -1509,28 +1509,20 @@ def configure_territory(customer_id):
     if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
+            email_template = frappe.get_doc("Email Template", "Customer without a Shipping Address")
             if customer.owner == 'webshop@microsynth.ch' or customer.owner == 'Administrator':
                 first_name = 'Administration'
-                recipient = 'info@microsynth.ch'
+                recipient = email_template.recipients
                 reason = ''
             else:
                 first_name = frappe.get_value("User", customer.owner, "first_name")
                 recipient = customer.owner
-                reason = 'You are receiving this e-mail because you have created the Customer in the ERP.<br>'
-            message = f"Dear {first_name},<br><br>this is an automatic email to inform you that Customer '{customer_id}' has no Shipping Address. " \
-                f"Therefore the ERP is unable to determine the Territory of this Customer.<br>" \
-                f"Please add a shipping address, Territory and Sales Manager for Customer '{customer_id}' in the ERP.<br>" \
-                f"{reason}<br>Best regards,<br>Jens"
-            subject = f"Customer '{customer_id}' has no Shipping Address. Can't configure Territory."
-            frappe.log_error(subject + f" Send an email to {recipient}.", "utils.configure_territory")
-            make(
-                recipients = recipient,
-                cc = "info@microsynth.ch" if recipient != "info@microsynth.ch" else '',
-                sender = "jens.petermann@microsynth.ch",
-                subject = "[ERP] " + subject,
-                content = message,
-                send_email = True
-                )
+                reason = 'You are receiving this email because you have created the Customer in the ERP.<br>'
+            customer_href = f"<a href={get_url_to_form('Customer', customer_id)}>{customer_id}</a>"
+            rendered_subject = frappe.render_template(email_template.subject, {'customer_id': customer_id})
+            rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'customer_href': customer_href, 'reason': reason})
+            frappe.log_error(rendered_subject + f" Send an email to {recipient}.", "utils.configure_territory")
+            send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=recipient)
             return
         territory = determine_territory(shipping_address)
         if territory: 
@@ -2655,13 +2647,13 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=[{'fid': _file.name}])
 
 
-def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None):
+def send_email_from_template(email_template, rendered_content, rendered_subject=None, attachments=None, recipients=None):
     """
     Takes an Email Template object, the rendered content (message) and optionally a rendered subjects
     and triggers the sending of the corresponding email.
     """
     make(
-            recipients = email_template.recipients,
+            recipients = recipients if recipients else email_template.recipients,
             cc = email_template.cc_recipients,
             sender = email_template.sender,
             sender_full_name = email_template.sender_full_name,
