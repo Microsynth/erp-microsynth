@@ -92,7 +92,8 @@ jenv = {
         "get_cc_attachments:microsynth.qms.doctype.qm_change.qm_change.get_cc_attachments",
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message",
-        "fetch_quotation:microsynth.microsynth.utils.fetch_quotation"
+        "fetch_quotation:microsynth.microsynth.utils.fetch_quotation",
+        "xml_normalize:microsynth.microsynth.jinja.xml_normalize"
     ]
 }
 

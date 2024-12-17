@@ -11,12 +11,12 @@
     {%- if doc.doctype == "Sales Invoice" %}
         {%- set customer_address = frappe.get_doc("Address", doc.get('customer_address')) %}
         {%- set customer = frappe.get_doc("Customer", doc.customer) %}
-        <address street="{{ customer_address.address_line1[:40] }}" name="{{ doc.customer_name[:50] }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city[:44] }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
+        <address street="{{ customer_address.address_line1[:40] }}" name="{{ xml_normalize(doc.customer_name, 50) }}" zip="{{ customer_address.pincode }}" city="{{ customer_address.city[:44] }}" party_id="{{ customer.get('ext_debitor_number') or customer.name }}" />
         <booking_info_bp bp_account_no="{{ customer.get('ext_debitor_number') or "99999" }}"/>
     {%- else %}
         {%- set supplier_address = frappe.get_doc("Address", doc.get('supplier_address')) %}
         {%- set supplier = frappe.get_doc("Supplier", doc.supplier) %}
-        <address street="{{ supplier_address.address_line1[:40] }}" name="{{ doc.supplier_name[:50] }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city[:44] }}" party_id="{{ supplier.get('ext_creditor_id') or supplier.name }}" />
+        <address street="{{ supplier_address.address_line1[:40] }}" name="{{ xml_normalize(doc.supplier_name, 50) }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city[:44] }}" party_id="{{ supplier.get('ext_creditor_id') or supplier.name }}" />
         <booking_info_bp bp_account_no="{{ supplier.get('ext_creditor_id') or "99999" }}"/>
     {%- endif %}
 </invoice_party>
@@ -24,12 +24,12 @@
 <supplier_party vat_id="{{ (company.tax_id or '').replace(' ', '') }}">
     {%- if doc.doctype == "Sales Invoice" %}
         {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
-        <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+        <address street="{{ xml_normalize(company_address.address_line1 or "", 33) }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
         {%- set account = frappe.get_doc("Account", doc.debit_to) %}
         <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
     {%- else %}
         {%- set company_address = frappe.get_doc("Address", doc.shipping_address) %}
-        <address street="{{ (company_address.address_line1 or "")[0:33] }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
+        <address street="{{ xml_normalize(company_address.address_line1 or "", 33) }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
         {%- set account = frappe.get_doc("Account", doc.credit_to) %}
         <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
     {%- endif %}

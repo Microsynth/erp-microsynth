@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
 import frappe
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import get_rate
 from frappe.utils import cint
+import unicodedata
 
 """
 Jinja endpoint to get pricelist rate and reference rate for an item
@@ -47,3 +48,41 @@ def get_destination_classification(so=None, dn=None, si=None):
             return "EU"
         else:
             return "ROW"
+
+"""
+XML-encoding and clean up
+"""
+def xml_normalize(s, length):
+    translation_table = {
+        #'ä': 'a', 
+        #'ö': 'o', 
+        #'ü': 'u', 
+        'ß': 'ss', 
+        'é': 'e',       # utf-8 0xC3 or 0xA9
+        'è': 'e', 
+        'á': 'a',
+        'à': 'a',
+        'í': 'i', 
+        'ó': 'o', 
+        'ú': 'u', 
+        'ñ': 'n', 
+        'ç': 'c', 
+        'â': 'a', 
+        'ê': 'e', 
+        'ô': 'o',
+        'î': 'i', 
+        'û': 'u', 
+        'é': 'e',       # utf-8 0xA9 or 0xC3
+        'è': 'e', 
+        'œ': 'oe', 
+        'ø': 'o', 
+        'å': 'a', 
+        'æ': 'ae',
+        '&': '+'
+    }
+    
+    normalized_string = ''.join(translation_table.get(char, char) for char in s) # if ord(char) < 128 or char in translation_table)
+    
+    normalized_s = unicodedata.normalize('NFKD', normalized_string)
+    
+    return normalized_s[:length]
