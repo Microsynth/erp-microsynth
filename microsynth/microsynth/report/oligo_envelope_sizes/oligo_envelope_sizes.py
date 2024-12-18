@@ -30,29 +30,32 @@ def get_data(filters):
         conditions += f"AND DATE(`tabSales Order`.`label_printed_on`) = DATE('{filters.get('date')}')"
 
     sql_query = f"""
-        SELECT
-            `tabDelivery Note`.`name` AS `delivery_note`,
-            `tabSales Order`.`name` AS `sales_order`,
-            `tabDelivery Note`.`customer`,
-            `tabDelivery Note`.`customer_name`,
-            `tabDelivery Note`.`contact_person` AS `contact`,
-            `tabDelivery Note`.`web_order_id`,
-            (SELECT COUNT(`tabOligo`.`name`)
-                FROM `tabOligo Link`
-                LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-                WHERE
-                    `tabOligo Link`.`parent` = `tabDelivery Note`.`name`
-                    AND `tabOligo Link`.`parenttype` = "Delivery Note"
-            ) AS `oligo_count`,
-            `tabSales Order`.`label_printed_on`,
-            GROUP_CONCAT(`tabDelivery Note Item`.`item_code`) AS `items`
-        FROM `tabDelivery Note`
-        LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-        LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
-        WHERE `tabDelivery Note`.`product_type` = 'Oligos'
-            AND `tabDelivery Note Item`.`item_code` = '1100'
-            {conditions}
-        GROUP BY `tabDelivery Note`.`name`
+        SELECT *
+        FROM (
+            SELECT
+                `tabDelivery Note`.`name` AS `delivery_note`,
+                `tabSales Order`.`name` AS `sales_order`,
+                `tabDelivery Note`.`customer`,
+                `tabDelivery Note`.`customer_name`,
+                `tabDelivery Note`.`contact_person` AS `contact`,
+                `tabDelivery Note`.`web_order_id`,
+                (SELECT COUNT(`tabOligo`.`name`)
+                    FROM `tabOligo Link`
+                    LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+                    WHERE
+                        `tabOligo Link`.`parent` = `tabDelivery Note`.`name`
+                        AND `tabOligo Link`.`parenttype` = "Delivery Note"
+                ) AS `oligo_count`,
+                `tabSales Order`.`label_printed_on`,
+                GROUP_CONCAT(`tabDelivery Note Item`.`item_code`) AS `items`
+            FROM `tabDelivery Note`
+            LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+            LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+            WHERE `tabDelivery Note`.`product_type` = 'Oligos'
+                {conditions}
+            GROUP BY `tabDelivery Note`.`name`
+            ) AS `inner`
+        WHERE `inner`.`items` LIKE '%1100%'
         ;"""
     data = frappe.db.sql(sql_query, as_dict=True)
     
@@ -63,10 +66,15 @@ def get_data(filters):
 
     for dn in data:
         items = set(dn['items'].split(','))
-        if len(items.intersection(set(['0011', '0051', '0101', '0104', '0641']))) > 0:
+        plate_items = set(['0011', '0051', '0101', '0104', '0641'])
+        if len(items.intersection(plate_items)) > 0:
             dn['type'] = 'Plate'
-            dn['envelope'] = 'Midi letter with surcharge'
-            midi_letters_with_surcharge += 1
+            if dn['oligo_count'] < 193:
+                dn['envelope'] = 'Midi letter with surcharge'
+                midi_letters_with_surcharge += 1
+            else:
+                dn['envelope'] = 'Parcel'
+                own_label += 1
             continue
         else:
             dn['type'] = 'Tubes'
@@ -80,11 +88,12 @@ def get_data(filters):
             dn['envelope'] = 'Midi letter with surcharge'
             midi_letters_with_surcharge += 1
         else:
+            dn['envelope'] = 'Parcel'
             own_label += 1
 
     summary_line = {
         'envelope': 'Summary:',
-        'customer_name': f"Standard: {standard_letters_b5} | Large: {large_letters} | Midi: {midi_letters_with_surcharge} | Own label: {own_label}"
+        'customer_name': f"Standard: {standard_letters_b5} | Large: {large_letters} | Midi: {midi_letters_with_surcharge} | Parcel: {own_label}"
     }
     data.append(summary_line)
     return data
