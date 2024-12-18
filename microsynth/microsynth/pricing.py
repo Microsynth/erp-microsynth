@@ -669,8 +669,8 @@ def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_ru
     total_counter = 0
     with open(log_file_path, 'w') as outfile:
         for item_code in item_codes:
-            if frappe.get_value("Item", item_code, "disabled"):
-                print(f"##### Item {item_code} is disabled. Going to continue with the next Item Code.")
+            # if frappe.get_value("Item", item_code, "disabled"):
+            #     print(f"##### Item {item_code} is disabled. Going to continue with the next Item Code.")
             item_prices_to_delete = frappe.get_all("Item Price", filters=[['item_code', '=', item_code], ['price_list', 'NOT IN', price_lists_to_exclude]], fields=['name'])
             for item_price_to_delete in item_prices_to_delete:
                 doc = frappe.get_doc("Item Price", item_price_to_delete['name'])
