@@ -661,15 +661,48 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
                 print(f"delete;{item_price_doc.name};{item_price_doc.price_list};{item_price_doc.item_code};{item_price_doc.price_list_rate};{item_price_doc.min_qty}")
 
 
-def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
+def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_run=True, verbose=False):
+    """
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'item_codes': ['30000'], 'price_lists_to_exclude': ['Projects CHF', 'Projects EUR', 'Projects USD', 'Horizon Projects'], 'log_file_path': '/home/libracore/Desktop/2024-12-18_deleted_Item_prices.txt', 'dry_run': True, 'verbose': 'False'}"
+    """
+    total_to_reach = len(frappe.get_all("Item Price", filters=[['item_code', 'IN', item_codes], ['price_list', 'NOT IN', price_lists_to_exclude]], fields=['name']))
+    total_counter = 0
+    with open(log_file_path, 'w') as outfile:
+        for item_code in item_codes:
+            if frappe.get_value("Item", item_code, "disabled"):
+                print(f"##### Item {item_code} is disabled. Going to continue with the next Item Code.")
+            item_prices_to_delete = frappe.get_all("Item Price", filters=[['item_code', '=', item_code], ['price_list', 'NOT IN', price_lists_to_exclude]], fields=['name'])
+            for item_price_to_delete in item_prices_to_delete:
+                doc = frappe.get_doc("Item Price", item_price_to_delete['name'])
+                base_string = f"Item Price {doc.name} from Price List {doc.price_list} with min_qty {doc.min_qty} and rate {doc.price_list_rate}. ({(100 * total_counter / total_to_reach):.2f} %)"
+                if dry_run:
+                    if verbose:
+                        print(f"Would delete {base_string}")
+                else:
+                    try:
+                        doc.delete()
+                    except Exception as err:
+                        print(f"### Unable to delete {base_string}: {err}")
+                    else:
+                        if verbose:
+                            print(f"Deleted {base_string}")
+                outfile.write(f"{doc.as_dict()}\n")
+                total_counter += 1
+            if not dry_run:
+                frappe.db.commit()
+        total_counter_formatted = f"{total_counter:,}".replace(",", "'")
+        print(f"{'Would have deleted' if dry_run else 'Deleted'} {total_counter_formatted} Item Prices in total.")
+
+
+def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=False):
     """
     Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the respective reference Price List.
 
-    bench execute microsynth.microsynth.pricing.copy_prices_from_projects_to_reference --kwargs "{'item_codes': ['20005','20006','20007','20011','20012','20013','20014','20015','20040','20041','20042','20043','20044','30000','30013','30014','30043','30044','30075','30076','30080','30081','30082','30083','30085','30087','30088','30094','30098','30099','30105','30106','30107','30119','30120','30138','30303','30304','30340','30341','30342','30500','30505','30510','30515','30520','30525','30530','30535','30550','30555','30560','30565','30570','30575','30605','30610','30615','30620','30625','30650','30655','30660','30665','30700','30705','30707','30710','30715','30720','30750','30800','30810','30850','31000','31010','31020','31030']}"
+    bench execute microsynth.microsynth.pricing.copy_prices_from_projects_to_reference --kwargs "{'item_codes': ['20005','20006','20007','20011','20012','20013','20014','20015','20040','20041','20042','20043','20044','30000','30013','30014','30043','30044','30075','30076','30080','30081','30082','30083','30085','30087','30088','30094','30098','30099','30105','30106','30107','30119','30120','30138','30303','30304','30340','30341','30342','30500','30505','30510','30515','30520','30525','30530','30535','30550','30555','30560','30565','30570','30575','30605','30610','30615','30620','30625','30650','30655','30660','30665','30700','30705','30707','30710','30715','30720','30750','30800','30810','30850','31000','31010','31020','31030'], 'dry_run': True, 'verbose': False}"
     """
     counter = {'CHF': 0, 'EUR': 0, 'USD': 0}
-    for item_code in item_codes:
-        print(f"Processing Item {item_code} ...")
+    for i, item_code in enumerate(item_codes):
+        print(f"[{i}/{len(item_codes)}] Processing Item {item_code} ...")
         # check if Item is enabled
         if frappe.get_value("Item", item_code, "disabled"):
             print(f"Item {item_code} is disabled. Going to skip.")
@@ -708,7 +741,11 @@ def copy_prices_from_projects_to_reference(item_codes, dry_run=True):
                 })
                 if not dry_run:
                     new_item_price.insert()
+                if verbose:
+                    print(f"{'Would create' if dry_run else 'Created'} {counter} Item Price for Item Code {new_item_price.item_code} with minimum quantity {new_item_price.min_qty} and a rate of {new_item_price.price_list_rate} {new_item_price.currency} on the reference Price List {reference_price_list_name}.")
                 counter[currency] += 1
+        if not dry_run:
+            frappe.db.commit()
     print(f"{'Would create' if dry_run else 'Created'} {counter} new Item Prices on the reference Price Lists.")
 
 
@@ -1099,3 +1136,19 @@ def change_customer_prices(items):
                 print(f"Changed rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
 
     print(f"\nSuccessfully changed {counter} Item Price rates.")
+
+
+def project_to_reference():
+    """
+    """
+    # create new reference price
+    new_item_price = frappe.get_doc({
+        'doctype': "Item Price",
+        'item_code': '',
+        'min_qty': '',
+        'price_list': '',
+        'buying': 0,
+        'selling': 1,
+        'currency': '',
+        'price_list_rate': ''
+    })
