@@ -48,6 +48,11 @@ def validate_registration_data(user_data):
         error = "Addresses are missing. "
         return error
 
+    for a in user_data['addresses']:
+        if not 'address_line1' in a or not a['address_line1'].strip():
+            error = f"Address Line 1 of {a['name']} is missing. "
+            return error
+
     error = []
     if frappe.db.exists("Customer", user_data['customer']['name']):
         error.append("Customer '{0}' already exists.".format(user_data['customer']['name']))
