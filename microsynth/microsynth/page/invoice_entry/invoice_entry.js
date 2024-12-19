@@ -117,7 +117,7 @@ frappe.invoice_entry = {
         let btn_delete = document.getElementById("btn_delete_" + purchase_invoice_name);
         btn_delete.onclick = frappe.invoice_entry.delete_document.bind(this, purchase_invoice_name);
     },
-    save_document: function(purchase_invoice_name) {
+    save_document: function(purchase_invoice_name, edit_mode=false) {
         let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
         let net_total = null;
         if ((net_total_inputs) && (net_total_inputs.length > 0)) {
@@ -142,7 +142,11 @@ frappe.invoice_entry = {
             'freeze_message': __("Saving..."),
             'callback': function(response) {
                 if (response.message.success) {
-                    location.reload();
+                    if (edit_mode===true) {
+                        frappe.invoice_entry.open_edit_form(purchase_invoice_name);
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     frappe.show_alert(response.message.message);
                 }                
@@ -172,7 +176,9 @@ frappe.invoice_entry = {
     },
     edit_document: function(purchase_invoice_name) {
         // save without reload
-        this.save_document(purchase_invoice_name);
+        this.save_document(purchase_invoice_name, edit_mode=true);
+    },
+    open_edit_form: function(purchase_invoice_name) {
         // toggle quick entry/form
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
         quick_entry.style.display = "None";
@@ -211,7 +217,6 @@ frappe.invoice_entry = {
         });
     },
     remove_clearfix_nodes: function() {
-        console.log("remove")
         let clearfixes = document.getElementsByClassName("clearfix"); 
         for  (let i = clearfixes.length - 1; i >= 0 ; i--) {
             clearfixes[i].remove();
