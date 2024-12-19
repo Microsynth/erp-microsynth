@@ -34,11 +34,11 @@ def get_data(filters=None):
     company = filters.get("company")
     conditions = ""
     if filters.get("customer"):
-        conditions += "AND `tabCustomer`.`name` = {0}".format(filters.get("customer"))
+        conditions += "AND `tabCustomer`.`name` = {0} ".format(filters.get("customer"))
     if filters.get("exclude_punchout"):
-        conditions += "AND `tabDelivery Note`.`is_punchout` != 1"
+        conditions += "AND `tabDelivery Note`.`is_punchout` != 1 "
     if filters.get("collective_billing"):
-        conditions += "AND `tabCustomer`.`collective_billing` = 1"
+        conditions += "AND `tabCustomer`.`collective_billing` = 1 "
 
     invoiceable_services = frappe.db.sql("""
         SELECT * 
@@ -58,7 +58,7 @@ def get_data(filters=None):
                 `tabCountry`.`export_code` AS `region`,
                 `tabCustomer`.`tax_id` AS `tax_id`,
                 `tabDelivery Note`.`shipment_type` AS `shipment_type`,
-                `tabDelivery Note`.`product_type` AS `product_type`,            
+                `tabDelivery Note`.`product_type` AS `product_type`,
                 (SELECT COUNT(`tabSales Invoice Item`.`name`) 
                  FROM `tabSales Invoice Item`
                  WHERE 
@@ -85,7 +85,7 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`company` = "{company}"
                 AND `tabDelivery Note`.`creation` > '2022-12-31'
                 AND `tabDelivery Note`.`status` != "Closed"
-                AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
+                AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%" 
                 {conditions}
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
