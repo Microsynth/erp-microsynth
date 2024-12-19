@@ -216,7 +216,7 @@ def async_create_invoices(mode, company, customer):
                     #     # Do not create punchout invoices of Sequencing orders because of positions with 0.00 cost that cause errors at EPFL
                     #     # TODO: Fix issue with EPFL and UNI-ZUR and remove this condition
                     #     continue
-                    if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR"] or
+                    if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR", "IMBA"] or
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) or      # invoices transmitted by email. unclear if invoices get paid.
                         (punchout_shop == "ROC-PENGEP" and company == "Microsynth Seqlab GmbH") ):
                         si = make_punchout_invoice(dn.get('delivery_note'))
