@@ -15,7 +15,7 @@ def communication_on_insert(self, event):
         if self.reference_doctype == "Sales Invoice":
             sinv = frappe.get_doc(self.reference_doctype, self.reference_name)
             if not sinv.invoice_sent_on:
-                sinv.invoice_sent_on = self.creation
+                sinv.invoice_sent_on = self.creation.strftime("%Y-%m-%d %H:%M:%S")
                 sinv.save()
                 frappe.db.commit()
         
