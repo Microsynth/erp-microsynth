@@ -5,7 +5,6 @@
 
 import frappe
 
-
 """
 Hook from Communication
 """
@@ -15,10 +14,13 @@ def communication_on_insert(self, event):
         if self.reference_doctype == "Sales Invoice":
             sinv = frappe.get_doc(self.reference_doctype, self.reference_name)
             if not sinv.invoice_sent_on:
-                sinv.invoice_sent_on = self.creation.strftime("%Y-%m-%d %H:%M:%S")
+                if type(self.creation) == str:
+                    sinv.invoice_sent_on = self.creation[:19]
+                else:
+                    sinv.invoice_sent_on = self.creation.strftime("%Y-%m-%d %H:%M:%S")
                 sinv.save()
                 frappe.db.commit()
-        
+
     except Exception as err:
         frappe.log_error(err, "Communication hook failed")
     return
