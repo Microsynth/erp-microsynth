@@ -2102,21 +2102,21 @@ def update_territories_and_sales_managers(current_territories, affected_countrie
             to_save = False
             if c.territory != territory.name:
                 if verbose:
-                    print(f"{i}/{len(customers)}: Changed Territory of Customer '{c.name}' ('{c.customer_name}') from {c.territory} to {territory.name}.")
+                    print(f"{i+1}/{len(customers)}: Changed Territory of Customer '{c.name}' ('{c.customer_name}') from {c.territory} to {territory.name}.")
                 if not dry_run:
                     c.territory = territory.name
                     to_save = True
             sales_manager = frappe.get_value("Territory", territory.name, "sales_manager")
             if c.account_manager != sales_manager:
                 if verbose:
-                    print(f"{i}/{len(customers)}: Changed Sales Manager of Customer '{c.name}' ('{c.customer_name}') from {c.account_manager} to {sales_manager}.")
+                    print(f"{i+1}/{len(customers)}: Changed Sales Manager of Customer '{c.name}' ('{c.customer_name}') from {c.account_manager} to {sales_manager}.")
                 if not dry_run:
                     c.account_manager = sales_manager
                     to_save = True
             if to_save:
                 c.save()
         except Exception as err:
-            print(f"##### {i}/{len(customers)}: Could not update Territory for Customer '{c.name}': {err}")
+            print(f"##### {i+1}/{len(customers)}: Could not update Territory for Customer '{c.name}': {err}")
     frappe.db.commit()
 
 

@@ -1413,16 +1413,16 @@ def determine_territory(address_id):
             if len(numeric_postal_code) != 5:
                 frappe.log_error(f"Postal code '{postal_code}' for {address_id=} in France does not contain five digits.", "utils.determine_territory")
                 return frappe.get_doc("Territory", "France")
-            pc_prefix = int(numeric_postal_code[:2])
-            if pc_prefix == 69:
-                return frappe.get_doc("Territory", "Lyon")
-            elif pc_prefix == 75 or pc_prefix == 77 or pc_prefix == 78 or 91 <= pc_prefix <= 95:
+            pc_prefix = numeric_postal_code[:2]
+            if pc_prefix in ['01', '04', '05', '06', '07', '13', '26', '30', '34', '38', '42', '43', '69', '73', '74', '83', '84']:
+                return frappe.get_doc("Territory", "France (Southeast)")
+            elif pc_prefix in ['75', '77', '78', '91', '92', '93', '94', '95']:
                 return frappe.get_doc("Territory", "Paris")
             else:
-                return frappe.get_doc("Territory", "France (without Paris and Lyon)")
+                return frappe.get_doc("Territory", "France (Northwest)")
         
         elif address.country == "Réunion" or address.country == "French Guiana":
-            return frappe.get_doc("Territory", "France (without Paris and Lyon)")
+            return frappe.get_doc("Territory", "France (Northwest)")
         
         elif address.country == "Liechtenstein":
             return frappe.get_doc("Territory", "Switzerland (German-speaking)")
