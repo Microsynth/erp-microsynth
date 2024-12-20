@@ -1450,7 +1450,9 @@ def determine_territory(address_id):
             return frappe.get_doc("Territory", "Rest of World (Asia, Africa, Australia)")
     
     except Exception as err:
-        frappe.log_error(f"Could not determine territory from address '{address_id}'\n{err}", "utils.determine_territory")
+        msg = f"Could not determine territory from address '{address_id}': {err}"
+        print(msg)
+        frappe.log_error(msg, "utils.determine_territory")
         return None
 
 

@@ -2027,43 +2027,96 @@ def check_territories():
             print(f"##### Could not update Territory for Customer '{cust['name']}': {err}")
 
 
-def update_territories_and_sales_managers(current_territory):
+def determine_countries_of_customer(customer_id):
+    query = f"""
+            SELECT DISTINCT `tabAddress`.`country`
+            FROM `tabAddress`
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                                AND `tDLA`.`parenttype` = "Address"
+                                                AND `tDLA`.`link_doctype` = "Customer"
+            WHERE `tDLA`.`link_name` = "{customer_id}"
+            ;"""
+    countries = frappe.db.sql(query, as_dict=True)
+    return [c['country'] for c in countries]
+
+
+def check_country_mismatches(customer_doc, countries, allowed_countries):
+    country_match = ""
+    for country in countries:
+        if country in allowed_countries:
+            country_match = country
+            break
+    if country_match:
+        country_mismatches = set()
+        for country in countries:
+            if country not in allowed_countries:
+                country_mismatches.add(country)
+        if len(country_mismatches) > 0:
+            print(f"Customer '{customer_doc.name}' ('{customer_doc.customer_name}') has an Address in {country_match} but also Addresses in {country_mismatches}.")
+            country_match = ""
+    else:
+        print(f"Customer '{customer_doc.name}' ('{customer_doc.customer_name}') has no Address in {allowed_countries}.")
+    return country_match
+
+
+def update_territories_and_sales_managers(current_territories, affected_countries, verbose=False, dry_run=True):
     """
     Update the territories and sales managers for all enabled Customers whose current territory is the given current_territory.
 
-    run 
-    bench execute microsynth.microsynth.migration.update_territories_and_sales_managers --kwargs "{'current_territory': 'Rest of Europe'}"
+    run
+    bench execute microsynth.microsynth.migration.update_territories_and_sales_managers --kwargs "{'current_territories': ['Lyon', 'France (without Paris and Lyon)'], 'affected_countries': ['France', 'Réunion', 'French Guiana'], 'verbose': False, 'dry_run': True}"
     """    
     from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
 
-    if not frappe.db.exists("Territory", current_territory):
-        print(f"The given Territory '{current_territory}' does not exist.")
-        return
+    for current_territory in current_territories:
+        if not frappe.db.exists("Territory", current_territory):
+            print(f"The given Territory '{current_territory}' does not exist. Please correct and restart.")
+            return
 
     customers = frappe.db.get_all("Customer",
-        filters = [['disabled', '=', 0], ['territory', '=', current_territory]],
+        filters = [['disabled', '=', 0], ['territory', 'IN', current_territories]],
         fields = ['name'])
 
     for i, cust in enumerate(customers):
         try:
             if i % 100 == 0:
-                print(f"Already processed {i}/{len(customers)} Customers.")
-                frappe.db.commit()
+                # print(f"Already processed {i}/{len(customers)} Customers.")
+                if not dry_run:
+                    frappe.db.commit()
             c = frappe.get_doc("Customer", cust['name'])
+            countries = determine_countries_of_customer(c.name)
+            if len(countries) < 1:
+                print(f"Found no Country for Customer '{c.name}' ('{c.customer_name}'). Going to continue.")
+                continue
+            country_match = check_country_mismatches(c, countries, affected_countries)
+            if not country_match:
+                continue
+            # all Addresses are in affected_countries
             address_id = get_first_shipping_address(c.name)
             if not address_id:
-                print(f"Found no shipping address for Customer '{cust['name']}'. Going to continue.")
-                continue
-            country = frappe.get_value("Address", address_id, "country")
-            if not country:
-                print(f"Found no country in shipping address '{address_id}' of Customer '{cust['name']}'. Going to continue.")
+                print(f"Customer '{c.name}' ('{c.customer_name}') has no Shipping Address. Unable to determine Territory. Going to continue.")
                 continue
             territory = determine_territory(address_id)
-            c.territory = territory.name
-            c.account_manager = frappe.get_value("Territory", territory.name, "sales_manager")
-            c.save()
+            if not territory:
+                continue
+            to_save = False
+            if c.territory != territory.name:
+                if verbose:
+                    print(f"{i}/{len(customers)}: Changed Territory of Customer '{c.name}' ('{c.customer_name}') from {c.territory} to {territory.name}.")
+                if not dry_run:
+                    c.territory = territory.name
+                    to_save = True
+            sales_manager = frappe.get_value("Territory", territory.name, "sales_manager")
+            if c.account_manager != sales_manager:
+                if verbose:
+                    print(f"{i}/{len(customers)}: Changed Sales Manager of Customer '{c.name}' ('{c.customer_name}') from {c.account_manager} to {sales_manager}.")
+                if not dry_run:
+                    c.account_manager = sales_manager
+                    to_save = True
+            if to_save:
+                c.save()
         except Exception as err:
-            print(f"##### Could not update Territory for Customer '{c.name}': {err}")
+            print(f"##### {i}/{len(customers)}: Could not update Territory for Customer '{c.name}': {err}")
     frappe.db.commit()
 
 
