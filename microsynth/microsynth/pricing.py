@@ -678,7 +678,7 @@ def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_ru
             for item_price_to_delete in item_prices_to_delete:
                 if (not 'projects' in item_price_to_delete['price_list'].lower()) and len(item_price_to_delete['item_code']) == 5:
                     doc = frappe.get_doc("Item Price", item_price_to_delete['name'])
-                    base_string = f"Item Price {doc.name} from Price List {doc.price_list} with min_qty {doc.min_qty} and rate {doc.price_list_rate}. ({(100 * total_counter / total_to_reach):.2f} %)"
+                    base_string = f"Item Price {doc.name} from Price List {doc.price_list} for Item {doc.item_code} with min_qty {doc.min_qty} and rate {doc.price_list_rate}. ({(100 * total_counter / total_to_reach):.2f} %)"
                     if dry_run:
                         if verbose:
                             print(f"Would delete {base_string}")
