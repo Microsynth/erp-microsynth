@@ -746,11 +746,11 @@ def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=Fal
                     'currency': item_price['currency'],
                     'price_list_rate': item_price['price_list_rate']
                 })
+                counter[currency] += 1
                 if not dry_run:
                     new_item_price.insert()
                 if verbose:
-                    print(f"{'Would create' if dry_run else 'Created'} {counter} Item Price for Item Code {new_item_price.item_code} with minimum quantity {new_item_price.min_qty} and a rate of {new_item_price.price_list_rate} {new_item_price.currency} on the reference Price List {reference_price_list_name}.")
-                counter[currency] += 1
+                    print(f"{'Would create' if dry_run else 'Created'} Item Price for Item Code {new_item_price.item_code} with minimum quantity {new_item_price.min_qty} and a rate of {new_item_price.price_list_rate} {new_item_price.currency} on the reference Price List {reference_price_list_name}. {counter=}")
         if not dry_run:
             frappe.db.commit()
     print(f"{'Would create' if dry_run else 'Created'} {counter} new Item Prices on the reference Price Lists.")
