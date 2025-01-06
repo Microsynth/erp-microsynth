@@ -4,7 +4,7 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 
 import frappe
-from frappe.desk.form.assign_to import add
+from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
 from microsynth.microsynth.utils import user_has_role
 import json
@@ -74,13 +74,20 @@ def create_pi_from_si(sales_invoice):
     return new_pi.name
 
 
-def is_already_assigned(dt, dn):
-    if frappe.db.sql(f"""SELECT `owner`
+def fetch_assignee(dt, dn):
+    assignees = frappe.db.sql(f"""SELECT `owner`
         FROM `tabToDo`
         WHERE `reference_type`= '{dt}'
             AND `reference_name`= '{dn}'
             AND `status`='Open'
-        ;""", frappe.local.form_dict):
+        ;""", as_dict=True)
+    if len(assignees) > 0:
+        return assignees[0]['owner']
+    return None
+
+
+def is_already_assigned(dt, dn):
+    if fetch_assignee(dt, dn):
         return True
     else:
         return False
@@ -115,6 +122,39 @@ def create_approval_request(assign_to, dt, dn):
         return True
     else:
         return False
+
+
+@frappe.whitelist()
+def reassign_purchase_invoice(assign_to, dt, dn):
+    if not is_already_assigned(dt, dn):
+        frappe.throw(f"{dt} {dn} is not already assigned. Unable to reassign.")
+        return False
+    assignee = fetch_assignee(dt, dn)
+    approver = frappe.get_value(dt, dn, "approver")
+    if assignee != approver:
+        frappe.throw(f"{dt} {dn} has Approver '{approver}', but is assigned to '{assignee}'. Unable to reassign.")
+        return False
+    # clear assignment
+    clear(dt, dn)
+    # create new assignment and notify new Approver
+    if create_approval_request(assign_to, dt, dn):
+        # notify original Approver about reassignment
+        make(
+                recipients = approver,
+                sender = frappe.session.user,
+                subject = f"{dt} {dn} was reassigned",
+                content = f"{dt} {dn} was originally assigned to you, but {frappe.session.user} reassigned it to {assign_to}.",
+                send_email = True
+            )
+        return True
+    return False
+
+
+def reset_in_approval(purchase_invoice, event):
+    if type(purchase_invoice) == str:
+        purchase_invoice = frappe.get_doc("Purchase Invoice", purchase_invoice)
+    purchase_invoice.in_approval = 0
+    purchase_invoice.save()
 
 
 def assign_purchase_invoices():

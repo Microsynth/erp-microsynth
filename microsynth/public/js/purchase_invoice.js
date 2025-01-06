@@ -25,6 +25,12 @@ frappe.ui.form.on('Purchase Invoice', {
             });
         }
 
+        if (!frm.doc.__islocal && frm.doc.docstatus == 0 && frm.doc.in_approval && frappe.user.has_role("Accounts Manager")) {
+            frm.add_custom_button(__("Reassign"), function() {
+                reassign(frm);
+            });
+        }
+
         if (frm.doc.in_approval) {
             cur_frm.set_df_property('approver', 'read_only', true);
         } else {
@@ -106,6 +112,44 @@ function request_approval(frm) {
         }
     },
     __('Please choose an approver'),
+    __('Request approval')
+    )
+}
+
+
+function reassign(frm) {
+    frappe.prompt([
+        {'fieldname': 'assign_to', 'fieldtype': 'Link', 'label': __('Approver'), 'options':'User', 'reqd': 1}
+    ],
+    function(values){
+        frappe.confirm(
+            __("Are you sure that you want to change the approver from " + cur_frm.doc.approver + " to " + values.assign_to + "?"),
+            function () {
+                // yes
+                frappe.call({
+                    'method': 'microsynth.microsynth.purchasing.reassign_purchase_invoice',
+                    'args': {
+                        'assign_to': values.assign_to,
+                        'dt': cur_frm.doc.doctype,
+                        'dn': cur_frm.doc.name
+                    },
+                    "callback": function(response) {
+                        if (response.message) {
+                            frappe.show_alert( __("Approval request created") );
+                            cur_frm.reload_doc();
+                        } else {
+                            frappe.show_alert( __("Error: No approval request created.") );
+                        }
+                    }
+                });
+            },
+            function () {
+                // no
+                frappe.show_alert('No changes made.');
+            }
+        );
+    },
+    __('Please choose a new approver'),
     __('Request approval')
     )
 }
