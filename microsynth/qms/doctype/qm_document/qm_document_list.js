@@ -14,5 +14,8 @@ frappe.listview_settings['QM Document'] = {
             "Invalid": "darkgrey"
         };
         return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
+    },
+    onload: function(doc) {
+        add_clear_button();
     }
 };
