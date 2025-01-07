@@ -29,11 +29,11 @@ frappe.ui.form.on('Standing Quotation', {
         }
 
         // add button "Populate Shipping Items"
-        // if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
-        //     frm.add_custom_button(__("Populate Shipping Items"), function() {
-        //         populate_shipping_items();
-        //     });
-        // }
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
+            frm.add_custom_button(__("Populate Shipping Items"), function() {
+                populate_shipping_items();
+            });
+        }
         
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {

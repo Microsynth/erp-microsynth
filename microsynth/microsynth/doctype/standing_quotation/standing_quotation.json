@@ -156,20 +156,18 @@
   {
    "fieldname": "sec_shipping_items",
    "fieldtype": "Section Break",
-   "hidden": 1,
    "label": "Shipping Items"
   },
   {
    "fieldname": "shipping_items",
    "fieldtype": "Table",
-   "hidden": 1,
    "label": "Shipping Items",
    "options": "Shipping Item"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-12-16 16:14:01.759855",
- "modified_by": "Administrator",
+ "modified": "2025-01-07 16:35:39.287158",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Standing Quotation",
  "owner": "Administrator",
