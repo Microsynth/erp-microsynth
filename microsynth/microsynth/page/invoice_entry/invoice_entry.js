@@ -97,6 +97,27 @@ frappe.invoice_entry = {
         link_field.refresh();
         link_field.set_value(purchase_invoice[field_name]);
     },
+    fetch_purchase_invoice: function(purchase_invoice) {
+        // fetch document
+        frappe.call({
+            'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.get_purchase_invoice_drafts',
+            'args': {
+                'purchase_invoice': purchase_invoice
+            },
+            'callback': function(r) {
+                var purchase_invoice_values = r.message[0];
+                frappe.invoice_entry.update_display_fields(purchase_invoice_values);
+            }
+        });
+    },
+    update_display_fields: function(purchase_invoice_values) {
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 'due_date', purchase_invoice_values.due_date);
+        
+    },
+    set_field: function(purchase_invoice, field_name, value) {
+        let field = document.querySelector("input[data-fieldname='" + field_name + "_" + purchase_invoice + "']");
+        field.value = value;
+    },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
         btn_save.onclick = frappe.invoice_entry.save_document.bind(this, purchase_invoice_name);
