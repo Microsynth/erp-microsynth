@@ -14,6 +14,7 @@ def get_approvals(user):
     pinvs = frappe.db.sql(f"""
         SELECT 
             `tabPurchase Invoice`.`name`,
+            `tabPurchase Invoice`.`company`,
             `tabPurchase Invoice`.`supplier`,
             `tabPurchase Invoice`.`supplier_name`,
             `tabPurchase Invoice`.`posting_date`,
