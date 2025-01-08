@@ -113,7 +113,8 @@ frappe.invoice_entry = {
     update_display_fields: function(purchase_invoice_values) {
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'supplier', purchase_invoice_values.supplier);
-        // supplier name
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'supplier_name', purchase_invoice_values.supplier_name);
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'due_date', frappe.datetime.obj_to_user(purchase_invoice_values.due_date));
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
@@ -122,11 +123,25 @@ frappe.invoice_entry = {
             'bill_no', purchase_invoice_values.bill_no);
         if (purchase_invoice_values.allow_edit_net_amount === 1) {
             frappe.invoice_entry.set_field(purchase_invoice_values.name, 
-                'net_total', purchase_invoice_values.net_total);
+                'net_total', format_currency(purchase_invoice_values.net_total));
         } else {
-            // div
+            frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+                'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_toal));
         }
-        
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'taxes', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.total_taxes_and_charges));
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'grand_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.grand_total));
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'tax_template', purchase_invoice_values.taxes_and_charges);
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'expense_account', purchase_invoice_values.expense_account + " / " + purchase_invoice_values.cost_center);
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'iban', purchase_invoice_values.iban);
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'esr_participation_number', purchase_invoice_values.esr_participation_number);
+        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            'payment_method', purchase_invoice_values.default_payment_method);
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'approver', purchase_invoice_values.approver);
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
@@ -138,7 +153,7 @@ frappe.invoice_entry = {
     },
     set_div: function(purchase_invoice, field_name, value) {
         let div = document.getElementById(field_name + "_" + purchase_invoice);
-        field.innerHTML = value;
+        try { div.innerHTML = value; } catch { console.log("set_div error on " + field_name + "_" + purchase_invoice) }
     },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
@@ -278,4 +293,8 @@ function import_invoices() {
                 location.reload();
             }
         });
+}
+
+function format_currency(n) {
+    return (n || 0).toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
 }
