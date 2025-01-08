@@ -111,12 +111,34 @@ frappe.invoice_entry = {
         });
     },
     update_display_fields: function(purchase_invoice_values) {
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 'due_date', purchase_invoice_values.due_date);
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'supplier', purchase_invoice_values.supplier);
+        // supplier name
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'due_date', frappe.datetime.obj_to_user(purchase_invoice_values.due_date));
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'posting_date', frappe.datetime.obj_to_user(purchase_invoice_values.posting_date));
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'bill_no', purchase_invoice_values.bill_no);
+        if (purchase_invoice_values.allow_edit_net_amount === 1) {
+            frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+                'net_total', purchase_invoice_values.net_total);
+        } else {
+            // div
+        }
         
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'approver', purchase_invoice_values.approver);
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'remarks', purchase_invoice_values.remarks);
     },
     set_field: function(purchase_invoice, field_name, value) {
         let field = document.querySelector("input[data-fieldname='" + field_name + "_" + purchase_invoice + "']");
         field.value = value;
+    },
+    set_div: function(purchase_invoice, field_name, value) {
+        let div = document.getElementById(field_name + "_" + purchase_invoice);
+        field.innerHTML = value;
     },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);

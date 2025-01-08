@@ -40,7 +40,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
             `tabPurchase Invoice Item`.`cost_center`,
             `tabSupplier`.`iban`,
             `tabSupplier`.`esr_participation_number`,
-            `tabSupplier`.`default_payment_method`,
+            `tabPurchase Invoice`.`payment_type` AS `default_payment_method`,
             `tabPurchase Invoice`.`approver`,
             `tabPurchase Invoice`.`remarks`,
             CURDATE() AS `curdate`,

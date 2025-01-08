@@ -42,39 +42,39 @@
                                 <td>{{ _("Net Total") }}</td>
                                 <td>
                                     {% if allow_edit_net_amount %}
-                                        <div id="net_total_{{ name }}">
+                                        <div id="net_total_{{ name }}"></div>
                                     {% else %}
-                                        {{ currency }} {{ "{:,.2f}".format(total).replace(",", "&apos;") }}
+                                        <div id="net_total_{{ name }}">{{ currency }} {{ "{:,.2f}".format(total).replace(",", "&apos;") }}</div>
                                     {% endif %}
                                 </td>
                             </tr>
                             <tr>
                                 <td>{{ _("Taxes") }}</td>
-                                <td>{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</td>
+                                <td><div id="taxes_{{ name }}">{{ currency }} {{ "{:,.2f}".format(total_taxes_and_charges).replace(",", "&apos;") }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("Grand Total") }}</td>
-                                <td>{{ currency }} {{ "{:,.2f}".format(grand_total).replace(",", "&apos;") }}</td>
+                                <td><div id="grand_total_{{ name }}">{{ currency }} {{ "{:,.2f}".format(grand_total).replace(",", "&apos;") }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("Tax Template") }}</td>
-                                <td>{{ taxes_and_charges }}</td>
+                                <td><div id="tax_template_{{ name }}">{{ taxes_and_charges }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("Expense Account / Cost Center") }}</td>
-                                <td>{{ (expense_account or "") }} / {{ (cost_center or "-") }}</td>
+                                <td><div id="expense_account_{{ name }}">{{ (expense_account or "") }} / {{ (cost_center or "-") }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("IBAN") }}</td>
-                                <td>{{ iban }}</td>
+                                <td><div id="iban_{{ name }}">{{ iban }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("ESR Participation Number / QR-IBAN") }}</td>
-                                <td>{{ esr_participation_number }}</td>
+                                <td><div id="esr_participation_number_{{ name }}">{{ esr_participation_number }}</div></td>
                             </tr>
                             <tr>
-                                <td>{{ _("Default Payment Method") }}</td>
-                                <td>{{ default_payment_method }}</td>
+                                <td>{{ _("Payment Method") }}</td>
+                                <td><div id="payment_method_{{ name }}">{{ default_payment_method }}</div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("Approver") }}</td>
