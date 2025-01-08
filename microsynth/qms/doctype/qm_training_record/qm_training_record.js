@@ -30,6 +30,13 @@ frappe.ui.form.on('QM Training Record', {
                 );
             }
         }
+
+        // allow QAU to force cancel Draft
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (frappe.user.has_role('QAU'))) {
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            }).addClass("btn-danger");
+        }
         
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
