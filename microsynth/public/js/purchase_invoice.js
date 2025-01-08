@@ -4,11 +4,11 @@ window.onmessage = function(e) {
     if (e.data == "close_document") {
         if (cur_frm.is_dirty()) {
             cur_frm.save().then(function() {
-                window.top.postMessage("iframe_saved", {});
+                window.top.postMessage("iframe_saved " + cur_frm.doc.name, {});
             });
         } else {
             // all saved, signal can close
-            window.top.postMessage("iframe_saved", {});
+            window.top.postMessage("iframe_saved " + cur_frm.doc.name, {});
         }
     }
 }

@@ -14,8 +14,17 @@ frappe.pages['invoice_entry'].on_page_load = function(wrapper) {
 
 // iframe interaction handler
 window.onmessage = function(e) {
-    if (e.data == "iframe_saved") {
-        location.reload();
+    if ((typeof e.data === "string") && ((e.data).startsWith("iframe_saved"))) {
+        let parts = e.data.split(" ");
+        if (parts.length > 1) {
+            // close form view
+            frappe.invoice_entry.open_edit_form(parts[1], close=true);
+            // only update selected part
+            frappe.invoice_entry.fetch_purchase_invoice(parts[1]);
+        } else {
+            // no document reference provided - need to reload all
+            location.reload();
+        }
     }
 }
 
@@ -203,7 +212,8 @@ frappe.invoice_entry = {
                     if (edit_mode===true) {
                         frappe.invoice_entry.open_edit_form(purchase_invoice_name);
                     } else {
-                        location.reload();
+                        //location.reload();
+                        frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
                     }
                 } else {
                     frappe.show_alert(response.message.message);
@@ -236,15 +246,25 @@ frappe.invoice_entry = {
         // save without reload
         this.save_document(purchase_invoice_name, edit_mode=true);
     },
-    open_edit_form: function(purchase_invoice_name) {
+    open_edit_form: function(purchase_invoice_name, close=false) {
         // toggle quick entry/form
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
-        quick_entry.style.display = "None";
         let full_form = document.getElementById("full_form_" + purchase_invoice_name);
-        full_form.style.display = "Block";
-        // load full form
         let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
-        form_frame.innerHTML = "<iframe id='iframe_" + purchase_invoice_name + "' class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
+        
+        if (close) {
+            // close edit iframe
+            quick_entry.style.display = "Block";
+            full_form.style.display = "None";
+            // clean form
+            form_frame.innerHTML = "";
+        } else {
+            
+            quick_entry.style.display = "None";
+            full_form.style.display = "Block";
+            // load full form
+            form_frame.innerHTML = "<iframe id='iframe_" + purchase_invoice_name + "' class='pdf' style='width: 100%; border: 0px; margin-top: 5px;' src='/desk#Form/Purchase Invoice/" + purchase_invoice_name + "'></iframe>";
+        }
     },
     close_document: function(purchase_invoice_name) {
         // TODO: Save document
