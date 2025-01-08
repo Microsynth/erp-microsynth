@@ -371,6 +371,12 @@ def invalidate_document(qm_document):
             content = f"Your QM Document {url_string} ({qm_document.title}) has been set to Invalid.",
             send_email = True
             )
+    # force cancel all QM Training Record Drafts
+    qmtr_drafts = frappe.get_all("QM Training Record", filters={'docstatus': 0, 'document_name': qm_document.name, 'document_type': 'QM Document'}, fields=['name'])
+    if len(qmtr_drafts) > 0:
+        from microsynth.microsynth.utils import force_cancel
+        for qmtr_draft in qmtr_drafts:
+            force_cancel("QM Training Record", qmtr_draft['name'])
 
 
 @frappe.whitelist()
