@@ -664,9 +664,8 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
 def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_run=True, verbose=False):
     """
     Delete all Item Prices from all Price Lists except price_lists_to_exclude.
-    If an Item Price to delete belongs to a Price List containing "projects" (lowered) or has not five characters, the function aborts.
 
-    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'item_codes': ['30000'], 'price_lists_to_exclude': ['Projects CHF', 'Projects EUR', 'Projects USD', 'Horizon Projects'], 'log_file_path': '/home/libracore/Desktop/2024-12-18_deleted_Item_prices.txt', 'dry_run': True, 'verbose': 'False'}"
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'item_codes': ['30000'], 'price_lists_to_exclude': ['Projects CHF', 'Projects EUR', 'Projects USD', 'Horizon Projects'], 'log_file_path': '/home/libracore/Desktop/2024-12-18_deleted_Item_prices.txt', 'dry_run': True, 'verbose': False}"
     """
     total_to_reach = len(frappe.get_all("Item Price", filters=[['item_code', 'IN', item_codes], ['price_list', 'NOT IN', price_lists_to_exclude]], fields=['name']))
     total_counter = 0
@@ -676,25 +675,21 @@ def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_ru
             #     print(f"##### Item {item_code} is disabled. Going to continue with the next Item Code.")
             item_prices_to_delete = frappe.get_all("Item Price", filters=[['item_code', '=', item_code], ['price_list', 'NOT IN', price_lists_to_exclude]], fields=['name', 'price_list', 'item_code'])
             for item_price_to_delete in item_prices_to_delete:
-                if (not 'projects' in item_price_to_delete['price_list'].lower()) and len(item_price_to_delete['item_code']) == 5:
-                    doc = frappe.get_doc("Item Price", item_price_to_delete['name'])
-                    base_string = f"Item Price {doc.name} from Price List {doc.price_list} for Item {doc.item_code} with min_qty {doc.min_qty} and rate {doc.price_list_rate}. ({(100 * total_counter / total_to_reach):.2f} %)"
-                    if dry_run:
-                        if verbose:
-                            print(f"Would delete {base_string}")
-                    else:
-                        try:
-                            doc.delete()
-                        except Exception as err:
-                            print(f"### Unable to delete {base_string}: {err}")
-                        else:
-                            if verbose:
-                                print(f"Deleted {base_string}")
-                    outfile.write(f"{doc.as_dict()}\n")
-                    total_counter += 1
+                doc = frappe.get_doc("Item Price", item_price_to_delete['name'])
+                base_string = f"Item Price {doc.name} from Price List {doc.price_list} for Item {doc.item_code} with min_qty {doc.min_qty} and rate {doc.price_list_rate}. ({(100 * total_counter / total_to_reach):.2f} %)"
+                if dry_run:
+                    if verbose:
+                        print(f"Would delete {base_string}")
                 else:
-                    print(f"{item_price_to_delete}")
-                    return
+                    try:
+                        doc.delete()
+                    except Exception as err:
+                        print(f"### Unable to delete {base_string}: {err}")
+                    else:
+                        if verbose:
+                            print(f"Deleted {base_string}")
+                outfile.write(f"{doc.as_dict()}\n")
+                total_counter += 1
             if not dry_run:
                 frappe.db.commit()
         total_counter_formatted = f"{total_counter:,}".replace(",", "'")
