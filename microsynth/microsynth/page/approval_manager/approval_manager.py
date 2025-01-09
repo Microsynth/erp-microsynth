@@ -68,11 +68,15 @@ def approve(pinv, user):
     pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
     # check if supplier has LSV/direct debit enabled, if so, mark invoice to not propose it for payment
     if cint(frappe.get_value("Supplier", pinv_doc.supplier, "direct_debit_enabled")):
-        pinv_doc.is_proposed = 1
+        pinv_doc.is_proposed = 1  # TODO: Test if this works
         pinv_doc.save()
+    #frappe.log_error(f"1: {pinv_doc.in_approval=}")
     pinv_doc.submit()
     add_comment(pinv, _("Approval"), _("Approved"), user)
+    pinv_doc.in_approval = 0  # TODO: Why does this not work? Alternatives: frappe set value, frappe db update
+    pinv_doc.save()
     frappe.db.commit()
+    #frappe.log_error(f"2: {pinv_doc.in_approval=}")
 
 
 @frappe.whitelist()
