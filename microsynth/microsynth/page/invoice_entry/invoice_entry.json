@@ -4,13 +4,29 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2024-08-29 10:22:22.748780",
+ "modified": "2025-01-09 16:47:38.790960",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "invoice_entry",
  "owner": "Administrator",
  "page_name": "invoice_entry",
- "roles": [],
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Purchase Master Manager"
+  },
+  {
+   "role": "Purchase Manager"
+  }
+ ],
  "script": null,
  "standard": "Yes",
  "style": null,
