@@ -42,12 +42,6 @@ def get_data():
                     },
                     {
                        "type": "doctype",
-                       "name": "QM Training Record",
-                       "label": _("Training Record"),
-                       "description": _("Training Record")
-                    },
-                    {
-                       "type": "doctype",
                        "name": "QM Revision",
                        "label": _("Revision"),
                        "description": _("Revision")

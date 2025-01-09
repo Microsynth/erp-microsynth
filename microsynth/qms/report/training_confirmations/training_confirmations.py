@@ -8,12 +8,14 @@ from frappe import _
 
 def get_columns(filters):
     return [
-        {"label": _("QM Training Record"), "fieldname": "name", "fieldtype": "Link", "options": "QM Training Record", "width": 130 },
-        {"label": _("Trainee"), "fieldname": "trainee", "fieldtype": "Link", "options": "User", "width": 200 },
+        {"label": _("Training Record"), "fieldname": "name", "fieldtype": "Link", "options": "QM Training Record", "width": 110 },
+        {"label": _("Trainee"), "fieldname": "trainee", "fieldtype": "Link", "options": "User", "width": 210 },
+        {"label": _("Training Status"), "fieldname": "training_status", "fieldtype": "Data", "width": 105 },
         {"label": _("Document Type"), "fieldname": "document_type", "fieldtype": "Data", "options": "DocType", "width": 105 },
-        {"label": _("Document Name"), "fieldname": "document_name", "fieldtype": "Dynamic Link", "options": "document_type", "width": 150 },
-        {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 235 },
-        {"label": _("Document Status"), "fieldname": "status", "fieldtype": "Data", "width": 125 },
+        {"label": _("Document Name"), "fieldname": "document_name", "fieldtype": "Dynamic Link", "options": "document_type", "width": 135 },
+        {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 300 },
+        {"label": _("Document Status"), "fieldname": "status", "fieldtype": "Data", "width": 115 },
+        {"label": _("Request Date"), "fieldname": "creation", "fieldtype": "Date", "width": 125 },
         {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 75 },
         {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 75 }
     ]
@@ -34,10 +36,13 @@ def get_data(filters):
         query = """
             SELECT `tabQM Training Record`.`name`,
                 `tabQM Training Record`.`trainee`,
+                `tabQM Training Record`.`docstatus` AS `training_status`,
+                IF(`tabQM Training Record`.`docstatus` = 1, 'Signed', 'Unsigned') as `training_status`,
                 `tabQM Training Record`.`document_type`,
                 `tabQM Training Record`.`document_name`,
                 `tabQM Document`.`title`,
                 `tabQM Document`.`status`,
+                `tabQM Training Record`.`creation`,
                 `tabQM Training Record`.`due_date`,
                 `tabQM Training Record`.`signed_on`
             FROM `tabQM Training Record`
