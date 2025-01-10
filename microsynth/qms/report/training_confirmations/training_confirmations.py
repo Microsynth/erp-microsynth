@@ -28,6 +28,8 @@ def get_data(filters):
     if filters:
         if filters.get('user'):
             filter_conditions += f"AND `tabQM Training Record`.`trainee` = '{filters.get('user')}'"
+        if filters.get('qm_process'):
+            filter_conditions += f"AND `tabQM Document`.`qm_process` = '{filters.get('qm_process')}'"
         if filters.get('qm_document'):
             filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
         if filters.get('limit_to_valid'):

@@ -10,6 +10,12 @@ frappe.query_reports["Training Confirmations"] = {
             "fieldtype": "Link",
             "options": "User"
         },
+        {
+            "fieldname": "qm_process",
+            "label": __("QM Process"),
+            "fieldtype": "Link",
+            "options": "QM Process"
+        },
 		{
             "fieldname": "qm_document",
             "label": __("QM Document"),
