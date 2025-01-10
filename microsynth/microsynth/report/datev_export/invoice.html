@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV Import invoices" version="5.0" xml_data="Kopie nur zur Verbuchung berechtigt nicht zum Vorsteuerabzug" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v050 Belegverwaltung_online_invoice_v050.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v050" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<invoice generator_info="libracore AG" generating_system="libracore business software" description="DATEV Import invoices" version="6.0" xml_data="Kopie nur zur Verbuchung berechtigt nicht zum Vorsteuerabzug" xsi:schemaLocation="http://xml.datev.de/bedi/tps/invoice/v060 Belegverwaltung_online_invoice_v060.xsd" xmlns="http://xml.datev.de/bedi/tps/invoice/v060" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <invoice_info invoice_date="{{ doc.posting_date }}" invoice_type="Rechnung" delivery_date="{{ doc.posting_date }}" invoice_id="
     {%- if doc.doctype == "Purchase Invoice" %}
         {{- doc.bill_no or doc.name }}
@@ -22,27 +22,33 @@
         {%- set supplier_address = frappe.get_doc("Address", doc.get('supplier_address')) %}
         {%- set supplier = frappe.get_doc("Supplier", doc.supplier) %}
         <address street="{{ supplier_address.address_line1[:40] }}" name="{{ xml_normalize(doc.supplier_name, 50) }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city[:44] }}" party_id="{{ supplier.get('ext_creditor_id') or supplier.name }}" />
-        <booking_info_bp bp_account_no="{{ doc.credit_to[:4] or supplier.get('ext_creditor_id') or "99999" }}"/>
+        <booking_info_bp bp_account_no="{{ supplier.get('ext_creditor_id') or ("{0}0".format(doc.credit_to[:4])) }}"/>
     {%- endif %}
 </invoice_party>
 {%- set company = frappe.get_doc("Company", doc.company) %}
-<supplier_party vat_id="
+<supplier_party
     {%- if doc.doctype == "Purchase Invoice" %}
-        {{- (doc.tax_id or '').replace(' ', '') }}
+        {%- if doc.tax_id %} vat_id="{{ (doc.tax_id).replace(' ', '') }}"{% endif %}
     {%- else %}
-        {{- (company.tax_id or '').replace(' ', '') }}
+        {%- if company.tax_id %} vat_id="{{- (company.tax_id).replace(' ', '') }}"{% endif %}
     {%- endif -%}
-    ">
+    >
     {%- if doc.doctype == "Sales Invoice" %}
         {%- set company_address = frappe.get_doc("Address", doc.company_address) %}
         <address street="{{ xml_normalize(company_address.address_line1 or "", 33) }}" zip="{{ company_address.pincode }}" city="{{ company_address.city }}" name="{{ doc.company }}"></address>
         {%- set account = frappe.get_doc("Account", doc.debit_to) %}
-        <account bank_name="{{ account.bank_name }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+        <account bank_name="{{ account.bank_name or "?" }}"
+             {%- if account.iban %} iban="{{ (account.iban).replace(' ', '') }}"{% endif %}
+             {%- if account.bic %} swiftcode="{{ (account.bic).replace(' ', '') }}"{% endif -%}
+        ></account>
     {%- else %}
         {%- set company_address = frappe.get_doc("Address", doc.shipping_address) %}
-        <address street="{{ xml_normalize(supplier_address.address_line1 or "", 33) }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city }}" name="{{ supplier.supplier_name }}"></address>
+        <address street="{{ xml_normalize(supplier_address.address_line1 or "", 33) }}" zip="{{ supplier_address.pincode }}" city="{{ supplier_address.city }}" name="{{ xml_normalize(doc.supplier_name, 50) }}"></address>
         {%- set account = frappe.get_doc("Account", doc.credit_to) %}
-        <account bank_name="{{ account.bank_name or "?" }}" iban="{{ (account.iban or '').replace(' ', '') }}" swiftcode="{{ (account.bic or '').replace(' ', '') }}"></account>
+        <account bank_name="{{ account.bank_name or "?" }}"
+             {%- if account.iban %} iban="{{ (account.iban).replace(' ', '') }}"{% endif %}
+             {%- if account.bic %} swiftcode="{{ (account.bic).replace(' ', '') }}"{% endif -%}
+        ></account>
     {%- endif %}
 </supplier_party>
 <payment_conditions currency="{{ doc.currency }}" due_date="{{ doc.due_date }}" payment_conditions_text="{{ doc.payment_terms_template or '-' }}"></payment_conditions>

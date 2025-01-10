@@ -222,8 +222,8 @@ def create_datev_xml(path, dt, dn):
     # pre-process document to prevent datev errors
     doc = frappe.get_doc(dt, dn).as_dict()
     for item in doc['items']:
-        item['item_name'] = escape_strip_cut(item['item_name'], length=20)     # drop html entitites from item name, if cropped, they become invalid
-    doc['customer_name'] = escape_strip_cut(doc.get('customer_name') or doc.get('supplier_name'), length=50)
+        item['item_name'] = escape_and_safe_truncate(item['item_name'], max_length=20)     # drop html entitites from item name, if cropped, they become invalid
+    # doc['customer_name'] = escape_and_safe_truncate(doc.get('customer_name') or doc.get('supplier_name'), max_length=50) # will be normalized and cropped in Jinja template
     
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
         'doc': doc
@@ -303,10 +303,28 @@ def package_export(filters):
 
     return
 
-def escape_strip_cut(s, length=None):
-    xml = html.escape(html.unescape(s))
-    pure = re.sub(r"&([a-z0-9]+|#[0-9]{1,6}|x[0-9a-fA-F]{1,6});", "", xml)     # drop html entitites from item name, if cropped, they become invalid
-    if length:
-        return pure[:length]
-    else:
-        return pure
+def escape_and_safe_truncate(input_string, max_length=50):
+    # Escape the HTML string
+    escaped_string = html.escape(input_string)
+    
+    # Early return if the string is already short enough
+    if len(escaped_string) <= max_length:
+        return escaped_string
+
+    # Use a regex to extract valid parts of the string without breaking entities
+    result = []
+    current_length = 0
+    # Regex to match entities or single characters
+    entity_or_char_pattern = re.compile(r'&[a-zA-Z0-9#]+;|.')
+    # Iterate through matches while keeping track of length
+    for match in entity_or_char_pattern.finditer(escaped_string):
+        part = match.group(0)
+        part_length = len(part)
+        if current_length + part_length > max_length:
+            break # Stop before exceeding the max length
+
+        result.append(part)
+        current_length += part_length
+
+    # Join the result to form the safely truncated string
+    return ''.join(result)
