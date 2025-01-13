@@ -20,6 +20,10 @@ def create_tracking_code(web_order_id, tracking_code):
         fields = ['name', 'contact_email', 'contact_display'] )
     
     if len(sales_orders) > 0:
+        if len(sales_orders) > 1:
+            msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
+            frappe.log_error(msg, "tracking_code.create_tracking_code")
+            #frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
         shipping_item = get_shipping_item(sales_order.items)
@@ -35,6 +39,7 @@ def create_tracking_code(web_order_id, tracking_code):
         tracking = frappe.get_doc({
             'doctype': 'Tracking Code',
             'sales_order': sales_order.name,
+            'shipping_item': shipping_item,
             'tracking_code': tracking_code,
             'tracking_url': tracking_url,
             'recipient_email': sales_orders[0]['contact_email'],
@@ -64,7 +69,7 @@ def create_tracking_code(web_order_id, tracking_code):
         if response.status_code != 200:
             frappe.throw("Could not transmit Tracking Code '{0}' to the webshop.<br>{1}".format(tracking.name, response.text))
     else:
-        frappe.throw("Sales Order with web_order_id '{0}' not found or multiple sales orders".format(web_order_id))
+        frappe.throw("Sales Order with web_order_id '{0}' not found".format(web_order_id))
     return tracking.name
 
 
@@ -100,13 +105,24 @@ def parse_ups_file(file_path, expected_line_length=78):
 
 
 def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
-    tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name'])
+    tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'tracking_code', 'delivery_date'])
     if len(tracking_codes) == 0:
-        print(f"Found no Tracking Code for {tracking_code=}")
+        print(f"Found no Tracking Code for '{tracking_code=}'. Going to skip.")
     elif len(tracking_codes) > 1:
-        print(f"Found {len(tracking_codes)} Tracking Code for {tracking_code=}")
+        msg = f"Found {len(tracking_codes)} Tracking Codes for '{tracking_code=}'. Going to skip."
+        print(msg)
+        frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
     else:
-        # TODO: Check if there is already a delivery_datetime stored
-        # yes: compare it and log an error if it differs
-        # no: save it
-        pass
+        tracking_code = tracking_codes[0]
+        # Check if there is already a delivery_datetime stored
+        if tracking_code['delivery_date']:
+            # yes: compare it and log an error if it differs
+            if tracking_code['delivery_date'] != delivery_datetime:
+                msg = f"Tracking Code '{tracking_code=}' has delivery date {tracking_code['delivery_date']} and should be {delivery_datetime}. Going to skip."
+                print(msg)
+                frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+        else:
+            # no: save it
+            tracking_code_doc = frappe.get_doc("Tracking Code", tracking_code['name'])
+            tracking_code_doc.delivery_date = delivery_datetime
+            tracking_code_doc.save()
