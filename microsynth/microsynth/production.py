@@ -5,6 +5,7 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 #
 
+from datetime import datetime
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, close_or_unclose_sales_orders
 import frappe
 from microsynth.microsynth.labels import print_raw
@@ -262,6 +263,33 @@ def oligo_delivery_packaged(delivery_note):
         return {'success': False, 'message': "Delivery Note not found: {0}".format(delivery_note)}
 
 
+def set_shipping_date(web_order_id):
+    """
+    Find Sales Order, find Tracking Code, set Shipping Date
+
+    bench execute "microsynth.microsynth.production.set_shipping_date" --kwargs "{'web_order_id': '4239539'}"
+    """
+    sales_orders = frappe.db.get_all("Sales Order", filters={'web_order_id': web_order_id, 'docstatus': 1}, fields=['name'])
+    if len(sales_orders) != 1:
+        msg = f"Found {len(sales_orders)} Sales Orders for Web Order ID {web_order_id}."
+        frappe.log_error(msg, "production.set_shipping_date")
+        #frappe.throw(msg)
+        return
+    tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
+    if len(tracking_codes) != 1:
+        msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}."
+        frappe.log_error(msg, "production.set_shipping_date")
+        #frappe.throw(msg)
+    if tracking_codes[0]['shipping_date']:
+        msg = f"Tracking Code '{tracking_codes[0]['tracking_code']=}' has already Shipping Date {tracking_codes[0]['shipping_date']}."
+        frappe.log_error(msg, "production.set_shipping_date")
+        #frappe.throw(msg)
+    else:
+        tracking_code_doc = frappe.get_doc("Tracking Code", tracking_codes[0]['name'])
+        tracking_code_doc.shipping_date = datetime.now()
+        tracking_code_doc.save()
+
+
 @frappe.whitelist()
 def oligo_order_packaged(web_order_id):
     """
@@ -281,7 +309,10 @@ def oligo_order_packaged(web_order_id):
     elif len(delivery_notes) > 1: 
         return {'success': False, 'message': "Multiple Delivery Notes found for web_order_id: {0}".format(web_order_id)}
     else:
-        return oligo_delivery_packaged(delivery_notes[0].name)
+        packaged = oligo_delivery_packaged(delivery_notes[0].name)
+        if packaged['success']:
+            set_shipping_date(web_order_id)
+        return packaged
 
 
 @frappe.whitelist()
