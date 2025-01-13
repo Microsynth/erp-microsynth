@@ -157,3 +157,53 @@ def add_shipping_items(from_date, to_date):
                 print(f"Sales Order {sales_order_doc.name} from Tracking Code {tracking_code_doc.name} has no Shipping Item.")
         else:
             print(f"Tracking Code {tracking_code_doc.name} has no Sales Order.")
+
+
+def add_shipping_date(from_date, to_date):
+    """
+    Migration: For all Tracking Codes created in the given date range:
+    Fetch the Delivery Note from the linked Sales Order and add the
+    Posting Date and Posting Time as Shipping Date to the Tracking Code
+
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.add_shipping_date --kwargs "{'from_date': '2024-10-01', 'to_date': '2025-01-31'}"
+    """
+    sql_query = f"""
+        SELECT `name`, `sales_order`
+        FROM `tabTracking Code`
+        WHERE `creation` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
+        """
+    tracking_codes = frappe.db.sql(sql_query, as_dict=True)
+    print(f"Going to process {len(tracking_codes)} Tracking Codes ...")
+    for i, tc in enumerate(tracking_codes):
+        if i % 100 == 0:
+            print(i)
+        tracking_code_doc = frappe.get_doc("Tracking Code", tc['name'])
+        if tracking_code_doc.sales_order:
+            sql_query = f"""
+                SELECT DISTINCT
+                    `tabDelivery Note`.`name`,
+                    `tabDelivery Note`.`posting_date`,
+                    `tabDelivery Note`.`posting_time`,
+                    `tabDelivery Note Item`.`parent` AS `delivery_note`
+                FROM `tabDelivery Note`
+                LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                WHERE `tabDelivery Note`.`docstatus` = 1
+                    AND `tabDelivery Note Item`.`against_sales_order` = '{tracking_code_doc.sales_order}'
+                """
+            delivery_notes = frappe.db.sql(sql_query, as_dict=True)
+            if len(delivery_notes) == 1:
+                dn = delivery_notes[0]
+                if not dn['posting_date']:
+                    print(f"Delivery Note {dn['name']} has no Date. Going to continue.")
+                    continue
+                if not dn['posting_time']:
+                    print(f"Delivery Note {dn['name']} has no Posting Time. Going to continue.")
+                    continue
+                shipping_time = (datetime.min + dn['posting_time']).time()  # convert from datetime.timedelta to datetime.time
+                shipping_datetime = datetime.combine(dn['posting_date'], shipping_time)
+                tracking_code_doc.shipping_date = shipping_datetime
+                tracking_code_doc.save()
+            else:
+                print(f"Found {len(delivery_notes)} submitted Delivery Notes for Sales Order {tracking_code_doc.sales_order} of Tracking Code {tracking_code_doc.name}")
+        else:
+            print(f"Tracking Code {tracking_code_doc.name} has no Sales Order.")
