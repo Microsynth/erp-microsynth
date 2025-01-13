@@ -100,7 +100,7 @@ def parse_ups_file(file_path, expected_line_length=78):
                 # no valid time -> use 00:00 from delivery_date instead
                 delivery_time = delivery_date
             delivery_datetime = datetime.combine(delivery_date.date(), delivery_time.time())
-            print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
+            #print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
             add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
 
 
@@ -126,3 +126,34 @@ def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
             tracking_code_doc = frappe.get_doc("Tracking Code", tracking_code['name'])
             tracking_code_doc.delivery_date = delivery_datetime
             tracking_code_doc.save()
+
+
+def add_shipping_items(from_date, to_date):
+    """
+    Migration: For all Tracking Codes created in the given date range:
+    Fetch the Shipping Item from the linked Sales Order and add it to the Tracking Code
+
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.add_shipping_items --kwargs "{'from_date': '2024-10-01', 'to_date': '2025-01-31'}"
+    """
+    sql_query = f"""
+        SELECT `name`, `shipping_item`
+        FROM `tabTracking Code`
+        WHERE `creation` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
+            AND `shipping_item` IS NULL
+        """
+    tracking_codes = frappe.db.sql(sql_query, as_dict=True)
+    print(f"Going to process {len(tracking_codes)} Tracking Codes ...")
+    for i, tc in enumerate(tracking_codes):
+        if i % 100 == 0:
+            print(i)
+        tracking_code_doc = frappe.get_doc("Tracking Code", tc['name'])
+        if tracking_code_doc.sales_order:
+            sales_order_doc = frappe.get_doc("Sales Order", tracking_code_doc.sales_order)
+            shipping_item = get_shipping_item(sales_order_doc.items)
+            if shipping_item:
+                tracking_code_doc.shipping_item = shipping_item
+                tracking_code_doc.save()
+            else:
+                print(f"Sales Order {sales_order_doc.name} from Tracking Code {tracking_code_doc.name} has no Shipping Item.")
+        else:
+            print(f"Tracking Code {tracking_code_doc.name} has no Sales Order.")
