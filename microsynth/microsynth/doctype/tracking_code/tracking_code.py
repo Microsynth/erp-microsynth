@@ -73,10 +73,13 @@ def create_tracking_code(web_order_id, tracking_code):
     return tracking.name
 
 
+@frappe.whitelist()
 def parse_ups_file(file_path, expected_line_length=78):
     """
-    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_path': '/mnt/erp_share/JPe/2_UPSMC4b-20241121-075023_01.11.-15.11.2024.csv'}"
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_path': '/mnt/erp_share/JPe/UPSMC4b-20250114-160630.csv'}"
     """
+    error_str = ""
+    # try:
     with open(file_path) as file:
         print(f"Parsing UPS Delivery dates from '{file_path}' ...")
         csv_reader = csv.reader(file, delimiter=",")
@@ -91,6 +94,8 @@ def parse_ups_file(file_path, expected_line_length=78):
                 # skip if shipment was canceled
                 continue
             date_str = line[13]
+            if not date_str:
+                continue
             delivery_date = datetime.strptime(date_str, '%m/%d/%Y')
             time_str = line[15]
             time_str = time_str.replace('.', '')  # Remove periods
@@ -101,31 +106,43 @@ def parse_ups_file(file_path, expected_line_length=78):
                 delivery_time = delivery_date
             delivery_datetime = datetime.combine(delivery_date.date(), delivery_time.time())
             #print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
-            add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
+            error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
+            if error:
+                error_str += f"<br>{error}"
+    # except Exception as err:
+    #     return {'success': False, 'message': err}
+    if error_str:
+        return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
+    else:
+        return {'success': True, 'message': "Successfully processed"}
 
 
 def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
     tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'tracking_code', 'delivery_date'])
     if len(tracking_codes) == 0:
-        print(f"Found no Tracking Code for '{tracking_code=}'. Going to skip.")
+        #print(f"Found no Tracking Code for '{tracking_code=}'. Going to skip.")
+        return ""
     elif len(tracking_codes) > 1:
-        msg = f"Found {len(tracking_codes)} Tracking Codes for '{tracking_code=}'. Going to skip."
+        msg = f"Found the following {len(tracking_codes)} Tracking Codes for '{tracking_code}': {','.join(tc['name'] for tc in tracking_codes)}. Going to skip."
         print(msg)
-        frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+        #frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+        return msg
     else:
         tracking_code = tracking_codes[0]
         # Check if there is already a delivery_datetime stored
         if tracking_code['delivery_date']:
             # yes: compare it and log an error if it differs
             if tracking_code['delivery_date'] != delivery_datetime:
-                msg = f"Tracking Code '{tracking_code=}' has delivery date {tracking_code['delivery_date']} and should be {delivery_datetime}. Going to skip."
+                msg = f"Tracking Code '{tracking_code=}' has already delivery date {tracking_code['delivery_date']} and should now be {delivery_datetime}. Going to skip."
                 print(msg)
-                frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+                #frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+                return msg
         else:
             # no: save it
             tracking_code_doc = frappe.get_doc("Tracking Code", tracking_code['name'])
             tracking_code_doc.delivery_date = delivery_datetime
             tracking_code_doc.save()
+    return ""
 
 
 def add_shipping_items(from_date, to_date):
