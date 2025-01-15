@@ -86,6 +86,7 @@ def link_quotation_to_order(sales_order, quotation):
             if item.item_code == qtn_itm.item_code and item.qty >= qtn_itm.qty:
                 item.rate = qtn_itm.rate
                 break
+        item.save()
     if created_new_order:
         so_doc.insert()
     return so_doc.name
