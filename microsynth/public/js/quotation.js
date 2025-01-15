@@ -114,13 +114,27 @@ frappe.ui.form.on('Quotation', {
     },
 
     validate(frm) {
-        if (!frm.doc.quotation_type) {
+        if (!frm.doc.product_type) {
             frappe.msgprint({
                 title: __('Validation'),
                 indicator: 'red',
-                message: __("Please set the Quotation Type.")
+                message: __("Please set the Product Type.")
             });
             frappe.validated=false;
+        }
+    },
+
+    product_type(frm){
+        if (frm.doc.product_type == 'Oligos') {
+            frm.set_value('quotation_type', 'Synthesis');
+        } else if (frm.doc.product_type == 'Labels') {
+            frm.set_value('quotation_type', 'Labels');
+        } else if (frm.doc.product_type == 'Sequencing') {
+            frm.set_value('quotation_type', 'Sequencing');
+        } else if (['Genetic Analysis', 'NGS', 'FLA', 'Project', 'Material', 'Service'].includes(frm.doc.product_type)) {
+            frm.set_value('quotation_type', 'Genetic Analysis');
+        } else {
+            frm.set_value('quotation_type', '');
         }
     }
 });
