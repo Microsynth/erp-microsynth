@@ -1022,7 +1022,7 @@
    "modified_by": "jens.petermann@microsynth.ch",
    "name": "Quotation-product_type",
    "no_copy": 0,
-   "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService",
+   "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject",
    "owner": "jens.petermann@microsynth.ch",
    "parent": null,
    "parentfield": null,
