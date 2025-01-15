@@ -13,6 +13,7 @@ def get_columns():
         {"label": _("Title"), "fieldname": "title", "fieldtype": "Data", "width": 250},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 55},
         {"label": _("Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 80},
+        {"label": _("Valid till"), "fieldname": "valid_till", "fieldtype": "Date", "width": 80},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 100},
         {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 105},
         {"label": _("Quotation Type"), "fieldname": "quotation_type", "fieldtype": "Data", "width": 118},
@@ -44,6 +45,7 @@ def get_data(filters=None):
             `tabQuotation`.`title`,
             IF(`tabQuotation`.`valid_till` < '{date.today()}', 'Expired', `tabQuotation`.`status`) as `status`,
             `tabQuotation`.`transaction_date`,
+            `tabQuotation`.`valid_till`,
             `tabQuotation`.`party_name` AS `customer`,
             `tabQuotation`.`contact_person`,
             `tabQuotation`.`quotation_type`,                  
@@ -63,19 +65,9 @@ def get_data(filters=None):
     if filters.get('search_mode') == "Include unlinked orders (slow)":
         for open_quotation in open_quotations:
             comment_field_results = frappe.get_all("Sales Order", filters=[['comment', 'LIKE', f"%{open_quotation['name']}%"]], fields=['name'])
-            # comment_doctype_results = frappe.get_all("Comment", filters=[['content', 'LIKE', f"%{open_quotation['name']}%"]], fields=['reference_name'])
-            # unlinked_sales_orders = set()
-            # for so in comment_field_results:
-            #     unlinked_sales_orders.add(so['name'])
-            # for so in comment_doctype_results:
-            #     unlinked_sales_orders.add(so['reference_name'])
             open_quotation['unlinked_sales_order'] = ', '.join(uso['name'] for uso in comment_field_results)
     
     return open_quotations
-
-
-# def has_sales_order(quotation):
-#     return frappe.db.get_value("Sales Order Item", {"prevdoc_docname": quotation.name, "docstatus": 1})
 
 
 def execute(filters=None):
