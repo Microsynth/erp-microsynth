@@ -292,9 +292,9 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_suppliers(file_path, expected_line_length=41, update_countries=False):
+def import_suppliers(file_path, expected_line_length=41, update_countries=False, add_ext_creditor_id=True):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/20241105_Lieferantenexport_Seqlab.csv', 'update_countries': True}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'update_countries': False, 'add_ext_creditor_id': True}"
     """
     import csv
     country_code_mapping = {}
@@ -353,8 +353,8 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False)
             threshold = line[37].strip()
             small_qty_surcharge = line[38].strip()
             transportation_costs = line[39].strip()
-            ext_debitor_number = line[40].strip()
-            #print(f"Processing Supplier with Index {ext_debitor_number} (external debitor number) ...")
+            ext_creditor_number = line[40].strip()
+            #print(f"Processing Supplier with Index {ext_creditor_number} (external debitor number) ...")
 
             # combine/edit some values
             if company_addition and company:
@@ -382,38 +382,55 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False)
             if country_code not in country_code_mapping:
                 countries = frappe.get_all("Country", filters={'code': country_code}, fields=['name'])
                 if len(countries) == 0:
-                    print(f"Unknown country code '{country_code}', going to skip {ext_debitor_number}.")
+                    print(f"Unknown country code '{country_code}', going to skip {ext_creditor_number}.")
                     continue
                 elif len(countries) > 1:
-                    print(f"Found the following {len(countries)} Countries for country code '{country_code}' in the ERP, going to skip {ext_debitor_number}: {countries}")
+                    print(f"Found the following {len(countries)} Countries for country code '{country_code}' in the ERP, going to skip {ext_creditor_number}: {countries}")
                     continue
                 else:
                     country = countries[0]['name']
                     country_code_mapping[country_code] = country
             if payment_days not in payment_terms_mapping:
-                print(f"There exists no Payment Terms Template for '{payment_days}', going to skip {ext_debitor_number}.")
+                print(f"There exists no Payment Terms Template for '{payment_days}', going to skip {ext_creditor_number}.")
                 continue
             if len(address_line1) > 140:
-                print(f"Column 'Strasse' has {len(address_line1)} > 140 characters, going to skip {ext_debitor_number}.")
+                print(f"Column 'Strasse' has {len(address_line1)} > 140 characters, going to skip {ext_creditor_number}.")
                 continue
             if not company:
-                print(f"Column 'Firma' is mandatory, going to skip {ext_debitor_number}.")
+                print(f"Column 'Firma' is mandatory, going to skip {ext_creditor_number}.")
                 continue
             #company = f"{company} 2"  # Only for testing
-            if (not update_countries) and len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
-                print(f"There exists already a Supplier with the Supplier Name '{company}', going to skip {ext_debitor_number}.")
+            if (not (update_countries or add_ext_creditor_id)) and len(frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])) > 0:
+                print(f"There exists already a Supplier with the Supplier Name '{company}', going to skip {ext_creditor_number}.")
+                continue
+
+            if add_ext_creditor_id:
+                suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])
+                if len(suppliers) != 1:
+                    print(f"Found {len(suppliers)} Suppliers with Supplier Name '{company}', going to skip {ext_creditor_number}.")
+                    continue
+                supplier_doc = frappe.get_doc("Supplier", suppliers[0]['name'])
+                if supplier_doc.ext_creditor_id and supplier_doc.ext_creditor_id != ext_creditor_number:
+                    print(f"Supplier {supplier_doc.name} has External Creditor ID {supplier_doc.ext_creditor_id}, but should now be {ext_creditor_number}. Going to skip.")
+                    continue
+                elif supplier_doc.ext_creditor_id and supplier_doc.ext_creditor_id == ext_creditor_number:
+                    print(f"Supplier {supplier_doc.name} already has External Creditor ID {supplier_doc.ext_creditor_id}. Going to skip.")
+                    continue
+                supplier_doc.ext_creditor_id = ext_creditor_number
+                supplier_doc.save()
+                print(f"Supplier {supplier_doc.name}: Added External Creditor ID {ext_creditor_number}.")
                 continue
 
             if update_countries:
                 suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name'])
                 if len(suppliers) != 1:
-                    print(f"Found {len(suppliers)} with Supplier Name '{company}', going to skip {ext_debitor_number}.")
+                    print(f"Found {len(suppliers)} with Supplier Name '{company}', going to skip {ext_creditor_number}.")
                     continue
                 supplier_doc = frappe.get_doc("Supplier", suppliers[0]['name'])
                 old_country = supplier_doc.country
                 supplier_doc.country = country_code_mapping[country_code]
                 supplier_doc.save()
-                print(f"Supplier {supplier_doc.name} (Index {ext_debitor_number}): Changed country from {old_country} to {supplier_doc.country}.")
+                print(f"Supplier {supplier_doc.name} (Index {ext_creditor_number}): Changed country from {old_country} to {supplier_doc.country}.")
                 continue
 
             new_supplier = frappe.get_doc({
@@ -435,7 +452,7 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False)
             if (address_line1 or post_box) and city and country_code and country_code in country_code_mapping:
                 address_title = f"{company} - {address_line1 or post_box}"
                 if len(address_title) > 100:
-                    print(f"The Address Title '{address_title}' is too long, going to skip {ext_debitor_number}. Please shorten 'Strasse' or 'Firma'.")
+                    print(f"The Address Title '{address_title}' is too long, going to skip {ext_creditor_number}. Please shorten 'Strasse' or 'Firma'.")
                     continue
                 new_address = frappe.get_doc({
                     'doctype': 'Address',
@@ -455,11 +472,11 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False)
                 new_address.save()
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
             elif city or pincode or address_line1 or post_box:
-                print(f"Missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_debitor_number} (external debitor number).")
+                print(f"Missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_creditor_number} (external debitor number).")
             
             if first_name or last_name or phone or email:
                 if not (first_name or last_name or company):
-                    print(f"Got no first name, no second name and no company for Supplier with Index {ext_debitor_number} (external debitor number). Unable to import a Contact, going to continue.")
+                    print(f"Got no first name, no second name and no company for Supplier with Index {ext_creditor_number} (external debitor number). Unable to import a Contact, going to continue.")
                     continue
                 new_contact = frappe.get_doc({
                     'doctype': 'Contact',
@@ -484,14 +501,14 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False)
                     })
                 new_contact.save()
             
-            create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_debitor_number)
-            create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_debitor_number)
-            create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_debitor_number)
+            create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_creditor_number)
+            create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_creditor_number)
+            create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_creditor_number)
             #print(f"Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
         print(f"Successfully imported {imported_counter} Suppliers.")
 
 
-def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debitor_number, last_name=None):
+def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_creditor_number, last_name=None):
     if first_name:
         if last_name:
             new_contact = frappe.get_doc({
@@ -516,7 +533,7 @@ def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debi
         try:
             new_contact.insert()
         except Exception as err:
-            print(f"Got the following error while trying to insert 'Ansprechpartner {idx}' of Supplier with Index {ext_debitor_number}: {err}")
+            print(f"Got the following error while trying to insert 'Ansprechpartner {idx}' of Supplier with Index {ext_creditor_number}: {err}")
             return
         if notes:
             if not frappe.db.exists("Contact", new_contact.name):
@@ -532,9 +549,9 @@ def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_debi
             })
             new_comment.insert(ignore_permissions=True)
     elif email:
-        print(f"Got the Email {idx} '{email}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
+        print(f"Got the Email {idx} '{email}' for Supplier with Index {ext_creditor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
     elif notes:
-        print(f"Got the Notes {idx} '{notes}' for Supplier with Index {ext_debitor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
+        print(f"Got the Notes {idx} '{notes}' for Supplier with Index {ext_creditor_number}, but no corresponding Contact name ('Ansprechpartner {idx}' required).")
 
 
 def validate_purchase_invoice(doc, event):
