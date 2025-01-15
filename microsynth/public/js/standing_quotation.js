@@ -6,6 +6,12 @@ frappe.ui.form.on('Standing Quotation', {
             $(target).parent().parent().remove();
         }
 
+        // lock some Shipping Item fields
+        cur_frm.get_field("shipping_items").grid.fields_map['item'].read_only = 1;
+        cur_frm.get_field("shipping_items").grid.fields_map['rate'].read_only = 1;
+        cur_frm.get_field("shipping_items").grid.fields_map['threshold'].read_only = 1;
+        cur_frm.get_field("shipping_items").grid.fields_map['preferred_express'].read_only = 1;
+
         // Display internal Item notes in a green banner if the Quotation is in Draft status
         if (frm.doc.docstatus == 0 && frm.doc.items.length > 0) {
             var dashboard_comment_color = 'green';
