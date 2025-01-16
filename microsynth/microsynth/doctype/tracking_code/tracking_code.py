@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import frappe
 import requests
 import csv
+import os
 from datetime import datetime
 from frappe.model.document import Document
 from microsynth.microsynth.shipping import get_shipping_item, TRACKING_URLS
@@ -74,10 +75,13 @@ def create_tracking_code(web_order_id, tracking_code):
 
 
 @frappe.whitelist()
-def parse_ups_file(file_path, expected_line_length=78):
+def parse_ups_file(file_id, expected_line_length=78):
     """
-    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_path': '/mnt/erp_share/JPe/UPSMC4b-20250114-160630.csv'}"
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
+    file_doc = frappe.get_doc("File", file_id)
+    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
+    file_path = f"{base_path}{file_doc.file_url}"
     error_str = ""
     # try:
     with open(file_path) as file:

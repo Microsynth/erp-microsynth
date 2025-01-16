@@ -51,7 +51,7 @@ frappe.query_reports["Shipping Times"] = {
                     frappe.call({
                         'method': "microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file",
                         'args': {
-                            "file_path": file_doc.file_url
+                            "file_id": file_doc.name
                         },
                         'freeze': true,
                         'freeze_message': __("Parsing CSV, please be patient ..."),
@@ -60,7 +60,7 @@ frappe.query_reports["Shipping Times"] = {
                                 frappe.msgprint({
                                     title: __('Success'),
                                     indicator: 'green',
-                                    message: response.message.message + "<br><br><b>Please reload</b>"
+                                    message: response.message.message + "<br><br><b>Please close and refresh or reload</b>"
                                 });
                                 frappe.click_button('Refresh');
                             } else {
