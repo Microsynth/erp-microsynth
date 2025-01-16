@@ -4725,3 +4725,25 @@ def change_default_company(old_company, new_company, countries_to_change, dry_ru
                         print(f"Changed Default Company of enabled Customer '{c['name']}' ('{c['customer_name']}') with an Address in {country_match} from {customer_doc.default_company} to {new_company}.")
                 else:
                     print(f"Enabled Customer '{c['name']}' ('{c['customer_name']}') with an Address in {country_match} has Default Company {customer_doc.default_company}.")
+
+
+def change_contact_email(old_email, new_email):
+    """
+    Change all primary Email Addresses of Passive (enabled) Contacts from old_email to new_email.
+
+    bench execute microsynth.microsynth.migration.change_contact_email --kwargs "{'old_email': 'firstname.lastname@microsynth.ch', 'new_email': '...@microsynth.ch'}"
+    """
+    contacts = frappe.get_all("Contact", filters={'email_id': old_email, 'status': 'Passive'}, fields=['name'])
+    for contact in contacts:
+        contact_doc = frappe.get_doc("Contact", contact['name'])
+        for email_id in contact_doc.email_ids:
+            if email_id.email_id == old_email and email_id.is_primary:
+                email_id.email_id = new_email
+            else:
+                #print(f"### Contact '{contact_doc.name}': {email_id.is_primary=} {email_id.email_id}")
+                continue
+        if contact_doc.user == old_email:
+            contact_doc.user = None
+        contact_doc.email_id = new_email
+        contact_doc.save()
+        print(f"Changed email_id of Contact '{contact_doc.name}' from {old_email} to {new_email}")
