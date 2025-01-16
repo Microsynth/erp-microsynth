@@ -490,6 +490,13 @@ def get_data():
                         "label": _("Label Accounting"),
                         "doctype": "Sales Order",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Shipping Times",
+                        "label": _("Shipping Times"),
+                        "doctype": "Tracking Code",
+                        "is_query_report": True
                     }
             ]
         },
