@@ -17,8 +17,9 @@ FORMAT_MAPPER = {
 }
 
 @frappe.whitelist()
-def get_purchase_invoice_drafts():
+def get_purchase_invoice_drafts(purchase_invoice=None):
     # find purchase invoice drafts
+    purchase_invoice_filter = f""" AND `tabPurchase Invoice`.`name` = "{purchase_invoice}" """ if purchase_invoice else ""
     pinvs = frappe.db.sql(f"""
         SELECT 
             `tabPurchase Invoice`.`name`,
@@ -39,7 +40,7 @@ def get_purchase_invoice_drafts():
             `tabPurchase Invoice Item`.`cost_center`,
             `tabSupplier`.`iban`,
             `tabSupplier`.`esr_participation_number`,
-            `tabSupplier`.`default_payment_method`,
+            `tabPurchase Invoice`.`payment_type` AS `default_payment_method`,
             `tabPurchase Invoice`.`approver`,
             `tabPurchase Invoice`.`remarks`,
             CURDATE() AS `curdate`,
@@ -50,6 +51,7 @@ def get_purchase_invoice_drafts():
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
         WHERE
             `tabPurchase Invoice`.`docstatus` = 0
+            { purchase_invoice_filter } 
             AND `tabPurchase Invoice`.`name` NOT IN (
                 SELECT `tabToDo`.`reference_name`
                 FROM `tabToDo`
