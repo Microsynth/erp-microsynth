@@ -11,11 +11,12 @@
    "fieldname": "tracking_log_file",
    "fieldtype": "Link",
    "label": "Tracking Log File",
-   "options": "File"
+   "options": "File",
+   "read_only": 1
   }
  ],
- "modified": "2025-01-16 13:49:15.194391",
- "modified_by": "Administrator",
+ "modified": "2025-01-16 13:55:18.751562",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Tracking Log",
  "owner": "Administrator",

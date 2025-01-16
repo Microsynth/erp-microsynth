@@ -79,6 +79,11 @@ def parse_ups_file(file_id, expected_line_length=78):
     """
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
+    tracking_log = frappe.get_doc({
+        'doctype': 'Tracking Log',
+        'tracking_log_file': file_id
+    })
+    tracking_log.insert()
     file_doc = frappe.get_doc("File", file_id)
     base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
     file_path = f"{base_path}{file_doc.file_url}"
