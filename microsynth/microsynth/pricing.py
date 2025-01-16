@@ -581,19 +581,22 @@ def delete_empty_disabled_price_lists(dry_run=True):
     counter = 0
     disabled_price_lists = frappe.db.get_all("Price List", filters={'enabled': 0}, fields=['name'])
     for dpl in disabled_price_lists:
-        enabled_customers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': dpl['name']}, fields=['name'])
-        if len(enabled_customers) > 0:
-            print(f"Price List {dpl['name']} is used by the following {len(enabled_customers)} enabled Customer(s): {','.join(c['name'] for c in enabled_customers)}. Going to continue.")
-            continue
-        item_prices = frappe.get_all("Item Price", filters={'price_list': dpl['name']}, fields=['name'])
-        if len(item_prices) > 0:
-            print(f"Price List {dpl['name']} contains {len(item_prices)} Item Prices. Please delete them first. Going to continue.")
-            continue
-        price_list_doc = frappe.get_doc("Price List", dpl['name'])
-        if not dry_run:
-            price_list_doc.delete()
-        print(f"{'Would have deleted' if dry_run else 'Deleted'} Price List '{dpl['name']}'.")
-        counter += 1
+        try:
+            enabled_customers = frappe.db.get_all("Customer", filters={'disabled': 0, 'default_price_list': dpl['name']}, fields=['name'])
+            if len(enabled_customers) > 0:
+                print(f"Price List {dpl['name']} is used by the following {len(enabled_customers)} enabled Customer(s): {','.join(c['name'] for c in enabled_customers)}. Going to continue.")
+                continue
+            item_prices = frappe.get_all("Item Price", filters={'price_list': dpl['name']}, fields=['name'])
+            if len(item_prices) > 0:
+                print(f"Price List {dpl['name']} contains {len(item_prices)} Item Prices. Please delete them first. Going to continue.")
+                continue
+            price_list_doc = frappe.get_doc("Price List", dpl['name'])
+            if not dry_run:
+                price_list_doc.delete()
+            print(f"{'Would have deleted' if dry_run else 'Deleted'} Price List '{dpl['name']}'.")
+            counter += 1
+        except Exception as e:
+            print(f"Got the following exception when trying to delete Price List '{dpl['name']}': {e}")
     print(f"\n{'Would have deleted' if dry_run else 'Deleted'} {counter} Price Lists.")
 
 
