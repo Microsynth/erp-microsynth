@@ -95,8 +95,8 @@ def parse_ups_file(file_id, expected_line_length=78):
         next(csv_reader)  # skip header
         for line in csv_reader:
             if len(line) != expected_line_length:
-                print(f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
-                continue
+                msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
+                return {'success': False, 'message': msg}
             tracking_number = line[0]
             status = line[2]
             if "canceled" in status.lower():
