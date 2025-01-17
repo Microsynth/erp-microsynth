@@ -277,9 +277,10 @@ def set_shipping_date(web_order_id):
         return
     tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
     if len(tracking_codes) != 1:
-        msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}."
-        frappe.log_error(msg, "production.set_shipping_date")
-        #frappe.throw(msg)
+        if len(tracking_codes) > 1:
+            msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}."
+            frappe.log_error(msg, "production.set_shipping_date")
+            #frappe.throw(msg)
         return
     if tracking_codes[0]['shipping_date']:
         msg = f"Tracking Code '{tracking_codes[0]['tracking_code']=}' has already Shipping Date {tracking_codes[0]['shipping_date']}."
