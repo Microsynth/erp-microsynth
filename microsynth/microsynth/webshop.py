@@ -1002,8 +1002,7 @@ def order_quote(quotation_id, client="webshop"):
         sales_order.delivery_date = date.today() + timedelta(days=3)
         sales_order.insert()
         sales_order.delivery_date = date.today() + timedelta(days=3)
-        sales_order.product_type = quotation.quotation_type if quotation.quotation_type in ["", "Oligos", "Labels", "Sequencing", "Genetic Analysis", "NGS", "FLA", "Project", "Material", "Service"] else ""
-        # TODO: How to map Quotation Type "Synthesis", "Genetic Analysis" and "Sanger Sequencing"?
+        sales_order.product_type = quotation.product_type
         sales_order.save()
         #sales_order.submit()
     except Exception as err:
