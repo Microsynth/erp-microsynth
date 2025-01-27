@@ -104,7 +104,7 @@ def reject(pinv, user, reason):
     clear("Purchase Invoice", pinv)
     pinv_doc = frappe.get_doc("Purchase Invoice", pinv)
     pinv_doc.reject_message = reason
-    pinv_doc.save()
+    pinv_doc.save(ignore_permissions=True)
     return
 
 
