@@ -49,6 +49,32 @@ frappe.ui.form.on('Contact', {
         // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
+        // lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous"
+        if (!frappe.user.has_role("System Manager") && frm.doc.first_name == "Anonymous") {
+            cur_frm.set_df_property('first_name', 'read_only', true);
+            cur_frm.set_df_property('middle_name', 'read_only', true);
+            cur_frm.set_df_property('last_name', 'read_only', true);
+            cur_frm.set_df_property('user', 'read_only', true);
+            cur_frm.set_df_property('address', 'read_only', true);
+            cur_frm.set_df_property('status', 'read_only', true);
+            cur_frm.set_df_property('salutation', 'read_only', true);
+            cur_frm.set_df_property('designation', 'read_only', true);
+            cur_frm.set_df_property('gender', 'read_only', true);
+            cur_frm.set_df_property('email_ids', 'read_only', true);
+            cur_frm.set_df_property('phone_nos', 'read_only', true);
+            cur_frm.set_df_property('is_primary_contact', 'read_only', true);
+            cur_frm.set_df_property('institute', 'read_only', true);
+            cur_frm.set_df_property('department', 'read_only', true);
+            cur_frm.set_df_property('room', 'read_only', true);
+            cur_frm.set_df_property('unsubscribed', 'read_only', true);
+            cur_frm.set_df_property('interests', 'read_only', true);
+            cur_frm.set_df_property('punchout_identifier', 'read_only', true);
+            cur_frm.set_df_property('punchout_shop', 'read_only', true);
+            cur_frm.set_df_property('receive_newsletter', 'read_only', true);
+            cur_frm.set_df_property('subscribe_date', 'read_only', true);
+            cur_frm.set_df_property('unsubscribe_date', 'read_only', true);
+        }
+
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
 
