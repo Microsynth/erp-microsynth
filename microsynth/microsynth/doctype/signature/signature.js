@@ -25,6 +25,10 @@ frappe.ui.form.on('Signature', {
                 reset_approval_password(frm);
             });
         }
+
+        if (!(frappe.user.has_role("System Manager") || frappe.session.user === frm.doc.user)) {
+            cur_frm.set_df_property('full_name', 'read_only', true);
+        }
     }
 });
 
