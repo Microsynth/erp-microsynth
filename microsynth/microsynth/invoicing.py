@@ -208,25 +208,11 @@ def async_create_invoices(mode, company, customer):
 
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
-                    punchout_shop = frappe.get_value("Delivery Note", dn.get('delivery_note'), "punchout_shop")
-                    if punchout_shop == "IMP-WIE":
-                        # Do not create single invoices because a collective invoice should be sent
-                        continue
-                    # if (punchout_shop == "EPFL" or punchout_shop == "UNI-ZUR") and dn.get('product_type') == "Sequencing":
-                    #     # Do not create punchout invoices of Sequencing orders because of positions with 0.00 cost that cause errors at EPFL
-                    #     # TODO: Fix issue with EPFL and UNI-ZUR and remove this condition
-                    #     continue
-                    if (punchout_shop in [ "EAWAG", "EPFL", "ETHZ", "NOV-BAS", "ROC-BASGEP", "UNI-BAS", "UNI-GOE", "UNI-MAR", "UNI-GIE", "UNI-ZUR", "IMBA"] or
-                        (punchout_shop == "ROC-PENGEP" and company == "Microsynth AG" ) or      # invoices transmitted by email. unclear if invoices get paid.
-                        (punchout_shop == "ROC-PENGEP" and company == "Microsynth Seqlab GmbH") ):
-                        si = make_punchout_invoice(dn.get('delivery_note'))
-                        if si:
-                            transmit_sales_invoice(si)
-                        continue
-                    else:
-                        # TODO implement punchout orders
-                        frappe.log_error("Cannot invoice {0}: \nThe punchout shop '{1}' is not implemented for invoicing".format(dn.get('delivery_note'), punchout_shop), "invoicing.async_create_invoices")
-                        continue
+                    
+                    si = make_punchout_invoice(dn.get('delivery_note'))
+                    if si:
+                        transmit_sales_invoice(si)
+                    continue
 
                 # check credit
                 if dn.get('product_type') == 'Project':
