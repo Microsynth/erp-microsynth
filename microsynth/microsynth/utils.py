@@ -985,6 +985,8 @@ def get_debtor_account(company, currency, country):
             account = 1102
         elif currency == "USD":
             account = 1101
+        elif currency == "PLN":
+            account = 1106
         # unknown currencies
         else:
             account = 1100
