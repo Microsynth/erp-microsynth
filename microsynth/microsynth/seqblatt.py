@@ -162,17 +162,18 @@ def check_sales_order_completion():
             continue
 
         try:
-            # check status of labels assigned to each sample
+            # check status of labels assigned to each sample and consider Samples without a label
             pending_samples = frappe.db.sql("""
                 SELECT 
                     `tabSample`.`name`
                 FROM `tabSample Link`
                 LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
-                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
+                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label` = `tabSequencing Label`.`name`
                 WHERE
                     `tabSample Link`.`parent` = "{sales_order}"
                     AND `tabSample Link`.`parenttype` = "Sales Order"
-                    AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
+                    AND (`tabSequencing Label`.`status` NOT IN ("received", "processed")
+                        OR `tabSample`.`sequencing_label` IS NULL);
                 """.format(sales_order=sales_order['name']), as_dict=True)
 
             if len(pending_samples) == 0:
