@@ -88,7 +88,7 @@ def get_data(filters=None):
             for i, item in enumerate(so_doc.items):
                 if i == 0:
                     continue  # only consider additional items
-                additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}"  # is there a use-case for non-integer qtys?
+                additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}<br>"  # is there a use-case for non-integer qtys?
             so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
             # ensure correct primary item
             so['item_code'] = so_doc.items[0].item_code

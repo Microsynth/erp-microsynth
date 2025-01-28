@@ -63,6 +63,9 @@ function process_queue() {
     if (locals.label_queue.length > 0) {
         // process first entry
         label_order = locals.label_queue[0];
+        if (label_order.additional_items) {
+            frappe.msgprint( __("Label Order " + label_order.sales_order + " contains the following additional Items:<br><br>") + label_order.additional_items, __("Additional Items to consider") );
+        }
         if (label_order.status === 0) {
             // nothing done - first barcode
             first_barcode_dialog();
