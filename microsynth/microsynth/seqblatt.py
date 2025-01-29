@@ -248,7 +248,7 @@ def check_submit_delivery_note(delivery_note):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
-                # TODO: Do not hardcode recipients or messages here
+                # Would require three different Email Templates to get rid of the recipients here
                 if 'GOE' in delivery_note.name:
                     recipient = 'karla.busch@microsynth.seqlab.de'
                     person = 'Karla'
@@ -272,7 +272,7 @@ def check_submit_delivery_note(delivery_note):
                 #frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
                 make(
                     recipients = recipient,
-                    sender = "jens.petermann@microsynth.ch",
+                    sender = "erp@microsynth.ch",
                     subject = subject,
                     content = message,
                     send_email = True

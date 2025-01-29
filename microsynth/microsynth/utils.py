@@ -31,7 +31,7 @@ def get_customer(contact):
 def check_contact_to_customer():
     """
     Report non-Disabled Contacts that are not linked to any Customer to the Administration.
-    Could be executed by a cronjob, e.g. once per month.
+    Could be executed by a cronjob, e.g. once per month, but is currently not.
 
     bench execute microsynth.microsynth.utils.check_contact_to_customer
     """
@@ -84,7 +84,7 @@ def check_contact_to_customer():
     message += "<br><br>Best regards,<br>Jens"
     make(
         recipients = "info@microsynth.ch",
-        sender = "jens.petermann@microsynth.ch",
+        sender = "erp@microsynth.ch",
         subject = "[ERP] Contacts that are not linked to any Customer",
         content = message,
         send_email = True
@@ -1928,7 +1928,7 @@ def is_valid_tax_id(tax_id):
 #                     f"Please check the Tax ID using {vies_url_string} and correct it if necessary.<br><br>Best regards,<br>Jens"
 #         make(
 #             recipients = "info@microsynth.ch",
-#             sender = "jens.petermann@microsynth.ch",
+#             sender = "erp@microsynth.ch",
 #             subject = subject,
 #             content = message,
 #             send_email = True
