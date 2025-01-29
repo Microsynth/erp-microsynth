@@ -63,6 +63,7 @@ frappe.ui.form.on('Contact', {
             cur_frm.set_df_property('email_ids', 'read_only', true);
             cur_frm.set_df_property('phone_nos', 'read_only', true);
             cur_frm.set_df_property('is_primary_contact', 'read_only', true);
+            cur_frm.set_df_property('links', 'read_only', true);
             cur_frm.set_df_property('institute', 'read_only', true);
             cur_frm.set_df_property('department', 'read_only', true);
             cur_frm.set_df_property('room', 'read_only', true);
@@ -73,6 +74,11 @@ frappe.ui.form.on('Contact', {
             cur_frm.set_df_property('receive_newsletter', 'read_only', true);
             cur_frm.set_df_property('subscribe_date', 'read_only', true);
             cur_frm.set_df_property('unsubscribe_date', 'read_only', true);
+        }
+
+        // show a banner if source = Punchout
+        if (frm.doc.source && frm.doc.source == "Punchout") {
+            frm.dashboard.add_comment( __("Punchout Contact! Please do <b>not</b> edit."), 'red', true);
         }
 
         // Show buttons if a customer is linked
