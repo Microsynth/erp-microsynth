@@ -742,17 +742,7 @@ function sign_and_close(frm) {
                             },
                             'async': false,
                             'callback': function(response) {
-                                frappe.call({
-                                    'method': 'set_in_approval',
-                                    'doc': cur_frm.doc,
-                                    'args': {
-                                        'in_approval': 0
-                                    },
-                                    'async': false,
-                                    'callback': function (r) {
-                                        cur_frm.reload_doc();
-                                    }
-                                });
+                                cur_frm.reload_doc();
                             }
                         });
                     }
@@ -781,7 +771,6 @@ function calculate_risk_classification(occ_prob, impact, after_actions) {
     } else if (res >= 6) {
         return after_actions ? "high" : "actions required";
     } else {
-        console.log(res);
         return "";
     }
 }

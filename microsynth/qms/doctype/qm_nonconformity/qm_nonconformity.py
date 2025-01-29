@@ -186,6 +186,7 @@ def close(doc, user):
         # set closing user and (current) date
         qm_nc.closed_by = user
         qm_nc.closed_on = date.today()
+        qm_nc.in_approval = 0
         qm_nc.save()
         frappe.db.commit()
         update_status(qm_nc.name, "Closed")
