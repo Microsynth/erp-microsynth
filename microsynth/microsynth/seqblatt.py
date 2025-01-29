@@ -248,35 +248,24 @@ def check_submit_delivery_note(delivery_note):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
+                from microsynth.microsynth.utils import send_email_from_template
                 # Would require three different Email Templates to get rid of the recipients here
                 if 'GOE' in delivery_note.name:
-                    recipient = 'karla.busch@microsynth.seqlab.de'
-                    person = 'Karla'
+                    email_template = frappe.get_doc("Email Template", "GOE - Barcode label used multiple times")
                 elif 'LYO' in delivery_note.name:
-                    recipient = 'sanger.support@microsynth.fr'
-                    person = 'Sanger Support France'
+                    email_template = frappe.get_doc("Email Template", "LYO - Barcode label used multiple times")
                 else:
-                    recipient = 'katja.laengle@microsynth.ch'
-                    person = 'Katja'
-                subject = f"Barcode label {barcode_label} used multiple times"
-                url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
-                message = f"Dear {person},<br><br>this is an automatic email to inform you that Delivery Note {url_string} won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:<br>"
+                    email_template = frappe.get_doc("Email Template", "BAL - Barcode label used multiple times")
+
+                dn_url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
+                sample_details = ""
                 for s in samples:
                     url = get_url_to_form("Sample", s['name'])
-                    message += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
-                message += f"<br>Please check these Samples. If you are sure that there is no problem, please submit '{delivery_note.name}' manually in the ERP.<br>"
-                message += f"If one of those Samples is on a Sales Order that was not processed and will not be processed, please comment and cancel this Sales Order."
-                message += f"<br><br>Best regards,<br>Jens"
-                #non_html_message = message.replace("<br>","\n")
-                #print(non_html_message)
-                #frappe.log_error(non_html_message, "seqblatt.check_submit_delivery_note: " + subject)
-                make(
-                    recipients = recipient,
-                    sender = "erp@microsynth.ch",
-                    subject = subject,
-                    content = message,
-                    send_email = True
-                    )
+                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
+
+                rendered_subject = frappe.render_template(email_template.subject, {'barcode_label': barcode_label})
+                rendered_content = frappe.render_template(email_template.response, {'dn_url_string': dn_url_string, 'barcode_label': barcode_label, 'len_samples': len(samples), 'sample_details': sample_details})
+                send_email_from_template(email_template, rendered_content, rendered_subject)
                 return
 
         delivery_note.submit()
