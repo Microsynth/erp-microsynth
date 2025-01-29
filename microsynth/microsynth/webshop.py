@@ -8,6 +8,7 @@
 import frappe
 import json
 import re
+import base64
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
@@ -1909,3 +1910,21 @@ def cancel_order(sales_order, web_order_id):
             "web_order_id": None,
             'labels': None
         }
+
+
+@frappe.whitelist()
+def get_quotation_pdf(quotation_id):
+    """
+    Creates the Quotation PDF and returns it as base64-encoded file
+
+    bench execute microsynth.microsynth.webshop.get_quotation_pdf --kwargs "{'quotation_id': 'QTN-2500123'}"
+    """
+    from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
+    if not frappe.db.exists("Quotation", quotation_id):
+        return {'success': False, 'message': f"Quotation '{quotation_id}' not found.", 'base64string': None}
+    try:
+        pdf = get_pdf_data(doctype='Quotation', name=quotation_id, print_format='Quotation')
+        encoded_string = base64.b64encode(pdf)
+        return {'success': True, 'message': 'OK', 'base64string': encoded_string}
+    except Exception as err:
+        return {'success': False, 'message': err, 'base64string': None}
