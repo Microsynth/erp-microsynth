@@ -130,7 +130,7 @@ frappe.ui.form.on('Quotation', {
         } else if (frm.doc.product_type == 'Labels') {
             frm.set_value('quotation_type', 'Labels');
         } else if (frm.doc.product_type == 'Sequencing') {
-            frm.set_value('quotation_type', 'Sequencing');
+            frm.set_value('quotation_type', 'Sanger Sequencing');
         } else if (['Genetic Analysis', 'NGS', 'FLA', 'Project', 'Material', 'Service'].includes(frm.doc.product_type)) {
             frm.set_value('quotation_type', 'Genetic Analysis');
         } else {
