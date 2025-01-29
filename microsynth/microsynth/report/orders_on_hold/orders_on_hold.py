@@ -48,7 +48,7 @@ def get_data(filters=None):
             AND `tabSales Order`.`hold_order` = 1
             AND `tabSales Order`.`transaction_date` > '2022-12-22'
             AND ((NOT `tabCustomer`.`invoicing_method` = 'Stripe Prepayment')
-                 OR (`tabSales Order`.`comment` IS NOT NULL))
+                 OR ((`tabSales Order`.`comment` IS NOT NULL) AND `tabSales Order`.`comment` != ""))
         ORDER BY
             `tabSales Order`.`transaction_date` DESC;
     """, as_dict=True)
