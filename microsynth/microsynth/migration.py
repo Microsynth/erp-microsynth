@@ -4747,3 +4747,37 @@ def change_contact_email(old_email, new_email):
         contact_doc.email_id = new_email
         contact_doc.save()
         print(f"Changed email_id of Contact '{contact_doc.name}' from {old_email} to {new_email}")
+
+
+def update_french_payment_terms(email_id):
+    """
+    Notify the administration daily about new Customers with a french billing address.
+    Should be run daily by a Cronjob.
+
+    bench execute microsynth.microsynth.migration.update_french_payment_terms --kwargs "{'email_id': 'i...@microsynth.ch'}"
+    """
+    sql_query = f"""
+        SELECT DISTINCT `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`customer_name`,
+            `tabCustomer`.`payment_terms`
+        FROM `tabCustomer`
+        LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+        WHERE `tabAddress`.`country` = "France"
+            AND `tabAddress`.`address_type` = 'Billing'
+            AND `tabAddress`.`disabled` = 0
+            AND `tabContact`.`email_id` != "{email_id}"
+            AND `tabContact`.`status` != "Disabled"
+            AND `tabCustomer`.`disabled` = 0
+            AND `tabCustomer`.`payment_terms` != "60 days net"
+        ;"""
+    customers = frappe.db.sql(sql_query, as_dict=True)
+    print(f"{len(customers)=}")
+    for c in customers:
+        customer_doc = frappe.get_doc("Customer", c['customer_id'])
+        if customer_doc.payment_terms != "30 days net":
+            print(f"Customer {c['customer_id']} has Default Payment Terms Template '{customer_doc.payment_terms}'. Going to continue.")
+            continue
+        customer_doc.payment_terms = "30 days net"
+        customer_doc.save()
+        print(f"Set Customer {c['customer_id']} to Default Payment Terms Template '60 days net'.")
