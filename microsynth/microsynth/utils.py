@@ -1940,7 +1940,7 @@ def check_new_customers_taxid(delta_days=7):
     """
     Check the Tax ID of all new Customers and send one email
     to the administration if there are invalid Tax IDs.
-    Should be run daily by a Cronjob.
+    Run daily by a Cronjob.
 
     bench execute microsynth.microsynth.utils.check_new_customers_taxid --kwargs "{'delta_days': 20}"
     """
@@ -1978,6 +1978,36 @@ def check_new_customers_taxid(delta_days=7):
 
         email_template = frappe.get_doc("Email Template", "Invalid Tax IDs of new Customers")
         rendered_content = frappe.render_template(email_template.response, {'invalid_tax_id_msg': invalid_tax_id_msg, 'delta_days': delta_days })
+        send_email_from_template(email_template, rendered_content)
+
+
+def new_french_customers(delta_hours=24):
+    """
+    Notify the administration daily about new Customers with a french billing address.
+    Should be run daily by a Cronjob.
+
+    bench execute microsynth.microsynth.utils.new_french_customers --kwargs "{'delta_hours': 24}"
+    """
+    sql_query = f"""
+        SELECT DISTINCT `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`customer_name`
+        FROM `tabCustomer`
+        LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
+        WHERE `tabCustomer`.`creation` BETWEEN "{datetime.now() - timedelta(hours=delta_hours)}" AND "{datetime.now()}"
+            AND `tabAddress`.`country` = "France"
+            AND `tabAddress`.`address_type` = 'Billing'
+            AND `tabAddress`.`disabled` = 0
+            AND `tabContact`.`status` != "Disabled"
+            AND `tabCustomer`.`disabled` = 0
+        ;"""
+    new_customers = frappe.db.sql(sql_query, as_dict=True)
+    if len(new_customers) > 0:
+        customer_details = ""
+        for new_customer in new_customers:
+            customer_details += f"<a href={get_url_to_form('Customer', new_customer['customer_id'])}>{new_customer['customer_id']} ({new_customer['customer_name']})</a><br>"
+        email_template = frappe.get_doc("Email Template", "New French Customers")
+        rendered_content = frappe.render_template(email_template.response, {'customer_details': customer_details })
         send_email_from_template(email_template, rendered_content)
 
 
