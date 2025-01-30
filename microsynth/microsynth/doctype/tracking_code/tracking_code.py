@@ -126,6 +126,58 @@ def parse_ups_file(file_id, expected_line_length=78):
         return {'success': True, 'message': "Successfully processed"}
 
 
+@frappe.whitelist()
+def parse_ems_file(file_id, expected_line_length=36):
+    """
+    TODO: Outsource identical parts to reduce code duplication
+
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ems_file --kwargs "{'file_id': '0f69f96ed0'}"
+    """
+    format_string = "%Y-%m-%dT%H:%M:%S"
+    tracking_log = frappe.get_doc({
+        'doctype': 'Tracking Log',
+        'tracking_log_file': file_id
+    })
+    tracking_log.insert()
+    file_doc = frappe.get_doc("File", file_id)
+    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
+    file_path = f"{base_path}{file_doc.file_url}"
+    error_str = ""
+    # try:
+    with open(file_path) as file:
+        print(f"Parsing UPS Delivery dates from '{file_path}' ...")
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) == 0:
+                continue
+            if len(line) != expected_line_length:
+                msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
+                return {'success': False, 'message': msg}
+            tracking_number = line[0].replace('"', '').replace('=', '')
+            datetime_str = line[24]
+            if not datetime_str:
+                continue
+            try:
+                if '.' in datetime_str:
+                    delivery_datetime = datetime.strptime(datetime_str, format_string + ".%f%z")
+                else:
+                    # no microsecond part
+                    delivery_datetime = datetime.strptime(datetime_str, format_string + "%z")
+            except Exception:
+                continue
+            #print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
+            error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
+            if error:
+                error_str += f"<br>{error}"
+    # except Exception as err:
+    #     return {'success': False, 'message': err}
+    if error_str:
+        return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
+    else:
+        return {'success': True, 'message': "Successfully processed"}
+
+
 def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
     tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'tracking_code', 'delivery_date'])
     if len(tracking_codes) == 0:
