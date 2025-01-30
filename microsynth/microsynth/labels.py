@@ -123,6 +123,15 @@ def get_label_data(sales_order):
     address_id = sales_order.shipping_address_name
     shipping_address = frappe.get_doc("Address", address_id)
     destination_country = frappe.get_doc("Country", shipping_address.country)
+    plate_aliquot_hint = ""
+
+    for item in sales_order.items:
+        if item.item_code in ['0011', '0051', '0101', '0104', '0641', '0773', '0774', '0780']:
+            plate_aliquot_hint = "(Plate)"
+            break
+        if item.item_code in ['0770', '0771']:
+            plate_aliquot_hint = "(Aliquots)"
+            break
 
     data = {
         'lines': create_receiver_address_lines(customer_name = sales_order.order_customer_display or sales_order.customer_name, contact = contact_id, address = address_id), 
@@ -132,7 +141,8 @@ def get_label_data(sales_order):
         'po_no': sales_order.po_no,
         'web_id': sales_order.web_order_id,
         'cstm_id': sales_order.customer,
-        'oligo_count': len(sales_order.oligos)
+        'oligo_count': len(sales_order.oligos),
+        'plate_aliquot_hint': plate_aliquot_hint
     }
     return data
 

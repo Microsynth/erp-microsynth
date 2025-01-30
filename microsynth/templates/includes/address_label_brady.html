@@ -38,7 +38,7 @@ T 29,49,90,3,pt 20;{{shipping_service}}
 
 {# barcodes #}
 B 45,5,3,CODE128,5,0.2;{{web_id}}
-T 45,4,0,3,pt 10;{{web_id}} - {{oligo_count}}
+T 45,4,0,3,pt 10;{{web_id}} - {{oligo_count}} {{ plate_aliquot_hint }}
 
 {# additional line break #}
 {%- if po_no is not none and po_no != "" -%}
