@@ -16,8 +16,8 @@ def get_columns(filters):
         {"label": _("Document Title"), "fieldname": "title", "fieldtype": "Data", "width": 300 },
         {"label": _("Document Status"), "fieldname": "status", "fieldtype": "Data", "width": 115 },
         {"label": _("Request Date"), "fieldname": "creation", "fieldtype": "Date", "width": 125 },
-        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 75 },
-        {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 75 }
+        {"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 80 },
+        {"label": _("Signed on"), "fieldname": "signed_on", "fieldtype": "Date", "width": 80 }
     ]
 
 
