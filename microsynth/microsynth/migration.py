@@ -4766,7 +4766,7 @@ def update_french_payment_terms(email_id):
         WHERE `tabAddress`.`country` = "France"
             AND `tabAddress`.`address_type` = 'Billing'
             AND `tabAddress`.`disabled` = 0
-            AND `tabContact`.`email_id` != "{email_id}"
+            AND `tabContact`.`email_id` = "{email_id}"
             AND `tabContact`.`status` != "Disabled"
             AND `tabCustomer`.`disabled` = 0
             AND `tabCustomer`.`payment_terms` != "60 days net"
