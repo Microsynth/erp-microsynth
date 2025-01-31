@@ -7,6 +7,7 @@ import frappe
 import requests
 import csv
 import os
+import re
 from datetime import datetime
 from frappe.model.document import Document
 from microsynth.microsynth.shipping import get_shipping_item, TRACKING_URLS
@@ -133,14 +134,13 @@ def parse_ems_file(file_id, expected_line_length=36):
 
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ems_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
-    format_string = "%Y-%m-%dT%H:%M:%S"
     tracking_log = frappe.get_doc({
         'doctype': 'Tracking Log',
         'tracking_log_file': file_id
     })
     tracking_log.insert()
     file_doc = frappe.get_doc("File", file_id)
-    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
+    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:])
     file_path = f"{base_path}{file_doc.file_url}"
     error_str = ""
     # try:
@@ -155,18 +155,15 @@ def parse_ems_file(file_id, expected_line_length=36):
                 msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
                 return {'success': False, 'message': msg}
             tracking_number = line[0].replace('"', '').replace('=', '')
-            datetime_str = line[24]
+            datetime_str = re.sub(r'\.\d+\+', '+', line[24])  # remove microseconds
             if not datetime_str:
                 continue
             try:
-                if '.' in datetime_str:
-                    delivery_datetime = datetime.strptime(datetime_str, format_string + ".%f%z")
-                else:
-                    # no microsecond part
-                    delivery_datetime = datetime.strptime(datetime_str, format_string + "%z")
-            except Exception:
+                delivery_datetime = datetime.fromisoformat(datetime_str)
+                delivery_datetime = delivery_datetime.replace(tzinfo=None)
+            except Exception as e:
+                frappe.log_error(f"File path: {file_path}\nTracking Log: {tracking_log.name}\nError: {e}", "parse_ems_file")
                 continue
-            #print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
