@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2023, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2023, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -25,7 +25,6 @@ def create_tracking_code(web_order_id, tracking_code):
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
             frappe.log_error(msg, "tracking_code.create_tracking_code")
-            #frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
         shipping_item = get_shipping_item(sales_order.items)
@@ -75,10 +74,9 @@ def create_tracking_code(web_order_id, tracking_code):
     return tracking.name
 
 
-@frappe.whitelist()
-def parse_ups_file(file_id, expected_line_length=78):
+def prepare_tracking_log(file_id):
     """
-    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
+    helper function for the next three parsing functions
     """
     tracking_log = frappe.get_doc({
         'doctype': 'Tracking Log',
@@ -88,11 +86,18 @@ def parse_ups_file(file_id, expected_line_length=78):
     file_doc = frappe.get_doc("File", file_id)
     base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
     file_path = f"{base_path}{file_doc.file_url}"
+    return file_path
+
+
+@frappe.whitelist()
+def parse_ups_file(file_id, expected_line_length=78):
+    """
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
+    """
+    file_path = prepare_tracking_log(file_id)
     error_str = ""
-    # try:
     with open(file_path) as file:
-        print(f"Parsing UPS Delivery dates from '{file_path}' ...")
-        csv_reader = csv.reader(file, delimiter=",")
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
             if len(line) != expected_line_length:
@@ -115,12 +120,44 @@ def parse_ups_file(file_id, expected_line_length=78):
                 # no valid time -> use 00:00 from delivery_date instead
                 delivery_time = delivery_date
             delivery_datetime = datetime.combine(delivery_date.date(), delivery_time.time())
-            #print(f"Tracking Number {tracking_number}: Delivery: {delivery_datetime.strftime('%Y-%m-%d %H:%M')}")
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
-    # except Exception as err:
-    #     return {'success': False, 'message': err}
+    if error_str:
+        return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
+    else:
+        return {'success': True, 'message': "Successfully processed"}
+
+
+@frappe.whitelist()
+def parse_fedex_file(file_id, expected_line_length=89):
+    """
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_fedex_file --kwargs "{'file_id': '0f69f96ed0'}"
+    """
+    file_path = prepare_tracking_log(file_id)
+    error_str = ""
+    with open(file_path) as file:
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
+                return {'success': False, 'message': msg}
+            tracking_number = line[0]
+            date_str = line[21]
+            if not date_str:
+                continue
+            delivery_date = datetime.strptime(date_str, '%m/%d/%y')
+            time_str = line[22]
+            try:
+                delivery_time = datetime.strptime(time_str, '%I:%M %p')
+            except Exception:
+                # no valid time -> use 00:00 from delivery_date instead
+                delivery_time = delivery_date
+            delivery_datetime = datetime.combine(delivery_date.date(), delivery_time.time())
+            error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
+            if error:
+                error_str += f"<br>{error}"
     if error_str:
         return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
     else:
@@ -130,22 +167,11 @@ def parse_ups_file(file_id, expected_line_length=78):
 @frappe.whitelist()
 def parse_ems_file(file_id, expected_line_length=36):
     """
-    TODO: Outsource identical parts to reduce code duplication
-
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ems_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
-    tracking_log = frappe.get_doc({
-        'doctype': 'Tracking Log',
-        'tracking_log_file': file_id
-    })
-    tracking_log.insert()
-    file_doc = frappe.get_doc("File", file_id)
-    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:])
-    file_path = f"{base_path}{file_doc.file_url}"
+    file_path = prepare_tracking_log(file_id)
     error_str = ""
-    # try:
     with open(file_path) as file:
-        print(f"Parsing UPS Delivery dates from '{file_path}' ...")
         csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
@@ -162,13 +188,11 @@ def parse_ems_file(file_id, expected_line_length=36):
                 delivery_datetime = datetime.fromisoformat(datetime_str)
                 delivery_datetime = delivery_datetime.replace(tzinfo=None)
             except Exception as e:
-                frappe.log_error(f"File path: {file_path}\nTracking Log: {tracking_log.name}\nError: {e}", "parse_ems_file")
+                frappe.log_error(f"File path: {file_path}\nError: {e}", "parse_ems_file")
                 continue
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
-    # except Exception as err:
-    #     return {'success': False, 'message': err}
     if error_str:
         return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
     else:
@@ -182,8 +206,7 @@ def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
         return ""
     elif len(tracking_codes) > 1:
         msg = f"Found the following {len(tracking_codes)} Tracking Codes for '{tracking_code}': {','.join(tc['name'] for tc in tracking_codes)}. Going to skip."
-        print(msg)
-        #frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+        #print(msg)
         return msg
     else:
         tracking_code = tracking_codes[0]
@@ -192,8 +215,7 @@ def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
             # yes: compare it and log an error if it differs
             if tracking_code['delivery_date'] != delivery_datetime:
                 msg = f"Tracking Code '{tracking_code=}' has already delivery date {tracking_code['delivery_date']} and should now be {delivery_datetime}. Going to skip."
-                print(msg)
-                #frappe.log_error(msg, "tracking_code.add_delivery_date_to_tracking_code")
+                #print(msg)
                 return msg
         else:
             # no: save it
