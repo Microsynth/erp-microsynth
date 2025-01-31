@@ -241,15 +241,17 @@ def update_status(qm_document, status):
         frappe.throw(f"Cannot release QM Document {qm_doc.name} because the release signature is missing.")
 
     # validate status transitions
-    if ((qm_doc.status == "Draft" and status == "Created") or 
+    if ((qm_doc.status == "Draft" and status == "Created") or
+        (qm_doc.status == "Draft" and status == "Invalid") or
         (qm_doc.status == "Created" and status == "In Review") or
         (qm_doc.status == "Created" and status == "Released" and qm_doc.document_type not in document_types_with_review) or
-        (qm_doc.status == "Created" and status == "Invalid" and qm_doc.document_type not in document_types_with_review) or
+        (qm_doc.status == "Created" and status == "Invalid") or
         (qm_doc.status == "In Review" and status == "Reviewed") or
         (qm_doc.status == "In Review" and status == "Invalid") or
         (qm_doc.status == "Reviewed" and status == "Released") or
         (qm_doc.status == "Reviewed" and status == "Invalid") or
         (qm_doc.status == "Released" and status == "Valid") or
+        (qm_doc.status == "Released" and status == "Invalid") or
         (qm_doc.status == "Valid" and status == "Invalid")
         ):
             qm_doc.status = status
@@ -395,8 +397,8 @@ def set_valid_document(qm_docname):
         invalidate_document(qm_doc)
         return False
 
-    # get all other valid versions for this document
-    valid_versions = frappe.db.sql(f"""
+    # get all other valid versions and all smaller versions for this document
+    other_versions = frappe.db.sql(f"""
         SELECT `name`, `version`
         FROM `tabQM Document`
         WHERE `version` != '{qm_doc.version}'
@@ -405,14 +407,15 @@ def set_valid_document(qm_docname):
             AND `subprocess_number` = '{qm_doc.subprocess_number}'
             AND `chapter` = '{qm_doc.chapter}'
             AND `document_number` = '{qm_doc.document_number}'
-            AND `status` = 'Valid'
-            AND `docstatus` = 1
+            AND ((`status` = 'Valid' AND `docstatus` = 1)
+                OR (`version` < '{qm_doc.version}' AND `status` != 'Invalid' AND `docstatus` < 2))
         ;""", as_dict=True)
 
-    # set other versions to invalid
-    for version in valid_versions:
+    # set other versions to status Invalid
+    for version in other_versions:
         if cint(version['version']) > cint(qm_doc.version):
-            frappe.log_error(f"Invalidated a later version of the document {qm_doc.name}", "qm_document.set_valid_document")
+            # should not happen anymore
+            frappe.log_error(f"Invalidated the later version {qm_doc.version} of the document {qm_doc.name}", "qm_document.set_valid_document")
         qm_doc_other_version = frappe.get_doc("QM Document", version['name'])
         invalidate_document(qm_doc_other_version)
 
