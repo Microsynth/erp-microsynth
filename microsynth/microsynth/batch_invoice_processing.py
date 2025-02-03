@@ -5,6 +5,7 @@ import frappe
 from frappe.utils import cint, flt, get_link_to_form, get_url_to_form
 from frappe.utils.file_manager import save_file
 import os
+import traceback
 from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_zugferd
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
@@ -97,7 +98,7 @@ def parse_file(file_name, company, company_settings, debug=True):
         create_invoice(file_name, invoice, company_settings)
     except Exception as err:
         try:
-            msg = f"Error: {err}\nFile: {file_name}"
+            msg = f"Error: {err}\n{traceback.format_exc()}\n\nFile: {file_name}"
             # Idea: Add an error path to each company setting in Batch Invoice Processing Settings?
             parts = file_name.split("/")
             pdf_name = parts[-1]
@@ -112,10 +113,10 @@ def parse_file(file_name, company, company_settings, debug=True):
             frappe.log_error(msg, "Batch processing parse file error")
             # Send an automatic email
             email_template = frappe.get_doc("Email Template", "Batch invoice processing error")
-            rendered_content = frappe.render_template(email_template.response, {'file_name': file_name, 'err': err})
+            rendered_content = frappe.render_template(email_template.response, {'file_name': file_name, 'err': f"{err}\n{traceback.format_exc()}"})
             send_email_from_template(email_template, rendered_content)
         except Exception as e:
-            frappe.log_error(f"Got the following error during error handling:\n{e}", "Batch processing parse file error")
+            frappe.log_error(f"Got the following error during error handling:\n{e}\n{traceback.format_exc()}", "Batch processing parse file error")
 
 
 def create_invoice(file_name, invoice, settings):
