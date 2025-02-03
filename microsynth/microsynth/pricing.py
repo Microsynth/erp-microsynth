@@ -155,7 +155,7 @@ def change_rates_from_csv(csv_file, user):
                 print(f"Expected line length 6 but was {len(line)} for the following line:\n{line}\n"
                       f"No Prices are changed. Please correct CSV file and restart. Going to return.")
                 return
-            if line[0] not in ('Sales Prices CHF', 'Sales Prices EUR', 'Sales Prices SEK', 'Sales Prices USD'):
+            if line[0] not in ('Sales Prices CHF', 'Sales Prices EUR', 'Sales Prices PLN', 'Sales Prices SEK', 'Sales Prices USD'):
                 print(f"Got unknown reference price list '{line[0]}'. No Prices are changed. "
                       f"Please correct CSV file or add '{line[0]}' here in the code and restart. Going to return.")
                 return
