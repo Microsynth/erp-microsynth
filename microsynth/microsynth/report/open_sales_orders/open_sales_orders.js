@@ -9,7 +9,7 @@ frappe.query_reports["Open Sales Orders"] = {
             "label": __("From date"),
             "fieldtype": "Date",
             "reqd": 1,
-			"default": ((new Date().getMonth()) == 0) ? (((new Date().getFullYear()) - 1) + "-01-01") : ((new Date().getFullYear()) + "-01-01")
+			"default": "2023-01-01"  // ((new Date().getMonth()) == 0) ? (((new Date().getFullYear()) - 1) + "-01-01") : ((new Date().getFullYear()) + "-01-01")
         },
         {
             "fieldname": "to_date",
@@ -37,7 +37,8 @@ frappe.query_reports["Open Sales Orders"] = {
         {
             "fieldname":"include_drafts",
             "label": __("Include Sales Order Drafts"),
-            "fieldtype": "Check"
+            "fieldtype": "Check",
+            "default": 1
         },
         {
             "fieldname":"include_orders_on_hold",
