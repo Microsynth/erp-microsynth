@@ -90,12 +90,48 @@ def prepare_tracking_log(file_id):
 
 
 @frappe.whitelist()
+def parse_dhl_file(file_id, expected_line_length=90):
+    """
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_dhl_file --kwargs "{'file_id': '0f69f96ed0'}"
+    """
+    file_path = prepare_tracking_log(file_id)
+    error_str = ""
+    counter = 0
+    with open(file_path) as file:
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
+                return {'success': False, 'message': msg}
+            tracking_number = line[0]
+            datetime_str = line[49]
+            if not datetime_str:
+                continue
+            try:
+                delivery_datetime = datetime.fromisoformat(datetime_str)
+            except Exception as e:
+                frappe.log_error(f"File path: {file_path}\nError: {e}", "parse_dhl_file")
+                continue
+            error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
+            if error:
+                error_str += f"<br>{error}"
+            else:
+                counter += 1
+    if error_str:
+        return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
+    else:
+        return {'success': True, 'message': f"Successfully processed {counter} tracking codes"}
+
+
+@frappe.whitelist()
 def parse_ups_file(file_id, expected_line_length=78):
     """
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_ups_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
     file_path = prepare_tracking_log(file_id)
     error_str = ""
+    counter = 0
     with open(file_path) as file:
         csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
@@ -123,10 +159,12 @@ def parse_ups_file(file_id, expected_line_length=78):
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
+            else:
+                counter += 1
     if error_str:
         return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
     else:
-        return {'success': True, 'message': "Successfully processed"}
+        return {'success': True, 'message': f"Successfully processed {counter} tracking codes"}
 
 
 @frappe.whitelist()
@@ -136,6 +174,7 @@ def parse_fedex_file(file_id, expected_line_length=89):
     """
     file_path = prepare_tracking_log(file_id)
     error_str = ""
+    counter = 0
     with open(file_path) as file:
         csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
@@ -158,10 +197,12 @@ def parse_fedex_file(file_id, expected_line_length=89):
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
+            else:
+                counter += 1
     if error_str:
         return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
     else:
-        return {'success': True, 'message': "Successfully processed"}
+        return {'success': True, 'message': f"Successfully processed {counter} tracking codes"}
 
 
 @frappe.whitelist()
@@ -171,6 +212,7 @@ def parse_ems_file(file_id, expected_line_length=36):
     """
     file_path = prepare_tracking_log(file_id)
     error_str = ""
+    counter = 0
     with open(file_path) as file:
         csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
@@ -193,10 +235,12 @@ def parse_ems_file(file_id, expected_line_length=36):
             error = add_delivery_date_to_tracking_code(tracking_number, delivery_datetime)
             if error:
                 error_str += f"<br>{error}"
+            else:
+                counter += 1
     if error_str:
         return {'success': True, 'message': f"Completed with the following problems: {error_str}"}
     else:
-        return {'success': True, 'message': "Successfully processed"}
+        return {'success': True, 'message': f"Successfully processed {counter} tracking codes"}
 
 
 def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):

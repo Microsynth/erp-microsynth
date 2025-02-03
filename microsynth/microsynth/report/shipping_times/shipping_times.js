@@ -76,6 +76,44 @@ frappe.query_reports["Shipping Times"] = {
             });
         });
 
+        report.page.add_inner_button(__('Upload DHL CSV'), function () {
+            new frappe.ui.FileUploader({
+                // folder: 'Home',
+                upload_notes: 'Please upload a CSV file created from the XLSX downloaded from DHL',
+                restrictions: {
+                    allowed_file_types: ['.csv']
+                },
+                allow_multiple: false,
+                on_success: (file_doc) => {
+                    console.log("upload ok, start parsing");
+                    frappe.call({
+                        'method': "microsynth.microsynth.doctype.tracking_code.tracking_code.parse_dhl_file",
+                        'args': {
+                            "file_id": file_doc.name
+                        },
+                        'freeze': true,
+                        'freeze_message': __("Parsing CSV, please be patient ..."),
+                        'callback': function(response) {
+                            if (response.message.success) {
+                                frappe.msgprint({
+                                    title: __('Success'),
+                                    indicator: 'green',
+                                    message: response.message.message + "<br><br><b>Please close and refresh or reload</b>"
+                                });
+                                frappe.click_button('Refresh');
+                            } else {
+                                frappe.msgprint({
+                                    title: __('Failure'),
+                                    indicator: 'red',
+                                    message: response.message.message
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
         report.page.add_inner_button(__('Upload FedEx CSV'), function () {
             new frappe.ui.FileUploader({
                 // folder: 'Home',
