@@ -1,0 +1,63 @@
+{
+ "creation": "2025-02-04 11:51:58.658506",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "webshop_url",
+  "customer_id",
+  "username",
+  "password",
+  "copy_password"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "webshop_url",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Webshop URL"
+  },
+  {
+   "fieldname": "customer_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer ID"
+  },
+  {
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Username"
+  },
+  {
+   "fieldname": "password",
+   "fieldtype": "Password",
+   "label": "Password"
+  },
+  {
+   "fieldname": "copy_password",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Copy Password"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-02-04 11:53:14.697167",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Supplier Shop",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

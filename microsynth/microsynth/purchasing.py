@@ -6,6 +6,7 @@
 import frappe
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
+from frappe.utils.password import get_decrypted_password
 from microsynth.microsynth.utils import user_has_role
 import json
 
@@ -576,5 +577,31 @@ def validate_unique_bill_no(doc):
         for pinv in same_bill_nos:
             if pinv['name'] != doc.get('name'):
                 frappe.throw("The supplier invoice number '{0}' is already recorded in {1}.<br><br>No changes were saved.".format(doc.get("bill_no"), pinv['name']) )
-
     return
+
+
+@frappe.whitelist()
+def supplier_change_fetches(supplier_id, company):
+    """
+    bench execute microsynth.microsynth.purchasing.supplier_change_fetches --kwargs "{'supplier_id': ''}"
+    """
+    supplier_doc = frappe.get_doc("Supplier", supplier_id)
+    default_tax_template = ""
+    for row in supplier_doc.accounts:
+        if row.company == company:
+            default_tax_template = row.default_tax_template
+            frappe.log_error(default_tax_template, "supplier_change_fetches")
+            break
+    return {'taxes_and_charges': default_tax_template,
+            'payment_terms_template': supplier_doc.payment_terms,
+            'default_item_code': supplier_doc.default_item,
+            'default_item_name': supplier_doc.item_name}
+
+
+@frappe.whitelist()
+def decrypt_access_password(cdn):
+    """
+    Decrypt access password
+    """
+    password = get_decrypted_password("Supplier Shop", cdn, "password", False)
+    return password

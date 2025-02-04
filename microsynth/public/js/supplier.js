@@ -19,6 +19,24 @@ frappe.ui.form.on('Supplier', {
             }
             return {'filters': filters}
         });
+    }
+});
 
+
+frappe.ui.form.on('Supplier Shop', {
+    copy_password(frm, cdt, cdn) {
+        frappe.call({
+            "method": "microsynth.microsynth.purchasing.decrypt_access_password",
+            "args": {
+                "cdn": cdn
+            },
+            "callback": function(response) {
+                navigator.clipboard.writeText(response.message).then(function() {
+                    frappe.show_alert( __("Copied") );
+                  }, function() {
+                     frappe.show_alert( __("No access") );
+                });
+            }
+        });
     }
 });
