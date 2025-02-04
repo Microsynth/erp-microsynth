@@ -4749,12 +4749,12 @@ def change_contact_email(old_email, new_email):
         print(f"Changed email_id of Contact '{contact_doc.name}' from {old_email} to {new_email}")
 
 
-def update_french_payment_terms(email_id):
+def update_french_payment_terms(email_id, new_payment_terms_template):
     """
     Notify the administration daily about new Customers with a french billing address.
     Should be run daily by a Cronjob.
 
-    bench execute microsynth.microsynth.migration.update_french_payment_terms --kwargs "{'email_id': 'i...@microsynth.ch'}"
+    bench execute microsynth.microsynth.migration.update_french_payment_terms --kwargs "{'email_id': 'i...@microsynth.ch', 'new_payment_terms_template': '... days net'}"
     """
     sql_query = f"""
         SELECT DISTINCT `tabCustomer`.`name` AS `customer_id`,
@@ -4769,7 +4769,7 @@ def update_french_payment_terms(email_id):
             AND `tabContact`.`email_id` = "{email_id}"
             AND `tabContact`.`status` != "Disabled"
             AND `tabCustomer`.`disabled` = 0
-            AND `tabCustomer`.`payment_terms` != "60 days net"
+            AND `tabCustomer`.`payment_terms` != "{new_payment_terms_template}"
         ;"""
     customers = frappe.db.sql(sql_query, as_dict=True)
     print(f"{len(customers)=}")
@@ -4778,6 +4778,6 @@ def update_french_payment_terms(email_id):
         if customer_doc.payment_terms != "30 days net":
             print(f"Customer {c['customer_id']} has Default Payment Terms Template '{customer_doc.payment_terms}'. Going to continue.")
             continue
-        customer_doc.payment_terms = "30 days net"
+        customer_doc.payment_terms = new_payment_terms_template
         customer_doc.save()
-        print(f"Set Customer {c['customer_id']} to Default Payment Terms Template '60 days net'.")
+        print(f"Set Customer {c['customer_id']} to Default Payment Terms Template '{new_payment_terms_template}'.")
