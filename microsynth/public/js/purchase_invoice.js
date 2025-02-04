@@ -55,7 +55,31 @@ frappe.ui.form.on('Purchase Invoice', {
     company(frm) {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function
-        }            
+        }
+    },
+    supplier(frm) {
+        // fetch Default Item, Default Taxes, Payment Terms
+        frappe.call({
+            'method': 'microsynth.microsynth.purchasing.supplier_change_fetches',
+            'args': {
+                'supplier_id': frm.doc.supplier,
+                'company': frm.doc.company
+            },
+            'callback': function(response) {
+                console.log(response.message.taxes_and_charges);
+                cur_frm.set_value('payment_terms_template', response.message.payment_terms_template);
+                if ((frm.doc.items || []).length == 1) {
+                    frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_code", response.message.default_item_code);
+                    frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_name", response.message.default_item_name);
+                } else {
+                    frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
+                }
+                setTimeout(() => { 
+                    cur_frm.set_value('taxes_and_charges', response.message.taxes_and_charges);
+                }, 400);
+                frappe.show_alert( __("Default Item, Taxes and Payment Terms Template fetched from new supplier") );
+            }
+        });
     }
 });
 
