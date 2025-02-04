@@ -248,24 +248,20 @@ def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
     if len(tracking_codes) == 0:
         #print(f"Found no Tracking Code for '{tracking_code=}'. Going to skip.")
         return ""
-    elif len(tracking_codes) > 1:
-        msg = f"Found the following {len(tracking_codes)} Tracking Codes for '{tracking_code}': {','.join(tc['name'] for tc in tracking_codes)}. Going to skip."
-        #print(msg)
-        return msg
     else:
-        tracking_code = tracking_codes[0]
-        # Check if there is already a delivery_datetime stored
-        if tracking_code['delivery_date']:
-            # yes: compare it and log an error if it differs
-            if tracking_code['delivery_date'] != delivery_datetime:
-                msg = f"Tracking Code '{tracking_code=}' has already delivery date {tracking_code['delivery_date']} and should now be {delivery_datetime}. Going to skip."
-                #print(msg)
-                return msg
-        else:
-            # no: save it
-            tracking_code_doc = frappe.get_doc("Tracking Code", tracking_code['name'])
-            tracking_code_doc.delivery_date = delivery_datetime
-            tracking_code_doc.save()
+        for tracking_code in tracking_codes:
+            # Check if there is already a delivery_datetime stored
+            if tracking_code['delivery_date']:
+                # yes: compare it and log an error if it differs
+                if tracking_code['delivery_date'] != delivery_datetime:
+                    msg = f"Tracking Code '{tracking_code=}' has already delivery date {tracking_code['delivery_date']} and should now be {delivery_datetime}. Going to skip."
+                    #print(msg)
+                    return msg
+            else:
+                # no: save it
+                tracking_code_doc = frappe.get_doc("Tracking Code", tracking_code['name'])
+                tracking_code_doc.delivery_date = delivery_datetime
+                tracking_code_doc.save()
     return ""
 
 
