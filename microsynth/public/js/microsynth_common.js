@@ -46,6 +46,9 @@ $(document).ready(function() {
             window.location.replace("/desk");
         }
     }
+    
+    // disable stop_drop handler by default - i.e. on each access, potentially lingering stop_drops are disabled
+    // window.removeEventListener("drop", stop_drop, true); // disabled because this trigger only works once and not on each document refresh
 });
 
 function sleep(milliseconds) {
@@ -365,4 +368,9 @@ function fetch_accounting_notes(frm) {
             frm.dashboard.add_comment(response.message, 'yellow', true);
         }
     });
+}
+
+// this is a handler function that prevents anything from being dropped on a form
+function stop_drop(event) {
+    event.stopImmediatePropagation();
 }

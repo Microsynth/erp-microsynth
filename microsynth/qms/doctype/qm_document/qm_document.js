@@ -252,19 +252,25 @@ frappe.ui.form.on('QM Document', {
             // assure company field is visible (after insert of a frehs document it would be still hidden)
             cur_frm.set_df_property('company', 'hidden', false);
         }
-        
+
         // remove dashboard doc (+) buttons
         var new_btns = document.getElementsByClassName("btn-new");
         for (var i = 0; i < new_btns.length; i++) {
             new_btns[i].style.visibility = "hidden";
         }
-        
+
         // remove attach file depending on status
         if (!["Draft"].includes(frm.doc.status)) {
             var attach_btns = document.getElementsByClassName("add-attachment");
             for (var i = 0; i < attach_btns.length; i++) {
                 attach_btns[i].style.visibility = "hidden";
             }
+
+            // disable dropping things
+            window.addEventListener("drop", stop_drop, true);
+        } else {
+            // enable dropping things (i.e. revert prevention from submitted document)
+            window.removeEventListener("drop", stop_drop, true);
         }
 
         // only allow creator and QAU to set/change valid till date
