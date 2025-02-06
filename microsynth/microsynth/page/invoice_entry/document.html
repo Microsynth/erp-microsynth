@@ -30,7 +30,7 @@
                                 <td>{{ _("Posting Date") }}</td>
                                 <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
                             </tr>
-                            <tr {% if due_date <= curdate %}style="background-color: #F6CDCE; "{% endif %} >
+                            <tr {% if due_date <= curdate %}class="highlight-row"{% endif %} >
                                 <td>{{ _("Due Date") }}</td>
                                 <td><div id="due_date_{{ name }}"></div></td>
                             </tr>

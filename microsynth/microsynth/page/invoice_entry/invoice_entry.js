@@ -126,6 +126,12 @@ frappe.invoice_entry = {
             'supplier_name', purchase_invoice_values.supplier_name);
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'due_date', frappe.datetime.obj_to_user(purchase_invoice_values.due_date));
+        // check if due date is in the past
+        if (purchase_invoice_values.due_date <= frappe.datetime.get_today()) {
+            document.getElementById("due_date_" + purchase_invoice_values.name).parentNode.parentNode.classList.add("highlight-row");
+        } else {
+            document.getElementById("due_date_" + purchase_invoice_values.name).parentNode.parentNode.classList.remove("highlight-row");
+        }
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'posting_date', frappe.datetime.obj_to_user(purchase_invoice_values.posting_date));
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 

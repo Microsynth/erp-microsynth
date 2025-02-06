@@ -155,3 +155,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .input-group-addon:last-child {
     border-left: 0;
 }
+
+.highlight-row {
+    background-color: #F6CDCE;
+}
