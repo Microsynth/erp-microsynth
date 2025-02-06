@@ -6,6 +6,7 @@ from frappe import _
 import json
 from datetime import datetime
 from frappe.utils import flt
+from microsynth.microsynth.purchasing import supplier_change_fetches
 
 FORMAT_MAPPER = {
     'dd.mm.yyyy': '%d.%m.%Y',
@@ -106,13 +107,25 @@ def save_document(doc):
         doc = json.loads(doc)
 
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
+    if d.supplier != doc.get('supplier'):
+        # Supplier change
+        fetches = supplier_change_fetches(doc.get('supplier'), d.company)
+        if fetches['taxes_and_charges']:
+            d.taxes_and_charges = fetches['taxes_and_charges']
+        if fetches['payment_terms_template']:
+            d.payment_terms_template = fetches['payment_terms_template']
+        if len(d.items) == 1 and fetches['default_item_code'] and fetches['default_item_name']:
+            d.items[0].item_code = fetches['default_item_code']
+            d.items[0].item_name = fetches['default_item_name']
     d.supplier = doc.get('supplier')
 
     # date field: parse back from human-friendly format
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     # prepare document fields
     d.set_posting_time = 1
-    d.payment_terms_template = None
+
+    # TODO:
+    # d.payment_terms_template = None
     d.payment_schedule = []
 
     target_values = {
