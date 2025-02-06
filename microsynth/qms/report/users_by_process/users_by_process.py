@@ -29,6 +29,7 @@ def get_data(filters):
             LEFT JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
             WHERE `tabQM User Process Assignment`.`process_number` = '{filters.get('process_number')}'
                 AND `tabQM User Process Assignment`.`subprocess_number` = '{filters.get('subprocess_number')}'
+                AND `tabUser Settings`.`disabled` = 0
                 {conditions}
             """
         return frappe.db.sql(query, as_dict=True)
@@ -83,6 +84,7 @@ def get_users(qm_processes, companies=None):
         LEFT JOIN `tabQM User Process Assignment` ON `tabQM User Process Assignment`.`parent` = `tabUser Settings`.`name`
         WHERE {company_condition}
             {qm_process_conditions}
+            AND `tabUser Settings`.`disabled` = 0
         """
     # frappe.log_error(f"{query=}")
     return frappe.db.sql(query, as_dict=True)
