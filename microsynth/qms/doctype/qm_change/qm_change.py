@@ -249,7 +249,8 @@ def get_cc_actions(qm_change):
             `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
-            `tabQM Action`.`status`
+            `tabQM Action`.`status`,
+            `tabQM Action`.`completion_date`
         FROM `tabQM Action`
         WHERE 
             `tabQM Action`.`document_type` = "QM Change"
@@ -270,7 +271,8 @@ def get_cc_effectiveness_checks(qm_change):
             `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
-            `tabQM Action`.`status`
+            `tabQM Action`.`status`,
+            `tabQM Action`.`completion_date`
         FROM `tabQM Action`
         WHERE 
             `tabQM Action`.`document_type` = "QM Change"
@@ -291,7 +293,8 @@ def get_cc_impact_assessments(qm_change):
             `tabQM Impact Assessment`.`due_date`,
             `tabQM Impact Assessment`.`assessment_summary`,
             `tabQM Impact Assessment`.`created_on`,
-            `tabQM Impact Assessment`.`created_by`
+            `tabQM Impact Assessment`.`created_by`,
+            `tabQM Impact Assessment`.`completion_date`
         FROM `tabQM Impact Assessment`
         WHERE 
             `tabQM Impact Assessment`.`document_type` = "QM Change"
