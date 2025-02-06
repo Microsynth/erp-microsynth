@@ -8,6 +8,7 @@
   "title",
   "qm_process",
   "document_type",
+  "completion_date",
   "column_break_3",
   "status",
   "due_date",
@@ -107,10 +108,16 @@
    "fieldname": "due_date",
    "fieldtype": "Date",
    "label": "Due Date"
+  },
+  {
+   "fieldname": "completion_date",
+   "fieldtype": "Date",
+   "label": "Completion Date",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2024-07-30 12:30:54.570240",
+ "modified": "2025-02-06 17:28:41.411640",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Impact Assessment",

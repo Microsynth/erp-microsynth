@@ -11,6 +11,7 @@ from frappe.model.document import Document
 class QMImpactAssessment(Document):
     def on_submit(self):
         self.status = "Completed"
+        self.completion_date = today()
         self.save()
         frappe.db.commit()
 
