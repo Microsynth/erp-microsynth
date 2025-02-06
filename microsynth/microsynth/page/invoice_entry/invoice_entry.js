@@ -58,7 +58,7 @@ frappe.invoice_entry = {
         }
         if (purchase_invoice_drafts.length == 0) {
             html = "<h1>Nothing to do 😎</h1>"  // Add button "Load invoices" that triggers batch_invoice_processing.process_files
-            html += '<button class="btn btn-sm btn-primary" id="btn_import" onclick="import_invoices()">Import Invoices now</button>'
+            //html += '<button class="btn btn-sm btn-primary" id="btn_import" onclick="import_invoices()">Import Invoices now</button>'
         }
         // insert content
         document.getElementById("pi_drafts_view").innerHTML = html;
