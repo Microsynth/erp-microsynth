@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 import json
 from datetime import datetime
-from frappe.utils import flt
+from frappe.utils import flt, add_days
 from microsynth.microsynth.purchasing import supplier_change_fetches
 
 FORMAT_MAPPER = {
@@ -123,14 +123,23 @@ def save_document(doc):
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     # prepare document fields
     d.set_posting_time = 1
-
-    # TODO:
     # d.payment_terms_template = None
     d.payment_schedule = []
 
+    if d.posting_date and d.payment_terms_template:
+        template = frappe.get_doc("Payment Terms Template", d.payment_terms_template)
+        if len(template.terms) > 0:
+            days = template.terms[0].credit_days
+            due_date = add_days(d.posting_date, days)
+        else:
+            due_date = d.posting_date
+            frappe.log_error(f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", "invoice_entry.save_document")
+    else:
+        due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
+
     target_values = {
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
-        'due_date': datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d"),
+        'due_date': due_date,
         'bill_no': doc.get('bill_no'),
         'approver': doc.get('approver'),
         'remarks': doc.get('remarks')
