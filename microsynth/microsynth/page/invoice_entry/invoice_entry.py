@@ -110,7 +110,12 @@ def save_document(doc):
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
-    due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
+    if not doc.get('posting_date'):
+        doc['posting_date'] = datetime.today().strftime(date_format)
+    if doc.get('due_date'):
+        due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
+    else:
+        due_date = datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d")
 
     if d.supplier != doc.get('supplier'):
         # Supplier change
