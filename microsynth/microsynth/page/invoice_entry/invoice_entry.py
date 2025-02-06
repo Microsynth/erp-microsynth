@@ -106,36 +106,35 @@ def save_document(doc):
     if type(doc) == str:
         doc = json.loads(doc)
 
+    # date field: parse back from human-friendly format
+    date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
+    
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
+    due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
+
     if d.supplier != doc.get('supplier'):
         # Supplier change
         fetches = supplier_change_fetches(doc.get('supplier'), d.company)
         if fetches['taxes_and_charges']:
             d.taxes_and_charges = fetches['taxes_and_charges']
-        if fetches['payment_terms_template']:
-            d.payment_terms_template = fetches['payment_terms_template']
         if len(d.items) == 1 and fetches['default_item_code'] and fetches['default_item_name']:
             d.items[0].item_code = fetches['default_item_code']
             d.items[0].item_name = fetches['default_item_name']
+        # define due date based on supplier payment terms (we do not rely on the payment terms copying, because that will prevent free setting of due date
+        if d.posting_date and fetches['payment_terms_template']:
+            template = frappe.get_doc("Payment Terms Template", fetches['payment_terms_template'])
+            if len(template.terms) > 0:
+                days = template.terms[0].credit_days
+                due_date = add_days(d.posting_date, days)
+            else:
+                frappe.log_error(f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", "invoice_entry.save_document")
+
     d.supplier = doc.get('supplier')
 
-    # date field: parse back from human-friendly format
-    date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     # prepare document fields
     d.set_posting_time = 1
-    # d.payment_terms_template = None
+    d.payment_terms_template = None
     d.payment_schedule = []
-
-    if d.posting_date and d.payment_terms_template:
-        template = frappe.get_doc("Payment Terms Template", d.payment_terms_template)
-        if len(template.terms) > 0:
-            days = template.terms[0].credit_days
-            due_date = add_days(d.posting_date, days)
-        else:
-            due_date = d.posting_date
-            frappe.log_error(f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", "invoice_entry.save_document")
-    else:
-        due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
 
     target_values = {
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
