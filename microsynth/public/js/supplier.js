@@ -19,6 +19,15 @@ frappe.ui.form.on('Supplier', {
             }
             return {'filters': filters}
         });
+
+        if (frm.doc.supplier_shops.length > 0 && frm.doc.supplier_shops[0].webshop_url) {
+            frm.add_custom_button(__('Open Supplier Webshop'), function() {
+                window.open(
+                    frm.doc.supplier_shops[0].webshop_url,
+                    '_blank' // open in a new window.
+                );
+            }).addClass("btn-primary");
+        }
     }
 });
 
