@@ -50,6 +50,11 @@ def link_quotation_to_order(sales_order, quotation):
     """
     qtn = frappe.get_doc("Quotation", quotation)
     sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    # check that the Quotation is submitted
+    if qtn.docstatus == 0:
+        frappe.throw(f"Unable to link Quotation {quotation} in Draft status. Please check to submit it first.")
+    if qtn.docstatus > 1:
+        frappe.throw(f"Unable to link cancelled Quotation {quotation}.")
     # check that the Quotation belongs to the same Customer than the Sales Order
     if qtn.party_name != sales_order_doc.customer:
         frappe.throw(f"Quotation {quotation} belongs to Customer {qtn.party_name} but Sales Order {sales_order} belongs to Customer {sales_order_doc.customer}. Unable to link.")
