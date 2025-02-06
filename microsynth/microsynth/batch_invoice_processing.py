@@ -10,6 +10,7 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 from microsynth.microsynth.utils import send_email_from_template
+from datetime import datetime
 
 
 @frappe.whitelist()
@@ -41,7 +42,9 @@ def read_company(company, input_path, company_settings, debug=True):
 
 def parse_file(file_name, company, company_settings, debug=True):
     if debug:
-        print("INFO: Parsing {0} for {1}...".format(file_name, company))
+        print("\nINFO: Parsing {0} for {1}...".format(file_name, company))
+        print("INFO: {0}".format(datetime.now()))
+        print("INFO: {0}".format(file_name.split("/")[-1]))
     try:
         # try to fetch data from zugferd
         try:
@@ -68,12 +71,20 @@ def parse_file(file_name, company, company_settings, debug=True):
             if qr_content:
                 if debug:
                     print("INFO: QR invoice detected")
-                invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
-            else:
+                try:
+                    invoice = get_content_from_qr(qr_content, company_settings.default_tax, company_settings.default_item, company)
+                except Exception as err:
+                    if debug:
+                        print("ERROR: {0}".format(err))
+                    invoice = {}
+            
+            # so far no invoice detected: fall back to pdf reading
+            if not invoice:
                 if debug:
                     print("INFO: extract supplier from pdf")
+                invoice = {}
                 invoice.update({
-                    'supplier': find_supplier_from_pdf(file_name, company)
+                    'supplier': find_supplier_from_pdf(file_name, company, debug)
                 })
         
         # currency: if so far not defined, get company default currency
@@ -93,6 +104,8 @@ def parse_file(file_name, company, company_settings, debug=True):
         
         if debug:
             print("INFO: supplier {0}".format(invoice.get('supplier')))
+            if not invoice.get('supplier'):
+                print("INFO: no supplier found, will fallback to default supplier in invoice creation.".format(invoice.get('supplier')))
             
         # create invoice record
         create_invoice(file_name, invoice, company_settings)
@@ -111,12 +124,16 @@ def parse_file(file_name, company, company_settings, debug=True):
             with open(txt_path, 'w') as txt_file:
                 txt_file.write(msg)
             frappe.log_error(msg, "Batch processing parse file error")
+            if debug:
+                print(f"ERROR: Batch processing parse file error: {msg}")
             # Send an automatic email
             email_template = frappe.get_doc("Email Template", "Batch invoice processing error")
             rendered_content = frappe.render_template(email_template.response, {'file_name': file_name, 'err': f"{err}\n{traceback.format_exc()}"})
             send_email_from_template(email_template, rendered_content)
         except Exception as e:
             frappe.log_error(f"Got the following error during error handling:\n{e}\n{traceback.format_exc()}", "Batch processing parse file error")
+            if debug:
+                print(f"ERROR: Batch processing error handling: {e}")
 
 
 def create_invoice(file_name, invoice, settings):
