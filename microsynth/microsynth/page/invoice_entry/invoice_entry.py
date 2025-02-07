@@ -120,6 +120,10 @@ def save_document(doc):
     if d.supplier != doc.get('supplier'):
         # Supplier change
         fetches = supplier_change_fetches(doc.get('supplier'), d.company)
+        if fetches['default_approver']:
+            d.default_approver = fetches['default_approver']
+            if not doc.get('approver'):
+                doc['approver'] = fetches['default_approver']
         if fetches['taxes_and_charges']:
             d.taxes_and_charges = fetches['taxes_and_charges']
         if len(d.items) == 1 and fetches['default_item_code'] and fetches['default_item_name']:

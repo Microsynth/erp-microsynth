@@ -67,17 +67,35 @@ frappe.ui.form.on('Purchase Invoice', {
             },
             'callback': function(response) {
                 console.log(response.message.taxes_and_charges);
-                cur_frm.set_value('payment_terms_template', response.message.payment_terms_template);
-                if ((frm.doc.items || []).length == 1) {
-                    frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_code", response.message.default_item_code);
-                    frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_name", response.message.default_item_name);
+                if (response.message.default_approver) {
+                    cur_frm.set_value('approver', response.message.default_approver);
                 } else {
-                    frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
+                    frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Approver.");
                 }
-                setTimeout(() => { 
-                    cur_frm.set_value('taxes_and_charges', response.message.taxes_and_charges);
-                }, 400);
-                frappe.show_alert( __("Default Item, Taxes and Payment Terms Template fetched from new supplier") );
+                if (response.message.payment_terms_template) {
+                    cur_frm.set_value('payment_terms_template', response.message.payment_terms_template);
+                } else {
+                    frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Payment Terms Template.");
+                }
+                if (response.message.default_item_code && response.message.default_item_name) {
+                    if ((frm.doc.items || []).length == 1) {
+                        frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_code", response.message.default_item_code);
+                        frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_name", response.message.default_item_name);
+                    } else {
+                        frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
+                    }
+                } else {
+                    frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Item.");
+                }
+                
+                if (response.message.taxes_and_charges) {
+                    setTimeout(() => { 
+                        cur_frm.set_value('taxes_and_charges', response.message.taxes_and_charges);
+                    }, 400);
+                } else {
+                    frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Tax Template for Company " + frm.doc.company + ".");
+                }
+                frappe.show_alert( __("Default Approver, Item, Taxes and Payment Terms Template fetched from new supplier") );
             }
         });
     }

@@ -595,7 +595,8 @@ def supplier_change_fetches(supplier_id, company):
     return {'taxes_and_charges': default_tax_template,
             'payment_terms_template': supplier_doc.payment_terms,
             'default_item_code': supplier_doc.default_item,
-            'default_item_name': supplier_doc.item_name}
+            'default_item_name': supplier_doc.item_name,
+            'default_approver': supplier_doc.default_approver}
 
 
 @frappe.whitelist()
