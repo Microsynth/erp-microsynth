@@ -221,7 +221,8 @@ def get_corrections(qm_nc):
             `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
-            `tabQM Action`.`status`
+            `tabQM Action`.`status`,
+            `tabQM Action`.`completion_date`
         FROM `tabQM Action`
         WHERE 
             `tabQM Action`.`document_type` = "QM Nonconformity"
@@ -242,7 +243,8 @@ def get_corrective_actions(qm_nc):
             `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
-            `tabQM Action`.`status`
+            `tabQM Action`.`status`,
+            `tabQM Action`.`completion_date`
         FROM `tabQM Action`
         WHERE 
             `tabQM Action`.`document_type` = "QM Nonconformity"
@@ -268,7 +270,8 @@ def get_effectiveness_checks(qm_nc):
             `tabQM Action`.`initiation_date`,
             `tabQM Action`.`description`,
             `tabQM Action`.`notes`,
-            `tabQM Action`.`status`
+            `tabQM Action`.`status`,
+            `tabQM Action`.`completion_date`
         FROM `tabQM Action`
         WHERE 
             `tabQM Action`.`document_type` = "QM Nonconformity"
