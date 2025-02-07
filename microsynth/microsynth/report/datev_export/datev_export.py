@@ -13,7 +13,8 @@ import html
 
 DATEV_CHARACTER_PATTERNS = {
     'p10040': "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$%*+-",        # dropped & to prevent xml encing issues
-    'p10027': "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ."
+    'p10027': "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.",
+    'p10036': "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$%*+- ",
 }
 
 def strip_str_to_allowed_chars(s, min_length, max_length, allowed_chars):
@@ -240,21 +241,22 @@ def create_datev_xml(path, dt, dn):
     # pre-process document to prevent datev errors
     doc = frappe.get_doc(dt, dn).as_dict()
     for item in doc['items']:
-        item['item_name'] = strip_str_to_allowed_chars(item['item_name'], 1, 50, DATEV_CHARACTER_PATTERNS['p10040'])
-    doc['party_name'] = strip_str_to_allowed_chars(doc.get('customer_name') or doc.get('supplier_name'), 1, 50, DATEV_CHARACTER_PATTERNS['p10040'])
+        item['item_name'] = strip_str_to_allowed_chars(item['item_name'], 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
+    doc['party_name'] = strip_str_to_allowed_chars(doc.get('customer_name') or doc.get('supplier_name'), 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
     if doc['doctype'] == "Sales Invoice":
         customer_address = frappe.get_doc("Address", doc.get("customer_address"))
         doc['party_number'] = frappe.get_value("Customer", doc.customer, "ext_debitor_number")
-        doc['address_line1'] = strip_str_to_allowed_chars(customer_address.address_line1, 1, 50, DATEV_CHARACTER_PATTERNS['p10040'])
+        doc['address_line1'] = strip_str_to_allowed_chars(customer_address.address_line1, 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
         doc['pincode'] = customer_address.pincode
-        doc['city'] = strip_str_to_allowed_chars(customer_address.city, 1, 11, DATEV_CHARACTER_PATTERNS['p10040'])
+        doc['city'] = strip_str_to_allowed_chars(customer_address.city, 1, 11, DATEV_CHARACTER_PATTERNS['p10036'])
     else:
         supplier_address = frappe.get_doc("Address", doc.get("supplier_address"))
         doc['party_number'] = frappe.get_value("Supplier", doc.supplier, "ext_creditor_id")
-        doc['address_line1'] = strip_str_to_allowed_chars(supplier_address.address_line1, 1, 50, DATEV_CHARACTER_PATTERNS['p10040'])
+        doc['address_line1'] = strip_str_to_allowed_chars(supplier_address.address_line1, 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
         doc['pincode'] = supplier_address.pincode
-        doc['city'] = strip_str_to_allowed_chars(supplier_address.city, 1, 11, DATEV_CHARACTER_PATTERNS['p10040'])
+        doc['city'] = strip_str_to_allowed_chars(supplier_address.city, 1, 11, DATEV_CHARACTER_PATTERNS['p10036'])
     doc['tax_id'] = strip_str_to_allowed_chars(doc.get("tax_id"), 1, 15, DATEV_CHARACTER_PATTERNS['p10027'])
+    doc['bill_no'] = strip_str_to_allowed_chars(doc.get("bill_no"), 1, 36, DATEV_CHARACTER_PATTERNS['p10040'])
     
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
         'doc': doc
