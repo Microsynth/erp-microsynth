@@ -133,7 +133,7 @@ def parse_ups_file(file_id, expected_line_length=78):
     error_str = ""
     counter = 0
     with open(file_path) as file:
-        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=',')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
             if len(line) != expected_line_length:
