@@ -533,7 +533,7 @@
    "permlevel": 0,
    "print": 0,
    "read": 1,
-   "report": 0,
+   "report": 1,
    "role": "Accounts Manager",
    "set_user_permissions": 0,
    "share": 0,
