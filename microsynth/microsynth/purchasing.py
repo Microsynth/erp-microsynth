@@ -590,7 +590,6 @@ def supplier_change_fetches(supplier_id, company):
     for row in supplier_doc.accounts:
         if row.company == company:
             default_tax_template = row.default_tax_template
-            frappe.log_error(default_tax_template, "supplier_change_fetches")
             break
     return {'taxes_and_charges': default_tax_template,
             'payment_terms_template': supplier_doc.payment_terms,
