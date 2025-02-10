@@ -77,17 +77,24 @@ frappe.ui.form.on('Purchase Invoice', {
                 } else {
                     frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Payment Terms Template.");
                 }
-                if (response.message.default_item_code && response.message.default_item_name) {
-                    if ((frm.doc.items || []).length == 1) {
+                if ((frm.doc.items || []).length == 1) {
+                    if (response.message.default_item_code && response.message.default_item_name) {
                         frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_code", response.message.default_item_code);
                         frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "item_name", response.message.default_item_name);
                     } else {
-                        frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
+                        frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Item.");
+                    }
+                    if (response.message.expense_account) {
+                        frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "expense_account", response.message.expense_account);
+                    } else {
+                        frappe.msgprint("The default Item " + response.message.default_item_code + " of Supplier " + frm.doc.supplier + " has no Default Expense Account.");
+                    }
+                    if (response.message.cost_center) {
+                        frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "cost_center", response.message.cost_center);
                     }
                 } else {
-                    frappe.msgprint("Supplier " + frm.doc.supplier + " has no default Item.");
-                }
-                
+                    frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
+                }                
                 if (response.message.taxes_and_charges) {
                     setTimeout(() => { 
                         cur_frm.set_value('taxes_and_charges', response.message.taxes_and_charges);

@@ -583,9 +583,18 @@ def validate_unique_bill_no(doc):
 @frappe.whitelist()
 def supplier_change_fetches(supplier_id, company):
     """
-    bench execute microsynth.microsynth.purchasing.supplier_change_fetches --kwargs "{'supplier_id': ''}"
+    bench execute microsynth.microsynth.purchasing.supplier_change_fetches --kwargs "{'supplier_id': 'S-00003', 'company': 'Microsynth AG'}"
     """
     supplier_doc = frappe.get_doc("Supplier", supplier_id)
+    expense_account = ""
+    cost_center = ""
+    if supplier_doc.default_item:
+        item_doc = frappe.get_doc("Item", supplier_doc.default_item)
+        for item_default in item_doc.item_defaults:
+            if item_default.company == company:
+                expense_account = item_default.expense_account
+                cost_center = item_default.buying_cost_center or frappe.get_value("Company", company, "cost_center")
+                break
     default_tax_template = ""
     for row in supplier_doc.accounts:
         if row.company == company:
@@ -595,6 +604,8 @@ def supplier_change_fetches(supplier_id, company):
             'payment_terms_template': supplier_doc.payment_terms,
             'default_item_code': supplier_doc.default_item,
             'default_item_name': supplier_doc.item_name,
+            'expense_account': expense_account,
+            'cost_center': cost_center,
             'default_approver': supplier_doc.default_approver}
 
 

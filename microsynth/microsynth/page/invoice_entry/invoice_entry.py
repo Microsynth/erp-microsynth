@@ -126,9 +126,14 @@ def save_document(doc):
                 doc['approver'] = fetches['default_approver']
         if fetches['taxes_and_charges']:
             d.taxes_and_charges = fetches['taxes_and_charges']
-        if len(d.items) == 1 and fetches['default_item_code'] and fetches['default_item_name']:
-            d.items[0].item_code = fetches['default_item_code']
-            d.items[0].item_name = fetches['default_item_name']
+        if len(d.items) == 1:
+            if fetches['default_item_code'] and fetches['default_item_name']:
+                d.items[0].item_code = fetches['default_item_code']
+                d.items[0].item_name = fetches['default_item_name']
+            if fetches['expense_account']:
+                d.items[0].expense_account = fetches['expense_account']
+            if fetches['cost_center']:
+                d.items[0].cost_center = fetches['cost_center']
         # define due date based on supplier payment terms (we do not rely on the payment terms copying, because that will prevent free setting of due date
         if d.posting_date and fetches['payment_terms_template']:
             template = frappe.get_doc("Payment Terms Template", fetches['payment_terms_template'])
