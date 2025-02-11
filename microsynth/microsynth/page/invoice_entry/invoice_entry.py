@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 import json
-from datetime import datetime
+from datetime import datetime, date
 from frappe.utils import flt, add_days
 from microsynth.microsynth.purchasing import supplier_change_fetches
 
@@ -111,6 +111,7 @@ def save_document(doc):
     
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
     if not doc.get('posting_date'):
+        frappe.throw(':-)')
         doc['posting_date'] = datetime.today().strftime(date_format)
     if doc.get('due_date'):
         due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
@@ -171,7 +172,8 @@ def save_document(doc):
 
         deviations = []
         for k,v in target_values.items():
-            if (d.get(k) or "") != target_values[k]:
+            # convert to string before comparing to circumvent permission issue
+            if str(d.get(k) or "") != str(target_values[k]):
                 deviations.append(k)
         if len(deviations) > 0:
             frappe.throw("Invalid input detected: {0}".format(deviations) )
