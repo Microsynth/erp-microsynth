@@ -293,12 +293,12 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_suppliers(file_path, expected_line_length=41, update_countries=False, add_ext_creditor_id=True):
+def import_suppliers(file_path, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=True):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'update_countries': False, 'add_ext_creditor_id': True}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'update_countries': False, 'add_ext_creditor_id': False}"
     """
     import csv
-    country_code_mapping = {}
+    country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
         '10': '10 days net',
         '20': '20 days net',
@@ -329,8 +329,8 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False,
             phone = line[11].strip() + line[12].strip()
             email = line[13].strip()
             web_url = line[14].strip()
-            web_username = line[15].strip()  # might be imported later
-            web_pwd = line[16].strip()  # might be entered directly into a protected field
+            web_username = line[15].strip()
+            web_pwd = line[16].strip()
             supplier_tax_id = line[17].strip()
             skonto = line[18].strip()  # will be imported manually
             payment_days = str(line[19].strip())
@@ -378,8 +378,13 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False,
                 details += f"\nTransportkosten: {transportation_costs}"
             if post_box and not "Postfach" in post_box:
                 post_box = f"Postfach {post_box}"
+            if currency == '£':
+                currency = 'GBP'
             
             # check some values
+            if salutation and salutation not in ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'):
+                #print(f"Salutation '{salutation}' is not in the list of allowed salutations ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'), going to ignore salutation of {ext_creditor_number}.")
+                salutation = None
             if country_code not in country_code_mapping:
                 countries = frappe.get_all("Country", filters={'code': country_code}, fields=['name'])
                 if len(countries) == 0:
@@ -448,6 +453,13 @@ def import_suppliers(file_path, expected_line_length=41, update_countries=False,
                 'country': country_code_mapping[country_code]
             })
             new_supplier.insert()
+            new_supplier.append("supplier_shops", {
+                'company': our_company,
+                'webshop_url': web_url,
+                'customer_id': ext_customer_id,
+                'username': web_username,
+                'password': web_pwd
+            })
             imported_counter += 1
 
             if (address_line1 or post_box) and city and country_code and country_code in country_code_mapping:
