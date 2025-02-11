@@ -600,6 +600,13 @@ def supplier_change_fetches(supplier_id, company):
         if row.company == company:
             default_tax_template = row.default_tax_template
             break
+    if (not default_tax_template) and company:
+        # fetch company specific default Purchase Taxes and Charges Template
+        tax_templates = frappe.get_all("Purchase Taxes and Charges Template", filters={'company': company, 'is_default': 1}, fields=['name'])
+        if len(tax_templates) == 1:
+            default_tax_template = tax_templates[0]['name']
+        else:
+            frappe.log_error(f"There are {len(tax_templates)} default Purchase Taxes and Charges Templates for Company {company}.", "purchasing.supplier_change_fetches")
     return {'taxes_and_charges': default_tax_template,
             'payment_terms_template': supplier_doc.payment_terms,
             'default_item_code': supplier_doc.default_item,
