@@ -33,6 +33,25 @@ frappe.ui.form.on('Supplier', {
 
 
 frappe.ui.form.on('Supplier Shop', {
+    // password(frm, cdt, cdn) {
+    //     frappe.call({
+    //         'method': 'microsynth.microsynth.purchasing.check_supplier_shop_password',
+    //         'args': {
+    //             "cdn": cdn
+    //         },
+    //         'callback': function(response) {
+    //             if (!response.message.error) {
+    //                 frappe.show_alert( __("Password ok") );
+    //             } else {
+    //                 frappe.msgprint({
+    //                     title: __('Error'),
+    //                     indicator: 'red',
+    //                     message: response.message.error
+    //                 });
+    //             }
+    //         }
+    //     });
+    // },
     copy_password(frm, cdt, cdn) {
         frappe.call({
             "method": "microsynth.microsynth.purchasing.decrypt_access_password",

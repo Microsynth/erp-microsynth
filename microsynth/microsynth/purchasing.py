@@ -4,6 +4,7 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 
 import frappe
+from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
 from frappe.utils.password import get_decrypted_password
@@ -635,3 +636,21 @@ def decrypt_access_password(cdn):
     """
     password = get_decrypted_password("Supplier Shop", cdn, "password", False)
     return password
+
+
+@frappe.whitelist()
+def check_supplier_shop_password(cdn):
+    """
+    cdn: child doc name
+
+    bench execute microsynth.microsynth.purchasing.check_supplier_shop_password --kwargs "{'new_password': 'microsynth-1'}"
+    """
+    from frappe.core.doctype.user.user import test_password_strength
+    password = decrypt_access_password(cdn)
+    # check strength
+    strength = test_password_strength(new_password=password)
+    if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
+        frappe.log_error(f"{password=}; {strength['feedback']['password_policy_validation_passed']=}")
+        return {'error': _("The new password does not match the security policy. Please try again with a strong password.") + " " + (strength['feedback']['warning'] or "")}
+    else:
+        return {'success': True}
