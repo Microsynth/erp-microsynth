@@ -111,7 +111,6 @@ def save_document(doc):
     
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
     if not doc.get('posting_date'):
-        frappe.throw(':-)')
         doc['posting_date'] = datetime.today().strftime(date_format)
     if doc.get('due_date'):
         due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
