@@ -650,7 +650,6 @@ def check_supplier_shop_password(cdn):
     # check strength
     strength = test_password_strength(new_password=password)
     if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
-        frappe.log_error(f"{password=}; {strength['feedback']['password_policy_validation_passed']=}")
         return {'error': _("The new password does not match the security policy. Please try again with a strong password.") + " " + (strength['feedback']['warning'] or "")}
     else:
         return {'success': True}
