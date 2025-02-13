@@ -126,6 +126,19 @@ def save_document(doc):
                 doc['approver'] = fetches['default_approver']
         if fetches['taxes_and_charges']:
             d.taxes_and_charges = fetches['taxes_and_charges']
+            tax_template = frappe.get_doc("Purchase Taxes and Charges Template", d.taxes_and_charges)
+            d.taxes = []
+            for tax in tax_template.taxes:
+                t = {
+                    'category': tax.category,
+                    'add_deduct_tax': tax.add_deduct_tax,
+                    'charge_type': tax.charge_type,
+                    'account_head': tax.account_head,
+                    'description': tax.description,
+                    'cost_center': tax.cost_center,
+                    'rate': tax.rate
+                }    
+                d.append("taxes", t)
         if len(d.items) == 1:
             if fetches['default_item_code'] and fetches['default_item_name']:
                 d.items[0].item_code = fetches['default_item_code']

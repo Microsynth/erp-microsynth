@@ -66,7 +66,6 @@ frappe.ui.form.on('Purchase Invoice', {
                 'company': frm.doc.company
             },
             'callback': function(response) {
-                console.log(response.message.taxes_and_charges);
                 if (response.message.default_approver) {
                     cur_frm.set_value('approver', response.message.default_approver);
                 } else {
