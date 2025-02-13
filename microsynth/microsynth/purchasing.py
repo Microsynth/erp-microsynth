@@ -8,6 +8,7 @@ from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
 from frappe.utils.password import get_decrypted_password
+from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 import json
 
@@ -636,7 +637,13 @@ def decrypt_access_password(cdn):
     Decrypt access password
     """
     password = get_decrypted_password("Supplier Shop", cdn, "password", False)
-    return password
+    if not password:
+        return {'password': password, 'warning': "Please set a password and save the Supplier before using the button 'Copy password'."}
+    strength = test_password_strength(new_password=password)
+    if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
+        return {'password': password, 'warning': f"The password does not match our security policy. Please change it to a strong password. {strength['feedback']['warning'] or ''}"}
+    else:
+        return {'password': password, 'warning': None}
 
 
 @frappe.whitelist()
@@ -644,7 +651,6 @@ def check_supplier_shop_password(password):
     """
     bench execute microsynth.microsynth.purchasing.check_supplier_shop_password --kwargs "{'new_password': 'microsynth-1'}"
     """
-    from frappe.core.doctype.user.user import test_password_strength
     # check strength
     strength = test_password_strength(new_password=password)
     if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:

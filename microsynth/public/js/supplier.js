@@ -59,11 +59,18 @@ frappe.ui.form.on('Supplier Shop', {
                 "cdn": cdn
             },
             "callback": function(response) {
-                navigator.clipboard.writeText(response.message).then(function() {
+                navigator.clipboard.writeText(response.message.password).then(function() {
                     frappe.show_alert( __("Copied") );
                   }, function() {
                      frappe.show_alert( __("No access") );
                 });
+                if (response.message.warning) {
+                    frappe.msgprint({
+                        title: __('Warning'),
+                        indicator: 'orange',
+                        message: response.message.warning
+                    });
+                }
             }
         });
     }
