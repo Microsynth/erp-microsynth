@@ -640,14 +640,11 @@ def decrypt_access_password(cdn):
 
 
 @frappe.whitelist()
-def check_supplier_shop_password(cdn):
+def check_supplier_shop_password(password):
     """
-    cdn: child doc name
-
     bench execute microsynth.microsynth.purchasing.check_supplier_shop_password --kwargs "{'new_password': 'microsynth-1'}"
     """
     from frappe.core.doctype.user.user import test_password_strength
-    password = decrypt_access_password(cdn)
     # check strength
     strength = test_password_strength(new_password=password)
     if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
