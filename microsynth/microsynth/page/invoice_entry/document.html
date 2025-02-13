@@ -27,14 +27,6 @@
                                 <td><div id="supplier_name_{{ name }}">{{ supplier_name }}</div></td>
                             </tr>
                             <tr>
-                                <td>{{ _("Posting Date") }}</td>
-                                <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
-                            </tr>
-                            <tr {% if due_date <= curdate %}class="highlight-row"{% endif %} >
-                                <td>{{ _("Due Date") }}</td>
-                                <td><div id="due_date_{{ name }}"></div></td>
-                            </tr>
-                            <tr>
                                 <td>{{ _("Supplier Invoice No") }}</td>
                                 <td><div id="bill_no_{{ name }}"></div></td>
                             </tr>
@@ -59,6 +51,14 @@
                             <tr>
                                 <td>{{ _("Tax Template") }}</td>
                                 <td><div id="tax_template_{{ name }}">{{ taxes_and_charges }}</div></td>
+                            </tr>
+                            <tr>
+                                <td>{{ _("Posting Date") }}</td>
+                                <td><div class="posting_date" id="posting_date_{{ name }}"></div></td>
+                            </tr>
+                            <tr {% if due_date <= curdate %}class="highlight-row"{% endif %} >
+                                <td>{{ _("Due Date") }}</td>
+                                <td><div id="due_date_{{ name }}"></div></td>
                             </tr>
                             <tr>
                                 <td>{{ _("Expense Account / Cost Center") }}</td>
