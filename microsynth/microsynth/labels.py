@@ -211,18 +211,26 @@ def print_oligo_order_labels(sales_orders):
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
 
     for o in sales_orders:
+        warning = ""
         try:
             sales_order = frappe.get_doc("Sales Order", o)
             label_data = get_label_data(sales_order)
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
-            
-            print_raw(settings.label_printer_ip, settings.label_printer_port, content)
-            sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            sales_order.save()
-            frappe.db.commit()
+            if not sales_order.label_printed_on:
+                print_raw(settings.label_printer_ip, settings.label_printer_port, content)
+                sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sales_order.save()
+                frappe.db.commit()
+            else:
+                warning = f"Shipping Label for Sales Order {sales_order.name} seems to be already printed on {sales_order.label_printed_on}. Not going to print again. Please make sure that you are in the correct report and refresh it."
         except Exception as err:
+            msg = "Error printing label for '{0}':\n{1}".format(sales_order.name, err)
             if str(err) != '[Errno 111] Connection refused':
-                frappe.log_error("Error printing label for '{0}':\n{1}".format(sales_order.name, err), "print_oligo_order_labels")
+                frappe.log_error(msg, "print_oligo_order_labels")
+            frappe.throw(msg)
+        if warning:
+            frappe.log_error(warning, "print_oligo_order_labels")
+            frappe.throw(warning)
     return
 
 
