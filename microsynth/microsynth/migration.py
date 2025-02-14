@@ -4789,3 +4789,27 @@ def update_customers_payment_terms(country, email_id, new_payment_terms_template
                 print(f"{'Would set' if dry_run else 'Set'} Customer {c['customer_id']} ({c['customer_name']}) from Invoicing Method Email to Chorus.")
             else:
                 print(f"WARNING: Customer {c['customer_id']} ({c['customer_name']}) has Invoicing Method {customer_doc.invoicing_method}. Not going to set to Chorus.")
+
+
+def delete_lost_reasons_from_not_lost_quotations():
+    """
+    bench execute microsynth.microsynth.migration.delete_lost_reasons_from_not_lost_quotations
+    """
+    query = """SELECT 
+            `tabQuotation`.`name` AS `quotation_id`, 
+            `tabQuotation Lost Reason`.`name` AS `qtn_lost_reason_id`,
+            `tabQuotation Lost Reason`.`order_lost_reason`
+        FROM `tabQuotation`
+        LEFT JOIN `tabQuotation Lost Reason` ON `tabQuotation Lost Reason`.`parent` = `tabQuotation`.`name`
+        WHERE `tabQuotation Lost Reason`.`order_lost_reason` IS NOT NULL
+            AND `tabQuotation`.`status` <> 'Lost';
+        """
+    quotations = frappe.db.sql(query, as_dict=True)
+    for quote in quotations:
+        quotation_doc = frappe.get_doc("Quotation", quote['name'])
+        lost_reasons = quotation_doc.lost_reasons
+        qtn_lost_reason_doc = frappe.get_doc("Quotation Lost Reason", quote['qtn_lost_reason_id'])
+        qtn_lost_reason_doc.delete()
+        quotation_doc.lost_reasons = None
+        quotation_doc.save()
+        print(f"Deleted the Lost Reasons '{lost_reasons}' from Quotation {quotation_doc.name} with status {quotation_doc.status}")
