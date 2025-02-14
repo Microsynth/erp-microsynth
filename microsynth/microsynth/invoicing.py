@@ -413,8 +413,13 @@ def make_invoice(delivery_note):
     sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
-    # for payment reminders: set 10 days goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
+    customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+    if customer_invoicing_method == "Chorus":
+        goodwill_days = 20
+    else:
+        goodwill_days = 10
+    # for payment reminders: set goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
     sales_invoice.submit()
     # in case of customer credit, this will be covered by the sales_invoice:on_submit hook
 
@@ -492,8 +497,13 @@ def make_punchout_invoice(delivery_note):
     sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
-    # for payment reminders: set 10 days goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
+    customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+    if customer_invoicing_method == "Chorus":
+        goodwill_days = 20
+    else:
+        goodwill_days = 10
+    # for payment reminders: set goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
 
     sales_invoice.submit()
     frappe.db.commit()
@@ -550,8 +560,13 @@ def make_collective_invoice(delivery_notes):
     sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
     # set income accounts
     set_income_accounts(sales_invoice)
-    # for payment reminders: set 10 days goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=10)
+    customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+    if customer_invoicing_method == "Chorus":
+        goodwill_days = 20
+    else:
+        goodwill_days = 10
+    # for payment reminders: set goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
 
     sales_invoice.submit()
 
@@ -1180,17 +1195,23 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "Paynet"
             elif customer.invoicing_method == "GEP":
                 mode = "GEP"
+            elif customer.invoicing_method == "Chorus":
+                mode = "Chorus"
             else:
                 mode = None
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
 
-        if mode == "Email":
+        if mode == "Email" or mode == "Chorus":
             # send by mail
-
             # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
-            recipient = invoice_contact.email_id
+            if mode == "Chorus":
+                # send to internal recipient as long as upload to Chorus is not automated
+                recipient = "invoice.deb@microsynth.ch"
+            else:
+                recipient = invoice_contact.email_id
+
             if not recipient:
                 email_template = frappe.get_doc("Email Template", "Missing email address to send Sales Invoice")
                 rendered_subject = frappe.render_template(email_template.subject, {'sales_invoice_id': sales_invoice.name, 'contact_id': invoice_contact.name})
