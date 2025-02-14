@@ -7,14 +7,19 @@ frappe.query_reports["Oligo Orders Ready To Package"] = {
 
 	],
 	"onload": (report) => {
-		report.page.add_inner_button(__("Print Shipping Labels"), function () {
-			frappe.call({
-				'method': "microsynth.microsynth.report.oligo_orders_ready_to_package.oligo_orders_ready_to_package.print_labels",
-				'callback': function(response){
-					frappe.show_alert( __("Started"))
-				}
+		hide_chart_buttons();
+		if (frappe.user.has_role("Accounts User")) {
+			frappe.show_alert('Accounts User should not print Shipping Labels from this report.');
+		} else {
+			report.page.add_inner_button(__("Print Shipping Labels"), function () {
+				frappe.call({
+					'method': "microsynth.microsynth.report.oligo_orders_ready_to_package.oligo_orders_ready_to_package.print_labels",
+					'callback': function(response){
+						frappe.show_alert( __("Started"))
+					}
+				});
 			});
-		});
+		}
 	}
 };
 
