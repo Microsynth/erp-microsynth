@@ -4749,13 +4749,13 @@ def change_contact_email(old_email, new_email):
         print(f"Changed email_id of Contact '{contact_doc.name}' from {old_email} to {new_email}")
 
 
-def update_customers_payment_terms(country, email_id, new_payment_terms_template, dry_run=True):
+def update_customers_payment_terms(country, email_id, new_payment_terms_template, update_invoicing_method=False, dry_run=True):
     """
     Set all enabled Customers with an enabled billing Address in the given Country,
     an enabled Contact with the given email_id and Payment Terms unequal the given Payment Terms Template
     to the given Payment Terms Template.
 
-    bench execute microsynth.microsynth.migration.update_customers_payment_terms --kwargs "{'country': 'France', 'email_id': 'invoice.deb@microsynth.ch', 'new_payment_terms_template': '30 days net', 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.update_customers_payment_terms --kwargs "{'country': 'France', 'email_id': 'i...@microsynth.ch', 'new_payment_terms_template': '30 days net', 'update_invoicing_method': True, 'dry_run': True}"
     """
     sql_query = f"""
         SELECT DISTINCT `tabCustomer`.`name` AS `customer_id`,
@@ -4781,3 +4781,11 @@ def update_customers_payment_terms(country, email_id, new_payment_terms_template
             customer_doc.payment_terms = new_payment_terms_template
             customer_doc.save()
         print(f"{'Would set' if dry_run else 'Set'} Customer {c['customer_id']} ({c['customer_name']}) from Default Payment Terms Template '{old_payment_terms}' to '{new_payment_terms_template}'.")
+        if update_invoicing_method:
+            if customer_doc.invoicing_method == "Email":
+                if not dry_run:
+                    customer_doc.invoicing_method = "Chorus"
+                    customer_doc.save()
+                print(f"{'Would set' if dry_run else 'Set'} Customer {c['customer_id']} ({c['customer_name']}) from Invoicing Method Email to Chorus.")
+            else:
+                print(f"WARNING: Customer {c['customer_id']} ({c['customer_name']}) has Invoicing Method {customer_doc.invoicing_method}. Not going to set to Chorus.")
