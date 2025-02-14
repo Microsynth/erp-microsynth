@@ -62,6 +62,7 @@ frappe.ui.form.on('Quotation', {
 
         setTimeout(function(){
             if (frm.doc.__islocal) {
+                frm.set_value('lost_reasons', null);  // remove lost reasons, e.g. when duplicating a Quotation
                 assert_customer_fields(frm);
             }
         }, 500);
