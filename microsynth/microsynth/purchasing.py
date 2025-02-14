@@ -297,7 +297,7 @@ def set_and_save_default_payable_accounts(supplier):
 
 def import_suppliers(file_path, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/Lieferanten_Microsynth_AG.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/2025-02-14_Lieferanten_Microsynth_AG.csv'}"
     """
     import csv
     country_code_mapping = {'UK': 'United Kingdom'}
@@ -306,6 +306,7 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
         '20': '20 days net',
         '30': '30 days net'
     }
+    total_counter = 0
     imported_counter = 0
     with open(file_path) as file:
         print(f"INFO: Parsing Suppliers from '{file_path}' ...")
@@ -315,7 +316,7 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
             if len(line) != expected_line_length:
                 print(f"ERROR: Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
-
+            total_counter += 1
             # parse values
             ext_customer_id = line[0].strip()  # remove leading and trailing whitespaces
             salutation = line[1].strip()
@@ -410,7 +411,7 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
             #company = f"{company} 2"  # Only for testing
             existing_suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name', 'ext_creditor_id'])
             if existing_suppliers and (not (update_countries or add_ext_creditor_id)) and len(existing_suppliers) > 0:
-                print(f"ERROR: There exist(s) already {len(existing_suppliers)} Supplier(s) with the Supplier Name '{company}'. They have the have the External Creditor ID {','.join((s['ext_creditor_id'] or 'None') for s in existing_suppliers)}. Going to skip {ext_creditor_number}.")
+                print(f"ERROR: There exists already {len(existing_suppliers)} Supplier with the Supplier Name '{company}' and it has the External Creditor ID {','.join((s['ext_creditor_id'] or 'None') for s in existing_suppliers)}. Going to skip {ext_creditor_number}.")
                 continue
 
             if add_ext_creditor_id:
@@ -521,7 +522,7 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
             create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_creditor_number)
             #print(f"INFO: Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
-        print(f"INFO: Successfully imported {imported_counter} Suppliers.")
+        print(f"INFO: Successfully imported {imported_counter}/{total_counter} Suppliers.")
 
 
 def create_and_fill_contact(supplier_id, idx, first_name, email, notes, ext_creditor_number, last_name=None):
