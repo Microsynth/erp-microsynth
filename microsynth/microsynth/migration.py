@@ -4749,12 +4749,13 @@ def change_contact_email(old_email, new_email):
         print(f"Changed email_id of Contact '{contact_doc.name}' from {old_email} to {new_email}")
 
 
-def update_french_payment_terms(email_id, new_payment_terms_template):
+def update_customers_payment_terms(country, email_id, new_payment_terms_template, dry_run=True):
     """
-    Notify the administration daily about new Customers with a french billing address.
-    Should be run daily by a Cronjob.
+    Set all enabled Customers with an enabled billing Address in the given Country,
+    an enabled Contact with the given email_id and Payment Terms unequal the given Payment Terms Template
+    to the given Payment Terms Template.
 
-    bench execute microsynth.microsynth.migration.update_french_payment_terms --kwargs "{'email_id': 'i...@microsynth.ch', 'new_payment_terms_template': '... days net'}"
+    bench execute microsynth.microsynth.migration.update_customers_payment_terms --kwargs "{'country': 'France', 'email_id': 'invoice.deb@microsynth.ch', 'new_payment_terms_template': '30 days net', 'dry_run': True}"
     """
     sql_query = f"""
         SELECT DISTINCT `tabCustomer`.`name` AS `customer_id`,
@@ -4763,7 +4764,7 @@ def update_french_payment_terms(email_id, new_payment_terms_template):
         FROM `tabCustomer`
         LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabCustomer`.`invoice_to`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
-        WHERE `tabAddress`.`country` = "France"
+        WHERE `tabAddress`.`country` = "{country}"
             AND `tabAddress`.`address_type` = 'Billing'
             AND `tabAddress`.`disabled` = 0
             AND `tabContact`.`email_id` = "{email_id}"
@@ -4775,9 +4776,8 @@ def update_french_payment_terms(email_id, new_payment_terms_template):
     print(f"{len(customers)=}")
     for c in customers:
         customer_doc = frappe.get_doc("Customer", c['customer_id'])
-        if customer_doc.payment_terms != "30 days net":
-            print(f"Customer {c['customer_id']} has Default Payment Terms Template '{customer_doc.payment_terms}'. Going to continue.")
-            continue
-        customer_doc.payment_terms = new_payment_terms_template
-        customer_doc.save()
-        print(f"Set Customer {c['customer_id']} to Default Payment Terms Template '{new_payment_terms_template}'.")
+        old_payment_terms = customer_doc.payment_terms
+        if not dry_run:
+            customer_doc.payment_terms = new_payment_terms_template
+            customer_doc.save()
+        print(f"{'Would set' if dry_run else 'Set'} Customer {c['customer_id']} ({c['customer_name']}) from Default Payment Terms Template '{old_payment_terms}' to '{new_payment_terms_template}'.")
