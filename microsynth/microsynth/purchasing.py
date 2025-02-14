@@ -295,9 +295,9 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_suppliers(file_path, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
+def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'file_path': '/mnt/erp_share/JPe/2025-02-14_Lieferanten_Microsynth_AG.csv'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-14_Lieferanten_Microsynth_AG_test.csv', 'output_filepath': '/mnt/erp_share/JPe/supplier_mapping.txt'}"
     """
     import csv
     country_code_mapping = {'UK': 'United Kingdom'}
@@ -308,8 +308,8 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
     }
     total_counter = 0
     imported_counter = 0
-    with open(file_path) as file:
-        print(f"INFO: Parsing Suppliers from '{file_path}' ...")
+    with open(input_filepath) as file:
+        print(f"INFO: Parsing Suppliers from '{input_filepath}' ...")
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
@@ -465,6 +465,10 @@ def import_suppliers(file_path, our_company='Microsynth AG', expected_line_lengt
                 'password': web_pwd
             })
             imported_counter += 1
+
+            # write mapping of ERP Supplier ID to FM Index to a file
+            with open(output_filepath, 'a') as txt_file:
+                txt_file.write(f"{new_supplier.name};{ext_creditor_number}\n")
 
             if (address_line1 or post_box) and city and country_code and country_code in country_code_mapping:
                 address_title = f"{company} - {address_line1 or post_box}"
