@@ -11,6 +11,8 @@ def get_columns():
     return [
         {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 125},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 75},
+        {"label": _("Label Barcode"), "fieldname": "sequencing_label_id", "fieldtype": "Data", "width": 100},
+        {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 70},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
@@ -23,7 +25,7 @@ def get_columns():
         #{"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
         #{"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
         #{"label": _("Hold Inv."), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 70},
-        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 220},
+        {"label": _("Creator"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 200},
         {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50}
     ]
 
@@ -62,6 +64,8 @@ def get_data(filters):
             `tabSales Order`.`transaction_date` AS `date`,
             ROUND(`tabSales Order`.`total`, 2) AS `total`,
             `tabSales Order`.`currency`,
+            `tabSample`.`sequencing_label_id`,
+            `tabSales Order`.`contact_person`,
             `tabSales Order`.`customer`,
             `tabSales Order`.`customer_name`,
             `tabSales Order`.`web_order_id`,
@@ -87,7 +91,7 @@ def get_data(filters):
         LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
         WHERE `tabSales Order`.`docstatus` = 1
             {conditions}
-        GROUP BY `tabSales Order`.`name`
+        -- GROUP BY `tabSales Order`.`name`
         ORDER BY `tabSales Order`.`transaction_date` DESC;
         """
     data = frappe.db.sql(sql_query, as_dict=True)
