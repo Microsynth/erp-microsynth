@@ -12,8 +12,10 @@ from datetime import datetime
 from frappe.model.document import Document
 from microsynth.microsynth.shipping import get_shipping_item, TRACKING_URLS
 
+
 class TrackingCode(Document):
     pass
+
 
 @frappe.whitelist()
 def create_tracking_code(web_order_id, tracking_code):
@@ -25,6 +27,7 @@ def create_tracking_code(web_order_id, tracking_code):
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
             frappe.log_error(msg, "tracking_code.create_tracking_code")
+            frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
         shipping_item = get_shipping_item(sales_order.items)
@@ -72,6 +75,51 @@ def create_tracking_code(web_order_id, tracking_code):
     else:
         frappe.throw("Sales Order with web_order_id '{0}' not found".format(web_order_id))
     return tracking.name
+
+
+@frappe.whitelist()
+def check_tracking_code(web_order_id, tracking_code):
+    """
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '4933668294'}"
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '779487631663'}"
+    """
+    sales_orders = frappe.get_all("Sales Order", 
+        filters = { 'web_order_id': web_order_id, 'docstatus': 1 },
+        fields = ['name', 'contact_email', 'contact_display'] )
+    
+    if len(sales_orders) > 0:
+        if len(sales_orders) > 1:
+            msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
+            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.throw(msg)
+        sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
+
+        shipping_item = get_shipping_item(sales_order.items)
+        if shipping_item is None:
+            frappe.throw(f"Sales Order '{sales_order.name}' does not have a shipping item")
+        if shipping_item not in TRACKING_URLS:
+            frappe.throw(f"Sales Order '{sales_order.name}' has the shipping item '{shipping_item}' without tracking code")
+
+        if shipping_item == '1126':  # FedEx
+            regex_str = '^7\d{11}$'
+        elif shipping_item == '1105':  # Post AT
+            regex_str = '^\d{22}$'
+        elif shipping_item in ['1120', '1123']:  # DHL
+            regex_str = '^\d{10}$'
+        elif shipping_item in ['1101', '1102']:  # Post CH
+            regex_str = '^\d{18}$'
+        elif shipping_item in ['1108', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
+            regex_str = '^1ZH\d{4}X\d{10}$'
+        else:
+            msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."
+            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            return {'success': False, 'message': msg}
+        pattern = re.compile(regex_str)
+        if pattern.match(tracking_code):
+            return {'success': True, 'message': 'OK'}
+        else:
+            msg = f"The tracking code '{tracking_code}' does <b>not</b> match the pattern expected for Shipping Item {shipping_item}.<br><br>If you see this often when you are sure that the tracking code is correct, please tell IT App to adapt the patterns."
+            return {'success': False, 'message': msg}
 
 
 def prepare_tracking_log(file_id):
