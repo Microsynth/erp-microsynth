@@ -459,7 +459,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-11-22 09:51:20.607444",
+ "modified": "2025-02-17 09:52:28.697272",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
@@ -494,6 +494,7 @@
    "cancel": 1,
    "create": 1,
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
