@@ -11,6 +11,8 @@ from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 import json
+import csv
+
 
 def create_pi_from_si(sales_invoice):
     """
@@ -295,11 +297,113 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
+def import_supplier_items(input_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=27):
+    """
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferantenartikel.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    """
+    supplier_mapping = {}
+    with open(supplier_mapping_file) as sm_file:
+        print(f"INFO: Parsing Supplier Mapping from '{supplier_mapping_file}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in sm_file), delimiter=";")  # replace NULL bytes (throwing an error)
+        for line in csv_reader:
+            if len(line) != 2:
+                print(f"ERROR: Line '{line}' has length {len(line)}, but expected length 2. Going to continue.")
+                continue
+            supplier_id = line[0]
+            index = line[1]
+            if index in supplier_mapping:
+                print(f"ERROR: Supplier Index {index} was already mapped to {supplier_mapping[index]} but should now be mapped to {supplier_id}. Going to continue.")
+            supplier_mapping[index] = supplier_id
+    total_counter = 0
+    imported_counter = 0
+    with open(input_filepath) as file:
+        print(f"INFO: Parsing Supplier Items from '{input_filepath}' ...")
+        csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                print(f"ERROR: Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
+                continue
+            total_counter += 1
+            # parse values
+            supplier_index = line[0].strip()  # remove leading and trailing whitespaces
+            auftraggeber = line[1].strip()
+            lk = line[2].strip()
+            internal_code = line[3].strip()  # if given, Item should have "Maintain Stock"
+            supplier_item_id = line[4].strip()
+            item_name = line[5].strip().replace('\n', ' ').replace('  ', ' ')  # replace newlines and double spaces
+            unit_size = line[6].strip()
+            currency = line[7].strip()
+            supplier_quote = line[8].strip()
+            list_price = line[9].strip()
+            purchase_price = line[10].strip()
+            customer_discount = line[11].strip()
+            content_quantity = line[12].strip()
+            item_group = line[13].strip()
+            group = line[14].strip()
+            account = line[15].strip()
+            storage_localtion = line[16].strip()  # warehouse
+            annual_consumption_budget = line[17].strip()
+            order_quantity_6mt = line[18].strip()
+            threshold = line[19].strip()
+            shelf_life  = line[20].strip()  # Haltbarkeit
+            process_critical = line[21].strip()
+            quality_control = line[22].strip()
+            quality_list = line[23].strip()
+            subgroup = line[24].strip()
+            time_limit = line[25].strip()
+            quantity_supplier = line[26].strip()
+
+            if account:
+                accounts = frappe.get_all("Account", filters={'account_number': account, 'company': company}, fields=['name'])
+                if len(accounts) != 1:
+                    print(f"ERROR: There are {len(accounts)} Accounts with Account Number '{account}': {','.join(a['name'] for a in accounts)}. Going to continue with the next supplier item.")
+                    continue
+                else:
+                    account_name = accounts[0]['name']  # TODO: Should this be the Default Expense Account in the Item Defaults table on the Item?
+            else:
+                print(f"ERROR: No account number given for Item '{item_name}'. Going to continue with the next supplier item.")
+                continue
+
+            if currency == "£":
+                currency = "GBP"
+
+            if len(item_name) > 140:
+                print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
+
+            item = frappe.get_doc({
+                'doctype': "Item",
+                'item_code': f"TODO-{total_counter}",
+                'item_name': item_name[:139],
+                'item_group': 'Purchasing',
+                'stock_uom': 'Pcs',
+                'is_stock_item': 1 if internal_code else 0,
+                'description': item_name,
+                'is_purchase_item': 1,
+                'is_sales_item': 0
+            })
+            item.insert()
+            imported_counter += 1
+            if not supplier_index in supplier_mapping:
+                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item {item.name} ({item.item_name}). Going to continue.")
+                continue
+            item.append("supplier_items", {
+                'supplier': supplier_mapping[supplier_index],
+                'supplier_part_no': supplier_item_id,
+                'substitute_status': ''
+            })
+            # item.append("item_defaults", {
+            #     'company': company,
+            #     'expense_account': account_name,
+            #     'default_supplier': supplier_mapping[supplier_index]
+            # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
+            item.save()
+
+
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-14_Lieferanten_Microsynth_AG_test.csv', 'output_filepath': '/mnt/erp_share/JPe/supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferanten_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
     """
-    import csv
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
         '10': '10 days net',
@@ -525,7 +629,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_creditor_number)
-            #print(f"INFO: Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
+            print(f"INFO: Successfully imported Supplier '{new_supplier.supplier_name}' ({new_supplier.name}).")
         print(f"INFO: Successfully imported {imported_counter}/{total_counter} Suppliers.")
 
 
