@@ -297,9 +297,9 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_supplier_items(input_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=27):
+def import_supplier_items(input_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferantenartikel.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferantenartikel_v2.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -353,16 +353,17 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
             subgroup = line[24].strip()
             time_limit = line[25].strip()
             quantity_supplier = line[26].strip()
+            item_id = line[27].strip()  # Datensatznummer
 
             if account:
                 accounts = frappe.get_all("Account", filters={'account_number': account, 'company': company}, fields=['name'])
                 if len(accounts) != 1:
-                    print(f"ERROR: There are {len(accounts)} Accounts with Account Number '{account}': {','.join(a['name'] for a in accounts)}. Going to continue with the next supplier item.")
+                    print(f"ERROR: There are {len(accounts)} Accounts with Account Number '{account}' for Company {company}: {','.join(a['name'] for a in accounts)}. Going to continue with the next supplier item.")
                     continue
                 else:
                     account_name = accounts[0]['name']  # TODO: Should this be the Default Expense Account in the Item Defaults table on the Item?
             else:
-                print(f"ERROR: No account number given for Item '{item_name}'. Going to continue with the next supplier item.")
+                print(f"WARNING: No account number given for Item '{item_name}'. Going to continue with the next supplier item.")
                 continue
 
             if currency == "£":
@@ -373,7 +374,7 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
 
             item = frappe.get_doc({
                 'doctype': "Item",
-                'item_code': f"TODO-{total_counter}",
+                'item_code': f"P{int(item_id):0{5}d}",  # TODO: How to name Items?
                 'item_name': item_name[:139],
                 'item_group': 'Purchasing',
                 'stock_uom': 'Pcs',
@@ -392,11 +393,12 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
                 'supplier_part_no': supplier_item_id,
                 'substitute_status': ''
             })
-            # item.append("item_defaults", {
-            #     'company': company,
-            #     'expense_account': account_name,
-            #     'default_supplier': supplier_mapping[supplier_index]
-            # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
+            #if account:
+                # item.append("item_defaults", {
+                #     'company': company,
+                #     'expense_account': account_name,
+                #     'default_supplier': supplier_mapping[supplier_index]
+                # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
             item.save()
 
 
