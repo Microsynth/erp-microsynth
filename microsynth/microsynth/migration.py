@@ -4813,3 +4813,37 @@ def delete_lost_reasons_from_not_lost_quotations():
         quotation_doc.lost_reasons = None
         quotation_doc.save()
         print(f"Deleted the Lost Reasons '{lost_reasons}' from Quotation {quotation_doc.name} with status {quotation_doc.status}")
+
+
+def rename_lost_reasons():
+    """
+    bench execute microsynth.microsynth.migration.rename_lost_reasons
+    """
+    mapping = {
+        'More expensive than competitor': 'Price',
+        'Delivery time too long': 'Turnaround Time (TAT)',
+        'Did not get the funds for the project': 'Budget/Funding Issues',
+        'choose another provider': 'Other',
+        'wrongTitle': 'Other',
+        'accidentally submitted': 'Other',
+        'aborted by customer': 'Other',
+        'exipred': 'Other',
+        'No need': 'Other',
+        '[object Object]Delivery time too long': 'Turnaround Time (TAT)',
+        'expired': 'Other',
+        'Analysis not required': 'Other',
+        'Too expensive': 'Price',
+        'technical issue': 'Missing Product/Service Feature'
+    }
+    for current_reason, new_reason in mapping.items():
+        frappe.db.sql(f"""
+            UPDATE `tabOpportunity Lost Reason`
+            SET `lost_reason` = '{new_reason}'
+            WHERE `name` = '{current_reason}';""")
+        # IntegrityError: (1062, "Duplicate entry 'Other' for key 'lost_reason'")
+        # The field "lost_reason" has the property "unique"
+        # TODO: How to merge?
+        frappe.db.sql(f"""
+            UPDATE `tabOpportunity Lost Reason`
+            SET `name` = '{new_reason}'
+            WHERE `name` = '{current_reason}';""")
