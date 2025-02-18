@@ -937,6 +937,11 @@ def place_order(content, client="webshop"):
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
         for t in taxes_template.taxes:
             so_doc.append("taxes", t)
+    # in case of drop-shipment, mark item positions for drop shipment (prevent actual delivery)
+    if is_drop_shipment:
+        for i in items:
+            i.delivered_by_supplier = 1
+    
     # save
     try:
         so_doc.insert(ignore_permissions=True)
