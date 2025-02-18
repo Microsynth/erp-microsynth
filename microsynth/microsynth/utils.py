@@ -566,6 +566,14 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 
+def get_customer_from_company(company):
+    customers = frappe.get_all("Intercompany Settings Company", filters={'company': company}, fields=['customer'])
+    if len(customers) > 0:
+        return customers[0]['customer']
+    else:
+        return None
+
+
 def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
@@ -856,6 +864,19 @@ def set_distributor(customer, distributor, product_type):
     customer.save()
 
     return
+
+
+def has_webshop_service(customer, service):
+    """
+    Check if a csutomer has the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq')
+    
+    bench execute microsynth.microsynth.utils.has_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
+    """
+    webshop_services = frappe.get_all("Webshop Service Link", 
+        filters={'parent': customer, 'parenttype': "Customer", 'webshop_service': service},
+        fields=['name', 'parent']
+    )
+    return len(webshop_services) > 0
 
 
 def add_webshop_service(customer, service):

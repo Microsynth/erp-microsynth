@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
+# Copyright (c) 2022-2025, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 #
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/wiki/Webshop-API
@@ -10,7 +10,7 @@ import json
 import re
 import base64
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -18,6 +18,7 @@ from microsynth.microsynth.invoicing import set_income_accounts
 from datetime import date, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+import traceback
 
 
 @frappe.whitelist(allow_guest=True)
@@ -742,6 +743,7 @@ def place_order(content, client="webshop"):
     # prepare parameters
     if type(content) == str:
         content = json.loads(content)
+    is_drop_shipment = False
     # validate input
     if not frappe.db.exists("Customer", content['customer']):
         return {'success': False, 'message': f"Customer '{content['customer']}' not found", 'reference': None}
@@ -761,9 +763,7 @@ def place_order(content, client="webshop"):
         company = frappe.get_value("Customer", content['customer'], 'default_company')
     if not company:
         company = frappe.defaults.get_global_default('company')
-    # select naming series
-    naming_series = get_naming_series("Sales Order", company)
-
+    
     customer = frappe.get_doc("Customer", content['customer'])
     contact = frappe.get_doc("Contact", content['contact'])  # cache contact values (Frappe bug in binding)
     billing_address = content['invoice_address']
@@ -773,11 +773,25 @@ def place_order(content, client="webshop"):
     if not 'product_type' in content or not content['product_type']:
         return {'success': False, 'message': "Product Type is mandatory but not given.", 'reference': None}
 
+    # identify dropshipment/intracompany order (ToDo: identify manufacturing company based on product type)
+    if company == "Microsynth AG" \
+        and has_webshop_service(customer.name, "InvoiceByDefaultCompany") \
+        and customer.default_company != company:
+        # this is a dropshipment case
+        drop_shipment_manufacturer = company        # keep original manufacturer
+        company = customer.default_company          # selling company
+        is_drop_shipment = True
+        
+    
     # Distributor workflow
     if 'product_type' in content:
         for distributor in customer.distributors:
             if distributor.product_type == content['product_type']:
                 # swap customer and replace billing address
+                if is_drop_shipment:
+                    err = "Not implemented: dropshipment conflicts with distributor workflow"
+                    frappe.log_error(err, "webshop.place_order")
+                    return {'success': False, 'message': err, 'reference': None}
                 order_customer = customer
                 customer = frappe.get_doc("Customer", distributor.distributor)
 
@@ -785,6 +799,9 @@ def place_order(content, client="webshop"):
 
     # check that the webshop does not send prices / take prices from distributor price list
     #   consider product type
+
+    # select naming series
+    naming_series = get_naming_series("Sales Order", company)
 
     # create sales order
     transaction_date = date.today()
@@ -971,6 +988,12 @@ def place_order(content, client="webshop"):
             
         """
         
+        # if drop shipment: create intra-company sales order for manufacturing company
+        if is_drop_shipment:
+            place_dropship_order(so_doc.name,
+                intercompany_customer_name=get_customer_from_company(so_doc.company), 
+                supplier_company=drop_shipment_manufacturer)
+            
         return {
             'success': True, 
             'message': 'Sales Order created', 
@@ -982,6 +1005,100 @@ def place_order(content, client="webshop"):
         }
     except Exception as err:
         return {'success': False, 'message': err, 'reference': None}
+
+
+def place_dropship_order(sales_order, intercompany_customer_name, supplier_company):
+    original_order = frappe.get_doc("Sales Order", sales_order)
+    
+    customer = frappe.get_doc("Customer", intercompany_customer_name)
+    
+    # shipping address: company override
+    shipping_address = frappe.get_doc("Address", original_order.shipping_address_name)
+    if not shipping_address.overwrite_company:
+        # note: do not overwrite: if there is a custom-selected overwrite target, leave as is (can come from webshop)
+        shipping_address.overwrite_company = original_order.customer_name
+        shipping_address.save()
+    
+    dropship_order = frappe.get_doc({
+        'doctype': "Sales Order",
+        'company': supplier_company,
+        'naming_series': get_naming_series("Sales Order", supplier_company),
+        'customer': customer.name,
+        'invoice_to': customer.invoice_to,
+        'customer_address': frappe.get_value("Contact", customer.invoice_to, "address"),
+        'shipping_contact': original_order.shipping_contact,
+        'shipping_address_name': original_order.shipping_address_name,
+        #'order_customer': order_customer.name if order_customer else None,
+        'contact_person': original_order.contact_person,
+        'contact_display': original_order.contact_display,
+        'contact_phone': original_order.contact_phone,
+        'contact_email': original_order.contact_email,
+        'product_type': original_order.product_type,
+        'territory': original_order.territory,
+        #'customer_request': original_order.customer_request,       # this field is currently not available
+        'transaction_date': original_order.transaction_date,
+        'delivery_date': original_order.delivery_date,
+        'web_order_id': original_order.web_order_id,
+        'is_punchout': original_order.is_punchout,
+        'po_no': original_order.name,
+        'po_date': original_order.transaction_date,
+        'punchout_shop': original_order.punchout_shop,
+        'register_labels': original_order.register_labels,
+        'selling_price_list': original_order.selling_price_list,
+        'currency': original_order.currency,
+        'comment': original_order.comment,
+        'hold_order': original_order.hold_order,
+        'additional_discount_percentage': 5                         # apply intercompany conditions
+    })
+    
+    # items
+    for i in original_order.items:
+        dropship_order.append("items", {
+            'item_code': i.item_code,
+            'item_name': i.item_name,
+            'qty': i.qty,
+            'rate': i.rate
+        })
+        
+    # oligos
+    for o in original_order.oligos:
+        dropship_order.append("oligos", {
+            'oligo': o.oligo
+        })
+    
+    # samples
+    for s in original_order.samples:
+        dropship_order.append("samples", {
+            'sample': s.sample
+        })
+    
+    # ToDo: plates
+    
+    # append taxes
+    if dropship_order.product_type == "Oligos" or dropship_order.product_type == "Material":
+        category = "Material"
+    else:
+        category = "Service"
+
+    taxes = find_dated_tax_template(dropship_order.company, dropship_order.customer, dropship_order.customer_address, category, dropship_order.delivery_date)
+    if taxes:
+        dropship_order.taxes_and_charges = taxes
+        taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+        for t in taxes_template.taxes:
+            dropship_order.append("taxes", t)
+    
+    # insert
+    try:
+        dropship_order.insert(ignore_permissions=True)
+
+        dropship_order.submit()
+        
+        return dropship_order.name
+        
+    except Exception as err:
+        frappe.log_error(f"{customer}\n{supplier}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
+    
+        return None
 
 
 @frappe.whitelist()
