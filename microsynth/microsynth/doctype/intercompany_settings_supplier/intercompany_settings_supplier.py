@@ -3,10 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+# import frappe
 from frappe.model.document import Document
 
-class IntercompanySettings(Document):
-    def validate(self):
-        # ToDo: validate that one company can only occur once in the settings child table
-        pass
+class IntercompanySettingsSupplier(Document):
+	pass

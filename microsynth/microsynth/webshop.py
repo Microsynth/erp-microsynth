@@ -10,7 +10,7 @@ import json
 import re
 import base64
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -939,9 +939,14 @@ def place_order(content, client="webshop"):
             so_doc.append("taxes", t)
     # in case of drop-shipment, mark item positions for drop shipment (prevent actual delivery)
     if is_drop_shipment:
-        for i in items:
+        supplier = get_supplier_for_product_type(so_doc.product_type)
+        if not supplier:
+            err = f"No supplier found for {so_doc.product_type}."
+            return {'success': False, 'message': err, 'reference': None}
+        for i in so_doc.items:
             i.delivered_by_supplier = 1
-    
+            i.supplier = supplier
+            
     # save
     try:
         so_doc.insert(ignore_permissions=True)

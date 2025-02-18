@@ -574,6 +574,14 @@ def get_customer_from_company(company):
         return None
 
 
+def get_supplier_for_product_type(product_type):
+    suppliers = frappe.get_all("Intercompany Settings Supplier", filters={'product_type': product_type}, fields=['supplier'])
+    if len(suppliers) > 0:
+        return suppliers[0]['supplier']
+    else:
+        return None
+
+
 def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
