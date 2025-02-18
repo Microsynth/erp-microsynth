@@ -72,7 +72,6 @@ def approve(pinv, user):
     frappe.db.set_value("Purchase Invoice", pinv, "in_approval", 0)
     # check if supplier has LSV/direct debit enabled, if so, mark invoice to not propose it for payment
     if cint(frappe.get_value("Supplier", pinv_doc.supplier, "direct_debit_enabled")):
-        frappe.log_error("direct_debit_enabled", "direct_debit_enabled")
         frappe.db.set_value("Purchase Invoice", pinv, "is_proposed", 1)
     frappe.db.commit()
 
