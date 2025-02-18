@@ -18,7 +18,8 @@ def get_columns(filters):
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 70 },
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95 },
-        {"label": _("Item Code"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 75 },
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 250 },
+        #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200 },  # not necessary, gets automatically pulled into Item Code
         {"label": _("Registered"), "fieldname": "registered", "fieldtype": "Check", "width": 80 },
         {"label": _("Registered To"), "fieldname": "registered_to", "fieldtype": "Link", "options": "Contact", "width": 100 },
         {"label": _("Sequencing Label"), "fieldname": "name", "fieldtype": "Link", "options": "Sequencing Label", "width": 115 },
@@ -81,6 +82,7 @@ def get_data(filters):
             `tabSequencing Label`.`registered`,
             `tabSequencing Label`.`label_id`,
             `tabSequencing Label`.`item` AS `item_code`,
+            `tabItem`.`item_name`,
             `tabSequencing Label`.`customer`,
             `tabSequencing Label`.`customer_name`,
             `tabSequencing Label`.`sales_order`,
@@ -90,6 +92,7 @@ def get_data(filters):
             `tabSequencing Label`.`creation`
         FROM `tabSequencing Label`
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSequencing Label`.`sales_order`
+        LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabSequencing Label`.`item`
         WHERE TRUE
             {conditions}
         ORDER BY `tabSequencing Label`.`label_id`;
