@@ -4795,28 +4795,28 @@ def delete_lost_reasons_from_not_lost_quotations():
     """
     bench execute microsynth.microsynth.migration.delete_lost_reasons_from_not_lost_quotations
     """
-    query = """SELECT 
-            `tabQuotation`.`name` AS `quotation_id`, 
-            `tabQuotation Lost Reason`.`name` AS `qtn_lost_reason_id`,
-            `tabQuotation Lost Reason`.`order_lost_reason`
+    query = """SELECT DISTINCT
+            `tabQuotation`.`name`,
+            `tabQuotation`.`status`
         FROM `tabQuotation`
-        LEFT JOIN `tabQuotation Lost Reason` ON `tabQuotation Lost Reason`.`parent` = `tabQuotation`.`name`
-        WHERE `tabQuotation Lost Reason`.`order_lost_reason` IS NOT NULL
+        LEFT JOIN `tabLost Reason Detail` ON `tabLost Reason Detail`.`parent` = `tabQuotation`.`name`
+        WHERE `tabLost Reason Detail`.`lost_reason` IS NOT NULL
             AND `tabQuotation`.`status` <> 'Lost';
         """
     quotations = frappe.db.sql(query, as_dict=True)
     for quote in quotations:
-        quotation_doc = frappe.get_doc("Quotation", quote['name'])
-        lost_reasons = quotation_doc.lost_reasons
-        qtn_lost_reason_doc = frappe.get_doc("Quotation Lost Reason", quote['qtn_lost_reason_id'])
-        qtn_lost_reason_doc.delete()
-        quotation_doc.lost_reasons = None
-        quotation_doc.save()
-        print(f"Deleted the Lost Reasons '{lost_reasons}' from Quotation {quotation_doc.name} with status {quotation_doc.status}")
+        # use DB operation due to cancelled QTNs        
+        frappe.db.sql(f"""                      
+            DELETE FROM `tabLost Reason Detail`
+            WHERE `tabLost Reason Detail`.`parent` = '{quote['name']}';
+            """)
+        print(f"Deleted the Lost Reasons from Quotation {quote['name']} with status {quote['status']}")
 
 
 def rename_lost_reasons():
     """
+    The new reasons should already exist as Opportunity Lost Reasons before executing this function.
+
     bench execute microsynth.microsynth.migration.rename_lost_reasons
     """
     mapping = {
@@ -4837,13 +4837,7 @@ def rename_lost_reasons():
     }
     for current_reason, new_reason in mapping.items():
         frappe.db.sql(f"""
-            UPDATE `tabOpportunity Lost Reason`
+            UPDATE `tabLost Reason Detail`
             SET `lost_reason` = '{new_reason}'
-            WHERE `name` = '{current_reason}';""")
-        # IntegrityError: (1062, "Duplicate entry 'Other' for key 'lost_reason'")
-        # The field "lost_reason" has the property "unique"
-        # TODO: How to merge?
-        frappe.db.sql(f"""
-            UPDATE `tabOpportunity Lost Reason`
-            SET `name` = '{new_reason}'
-            WHERE `name` = '{current_reason}';""")
+            WHERE `lost_reason` = '{current_reason}';""")
+        print(f"Renamed Lost Reason '{current_reason}' on all Lost Reason Detail entries to '{new_reason}'.")
