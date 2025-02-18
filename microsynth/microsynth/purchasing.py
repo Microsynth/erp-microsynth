@@ -299,7 +299,7 @@ def set_and_save_default_payable_accounts(supplier):
 
 def import_supplier_items(input_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferantenartikel_v2.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-18_Lieferantenartikel.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -355,15 +355,24 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
             quantity_supplier = line[26].strip()
             item_id = line[27].strip()  # Datensatznummer
 
+            if not item_name:
+                print(f"ERROR: Item with Index {item_id} has no Item name. Going to continue with the next supplier item.")
+                continue
+            if not item_id:
+                print(f"ERROR: Item '{item_name}' has no Index (Datensatznummer). Going to continue with the next supplier item.")
+                continue
+            if not supplier_index:
+                print(f"ERROR: Item with Index {item_id} ('{item_name}') has no Supplier Index. Going to continue with the next supplier item.")
+                continue
             if account:
                 accounts = frappe.get_all("Account", filters={'account_number': account, 'company': company}, fields=['name'])
                 if len(accounts) != 1:
-                    print(f"ERROR: There are {len(accounts)} Accounts with Account Number '{account}' for Company {company}: {','.join(a['name'] for a in accounts)}. Going to continue with the next supplier item.")
+                    print(f"ERROR: There are {len(accounts)} Accounts with Account Number '{account}' for Company {company}: {','.join(a['name'] for a in accounts)}. Unable to import Item '{item_name}' with Index {item_id}. Going to continue with the next supplier item.")
                     continue
                 else:
                     account_name = accounts[0]['name']  # TODO: Should this be the Default Expense Account in the Item Defaults table on the Item?
             else:
-                print(f"WARNING: No account number given for Item '{item_name}'. Going to continue with the next supplier item.")
+                print(f"ERROR: No account number given for Item with Index {item_id} ('{item_name}'). Going to continue with the next supplier item.")
                 continue
 
             if currency == "£":
@@ -375,7 +384,7 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
             item = frappe.get_doc({
                 'doctype': "Item",
                 'item_code': f"P{int(item_id):0{5}d}",  # TODO: How to name Items?
-                'item_name': item_name[:139],
+                'item_name': item_name[:140],
                 'item_group': 'Purchasing',
                 'stock_uom': 'Pcs',
                 'is_stock_item': 1 if internal_code else 0,
@@ -386,7 +395,7 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
             item.insert()
             imported_counter += 1
             if not supplier_index in supplier_mapping:
-                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item {item.name} ({item.item_name}). Going to continue.")
+                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}). Going to continue.")
                 continue
             item.append("supplier_items", {
                 'supplier': supplier_mapping[supplier_index],
@@ -400,6 +409,8 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
                 #     'default_supplier': supplier_mapping[supplier_index]
                 # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
             item.save()
+            #print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
+        print(f"INFO: Successfully imported {imported_counter}/{total_counter} Items.")
 
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
