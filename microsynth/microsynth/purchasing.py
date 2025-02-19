@@ -297,9 +297,9 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
-def import_supplier_items(input_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
+def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-18_Lieferantenartikel.csv', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-19_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-19_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -383,7 +383,7 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
 
             item = frappe.get_doc({
                 'doctype': "Item",
-                'item_code': f"P{int(item_id):0{5}d}",  # TODO: How to name Items?
+                'item_code': f"P{int(item_id):0{5}d}",
                 'item_name': item_name[:140],
                 'item_group': 'Purchasing',
                 'stock_uom': 'Pcs',
@@ -394,6 +394,11 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
             })
             item.insert()
             imported_counter += 1
+
+            # write mapping of ERP Item ID to FM Index (Datensatznummer) to a file
+            with open(output_filepath, 'a') as txt_file:
+                txt_file.write(f"{item.name};{item_id}\n")
+
             if not supplier_index in supplier_mapping:
                 print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}). Going to continue.")
                 continue
@@ -409,7 +414,7 @@ def import_supplier_items(input_filepath, supplier_mapping_file, company='Micros
                 #     'default_supplier': supplier_mapping[supplier_index]
                 # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
             item.save()
-            #print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
+            print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
         print(f"INFO: Successfully imported {imported_counter}/{total_counter} Items.")
 
 
