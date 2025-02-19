@@ -39,7 +39,11 @@ def get_data(filters):
             SELECT `tabQM Training Record`.`name`,
                 `tabQM Training Record`.`trainee`,
                 `tabQM Training Record`.`docstatus` AS `training_status`,
-                IF(`tabQM Training Record`.`docstatus` = 1, 'Signed', 'Unsigned') as `training_status`,
+                CASE
+                    WHEN `tabQM Training Record`.`docstatus` = 0 THEN 'Unsigned'
+                    WHEN `tabQM Training Record`.`docstatus` = 1 THEN 'Signed'
+                    WHEN `tabQM Training Record`.`docstatus` = 2 THEN 'Cancelled'
+                END AS `training_status`,
                 `tabQM Training Record`.`document_type`,
                 `tabQM Training Record`.`document_name`,
                 `tabQM Document`.`title`,
