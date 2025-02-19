@@ -120,7 +120,15 @@ def check_sales_order_completion(sales_orders):
 
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
-
+            items_delivered_by_supplier = frappe.db.sql(f"""
+                SELECT `tabSales Order Item`.`name`
+                FROM `tabSales Order Item`
+                WHERE `tabSales Order Item`.`parent` = '{sales_order}'
+                    AND `tabSales Order Item`.`delivered_by_supplier` = 1
+                ;""", as_dict=True)
+            if len(items_delivered_by_supplier) > 0:
+                # do not create a DN if any item has the flag delivered_by_supplier set
+                continue
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             dn_content = make_delivery_note(sales_order)
             dn = frappe.get_doc(dn_content)

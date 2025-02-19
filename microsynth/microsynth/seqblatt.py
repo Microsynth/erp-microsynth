@@ -178,6 +178,15 @@ def check_sales_order_completion():
 
             if len(pending_samples) == 0:
                 # all processed: create delivery
+                items_delivered_by_supplier = frappe.db.sql(f"""
+                    SELECT `tabSales Order Item`.`name`
+                    FROM `tabSales Order Item`
+                    WHERE `tabSales Order Item`.`parent` = '{sales_order}'
+                        AND `tabSales Order Item`.`delivered_by_supplier` = 1
+                    ;""", as_dict=True)
+                if len(items_delivered_by_supplier) > 0:
+                    # do not create a DN if any item has the flag delivered_by_supplier set
+                    continue
                 customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
                 customer = frappe.get_doc("Customer", customer_name)
 
