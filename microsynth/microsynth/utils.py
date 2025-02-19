@@ -2368,6 +2368,7 @@ def force_cancel(dt, dn):
         new_comment.insert(ignore_permissions=True)
     return
 
+
 def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
     frappe.db.sql("""
         UPDATE `tab{dt}`
@@ -2386,6 +2387,7 @@ def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
         parent=""" AND `parenttype` = "{0}" """.format(parent_dt) if parent_dt else "")
     )
     return
+
 
 def user_has_role(user, role):
     """
@@ -2488,6 +2490,20 @@ def has_distributor(customer, product_type):
         if distributor.product_type == product_type:
             return True
     return False
+
+
+def has_items_delivered_by_supplier(sales_order_id):
+    """
+    Checks if there are any Sales Order Items for the given Sales Order ID
+    with the flag "Supplier delivers to Customer" set.
+    """
+    items_delivered_by_supplier = frappe.db.sql(f"""
+        SELECT `tabSales Order Item`.`name`
+        FROM `tabSales Order Item`
+        WHERE `tabSales Order Item`.`parent` = '{sales_order_id}'
+            AND `tabSales Order Item`.`delivered_by_supplier` = 1
+        ;""", as_dict=True)
+    return len(items_delivered_by_supplier) > 0
 
 
 def print_users_without_role(role):
