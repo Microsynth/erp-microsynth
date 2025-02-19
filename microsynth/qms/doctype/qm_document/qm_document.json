@@ -288,7 +288,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-09-09 09:56:02.614499",
+ "modified": "2025-02-19 11:40:29.742997",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
@@ -332,6 +332,10 @@
   {
    "read": 1,
    "role": "NGS Lab User"
+  },
+  {
+   "read": 1,
+   "role": "QM Reader"
   }
  ],
  "sort_field": "modified",
