@@ -6,7 +6,8 @@
  "field_order": [
   "company",
   "customer",
-  "customer_name"
+  "customer_name",
+  "margin"
  ],
  "fields": [
   {
@@ -31,11 +32,17 @@
    "in_list_view": 1,
    "label": "Customer Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "margin",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Margin"
   }
  ],
  "istable": 1,
- "modified": "2025-02-18 11:35:49.412253",
- "modified_by": "Administrator",
+ "modified": "2025-02-19 15:59:48.891488",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings Company",
  "owner": "Administrator",

@@ -10,7 +10,7 @@ import json
 import re
 import base64
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -1058,7 +1058,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         'currency': original_order.currency,
         'comment': original_order.comment,
         'hold_order': original_order.hold_order,
-        'additional_discount_percentage': 5                         # apply intercompany conditions
+        'additional_discount_percentage': get_margin_from_customer(intercompany_customer_name)  # apply intercompany conditions
     })
     
     # items

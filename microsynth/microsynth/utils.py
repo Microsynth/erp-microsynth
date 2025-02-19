@@ -574,6 +574,24 @@ def get_customer_from_company(company):
         return None
 
 
+def get_margin_from_company(company):
+    margins = frappe.get_all("Intercompany Settings Company", filters={'company': company}, fields=['margin'])
+    if len(margins) == 1:
+        return margins[0]['margin']
+    else:
+        frappe.log_error(f"There are {len(margins)} Companies '{company}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        return None
+
+
+def get_margin_from_customer(customer):
+    margins = frappe.get_all("Intercompany Settings Company", filters={'customer': customer}, fields=['margin'])
+    if len(margins) == 1:
+        return margins[0]['margin']
+    else:
+        frappe.log_error(f"There are {len(margins)} Customers '{customer}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        return None
+
+
 def get_supplier_for_product_type(product_type):
     suppliers = frappe.get_all("Intercompany Settings Supplier", filters={'product_type': product_type}, fields=['supplier'])
     if len(suppliers) > 0:
