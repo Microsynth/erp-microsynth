@@ -4,13 +4,26 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2023-03-28 15:20:45.965761",
+ "modified": "2025-02-19 11:56:29.499853",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "tracking_codes",
  "owner": "Administrator",
  "page_name": "tracking_codes",
- "roles": [],
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Oligo Lab User"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  }
+ ],
  "script": null,
  "standard": "Yes",
  "style": null,
