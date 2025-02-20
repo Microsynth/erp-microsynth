@@ -28,7 +28,7 @@ def oligo_status_changed(content=None):
         return {'success': False, 'message': "Please provide oligos", 'reference': None}
     
     # go through oligos and update status
-    affected_sales_orders = []
+    affected_sales_orders = set()
     updated_oligos = []
     error_oligos = []
     for oligo in content['oligos']:
@@ -68,7 +68,7 @@ def oligo_status_changed(content=None):
                 updated_oligos.append(oligos[0]['name'])
             # append sales order (if available and not in list)
             if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
-                affected_sales_orders.append(oligos[0]['sales_order'])
+                affected_sales_orders.add(oligos[0]['sales_order'])
         else:
             #frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
             error_oligos.append(oligo['web_id'])
