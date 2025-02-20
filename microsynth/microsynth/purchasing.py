@@ -23,7 +23,7 @@ def create_pi_from_si(sales_invoice):
     from microsynth.microsynth.taxes import find_dated_tax_template
     si = frappe.get_doc("Sales Invoice", sales_invoice)
     # create matching purchase invoice
-    pi_company = si.customer_name
+    pi_company = si.customer_name           # ToDo: match from intercompany settings
     suppliers = frappe.get_all("Supplier", filters={'supplier_name': si.company}, fields=['name'])
     if suppliers and len(suppliers) == 1:
         if len(suppliers) > 1:
@@ -40,6 +40,7 @@ def create_pi_from_si(sales_invoice):
         category = "Service"
     if si.oligos is not None and len(si.oligos) > 0:
         category = "Material"
+    # ToDo: we need a purchase taxes and charges template
     pi_tax_template = find_dated_tax_template(pi_company, pi_supplier, si.shipping_address_name, category, si.posting_date)  # TODO: Check carefully
     # create new purchase invoice
     new_pi = frappe.get_doc({

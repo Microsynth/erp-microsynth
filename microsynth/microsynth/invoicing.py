@@ -1197,6 +1197,8 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "GEP"
             elif customer.invoicing_method == "Chorus":
                 mode = "Chorus"
+            elif customer.invoicing_method == "Intercompany":
+                mode = "Intercompany"
             else:
                 mode = None
 
@@ -1377,6 +1379,18 @@ Your administration team<br><br>{footer}"
             )
             '''
 
+        elif mode == "Intercompany":
+            # trigger inter-company invoicing: create PI from SI
+            from microsynth.microsynth.purchasing import create_pi_from_si
+            purchase_invoice = create_pi_from_si(sales_invoice)
+            
+            ## book against intercompany KK (SI-BAL & PI-LYO)
+            
+            # create SI-LYO
+            ## find DN-BAL > po_no > SO-LYO
+            ## create SI-LYO
+            ## close SO-LYO (there will be no delviery note)
+            
         else:
             return
 
