@@ -2001,11 +2001,11 @@ def check_new_customers_taxid(delta_days=7):
     for nc in new_customers:
         if not nc['tax_id']:
             continue
-        shipping_address = get_first_shipping_address(nc['name'])
-        if shipping_address is None:
-            frappe.log_error(f"Customer '{nc['name']}' has no shipping address.", "utils.check_new_customers_taxid")
+        address = get_first_shipping_address(nc['name']) or get_billing_address(nc['name'])  # second function is only called if first returns falsy value
+        if address is None:
+            frappe.log_error(f"Customer '{nc['name']}' has no address. Unable to check Tax ID.", "utils.check_new_customers_taxid")
             continue
-        country = frappe.get_value("Address", shipping_address, "Country")
+        country = frappe.get_value("Address", address, "Country")
         if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
                            'Spain', 'Finland', 'France', 'Croatia', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Latvia',
                            'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia']:
