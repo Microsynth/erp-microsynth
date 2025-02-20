@@ -811,6 +811,7 @@ def place_order(content, client="webshop"):
         'company': company,
         'naming_series': naming_series,
         'customer': customer.name,
+        'tax_id': customer.tax_id,
         'invoice_to': content['invoice_contact'] if 'invoice_contact' in content else None,
         'customer_address': billing_address,
         'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
@@ -1022,23 +1023,25 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
     
     customer = frappe.get_doc("Customer", intercompany_customer_name)
     
-    # shipping address: company override
-    shipping_address = frappe.get_doc("Address", original_order.shipping_address_name)
-    if not shipping_address.overwrite_company:
-        # note: do not overwrite: if there is a custom-selected overwrite target, leave as is (can come from webshop)
-        shipping_address.overwrite_company = original_order.customer_name
-        shipping_address.save()
+    # shipping address: company override (2025-02-20: obsolete - we use order_customer instead
+    #shipping_address = frappe.get_doc("Address", original_order.shipping_address_name)
+    #if not shipping_address.overwrite_company:
+    #    # note: do not overwrite: if there is a custom-selected overwrite target, leave as is (can come from webshop)
+    #    shipping_address.overwrite_company = original_order.customer_name
+    #    shipping_address.save()
     
     dropship_order = frappe.get_doc({
         'doctype': "Sales Order",
         'company': supplier_company,
         'naming_series': get_naming_series("Sales Order", supplier_company),
         'customer': customer.name,
+        'tax_id': customer.tax_id,
         'invoice_to': customer.invoice_to,
         'customer_address': frappe.get_value("Contact", customer.invoice_to, "address"),
         'shipping_contact': original_order.shipping_contact,
         'shipping_address_name': original_order.shipping_address_name,
-        #'order_customer': order_customer.name if order_customer else None,
+        'order_customer': original_order.customer,
+        'order_customer_display': original_order.customer_name,
         'contact_person': original_order.contact_person,
         'contact_display': original_order.contact_display,
         'contact_phone': original_order.contact_phone,
