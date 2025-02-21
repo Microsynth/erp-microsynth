@@ -43,6 +43,7 @@ doctype_js = {
     "Journal Entry":      "public/js/journal_entry.js",
     "Material Request":   "public/js/material_request.js",
     "Payment Entry":      "public/js/payment_entry.js",
+    "Payment Proposal":   "public/js/payment_proposal.js",
     "Payment Reminder":   "public/js/payment_reminder.js",
     "Price List" :        "public/js/price_list.js",
     "Purchase Invoice":   "public/js/purchase_invoice.js",

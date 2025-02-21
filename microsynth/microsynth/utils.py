@@ -2696,3 +2696,14 @@ def send_email_from_template(email_template, rendered_content, rendered_subject=
             attachments = attachments,
             send_email = True
         )
+
+
+@frappe.whitelist()
+def set_xml_version(xml_version):
+    try:
+        settings = frappe.get_doc("ERPNextSwiss Settings", "ERPNextSwiss Settings")
+        settings.xml_version = xml_version
+        settings.save(ignore_permissions=True)
+    except Exception as err:
+        return {'success': False, 'message': err}
+    return {'success': True, 'message': 'OK'}
