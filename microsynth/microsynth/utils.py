@@ -1868,7 +1868,10 @@ def deduct_and_close(payment_entry, account, cost_center):
     """
     doc = frappe.get_doc("Payment Entry", payment_entry)
     if doc.payment_type == "Pay":
-        amount = doc.unallocated_amount or doc.difference_amount or 0
+        if doc.source_exchange_rate != 1 and (not doc.references or len(doc.references) == 0):
+            amount = doc.base_paid_amount;   # use full paid amount, with valuation
+        else:
+            amount = doc.unallocated_amount or doc.difference_amount or 0
     else:
         amount = ((-1) * doc.unallocated_amount) or doc.difference_amount
 

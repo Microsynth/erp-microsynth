@@ -172,11 +172,15 @@ function deduct_to_unclear(frm) {
     add_deduction(locals.account_matrix[frm.doc.company].unclear[frm.doc.paid_to_account_currency], locals.cost_center_matrix[frm.doc.company], amount);
 }
 
-/* in den Aufwand buchen (aktuell keine Kreitoren) */
+/* in den Aufwand buchen (aktuell keine Kreditoren) */
 function expense(frm) {
     var amount = 0;
     if (frm.doc.payment_type === "Pay") {
-        amount = (frm.doc.unallocated_amount) || frm.doc.difference_amount;
+        if ((frm.doc.source_exchange_rate != 1) && ((!frm.doc.references) || (frm.doc.references.length == 0))) {
+            amount = frm.doc.base_paid_amount;   // use full paid amount, with valuation
+        } else {
+            amount = (frm.doc.unallocated_amount) || frm.doc.difference_amount;
+        }
     } else {
         amount = ((-1) * frm.doc.unallocated_amount) || frm.doc.difference_amount;
     }
