@@ -12,6 +12,7 @@ from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 import json
 import csv
+import re
 
 
 def create_pi_from_si(sales_invoice):
@@ -297,9 +298,16 @@ def set_and_save_default_payable_accounts(supplier):
     #frappe.db.commit()
 
 
+def remove_control_characters(input_string):
+    """
+    Removes all control characters (ASCII 0-31 and 127-159) and returns the cleaned string.
+    """
+    return re.sub(r'[\x00-\x1F\x7F-\x9F]', '', input_string)
+
+
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-19_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-19_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-24_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-24_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-24_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -331,7 +339,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             lk = line[2].strip()
             internal_code = line[3].strip()  # if given, Item should have "Maintain Stock"
             supplier_item_id = line[4].strip()
-            item_name = line[5].strip().replace('\n', ' ').replace('  ', ' ')  # replace newlines and double spaces
+            item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
             unit_size = line[6].strip()
             currency = line[7].strip()
             supplier_quote = line[8].strip()
@@ -380,10 +388,12 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
+            
+            item_code = f"P{int(item_id):0{5}d}"
 
             item = frappe.get_doc({
                 'doctype': "Item",
-                'item_code': f"P{int(item_id):0{5}d}",
+                'item_code': item_code,
                 'item_name': item_name[:140],
                 'item_group': 'Purchasing',
                 'stock_uom': 'Pcs',
@@ -415,12 +425,14 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
             item.save()
             print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
+            if imported_counter % 1000 == 0:
+                frappe.db.commit()
         print(f"INFO: Successfully imported {imported_counter}/{total_counter} Items.")
 
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferanten_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-17_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferanten_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-24_supplier_mapping.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
