@@ -577,21 +577,21 @@ def validate_sales_order_status(sales_order):
     customer = get_customer_from_sales_order(sales_order)
 
     if customer.disabled:
-        frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "utils.validate_sales_order")
+        frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "utils.validate_sales_order_status")
         return False
 
     so = frappe.get_doc("Sales Order", sales_order)
 
     if so.docstatus != 1:
-        frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order")
+        frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
 
     if so.status in ['Completed', 'Cancelled', 'Closed']:
-        frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order")
+        frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
 
     if not so.taxes_and_charges or so.taxes_and_charges == "":
-        frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order")
+        frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
 
     return True
