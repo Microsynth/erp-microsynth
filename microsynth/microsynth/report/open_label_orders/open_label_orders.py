@@ -61,7 +61,8 @@ def get_data(filters=None):
             COUNT(`tabSales Order Item`.`name`) AS `item_count`,
             `tabLabel Range`.`range` AS `range`,
             `tabLabel Range`.`prefix` AS `prefix`,
-            `tabSales Order`.`comment` AS `comment`
+            `tabSales Order`.`comment` AS `comment`,
+            `tabSales Order`.`owner`
         FROM `tabSales Order`
         LEFT JOIN `tabSales Order Item` ON
             (`tabSales Order Item`.`parent` = `tabSales Order`.`name`)
@@ -85,10 +86,12 @@ def get_data(filters=None):
         if so['item_count'] > 1:
             so_doc = frappe.get_doc("Sales Order", so['sales_order'])
             additional_item_str = ""
+            so['additional_item_codes'] = []
             for i, item in enumerate(so_doc.items):
                 if i == 0:
                     continue  # only consider additional items
                 additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}<br>"  # is there a use-case for non-integer qtys?
+                so['additional_item_codes'].append(item.item_code)
             so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
             # ensure correct primary item
             so['item_code'] = so_doc.items[0].item_code

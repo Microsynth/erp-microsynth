@@ -14,14 +14,13 @@ frappe.query_reports["Open Label Orders"] = {
         }
     ],
     "onload": (report) => {
+        hide_chart_buttons();
         report.page.add_inner_button( __("Pick labels"), function() {
             queue_builder(report.get_values());
         });
         report.page.add_inner_button( __("PrioPick"), function() {
             prio_pick(report.get_values());
         });
-
-        hide_chart_buttons();
     }
 };
 
@@ -64,7 +63,23 @@ function process_queue() {
         // process first entry
         label_order = locals.label_queue[0];
         if (label_order.additional_items) {
-            frappe.msgprint( __("Label Order " + label_order.sales_order + " contains the following additional Items:<br><br>") + label_order.additional_items, __("Additional Items to consider") );
+            label_order.additional_item_codes.forEach(function (item_code, index){
+                var allowed_additional_items = ['20050'];
+                if (!allowed_additional_items.includes(item_code)) {
+                    frappe.msgprint({
+                        title: __("Unallowed additional Item"),
+                        indicator: 'red',
+                        message: __("Label Order " + label_order.sales_order + " contains the unallowed additional Item ") + item_code + ".<br>Please do <b>not</b> pick labels for this order and reassign it to its creator " + label_order.owner + "."
+                    });
+                    return;
+                } else {
+                    frappe.msgprint({
+                        title: __("Additional Items to consider"),
+                        indicator: 'blue',
+                        message: __("Label Order " + label_order.sales_order + " contains the following additional Items:<br><br>") + label_order.additional_items
+                    });
+                }
+            });
         }
         if (label_order.status === 0) {
             // nothing done - first barcode
