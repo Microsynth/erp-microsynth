@@ -43,6 +43,35 @@ def find_tax_template(company, customer, shipping_address, category):
             return None
 
 
+def find_purchase_tax_template(company, customer, shipping_address, category):
+    """
+    TODO: check carefully
+    """
+    country = frappe.get_value("Address", shipping_address, "country")
+    if frappe.get_value("Country", country, "eu"):
+        eu_pattern = """ OR `country` = "EU" """
+    else:
+        eu_pattern = ""
+    purchase_tax_records = frappe.db.sql(f"""SELECT `purchase_taxes_template`
+        FROM `tabTax Matrix Entry`
+        WHERE `company` = "{company}"
+            AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
+            AND `category` = "{category}"
+        ORDER BY `idx` ASC;""", as_dict=True)
+    if len(purchase_tax_records) > 0:
+        return purchase_tax_records[0]['sales_taxes_template']
+    else:
+        frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_purchase_tax_template")
+        return None
+
+
+def get_alternative_purchase_tax_template(tax_template, date):
+    """
+    TODO
+    """
+    return tax_template
+
+
 def get_alternative_tax_template(tax_template, date):
     """
     run 
@@ -132,6 +161,14 @@ def find_dated_tax_template(company, customer, shipping_address, category, date)
     alternative_template = get_alternative_tax_template(template, date)
     return alternative_template
 
+
+def find_dated_purchase_tax_template(company, customer, shipping_address, category, date):
+    """
+    TODO
+    """
+    template = find_purchase_tax_template(company, customer, shipping_address, category)
+    alternative_template = get_alternative_purchase_tax_template(template, date)  # TODO: necessary?
+    return alternative_template
 
 
 def sales_order_before_save(doc, event):

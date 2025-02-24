@@ -10,6 +10,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
+from microsynth.microsynth.taxes import find_dated_purchase_tax_template
 import json
 import csv
 
@@ -20,7 +21,6 @@ def create_pi_from_si(sales_invoice):
 
     bench execute microsynth.microsynth.purchasing.create_pi_from_si  --kwargs "{'sales_invoice': 'SI-BAL-24017171'}"
     """
-    from microsynth.microsynth.taxes import find_dated_tax_template
     si = frappe.get_doc("Sales Invoice", sales_invoice)
     # create matching purchase invoice
     pi_company = si.customer_name           # ToDo: match from intercompany settings
@@ -40,8 +40,7 @@ def create_pi_from_si(sales_invoice):
         category = "Service"
     if si.oligos is not None and len(si.oligos) > 0:
         category = "Material"
-    # ToDo: we need a purchase taxes and charges template
-    pi_tax_template = find_dated_tax_template(pi_company, pi_supplier, si.shipping_address_name, category, si.posting_date)  # TODO: Check carefully
+    pi_tax_template = find_dated_purchase_tax_template(pi_company, pi_supplier, si.shipping_address_name, category, si.posting_date)  # TODO: Check carefully
     # create new purchase invoice
     new_pi = frappe.get_doc({
         'doctype': 'Purchase Invoice',
@@ -52,7 +51,7 @@ def create_pi_from_si(sales_invoice):
         'due_date': si.due_date,
         'project': si.project,
         'cost_center': pi_cost_center,
-        #'taxes_and_charges': pi_tax_template,  # TODO
+        'taxes_and_charges': pi_tax_template,  # TODO
         'disable_rounded_total': 1
     })
     # add item positions
@@ -65,15 +64,15 @@ def create_pi_from_si(sales_invoice):
             'cost_center': pi_cost_center
         })
     # apply taxes
-    # if pi_tax_template:
-    #     pi_tax_details = frappe.get_doc("Purchase Taxes and Charges Template", pi_tax_template)
-    #     for t in pi_tax_details.taxes:
-    #         new_pi.append('taxes', {
-    #             'charge_type': t.charge_type,
-    #             'account_head': t.account_head,
-    #             'description': t.description,
-    #             'rate': t.rate
-    #         })
+    if pi_tax_template:
+        pi_tax_details = frappe.get_doc("Purchase Taxes and Charges Template", pi_tax_template)
+        for t in pi_tax_details.taxes:
+            new_pi.append('taxes', {
+                'charge_type': t.charge_type,
+                'account_head': t.account_head,
+                'description': t.description,
+                'rate': t.rate
+            })
     # insert
     new_pi.insert()
     new_pi.submit()
