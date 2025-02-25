@@ -34,7 +34,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for(var i=0, l=data.length; i<l; i++) { %}
+        {% for(var i=0; l=data.length; i<(l-1); i++) { %}
             <tr>
                 <td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
                 <td>{%= data[i]["ext_customer"] %}</td>
