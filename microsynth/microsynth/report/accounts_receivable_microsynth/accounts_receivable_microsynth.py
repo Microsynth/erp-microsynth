@@ -28,10 +28,9 @@ def execute(filters=None):
         if c['fieldname'].startswith("range") \
             or c['fieldname'] == "customer_primary_contact" \
             or c['fieldname'] == "voucher_type" \
-            or c['fieldname'] == "age" \
             or c['fieldname'] == "due_date":
             continue
-        # skip range columns
+        # skip currency column
         if c['fieldname'] == "currency":
             continue
             
@@ -55,14 +54,15 @@ def execute(filters=None):
 
         new_columns.append(c)
     
-    # add document currency columns
-    #new_columns.append({
-    #    'fieldtype': 'Data',
-    #    'fieldname': 'doc_currency',
-    #    'label': "Doc Currency",
-    #    'width': 80
-    #})
-    new_columns.append({
+    target_order = ['posting_date', 'ext_customer', 'party', 'contact_person', 'voucher_no', 'invoiced', 'paid', 
+        'credit_note', 'outstanding', 'po_no', 'territory', 'customer_group', 'remarks', 'age']
+    sorted_columns = []
+    for t in target_order:
+        for c in new_columns:
+            if c['fieldname'] == t:
+                sorted_columns.append(c)
+                
+    sorted_columns.append({
         'fieldtype': 'Currency',
         'fieldname': 'doc_outstanding',
         'label': "Outstanding",
@@ -200,7 +200,7 @@ def execute(filters=None):
         'currency': currency
     })
 
-    return new_columns, output #sorted(data, key= lambda x: x['ext_customer'] or "" )
+    return sorted_columns, output #sorted(data, key= lambda x: x['ext_customer'] or "" )
 
 def get_foreign_currency_outstanding(docname, account, date, party):
     #sql_query = """
