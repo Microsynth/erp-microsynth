@@ -16,21 +16,21 @@
 <table class="table">
     <thead>
         <tr>
-            <th style="width: 10%">{%= __("Posting Date") %}</th>
-            <th style="width: 10%">{%= __("Ext. Debitor") %}</th>
-            <th style="width: 10%">{%= __("Customer") %}</th>
-            <th style="width: 10%">{%= __("Customer Name") %}</th>
-            <th style="width: 10%">{%= __("Contact") %}</th>
-            <th style="width: 10%">{%= __("Voucher No") %}</th>
-            <th style="width: 10%">{%= __("Invoiced Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
-            <th style="width: 10%">{%= __("Paid Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
-            <th style="width: 10%">{%= __("Credit Note") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
-            <th style="width: 10%">{%= __("Outstanding Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 7% !important">{%= __("Posting Date") %}</th>
+            <th style="width: 6% !important">{%= __("Ext. Debitor") %}</th>
+            <th style="width: 6% !important">{%= __("Customer") %}</th>
+            <th style="width: 25% !important">{%= __("Customer Name") %}</th>
+            <th style="width: 7% !important">{%= __("Contact") %}</th>
+            <th style="width: 9% !important">{%= __("Voucher No") %}</th>
+            <th style="width: 7% !important">{%= __("Invoiced Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 7% !important">{%= __("Paid Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 7% !important">{%= __("Credit Note") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 7% !important">{%= __("Outstanding Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
             <!-- <th style="width: 10%">{%= __("Territory") %}</th> -->
             <!-- <th style="width: 10%">{%= __("Customer Group") %}</th> -->
             <!-- <th style="width: 10%">{%= __("Remarks") %}</th> -->
-            <th style="width: 10%">{%= __("Age (Days)") %}</th>
-            <th style="width: 10%">{%= __("Outstanding") %} {% if (data.length > 0)  { %}[{%= data[0]["doc_currency"] %}]{% } %}</th>
+            <th style="width: 5% !important">{%= __("Age [Days]") %}</th>
+            <th style="width: 7% !important">{%= __("Outstanding") %} {% if (data.length > 0)  { %}[{%= data[0]["doc_currency"] %}]{% } %}</th>
         </tr>
     </thead>
     <tbody>
