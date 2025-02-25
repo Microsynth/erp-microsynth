@@ -1,6 +1,6 @@
 frappe.ui.form.on('Payment Proposal', {
     refresh(frm) {
-        if (!frm.doc.__islocal) {
+        if (frm.doc.docstatus == 1) {
             let desired_version = "09";
             frm.add_custom_button(__("Download bank file v" + desired_version), function() {
                 frappe.db.get_value("ERPNextSwiss Settings", "ERPNextSwiss Settings", ["xml_version"], function(value) {
