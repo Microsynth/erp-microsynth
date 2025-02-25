@@ -43,37 +43,23 @@ def find_tax_template(company, customer, shipping_address, category):
             return None
 
 
-def find_purchase_tax_template(company, customer, shipping_address, category):
+def find_purchase_tax_template(sales_tax_template, company):
     """
     Find the corresponding purchase tax template in the tax matrix. Does not consider alternative tax templates.
 
-    TODO: check carefully
-
-    bench execute microsynth.microsynth.taxes.find_purchase_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
+    bench execute microsynth.microsynth.taxes.find_purchase_tax_template --kwargs "{'sales_tax_template': 'BAL Export (220) - BAL', 'company':'Microsynth France SAS'}"
     """
-    country = frappe.get_value("Address", shipping_address, "country")
-    if frappe.get_value("Country", country, "eu"):
-        eu_pattern = """ OR `country` = "EU" """
-    else:
-        eu_pattern = ""
-    purchase_tax_records = frappe.db.sql(f"""SELECT `purchase_taxes_template`
-        FROM `tabTax Matrix Entry`
-        WHERE `company` = "{company}"
-            AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
-            AND `category` = "{category}"
+    purchase_tax_records = frappe.db.sql(f"""
+        SELECT `purchase_tax_template`
+        FROM `tabTax Matrix Template Mapping`
+        WHERE `purchase_company` = "{company}"
+            AND `sales_tax_template` = "{sales_tax_template}"
         ORDER BY `idx` ASC;""", as_dict=True)
     if len(purchase_tax_records) > 0:
-        return purchase_tax_records[0]['purchase_taxes_template']
+        return purchase_tax_records[0]['purchase_tax_template']
     else:
-        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_purchase_tax_template")
+        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template} targetting {company=}", "taxes.find_purchase_tax_template")
         return None
-
-
-def get_alternative_purchase_tax_template(tax_template, date):
-    """
-    TODO?
-    """
-    return tax_template
 
 
 def get_alternative_tax_template(tax_template, date):
@@ -163,18 +149,6 @@ def find_dated_tax_template(company, customer, shipping_address, category, date)
     """
     template = find_tax_template(company, customer, shipping_address, category)
     alternative_template = get_alternative_tax_template(template, date)
-    return alternative_template
-
-
-def find_dated_purchase_tax_template(company, customer, shipping_address, category, date):
-    """
-    Find the corresponding purchase tax template in the tax matrix.
-    Category must be 'Material' or 'Service'.
-
-    bench execute microsynth.microsynth.taxes.find_dated_purchase_tax_template --kwargs "{'company':'Microsynth AG', 'customer':'23057', 'shipping_address':'237472', 'category':'Material', 'date': '2025-01-09'}"
-    """
-    template = find_purchase_tax_template(company, customer, shipping_address, category)
-    alternative_template = get_alternative_purchase_tax_template(template, date)  # TODO: necessary?
     return alternative_template
 
 

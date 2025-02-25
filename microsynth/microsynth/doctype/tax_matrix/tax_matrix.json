@@ -5,7 +5,8 @@
  "engine": "InnoDB",
  "field_order": [
   "taxes",
-  "alternative_tax_templates"
+  "alternative_tax_templates",
+  "tax_template_mappings"
  ],
  "fields": [
   {
@@ -19,10 +20,16 @@
    "fieldtype": "Table",
    "label": "Alternative Tax Templates",
    "options": "Alternative Tax Template"
+  },
+  {
+   "fieldname": "tax_template_mappings",
+   "fieldtype": "Table",
+   "label": "Tax Template Mappings",
+   "options": "Tax Matrix Template Mapping"
   }
  ],
  "issingle": 1,
- "modified": "2023-12-18 07:19:49.538692",
+ "modified": "2025-02-25 10:53:53.931003",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Tax Matrix",

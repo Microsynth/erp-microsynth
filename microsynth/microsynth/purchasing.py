@@ -10,7 +10,7 @@ from frappe.core.doctype.communication.email import make
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
-from microsynth.microsynth.taxes import find_dated_purchase_tax_template
+from microsynth.microsynth.taxes import find_purchase_tax_template
 import json
 import csv
 
@@ -23,7 +23,10 @@ def create_pi_from_si(sales_invoice):
     """
     si = frappe.get_doc("Sales Invoice", sales_invoice)
     # create matching purchase invoice
-    pi_company = si.customer_name           # ToDo: match from intercompany settings
+    pi_company = si.customer_name           # Note: company names are unique
+    if not frappe.db.exists("Company", pi_company):
+        frappe.log_error(f"Company {pi_company} is not available, but was requested in the intercompany invoicing of {sales_invoice}.", "purchasing.create_pi_from_si")
+        return None
     suppliers = frappe.get_all("Supplier", filters={'supplier_name': si.company}, fields=['name'])
     if suppliers and len(suppliers) == 1:
         if len(suppliers) > 1:
@@ -33,14 +36,11 @@ def create_pi_from_si(sales_invoice):
         frappe.log_error(f"Found no Supplier for Company {si.company} on Sales Invoice {si.name}. Going to return.", "purchasing.create_pi_from_si")
         return None
     pi_cost_center = frappe.get_value("Company", pi_company, "cost_center")
-    # find dated tax template
-    if si.product_type == "Oligos" or si.product_type == "Material":
-        category = "Material"
-    else:
-        category = "Service"
-    if si.oligos is not None and len(si.oligos) > 0:
-        category = "Material"
-    pi_tax_template = find_dated_purchase_tax_template(pi_company, pi_supplier, si.shipping_address_name, category, si.posting_date)  # TODO: Check carefully
+    # find tax template based on sales invoice taxes
+    pi_tax_template = find_purchase_tax_template(si.taxes_and_charges, pi_company)
+    if not pi_tax_template:
+        frappe.log_error(f"Cannot create purchase invoice, because no purchase tax template was found for {sales_invoice}. Going to return.", "purchasing.create_pi_from_si")
+        return None
     # create new purchase invoice
     new_pi = frappe.get_doc({
         'doctype': 'Purchase Invoice',
@@ -51,13 +51,14 @@ def create_pi_from_si(sales_invoice):
         'due_date': si.due_date,
         'project': si.project,
         'cost_center': pi_cost_center,
-        'taxes_and_charges': pi_tax_template,  # TODO
+        'taxes_and_charges': pi_tax_template,
         'disable_rounded_total': 1
     })
     # add item positions
     for i in si.items:
         new_pi.append('items', {
             'item_code': i.item_code,
+            'item_name': i.item_name,
             'qty': i.qty,
             'description': i.description,
             'rate': i.rate,

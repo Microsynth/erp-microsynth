@@ -7,8 +7,7 @@
   "company",
   "country",
   "category",
-  "sales_taxes_template",
-  "purchase_taxes_template"
+  "sales_taxes_template"
  ],
  "fields": [
   {
@@ -21,7 +20,7 @@
    "reqd": 1
   },
   {
-   "columns": 1,
+   "columns": 2,
    "description": "Country name or wildcard % for rest",
    "fieldname": "country",
    "fieldtype": "Data",
@@ -39,7 +38,7 @@
    "reqd": 1
   },
   {
-   "columns": 1,
+   "columns": 2,
    "default": "Material",
    "fieldname": "category",
    "fieldtype": "Select",
@@ -47,18 +46,10 @@
    "label": "Category",
    "options": "Material\nService",
    "reqd": 1
-  },
-  {
-   "columns": 3,
-   "fieldname": "purchase_taxes_template",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Purchase Taxes Template",
-   "options": "Purchase Taxes and Charges Template"
   }
  ],
  "istable": 1,
- "modified": "2025-02-25 10:18:44.205227",
+ "modified": "2025-02-25 10:56:07.525703",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Tax Matrix Entry",
