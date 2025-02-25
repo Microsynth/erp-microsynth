@@ -1,0 +1,59 @@
+<style>
+    .print-format {
+        padding: 1mm;
+        font-size: 8.0pt !important;
+    }
+    .print-format td {
+        vertical-align:middle !important;
+    }
+</style>
+
+<h2 class="text-center" style="margin-top:0">{%= __(report.report_name) %}</h2>
+<p>{%= __("Company") %}: {%= filters.company %} |
+{%= __("As on Date") %}: {%= frappe.datetime.str_to_user(filters.report_date) %} | 
+{%= __("Account") %}: {%= filters.account %}</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th style="width: 10%">{%= __("Posting Date") %}</th>
+            <th style="width: 10%">{%= __("Ext. Debitor") %}</th>
+            <th style="width: 10%">{%= __("Customer") %}</th>
+            <th style="width: 10%">{%= __("Customer Name") %}</th>
+            <th style="width: 10%">{%= __("Contact") %}</th>
+            <th style="width: 10%">{%= __("Voucher No") %}</th>
+            <th style="width: 10%">{%= __("Invoiced Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 10%">{%= __("Paid Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 10%">{%= __("Credit Note") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <th style="width: 10%">{%= __("Outstanding Amount") %} {% if (data.length > 0)  { %}[{%= data[0]["currency"] %}]{% } %}</th>
+            <!-- <th style="width: 10%">{%= __("Territory") %}</th> -->
+            <!-- <th style="width: 10%">{%= __("Customer Group") %}</th> -->
+            <!-- <th style="width: 10%">{%= __("Remarks") %}</th> -->
+            <th style="width: 10%">{%= __("Age (Days)") %}</th>
+            <th style="width: 10%">{%= __("Outstanding") %} {% if (data.length > 0)  { %}[{%= data[0]["doc_currency"] %}]{% } %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for(var i=0, l=data.length; i<l; i++) { %}
+            <tr>
+                <td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
+                <td>{%= data[i]["ext_customer"] %}</td>
+                <td>{%= data[i]["party"] %}</td>
+                <td>{%= data[i]["customer_name"] %}</td>
+                <td>{%= data[i]["contact_person"] %}</td>
+                <td>{%= data[i]["voucher_no"] %}</td>
+                <td style="text-align: right">{%= (data[i]["invoiced"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                <td style="text-align: right">{%= (data[i]["paid"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                <td style="text-align: right">{%= (data[i]["credit_note"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                <td style="text-align: right">{%= (data[i]["outstanding"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                <!-- <td>{%= data[i]["territory"] %}</td> -->
+                <!-- <td>{%= data[i]["customer_group"] %}</td> -->
+                <!-- <td>{%= data[i]["remarks"] %}</td> -->
+                <td style="text-align: right">{%= data[i]["age"] %}</td>
+                <td style="text-align: right">{%= (data[i]["doc_outstanding"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+            </tr>
+        {% } %}
+    </tbody>
+</table>
+
+<p class="text-right text-muted">{{ __("Printed On ") }}{%= frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string()) %}</p>
