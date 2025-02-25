@@ -63,8 +63,9 @@ function process_queue() {
         // process first entry
         label_order = locals.label_queue[0];
         if (label_order.additional_items) {
-            label_order.additional_item_codes.forEach(function (item_code, index){
-                var allowed_additional_items = ['20050'];
+            for (let i = 0; i < label_order.additional_item_codes.length; i++) {
+                let item_code = label_order.additional_item_codes[i].item_code;
+                let allowed_additional_items = ['20050'];
                 if (!allowed_additional_items.includes(item_code)) {
                     frappe.msgprint({
                         title: __("Unallowed additional Item"),
@@ -79,7 +80,7 @@ function process_queue() {
                         message: __("Label Order " + label_order.sales_order + " contains the following additional Items:<br><br>") + label_order.additional_items
                     });
                 }
-            });
+            }
         }
         if (label_order.status === 0) {
             // nothing done - first barcode
