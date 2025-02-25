@@ -63,9 +63,9 @@ function process_queue() {
         // process first entry
         label_order = locals.label_queue[0];
         if (label_order.additional_items) {
+            let allowed_additional_items = ['20050'];
             for (let i = 0; i < label_order.additional_item_codes.length; i++) {
-                let item_code = label_order.additional_item_codes[i].item_code;
-                let allowed_additional_items = ['20050'];
+                let item_code = label_order.additional_item_codes[i];
                 if (!allowed_additional_items.includes(item_code)) {
                     frappe.msgprint({
                         title: __("Unallowed additional Item"),
