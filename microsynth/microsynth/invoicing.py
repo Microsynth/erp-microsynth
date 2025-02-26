@@ -11,10 +11,10 @@ import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
-from frappe.utils import cint, flt, get_url_to_form
+from frappe.utils import cint, get_url_to_form
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
-from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
-from frappe.utils.file_manager import save_file
+from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
@@ -1381,17 +1381,16 @@ Your administration team<br><br>{footer}"
 
         elif mode == "Intercompany":
             # trigger inter-company invoicing: create PI from SI
-            from microsynth.microsynth.purchasing import create_pi_from_si
             purchase_invoice = create_pi_from_si(sales_invoice.name)
-            
+
             # TODO: book against intercompany KK (SI-BAL & PI-LYO)
-            
-            # create SI-LYO
-            ## find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
+
+            # create and transmit SI-LYO
+            # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
             delivery_note_ids = set()
             for item in sales_invoice.items:
                 delivery_note_ids.add(item.delivery_note)
-            
+
             po_nos = set()
             for dn_id in delivery_note_ids:
                 po_no = frappe.get_value("Delivery Note", dn_id, "po_no")
@@ -1402,14 +1401,21 @@ Your administration team<br><br>{footer}"
                     frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
                     continue
                 po_nos.add(po_no)
-            
-            for po in po_nos:
-                so_doc = frappe.get_doc("Sales Order", po)
-                ## TODO: create SI-LYO from SO-LYO
 
-                ## close SO-LYO (there will be no delviery note)
+            for so_id in po_nos:
+                so_doc = frappe.get_doc("Sales Order", so_id)
+                # create SI-LYO from SO-LYO
+                si_content = make_sales_invoice_from_so(so_id)
+                si_doc = frappe.get_doc(si_content)
+                si_doc.insert(ignore_permissions=True)   
+                si_doc.submit()
+
+                # transmit SI-LYO
+                transmit_sales_invoice(si_doc.name)
+
+                # close SO-LYO (there will be no delviery note)
                 so_doc.update_status("Closed")
-            
+
         else:
             return
 
