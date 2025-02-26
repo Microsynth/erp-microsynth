@@ -83,6 +83,8 @@ def link_quotation_to_order(sales_order, quotation):
         created_new_order = True
     else:  # Draft
         so_doc = sales_order_doc
+    if created_new_order:
+        so_doc.insert()
     # write the Quotation ID into the field Sales Order Item.prevdoc_docname
     for item in so_doc.items:
         item.prevdoc_docname = quotation
@@ -90,8 +92,7 @@ def link_quotation_to_order(sales_order, quotation):
         for qtn_itm in qtn.items:
             if item.item_code == qtn_itm.item_code and item.qty >= qtn_itm.qty:
                 item.rate = qtn_itm.rate
+                item.parent = so_doc.name
                 break
         item.save()
-    if created_new_order:
-        so_doc.insert()
     return so_doc.name
