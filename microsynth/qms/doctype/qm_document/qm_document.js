@@ -420,7 +420,11 @@ function request_revision() {
 
 
 function invalidate(frm) {
-    frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?<br>There will be <b>no other valid version.</b>",
+    let additional_warning = "";
+    if (frm.doc.status == "Valid") {
+        additional_warning = "<br>There will be <b>no other valid version.</b>";
+    }
+    frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?" + additional_warning,
     () => {
         // on yes
         frappe.call({
