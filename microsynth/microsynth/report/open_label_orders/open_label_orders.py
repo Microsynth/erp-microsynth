@@ -95,6 +95,7 @@ def get_data(filters=None):
                     label_range_doc = frappe.get_doc("Label Range", item.item_code)
                     so['item_code'] = item.item_code
                     so['item_name'] = item.item_name
+                    so['qty'] = item.qty
                     so['range'] = label_range_doc.range
                     so['prefix'] = label_range_doc.prefix
             so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
