@@ -79,6 +79,18 @@ def get_data():
                     }
             ]
         },
+                {
+            "label": _("Change Control"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Change",
+                       "label": _("Change"),
+                       "description": _("QM Change")
+                    }
+            ]
+        },
         {
             "label": _("Complaints"),
             "icon": "octicon octicon-file-submodule",
