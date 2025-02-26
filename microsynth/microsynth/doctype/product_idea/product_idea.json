@@ -21,8 +21,11 @@
    "default": "PIA-.YY.###",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Naming Series",
-   "options": "PIA-.YY.###"
+   "options": "PIA-.YY.###",
+   "print_hide": 1,
+   "read_only": 1
   },
   {
    "fieldname": "item_group",
@@ -70,8 +73,8 @@
    "options": "Contact"
   }
  ],
- "modified": "2025-02-25 10:12:12.515526",
- "modified_by": "Administrator",
+ "modified": "2025-02-26 09:37:29.724727",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Product Idea",
  "owner": "Administrator",
