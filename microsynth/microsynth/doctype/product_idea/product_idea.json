@@ -1,5 +1,4 @@
 {
- "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2023-12-12 19:13:36.969305",
  "doctype": "DocType",
@@ -73,8 +72,8 @@
    "options": "Contact"
   }
  ],
- "modified": "2025-02-26 09:37:29.724727",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-02-26 09:48:05.796986",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Product Idea",
  "owner": "Administrator",
