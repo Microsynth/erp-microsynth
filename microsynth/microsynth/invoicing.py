@@ -1382,14 +1382,33 @@ Your administration team<br><br>{footer}"
         elif mode == "Intercompany":
             # trigger inter-company invoicing: create PI from SI
             from microsynth.microsynth.purchasing import create_pi_from_si
-            purchase_invoice = create_pi_from_si(sales_invoice)
+            purchase_invoice = create_pi_from_si(sales_invoice.name)
             
-            ## book against intercompany KK (SI-BAL & PI-LYO)
+            # TODO: book against intercompany KK (SI-BAL & PI-LYO)
             
             # create SI-LYO
-            ## find DN-BAL > po_no > SO-LYO
-            ## create SI-LYO
-            ## close SO-LYO (there will be no delviery note)
+            ## find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
+            delivery_note_ids = set()
+            for item in sales_invoice.items:
+                delivery_note_ids.add(item.delivery_note)
+            
+            po_nos = set()
+            for dn_id in delivery_note_ids:
+                po_no = frappe.get_value("Delivery Note", dn_id, "po_no")
+                if not po_no:
+                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
+                    continue
+                if not po_no.startswith("SO-"):
+                    frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
+                    continue
+                po_nos.add(po_no)
+            
+            for po in po_nos:
+                so_doc = frappe.get_doc("Sales Order", po)
+                ## TODO: create SI-LYO from SO-LYO
+
+                ## close SO-LYO (there will be no delviery note)
+                so_doc.update_status("Closed")
             
         else:
             return
