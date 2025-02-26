@@ -29,6 +29,7 @@ def get_columns():
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Integer", "width": 50},
+        {"label": _("Additional Items"), "fieldname": "additional_items", "fieldtype": "Data", "width": 250},
         # {"label": _("Range"), "fieldname": "range", "fieldtype": "Data", "width": 80},
         # {"label": _("Prefix"), "fieldname": "prefix", "fieldtype": "Data", "width": 60},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
@@ -57,12 +58,14 @@ def get_data(filters=None):
             `tabSales Order Item`.`item_code` AS `item_code`,
             `tabSales Order Item`.`item_name` AS `item_name`,
             `tabSales Order Item`.`qty` AS `qty`,
+            COUNT(`tabSales Order Item`.`name`) AS `item_count`,
             `tabLabel Range`.`range` AS `range`,
             `tabLabel Range`.`prefix` AS `prefix`,
-            `tabSales Order`.`comment` AS `comment`
+            `tabSales Order`.`comment` AS `comment`,
+            `tabSales Order`.`owner`
         FROM `tabSales Order`
         LEFT JOIN `tabSales Order Item` ON
-            (`tabSales Order Item`.`parent` = `tabSales Order`.`name` AND `tabSales Order Item`.`idx` = 1)
+            (`tabSales Order Item`.`parent` = `tabSales Order`.`name`)
         LEFT JOIN `tabLabel Range` ON
             (`tabLabel Range`.`item_code` = `tabSales Order Item`.`item_code`)
         WHERE 
@@ -75,8 +78,29 @@ def get_data(filters=None):
                             FROM `tabDelivery Note Item`
                             WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
                             AND `tabDelivery Note Item`.`docstatus` <> 2)
+        GROUP BY `tabSales Order`.`name`
         ORDER BY `tabSales Order Item`.`item_code`, `tabSales Order`.`transaction_date` ASC;
     """.format(company=filters.get("company")), as_dict=True)
+
+    for so in open_label_orders:
+        if so['item_count'] > 1:
+            so_doc = frappe.get_doc("Sales Order", so['sales_order'])
+            additional_item_str = ""
+            so['additional_item_codes'] = []
+            for i, item in enumerate(so_doc.items):
+                if not frappe.db.exists("Label Range", item.item_code):
+                    additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}<br>"  # TODO: is there a use-case for non-integer qtys?
+                    so['additional_item_codes'].append(item.item_code)
+                else:  # Found the only allowed label item. Make sure that it is correctly displayed in the report and will be the one to pick.
+                    label_range_doc = frappe.get_doc("Label Range", item.item_code)
+                    so['item_code'] = item.item_code
+                    so['item_name'] = item.item_name
+                    so['qty'] = item.qty
+                    so['range'] = label_range_doc.range
+                    so['prefix'] = label_range_doc.prefix
+            so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
+        else:
+            so['additional_items'] = ""  # avoid misalignment in export
     
     return open_label_orders
 
