@@ -91,11 +91,13 @@ def get_data(filters=None):
                 if not frappe.db.exists("Label Range", item.item_code):
                     additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}<br>"  # TODO: is there a use-case for non-integer qtys?
                     so['additional_item_codes'].append(item.item_code)
+                else:  # Found the only allowed label item. Make sure that it is correctly displayed in the report and will be the one to pick.
+                    label_range_doc = frappe.get_doc("Label Range", item.item_code)
+                    so['item_code'] = item.item_code
+                    so['item_name'] = item.item_name
+                    so['range'] = label_range_doc.range
+                    so['prefix'] = label_range_doc.prefix
             so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
-            # ensure correct primary item
-            so['item_code'] = so_doc.items[0].item_code
-            so['item_name'] = so_doc.items[0].item_name
-            so['qty'] = so_doc.items[0].qty
         else:
             so['additional_items'] = ""  # avoid misalignment in export
     
