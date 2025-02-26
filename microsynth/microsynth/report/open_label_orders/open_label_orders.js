@@ -70,7 +70,7 @@ function process_queue() {
                     frappe.msgprint({
                         title: __("Unallowed additional Item"),
                         indicator: 'red',
-                        message: __("Label Order " + label_order.sales_order + " contains the unallowed additional Item ") + item_code + ".<br>Please do <b>not</b> pick labels for this order and reassign it to its creator " + label_order.owner + "."
+                        message: __("Label Order " + label_order.sales_order + " contains the unallowed additional Item ") + item_code + ".<br>Label picking for this order is <b>not</b> permitted.<br>Please contact its creator " + label_order.owner + "."
                     });
                     return;
                 } else {
