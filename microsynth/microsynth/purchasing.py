@@ -77,7 +77,7 @@ def create_pi_from_si(sales_invoice):
     # insert
     new_pi.insert()
     new_pi.submit()
-    return new_pi.name
+    return new_pi
 
 
 def fetch_assignee(dt, dn):

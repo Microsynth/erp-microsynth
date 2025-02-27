@@ -1380,10 +1380,12 @@ Your administration team<br><br>{footer}"
             '''
 
         elif mode == "Intercompany":
-            # trigger inter-company invoicing: create PI from SI
+            # trigger inter-company invoicing: create PI from SI (PI is submitted/open after this)
             purchase_invoice = create_pi_from_si(sales_invoice.name)
 
-            # TODO: book against intercompany KK (SI-BAL & PI-LYO)
+            # create journal entry to close original invoice against intercompany account
+            create_intercompany_booking(sales_invoice)
+            create_intercompany_booking(purchase_invoice)
 
             # create and transmit SI-LYO
             # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
@@ -1402,6 +1404,7 @@ Your administration team<br><br>{footer}"
                     continue
                 po_nos.add(po_no)
 
+            # ToDo: consider partial delivery: e.g. not all oligos were invoiced(=delivered)
             for so_id in po_nos:
                 so_doc = frappe.get_doc("Sales Order", so_id)
                 # create SI-LYO from SO-LYO
@@ -1780,3 +1783,90 @@ def report_sales_invoice_drafts():
         email_template = frappe.get_doc("Email Template", "Sales Invoice Drafts to be submitted")
         rendered_content = frappe.render_template(email_template.response, {'si_draft_details': si_draft_details})
         send_email_from_template(email_template, rendered_content)
+
+
+def get_intermediate_account(company, party_type, party):
+    parties = frappe.get_all("Intercompany Settings Account", filters={'company': company, 'party_type': party_type, 'party': party}, fields=['account'])
+    if len(parties) > 0:
+        return parties[0]['account']
+    else:
+        return None
+
+
+def create_intercompany_booking(invoice):
+    """
+    This function will record a journal entry in order to close the referenced invoice against the corresponding intercompany account
+    
+    ToDo: validate process when a intercompany invoice is cancelled or returned (!)
+    
+    """
+    jv = frappe.get_doc({
+        'doctype': "Journal Entry",
+        'posting_date': invoice.posting_date,
+        'voucher_type': "Journal Entry",
+        'company': invoice.company,
+        'user_remark': "Intercompany booking for {0}".format(invoice.name),
+        'multi_currency': 1
+    })
+        
+    if invoice.doctype == "Sales Invoice":
+        intercompany_account = get_intermediate_account(invoice.company, "Customer", invoice.customer)
+        if not intercompany_account:
+            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.customer} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+        if frappe.get_value("Account", intercompany_account, "account_currency") != \
+            frappe.get_value("Account", invoice.debit_to, "account_currency"):
+            frappe.log_error(f"Debtor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+
+        jv.append("accounts", {
+            'account': intercompany_account,
+            'debit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center
+        })
+        jv.append("accounts", {
+            'account': invoice.debit_to,
+            'credit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center,
+            'party_type': "Customer",
+            'party': invoice.customer,
+            'reference_type': "Sales Invoice",
+            'reference_name': invoice.name
+        })
+        
+    elif invoice.doctype == "Purchase Invoice":
+        intercompany_account = get_intermediate_account(invoice.company, "Supplier", invoice.supplier)
+        if not intercompany_account:
+            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.supplier} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+        if frappe.get_value("Account", intercompany_account, "account_currency") != \
+            frappe.get_value("Account", invoice.credit_to, "account_currency"):
+            frappe.log_error(f"Creditor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+
+        jv.append("accounts", {
+            'account': invoice.credit_to,
+            'debit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center,
+            'party_type': "Supplier",
+            'party': invoice.supplier,
+            'reference_type': "Purchase Invoice",
+            'reference_name': invoice.name
+        })
+        jv.append("accounts", {
+            'account': intercompany_account,
+            'credit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center
+        })
+
+    else:
+        frappe.log_error(f"Invalid argument: intercompany booking for doctype {invoice.doctype} ({invoice.name}).", "invoicing.create_intercompany_booking")
+        return
+    jv.insert(ignore_permissions=True)
+    jv.submit()
+    
+    return jv.name
