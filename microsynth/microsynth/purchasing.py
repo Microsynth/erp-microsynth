@@ -23,7 +23,12 @@ def create_pi_from_si(sales_invoice):
     """
     si = frappe.get_doc("Sales Invoice", sales_invoice)
     # create matching purchase invoice
-    pi_company = si.customer_name           # Note: company names are unique
+    pi_company = frappe.get_all("Intercompany Settings Company", filters{'customer': si.customer}, fields=['company'])
+    if len(pi_company) == 0:
+        frappe.log_error(f"Company for customer {si.customer} is not available, but was requested in the intercompany invoicing of {sales_invoice}. Please check the Intercompany Settings.", "purchasing.create_pi_from_si")
+        return None
+    else:
+        pi_company = pi_company[0]['company']
     if not frappe.db.exists("Company", pi_company):
         frappe.log_error(f"Company {pi_company} is not available, but was requested in the intercompany invoicing of {sales_invoice}.", "purchasing.create_pi_from_si")
         return None
