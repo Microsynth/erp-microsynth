@@ -10,7 +10,7 @@ import frappe
 from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
-from frappe.utils import cint, get_url_to_form
+from frappe.utils import cint, get_url_to_form, has_items_delivered_by_supplier
 import json
 from datetime import datetime
 from microsynth.microsynth.naming_series import get_naming_series
@@ -178,6 +178,9 @@ def check_sales_order_completion():
 
             if len(pending_samples) == 0:
                 # all processed: create delivery
+                if has_items_delivered_by_supplier(sales_order):
+                    # do not create a DN if any item has the flag delivered_by_supplier set
+                    continue
                 customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
                 customer = frappe.get_doc("Customer", customer_name)
 

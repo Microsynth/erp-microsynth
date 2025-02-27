@@ -5,7 +5,7 @@ from frappe import _
 
 def find_tax_template(company, customer, shipping_address, category):
     """
-    Find the corresponding tax template in the tax matrix. Does not consider alternative tax templates.
+    Find the corresponding sales tax template in the tax matrix. Does not consider alternative tax templates.
 
     run
     bench execute microsynth.microsynth.taxes.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
@@ -39,8 +39,27 @@ def find_tax_template(company, customer, shipping_address, category):
         if len(find_tax_record) > 0:
             return find_tax_record[0]['sales_taxes_template']
         else:
-            frappe.log_error(f"Could not find tax template entry in the Tax Matrix for customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_tax_template")
+            frappe.log_error(f"Could not find sales tax template entry in the Tax Matrix for Customer '{customer}'\n{company=}, {country=}, {category=}, {eu_pattern=}", "taxes.find_tax_template")
             return None
+
+
+def find_purchase_tax_template(sales_tax_template, company):
+    """
+    Find the corresponding purchase tax template in the tax matrix. Does not consider alternative tax templates.
+
+    bench execute microsynth.microsynth.taxes.find_purchase_tax_template --kwargs "{'sales_tax_template': 'BAL Export (220) - BAL', 'company':'Microsynth France SAS'}"
+    """
+    purchase_tax_records = frappe.db.sql(f"""
+        SELECT `purchase_tax_template`
+        FROM `tabTax Matrix Template Mapping`
+        WHERE `purchase_company` = "{company}"
+            AND `sales_tax_template` = "{sales_tax_template}"
+        ORDER BY `idx` ASC;""", as_dict=True)
+    if len(purchase_tax_records) > 0:
+        return purchase_tax_records[0]['purchase_tax_template']
+    else:
+        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template} targetting {company=}", "taxes.find_purchase_tax_template")
+        return None
 
 
 def get_alternative_tax_template(tax_template, date):
@@ -131,7 +150,6 @@ def find_dated_tax_template(company, customer, shipping_address, category, date)
     template = find_tax_template(company, customer, shipping_address, category)
     alternative_template = get_alternative_tax_template(template, date)
     return alternative_template
-
 
 
 def sales_order_before_save(doc, event):

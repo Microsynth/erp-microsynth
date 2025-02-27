@@ -123,6 +123,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`shipping_address_name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
+                AND `tabSales Invoice`.`invoicing_method` != 'Intercompany'
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}

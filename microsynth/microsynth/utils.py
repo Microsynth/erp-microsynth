@@ -566,6 +566,40 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 
+def get_customer_from_company(company):
+    customers = frappe.get_all("Intercompany Settings Company", filters={'company': company}, fields=['customer'])
+    if len(customers) > 0:
+        return customers[0]['customer']
+    else:
+        return None
+
+
+def get_margin_from_company(company):
+    margins = frappe.get_all("Intercompany Settings Company", filters={'company': company}, fields=['margin'])
+    if len(margins) == 1:
+        return margins[0]['margin']
+    else:
+        frappe.log_error(f"There are {len(margins)} Companies '{company}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        return None
+
+
+def get_margin_from_customer(customer):
+    margins = frappe.get_all("Intercompany Settings Company", filters={'customer': customer}, fields=['margin'])
+    if len(margins) == 1:
+        return margins[0]['margin']
+    else:
+        frappe.log_error(f"There are {len(margins)} Customers '{customer}' in the Intercompany Settings.", "utils.get_margin_from_company")
+        return None
+
+
+def get_supplier_for_product_type(product_type):
+    suppliers = frappe.get_all("Intercompany Settings Supplier", filters={'product_type': product_type}, fields=['supplier'])
+    if len(suppliers) > 0:
+        return suppliers[0]['supplier']
+    else:
+        return None
+
+
 def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
@@ -856,6 +890,19 @@ def set_distributor(customer, distributor, product_type):
     customer.save()
 
     return
+
+
+def has_webshop_service(customer, service):
+    """
+    Check if a csutomer has the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq')
+    
+    bench execute microsynth.microsynth.utils.has_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
+    """
+    webshop_services = frappe.get_all("Webshop Service Link", 
+        filters={'parent': customer, 'parenttype': "Customer", 'webshop_service': service},
+        fields=['name', 'parent']
+    )
+    return len(webshop_services) > 0
 
 
 def add_webshop_service(customer, service):
@@ -1957,11 +2004,11 @@ def check_new_customers_taxid(delta_days=7):
     for nc in new_customers:
         if not nc['tax_id']:
             continue
-        shipping_address = get_first_shipping_address(nc['name'])
-        if shipping_address is None:
-            frappe.log_error(f"Customer '{nc['name']}' has no shipping address.", "utils.check_new_customers_taxid")
+        address = get_first_shipping_address(nc['name']) or get_billing_address(nc['name'])  # second function is only called if first returns falsy value
+        if address is None:
+            frappe.log_error(f"Customer '{nc['name']}' has no address. Unable to check Tax ID.", "utils.check_new_customers_taxid")
             continue
-        country = frappe.get_value("Address", shipping_address, "Country")
+        country = frappe.get_value("Address", address, "Country")
         if not country in ['Austria', 'Belgium', 'Bulgaria', 'Cyprus', 'Czech Republic', 'Germany', 'Denmark', 'Estonia', 'Greece',
                            'Spain', 'Finland', 'France', 'Croatia', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Latvia',
                            'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia']:
@@ -2324,6 +2371,7 @@ def force_cancel(dt, dn):
         new_comment.insert(ignore_permissions=True)
     return
 
+
 def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
     frappe.db.sql("""
         UPDATE `tab{dt}`
@@ -2342,6 +2390,7 @@ def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
         parent=""" AND `parenttype` = "{0}" """.format(parent_dt) if parent_dt else "")
     )
     return
+
 
 def user_has_role(user, role):
     """
@@ -2444,6 +2493,20 @@ def has_distributor(customer, product_type):
         if distributor.product_type == product_type:
             return True
     return False
+
+
+def has_items_delivered_by_supplier(sales_order_id):
+    """
+    Checks if there are any Sales Order Items for the given Sales Order ID
+    with the flag "Supplier delivers to Customer" set.
+    """
+    items_delivered_by_supplier = frappe.db.sql(f"""
+        SELECT `tabSales Order Item`.`name`
+        FROM `tabSales Order Item`
+        WHERE `tabSales Order Item`.`parent` = '{sales_order_id}'
+            AND `tabSales Order Item`.`delivered_by_supplier` = 1
+        ;""", as_dict=True)
+    return len(items_delivered_by_supplier) > 0
 
 
 def print_users_without_role(role):

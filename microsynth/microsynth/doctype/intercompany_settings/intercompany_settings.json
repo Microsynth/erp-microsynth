@@ -1,0 +1,64 @@
+{
+ "creation": "2025-02-18 11:36:14.296926",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "companies",
+  "sec_prod",
+  "product_types",
+  "sec_accounts",
+  "accounts"
+ ],
+ "fields": [
+  {
+   "fieldname": "companies",
+   "fieldtype": "Table",
+   "label": "Company Settings",
+   "options": "Intercompany Settings Company"
+  },
+  {
+   "fieldname": "sec_prod",
+   "fieldtype": "Section Break",
+   "label": "Product Types"
+  },
+  {
+   "fieldname": "product_types",
+   "fieldtype": "Table",
+   "label": "Product Types",
+   "options": "Intercompany Settings Supplier"
+  },
+  {
+   "fieldname": "sec_accounts",
+   "fieldtype": "Section Break",
+   "label": "Accounts"
+  },
+  {
+   "fieldname": "accounts",
+   "fieldtype": "Table",
+   "label": "Accounts",
+   "options": "Intercompany Settings Account"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2025-02-27 14:45:28.646544",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Intercompany Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

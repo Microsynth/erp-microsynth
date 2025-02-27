@@ -9,7 +9,7 @@ from datetime import datetime
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, close_or_unclose_sales_orders
 import frappe
 from microsynth.microsynth.labels import print_raw
-from microsynth.microsynth.utils import get_export_category, validate_sales_order_status, validate_sales_order
+from microsynth.microsynth.utils import get_export_category, validate_sales_order_status, validate_sales_order, has_items_delivered_by_supplier
 from microsynth.microsynth.naming_series import get_naming_series
 
 
@@ -28,7 +28,7 @@ def oligo_status_changed(content=None):
         return {'success': False, 'message': "Please provide oligos", 'reference': None}
     
     # go through oligos and update status
-    affected_sales_orders = []
+    affected_sales_orders = set()
     updated_oligos = []
     error_oligos = []
     for oligo in content['oligos']:
@@ -68,7 +68,7 @@ def oligo_status_changed(content=None):
                 updated_oligos.append(oligos[0]['name'])
             # append sales order (if available and not in list)
             if oligos[0]['sales_order'] and oligos[0]['sales_order'] not in affected_sales_orders:
-                affected_sales_orders.append(oligos[0]['sales_order'])
+                affected_sales_orders.add(oligos[0]['sales_order'])
         else:
             #frappe.log_error("Oligo status update: oligo {0} not found.".format(oligo['web_id']), "Production: oligo status update error")
             error_oligos.append(oligo['web_id'])
@@ -120,7 +120,9 @@ def check_sales_order_completion(sales_orders):
 
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
-
+            if has_items_delivered_by_supplier(sales_order):
+                # do not create a DN if any item has the flag delivered_by_supplier set
+                continue
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             dn_content = make_delivery_note(sales_order)
             dn = frappe.get_doc(dn_content)

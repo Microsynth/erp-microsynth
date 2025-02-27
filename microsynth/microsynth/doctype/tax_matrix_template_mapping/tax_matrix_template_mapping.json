@@ -1,0 +1,49 @@
+{
+ "creation": "2025-02-25 10:51:56.683300",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_tax_template",
+  "purchase_tax_template",
+  "purchase_company"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_tax_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Tax Template",
+   "options": "Sales Taxes and Charges Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "purchase_tax_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Purchase Tax Template",
+   "options": "Purchase Taxes and Charges Template",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "purchase_taxes_template.company",
+   "fieldname": "purchase_company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Purchase Company",
+   "options": "Company",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-02-25 10:59:04.871710",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Tax Matrix Template Mapping",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

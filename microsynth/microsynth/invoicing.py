@@ -11,10 +11,10 @@ import frappe
 from frappe import _
 from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
-from frappe.utils import cint, flt, get_url_to_form
+from frappe.utils import cint, get_url_to_form
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
-from erpnextswiss.erpnextswiss.attach_pdf import create_folder, execute
-from frappe.utils.file_manager import save_file
+from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
@@ -1197,6 +1197,8 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "GEP"
             elif customer.invoicing_method == "Chorus":
                 mode = "Chorus"
+            elif customer.invoicing_method == "Intercompany":
+                mode = "Intercompany"
             else:
                 mode = None
 
@@ -1376,6 +1378,46 @@ Your administration team<br><br>{footer}"
                 is_private=True
             )
             '''
+
+        elif mode == "Intercompany":
+            # trigger inter-company invoicing: create PI from SI (PI is submitted/open after this)
+            purchase_invoice = create_pi_from_si(sales_invoice.name)
+
+            # create journal entry to close original invoice against intercompany account
+            create_intercompany_booking(sales_invoice)
+            create_intercompany_booking(purchase_invoice)
+
+            # create and transmit SI-LYO
+            # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
+            delivery_note_ids = set()
+            for item in sales_invoice.items:
+                delivery_note_ids.add(item.delivery_note)
+
+            po_nos = set()
+            for dn_id in delivery_note_ids:
+                po_no = frappe.get_value("Delivery Note", dn_id, "po_no")
+                if not po_no:
+                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
+                    continue
+                if not po_no.startswith("SO-"):
+                    frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
+                    continue
+                po_nos.add(po_no)
+
+            # ToDo: consider partial delivery: e.g. not all oligos were invoiced(=delivered)
+            for so_id in po_nos:
+                so_doc = frappe.get_doc("Sales Order", so_id)
+                # create SI-LYO from SO-LYO
+                si_content = make_sales_invoice_from_so(so_id)
+                si_doc = frappe.get_doc(si_content)
+                si_doc.insert(ignore_permissions=True)   
+                si_doc.submit()
+
+                # transmit SI-LYO
+                transmit_sales_invoice(si_doc.name)
+
+                # close SO-LYO (there will be no delviery note)
+                so_doc.update_status("Closed")
 
         else:
             return
@@ -1741,3 +1783,90 @@ def report_sales_invoice_drafts():
         email_template = frappe.get_doc("Email Template", "Sales Invoice Drafts to be submitted")
         rendered_content = frappe.render_template(email_template.response, {'si_draft_details': si_draft_details})
         send_email_from_template(email_template, rendered_content)
+
+
+def get_intermediate_account(company, party_type, party):
+    parties = frappe.get_all("Intercompany Settings Account", filters={'company': company, 'party_type': party_type, 'party': party}, fields=['account'])
+    if len(parties) > 0:
+        return parties[0]['account']
+    else:
+        return None
+
+
+def create_intercompany_booking(invoice):
+    """
+    This function will record a journal entry in order to close the referenced invoice against the corresponding intercompany account
+    
+    ToDo: validate process when a intercompany invoice is cancelled or returned (!)
+    
+    """
+    jv = frappe.get_doc({
+        'doctype': "Journal Entry",
+        'posting_date': invoice.posting_date,
+        'voucher_type': "Journal Entry",
+        'company': invoice.company,
+        'user_remark': "Intercompany booking for {0}".format(invoice.name),
+        'multi_currency': 1
+    })
+        
+    if invoice.doctype == "Sales Invoice":
+        intercompany_account = get_intermediate_account(invoice.company, "Customer", invoice.customer)
+        if not intercompany_account:
+            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.customer} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+        if frappe.get_value("Account", intercompany_account, "account_currency") != \
+            frappe.get_value("Account", invoice.debit_to, "account_currency"):
+            frappe.log_error(f"Debtor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+
+        jv.append("accounts", {
+            'account': intercompany_account,
+            'debit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center
+        })
+        jv.append("accounts", {
+            'account': invoice.debit_to,
+            'credit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center,
+            'party_type': "Customer",
+            'party': invoice.customer,
+            'reference_type': "Sales Invoice",
+            'reference_name': invoice.name
+        })
+        
+    elif invoice.doctype == "Purchase Invoice":
+        intercompany_account = get_intermediate_account(invoice.company, "Supplier", invoice.supplier)
+        if not intercompany_account:
+            frappe.log_error(f"Unable to find intercompany account for {invoice.company} to {invoice.supplier} for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+        if frappe.get_value("Account", intercompany_account, "account_currency") != \
+            frappe.get_value("Account", invoice.credit_to, "account_currency"):
+            frappe.log_error(f"Creditor and intercompany account currency does not match for {invoice.name}.", "invoicing.create_intercompany_booking")
+            return
+
+        jv.append("accounts", {
+            'account': invoice.credit_to,
+            'debit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center,
+            'party_type': "Supplier",
+            'party': invoice.supplier,
+            'reference_type': "Purchase Invoice",
+            'reference_name': invoice.name
+        })
+        jv.append("accounts", {
+            'account': intercompany_account,
+            'credit_in_account_currency': invoice.outstanding_amount,
+            'exchange_rate': invoice.conversion_rate if not cint(invoice.is_return) else 1,
+            'cost_center': invoice.cost_center
+        })
+
+    else:
+        frappe.log_error(f"Invalid argument: intercompany booking for doctype {invoice.doctype} ({invoice.name}).", "invoicing.create_intercompany_booking")
+        return
+    jv.insert(ignore_permissions=True)
+    jv.submit()
+    
+    return jv.name

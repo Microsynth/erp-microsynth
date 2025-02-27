@@ -1,0 +1,54 @@
+{
+ "creation": "2025-02-18 11:35:49.412253",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "customer",
+  "customer_name",
+  "margin"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "margin",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Margin"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-02-19 15:59:48.891488",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Intercompany Settings Company",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

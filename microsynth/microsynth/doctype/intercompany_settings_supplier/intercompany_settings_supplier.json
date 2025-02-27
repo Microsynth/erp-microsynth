@@ -1,0 +1,47 @@
+{
+ "creation": "2025-02-18 14:58:36.302491",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "product_type",
+  "supplier",
+  "supplier_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "product_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Product Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supplier Name",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-02-18 14:58:36.302491",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Intercompany Settings Supplier",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

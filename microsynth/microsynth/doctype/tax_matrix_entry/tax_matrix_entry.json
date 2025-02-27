@@ -11,6 +11,7 @@
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "company",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -19,6 +20,7 @@
    "reqd": 1
   },
   {
+   "columns": 2,
    "description": "Country name or wildcard % for rest",
    "fieldname": "country",
    "fieldtype": "Data",
@@ -27,6 +29,7 @@
    "reqd": 1
   },
   {
+   "columns": 3,
    "fieldname": "sales_taxes_template",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -35,6 +38,7 @@
    "reqd": 1
   },
   {
+   "columns": 2,
    "default": "Material",
    "fieldname": "category",
    "fieldtype": "Select",
@@ -45,7 +49,7 @@
   }
  ],
  "istable": 1,
- "modified": "2022-09-06 16:13:22.475495",
+ "modified": "2025-02-25 10:56:07.525703",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Tax Matrix Entry",
