@@ -18,7 +18,7 @@ from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_alternative_intercompany_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
 from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -357,12 +357,16 @@ def set_income_accounts(sales_invoice):
         address = sales_invoice.shipping_address_name
     else:
         address = sales_invoice.customer_address
+
+    intercompany = frappe.db.get_value("Customer", sales_invoice.customer, "invoicing_method") == "Intercompany"
     country = frappe.db.get_value("Address", address, "country")
 
     for item in sales_invoice.items:
         if item.item_code == "6100":
             # credit item
             item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
+        elif intercompany:
+            item.income_account = get_alternative_intercompany_income_account(item.income_account, sales_invoice.customer)
         else:
             # all other items
             item.income_account = get_alternative_income_account(item.income_account, country)
@@ -370,16 +374,20 @@ def set_income_accounts(sales_invoice):
 
 
 @frappe.whitelist()
-def get_income_accounts(address, currency, sales_invoice_items):
+def get_income_accounts(customer, address, currency, sales_invoice_items):
 
     if type(sales_invoice_items) == str:
         sales_invoice_items = json.loads(sales_invoice_items)
+
+    intercompany = frappe.db.get_value("Customer", customer, "invoicing_method") == "Intercompany"
     country = frappe.db.get_value("Address", address, "country")
     income_accounts = []
     for item in sales_invoice_items:
         if item.get("item_code") == "6100":
             # credit item
             income_accounts.append(get_alternative_account(item.get("income_account"), currency))
+        elif intercompany:
+            income_accounts.append(get_alternative_intercompany_income_account(item.get("income_account"), customer))
         else:
             # all other items
             income_accounts.append(get_alternative_income_account(item.get("income_account"), country))
