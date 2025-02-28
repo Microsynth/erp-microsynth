@@ -10,11 +10,11 @@ import frappe
 from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
-from frappe.utils import cint, get_url_to_form, has_items_delivered_by_supplier
+from frappe.utils import cint, get_url_to_form 
 import json
 from datetime import datetime
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import validate_sales_order
+from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
 
 
 def set_status(status, labels):
