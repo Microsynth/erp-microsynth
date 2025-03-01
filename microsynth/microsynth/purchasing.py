@@ -802,3 +802,33 @@ def check_supplier_shop_password(password):
         return {'error': _("The new password does not match the security policy. Please try again with a strong password.") + " " + (strength['feedback']['warning'] or "")}
     else:
         return {'success': True}
+
+
+def mark_purchase_invoice_as_proposed(purchase_invoice):
+    """
+    bench execute microsynth.microsynth.purchasing.mark_purchase_invoices_as_proposed --kwargs "{'payment_proposal_id':'e9b1a13027'}"
+    """
+
+    pi = frappe.get_doc("Purchase Invoice", purchase_invoice)
+    pi.is_proposed = True
+    pi.save()
+    print(f"Set {pi.name} to 'is proposed'")
+
+
+def mark_purchase_invoices_as_proposed(payment_proposal_id):
+    """
+    bench execute microsynth.microsynth.purchasing.mark_purchase_invoices_as_proposed --kwargs "{'payment_proposal_id':'e9b1a13027'}"
+    """
+    payment_proposal = frappe.get_doc("Payment Proposal", payment_proposal_id)
+    for i in payment_proposal.purchase_invoices:
+        mark_purchase_invoice_as_proposed(i.purchase_invoice)
+
+
+def mark_purchase_invoices_of_payment_propsals_as_proposed(payment_proposal_ids):
+    """
+    bench execute microsynth.microsynth.purchasing.mark_purchase_invoices_of_payment_propsals_as_proposed --kwargs "{'payment_proposal_ids':['e9b1a13027', 'e9b1a13027']}"
+    """
+    for pp_id in payment_proposal_ids:
+        print(f"Process Payment Proposal {pp_id}")
+        mark_purchase_invoices_as_proposed(pp_id)
+
