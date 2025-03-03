@@ -1109,7 +1109,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         return dropship_order.name
         
     except Exception as err:
-        frappe.log_error(f"{customer}\n{supplier}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
+        frappe.log_error(f"{customer}\n{supplier_company}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
     
         return None
 
