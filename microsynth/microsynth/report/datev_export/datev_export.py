@@ -19,6 +19,8 @@ DATEV_CHARACTER_PATTERNS = {
 
 def strip_str_to_allowed_chars(s, min_length, max_length, allowed_chars):
     out = ""
+    if not s:
+        return out
     # append each valid character
     for c in s:
         if c in allowed_chars:
