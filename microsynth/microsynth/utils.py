@@ -2315,7 +2315,7 @@ def apply_item_group_defaults(item_group):
     items = frappe.db.get_all("Item", filters={'item_group': item_group.name}, fields=['name'])
     for item in items:
         print(f"Going to process Item {item['name']} ...")
-        l(item['name'])
+        overwrite_item_defaults(item['name'])
 
 
 @frappe.whitelist()
