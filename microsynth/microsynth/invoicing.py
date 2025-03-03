@@ -1410,15 +1410,27 @@ Your administration team<br><br>{footer}"
                 if not po_no.startswith("SO-"):
                     frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
                     continue
+                if not frappe.db.exists("Sales Order", po_no):
+                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
+                    continue
                 po_nos.add(po_no)
 
-            # ToDo: consider partial delivery: e.g. not all oligos were invoiced(=delivered)
             for so_id in po_nos:
                 so_doc = frappe.get_doc("Sales Order", so_id)
                 # create SI-LYO from SO-LYO
                 si_content = make_sales_invoice_from_so(so_id)
                 si_doc = frappe.get_doc(si_content)
-                si_doc.insert(ignore_permissions=True)   
+                dns = frappe.get_all("Delivery Note", filter={'po_no': so_id}, fields=['name'])
+                if len(dns) != 1:
+                    frappe.log_error(f"There are {len(dns)} Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
+                    continue
+                dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
+                # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
+                # assume that there are not different Oligos, Samples or Items while the amount of them is identical
+                # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
+                if len(si_doc.oligos) != len(dn_doc.oligos) or len(si_doc.samples) != len(dn_doc.samples) or len(si_doc.items) != len(dn_doc.items):
+                    si_doc = remove_undelivered_objects(so_doc, dn_doc, si_doc)  # should be call by reference but just for safety
+                si_doc.insert(ignore_permissions=True)
                 si_doc.submit()
 
                 # transmit SI-LYO
@@ -1426,10 +1438,8 @@ Your administration team<br><br>{footer}"
 
                 # close SO-LYO (there will be no delviery note)
                 so_doc.update_status("Closed")
-
         else:
             return
-
         # sales_invoice.invoice_sent_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = False)
@@ -1444,6 +1454,58 @@ Your administration team<br><br>{footer}"
         frappe.log_error(f"Cannot transmit sales invoice {sales_invoice_id}:\n{err}\n{traceback.format_exc()}\n\n{rendered_content}",
                          "invoicing.transmit_sales_invoice")
     return
+
+
+def remove_undelivered_objects(so_doc, dn_doc, si_doc):
+    """
+    Removes all Oligos, Samples, Items from the given Sales Invoice which are not on the given Delivery Note.
+    Note: Prices may differ. Take rates from the given Sales Order
+    """
+    items_to_keep = {}  # map item code to quantity
+    if len(si_doc.oligos) != len(dn_doc.oligos):
+        for dn_oligo in dn_doc.oligos:
+            for si_oligo in si_doc.oligos:
+                if dn_oligo.web_id == si_oligo.web_id:
+                    for item in dn_oligo.items:
+                        if item.code in items_to_keep:
+                            items_to_keep[item.code] += item.qty
+                        else:
+                            items_to_keep[item.code] = item.qty
+
+    if len(si_doc.samples) != len(dn_doc.samples):
+        for dn_sample in dn_doc.samples:
+            for si_sample in si_doc.samples:
+                if dn_sample.web_id == si_sample.web_id:
+                    for item in dn_sample.items:
+                        if item.code in items_to_keep:
+                            items_to_keep[item.code] += item.qty
+                        else:
+                            items_to_keep[item.code] = item.qty
+
+    # no Oligos, no Samples, but different Item count
+    if len(si_doc.items) != len(dn_doc.items) and (len(si_doc.oligos) + len(dn_doc.oligos) + len(si_doc.samples) + len(dn_doc.samples)) == 0:
+        si_doc.items = dn_doc.items  # TODO: change parent?
+    else:
+        # TODO: What about additional Items that are not on a Oligo or Sample?
+        # drop Sales Invoice Items and apply Items to keep
+        si_doc.items = []
+        for item_code, qty in items_to_keep.items():
+            rate = 0.0
+            found = False
+            for item in so_doc.items:
+                if item.item_code == item_code:
+                    rate = item.rate
+                    found = True
+                    break
+            if found:
+                si_doc.append("items", {
+                    'item_code': item_code,
+                    'qty': qty,
+                    'rate': rate
+                })
+            else:
+                frappe.log_error(f"Item {item_code} from Delivery Note {dn_doc.name} is not on Sales Order {so_doc.name}", "remove_undelivered_objects")
+    return si_doc
 
 
 def transmit_sales_invoices(sales_invoices):
