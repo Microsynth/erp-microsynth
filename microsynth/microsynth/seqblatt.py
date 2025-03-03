@@ -178,7 +178,7 @@ def check_sales_order_completion():
 
             if len(pending_samples) == 0:
                 # all processed: create delivery
-                if has_items_delivered_by_supplier(sales_order):
+                if has_items_delivered_by_supplier(sales_order['name']):
                     # do not create a DN if any item has the flag delivered_by_supplier set
                     continue
                 customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
