@@ -18,7 +18,7 @@ from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_alternative_intercompany_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
 from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -317,7 +317,7 @@ def async_create_invoices(mode, company, customer):
 
         for dn in all_invoiceable:
             # TODO process other invoicing methods
-            if dn.get('invoicing_method') not in  ["Email", "Post"]:
+            if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany"]:
                 frappe.log_error("Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), "invoicing.async_create_invoices")
                 continue
 
@@ -357,12 +357,19 @@ def set_income_accounts(sales_invoice):
         address = sales_invoice.shipping_address_name
     else:
         address = sales_invoice.customer_address
+
     country = frappe.db.get_value("Address", address, "country")
 
+    order_types = {}
     for item in sales_invoice.items:
+        if item.sales_order and item.sales_order not in order_types:
+            order_types[item.sales_order] = frappe.get_value("Sales Order", item.sales_order, "order_type")
+
         if item.item_code == "6100":
             # credit item
             item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
+        elif order_types[item.sales_order] == "Intercompany":
+            item.income_account = get_alternative_intercompany_income_account(item.income_account, sales_invoice.customer)
         else:
             # all other items
             item.income_account = get_alternative_income_account(item.income_account, country)
@@ -370,16 +377,23 @@ def set_income_accounts(sales_invoice):
 
 
 @frappe.whitelist()
-def get_income_accounts(address, currency, sales_invoice_items):
+def get_income_accounts(customer, address, currency, sales_invoice_items):
 
     if type(sales_invoice_items) == str:
         sales_invoice_items = json.loads(sales_invoice_items)
+
     country = frappe.db.get_value("Address", address, "country")
     income_accounts = []
+    order_types = {}
     for item in sales_invoice_items:
+        if item.sales_order and item.sales_order not in order_types:
+            order_types[item.sales_order] = frappe.get_value("Sales Order", item.sales_order, "order_type")
+
         if item.get("item_code") == "6100":
             # credit item
             income_accounts.append(get_alternative_account(item.get("income_account"), currency))
+        elif order_types[item.sales_order] == "Intercompany":
+            income_accounts.append(get_alternative_intercompany_income_account(item.get("income_account"), customer))
         else:
             # all other items
             income_accounts.append(get_alternative_income_account(item.get("income_account"), country))
@@ -1128,6 +1142,34 @@ def escape_chars_for_xml(text):
     return text.replace("&", "&amp;")
 
 
+def adjust_si_to_dn(dn_doc, si_doc):
+    """
+    Copies Oligos, Samples and Items from the given Delivery Note to the given Sales Invoice.
+    """
+    if len(dn_doc.oligos) > 0:
+        si_doc.oligos = []
+        for dn_oligo in dn_doc.oligos:
+            si_doc.append("oligos", {
+                'oligo': dn_oligo.oligo
+            })
+    if len(dn_doc.samples) > 0:
+        si_doc.samples = []
+        for dn_sample in dn_doc.samples:
+            si_doc.append("samples", {
+                'sample': dn_sample.sample
+            })
+    if len(dn_doc.items) > 0:
+        si_doc.items = []
+        for dn_item in dn_doc.items:
+            si_doc.append("items", {
+                'item_code': dn_item.item_code,
+                'item_name': dn_item.item_name,
+                'qty': dn_item.qty,
+                'rate': dn_item.rate
+            })
+    return si_doc
+
+
 @frappe.whitelist()
 def transmit_sales_invoice(sales_invoice_id):
     """
@@ -1402,15 +1444,30 @@ Your administration team<br><br>{footer}"
                 if not po_no.startswith("SO-"):
                     frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
                     continue
+                if not frappe.db.exists("Sales Order", po_no):
+                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
+                    continue
                 po_nos.add(po_no)
 
-            # ToDo: consider partial delivery: e.g. not all oligos were invoiced(=delivered)
             for so_id in po_nos:
                 so_doc = frappe.get_doc("Sales Order", so_id)
                 # create SI-LYO from SO-LYO
                 si_content = make_sales_invoice_from_so(so_id)
                 si_doc = frappe.get_doc(si_content)
-                si_doc.insert(ignore_permissions=True)   
+                dns = frappe.get_all("Delivery Note", filter={'po_no': so_id, 'docstatus': 1}, fields=['name'])
+                if len(dns) != 1:
+                    frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
+                    continue
+                dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
+                # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
+                # assume that there are not different Oligos, Samples or Items while the amount of them is identical
+                # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
+                if len(si_doc.oligos) != len(dn_doc.oligos) or len(si_doc.samples) != len(dn_doc.samples) or len(si_doc.items) != len(dn_doc.items):
+                    si_doc = adjust_si_to_dn(dn_doc, si_doc)  # should be call by reference but just for safety
+                if si_doc.total > dn_doc.total:
+                    frappe.log_error(f"Total of Sales Invoice {si_doc.name} ({si_doc.total}) is greater than total of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
+                    continue
+                si_doc.insert(ignore_permissions=True)
                 si_doc.submit()
 
                 # transmit SI-LYO
@@ -1418,10 +1475,8 @@ Your administration team<br><br>{footer}"
 
                 # close SO-LYO (there will be no delviery note)
                 so_doc.update_status("Closed")
-
         else:
             return
-
         # sales_invoice.invoice_sent_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # sales_invoice.save()
         frappe.db.set_value("Sales Invoice", sales_invoice.name, "invoice_sent_on", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), update_modified = False)

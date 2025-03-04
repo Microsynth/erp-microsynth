@@ -1243,7 +1243,31 @@ def get_alternative_income_account(account, country):
         return records[0]['alternative_account']
     else:
         return account
+
+
+def get_alternative_intercompany_income_account(account, customer):
+    """
+    Return the first alternative intercompany income account for a given account and customer. 
     
+    run
+    bench execute microsynth.microsynth.utils.get_alternative_intercompany_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'customer': '37595596'}"
+    """
+
+    query = """
+        SELECT `alternative_account`
+        FROM `tabIntercompany Settings Alternative Account`
+        WHERE `account` = '{account}'
+        AND `customer` = '{customer}'
+        ORDER BY `idx` ASC
+    """.format(account = account, customer = customer)
+
+    records = frappe.db.sql(query, as_dict = True)
+
+    if len(records) > 0:
+        return records[0]['alternative_account']
+    else:
+        return account
+
 
 def get_customers_for_country(country):
     """

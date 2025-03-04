@@ -8,7 +8,8 @@
   "sec_prod",
   "product_types",
   "sec_accounts",
-  "accounts"
+  "accounts",
+  "alternative_accounts"
  ],
  "fields": [
   {
@@ -38,10 +39,16 @@
    "fieldtype": "Table",
    "label": "Accounts",
    "options": "Intercompany Settings Account"
+  },
+  {
+   "fieldname": "alternative_accounts",
+   "fieldtype": "Table",
+   "label": "Alternative Accounts",
+   "options": "Intercompany Settings Alternative Account"
   }
  ],
  "issingle": 1,
- "modified": "2025-02-27 14:45:28.646544",
+ "modified": "2025-02-28 11:25:40.730526",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Intercompany Settings",

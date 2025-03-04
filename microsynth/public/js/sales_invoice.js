@@ -255,6 +255,7 @@ function set_income_accounts(frm) {
     frappe.call({
         'method': "microsynth.microsynth.invoicing.get_income_accounts",
         'args': { 
+            'customer': frm.doc.customer,
             'address': frm.doc.shipping_address_name || frm.doc.customer_address,
             'currency': frm.doc.currency,
             'sales_invoice_items': frm.doc.items

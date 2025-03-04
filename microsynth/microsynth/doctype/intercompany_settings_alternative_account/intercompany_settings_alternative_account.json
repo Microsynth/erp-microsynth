@@ -1,0 +1,59 @@
+{
+ "creation": "2025-02-28 11:22:19.215742",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "account",
+  "customer",
+  "customer_name",
+  "alternative_account",
+  "data_5"
+ ],
+ "fields": [
+  {
+   "fieldname": "account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "alternative_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Alternative Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "data_5",
+   "fieldtype": "Data"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-02-28 11:22:40.086326",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Intercompany Settings Alternative Account",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
