@@ -19,7 +19,10 @@ DATEV_CHARACTER_PATTERNS = {
 
 def strip_str_to_allowed_chars(s, min_length, max_length, allowed_chars):
     out = ""
-    if not s:
+    if not s and min_length == 0:
+        return out
+    elif not s:
+        frappe.log_error(f"Got no value for s", "datev_export.strip_str_to_allowed_chars")
         return out
     # append each valid character
     for c in s:
@@ -258,7 +261,7 @@ def create_datev_xml(path, dt, dn):
         doc['pincode'] = supplier_address.pincode
         doc['city'] = strip_str_to_allowed_chars(supplier_address.city, 1, 11, DATEV_CHARACTER_PATTERNS['p10036'])
     doc['tax_id'] = strip_str_to_allowed_chars(doc.get("tax_id"), 1, 15, DATEV_CHARACTER_PATTERNS['p10027'])
-    doc['bill_no'] = strip_str_to_allowed_chars(doc.get("bill_no"), 1, 36, DATEV_CHARACTER_PATTERNS['p10040'])
+    doc['bill_no'] = strip_str_to_allowed_chars(doc.get("bill_no") or doc.get('name'), 1, 36, DATEV_CHARACTER_PATTERNS['p10040'])
     
     datev_xml = frappe.render_template("microsynth/microsynth/report/datev_export/invoice.html", {
         'doc': doc
