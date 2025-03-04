@@ -1047,6 +1047,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         'contact_phone': original_order.contact_phone,
         'contact_email': original_order.contact_email,
         'product_type': original_order.product_type,
+        'order_type': 'Intercompany',
         'territory': original_order.territory,
         #'customer_request': original_order.customer_request,       # this field is currently not available
         'transaction_date': original_order.transaction_date,
