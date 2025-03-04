@@ -119,7 +119,7 @@ def get_data():
             ]
         },
         {
-            "label": _("Sequencing"),
+            "label": _("Labels"),
             "icon": "fa fa-tools",
             "items": [
                    {
@@ -129,7 +129,14 @@ def get_data():
                         "doctype": "Sequencing Label",
                         "is_query_report": True
                     },
-                   {
+                    {
+                        "type": "report",
+                        "name": "Label Usage",
+                        "label": _("Label Usage"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
                         "type": "report",
                         "name": "Open Label Orders",
                         "label": _("Open Label Orders"),
