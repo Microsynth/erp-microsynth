@@ -156,7 +156,7 @@ function assert_customer_fields(frm) {
                 var customer = r.message;
                 if (customer.territory) { cur_frm.set_value("territory", customer.territory); }
                 if (customer.default_currency) { cur_frm.set_value("currency", customer.default_currency); }
-                if (customer.default_price_list && !frm.doc.selling_price_list) {  // do not overwrite an already set price list
+                if (customer.default_price_list && !frm.doc.selling_price_list.includes("Contract Research")) {  // do not overwrite an already set Contract Research price list
                     cur_frm.set_value("selling_price_list", customer.default_price_list);
                 }
             }
