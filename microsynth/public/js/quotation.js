@@ -77,7 +77,9 @@ frappe.ui.form.on('Quotation', {
                         }
                         url_string += "<a href='" + contact_notes[i].url + "'>" + contact_notes[i].name + " (" + contact_notes[i].date + ")</a>"
                     }
-                    cur_frm.dashboard.add_comment("This Quotation was followed up with " + url_string, "green", true);
+                    if (contact_notes.length > 0) {
+                        cur_frm.dashboard.add_comment("This Quotation was followed up with " + url_string, "green", true);
+                    }
                 }
             });
         }

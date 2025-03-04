@@ -4,6 +4,11 @@
 
 frappe.query_reports["Quotation Tracker"] = {
 	"filters": [
-
+		{
+            "fieldname": "sales_manager",
+            "label": __("Sales Manager"),
+            "fieldtype": "Link",
+            "options": "User"
+        }
 	]
 };
