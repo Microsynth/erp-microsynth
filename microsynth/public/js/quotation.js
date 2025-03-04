@@ -1,3 +1,12 @@
+// extend/create dashboard
+cur_frm.dashboard.add_transactions([
+    {
+        'label': __("Follow Up"),
+        'items': ["Contact Note"]
+    }
+]);
+
+
 frappe.ui.form.on('Quotation Item', {
     qty(frm, cdt, cdn) {
         fetch_price_list_rate(frm, cdt, cdn);
@@ -45,6 +54,32 @@ frappe.ui.form.on('Quotation', {
                     });
                 }
             }
+        }
+
+        if (frm.doc.docstatus == 1 && frm.doc.status == "Open" && frm.doc.valid_till >= frappe.datetime.get_today()) {
+            frm.add_custom_button(__('Follow Up'), function() {
+                follow_up(frm);
+            }).addClass("btn-primary");
+        }
+
+        if (frm.doc.docstatus > 0) {
+            frappe.call({
+                'method': 'microsynth.microsynth.doctype.contact_note.contact_note.get_follow_ups',
+                'args': {
+                    'quotation': frm.doc.name
+                },
+                'callback': function(response) {
+                    let contact_notes = response.message;
+                    let url_string = "";
+                    for (var i = 0; i < contact_notes.length; i++) {
+                        if (i > 0) {
+                            url_string += ", ";
+                        }
+                        url_string += "<a href='" + contact_notes[i].url + "'>" + contact_notes[i].name + " (" + contact_notes[i].date + ")</a>"
+                    }
+                    cur_frm.dashboard.add_comment("This Quotation was followed up with " + url_string, "green", true);
+                }
+            });
         }
 
         // run code with a delay because the core framework code is slower than the refresh trigger and would overwrite it
@@ -204,4 +239,17 @@ function pull_item_service_specification(item_code, quotation_group) {
             }
         });
     }
+}
+
+function follow_up(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.doctype.contact_note.contact_note.create_new_follow_up',
+        'args': {
+            'quotation': frm.doc.name,
+            'contact_person': frm.doc.contact_person
+        },
+        'callback': function (r) {
+            frappe.set_route("Form", "Contact Note", r.message.name);
+        }
+    });
 }
