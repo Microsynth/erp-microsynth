@@ -3815,7 +3815,19 @@ def calculate_prices_from_so(filepath):
     used at another Microsynth company (quick and dirty script version).
     This computation is done yearly in Q1.
 
-    bench execute microsynth.microsynth.migration.calculate_prices_from_so  --kwargs "{'filepath': '/mnt/erp_share/JPe/labels/Rest.csv'}"
+    Takes a table with four columns:
+    0: Web Order ID or Sales Order ID of label order
+    1: Number of labels
+    2: Item Code
+    3: Customer or Contact name (not needed)
+
+    a) parse input table
+    b) find Sales Order
+    c) lookup rate of specified Item
+    d) mutiply rate with the given number of labels
+    e) writes output
+
+    bench execute microsynth.microsynth.migration.calculate_prices_from_so  --kwargs "{'filepath': '/mnt/erp_share/JPe/labels/labels_used_at_another_company.csv'}"
     """
     results = []
     with open(filepath, 'r') as file:
@@ -3862,7 +3874,7 @@ def calculate_prices_from_so(filepath):
                     print(f"Did not found the Item Code {item_code} on the order '{order}'.")
                 results.append([order, qty, '-', '-', item_code, contact])
             else:
-                results.append([order, qty, rate, total, item_code, contact])
+                results.append([order, qty, rate, round(total, 2), item_code, contact])
 
         with open(filepath + '_results.csv', 'w') as outfile:
             writer = csv.writer(outfile, delimiter=';')
