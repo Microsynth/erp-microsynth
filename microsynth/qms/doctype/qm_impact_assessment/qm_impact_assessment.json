@@ -110,6 +110,7 @@
    "label": "Due Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "completion_date",
    "fieldtype": "Date",
    "label": "Completion Date",
@@ -117,7 +118,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-02-06 17:28:41.411640",
+ "modified": "2025-03-05 11:37:24.639403",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Impact Assessment",
