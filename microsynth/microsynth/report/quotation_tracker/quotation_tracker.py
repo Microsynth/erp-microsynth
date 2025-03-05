@@ -65,6 +65,7 @@ def get_data(filters=None):
         WHERE `tabQuotation`.`docstatus` = 1
             AND `tabQuotation`.`status` NOT IN ('Ordered', 'Cancelled', 'Lost')
             AND `tabQuotation`.`valid_till` >= '{date.today()}'
+            AND `tabQuotation`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -7 DAY)
             {filter_conditions}
         ORDER BY
             `tabQuotation`.`transaction_date` DESC;

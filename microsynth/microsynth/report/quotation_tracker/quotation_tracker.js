@@ -10,5 +10,8 @@ frappe.query_reports["Quotation Tracker"] = {
             "fieldtype": "Link",
             "options": "User"
         }
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };
