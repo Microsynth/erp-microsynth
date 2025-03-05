@@ -121,8 +121,8 @@ frappe.ui.form.on('QM Document', {
             }).addClass("btn-primary");
         }
 
-        // Invalidate
-        if (["Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU') && !frm.doc.__islocal) {
+        // Allow QAU to invalidate
+        if (["Created", "Released", "Valid"].includes(frm.doc.status) && frappe.user.has_role('QAU') && !frm.doc.__islocal) {
             frm.add_custom_button(__("Invalidate"), function() {
                 invalidate(frm);
             }).addClass("btn-danger");
@@ -424,7 +424,7 @@ function invalidate(frm) {
     if (frm.doc.status == "Valid") {
         additional_warning = "<br>There will be <b>no other valid version.</b>";
     }
-    frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' to the status <b>Invalid</b>?" + additional_warning,
+    frappe.confirm("Are you sure you want to set this QM Document '" + frm.doc.name + "' <b>irreversibly</b> to the status <b>Invalid</b>?" + additional_warning,
     () => {
         // on yes
         frappe.call({
