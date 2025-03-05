@@ -246,7 +246,7 @@ def create_datev_xml(path, dt, dn):
     # pre-process document to prevent datev errors
     doc = frappe.get_doc(dt, dn).as_dict()
     for item in doc['items']:
-        item['item_name'] = strip_str_to_allowed_chars(item['item_name'], 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
+        item['item_name'] = strip_str_to_allowed_chars(item['item_name'], 1, 39, DATEV_CHARACTER_PATTERNS['p10036'])
     doc['party_name'] = strip_str_to_allowed_chars(doc.get('customer_name') or doc.get('supplier_name'), 1, 50, DATEV_CHARACTER_PATTERNS['p10036'])
     if doc['doctype'] == "Sales Invoice":
         customer_address = frappe.get_doc("Address", doc.get("customer_address"))
