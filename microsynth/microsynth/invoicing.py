@@ -368,7 +368,7 @@ def set_income_accounts(sales_invoice):
         if item.item_code == "6100":
             # credit item
             item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
-        elif order_types[item.get('sales_order')] == "Intercompany":
+        elif item.get('sales_order') and order_types[item.get('sales_order')] == "Intercompany":
             item.income_account = get_alternative_intercompany_income_account(item.income_account, sales_invoice.customer)
         else:
             # all other items
@@ -391,7 +391,7 @@ def get_income_accounts(customer, address, currency, sales_invoice_items):
         if item.get("item_code") == "6100":
             # credit item
             income_accounts.append(get_alternative_account(item.get("income_account"), currency))
-        elif order_types[item.get('sales_order')] == "Intercompany":
+        elif item.get('sales_order') and order_types[item.get('sales_order')] == "Intercompany":
             income_accounts.append(get_alternative_intercompany_income_account(item.get("income_account"), customer))
         else:
             # all other items
