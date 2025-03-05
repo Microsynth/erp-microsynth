@@ -108,7 +108,9 @@ def parse_file(file_name, company, company_settings, debug=True):
                 print("INFO: no supplier found, will fallback to default supplier in invoice creation.".format(invoice.get('supplier')))
             
         # create invoice record
-        create_invoice(file_name, invoice, company_settings)
+        record = create_invoice(file_name, invoice, company_settings)
+        if debug:
+            print(f"INFO: Purchase Invoice: {record['name']}")
     except Exception as err:
         try:
             msg = f"Error: {err}\n{traceback.format_exc()}\n\nFile: {file_name}"
