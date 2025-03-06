@@ -1080,6 +1080,10 @@ def set_debtor_accounts(customer):
 
     customer = frappe.get_doc("Customer", customer)
 
+    # allow to set specific debtor accounts for intercompany customers
+    if customer.invoicing_method == "Intercompany":
+        return
+
     if not customer.default_currency:
         customer.default_currency = default_currencies[customer.default_company]
 
