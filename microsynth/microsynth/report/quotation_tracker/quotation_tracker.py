@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from datetime import date, timedelta
+from datetime import date, datetime
 
 
 def get_columns():
@@ -30,6 +30,8 @@ def get_data(filters=None):
     filter_conditions = ''
     if filters.get('sales_manager'):
         filter_conditions += f"AND `tabQuotation`.`sales_manager` = '{filters.get('sales_manager')}'"
+    if filters.get('net_total_threshold'):
+        filter_conditions += f"AND `tabQuotation`.`net_total` >= {filters.get('net_total_threshold')}"
 
     quotations = frappe.db.sql(f"""
         SELECT DISTINCT
@@ -65,14 +67,14 @@ def get_data(filters=None):
         WHERE `tabQuotation`.`docstatus` = 1
             AND `tabQuotation`.`status` NOT IN ('Ordered', 'Cancelled', 'Lost')
             AND `tabQuotation`.`valid_till` >= '{date.today()}'
-            AND `tabQuotation`.`transaction_date` < DATE_ADD(NOW(), INTERVAL -7 DAY)
+            AND `tabQuotation`.`transaction_date` < DATE('{filters.get('date_threshold')}')
             {filter_conditions}
         ORDER BY
             `tabQuotation`.`transaction_date` DESC;
     """, as_dict=True)
 
     quotations_to_follow_up = []
-    threshold_day = date.today() - timedelta(days=30)
+    threshold_day = datetime.strptime(filters.get('last_follow_up_date_threshold'), '%Y-%m-%d').date()
 
     for quote in quotations:
         if quote['last_follow_up_date']:
