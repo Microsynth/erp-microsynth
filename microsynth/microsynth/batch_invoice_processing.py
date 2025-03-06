@@ -2,7 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe
-from frappe.utils import cint, flt, get_link_to_form, get_url_to_form
+from frappe.utils import cint, flt, get_link_to_form, get_url_to_form, add_days
 from frappe.utils.file_manager import save_file
 import os
 import traceback
@@ -10,7 +10,7 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 from microsynth.microsynth.utils import send_email_from_template
-from datetime import datetime
+from datetime import date, datetime
 
 
 @frappe.whitelist()
@@ -98,9 +98,19 @@ def parse_file(file_name, company, company_settings, debug=True):
                 # company default currency (last resort)
                 invoice['currency'] = frappe.get_value("Company", company, "default_currency")
 
-        # apply price list from supplier
         if invoice.get("supplier"):
-            invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list") 
+            # apply price list from supplier
+            invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list")
+            # ensure an allowed due date
+            supplier_payment_terms = frappe.get_value("Supplier", invoice.get("supplier"), "payment_terms")
+            if supplier_payment_terms:
+                template = frappe.get_doc("Payment Terms Template", supplier_payment_terms)
+                if len(template.terms) > 0 and invoice['posting_date']:
+                    credit_days = template.terms[0].credit_days
+                    posting_date = datetime.strptime(invoice['posting_date'], '%Y-%m-%d').date()
+                    allowed_due_date = add_days(posting_date, credit_days)
+                    if invoice['due_date'] and datetime.strptime(invoice['due_date'], '%Y-%m-%d').date() > allowed_due_date:
+                        invoice['due_date'] = allowed_due_date.strftime("%Y-%m-%d")
         
         if debug:
             print("INFO: supplier {0}".format(invoice.get('supplier')))
