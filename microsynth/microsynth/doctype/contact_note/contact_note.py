@@ -18,6 +18,7 @@ def create_new_follow_up(quotation, contact_person):
     new_doc = frappe.get_doc({
         'doctype': 'Contact Note',
         'contact_person': contact_person,
+        'prevdoc_doctype': 'Quotation',
         'prevdoc_docname': quotation,
         'date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
