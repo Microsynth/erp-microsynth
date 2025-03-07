@@ -41,6 +41,12 @@ frappe.ui.form.on('Contact', {
         }
     },
     refresh(frm) {
+
+        // set Contact source
+        if (frm.doc.__islocal) {
+            cur_frm.set_value("source", "Manual");
+        }
+
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
