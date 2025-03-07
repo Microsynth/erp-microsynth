@@ -1240,6 +1240,11 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "Chorus"
             elif customer.invoicing_method == "Intercompany":
                 mode = "Intercompany"
+                # Do not process manual intercompany automatically
+                for i in sales_invoice.items:
+                    if i.item_code == "1008":
+                        mode = "Email"
+                        continue
             else:
                 mode = None
 
