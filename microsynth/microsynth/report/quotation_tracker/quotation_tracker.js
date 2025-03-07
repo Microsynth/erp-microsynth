@@ -12,11 +12,10 @@ frappe.query_reports["Quotation Tracker"] = {
             "default": frappe.session.user,
         },
         {
-            "fieldname": "date_threshold",
-            "label": __("Date threshold"),
-            "fieldtype": "Date",
-            "reqd": 1,
-            "default": frappe.datetime.add_days(frappe.datetime.get_today(), -7)
+            "fieldname": "minimum_age",
+            "label": __("Minimum quotation age (days)"),
+            "fieldtype": "Int",
+            "default": 7
         },
         {
             "fieldname":"net_total_threshold",
@@ -24,11 +23,10 @@ frappe.query_reports["Quotation Tracker"] = {
             "fieldtype": "Currency"
         },
         {
-            "fieldname": "last_follow_up_date_threshold",
-            "label": __("Last followed up threshold"),
-            "fieldtype": "Date",
-            "reqd": 1,
-            "default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+            "fieldname": "followup_days",
+            "label": __("Minimum follow up age (days)"),
+            "fieldtype": "Int",
+            "default": 30
         }
 	],
     "onload": (report) => {

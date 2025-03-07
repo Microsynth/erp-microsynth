@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from datetime import date, datetime
+from datetime import date, timedelta
 
 
 def get_columns():
@@ -32,12 +32,16 @@ def get_data(filters=None):
         filter_conditions += f"AND `tabQuotation`.`sales_manager` = '{filters.get('sales_manager')}'"
     if filters.get('net_total_threshold'):
         filter_conditions += f"AND `tabQuotation`.`net_total` >= {filters.get('net_total_threshold')}"
+    if not filters.get('minimum_age'):
+        filters['minimum_age'] = 0
+    if not filters.get('followup_days'):
+        filters['followup_days'] = 0
 
     quotations = frappe.db.sql(f"""
         SELECT DISTINCT
             `tabQuotation`.`name`,
             `tabQuotation`.`title`,
-            IF(`tabQuotation`.`valid_till` < '{date.today()}', 'Expired', `tabQuotation`.`status`) as `status`,
+            `tabQuotation`.`status`,
             `tabQuotation`.`transaction_date`,
             `tabQuotation`.`valid_till`,
             `tabQuotation`.`party_name` AS `customer`,
@@ -67,18 +71,18 @@ def get_data(filters=None):
         WHERE `tabQuotation`.`docstatus` = 1
             AND `tabQuotation`.`status` NOT IN ('Ordered', 'Cancelled', 'Lost')
             AND `tabQuotation`.`valid_till` >= '{date.today()}'
-            AND `tabQuotation`.`transaction_date` < DATE('{filters.get('date_threshold')}')
+            AND `tabQuotation`.`transaction_date` <= DATE_ADD(NOW(), INTERVAL -{filters.get('minimum_age')} DAY)
             {filter_conditions}
         ORDER BY
             `tabQuotation`.`transaction_date` DESC;
     """, as_dict=True)
 
     quotations_to_follow_up = []
-    threshold_day = datetime.strptime(filters.get('last_follow_up_date_threshold'), '%Y-%m-%d').date()
+    threshold_day = date.today() - timedelta(days=filters.get('followup_days'))
 
     for quote in quotations:
         if quote['last_follow_up_date']:
-            if quote['last_follow_up_date'] < threshold_day:
+            if quote['last_follow_up_date'] <= threshold_day:
                 quote['status'] = 'Followed Up'
                 quotations_to_follow_up.append(quote)
         else:
