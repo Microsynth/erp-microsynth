@@ -103,7 +103,7 @@ def parse_file(file_name, company, company_settings, debug=True):
             invoice['price_list'] = frappe.get_value("Supplier", invoice.get("supplier"), "default_price_list")
             # ensure an allowed due date
             supplier_payment_terms = frappe.get_value("Supplier", invoice.get("supplier"), "payment_terms")
-            if supplier_payment_terms:
+            if supplier_payment_terms and 'posting_date' in invoice:
                 template = frappe.get_doc("Payment Terms Template", supplier_payment_terms)
                 if len(template.terms) > 0 and invoice['posting_date']:
                     credit_days = template.terms[0].credit_days
