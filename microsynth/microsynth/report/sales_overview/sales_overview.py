@@ -396,7 +396,7 @@ def get_item_groups():
     """
     Return a list of item groups that are used to show on Sales Overview and also Revenue Export.
     """
-    groups = frappe.get_all("Item Group", filters={'is_group': 0}, fields=['name'])
+    groups = frappe.get_all("Item Group", filters=[['is_group', '=', 0], ['parent_item_group', '!=', 'Purchasing']], fields=['name'])
     group_list = []
     for g in groups:
         #if cint(g['name'][0]) > 0:                     # only use numeric item groups, like 3.1 Oligo
