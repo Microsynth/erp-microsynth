@@ -310,7 +310,7 @@ def get_item_revenues(filters, month, item_groups, debug=False):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`invoicing_method` != 'Intercompany'
+                AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
@@ -362,7 +362,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
             FROM `tabSales Invoice`
             WHERE 
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice`.`invoicing_method` != 'Intercompany'
+                AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
                 {territory_condition}
