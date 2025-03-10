@@ -36,11 +36,15 @@ frappe.ui.form.on('QM Document', {
         
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
-        if ((!frm.doc.__islocal)
-            && ((!cur_frm.attachments) 
-            || (!cur_frm.attachments.get_attachments())
-            || ((cur_frm.attachments) && (cur_frm.attachments.get_attachments().length === 0)))) {
-                cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
+        if (!frm.doc.__islocal
+            && ((!cur_frm.attachments)
+                || (!cur_frm.attachments.get_attachments())
+                || (cur_frm.attachments && (cur_frm.attachments.get_attachments().length === 0)))) {
+                if (['SOP', 'APPX', 'FLOW', 'QMH'].includes(frm.doc.document_type)) {
+                    cur_frm.dashboard.add_comment( __("Please attach a PDF and a document."), 'red', true);
+                } else {
+                    cur_frm.dashboard.add_comment( __("Please attach a document."), 'red', true);
+                }
         }
 
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
@@ -152,9 +156,12 @@ frappe.ui.form.on('QM Document', {
             && (frappe.session.user === frm.doc.created_by)
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
-            && ((cur_frm.attachments) 
-            && (cur_frm.attachments.get_attachments())
-            && (cur_frm.attachments.get_attachments().length > 0))
+            && ((cur_frm.attachments)
+                && (cur_frm.attachments.get_attachments())
+                && (cur_frm.attachments.get_attachments().length > 0)
+                && (["LIST", "FORM", "CL"].includes(frm.doc.document_type)
+                    || (cur_frm.attachments.get_attachments().length > 1
+                        && has_pdf(cur_frm.attachments.get_attachments()))))
             ) {
             // add sign button
             cur_frm.page.set_primary_action(
@@ -750,4 +757,16 @@ function change_creator() {
         __('Set new creator'),
         __('Set')
     );
+}
+
+
+function has_pdf(attachments) {
+    let pdfs = 0;
+    for (var i = 0; i < attachments.length; i++) {
+        let file_name_lowered = attachments[i].file_name.toLowerCase();
+        if (file_name_lowered.endsWith(".pdf")) {
+            pdfs += 1;
+        }
+    }
+    return pdfs == 1;
 }
