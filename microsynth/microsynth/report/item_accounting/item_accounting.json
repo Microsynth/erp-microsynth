@@ -1,0 +1,20 @@
+{
+ "add_total_row": 0,
+ "creation": "2025-03-10 13:52:19.957244",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2025-03-10 13:53:19.438372",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Item Accounting",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Item",
+ "report_name": "Item Accounting",
+ "report_type": "Script Report",
+ "roles": []
+}
