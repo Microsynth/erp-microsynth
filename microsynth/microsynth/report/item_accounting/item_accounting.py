@@ -9,11 +9,11 @@ from frappe import _
 def get_columns():
     return [
         {"label": _("Item"), "fieldname": "name", "fieldtype": "Link", "options": "Item", "width": 300},
-        {"label": _("Account BAL"), "fieldname": "account_BAL", "fieldtype": "Link", "options": "Account", "width": 280},
-        {"label": _("Account ECO"), "fieldname": "account_ECO", "fieldtype": "Link", "options": "Account", "width": 280},
-        {"label": _("Account GOE"), "fieldname": "account_GOE", "fieldtype": "Link", "options": "Account", "width": 280},
-        {"label": _("Account LYO"), "fieldname": "account_LYO", "fieldtype": "Link", "options": "Account", "width": 280},
-        {"label": _("Account WIE"), "fieldname": "account_WIE", "fieldtype": "Link", "options": "Account", "width": 280}
+        {"label": _("Account BAL"), "fieldname": "account_BAL", "fieldtype": "Link", "options": "Account", "width": 280, "align": "left"},
+        {"label": _("Account GOE"), "fieldname": "account_GOE", "fieldtype": "Link", "options": "Account", "width": 280, "align": "left"},
+        {"label": _("Account LYO"), "fieldname": "account_LYO", "fieldtype": "Link", "options": "Account", "width": 280, "align": "left"},
+        {"label": _("Account WIE"), "fieldname": "account_WIE", "fieldtype": "Link", "options": "Account", "width": 280, "align": "left"},
+        {"label": _("Account ECO"), "fieldname": "account_ECO", "fieldtype": "Link", "options": "Account", "width": 280, "align": "left"}
     ]
 
 

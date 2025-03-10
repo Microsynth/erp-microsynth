@@ -9,13 +9,15 @@ frappe.query_reports["Item Accounting"] = {
 			"fieldtype": "Select",
 			"label": "Account Type",
 			"options": "Expense\nIncome",
+			"default": "Expense",
 			"reqd": 1
 		},
 		{
 			"fieldname": "item_group",
 			"fieldtype": "Link",
 			"label": "Item Group",
-			"options": "Item Group"
+			"options": "Item Group",
+			"default": "Financial Accounting"
 		}
 	]
 };
