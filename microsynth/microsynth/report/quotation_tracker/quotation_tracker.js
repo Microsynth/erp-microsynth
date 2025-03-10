@@ -13,7 +13,7 @@ frappe.query_reports["Quotation Tracker"] = {
         },
         {
             "fieldname": "minimum_age",
-            "label": __("Minimum quotation age (days)"),
+            "label": __("Minimum Quotation age (days)"),
             "fieldtype": "Int",
             "default": 7
         },
@@ -24,7 +24,7 @@ frappe.query_reports["Quotation Tracker"] = {
         },
         {
             "fieldname": "followup_days",
-            "label": __("Minimum follow up age (days)"),
+            "label": __("Minimum Follow Up age (days)"),
             "fieldtype": "Int",
             "default": 30
         }
