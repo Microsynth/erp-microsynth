@@ -2801,3 +2801,50 @@ def set_xml_version(xml_version):
     except Exception as err:
         return {'success': False, 'message': err}
     return {'success': True, 'message': 'OK'}
+
+
+def find_unsend_communications(from_date_time, to_date_time):
+    """
+    bench execute microsynth.microsynth.utils.find_unsend_communications --kwargs "{'from_date_time': '2025-03-10 20:00:00', 'to_date_time': '2025-03-11 12:00:00'}"
+    """
+    query = f"""
+            SELECT
+                `tabCommunication`.`name`,
+                `tabCommunication`.`creation`,
+                `tabCommunication`.`status`
+            FROM `tabCommunication`
+            LEFT JOIN `tabEmail Queue` ON `tabEmail Queue`.`communication` = `tabCommunication`.`name`
+            WHERE
+                `tabCommunication`.`communication_type` = "Communication"
+                AND `tabCommunication`.`creation` >= '{from_date_time}'
+                AND `tabCommunication`.`creation` <= '{to_date_time}'
+                -- AND `tabCommunication`.`status` = "Linked"
+                AND `tabCommunication`.`sent_or_received` = "Sent"
+                AND `tabEmail Queue`.`name` IS NULL
+            ORDER BY `creation`
+            """
+    communications = frappe.db.sql(query, as_dict=True)
+
+    for c in communications:
+        print(f"{c['name']}    {c['creation']}    {c['status']}" )
+
+    print(f"number of communications: {len(communications)}")
+
+    return communications
+
+
+def send_communication(communication_id):
+    """
+    bench execute microsynth.microsynth.utils.send_communication --kwargs "{'communication_id': 'e6ab3eee0e'}"
+    """
+    communication = frappe.get_doc("Communication", communication_id)
+    communication.send()
+
+
+def send_unsend_communications(from_date_time, to_date_time):
+    """
+    bench execute microsynth.microsynth.utils.send_unsend_communications --kwargs "{'from_date_time': '2025-03-10 20:00:00', 'to_date_time': '2025-03-11 12:00:00'}"
+    """
+    communications = find_unsend_communications(from_date_time, to_date_time)
+    for c in communications:
+        send_communication(c['name'])
