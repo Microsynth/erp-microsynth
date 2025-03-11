@@ -19,5 +19,8 @@ frappe.query_reports["Item Accounting"] = {
 			"options": "Item Group",
 			"default": "Financial Accounting"
 		}
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };
