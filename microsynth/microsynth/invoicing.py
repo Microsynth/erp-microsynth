@@ -360,15 +360,15 @@ def set_income_accounts(sales_invoice):
 
     country = frappe.db.get_value("Address", address, "country")
 
-    order_types = {}
+    intercompany = {}
     for item in sales_invoice.items:
-        if item.get('sales_order') and item.get('sales_order') not in order_types:
-            order_types[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "order_type")
+        if item.get('sales_order') and item.get('sales_order') not in intercompany:
+            intercompany[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "is_intercompany")
 
         if item.item_code == "6100":
             # credit item
             item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
-        elif item.get('sales_order') and order_types[item.get('sales_order')] == "Intercompany":
+        elif item.get('sales_order') and intercompany[item.get('sales_order')] == 1:
             item.income_account = get_alternative_intercompany_income_account(item.income_account, sales_invoice.customer)
         else:
             # all other items
@@ -383,15 +383,15 @@ def get_income_accounts(customer, address, currency, sales_invoice_items):
 
     country = frappe.db.get_value("Address", address, "country")
     income_accounts = []
-    order_types = {}
+    intercompany = {}
     for item in sales_invoice_items:
-        if item.get('sales_order') and item.get('sales_order') not in order_types:
-            order_types[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "order_type")
+        if item.get('sales_order') and item.get('sales_order') not in intercompany:
+            intercompany[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "is_intercompany")
 
         if item.get("item_code") == "6100":
             # credit item
             income_accounts.append(get_alternative_account(item.get("income_account"), currency))
-        elif item.get('sales_order') and order_types[item.get('sales_order')] == "Intercompany":
+        elif item.get('sales_order') and intercompany[item.get('sales_order')] == 1:
             income_accounts.append(get_alternative_intercompany_income_account(item.get("income_account"), customer))
         else:
             # all other items
