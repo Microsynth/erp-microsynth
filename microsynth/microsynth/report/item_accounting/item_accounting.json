@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-03-10 14:28:49.836040",
+ "modified": "2025-03-12 15:49:31.074738",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Item Accounting",
@@ -16,5 +16,9 @@
  "ref_doctype": "Item",
  "report_name": "Item Accounting",
  "report_type": "Script Report",
- "roles": []
+ "roles": [
+  {
+   "role": "Accounts User"
+  }
+ ]
 }
