@@ -394,7 +394,14 @@ def get_data():
                        "name": "Batch Invoice Processing Settings",
                        "label": _("Batch Invoice Processing Settings"),
                        "description": _("Batch Invoice Processing Settings")
-                   }
+                   },
+                   {
+                        "type": "report",
+                        "name": "Item Accounting",
+                        "label": _("Item Accounting"),
+                        "doctype": "Item",
+                        "is_query_report": True
+                    }
             ]
         },
         {
