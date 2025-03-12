@@ -5,11 +5,13 @@
  "engine": "InnoDB",
  "field_order": [
   "product_type",
+  "company",
   "supplier",
   "supplier_name"
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "product_type",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -17,6 +19,7 @@
    "reqd": 1
   },
   {
+   "columns": 2,
    "fieldname": "supplier",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -25,17 +28,26 @@
    "reqd": 1
   },
   {
+   "columns": 2,
    "fetch_from": "supplier.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Supplier Name",
    "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company"
   }
  ],
  "istable": 1,
- "modified": "2025-02-18 14:58:36.302491",
- "modified_by": "Administrator",
+ "modified": "2025-03-12 13:44:04.795399",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings Supplier",
  "owner": "Administrator",
