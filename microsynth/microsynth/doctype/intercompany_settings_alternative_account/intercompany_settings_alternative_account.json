@@ -7,11 +7,11 @@
   "account",
   "customer",
   "customer_name",
-  "alternative_account",
-  "data_5"
+  "alternative_account"
  ],
  "fields": [
   {
+   "columns": 3,
    "fieldname": "account",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -19,6 +19,7 @@
    "options": "Account"
   },
   {
+   "columns": 1,
    "fieldname": "customer",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -26,6 +27,7 @@
    "options": "Customer"
   },
   {
+   "columns": 2,
    "fetch_from": "customer.customer_name",
    "fieldname": "customer_name",
    "fieldtype": "Data",
@@ -34,20 +36,17 @@
    "read_only": 1
   },
   {
+   "columns": 4,
    "fieldname": "alternative_account",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Alternative Account",
    "options": "Account"
-  },
-  {
-   "fieldname": "data_5",
-   "fieldtype": "Data"
   }
  ],
  "istable": 1,
- "modified": "2025-02-28 11:22:40.086326",
- "modified_by": "Administrator",
+ "modified": "2025-03-12 08:10:27.250948",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings Alternative Account",
  "owner": "Administrator",
