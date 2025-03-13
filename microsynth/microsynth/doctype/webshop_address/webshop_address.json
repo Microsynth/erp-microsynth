@@ -5,13 +5,22 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "webshop_account",
   "address_type",
+  "column_break_3",
   "customer",
   "contact",
   "address",
   "naming_series"
  ],
  "fields": [
+  {
+   "fieldname": "webshop_account",
+   "fieldtype": "Link",
+   "label": "Webshop Account",
+   "options": "Contact",
+   "reqd": 1
+  },
   {
    "fieldname": "customer",
    "fieldtype": "Link",
@@ -37,7 +46,8 @@
    "fieldname": "address_type",
    "fieldtype": "Select",
    "label": "Address Type",
-   "options": "\nShipping\nBilling"
+   "options": "\nShipping\nBilling",
+   "reqd": 1
   },
   {
    "fieldname": "naming_series",
@@ -49,9 +59,13 @@
    "read_only": 1,
    "reqd": 1,
    "set_only_once": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
   }
  ],
- "modified": "2025-03-13 16:57:24.377626",
+ "modified": "2025-03-13 20:48:47.227672",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Webshop Address",
