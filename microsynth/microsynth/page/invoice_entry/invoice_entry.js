@@ -80,6 +80,7 @@ frappe.invoice_entry = {
     },
     create_fields: function(purchase_invoice) {
         frappe.invoice_entry.create_field(purchase_invoice, 'Link', 'supplier', 'Supplier', 'Supplier');
+        frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'bill_date', 'Supplier Invoice Date', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'posting_date', 'Posting Date', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Date', 'due_date', 'Due Date', '');
         frappe.invoice_entry.create_field(purchase_invoice, 'Data', 'bill_no', 'Supplier Invoice No', '');
@@ -132,6 +133,8 @@ frappe.invoice_entry = {
         } else {
             document.getElementById("due_date_" + purchase_invoice_values.name).parentNode.parentNode.classList.remove("highlight-row");
         }
+        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            'bill_date', frappe.datetime.obj_to_user(purchase_invoice_values.bill_date));
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
             'posting_date', frappe.datetime.obj_to_user(purchase_invoice_values.posting_date));
         frappe.invoice_entry.set_field(purchase_invoice_values.name, 
@@ -199,6 +202,7 @@ frappe.invoice_entry = {
         let doc = {
             'name': purchase_invoice_name,
             'supplier': document.querySelectorAll("input[data-fieldname='supplier_" + purchase_invoice_name + "']")[0].value,
+            'bill_date': document.querySelectorAll("input[data-fieldname='bill_date_" + purchase_invoice_name + "']")[0].value,
             'posting_date': document.querySelectorAll("input[data-fieldname='posting_date_" + purchase_invoice_name + "']")[0].value,
             'due_date': document.querySelectorAll("input[data-fieldname='due_date_" + purchase_invoice_name + "']")[0].value,
             'bill_no': document.querySelectorAll("input[data-fieldname='bill_no_" + purchase_invoice_name + "']")[0].value,

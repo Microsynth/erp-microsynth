@@ -27,6 +27,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
             `tabPurchase Invoice`.`company`,
             `tabPurchase Invoice`.`supplier`,
             `tabPurchase Invoice`.`supplier_name`,
+            `tabPurchase Invoice`.`bill_date`,
             `tabPurchase Invoice`.`posting_date`,
             `tabPurchase Invoice`.`due_date`,
             `tabPurchase Invoice`.`net_total`,
@@ -110,6 +111,8 @@ def save_document(doc):
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
+    if not doc.get('bill_date'):
+        doc['bill_date'] = datetime.today().strftime(date_format)
     if not doc.get('posting_date'):
         doc['posting_date'] = datetime.today().strftime(date_format)
     if doc.get('due_date'):
@@ -164,6 +167,7 @@ def save_document(doc):
     d.payment_schedule = []
 
     target_values = {
+        'bill_date': datetime.strptime(doc.get('bill_date'), date_format).strftime("%Y-%m-%d"),
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
         'due_date': due_date,
         'bill_no': doc.get('bill_no'),
