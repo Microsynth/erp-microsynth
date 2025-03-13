@@ -54,11 +54,10 @@ def get_data(filters=None):
         WHERE 
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabSales Order`.`docstatus` = 1
-            AND `tabSales Order`.`status` != 'Closed'
+            AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
             AND `tabCountry`.`name` <> 'Switzerland'
             AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
-            AND `tabSales Order`.`transaction_date` > '2022-12-22'
             AND `tabSales Order Item`.`item_group` = 'Shipping'
         ORDER BY 
             `tabSales Order Item`.`description`,
