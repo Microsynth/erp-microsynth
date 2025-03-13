@@ -605,7 +605,7 @@ def get_supplier_for_product_type(company, product_type):
     )
     if len(suppliers) > 0:
         if len(suppliers) > 1:
-            frappe.log_error(f"Multiple suitable intercompany suppliers found for {company} and {product_type}", "webshop.get_intercompany_supplier")
+            frappe.log_error(f"Multiple suitable intercompany suppliers found for {company} and {product_type}", "utils.get_supplier_for_product_type")
         return suppliers[0]
     else:
         return None
