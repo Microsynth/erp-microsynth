@@ -775,7 +775,7 @@ def place_order(content, client="webshop"):
 
     if has_webshop_service(customer.name, "InvoiceByDefaultCompany"):
         # identify dropshipment/intracompany order
-        intercompany_supplier = get_intercompany_supplier(customer.default_company, content.get('product_type']))
+        intercompany_supplier = get_intercompany_supplier(customer.default_company, content.get('product_type'))
         if intercompany_supplier \
             and customer.default_company != intercompany_supplier['manufacturing_company']:
             # this is a dropshipment case
