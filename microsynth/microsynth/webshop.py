@@ -773,16 +773,16 @@ def place_order(content, client="webshop"):
     if not 'product_type' in content or not content['product_type']:
         return {'success': False, 'message': "Product Type is mandatory but not given.", 'reference': None}
 
-    # identify dropshipment/intracompany order (ToDo: identify manufacturing company based on product type)
-    if company == "Microsynth AG" \
-        and has_webshop_service(customer.name, "InvoiceByDefaultCompany") \
-        and customer.default_company != company:
-        # this is a dropshipment case
-        drop_shipment_manufacturer = company        # keep original manufacturer
-        company = customer.default_company          # selling company
-        is_drop_shipment = True
-        
-    
+    if has_webshop_service(customer.name, "InvoiceByDefaultCompany"):
+        # identify dropshipment/intracompany order
+        intercompany_supplier = get_intercompany_supplier(customer.default_company, content.get('product_type']))
+        if intercompany_supplier \
+            and customer.default_company != intercompany_supplier['manufacturing_company']:
+            # this is a dropshipment case
+            drop_shipment_manufacturer = intercompany_supplier['manufacturing_company']        # keep original manufacturer
+            company = customer.default_company          # selling company
+            is_drop_shipment = True
+
     # Distributor workflow
     if 'product_type' in content:
         for distributor in customer.distributors:
@@ -939,8 +939,8 @@ def place_order(content, client="webshop"):
         for t in taxes_template.taxes:
             so_doc.append("taxes", t)
     # in case of drop-shipment, mark item positions for drop shipment (prevent actual delivery)
-    if is_drop_shipment:
-        supplier = get_supplier_for_product_type(so_doc.product_type)
+    if is_drop_shipment and intercompany_supplier:
+        supplier = intercompany_supplier['supplier']
         if not supplier:
             err = f"No supplier found for {so_doc.product_type}."
             return {'success': False, 'message': err, 'reference': None}

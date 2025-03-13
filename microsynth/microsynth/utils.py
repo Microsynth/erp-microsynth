@@ -592,13 +592,23 @@ def get_margin_from_customer(customer):
         return None
 
 
-def get_supplier_for_product_type(product_type):
-    suppliers = frappe.get_all("Intercompany Settings Supplier", filters={'product_type': product_type}, fields=['supplier'])
+def get_supplier_for_product_type(company, product_type):
+    """
+    Returns a ['supplier': '..', 'supplier_name': '..', 'manufacturing_company': '..'] dict or None if there is no applicable intercompany supplier
+    """
+    suppliers = frappe.get_all("Intercompany Settings Supplier", 
+        filters={
+            'company': company,
+            'product_type': product_type
+        },
+        fields=['supplier', 'supplier_name', 'manufacturing_company']
+    )
     if len(suppliers) > 0:
-        return suppliers[0]['supplier']
+        if len(suppliers) > 1:
+            frappe.log_error(f"Multiple suitable intercompany suppliers found for {company} and {product_type}", "webshop.get_intercompany_supplier")
+        return suppliers[0]
     else:
         return None
-
 
 def validate_sales_order_status(sales_order):
     """

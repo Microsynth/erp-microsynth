@@ -4,10 +4,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "product_type",
   "company",
+  "product_type",
   "supplier",
-  "supplier_name"
+  "supplier_name",
+  "manufacturing_company"
  ],
  "fields": [
   {
@@ -42,12 +43,20 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Company",
-   "options": "Company"
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "manufacturing_company",
+   "fieldtype": "Link",
+   "label": "Manufacturing Company",
+   "options": "Company",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2025-03-12 13:44:04.795399",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-03-13 11:31:45.265962",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Intercompany Settings Supplier",
  "owner": "Administrator",
