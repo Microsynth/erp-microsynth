@@ -4,7 +4,7 @@
 
 import frappe
 from frappe.utils.password import get_decrypted_password
-import hashlib
+from frappe.utils.password import check_password
 from datetime import datetime
 from frappe import _
 
@@ -35,10 +35,22 @@ def sign(dt, dn, user, password, target_field=None, submit=True):
     if not approval_password:
         frappe.throw( _("Approval password is not set! Please go to Signature and set the approval password."), _("Authentication failed") )
         return False
-        
+
     # check password 
     if password == approval_password:
         # password correct
+
+        # check that approval password does not match login password
+        password_match_with_login_pw = True
+        try:
+            check_password(user, approval_password)
+        except Exception as err:
+            # password failed - this is good, the passwords are different
+            password_match_with_login_pw = False
+        if password_match_with_login_pw:
+            frappe.throw( _("Signing failed: Your approval password is identical to your login password.<br>Please change one of them and try again."), _("Authentication failed") )
+            return False
+
         doc = frappe.get_doc(dt, dn)
         if target_field and target_field in doc.as_dict():
             signature = {}
