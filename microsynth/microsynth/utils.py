@@ -1595,7 +1595,7 @@ def configure_territory(customer_id):
     bench execute microsynth.microsynth.utils.configure_territory --kwargs "{'customer_id': '836496'}"
     """
     customer = frappe.get_doc("Customer", customer_id)
-    if customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None:
+    if customer.disabled == 0 and (customer.territory == 'All Territories' or customer.territory == '' or customer.territory is None):
         shipping_address = get_first_shipping_address(customer_id)
         if shipping_address is None:
             email_template = frappe.get_doc("Email Template", "Customer without a Shipping Address")
