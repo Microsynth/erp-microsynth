@@ -162,9 +162,19 @@ def save_document(doc):
             template = frappe.get_doc("Payment Terms Template", fetches['payment_terms_template'])
             if len(template.terms) > 0:
                 days = template.terms[0].credit_days
-                due_date = add_days(d.posting_date, days)
+                due_date_object = add_days(d.posting_date, days)
+                due_date = due_date_object.strftime("%Y-%m-%d")
             else:
                 frappe.log_error(f"Payment Terms Template '{d.payment_terms_template}' has no Payment Terms. Please check due_date on Purchase Invoice {doc.get('name')}", "invoice_entry.save_document")
+
+    # check due date restrictions: not in the past and not more than ten months in the future
+    due_date_object = datetime.strptime(due_date, "%Y-%m-%d").date()
+    todays_date = datetime.today().date()
+    if due_date_object < todays_date:
+        frappe.throw("The Due Date is not allowed to be in the past.")
+    max_allowed_due_date = frappe.utils.add_days(todays_date, 10 * 30)  # approximation for ten months (a few days do not matter)
+    if due_date_object > max_allowed_due_date:
+        frappe.throw(f"Due Date {due_date_object.strftime('%d.%m.%Y')} exceeds max. allowed Due Date {max_allowed_due_date.strftime('%d.%m.%Y')}")
 
     d.supplier = doc.get('supplier')
 
