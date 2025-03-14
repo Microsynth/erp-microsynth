@@ -186,7 +186,7 @@ def save_document(doc):
     target_values = {
         'bill_date': datetime.strptime(doc.get('bill_date'), date_format).strftime("%Y-%m-%d"),
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
-        #'due_date': due_date,  # update directly in db after all other values are saved with validation to enable free setting
+        'due_date': None,  # update directly in db after all other values are saved to enable free setting
         'bill_no': doc.get('bill_no'),
         'approver': doc.get('approver'),
         'remarks': doc.get('remarks')
@@ -207,7 +207,7 @@ def save_document(doc):
         deviations = []
         for k,v in target_values.items():
             # convert to string before comparing to circumvent permission issue
-            if str(d.get(k) or "") != str(target_values[k]):
+            if str(d.get(k) or "") != str(target_values[k]) and k != 'due_date':
                 deviations.append(k)
         if len(deviations) > 0:
             frappe.throw("Invalid input detected: {0}".format(deviations) )
