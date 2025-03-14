@@ -284,6 +284,9 @@ def get_cc_effectiveness_checks(qm_change):
 
 
 def get_cc_impact_assessments(qm_change):
+    """
+    bench execute microsynth.qms.doctype.qm_change.qm_change.get_cc_impact_assessments --kwargs "{'qm_change': 'QMC-250003'}"
+    """
     impact_assessments = frappe.db.sql(f"""
         SELECT 
             `tabQM Impact Assessment`.`name`,
@@ -301,6 +304,8 @@ def get_cc_impact_assessments(qm_change):
             AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
             AND `tabQM Impact Assessment`.`status` != "Cancelled"
         ;""", as_dict=True)
+    #frappe.log_error(f"{qm_change=}\n{impact_assessments=}")
+    #return []
     return impact_assessments
 
 
