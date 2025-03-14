@@ -102,6 +102,13 @@ def add_comment(pinv, subject, comment, user):
     frappe.db.commit()
 
 
+def force_set_due_date(purchase_invoice_id, due_date):
+    # necessary to circumvent the validation and enable free setting of due_date
+    frappe.db.sql(f"""UPDATE `tabPurchase Invoice` 
+                     SET `due_date` = '{due_date}' 
+                     WHERE `name` = '{purchase_invoice_id}'""")
+
+
 @frappe.whitelist()
 def save_document(doc):
     if type(doc) == str:
@@ -111,10 +118,10 @@ def save_document(doc):
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
     
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
-    if not doc.get('bill_date'):
-        doc['bill_date'] = datetime.today().strftime(date_format)
     if not doc.get('posting_date'):
         doc['posting_date'] = datetime.today().strftime(date_format)
+    if not doc.get('bill_date'):
+        doc['bill_date'] = doc['posting_date']
     if doc.get('due_date'):
         due_date = datetime.strptime(doc.get('due_date'), date_format).strftime("%Y-%m-%d")
     else:
@@ -169,7 +176,7 @@ def save_document(doc):
     target_values = {
         'bill_date': datetime.strptime(doc.get('bill_date'), date_format).strftime("%Y-%m-%d"),
         'posting_date': datetime.strptime(doc.get('posting_date'), date_format).strftime("%Y-%m-%d"),
-        'due_date': due_date,
+        #'due_date': due_date,  # update directly in db after all other values are saved with validation to enable free setting
         'bill_no': doc.get('bill_no'),
         'approver': doc.get('approver'),
         'remarks': doc.get('remarks')
@@ -185,6 +192,7 @@ def save_document(doc):
     try:
         d.save()
         frappe.db.commit()
+        force_set_due_date(d.name, due_date)
 
         deviations = []
         for k,v in target_values.items():
