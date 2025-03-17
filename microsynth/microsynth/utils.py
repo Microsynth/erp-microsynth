@@ -2858,3 +2858,23 @@ def send_unsend_communications(from_date_time, to_date_time):
     communications = find_unsend_communications(from_date_time, to_date_time)
     for c in communications:
         send_communication(c['name'])
+
+
+def iterate_dates(start_date, end_date):
+    """
+    Yield all dates from the given start_date to and including the given end_date
+    """
+    current_date = start_date
+    while current_date <= end_date:
+        yield current_date
+        current_date += timedelta(days=1)
+
+
+def is_workday(date_time, holidays):
+    """
+    Returns true if the given date_time is a workday (Monday to Friday and no holiday), otherwise false.
+    """
+    # https://docs.python.org/3/library/datetime.html#datetime.date.weekday
+    if date_time.weekday() < 5 and date_time.strftime('%d.%m.%Y') not in holidays:
+        return True
+    return False
