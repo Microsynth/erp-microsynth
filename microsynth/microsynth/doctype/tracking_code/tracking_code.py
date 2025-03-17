@@ -189,8 +189,8 @@ def parse_ups_file(file_id, expected_line_length=78):
                 return {'success': False, 'message': msg}
             tracking_number = line[0]
             status = line[2]
-            if "canceled" in status.lower():
-                # skip if shipment was canceled
+            if status != 'Delivered':
+                # skip if shipment is not yet delivered
                 continue
             date_str = line[13]
             if not date_str:
@@ -270,6 +270,9 @@ def parse_ems_file(file_id, expected_line_length=36):
             if len(line) != expected_line_length:
                 msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
                 return {'success': False, 'message': msg}
+            if line[22] != 'Zugestellt':
+                # skip if shipment is not yet delivered
+                continue
             tracking_number = line[0].replace('"', '').replace('=', '')
             datetime_str = re.sub(r'\.\d+\+', '+', line[24])  # remove microseconds
             if not datetime_str:
