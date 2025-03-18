@@ -5,10 +5,21 @@
 frappe.ui.form.on('Item Price', {
     refresh(frm) {
         console.log()
-        if (frm.doc.price_list.includes('Sales Prices') && frappe.user.has_role("Sales Manager Extended")) {
-            frm.add_custom_button(__("Change reference price"), function() {
-                change_reference_rate();
-            });
+        if (frm.doc.price_list.includes('Sales Prices')) {
+            if (frappe.user.has_role("Sales Manager Extended")) {
+                frm.add_custom_button(__("Change reference price"), function() {
+                    change_reference_rate();
+                });
+            } else {
+                cur_frm.set_df_property('reference_price_list', 'read_only', true);
+                cur_frm.set_df_property('currency', 'read_only', true);
+                cur_frm.set_df_property('item_code', 'read_only', true);
+                cur_frm.set_df_property('price_list', 'read_only', true);
+                cur_frm.set_df_property('min_qty', 'read_only', true);
+                cur_frm.set_df_property('valid_from', 'read_only', true);
+                cur_frm.set_df_property('valid_upto', 'read_only', true);
+            }
+            cur_frm.set_df_property('price_list_rate', 'read_only', true);
         }
     }
 });
