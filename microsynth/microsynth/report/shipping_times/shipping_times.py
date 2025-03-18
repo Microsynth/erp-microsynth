@@ -17,8 +17,8 @@ def get_columns(filters):
         {"label": _("Country"), "fieldname": "country", "fieldtype": "Link", "options": "Country", "width": 110 },
         {"label": _("Shipping Item"), "fieldname": "shipping_item", "fieldtype": "Link", "options": "Item", "width": 350 },
         #{"label": _("Shipping Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 170 },
-        {"label": _("Tracking Code"), "fieldname": "tracking_code", "fieldtype": "Data", "width": 170 },
-        {"label": _("Tracking URL"), "fieldname": "tracking_url", "fieldtype": "HTML", "width": 410 },
+        {"label": _("Tracking Code"), "fieldname": "tracking_code", "fieldtype": "Data", "width": 165 },
+        {"label": _("Tracking URL"), "fieldname": "tracking_url", "fieldtype": "HTML", "width": 400 },
         {"label": _("Shipping Date"), "fieldname": "shipping_date", "fieldtype": "Date", "width": 130 },
         {"label": _("Delivery Date"), "fieldname": "delivery_date", "fieldtype": "Date", "width": 130 },
         {"label": _("Business Days"), "fieldname": "shipping_days", "fieldtype": "Data", "width": 110 },
@@ -78,6 +78,8 @@ def get_data(filters):
                 line['shipping_days'] = business_days
                 shipping_days_list.append(business_days)
                 counter += 1
+            else:
+                line['shipping_days'] = None
     if counter > 0:
         # add a summary line
         summary_line = {
