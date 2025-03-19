@@ -594,6 +594,17 @@ def request_quote(content, client="webshop"):
     # insert new quotation
     try:
         qtn_doc.insert(ignore_permissions=True)
+        if 'warnings' in content and content['warnings']:
+            new_comment = frappe.get_doc({
+                'doctype': 'Comment',
+                'comment_type': 'Comment',
+                'subject': 'Warnings from the Webshop',
+                'content': content['warnings'],
+                'reference_doctype': 'Quotation',
+                'status': 'Linked',
+                'reference_name': qtn_doc.name
+            })
+            new_comment.insert(ignore_permissions=True)
         # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
         return {'success': True, 'message': 'Quotation created', 
             'reference': qtn_doc.name}
