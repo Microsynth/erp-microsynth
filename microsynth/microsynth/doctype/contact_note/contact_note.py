@@ -7,6 +7,7 @@ from datetime import datetime
 import frappe
 from frappe.model.document import Document
 from frappe.utils import get_url_to_form
+from frappe.model.mapper import get_mapped_doc
 
 
 class ContactNote(Document):
@@ -14,18 +15,22 @@ class ContactNote(Document):
 
 
 @frappe.whitelist()
-def create_new_follow_up(quotation, contact_person):
-    new_doc = frappe.get_doc({
-        'doctype': 'Contact Note',
-        'contact_person': contact_person,
-        'prevdoc_doctype': 'Quotation',
-        'prevdoc_docname': quotation,
-        'date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    })
-    new_doc.flags.ignore_mandatory = True
-    new_doc.insert()
-    frappe.db.commit()
-    return {'name': new_doc.name, 'url': get_url_to_form("Contact Note", new_doc.name)}
+def create_new_follow_up(quotation):
+    doc = get_mapped_doc("Quotation",
+                         quotation,
+                         {
+                            "Quotation": {
+			                    "doctype": "Contact Note",
+				                "field_map": {
+                                    "contact_person": "contact_person"
+                                }
+		                    }
+                         },
+                         None)
+    doc.date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    doc.prevdoc_doctype = 'Quotation'
+    doc.prevdoc_docname = quotation
+    return doc
 
 
 @frappe.whitelist()

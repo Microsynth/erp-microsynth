@@ -243,15 +243,15 @@ function pull_item_service_specification(item_code, quotation_group) {
     }
 }
 
-function follow_up(frm) {
-    frappe.call({
+
+function follow_up(frm){
+    console.log(frm.doc.name);
+    console.log(frm.doc.contact_person);
+    frappe.model.open_mapped_doc({
         'method': 'microsynth.microsynth.doctype.contact_note.contact_note.create_new_follow_up',
         'args': {
-            'quotation': frm.doc.name,
-            'contact_person': frm.doc.contact_person
+            'quotation': frm.doc.name
         },
-        'callback': function (r) {
-            frappe.set_route("Form", "Contact Note", r.message.name);
-        }
-    });
+        'frm': frm
+    })
 }
