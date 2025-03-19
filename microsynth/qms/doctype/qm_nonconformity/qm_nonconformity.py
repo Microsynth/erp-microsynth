@@ -14,6 +14,7 @@ from frappe.desk.form.assign_to import add
 from frappe.core.doctype.communication.email import make
 
 from microsynth.microsynth.utils import user_has_role
+from microsynth.qms.doctype.qm_action.qm_action import assign_and_notify
 
 
 class QMNonconformity(Document):
@@ -130,6 +131,16 @@ def set_status(doc, user, status):
     update_status(doc, status)
 
 
+def notify_actions(qm_nc_id):
+    qm_actions = frappe.get_all("QM Action", filters={
+                                                'document_type': 'QM Nonconformity',
+                                                'document_name': qm_nc_id,
+                                                'docstatus': 1
+                                            }, fields=['name', 'responsible_person'])
+    for action in qm_actions:
+        assign_and_notify(action['name'], action['responsible_person'])
+
+
 def update_status(nc, status):
     nc = frappe.get_doc("QM Nonconformity", nc)
     if nc.status == status:
@@ -148,6 +159,8 @@ def update_status(nc, status):
         (nc.status == 'Completed' and status == 'Closed') or
         (nc.status == 'Investigation' and status == 'Closed')
        ):
+        if nc.status == 'Plan Approval' and status == 'Implementation':
+            notify_actions(nc.name)
         nc.status = status
         nc.save()
         frappe.db.commit()

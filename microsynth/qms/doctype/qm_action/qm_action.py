@@ -16,7 +16,7 @@ class QMAction(Document):
 
 
 @frappe.whitelist()
-def create_action(title, responsible_person, dt, dn, qm_process, due_date, type, description):
+def create_action(title, responsible_person, dt, dn, qm_process, due_date, type, description, notify=False):
     action = frappe.get_doc(
         {
             'doctype': 'QM Action',
@@ -35,8 +35,9 @@ def create_action(title, responsible_person, dt, dn, qm_process, due_date, type,
     action.submit()
     frappe.db.commit()
 
-    # create assignment to user
-    assign(action.name, responsible_person)
+    # do not create assignment to user by default, will be assigned when dn enters status "Implementation"
+    if notify:
+        assign(action.name, responsible_person)
 
     return action.name
 
@@ -122,12 +123,23 @@ def assign(doc, responsible_person):
         'doctype': "QM Action",
         'name': doc,
         'assign_to': responsible_person,
+        'notify': False
+    })
+
+
+@frappe.whitelist()
+def assign_and_notify(doc, responsible_person):
+    clear("QM Action", doc)
+    add({
+        'doctype': "QM Action",
+        'name': doc,
+        'assign_to': responsible_person,
         'notify': True
     })
 
 
 @frappe.whitelist()
-def change_responsible_person(user, action, responsible_person):
+def change_responsible_person(user, action, responsible_person, notify=False):
     action_doc = frappe.get_doc("QM Action", action)
     # check that the user has the right to change the responsible person
     if not (user == action_doc.responsible_person or user_has_role(user, "QAU")):
@@ -135,5 +147,6 @@ def change_responsible_person(user, action, responsible_person):
     # change the responsible person
     action_doc.responsible_person = responsible_person
     action_doc.save()
-    # create assignment to user
-    assign(action, responsible_person)
+    # do not create assignment to user by default, will be assigned when parent document enters status "Implementation"
+    if notify:
+        assign(action, responsible_person)

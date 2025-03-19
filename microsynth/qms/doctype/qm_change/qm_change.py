@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
 from microsynth.microsynth.utils import user_has_role
+from microsynth.qms.doctype.qm_action.qm_action import assign_and_notify
 
 
 class QMChange(Document):
@@ -125,6 +126,16 @@ def set_status(doc, user, status):
     update_status(doc, status)
 
 
+def notify_actions(qm_change_id):
+    qm_actions = frappe.get_all("QM Action", filters={
+                                                'document_type': 'QM Change',
+                                                'document_name': qm_change_id,
+                                                'docstatus': 1
+                                            }, fields=['name', 'responsible_person'])
+    for action in qm_actions:
+        assign_and_notify(action['name'], action['responsible_person'])
+
+
 def update_status(nc, status):
     change = frappe.get_doc("QM Change", nc)
     if change.status == status:
@@ -143,6 +154,8 @@ def update_status(nc, status):
        ):
         if change.status == 'Created' and status == 'Assessment & Classification':
             change.date = today()
+        if change.status == 'Planning' and status == 'Implementation':
+            notify_actions(nc)
         change.status = status
         change.save()
         frappe.db.commit()
