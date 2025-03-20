@@ -11,6 +11,7 @@ from frappe.desk.form.assign_to import add, clear
 from frappe.desk.form.load import get_attachments
 from frappe.core.doctype.communication.email import make
 from datetime import datetime
+from microsynth.microsynth.utils import add_workdays
 
 
 class QMTrainingRecord(Document):
@@ -73,24 +74,34 @@ def get_training_records(qm_document):
 
 def send_reminder_on_due_date():
     """
-    Send a reminder to trainees whose QM Training Record is due today.
-    Should be run by a daily cronjob in the early morning:
-    40 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
-
-    bench execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_on_due_date
+    stub that should be deleted after cronjob is changed to below function send_reminder_before_due_date
     """
+    pass
+
+
+def send_reminder_before_due_date(workdays=2):
+    """
+    Send a reminder to trainees whose QM Training Record is due in exactly :param workdays.
+    Should be run by a daily cronjob in the early morning:
+    40 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_before_due_date
+
+    bench execute microsynth.qms.doctype.qm_training_record.qm_training_record.send_reminder_before_due_date
+    """
+    target_due_date = add_workdays(today(), workdays)
+    # Send reminder for all QM Training Record Drafts due in exactly :param workdays
     qmtr_drafts_due_today = frappe.get_all("QM Training Record",
-            filters = [['due_date', '=', f'{today()}'], ['docstatus', '=', 0]],
+            filters = [['due_date', '=', f'{target_due_date}'], ['docstatus', '=', 0]],
             fields = ['name', 'trainee', 'document_type', 'document_name'])
     for qmtr in qmtr_drafts_due_today:
         first_name = frappe.get_value("User", qmtr['trainee'], "first_name")
         url = get_url_to_form("QM Training Record", qmtr['name'])
+        print(url)
         make(
             recipients = qmtr['trainee'],
             cc = "qm@microsynth.ch",
             sender = "qm@microsynth.ch",
             sender_full_name = "QAU",
-            subject = "Last Reminder: Your QM Training Record is due today",
-            content = f"Dear {first_name},<br><br>Your QM Training Record <a href={url}>{qmtr['name']}</a> is due today. Please sign it or contact QAU.",
+            subject = f"Last Reminder: Your QM Training Record {qmtr['name']} is due on {target_due_date}",
+            content = f"Dear {first_name},<br><br>Your QM Training Record <a href={url}>{qmtr['name']}</a> is due on {target_due_date}. Please sign by the due date.",
             send_email = True
         )

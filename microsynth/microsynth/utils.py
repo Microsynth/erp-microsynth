@@ -2878,3 +2878,23 @@ def is_workday(date_time, holidays):
     if date_time.weekday() < 5 and date_time.strftime('%d.%m.%Y') not in holidays:
         return True
     return False
+
+
+def add_workdays(date, workdays):
+    """
+    Calculates the date that is exactly :param workdays in the future from the given date.
+    The existence of public holidays is ignored.
+    """
+    if type(date) == str:
+        current_date = datetime.strptime(date, "%Y-%m-%d").date()
+    else:
+        current_date = date
+    workdays_needed = workdays
+
+    # Go forwards until we have found two workdays
+    while workdays_needed > 0:
+        current_date += timedelta(days=1)
+        if current_date.weekday() < 5:  # 0-4 are Monday to Friday (workdays)
+            workdays_needed -= 1
+
+    return current_date

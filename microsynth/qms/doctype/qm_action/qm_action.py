@@ -7,8 +7,9 @@ import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add, clear
 from frappe.utils.data import today
+from frappe.utils import get_url_to_form
 from frappe.core.doctype.communication.email import make
-from microsynth.microsynth.utils import user_has_role
+from microsynth.microsynth.utils import user_has_role, add_workdays
 
 
 class QMAction(Document):
@@ -158,3 +159,32 @@ def change_responsible_person(user, action, responsible_person, notify=False):
     # do not create assignment to user by default, will be assigned when parent document enters status "Implementation"
     if notify:
         assign(action, responsible_person)
+
+
+def send_reminder_before_due_date(workdays=2):
+    """
+    Send a reminder to the responsible_person of a QM Action that is due in exactly :param workdays, not cancelled and not completed.
+    Should be run by a daily cronjob in the early morning:
+    42 4 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.qms.doctype.qm_action.qm_action.send_reminder_before_due_date
+
+    bench execute microsynth.qms.doctype.qm_action.qm_action.send_reminder_before_due_date
+    """
+    target_due_date = add_workdays(today(), workdays)
+
+    qm_actions_to_remind = frappe.get_all("QM Action",
+            filters = [['due_date', '=', f'{target_due_date}'], ['docstatus', '!=', 2], ['status', '!=', 'Completed']],
+            fields = ['name', 'responsible_person', 'document_type', 'document_name'])
+
+    for qma in qm_actions_to_remind:
+        first_name = frappe.get_value("User", qma['responsible_person'], "first_name")
+        url = get_url_to_form("QM Action", qma['name'])
+        #print(url)
+        make(
+            recipients = qma['responsible_person'],
+            cc = "qm@microsynth.ch",
+            sender = "qm@microsynth.ch",
+            sender_full_name = "QAU",
+            subject = f"Last Reminder: Your QM Action {qma['name']} is due on {target_due_date}",
+            content = f"Dear {first_name},<br><br>Your QM Action <a href={url}>{qma['name']}</a> is due on {target_due_date}. Please complete the task by the due date.",
+            send_email = True
+        )
