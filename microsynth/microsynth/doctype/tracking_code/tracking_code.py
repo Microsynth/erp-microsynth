@@ -138,7 +138,7 @@ def prepare_tracking_log(file_id):
 
 
 @frappe.whitelist()
-def parse_dhl_file(file_id, expected_line_length=90):
+def parse_dhl_file(file_id, expected_line_length=15):
     """
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.parse_dhl_file --kwargs "{'file_id': '0f69f96ed0'}"
     """
@@ -146,18 +146,21 @@ def parse_dhl_file(file_id, expected_line_length=90):
     error_str = ""
     counter = 0
     with open(file_path) as file:
-        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=';')  # replace NULL bytes (throwing an error)
+        csv_reader = csv.reader((x.replace('\0', '') for x in file), delimiter=',')  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
             if len(line) != expected_line_length:
                 msg = f"Line '{line}' has length {len(line)}, but expected length {expected_line_length}."
                 return {'success': False, 'message': msg}
-            tracking_number = line[0]
-            datetime_str = line[49]
+            tracking_number = line[1].strip()
+            datetime_str = line[2].strip()
+            status = line[3].strip()
             if not datetime_str:
                 continue
+            if status != 'Shipment delivered ok':
+                continue
             try:
-                delivery_datetime = datetime.fromisoformat(datetime_str)
+                delivery_datetime = datetime.strptime(datetime_str, '%d/%m/%Y %H:%M')
             except Exception as e:
                 frappe.log_error(f"File path: {file_path}\nError: {e}", "parse_dhl_file")
                 continue
@@ -297,8 +300,8 @@ def parse_ems_file(file_id, expected_line_length=36):
 def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
     tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'tracking_code', 'delivery_date'])
     if len(tracking_codes) == 0:
-        #print(f"Found no Tracking Code for '{tracking_code=}'. Going to skip.")
-        return ""
+        return f"Found no Tracking Code for '{tracking_code=}'. Going to skip."
+        #return ""
     else:
         for tracking_code in tracking_codes:
             # Check if there is already a delivery_datetime stored
