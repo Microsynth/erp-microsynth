@@ -88,10 +88,18 @@ def update_status(action, status):
 
 def notify_refdoc_creator(action, msg):
     if action.document_name and action.document_type:
-        creator = frappe.get_value(action.document_type, action.document_name, "created_by")
-        if creator:
+        if action.document_type == 'QM Change':
+            cc_type = frappe.get_value('QM Change', action.document_name, 'cc_type')
+            if cc_type == 'procurement':
+                # notification about completed QM Action for QM Change of type procurement need to be send to QAU
+                recipient = 'qm@microsynth.ch'
+            else:
+                recipient = frappe.get_value(action.document_type, action.document_name, "created_by")
+        else:
+            recipient = frappe.get_value(action.document_type, action.document_name, "created_by")
+        if recipient:
             make(
-                recipients = creator,
+                recipients = recipient,
                 sender = 'erp@microsynth.ch',
                 sender_full_name = 'Microsynth ERP',
                 subject = f"QM Action {action.name}",
