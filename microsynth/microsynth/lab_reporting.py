@@ -4,6 +4,7 @@
 import os
 import re
 from datetime import datetime
+import traceback
 import frappe
 from frappe.utils import get_url_to_form
 from frappe.core.doctype.communication.email import make
@@ -347,7 +348,9 @@ def send_reports(recipient, cc_mails, analysis_reports):
                 # attachments = all_attachments
             )
     except Exception as err:
-        return {'success': False, 'message': f"Got the following error: {err}"}
+        err_str = f'{recipient=}, {cc_mails=}, {analysis_reports=}:\nGot the following error: {err}\n{type(err).__name__}\n{traceback.format_exc()}'
+        frappe.log_error(err_str, 'lab_reporting.send_reports')
+        return {'success': False, 'message': err_str}
     return {'success': True, 'message': f"Successfully send Analysis Report(s) to '{recipient}'"}
 
 
