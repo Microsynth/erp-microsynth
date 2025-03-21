@@ -487,7 +487,9 @@ def set_sample_labels_processed(samples):
             seq_label.status = 'processed'
             seq_label.save()
     except Exception as err:
-        return {'success': False, 'message': f"Got the following error: {err}"}
+        err_str = f'{samples=}:\nGot the following error: {err}\n{type(err).__name__}\n{traceback.format_exc()}'
+        frappe.log_error(err_str, 'lab_reporting.set_sample_labels_processed')
+        return {'success': False, 'message': err_str}
     return {'success': True, 'message': 'OK'}
 
 
