@@ -4853,3 +4853,49 @@ def rename_lost_reasons():
             SET `lost_reason` = '{new_reason}'
             WHERE `lost_reason` = '{current_reason}';""")
         print(f"Renamed Lost Reason '{current_reason}' on all Lost Reason Detail entries to '{new_reason}'.")
+
+
+def lookup_unused_sequencing_labels(input_filepath, output_filepath):
+    """
+    bench execute microsynth.microsynth.migration.lookup_unused_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'output_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Missing_in_Webshop_Export.csv'}"
+    """
+    print(f"Selecting unused Sequencing Labels from ERP ...")
+    erp_unused_labels = frappe.get_all('Sequencing Label', filters={'status': 'unused'},
+                                       fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
+    print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP.")
+    use_states = ['unknown', 'unused_unregistered', 'unused_registered', 'submitted', 'received', 'processed']
+    counters = {state: 0 for state in use_states}
+    counters['not_in_webshop'] = 0
+    not_in_webshop = []
+    print(f"Parsing Webshop export ...")
+    webshop_table = {}
+    with open(input_filepath, 'r') as file:
+        csv_reader = csv.reader(file, delimiter='\t')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 9:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            number = line[1]
+            use_state = int(line[2])
+            webshop_table[number] = use_state
+    print(f"Comparing unused ERP labels to Webshop ...")
+    for erp_label in erp_unused_labels:
+        if erp_label['label_id'] in webshop_table:
+            webshop_use_state = webshop_table[erp_label['label_id']]
+            counters[use_states[webshop_use_state]] += 1
+        else:
+            counters['not_in_webshop'] += 1
+            not_in_webshop.append(erp_label)
+    
+    print(f"The {len(erp_unused_labels)} unused Sequencing Labels in the ERP have the following statuses in the Webshop:")
+    for status, counter in counters.items():
+        print(f"{status}: {counter} ({(counter/len(erp_unused_labels))*100:.2f} %)")
+    
+    if len(not_in_webshop) > 0:
+        with open(output_filepath, mode='w') as file:
+            writer = csv.DictWriter(file, fieldnames=not_in_webshop[0].keys())
+            # Write the header (column names)
+            writer.writeheader()        
+            # Write each dictionary as a row
+            writer.writerows(not_in_webshop)
