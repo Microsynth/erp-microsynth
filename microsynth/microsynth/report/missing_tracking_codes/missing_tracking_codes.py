@@ -10,16 +10,18 @@ from frappe import _
 def get_columns(filters):
     return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
+        {"label": _("Order Status"), "fieldname": "so_status", "fieldtype": "Data", "width": 110 },
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
         {"label": _("Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 80 },
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80 },
-        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 275 },
-        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100 },
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 225 },
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 95 },
         {"label": _("Net Total"), "fieldname": "net_total", "fieldtype": "Currency", "options": "currency", "width": 100},
-        {"label": _("Shipping Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 375, "align": "left" },
+        {"label": _("Shipping Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 370, "align": "left" },
         #{"label": _("Shipping Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 170 },
         {"label": _("Shipping Label printed"), "fieldname": "label_printed_on", "fieldtype": "Date", "width": 145 },
-        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 125 }
+        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 125 },
+        {"label": _("DN Status"), "fieldname": "dn_status", "fieldtype": "Data", "width": 80 }
     ]
 
 
@@ -33,6 +35,7 @@ def get_data(filters):
     query = f"""
         SELECT DISTINCT
             `tabSales Order`.`name` AS `sales_order`,
+            `tabSales Order`.`status` AS `so_status`,
             `tabSales Order`.`web_order_id`,
             `tabSales Order`.`transaction_date`,
             `tabSales Order`.`customer`,
@@ -43,7 +46,8 @@ def get_data(filters):
             `tabSales Order Item`.`item_code`,
             `tabSales Order Item`.`item_name`,
             `tabSales Order`.`label_printed_on`,
-            `tabDelivery Note`.`name` AS `delivery_note`
+            `tabDelivery Note`.`name` AS `delivery_note`,
+            `tabDelivery Note`.`status` AS `dn_status`
         FROM `tabSales Order`
         LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
         LEFT JOIN `tabTracking Code` ON `tabTracking Code`.`sales_order` = `tabSales Order`.`name`
