@@ -984,7 +984,10 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         address = company_address,
         country_codes = country_codes )
 
-    terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
+    if sales_invoice.payment_terms_template:
+        terms_template = frappe.get_doc("Payment Terms Template", sales_invoice.payment_terms_template)
+    else:
+        terms_template = frappe.get_doc("Payment Terms Template", customer.payment_terms)
 
     # create sets of strings for delivery_note and sales_order
     order_names = []
