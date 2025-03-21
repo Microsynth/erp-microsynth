@@ -50,6 +50,12 @@ frappe.query_reports["Label Manager"] = {
             }
         },
         {
+            "fieldname": "label_status",
+            "label": __("Label Status"),
+            "fieldtype": "Select",
+            "options": "unknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
+        },
+        {
             "fieldname": "sales_order",
             "label": __("Sales Order"),
             "fieldtype": "Link",

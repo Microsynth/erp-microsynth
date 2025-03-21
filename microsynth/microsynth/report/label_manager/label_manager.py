@@ -33,21 +33,23 @@ def get_data(filters):
     conditions = ""
     
     if filters.get('contact'):
-        conditions += f"AND `tabSequencing Label`.`contact` = '{filters.get('contact')}'"
+        conditions += f" AND `tabSequencing Label`.`contact` = '{filters.get('contact')}'"
     if filters.get('registered_to'):
-        conditions += f"AND `tabSequencing Label`.`registered_to` = '{filters.get('registered_to')}'"
+        conditions += f" AND `tabSequencing Label`.`registered_to` = '{filters.get('registered_to')}'"
     if filters.get('customer'):
-        conditions += f"AND `tabSequencing Label`.`customer` = '{filters.get('customer')}'"
+        conditions += f" AND `tabSequencing Label`.`customer` = '{filters.get('customer')}'"
     if filters.get('customer_name'):
-        conditions += f"AND `tabSequencing Label`.`customer_name` LIKE '{filters.get('customer_name')}'"
+        conditions += f" AND `tabSequencing Label`.`customer_name` LIKE '{filters.get('customer_name')}'"
+    if filters.get('label_status'):
+        conditions += f" AND `tabSequencing Label`.`status` = '{filters.get('label_status')}'"
     if filters.get('sales_order'):
-        conditions += f"AND `tabSequencing Label`.`sales_order` = '{filters.get('sales_order')}'"
+        conditions += f" AND `tabSequencing Label`.`sales_order` = '{filters.get('sales_order')}'"
     if filters.get('web_order_id'):
-        conditions += f"AND `tabSales Order`.`web_order_id` = '{filters.get('web_order_id')}'"
+        conditions += f" AND `tabSales Order`.`web_order_id` = '{filters.get('web_order_id')}'"
     if filters.get('item_code'):
-        conditions += f"AND `tabSequencing Label`.`item` = '{filters.get('item_code')}'"
+        conditions += f" AND `tabSequencing Label`.`item` = '{filters.get('item_code')}'"
     if filters.get('registered'):
-        conditions += f"AND `tabSequencing Label`.`registered` = 1"
+        conditions += f" AND `tabSequencing Label`.`registered` = 1"
     if filters.get('from_barcode') and filters.get('to_barcode'):
         if filters.get('from_barcode').isnumeric() and filters.get('to_barcode').isnumeric():
             from_barcode = filters.get('from_barcode')
