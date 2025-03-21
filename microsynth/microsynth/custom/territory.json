@@ -55,6 +55,30 @@
  ],
  "custom_perms": [],
  "doctype": "Territory",
- "property_setters": [],
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2025-03-21 11:34:17.227449",
+   "default_value": null,
+   "doc_type": "Territory",
+   "docstatus": 0,
+   "doctype_or_field": "DocType",
+   "field_name": null,
+   "idx": 0,
+   "modified": "2025-03-21 11:34:17.227449",
+   "modified_by": "Administrator",
+   "name": "Territory-track_changes",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "track_changes",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
  "sync_on_migrate": 1
 }
