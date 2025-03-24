@@ -72,13 +72,6 @@ def get_training_records(qm_document):
             fields = ['name', 'trainee', 'signed_on', 'signature'])
 
 
-def send_reminder_on_due_date():
-    """
-    stub that should be deleted after cronjob is changed to below function send_reminder_before_due_date
-    """
-    pass
-
-
 def send_reminder_before_due_date(workdays=2):
     """
     Send a reminder to trainees whose QM Training Record is due in exactly :param workdays.
