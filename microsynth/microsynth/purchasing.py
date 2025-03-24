@@ -245,12 +245,20 @@ def set_default_payable_accounts(supplier, event):
         supplier = frappe.get_doc("Supplier", supplier)
     companies = frappe.get_all("Company", fields = ['name', 'default_currency'])
 
+    # allow to set specific debtor accounts for intercompany customers
+    intercompany_suppliers = set()
+    for s in frappe.get_all("Intercompany Settings Supplier", fields = ['supplier']):
+        intercompany_suppliers.add(s['supplier'])
+
+    if  supplier.name in intercompany_suppliers or supplier.supplier_name in ['Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS']:  # TODO remove fallback to supplier_name once they are all entered in the supplier settings
+        return
+
     for company in companies:
         #print(f"Processing {company['name']} ...")
         if company['name'] == "Microsynth Seqlab GmbH":
             account = "1600 - Verb. aus Lieferungen und Leistungen - GOE"
         elif company['name'] == "Microsynth France SAS":
-            account = "4191000 - Clients acptes s/com - LYO"
+            account = "4010000 - Fournisseurs - LYO"  # TODO check this account!
         elif company['name'] == "Microsynth AG":
             if supplier.default_currency and supplier.default_currency == "EUR":
                 account = "2005 - Kreditoren EUR - BAL"
