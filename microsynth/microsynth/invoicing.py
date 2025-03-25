@@ -18,7 +18,7 @@ from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_alternative_intercompany_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template
+from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_alternative_intercompany_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template, get_sql_list
 from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
@@ -141,7 +141,8 @@ def make_collective_invoices(delivery_notes):
 
                 if len(filtered_dns) > 0:
                     si = make_collective_invoice(filtered_dns)
-                    invoices.append(si)
+                    if si:
+                        invoices.append(si)
 
     return invoices
 
@@ -545,19 +546,37 @@ def make_collective_invoice(delivery_notes):
     bench execute microsynth.microsynth.invoicing.make_collective_invoice --kwargs "{'delivery_notes': ['DN-BAL-23106590', 'DN-BAL-23113391', 'DN-BAL-23114506', 'DN-BAL-23115682']}"
     """
 
+    query = f"""
+        SELECT DISTINCT `parent`
+        FROM `tabDelivery Note Item`
+        WHERE `parent` in ({get_sql_list(delivery_notes)})
+        AND `item_code` = "1008"
+        """
+
+    manual_intercompany_delivery_notes = [ x['parent'] for x in frappe.db.sql(query, as_dict=True) ]
+
+    cleaned_delivery_notes = []
+    for dn in delivery_notes:
+        if dn not in  manual_intercompany_delivery_notes:
+            cleaned_delivery_notes.append(dn)
+
+    if len(cleaned_delivery_notes) == 0:
+        # frappe.log_error(f"No delivery note to invoice found:\n{delivery_notes}", "invoicing.make_collective_invoice")
+        return None
+
     # create invoice from first delivery note
-    sales_invoice_content = make_sales_invoice(delivery_notes[0])
-    if len(delivery_notes) > 1:
-        for i in range(1, len(delivery_notes)):
+    sales_invoice_content = make_sales_invoice(cleaned_delivery_notes[0])
+    if len(cleaned_delivery_notes) > 1:
+        for i in range(1, len(cleaned_delivery_notes)):
             # append items from other delivery notes
-            sales_invoice_content = make_sales_invoice(source_name=delivery_notes[i], target_doc=sales_invoice_content)
+            sales_invoice_content = make_sales_invoice(source_name=cleaned_delivery_notes[i], target_doc=sales_invoice_content)
     
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
     if not sales_invoice.invoice_to:
         sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
 
-    company = frappe.get_value("Delivery Note", delivery_notes[0], "company")
+    company = frappe.get_value("Delivery Note", cleaned_delivery_notes[0], "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
         
     # sales_invoice.set_advances()    # get advances (customer credit)
@@ -1243,11 +1262,6 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "Chorus"
             elif customer.invoicing_method == "Intercompany":
                 mode = "Intercompany"
-                # Do not process manual intercompany automatically
-                for i in sales_invoice.items:
-                    if i.item_code == "1008":
-                        mode = "Email"
-                        continue
             else:
                 mode = None
 

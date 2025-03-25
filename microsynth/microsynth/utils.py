@@ -2898,3 +2898,10 @@ def add_workdays(date, workdays):
             workdays_needed -= 1
 
     return current_date
+
+
+def get_sql_list(list):
+    if list:
+        return (','.join('"{0}"'.format(e) for e in list))
+    else:
+        return '""'
