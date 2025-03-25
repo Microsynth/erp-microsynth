@@ -22,7 +22,7 @@ def strip_str_to_allowed_chars(s, min_length, max_length, allowed_chars):
     if not s and min_length == 0:
         return out
     elif not s:
-        frappe.log_error(f"Got no value for s", "datev_export.strip_str_to_allowed_chars")
+        #frappe.log_error(f"Got no value for s", "datev_export.strip_str_to_allowed_chars")
         return out
     # append each valid character
     for c in s:
