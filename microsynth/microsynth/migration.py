@@ -4946,3 +4946,24 @@ def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
                     if not verbose and changed_counter % 100 == 0:
                         print(f"Already changed status of {changed_counter}/{received_counter} Sequencing Labels.")
     print(f"Successfully set {changed_counter} ERP Sequencing Labels from status unused to status received according to the Webshop.")
+
+
+def change_payable_account_on_supplier(company, old_account, new_account, exclude_microsynth=True):
+    """
+    bench execute microsynth.microsynth.migration.change_payable_account_on_supplier --kwargs "{'company': 'Microsynth France SAS', 'old_account': '4191000 - Clients acptes s/com - LYO', 'new_account': '4010000 - Fournisseurs - LYO'}"
+    """
+    suppliers = frappe.get_all("Supplier", filters={'disabled': 0}, fields=['name', 'supplier_name'])
+    print(f"Going to process {len(suppliers)} enabled Suppliers.")
+    
+    for supplier in suppliers:
+        if exclude_microsynth and 'Microsynth' in supplier['supplier_name']:
+            continue
+        supplier_doc = frappe.get_doc('Supplier', supplier['name'])
+        for account in supplier_doc.accounts:
+            if account.company == company:
+                if account.account == old_account:
+                    account.account = new_account
+                    print(f"Supplier {supplier.name} ({supplier.supplier_name}): Changed Account '{old_account}' for Company {company} to '{new_account}'.")
+                else:
+                    print(f"### Supplier {supplier.name} ({supplier.supplier_name}) has Account '{account.account}' for Company {company}.")
+        supplier_doc.save()
