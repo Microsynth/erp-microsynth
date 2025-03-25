@@ -280,7 +280,7 @@ def set_shipping_date(web_order_id):
     tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
     if len(tracking_codes) != 1:
         if len(tracking_codes) > 1:
-            msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}."
+            msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}. Going to not set the Shipping Date."
             frappe.log_error(msg, "production.set_shipping_date")
             #frappe.throw(msg)
         return
