@@ -7,17 +7,17 @@ import json
 
 
 TRACKING_URLS = {
-    '1010': "https://www.post.at/sv/sendungssuche?snr=",
+    #'1010': "https://www.post.at/sv/sendungssuche?snr=",  # disabled
     '1101': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
     '1102': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
     #'1103': "https://www.post.at/sv/sendungssuche?snr=",  # has no tracking anymore
-    '1104': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
+    #'1104': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",  # disabled
     '1105': "https://www.post.at/sv/sendungssuche?snr=",
-    '1107': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
+    #'1107': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",  # disabled
     '1108': "https://www.ups.com/track?tracknum=",
     '1114': "https://www.ups.com/track?tracknum=",
     '1117': "https://www.ups.com/track?tracknum=",
-    '1119': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
+    #'1119': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",  # disabled
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
     '1126': "https://www.fedex.com/fedextrack/?trknbr=",
@@ -28,6 +28,15 @@ TRACKING_URLS = {
     '1166': "https://www.ups.com/track?tracknum=",
     '1167': "https://www.ups.com/track?tracknum="
 }
+
+
+def get_shipping_items_with_tracking():
+    """
+    Returns a list of all Shipping Item Codes that support tracking, based on the above dictionary TRACKING_URLS.
+
+    bench execute microsynth.microsynth.shipping.get_shipping_items_with_tracking
+    """
+    return TRACKING_URLS.keys()
 
 
 def get_shipping_service(item_code, ship_adr, cstm_ID):
