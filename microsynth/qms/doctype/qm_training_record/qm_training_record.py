@@ -94,7 +94,7 @@ def send_reminder_before_due_date(workdays=2):
             cc = "qm@microsynth.ch",
             sender = "qm@microsynth.ch",
             sender_full_name = "QAU",
-            subject = f"Last Reminder: Your QM Training Record {qmtr['name']} is due on {target_due_date}",
-            content = f"Dear {first_name},<br><br>Your QM Training Record <a href={url}>{qmtr['name']}</a> is due on {target_due_date}. Please sign by the due date.",
+            subject = f"Last Reminder: Your QM Training Record {qmtr['name']} is due on {target_due_date.strftime('%d.%m.%Y')}",
+            content = f"Dear {first_name},<br><br>Your QM Training Record <a href={url}>{qmtr['name']}</a> is due on {target_due_date.strftime('%d.%m.%Y')}. Please sign by the due date.",
             send_email = True
         )
