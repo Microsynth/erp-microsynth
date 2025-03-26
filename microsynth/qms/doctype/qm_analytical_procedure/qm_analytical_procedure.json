@@ -1,0 +1,210 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2025-03-26 15:12:18.479374",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "regulatory_classification",
+  "company",
+  "process",
+  "analyte",
+  "matrix",
+  "device_type",
+  "iso_17025_section",
+  "test_technique",
+  "quality_control",
+  "gmp_assays_section",
+  "assay_name",
+  "description",
+  "drug_product_name",
+  "ich_class",
+  "type_of_assay",
+  "method",
+  "analytical_steps",
+  "current_status",
+  "creation1_section",
+  "created_on",
+  "created_by",
+  "references_section",
+  "qm_documents",
+  "customers",
+  "naming_series",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "label": "Regulatory Classification",
+   "options": "GMP\nISO 17025"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "process",
+   "fieldtype": "Link",
+   "label": "Process",
+   "options": "QM Process"
+  },
+  {
+   "description": "Measurand",
+   "fieldname": "analyte",
+   "fieldtype": "Data",
+   "label": "Analyte"
+  },
+  {
+   "fieldname": "matrix",
+   "fieldtype": "Data",
+   "label": "Matrix"
+  },
+  {
+   "fieldname": "device_type",
+   "fieldtype": "Link",
+   "label": "Device Type",
+   "options": "QM Device Type"
+  },
+  {
+   "fieldname": "iso_17025_section",
+   "fieldtype": "Section Break",
+   "label": "ISO 17025"
+  },
+  {
+   "fieldname": "test_technique",
+   "fieldtype": "Data",
+   "label": "Test Technique"
+  },
+  {
+   "fieldname": "quality_control",
+   "fieldtype": "Data",
+   "label": "Quality Control"
+  },
+  {
+   "fieldname": "gmp_assays_section",
+   "fieldtype": "Section Break",
+   "label": "GMP Assays"
+  },
+  {
+   "fieldname": "assay_name",
+   "fieldtype": "Data",
+   "label": "Assay Name"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "label": "Description"
+  },
+  {
+   "fieldname": "drug_product_name",
+   "fieldtype": "Data",
+   "label": "Drug Product Name"
+  },
+  {
+   "fieldname": "ich_class",
+   "fieldtype": "Select",
+   "label": "ICH Class",
+   "options": "\nI: Identity\nII: Impurity (quantitative)\nIII:  Impurity (qualitative)\nIV: Active ingridients (quantitative)\nOther\nNA"
+  },
+  {
+   "fieldname": "type_of_assay",
+   "fieldtype": "Select",
+   "label": "Type of Assay",
+   "options": "\nRelease\nCharacterization\nOther\nNA"
+  },
+  {
+   "fieldname": "method",
+   "fieldtype": "Select",
+   "label": "Method",
+   "options": "Sanger\nddPCR\nFLA\nNGS\nNA"
+  },
+  {
+   "fieldname": "analytical_steps",
+   "fieldtype": "Table MultiSelect",
+   "label": "Analytical Steps",
+   "options": "QM AP Step Link"
+  },
+  {
+   "fieldname": "current_status",
+   "fieldtype": "Select",
+   "label": "Current Status",
+   "options": "\nEarly Development/Robustness\nProtocol Transfer\nQualified\nValidated\nDiscontinued\nNA"
+  },
+  {
+   "fieldname": "creation1_section",
+   "fieldtype": "Section Break",
+   "label": "Creation"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created on"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created by",
+   "options": "User"
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "qm_documents",
+   "fieldtype": "Table",
+   "label": "QM Documents",
+   "options": "QM Document Link"
+  },
+  {
+   "fieldname": "customers",
+   "fieldtype": "Table",
+   "label": "Customers",
+   "options": "Customer Link"
+  },
+  {
+   "default": "QMAP-.YY.###",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "QMAP-.YY.###"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Analytical Procedure",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2025-03-26 15:12:18.479374",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Analytical Procedure",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
