@@ -1886,6 +1886,22 @@ def activate_easyrun_italy():
     frappe.db.commit()
 
 
+def activate_directoligoorders_carloerba():
+    """
+    run
+    bench execute microsynth.microsynth.migration.activate_directoligoorders_carloerba
+    """
+    from microsynth.microsynth.utils import add_webshop_service
+
+    customers = frappe.db.get_all("Customer",
+        filters = [['account_manager', '=', 'servizioclienticer@dgroup.it']],
+        fields = ['name', 'customer_name'])
+    for customer in customers:
+        print(f"process {customer['name']} {customer['customer_name']}")
+        add_webshop_service(customer['name'], "DirectOligoOrders")
+    return
+
+
 def activate_fullplasmidseq_dach():
     """
     run
