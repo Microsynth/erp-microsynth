@@ -7,7 +7,7 @@
  "field_order": [
   "regulatory_classification",
   "company",
-  "process",
+  "qm_process",
   "analyte",
   "matrix",
   "device_type",
@@ -44,12 +44,6 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
-  },
-  {
-   "fieldname": "process",
-   "fieldtype": "Link",
-   "label": "Process",
-   "options": "QM Process"
   },
   {
    "description": "Measurand",
@@ -139,17 +133,6 @@
    "label": "Creation"
   },
   {
-   "fieldname": "created_on",
-   "fieldtype": "Date",
-   "label": "Created on"
-  },
-  {
-   "fieldname": "created_by",
-   "fieldtype": "Link",
-   "label": "Created by",
-   "options": "User"
-  },
-  {
    "fieldname": "references_section",
    "fieldtype": "Section Break",
    "label": "References"
@@ -182,10 +165,27 @@
    "options": "QM Analytical Procedure",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "label": "Created On"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User"
+  },
+  {
+   "fieldname": "qm_process",
+   "fieldtype": "Link",
+   "label": "Process",
+   "options": "QM Process"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-03-26 15:12:18.479374",
+ "modified": "2025-03-26 18:31:24.294859",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Analytical Procedure",
