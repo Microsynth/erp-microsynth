@@ -12,7 +12,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
 from frappe.utils import cint, get_url_to_form 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
 
@@ -145,6 +145,7 @@ def check_sales_order_completion():
     run 
     bench execute microsynth.microsynth.seqblatt.check_sales_order_completion
     """
+    start_ts = datetime.now()
     open_sequencing_sales_orders = frappe.db.sql("""
         SELECT `name`
         FROM `tabSales Order`
@@ -156,6 +157,7 @@ def check_sales_order_completion():
 
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
+        #print(f"processing {sales_order['name']} ...")
 
         if not validate_sales_order(sales_order['name']):
             # validate_sales_order writes to the error log in case of an issue
@@ -197,10 +199,13 @@ def check_sales_order_completion():
                 # insert record
                 dn.flags.ignore_missing = True
                 dn.insert(ignore_permissions=True)
+                #print(f"### Inserted {dn.name} for {sales_order['name']}.")
                 frappe.db.commit()
 
         except Exception as err:
             frappe.log_error("Cannot create a Delivery Note for Sales Order '{0}': \n{1}".format(sales_order['name'], err), "seqblatt.check_sales_order_completion")
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    frappe.log_error(f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", "monitoring check_sales_order_completion")
     return
 
 
