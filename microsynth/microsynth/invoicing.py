@@ -1475,7 +1475,8 @@ Your administration team<br><br>{footer}"
                 # create SI-LYO from SO-LYO
                 si_content = make_sales_invoice_from_so(so_id)
                 si_doc = frappe.get_doc(si_content)
-                dns = frappe.get_all("Delivery Note", filter={'po_no': so_id, 'docstatus': 1}, fields=['name'])
+                si_doc.naming_series = get_naming_series("Sales Invoice", si_doc.company)
+                dns = frappe.get_all("Delivery Note", filters={'po_no': so_id, 'docstatus': 1}, fields=['name'])
                 if len(dns) != 1:
                     frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
                     continue
@@ -1483,7 +1484,9 @@ Your administration team<br><br>{footer}"
                 # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
                 # assume that there are not different Oligos, Samples or Items while the amount of them is identical
                 # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
-                if len(si_doc.oligos) != len(dn_doc.oligos) or len(si_doc.samples) != len(dn_doc.samples) or len(si_doc.items) != len(dn_doc.items):
+                if (si_doc.get('oligos') and dn_doc.get('oligos') and len(si_doc.oligos) != len(dn_doc.oligos)) or \
+                   (si_doc.get('samples') and dn_doc.get('samples') and len(si_doc.samples) != len(dn_doc.samples)) or \
+                   (si_doc.get('items') and dn_doc.get('items') and len(si_doc.items) != len(dn_doc.items)):
                     si_doc = adjust_si_to_dn(dn_doc, si_doc)  # should be call by reference but just for safety
                 if si_doc.total > dn_doc.total:
                     frappe.log_error(f"Total of Sales Invoice {si_doc.name} ({si_doc.total}) is greater than total of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
