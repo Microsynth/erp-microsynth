@@ -33,6 +33,7 @@
   "customers",
   "classification_section",
   "regulatory_classification",
+  "device_classification",
   "impact",
   "risk_classification",
   "column_break_26",
@@ -305,10 +306,17 @@
    "fieldtype": "Link",
    "label": "Hierarchy 2",
    "options": "QM Classification Hierarchy"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "device_classification",
+   "fieldtype": "Select",
+   "label": "Device Classification",
+   "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 devices without measuring function"
   }
  ],
  "is_submittable": 1,
- "modified": "2024-11-28 15:26:07.767705",
+ "modified": "2025-03-25 15:49:25.878211",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

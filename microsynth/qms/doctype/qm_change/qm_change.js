@@ -7,6 +7,10 @@ frappe.ui.form.on('QM Change', {
             frappe.msgprint( __("Change Control Type 'short' cannot have Regulatory Classification 'GMP'."), __("Validation") );
             frappe.validated = false;
         }
+        if (frm.doc.status=='Assessment & Classification' && frm.doc.cc_type == 'procurement' && !frm.doc.device_classification) {
+            frappe.msgprint( __("Please set mandatory Device Classification for Change Control Type 'procurement'."), __("Validation") );
+            frappe.validated = false;
+        }
     },
     qm_process: function(frm) {
         // clear affected hierarchy 1 field when process has changed to prevent invalid values
@@ -93,11 +97,12 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('description', 'read_only', true);
         }
 
-        // Only QAU can set fields CC Type, Regulatory Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
+        // Only QAU can set fields CC Type, Regulatory Classification, Device Classification and Risk Classification in status Draft, Created or Assessment & Classification directly
         if (["Draft", "Created", "Assessment & Classification"].includes(frm.doc.status)
             && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('cc_type', 'read_only', false);
             cur_frm.set_df_property('regulatory_classification', 'read_only', false);
+            cur_frm.set_df_property('device_classification', 'read_only', false);
             cur_frm.set_df_property('risk_classification', 'read_only', false);
             if (frm.doc.regulatory_classification == 'GMP') {
                 cur_frm.set_df_property('impact', 'read_only', false);
@@ -108,6 +113,7 @@ frappe.ui.form.on('QM Change', {
         } else {
             cur_frm.set_df_property('cc_type', 'read_only', true);
             cur_frm.set_df_property('regulatory_classification', 'read_only', true);
+            cur_frm.set_df_property('device_classification', 'read_only', true);
             cur_frm.set_df_property('risk_classification', 'read_only', true);
             cur_frm.set_df_property('impact', 'read_only', true);
             cur_frm.get_field("impact").grid.fields_map['impact_answer'].read_only = 1;  // cur_frm.get_field("impact").grid.docfields[1].read_only = 1;
@@ -121,6 +127,14 @@ frappe.ui.form.on('QM Change', {
             if (frm.doc.status == "Assessment & Classification" && frappe.user.has_role('QAU')) {
                 fill_impact_table(frm);
             }
+        }
+
+        if (frm.doc.cc_type == 'procurement') {
+            cur_frm.set_df_property('device_classification', 'hidden', false);
+            cur_frm.set_df_property('regulatory_classification', 'hidden', true);
+        } else {
+            cur_frm.set_df_property('device_classification', 'hidden', true);
+            cur_frm.set_df_property('regulatory_classification', 'hidden', false);
         }
 
         if (!["Closed", "Cancelled"].includes(frm.doc.status)
@@ -299,8 +313,9 @@ frappe.ui.form.on('QM Change', {
         if (frm.doc.status == 'Assessment & Classification') {
             if ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
                 || frappe.user.has_role('QAU')) {
-                if (frm.doc.regulatory_classification
-                    && frm.doc.risk_classification) {
+                if ((frm.doc.regulatory_classification && frm.doc.risk_classification && frm.doc.cc_type != 'procurement')
+                    || (frm.doc.device_classification && frm.doc.risk_classification && frm.doc.cc_type == 'procurement')
+                ) {
                     var continue_checks = false;
                     // Ensure that each Impact question is answered if Regulatory Classification is GMP
                     if (frm.doc.regulatory_classification == 'GMP') {
