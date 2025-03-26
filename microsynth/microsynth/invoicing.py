@@ -1471,7 +1471,6 @@ Your administration team<br><br>{footer}"
                 po_nos.add(po_no)
 
             for so_id in po_nos:
-                so_doc = frappe.get_doc("Sales Order", so_id)
                 # create SI-LYO from SO-LYO
                 si_content = make_sales_invoice_from_so(so_id)
                 si_doc = frappe.get_doc(si_content)
@@ -1498,6 +1497,7 @@ Your administration team<br><br>{footer}"
                 transmit_sales_invoice(si_doc.name)
 
                 # close SO-LYO (there will be no delviery note)
+                so_doc = frappe.get_doc("Sales Order", so_id)
                 so_doc.update_status("Closed")
         else:
             return
