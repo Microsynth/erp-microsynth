@@ -86,8 +86,23 @@ def create_pi_from_si(sales_invoice):
     new_pi.insert()
     new_pi.submit()
 
-    # TODO: Link attachment of sales invoice (duplication record of tabFile)
+    # Link attachment of sales invoice (duplication record of tabFile)
+    # Get the list of attachments linked to the Sales Invoice
+    attachments = frappe.get_all('File', filters={'attached_to_doctype': 'Sales Invoice', 'attached_to_name': sales_invoice})
 
+    # Loop through the attachments and add them to the Purchase Invoice
+    for attachment in attachments:
+        file_record = frappe.get_doc('File', attachment['name'])
+        new_file = frappe.get_doc({
+            'doctype': 'File',
+            'file_name': file_record.file_name,
+            'file_url': file_record.file_url,
+            'attached_to_doctype': 'Purchase Invoice',
+            'attached_to_name': new_pi.name,
+            'is_private': file_record.is_private
+        })
+        new_file.insert(ignore_permissions=True)
+    new_pi.save()
     return new_pi
 
 
