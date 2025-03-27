@@ -657,7 +657,7 @@ def import_qm_documents(file_path, expected_line_length=24, only_attach_docx=Fal
     """
     Validate and import QM Documents from a FileMaker export tsv.
 
-    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/APPX_Import_3.5.51.005_SOP.csv', 'expected_line_length': 24, 'only_attach_docx': False}"
+    bench execute microsynth.qms.doctype.qm_document.qm_document.import_qm_documents --kwargs "{'file_path': '/mnt/erp_share/JPe/250325_Upload_FORM 1.3.3101.csv', 'expected_line_length': 24, 'only_attach_docx': False}"
     """
     import csv
 
@@ -763,7 +763,8 @@ def import_qm_documents(file_path, expected_line_length=24, only_attach_docx=Fal
             duplicates = frappe.db.get_all("QM Document", filters=[['document_type', '=', parts['doc_type']],
                                                                ['qm_process', '=', qm_processes[0]['name']],
                                                                ['chapter', '=', chapter],
-                                                               ['document_number', '=', parts['document_number']]])
+                                                               ['document_number', '=', parts['document_number']],
+                                                               ['version', '=', version]])
             if len(duplicates) > 0 and not only_attach_docx:
                 print(f"{doc_id_new};{title};There is already a QM Document with type {parts['doc_type']}, qm_process {qm_processes[0]['name']}, chapter {chapter} and document_number {parts['document_number']}. Going to continue.")
                 continue
