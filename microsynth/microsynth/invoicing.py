@@ -646,7 +646,7 @@ def make_monthly_collective_invoices(company, customers, months):
     return sales_invoices
 
 
-def create_pdf_attachment(sales_invoice): 
+def create_pdf_attachment(sales_invoice):
     """
     Creates the PDF file for a given Sales Invoice name and attaches the file to the record in the ERP.
 
@@ -1443,6 +1443,8 @@ Your administration team<br><br>{footer}"
             '''
 
         elif mode == "Intercompany":
+            # create and attach PDF
+            create_pdf_attachment(sales_invoice.name)
             # trigger inter-company invoicing: create PI from SI (PI is submitted/open after this)
             purchase_invoice = create_pi_from_si(sales_invoice.name)
 
