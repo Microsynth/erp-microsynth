@@ -97,6 +97,16 @@ frappe.ui.form.on('Sales Invoice', {
             });
         }
 
+        if (frm.doc.web_order_id) {
+            frm.add_custom_button(__('Sales Orders'), function () {
+                frappe.set_route('List', 'Sales Order', { 'web_order_id': frm.doc.web_order_id });
+            }, __("View"));
+
+            frm.add_custom_button(__('Delievery Notes'), function () {
+                frappe.set_route('List', 'Delivery Note', { 'web_order_id': frm.doc.web_order_id });
+            }, __("View"));            
+        }
+
         hide_in_words();
 
         var time_out = 500;
