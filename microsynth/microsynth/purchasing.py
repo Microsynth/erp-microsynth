@@ -57,6 +57,8 @@ def create_pi_from_si(sales_invoice):
         'due_date': si.due_date,
         'project': si.project,
         'cost_center': pi_cost_center,
+        'currency': si.currency,
+        'additional_discount_percentage': si.additional_discount_percentage,        
         'taxes_and_charges': pi_tax_template,
         'disable_rounded_total': 1
     })
@@ -83,6 +85,9 @@ def create_pi_from_si(sales_invoice):
     # insert
     new_pi.insert()
     new_pi.submit()
+
+    # TODO: Link attachment of sales invoice (duplication record of tabFile)
+
     return new_pi
 
 
