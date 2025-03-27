@@ -7,24 +7,28 @@
  "field_order": [
   "regulatory_classification",
   "company",
-  "qm_process",
   "analyte",
+  "column_break_4",
+  "qm_process",
   "matrix",
   "device_type",
   "iso_17025_section",
   "test_technique",
+  "column_break_9",
   "quality_control",
   "gmp_assays_section",
   "assay_name",
   "description",
   "drug_product_name",
   "ich_class",
+  "column_break_17",
   "type_of_assay",
   "method",
   "analytical_steps",
   "current_status",
   "creation1_section",
   "created_on",
+  "column_break_21",
   "created_by",
   "references_section",
   "qm_documents",
@@ -36,8 +40,10 @@
   {
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Regulatory Classification",
-   "options": "GMP\nISO 17025"
+   "options": "\nGMP\nISO 17025",
+   "reqd": 1
   },
   {
    "fieldname": "company",
@@ -113,7 +119,7 @@
    "fieldname": "method",
    "fieldtype": "Select",
    "label": "Method",
-   "options": "Sanger\nddPCR\nFLA\nNGS\nNA"
+   "options": "\nSanger\nddPCR\nFLA\nNGS\nNA"
   },
   {
    "fieldname": "analytical_steps",
@@ -182,11 +188,27 @@
    "fieldtype": "Link",
    "label": "Process",
    "options": "QM Process"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-03-26 18:33:39.566530",
- "modified_by": "Administrator",
+ "modified": "2025-03-27 12:16:26.155578",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",
