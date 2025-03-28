@@ -147,14 +147,28 @@ def check_sales_order_completion():
     """
     start_ts = datetime.now()
     open_sequencing_sales_orders = frappe.db.sql("""
-        SELECT `name`
+        SELECT `tabSales Order`.`name`,
+            `tabSales Order`.`web_order_id`
         FROM `tabSales Order`
-        WHERE `docstatus` = 1
-          AND `status` NOT IN ("Closed", "Completed")
-          AND `product_type` = "Sequencing"
-          AND `per_delivered` < 100;
+        LEFT JOIN `tabDelivery Note Item` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+        WHERE `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
+            AND `tabSales Order`.`product_type` = "Sequencing"
+            AND `tabSales Order`.`per_delivered` < 100
+            AND (
+                `tabSales Order`.`web_order_id` IS NULL
+                OR NOT EXISTS (
+                    SELECT 1
+                    FROM `tabDelivery Note`
+                    WHERE `tabDelivery Note`.`web_order_id` = `tabSales Order`.`web_order_id`
+                        AND `tabDelivery Note`.`docstatus` < 2
+                )
+            )
+        GROUP BY `tabSales Order`.`name`
+        HAVING COUNT(`tabDelivery Note Item`.`parent`) = 0;
     """, as_dict=True)
-
+    #print(f"Found {len(open_sequencing_sales_orders)} open Sequencing Sales Orders.")
     # check completion of each sequencing sales order: sequencing labels of this order on processed
     for sales_order in open_sequencing_sales_orders:
         #print(f"processing {sales_order['name']} ...")
@@ -205,7 +219,7 @@ def check_sales_order_completion():
         except Exception as err:
             frappe.log_error("Cannot create a Delivery Note for Sales Order '{0}': \n{1}".format(sales_order['name'], err), "seqblatt.check_sales_order_completion")
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
-    #frappe.log_error(f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", "monitoring check_sales_order_completion")
+    frappe.log_error(f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", "monitoring check_sales_order_completion")
     return
 
 
