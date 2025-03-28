@@ -202,7 +202,7 @@ function second_barcode_dialog() {
                     'fieldname': 'print_shipping_label',
                     'fieldtype': 'Check',
                     'label': 'Print Shipping Label',
-                    'default': ['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code) ? 1 : 0
+                    'default': (['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code) || locals.label_queue[0].additional_item_codes.includes('20050')) ? 1 : 0
                 },
                 {
                     'fieldname': 'sales_order', 

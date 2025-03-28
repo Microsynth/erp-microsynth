@@ -100,6 +100,7 @@ def get_data(filters=None):
                     so['prefix'] = label_range_doc.prefix
             so['additional_items'] = f"<span style=\"color: red; \">{additional_item_str}</span>"
         else:
+            so['additional_item_codes'] = []
             so['additional_items'] = ""  # avoid misalignment in export
     
     return open_label_orders
