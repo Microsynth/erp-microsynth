@@ -15,8 +15,8 @@ def get_data():
                     },
                     {
                         "type": "report",
-                        "name": "Open Quotations",
-                        "label": _("Open Quotations"),
+                        "name": "Quotation Tracker",
+                        "label": _("Quotation Tracker"),
                         "doctype": "Quotation",
                         "is_query_report": True
                     },
