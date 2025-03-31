@@ -1819,6 +1819,18 @@ def process_collective_invoices_monthly():
             create_invoices("Collective", company['name'], None)
 
 
+def process_collective_intercompany_invoices():
+    """
+    bench execute microsynth.microsynth.invoicing.process_collective_intercompany_invoices
+    """    
+    companies = frappe.get_all("Company")
+    customers = frappe.get_all("Intercompany Settings Company", fields=['customer'])
+    for company in companies:
+        for customer in customers:
+            # print(f"{company['name']} {customer['customer']}")
+            create_invoices("Collective", company['name'], customer['customer'])
+
+
 def check_invoice_sent_on(days=0):
     """
     Find Unpaid Sales Invoices without an Invoice sent on date that are older than :param days
