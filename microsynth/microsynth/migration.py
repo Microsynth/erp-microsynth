@@ -4917,6 +4917,51 @@ def lookup_unused_sequencing_labels(input_filepath, output_filepath):
             writer.writerows(not_in_webshop)
 
 
+def lookup_used_sequencing_labels(input_filepath, output_filepath):
+    """
+    bench execute microsynth.microsynth.migration.lookup_used_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-03-28_seqblatt_used_labels.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-03-31_wrongly_unused_Sequencing_Labels.csv'}"
+    """
+    #import gc  # garbage collection
+    print(f"Selecting unused Sequencing Labels from ERP ...")
+    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted']]],
+                                       fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
+    print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP.")
+    used_in_seqblatt = []
+    print(f"Writing unused ERP labels to a dictionary ...")
+    erp_unused_table = {}
+    for erp_label in erp_unused_labels:
+        erp_unused_table[erp_label['label_id']] = erp_label
+    #gc.collect()  # manually free erp_unused_labels
+    print(f"Comparing used Seqblatt export to unused ERP labels ...")
+    with open(input_filepath, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 3:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            label_no = line[0]
+            if not label_no:
+                continue
+            web_order_id = int(line[1])
+            date = line[2]
+            if label_no in erp_unused_table:
+                erp_label = erp_unused_table[label_no]
+                erp_label['web_order_id'] = web_order_id
+                erp_label['date'] = date
+                used_in_seqblatt.append(erp_label)
+
+    print(f"There are {len(used_in_seqblatt)} Labels that are used in Seqblatt but unused (incl. submitted) in the ERP. Going to write them to {output_filepath} ...")
+
+    if len(used_in_seqblatt) > 0:
+        with open(output_filepath, mode='w') as file:
+            writer = csv.DictWriter(file, fieldnames=used_in_seqblatt[0].keys())
+            # Write the header (column names)
+            writer.writeheader()        
+            # Write each dictionary as a row
+            writer.writerows(used_in_seqblatt)
+
+
 def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
     """
     bench execute microsynth.microsynth.migration.set_unused_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'verbose': False}"
