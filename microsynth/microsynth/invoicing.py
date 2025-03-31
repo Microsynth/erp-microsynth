@@ -255,7 +255,7 @@ def async_create_invoices(mode, company, customer):
                             # do not process Carlo Erba invoices with electronic and Post invoices
                             continue
 
-                        if dn.get('invoicing_method') not in ["Email", "Paynet"]:
+                        if dn.get('invoicing_method') not in ["Email", "Paynet", "ARIBA", "GEP", "Chorus"]:
                             continue
 
                         # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
@@ -1253,13 +1253,13 @@ def transmit_sales_invoice(sales_invoice_id):
             elif customer.invoicing_method == "Email":
                 mode = "Email"
             elif customer.invoicing_method == "ARIBA":
-                mode = "ARIBA"
+                mode = "EmailAdministration"
             elif customer.invoicing_method == "Paynet":
-                mode = "Paynet"
+                mode = "EmailAdministration"
             elif customer.invoicing_method == "GEP":
-                mode = "GEP"
+                mode = "EmailAdministration"
             elif customer.invoicing_method == "Chorus":
-                mode = "Chorus"
+                mode = "EmailAdministration"
             elif customer.invoicing_method == "Intercompany":
                 mode = "Intercompany"
             else:
@@ -1267,12 +1267,12 @@ def transmit_sales_invoice(sales_invoice_id):
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
 
-        if mode == "Email" or mode == "Chorus":
+        if mode == "Email" or mode == "EmailAdministration":
             # send by mail
             # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
-            if mode == "Chorus":
-                # send to internal recipient as long as upload to Chorus is not automated
+            if mode == "EmailAdministration":
+                # send to internal recipient as long as upload is not automated
                 recipient = "invoice.deb@microsynth.ch"
             else:
                 recipient = invoice_contact.email_id
