@@ -1,6 +1,9 @@
 frappe.ui.form.on('Payment Proposal', {
     refresh(frm) {
-        if (frm.doc.docstatus == 1) {
+        if (frm.doc.docstatus == 0) {
+            setTimeout (set_intermediate_account, 500); // timeout to ensure loading of configuration in custom script
+        }
+        else if (frm.doc.docstatus == 1) {
             let desired_version = "09";
             frm.add_custom_button(__("Download bank file v" + desired_version), function() {
                 frappe.db.get_value("ERPNextSwiss Settings", "ERPNextSwiss Settings", ["xml_version"], function(value) {
@@ -50,3 +53,10 @@ frappe.ui.form.on('Payment Proposal', {
         }
     },
 });
+
+function set_intermediate_account() {
+    if (locals.account_matrix[cur_frm.doc.company].intermediate_account) {
+        cur_frm.set_value("use_intermediate", 1);
+        cur_frm.set_value("intermediate_account", locals.account_matrix[cur_frm.doc.company].intermediate_account);
+    }
+}
