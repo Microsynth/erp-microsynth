@@ -16,6 +16,9 @@ def execute(filters=None):
     }
     columns, data, unused, chart = ReceivablePayableReport(filters).run(args)
     
+    if len(data) == 0:
+        return columns, data
+
     currency = data[0]['currency']
     for d in data:
         if d['currency'] != currency:
