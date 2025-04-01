@@ -626,16 +626,26 @@ def validate_sales_order_status(sales_order):
 
     so = frappe.get_doc("Sales Order", sales_order)
 
+    if so.status in ['Completed', 'Cancelled', 'Closed']:
+        msg = f"Sales Order {so.name} with Web Order ID '{so.web_order_id}' is in status '{so.status}'. Cannot create a Delivery Note."
+        user = frappe.get_user()
+        if user == 'bos@microsynth.ch':
+            email_template = frappe.get_doc("Email Template", "Unable to create Delivery Note")
+            rendered_subject = frappe.render_template(email_template.subject, {'web_order_id': so.web_order_id})
+            so_url_string = f"<a href={get_url_to_form('Sales Order', so.name)}>{so.name}</a>"
+            rendered_content = frappe.render_template(email_template.response, {'sales_order_id': so_url_string, 'web_order_id': so.web_order_id, 'status': so.status})
+            send_email_from_template(email_template, rendered_content, rendered_subject)
+            frappe.log_error(msg + f'\n\nSent an email to {email_template.recipient}.', "utils.validate_sales_order_status")
+        else:
+            frappe.log_error(msg, "utils.validate_sales_order_status")
+        return False
+    
     if so.docstatus != 1:
         frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
 
-    if so.status in ['Completed', 'Cancelled', 'Closed']:
-        frappe.log_error(f"Sales Order {so.name} is in status '{so.status}'. Cannot create a delivery note.", "utils.validate_sales_order_status")
-        return False
-
     if not so.taxes_and_charges or so.taxes_and_charges == "":
-        frappe.log_error(f"Sales Order {so.name} has not Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order_status")
+        frappe.log_error(f"Sales Order {so.name} has no Sales Taxes and Charges Template. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
 
     return True
