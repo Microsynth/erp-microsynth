@@ -4873,6 +4873,9 @@ def rename_lost_reasons():
 
 def lookup_unused_sequencing_labels(input_filepath, output_filepath):
     """
+    Parse a Webshop export of Barcode Labels. Write those Sequencing Labels to the given output file
+    that have a different status in the ERP compared to the given Webshop export.
+
     bench execute microsynth.microsynth.migration.lookup_unused_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'output_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Missing_in_Webshop_Export.csv'}"
     """
     print(f"Selecting unused Sequencing Labels from ERP ...")
@@ -4919,7 +4922,10 @@ def lookup_unused_sequencing_labels(input_filepath, output_filepath):
 
 def lookup_used_sequencing_labels(input_filepath, output_filepath):
     """
-    bench execute microsynth.microsynth.migration.lookup_used_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-03-28_seqblatt_used_labels.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-03-31_wrongly_unused_Sequencing_Labels.csv'}"
+    Parse a Seqblatt export of used Sequencing Labels.
+    Write those to the given output file that are unused in the ERP, but used according to the given Seqblatt export.
+
+    bench execute microsynth.microsynth.migration.lookup_used_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-03-28_seqblatt_used_labels.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-04-01_wrongly_unused_Sequencing_Labels.csv'}"
     """
     #import gc  # garbage collection
     print(f"Selecting unused Sequencing Labels from ERP ...")
@@ -4962,8 +4968,45 @@ def lookup_used_sequencing_labels(input_filepath, output_filepath):
             writer.writerows(used_in_seqblatt)
 
 
+def set_sequencing_labels_to_received(input_filepath, verbose=False, dry_run=True):
+    """
+    Parse the output file of the previous function lookup_used_sequencing_labels.
+    Set all these Sequencing Labels to status "received" in the ERP if they have still status "unused".
+
+    bench execute microsynth.microsynth.migration.set_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-04-01_wrongly_unused_Sequencing_Labels.csv', 'verbose': True, 'dry_run': True}"
+    """
+    counter = 0
+    with open(input_filepath, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=',')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 15:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            seq_label_id = line[0].strip()
+            if not seq_label_id:
+                continue
+            seq_label_doc = frappe.get_doc('Sequencing Label', seq_label_id)
+            if seq_label_doc.status != 'unused':
+                print(f"Sequencing Label {seq_label_doc.name} with barcode {seq_label_doc.label_id} has status {seq_label_doc.status} in the ERP. Not going to set it to received, goint to continue.")
+                continue
+            if not dry_run:
+                try:
+                    seq_label_doc.status = 'received'
+                    seq_label_doc.save()
+                except Exception as err:
+                    print(f"Unable to set Sequencing Label {seq_label_doc.name} with barcode {seq_label_doc.label_id} to status {seq_label_doc.status}: {err}")
+                else:
+                    counter += 1
+            if verbose:
+                print(f"Set Sequencing Label {seq_label_doc.name} with barcode {seq_label_doc.label_id} to status {seq_label_doc.status}.")
+    print(f"Successfully set {counter} Sequencing Labels to received.")
+
+
 def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
     """
+    Parse a Webshop export and set Sequencing Labels that are unused in the ERP to status "received" if they have use state 4 (=received) in the Webshop export.
+
     bench execute microsynth.microsynth.migration.set_unused_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'verbose': False}"
     """
     print(f"Selecting unused Sequencing Labels from ERP ...")
