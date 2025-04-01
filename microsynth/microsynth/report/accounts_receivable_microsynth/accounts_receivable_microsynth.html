@@ -30,11 +30,13 @@
             <!-- <th style="width: 10%">{%= __("Customer Group") %}</th> -->
             <!-- <th style="width: 10%">{%= __("Remarks") %}</th> -->
             <th style="width: 5% !important">{%= __("Age [Days]") %}</th>
-            <th style="width: 7% !important">{%= __("Outstanding") %} {% if (data.length > 0)  { %}[{%= data[0]["doc_currency"] %}]{% } %}</th>
+            {% if (filters.account) { %}
+                <th style="width: 7% !important">{%= __("Outstanding") %} {% if (data.length > 0)  { %}[{%= data[0]["doc_currency"] %}]{% } %}</th>
+            {% } %}
         </tr>
     </thead>
     <tbody>
-        {% for(var i=0; l=data.length; i<(l-1); i++) { %}
+        {% for(var i=0; i<(data.length-1); i++) { %}
             <tr>
                 <td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
                 <td>{%= data[i]["ext_customer"] %}</td>
@@ -50,7 +52,9 @@
                 <!-- <td>{%= data[i]["customer_group"] %}</td> -->
                 <!-- <td>{%= data[i]["remarks"] %}</td> -->
                 <td style="text-align: right">{%= data[i]["age"] %}</td>
-                <td style="text-align: right">{%= (data[i]["doc_outstanding"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                {% if (filters.account) { %}
+                    <td style="text-align: right">{%= (data[i]["doc_outstanding"] || data[i]["outstanding"]).toLocaleString("de-CH", {minimumFractionDigits: 2}) %}</td>
+                {% } %}
             </tr>
         {% } %}
     </tbody>
