@@ -931,7 +931,6 @@ def add_webshop_service(customer, service):
     
     bench execute microsynth.microsynth.utils.add_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
     """
-    
     customer = frappe.get_doc("Customer", customer)
     has_service = False
 
@@ -948,8 +947,17 @@ def add_webshop_service(customer, service):
         customer.save()
     else:
         print("Customer '{0}': Has already webshop service '{1}'".format(customer.name, service))
-
     return
+
+
+def add_webshop_service_to_customers(customer_ids, service):
+    """
+    Wrapper to add the given Webshop Service to all given Customers.
+
+    bench execute microsynth.microsynth.utils.add_webshop_service_to_customers --kwargs "{'customers': ['832188', '8003'], 'service':'InvoiceByDefaultCompany'}"
+    """
+    for customer_id in customer_ids:
+        add_webshop_service(customer_id, service)
 
 
 def add_webshop_services_for_italy(customer_id):
