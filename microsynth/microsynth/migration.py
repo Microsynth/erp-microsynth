@@ -4998,6 +4998,8 @@ def set_sequencing_labels_to_received(input_filepath, verbose=False, dry_run=Tru
                     print(f"Unable to set Sequencing Label {seq_label_doc.name} with barcode {seq_label_doc.label_id} to status {seq_label_doc.status}: {err}")
                 else:
                     counter += 1
+                if counter % 1000 == 0:
+                    frappe.db.commit()
             if verbose:
                 print(f"Set Sequencing Label {seq_label_doc.name} with barcode {seq_label_doc.label_id} to status {seq_label_doc.status}.")
     print(f"Successfully set {counter} Sequencing Labels to received.")
@@ -5048,6 +5050,7 @@ def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
                 else:
                     changed_counter += 1
                     if not verbose and changed_counter % 100 == 0:
+                        frappe.db.commit()
                         print(f"Already changed status of {changed_counter}/{received_counter} Sequencing Labels.")
     print(f"Successfully set {changed_counter} ERP Sequencing Labels from status unused to status received according to the Webshop.")
 
