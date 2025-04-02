@@ -6,6 +6,7 @@
 #
 
 import requests
+import traceback
 import frappe
 from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
@@ -217,7 +218,7 @@ def check_sales_order_completion():
                 frappe.db.commit()
 
         except Exception as err:
-            frappe.log_error("Cannot create a Delivery Note for Sales Order '{0}': \n{1}".format(sales_order['name'], err), "seqblatt.check_sales_order_completion")
+            frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}\n{traceback.format_exc()}", "seqblatt.check_sales_order_completion")
     #elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     #frappe.log_error(f"{datetime.now()}: Finished seqblatt.check_sales_order_completion after {elapsed_time} hh:mm:ss for {len(open_sequencing_sales_orders)} open_sequencing_sales_orders.", "monitoring check_sales_order_completion")
     return
