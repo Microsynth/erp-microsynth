@@ -20,6 +20,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Type",
    "options": "Early Development\nRobustness\nProtocol Transfer\nQualification\nValidation\nRound robin testing\nOther",
    "reqd": 1
@@ -75,7 +76,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-02 15:49:46.419988",
+ "modified": "2025-04-02 16:36:29.560352",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Study",
