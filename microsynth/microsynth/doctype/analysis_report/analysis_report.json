@@ -39,6 +39,8 @@
    "fetch_if_empty": 1,
    "fieldname": "web_order_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Web Order ID"
   },
   {
@@ -110,6 +112,7 @@
    "fieldname": "report_type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Report Type",
    "options": "Mycoplasma",
    "reqd": 1
@@ -158,8 +161,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2024-10-18 16:08:23.870319",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-02 16:34:53.608727",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report",
  "owner": "Administrator",
