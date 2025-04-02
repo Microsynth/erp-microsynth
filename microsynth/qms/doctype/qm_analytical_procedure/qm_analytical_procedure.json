@@ -48,25 +48,35 @@
   {
    "fieldname": "company",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Company",
-   "options": "Company"
+   "options": "Company",
+   "reqd": 1
   },
   {
    "description": "Measurand",
    "fieldname": "analyte",
    "fieldtype": "Data",
-   "label": "Analyte"
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Analyte",
+   "reqd": 1
   },
   {
    "fieldname": "matrix",
    "fieldtype": "Data",
-   "label": "Matrix"
+   "label": "Matrix",
+   "reqd": 1
   },
   {
    "fieldname": "device_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Device Type",
-   "options": "QM Device Type"
+   "options": "QM Device Type",
+   "reqd": 1
   },
   {
    "fieldname": "iso_17025_section",
@@ -130,6 +140,8 @@
   {
    "fieldname": "current_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Current Status",
    "options": "\nEarly Development/Robustness\nProtocol Transfer\nQualified\nValidated\nDiscontinued\nNA"
   },
@@ -187,7 +199,8 @@
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "label": "Process",
-   "options": "QM Process"
+   "options": "QM Process",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_21",
@@ -207,7 +220,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-03-27 12:16:26.155578",
+ "modified": "2025-04-02 16:24:10.959864",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
