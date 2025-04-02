@@ -6,11 +6,14 @@
  "engine": "InnoDB",
  "field_order": [
   "type",
-  "completion_date",
-  "naming_series",
-  "amended_from",
   "document_type",
-  "document_name"
+  "column_break_3",
+  "completion_date",
+  "document_name",
+  "amended_from",
+  "section_break_7",
+  "comments",
+  "naming_series"
  ],
  "fields": [
   {
@@ -25,14 +28,14 @@
    "fieldname": "completion_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Completion Date",
-   "reqd": 1
+   "label": "Completion Date"
   },
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Naming Series",
-   "options": "QMST-.YY.###"
+   "options": "QMST-.YY.####"
   },
   {
    "fieldname": "amended_from",
@@ -56,16 +59,31 @@
    "label": "Source Document Name",
    "options": "document_type",
    "read_only": 1
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-03-31 16:10:34.578821",
- "modified_by": "Administrator",
+ "modified": "2025-04-02 15:49:46.419988",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Study",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -75,6 +93,22 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

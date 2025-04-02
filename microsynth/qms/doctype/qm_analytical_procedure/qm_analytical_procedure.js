@@ -10,6 +10,11 @@ frappe.ui.form.on('QM Analytical Procedure', {
 			cur_frm.set_df_property('gmp_assays_section', 'hidden', true);
 			cur_frm.set_df_property('iso_17025_section', 'hidden', false);
 		}
+		if (frm.doc.docstatus < 2) {
+            cur_frm.add_custom_button(__("Add Study"), function() {
+                create_qm_study();
+            }).addClass("btn-primary");
+        }
 	},
     regulatory_classification: function(frm) {
         if (frm.doc.regulatory_classification == 'GMP') {
@@ -21,3 +26,31 @@ frappe.ui.form.on('QM Analytical Procedure', {
 		}
     }
 });
+
+
+function create_qm_study() {
+    frappe.prompt([
+        {'fieldname': 'type', 'fieldtype': 'Select', 'label': __('Type'), 'options': 'Early Development\nRobustness\nProtocol Transfer\nQualification\nValidation\nRound robin testing\nOther', 'reqd': 1},
+        {'fieldname': 'comments', 'fieldtype': 'Text', 'label': __('Comments')}
+    ],
+    function(values){
+        frappe.call({
+            'method': 'microsynth.qms.doctype.qm_study.qm_study.create_qm_study',
+            'args': {
+                'type': values.type,
+                'dt': cur_frm.doc.doctype,
+                'dn': cur_frm.doc.name,
+                'comments': values.comments || ''
+            },
+            "callback": function(response) {
+				window.open(
+					response.message,
+					'_blank' // open in a new tab
+				);
+            }
+        });
+    },
+    __('Create a new QM Study'),
+    __('Create ')
+    )
+}

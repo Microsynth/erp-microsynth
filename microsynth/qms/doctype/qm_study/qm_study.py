@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
+from frappe.utils import get_url_to_form
 
 
 class QMStudy(Document):
@@ -13,17 +13,15 @@ class QMStudy(Document):
 
 
 @frappe.whitelist()
-def create_new_qm_study(dt, dn):
-    doc = get_mapped_doc(dt,
-                         dn,
-                         {
-                            dt: {
-			                    "doctype": "QM Study",
-				                "field_map": {
-                                }
-		                    }
-                         },
-                         None)
-    doc.document_type = dt
-    doc.document_name = dn
-    return doc
+def create_qm_study(type, dt, dn, comments):
+    study = frappe.get_doc({
+                'doctype': 'QM Study',
+                'type': type,
+                'document_type': dt,
+                'document_name': dn,
+                'comments': comments,
+                'status': 'Draft'
+            })
+    study.save()
+    frappe.db.commit()
+    return get_url_to_form("QM Study", study.name)
