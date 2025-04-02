@@ -1255,7 +1255,7 @@ def transmit_sales_invoice(sales_invoice_id):
             elif customer.invoicing_method == "ARIBA":
                 mode = "EmailAdministration"
             elif customer.invoicing_method == "Paynet":
-                mode = "EmailAdministration"
+                mode = "Paynet"
             elif customer.invoicing_method == "GEP":
                 mode = "EmailAdministration"
             elif customer.invoicing_method == "Chorus":
