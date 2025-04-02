@@ -5005,12 +5005,12 @@ def set_sequencing_labels_to_received(input_filepath, verbose=False, dry_run=Tru
 
 def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
     """
-    Parse a Webshop export and set Sequencing Labels that are unused in the ERP to status "received" if they have use state 4 (=received) in the Webshop export.
+    Parse a Webshop export and set unused and submitted ERP Sequencing Labels to "received" if they have use state 4 (=received) in the Webshop export.
 
     bench execute microsynth.microsynth.migration.set_unused_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'verbose': False}"
     """
     print(f"Selecting unused Sequencing Labels from ERP ...")
-    erp_unused_labels = frappe.get_all('Sequencing Label', filters={'status': 'unused'},
+    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'in', ['unused', 'submitted'] ]],
                                        fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP. Parsing Webshop export ...")
     
