@@ -763,8 +763,7 @@ def import_qm_documents(file_path, expected_line_length=24, only_attach_docx=Fal
             duplicates = frappe.db.get_all("QM Document", filters=[['document_type', '=', parts['doc_type']],
                                                                ['qm_process', '=', qm_processes[0]['name']],
                                                                ['chapter', '=', chapter],
-                                                               ['document_number', '=', parts['document_number']],
-                                                               ['version', '=', version]])
+                                                               ['document_number', '=', parts['document_number']]])
             if len(duplicates) > 0 and not only_attach_docx:
                 print(f"{doc_id_new};{title};There is already a QM Document with type {parts['doc_type']}, qm_process {qm_processes[0]['name']}, chapter {chapter} and document_number {parts['document_number']}. Going to continue.")
                 continue
