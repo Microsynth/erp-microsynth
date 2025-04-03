@@ -208,7 +208,7 @@ def check_sales_order_completion():
                 ## create delivery note (leave on draft: submitted in a batch process later on)
                 dn_content = make_delivery_note(sales_order['name'])
                 dn = frappe.get_doc(dn_content)
-                company = frappe.get_value("Sales Order", sales_order, "company")
+                company = frappe.get_value("Sales Order", sales_order['name'], "company")
                 dn.naming_series = get_naming_series("Delivery Note", company)
 
                 # insert record
