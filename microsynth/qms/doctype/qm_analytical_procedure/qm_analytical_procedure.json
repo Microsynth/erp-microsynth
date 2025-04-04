@@ -14,13 +14,12 @@
   "device_type",
   "iso_17025_section",
   "test_technique",
-  "column_break_9",
   "quality_control",
-  "gmp_assays_section",
+  "gmp_assay_section",
   "assay_name",
-  "description",
   "drug_product_name",
   "ich_class",
+  "description",
   "column_break_17",
   "type_of_assay",
   "method",
@@ -85,18 +84,13 @@
   },
   {
    "fieldname": "test_technique",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "Test Technique"
   },
   {
    "fieldname": "quality_control",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "Quality Control"
-  },
-  {
-   "fieldname": "gmp_assays_section",
-   "fieldtype": "Section Break",
-   "label": "GMP Assays"
   },
   {
    "fieldname": "assay_name",
@@ -105,13 +99,13 @@
   },
   {
    "fieldname": "description",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "Description"
   },
   {
    "fieldname": "drug_product_name",
    "fieldtype": "Data",
-   "label": "Drug Product Name"
+   "label": "Drug Product Names"
   },
   {
    "fieldname": "ich_class",
@@ -187,13 +181,15 @@
   {
    "fieldname": "created_on",
    "fieldtype": "Date",
-   "label": "Created On"
+   "label": "Created On",
+   "read_only": 1
   },
   {
    "fieldname": "created_by",
    "fieldtype": "Link",
    "label": "Created By",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "qm_process",
@@ -207,20 +203,21 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_9",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
   {
    "fieldname": "column_break_17",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gmp_assay_section",
+   "fieldtype": "Section Break",
+   "label": "GMP Assay"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-02 16:24:10.959864",
+ "modified": "2025-04-04 17:12:46.918159",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
