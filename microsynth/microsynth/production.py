@@ -250,6 +250,8 @@ def get_next_order_for_packaging(destination="CH"):
 def oligo_delivery_packaged(delivery_note):
     """
     Mark a delivery as packaged
+    
+    bench execute "microsynth.microsynth.production.oligo_delivery_packaged" --kwargs "{'delivery_note': 'DN-BAL-25016266-1'}"
     """
     if frappe.db.exists("Delivery Note", delivery_note):
         dn = frappe.get_doc("Delivery Note", delivery_note)
@@ -258,6 +260,7 @@ def oligo_delivery_packaged(delivery_note):
         try:
             dn.submit()
             frappe.db.commit()
+            set_shipping_date(dn)
             return {'success': True, 'message': 'OK'}
         except Exception as err:
             return {'success': False, 'message': err}
@@ -265,29 +268,34 @@ def oligo_delivery_packaged(delivery_note):
         return {'success': False, 'message': "Delivery Note not found: {0}".format(delivery_note)}
 
 
-def set_shipping_date(web_order_id):
+def set_shipping_date(delivery_note):
     """
     Find Sales Order, find Tracking Code, set Shipping Date
 
-    bench execute "microsynth.microsynth.production.set_shipping_date" --kwargs "{'web_order_id': '4239539'}"
+    bench execute "microsynth.microsynth.production.set_shipping_date" --kwargs "{'delivery_note': 'DN-BAL-24057747'}"
     """
-    sales_orders = frappe.db.get_all("Sales Order", filters={'web_order_id': web_order_id, 'docstatus': 1}, fields=['name'])
+    if type(delivery_note) == str:
+        delivery_note = frappe.get_doc("Delivery Note", delivery_note)
+
+    sales_orders = set()
+    for item in delivery_note.items:
+        if item.against_sales_order:
+            sales_orders.add(item.against_sales_order)
+
     if len(sales_orders) != 1:
-        msg = f"Found {len(sales_orders)} submitted Sales Orders for Web Order ID {web_order_id}."
+        msg = f"Found {len(sales_orders)} Sales Orders for Delivery Note {delivery_note.name}."
         frappe.log_error(msg, "production.set_shipping_date")
-        #frappe.throw(msg)
         return
-    tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
+    [sales_order_id] = sales_orders  # tuple unpacking verifies the assumption that the set contains exactly one element (raising ValueError if it has too many or too few elements)
+    tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_order_id}, fields=['name', 'tracking_code', 'sales_order', 'shipping_date'])
     if len(tracking_codes) != 1:
         if len(tracking_codes) > 1:
-            msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_orders[0]['name']}. Going to not set the Shipping Date."
+            msg = f"Found {len(tracking_codes)} Tracking Codes for Sales Order {sales_order_id}. Going to not set the Shipping Date."
             frappe.log_error(msg, "production.set_shipping_date")
-            #frappe.throw(msg)
         return
     if tracking_codes[0]['shipping_date']:
         msg = f"Tracking Code '{tracking_codes[0]['tracking_code']=}' has already Shipping Date {tracking_codes[0]['shipping_date']}."
         frappe.log_error(msg, "production.set_shipping_date")
-        #frappe.throw(msg)
     else:
         tracking_code_doc = frappe.get_doc("Tracking Code", tracking_codes[0]['name'])
         tracking_code_doc.shipping_date = datetime.now()
@@ -316,8 +324,6 @@ def oligo_order_packaged(web_order_id):
         return {'success': False, 'message': "Multiple Delivery Note Drafts found for web_order_id: {0}".format(web_order_id)}
     else:
         packaged = oligo_delivery_packaged(delivery_notes[0].name)
-        if packaged['success']:
-            set_shipping_date(web_order_id)
         return packaged
 
 
