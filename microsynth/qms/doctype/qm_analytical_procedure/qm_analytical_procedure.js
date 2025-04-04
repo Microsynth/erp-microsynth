@@ -36,6 +36,7 @@ frappe.ui.form.on('QM Analytical Procedure', {
 
 function create_qm_study() {
     frappe.prompt([
+        {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'type', 'fieldtype': 'Select', 'label': __('Type'), 'options': 'Early Development\nRobustness\nProtocol Transfer\nQualification\nValidation\nReference Material\nRound Robin Testing\nOther', 'reqd': 1},
         {'fieldname': 'comments', 'fieldtype': 'Text', 'label': __('Comments')}
     ],
@@ -43,6 +44,7 @@ function create_qm_study() {
         frappe.call({
             'method': 'microsynth.qms.doctype.qm_study.qm_study.create_qm_study',
             'args': {
+                'title': values.title,
                 'type': values.type,
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
