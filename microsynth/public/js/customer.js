@@ -98,9 +98,9 @@ frappe.ui.form.on('Customer', {
             });
             frappe.validated=false;
         }
-        if (frm.doc.tax_id && frm.doc.customer_type != 'Individual') {
-            verify_tax_id(frm.doc.tax_id);
-        }
+        // if (frm.doc.tax_id && frm.doc.customer_type != 'Individual') {
+        //     verify_tax_id(frm.doc.tax_id);
+        // }
     },
     after_save(frm) {
         if (!frm.doc.disabled) {
