@@ -627,7 +627,6 @@ def validate_sales_order_status(sales_order):
     so = frappe.get_doc("Sales Order", sales_order)
 
     if so.status in ['Completed', 'Cancelled', 'Closed']:
-        msg = f"Sales Order {so.name} with Web Order ID '{so.web_order_id}' is in status '{so.status}'. Cannot create a Delivery Note."
         user = frappe.get_user()
         if user == 'bos@microsynth.ch':
             email_template = frappe.get_doc("Email Template", "Unable to create Delivery Note")
@@ -637,7 +636,7 @@ def validate_sales_order_status(sales_order):
             send_email_from_template(email_template, rendered_content, rendered_subject)
             frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\nSent an email to {email_template.recipient}.', 'utils.validate_sales_order_status')
         else:
-            frappe.log_error(msg, "utils.validate_sales_order_status")
+            frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\n{user=}', 'utils.validate_sales_order_status')
         return False
     
     if so.docstatus != 1:
