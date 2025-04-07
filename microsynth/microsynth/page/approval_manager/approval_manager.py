@@ -27,10 +27,12 @@ def get_approvals(user):
             `tabPurchase Invoice`.`bill_no`,
             `tabPurchase Invoice Item`.`expense_account`,
             `tabPurchase Invoice Item`.`cost_center`,
+            `tabSupplier`.`iban`,
             `tabPurchase Invoice`.`remarks`
         FROM `tabToDo`
         LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice`.`name` = `tabToDo`.`reference_name`
         LEFT JOIN `tabPurchase Invoice Item` ON `tabPurchase Invoice Item`.`parent` = `tabPurchase Invoice`.`name`
+        LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
         WHERE `tabPurchase Invoice`.`docstatus` = 0
             AND `tabToDo`.`owner` = "{user}"
             AND `tabToDo`.`reference_type` = "Purchase Invoice"

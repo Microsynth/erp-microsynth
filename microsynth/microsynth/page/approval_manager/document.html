@@ -9,13 +9,13 @@
         <tr>
             <td>{{ _("Document") }}</td>
             <td><a href="/desk#Form/Purchase Invoice/{{ name }}">{{ name }}</a></td>
-            <td rowspan=9>
+            <td rowspan=11>
                 {% for a in attachments %}
                 <iframe class="pdf" src="{{ a.file_url }}"></iframe>
                 {% endfor %}
                 <button type="submit" class="btn btn-sm btn-danger" id="btn_reject_{{ name }}">{{ _("Reject") }}</button>
                 <button type="submit" class="btn btn-sm btn-primary" id="btn_reassign_{{ name }}">{{ _("Reassign") }}</button>
-                <button type="submit" class="btn btn-sm btn-primary" id="btn_approve_{{ name }}" data-pinv="{{ name }}">{{ _("Approve") }}</button>
+                <button type="submit" class="btn btn-sm btn-success" id="btn_approve_{{ name }}" data-pinv="{{ name }}">{{ _("Approve") }}</button>
         </td>
         <tr>
             <td>{{ _("Supplier") }}</td>
@@ -50,6 +50,10 @@
         <tr>
             <td>{{ _("Expense Account / Cost Center") }}</td>
             <td>{{ (expense_account or "") }} / {{ (cost_center or "-") }}</td>
+        </tr>
+        <tr>
+            <td>{{ _("IBAN") }}</td>
+            <td>{{ iban }}</td>
         </tr>
         <tr>
             <td>{{ _("Remarks") }}</td>
