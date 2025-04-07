@@ -14,7 +14,7 @@ frappe.query_reports["Missing Tracking Codes"] = {
             "fieldname":"from_date",
             "label": __("From Date"),
             "fieldtype": "Date",
-            "default": frappe.datetime.add_months(frappe.datetime.get_today(), -6),
+            "default": "2025-01-01", // frappe.datetime.add_months(frappe.datetime.get_today(), -6),
             "reqd": 1
         },
     ],

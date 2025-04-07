@@ -57,6 +57,7 @@ def get_data(filters):
             AND `tabSales Order`.`status` != 'Closed'
             AND `tabSales Order`.`transaction_date` >= DATE('{filters.get('from_date')}')
             AND `tabSales Order Item`.`item_name` LIKE '%Track%'
+            AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
             AND `tabTracking Code`.`sales_order` IS NULL
             AND `tabDelivery Note`.`docstatus` != 2
             {conditions}
