@@ -4871,21 +4871,22 @@ def rename_lost_reasons():
         print(f"Renamed Lost Reason '{current_reason}' on all Lost Reason Detail entries to '{new_reason}'.")
 
 
-def lookup_unused_sequencing_labels(input_filepath, output_filepath):
+def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_in_webshop_output):
     """
-    Parse a Webshop export of Barcode Labels. Write those Sequencing Labels to the given output file
-    that have a different status in the ERP compared to the given Webshop export.
+    Parse a Webshop export of Barcode Labels.
+    Write those Sequencing Labels to the given output file that are unused in the ERP but received or processed in the given Webshop export.
 
-    bench execute microsynth.microsynth.migration.lookup_unused_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'output_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Missing_in_Webshop_Export.csv'}"
+    bench execute microsynth.microsynth.migration.lookup_unused_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'not_in_webshop_output': '/mnt/erp_share/Sequencing/Label_Sync/2025-04-08_Missing_in_Webshop_Export.csv', 'used_in_webshop_output': '/mnt/erp_share/Sequencing/Label_Sync/2025-04-08_Used_in_Webshop_Export.csv'}"
     """
-    print(f"Selecting unused Sequencing Labels from ERP ...")
-    erp_unused_labels = frappe.get_all('Sequencing Label', filters={'status': 'unused'},
+    print(f"Selecting unused and submitted Sequencing Labels from ERP ...")
+    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted'] ]],
                                        fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP.")
     use_states = ['unknown', 'unused_unregistered', 'unused_registered', 'submitted', 'received', 'processed']
     counters = {state: 0 for state in use_states}
     counters['not_in_webshop'] = 0
     not_in_webshop = []
+    used_in_webshop = []
     print(f"Parsing Webshop export ...")
     webshop_table = {}
     with open(input_filepath, 'r') as file:
@@ -4903,6 +4904,9 @@ def lookup_unused_sequencing_labels(input_filepath, output_filepath):
         if erp_label['label_id'] in webshop_table:
             webshop_use_state = webshop_table[erp_label['label_id']]
             counters[use_states[webshop_use_state]] += 1
+            if webshop_use_state > 3:  # received or processed
+                erp_label['webshop_use_state'] = webshop_use_state
+                used_in_webshop.append(erp_label)
         else:
             counters['not_in_webshop'] += 1
             not_in_webshop.append(erp_label)
@@ -4910,14 +4914,25 @@ def lookup_unused_sequencing_labels(input_filepath, output_filepath):
     print(f"The {len(erp_unused_labels)} unused Sequencing Labels in the ERP have the following statuses in the Webshop:")
     for status, counter in counters.items():
         print(f"{status}: {counter} ({(counter/len(erp_unused_labels))*100:.2f} %)")
-    
+
+    print(f"Writing file {not_in_webshop_output} ...")
     if len(not_in_webshop) > 0:
-        with open(output_filepath, mode='w') as file:
+        with open(not_in_webshop_output, mode='w') as file:
             writer = csv.DictWriter(file, fieldnames=not_in_webshop[0].keys())
             # Write the header (column names)
             writer.writeheader()        
             # Write each dictionary as a row
             writer.writerows(not_in_webshop)
+
+    print(f"Writing file {used_in_webshop_output} ...")
+    if len(used_in_webshop) > 0:
+        with open(used_in_webshop_output, mode='w') as file:
+            writer = csv.DictWriter(file, fieldnames=used_in_webshop[0].keys())
+            # Write the header (column names)
+            writer.writeheader()        
+            # Write each dictionary as a row
+            writer.writerows(used_in_webshop)
+    print("Finished migration.lookup_unused_sequencing_labels")
 
 
 def lookup_used_sequencing_labels(input_filepath, output_filepath):
@@ -4928,7 +4943,7 @@ def lookup_used_sequencing_labels(input_filepath, output_filepath):
     bench execute microsynth.microsynth.migration.lookup_used_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-03-28_seqblatt_used_labels.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-04-01_wrongly_unused_Sequencing_Labels.csv'}"
     """
     #import gc  # garbage collection
-    print(f"Selecting unused Sequencing Labels from ERP ...")
+    print(f"Selecting unused and submitted Sequencing Labels from ERP ...")
     erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted']]],
                                        fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP.")
@@ -5005,15 +5020,15 @@ def set_sequencing_labels_to_received(input_filepath, verbose=False, dry_run=Tru
     print(f"Successfully set {counter} Sequencing Labels to received.")
 
 
-def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
+def set_unused_sequencing_labels_to_received(input_filepath, verbose=False, dry_run=True):
     """
     Parse a Webshop export and set unused and submitted ERP Sequencing Labels to "received" if they have use state 4 (=received) in the Webshop export.
 
-    bench execute microsynth.microsynth.migration.set_unused_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'verbose': False}"
+    bench execute microsynth.microsynth.migration.set_unused_sequencing_labels_to_received --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'verbose': False, 'dry_run': True}"
     """
-    print(f"Selecting unused Sequencing Labels from ERP ...")
-    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'in', ['unused', 'submitted'] ]],
-                                       fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
+    print(f"Selecting unused and submitted Sequencing Labels from ERP ...")
+    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted'] ]],
+                                       fields=['name', 'label_id', 'status'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP. Parsing Webshop export ...")
     
     webshop_table = {}
@@ -5042,16 +5057,17 @@ def set_unused_sequencing_labels_to_received(input_filepath, verbose=False):
                 erp_label_doc = frappe.get_doc("Sequencing Label", erp_label['name'])
                 if verbose:
                     print(f"{changed_counter+1}/{received_counter}: Setting the status of Sequencing Label {erp_label_doc.name} with Barcode {erp_label_doc.label_id} from {erp_label_doc.status} to received.")
-                erp_label_doc.status = "received"
-                try:
-                    erp_label_doc.save()
-                except Exception as err:
-                    print(f"Unable to set the status of Sequencing Label {erp_label_doc.name} with Barcode {erp_label_doc.label_id} from {erp_label_doc.status} to received: {err}")
-                else:
-                    changed_counter += 1
-                    if not verbose and changed_counter % 100 == 0:
-                        frappe.db.commit()
-                        print(f"Already changed status of {changed_counter}/{received_counter} Sequencing Labels.")
+                if not dry_run:
+                    erp_label_doc.status = "received"
+                    try:
+                        erp_label_doc.save()
+                    except Exception as err:
+                        print(f"Unable to set the status of Sequencing Label {erp_label_doc.name} with Barcode {erp_label_doc.label_id} from {erp_label_doc.status} to received: {err}")
+                    else:
+                        changed_counter += 1
+                        if not verbose and changed_counter % 100 == 0:
+                            frappe.db.commit()
+                            print(f"Already changed status of {changed_counter}/{received_counter} Sequencing Labels.")
     print(f"Successfully set {changed_counter} ERP Sequencing Labels from status unused to status received according to the Webshop.")
 
 
