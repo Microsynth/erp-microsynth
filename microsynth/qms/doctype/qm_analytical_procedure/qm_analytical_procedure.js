@@ -18,6 +18,16 @@ frappe.ui.form.on('QM Analytical Procedure', {
                 create_qm_study();
             }).addClass("btn-primary");
         }
+        if (!frm.doc.__islocal) {
+            // display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
     },
     regulatory_classification: function(frm) {
         if (frm.doc.regulatory_classification == 'GMP') {
