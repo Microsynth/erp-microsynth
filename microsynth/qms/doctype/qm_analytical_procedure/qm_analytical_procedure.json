@@ -73,8 +73,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Device Type",
-   "options": "QM Device Type",
+   "label": "Device Name",
+   "options": "QM Device Name",
    "reqd": 1
   },
   {
@@ -217,8 +217,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-04 17:12:46.918159",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-08 13:56:24.569524",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",
