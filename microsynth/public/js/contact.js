@@ -55,8 +55,8 @@ frappe.ui.form.on('Contact', {
         // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
-        // lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous"
-        if (!frappe.user.has_role("System Manager") && frm.doc.first_name == "Anonymous") {
+        // lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous" or if source = Punchout
+        if (!frappe.user.has_role("System Manager") && (frm.doc.first_name == "Anonymous" || (frm.doc.source && frm.doc.source == "Punchout"))) {
             cur_frm.set_df_property('first_name', 'read_only', true);
             cur_frm.set_df_property('middle_name', 'read_only', true);
             cur_frm.set_df_property('last_name', 'read_only', true);
