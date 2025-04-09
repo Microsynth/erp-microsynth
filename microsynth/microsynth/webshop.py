@@ -1228,7 +1228,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     """
     Return all available shipping items for a contact specified by its Contact ID (Person ID)
 
-    bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'contact': 221845}"
+    bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'contact': 243079}"
     """
     if not contact or not frappe.db.exists("Contact", contact):
         return {'success': False, 'message': 'A valid and existing contact is required', 'shipping_items': []}
@@ -1251,12 +1251,20 @@ def get_contact_shipping_items(contact, client="webshop"):
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
-            # find country for fallback
-            address = frappe.get_value("Contact", contact, "address")
-            if address:
-                country = frappe.get_value("Address", address, "country")
-            else:
-                return {'success': False, 'message': f'Contact {contact} has no address', 'shipping_items': []}
+            country = None
+            # check if customer has a punchout_shop
+            punchout_shop = frappe.get_value("Customer", customer_id, "punchout_shop")
+            if punchout_shop:
+                punchout_shop_country = frappe.get_value("Punchout Shop", punchout_shop, "shipping_country")
+                if punchout_shop_country:
+                    country = punchout_shop_country
+            if not country:
+                # find country for fallback
+                address = frappe.get_value("Contact", contact, "address")
+                if address:
+                    country = frappe.get_value("Address", address, "country")
+                else:
+                    return {'success': False, 'message': f'Contact {contact} has no address', 'shipping_items': []}
 
     # find by country (fallback from the customer)
     if not country:
