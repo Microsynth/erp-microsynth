@@ -53,6 +53,7 @@ def get_data(filters=None):
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
         WHERE 
             `tabSales Order`.`product_type` = "Oligos"
+            AND `tabSales Order`.`company` = "Microsynth AG"
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
             AND `tabCountry`.`name` <> 'Switzerland'
