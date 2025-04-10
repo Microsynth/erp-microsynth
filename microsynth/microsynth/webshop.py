@@ -960,11 +960,11 @@ def place_order(content, client="webshop"):
             i.supplier = supplier
             
     # save
-    try:
-        so_doc.insert(ignore_permissions=True)
+    # try:
+    #     so_doc.insert(ignore_permissions=True)
 
-    except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+    # except Exception as err:
+    #     return {'success': False, 'message': err, 'reference': None}
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
@@ -990,13 +990,12 @@ def place_order(content, client="webshop"):
             if item.item_code in quotation_rate:                    # check if this item had a quotation rate
                 item.rate = quotation_rate[item.item_code]
                 item.price_list_rate = quotation_rate[item.item_code]
-        so_doc.save()
+        #so_doc.save()
         so_doc = apply_discount(qtn_doc, so_doc)
 
-    so_doc.save()
-    try:        
+    try:
+        so_doc.save(ignore_permissions=True)
         so_doc.submit()
-        
         # check if this customer is approved
         """if not frappe.get_value("Customer", so_doc.customer, "customer_approved"):
             # this customer is not approved: create invoice and payment link
@@ -1026,7 +1025,9 @@ def place_order(content, client="webshop"):
             'gross_amount': so_doc.grand_total
         }
     except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+        msg = f"{err}\n{traceback.format_exc()}"
+        frappe.log_error(msg, "webshop.place_order")
+        return {'success': False, 'message': msg, 'reference': None}
 
 
 def place_dropship_order(sales_order, intercompany_customer_name, supplier_company):
@@ -1122,7 +1123,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         return dropship_order.name
         
     except Exception as err:
-        frappe.log_error(f"{customer}\n{supplier_company}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
+        frappe.log_error(f"{customer}\n{supplier_company}\n{sales_order}\n\n{err}\n{traceback.format_exc()}", "webshop.place_dropship_order")
     
         return None
 
