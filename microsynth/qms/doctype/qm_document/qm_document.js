@@ -50,6 +50,13 @@ frappe.ui.form.on('QM Document', {
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
+        // only allow QAU to set/change field "Registered Externally"
+        if (frappe.user.has_role("QAU")) {
+            cur_frm.set_df_property('registered_externally', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('registered_externally', 'read_only', true);
+        }
+
         // Only creator and QAU can change these fields in Draft status: Title, Company, Classification Level, linked Documents
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) && !frm.doc.__islocal) {
             cur_frm.set_df_property('title', 'read_only', true);

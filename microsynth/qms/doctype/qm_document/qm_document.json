@@ -11,6 +11,7 @@
   "process_number",
   "subprocess_number",
   "chapter",
+  "registered_externally",
   "company",
   "document_identification_column_break",
   "title",
@@ -61,18 +62,22 @@
    "read_only": 1
   },
   {
+   "default": "1",
    "fetch_from": "qm_process.process_number",
    "fieldname": "process_number",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Process Number",
    "options": "1\n2\n3\n4\n5",
    "read_only": 1,
    "reqd": 1
   },
   {
+   "default": "1",
    "fetch_from": "qm_process.subprocess_number",
    "fieldname": "subprocess_number",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Subprocess Number",
    "options": "1\n2\n3\n4\n5\n6\n7\n37",
    "read_only": 1,
@@ -285,10 +290,17 @@
    "label": "Last revision by",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "registered_externally",
+   "fieldtype": "Select",
+   "label": "Registered externally",
+   "options": "\nyes\nno"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-02-19 11:40:29.742997",
+ "modified": "2025-04-10 14:47:34.434761",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
