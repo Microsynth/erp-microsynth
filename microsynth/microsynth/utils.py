@@ -1642,6 +1642,27 @@ def configure_territory(customer_id):
         #print(f"Customer '{customer_id}' has Territory '{customer.territory}'.")
 
 
+def set_sales_manager(customer):
+    """
+    Set the sales manager of a customer according to the first shipping address and its country.
+    """
+
+    shipping_address = get_first_shipping_address(customer.name)
+    if shipping_address is None:
+        country = None
+    else:
+        country = frappe.get_value("Address", shipping_address, "Country")
+
+    if country == "Italy":
+        customer.account_manager = "servizioclienticer@dgroup.it"
+    elif country == "Slovakia" and customer.name not in ("11007", "37332309"):
+            customer.account_manager = "ktrade@ktrade.sk"
+    else:
+        customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
+
+    customer.save()
+
+
 def configure_sales_manager(customer_id):
     """
     Update a customer given by its ID with a sales manager if it is not yet set (default).
@@ -1652,22 +1673,7 @@ def configure_sales_manager(customer_id):
     customer = frappe.get_doc("Customer", customer_id)
 
     if customer.account_manager is None or customer.account_manager == '' or customer.account_manager == 'null':
-        shipping_address = get_first_shipping_address(customer_id)
-        if shipping_address is None:
-            country = None
-        else:
-            country = frappe.get_value("Address", shipping_address, "Country")
-
-        if country == "Italy":
-            customer.account_manager = "servizioclienticer@dgroup.it"
-        elif country == "Slovakia":
-            if frappe.get_value("Address", shipping_address, "City") in ["Kocice", "Kosice", "Košice", "KOSICE"]:
-                # according to an email of Elges from Mi 06.09.2023 16:23
-                customer.account_manager = "ktrade@ktrade.sk"
-        else:
-            customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
-        # TODO: Logic to set Account manager rupert.hagg_agent@microsynth.ch
-        customer.save()
+        set_sales_manager(customer)
         #print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
 
 
@@ -1711,6 +1717,20 @@ def check_default_companies():
     for c in countries:
         print(c)
         set_customer_default_company_for_country(c)
+
+
+def update_sales_manager_for_country(country):
+    """
+    run
+    bench execute microsynth.microsynth.utils.update_sales_manager_for_country --kwargs "{'country': 'Slovakia'}"
+    """
+    customers = get_customers_for_country(country)
+    for c in customers:
+        customer = frappe.get_doc("Customer", c)
+
+        print(f"process customer {c}: disabled = {customer.disabled}")
+        if not customer.disabled:
+            set_sales_manager(customer)
 
 
 @frappe.whitelist()
