@@ -53,25 +53,35 @@ frappe.ui.form.on('Supplier Shop', {
         });
     },
     copy_password(frm, cdt, cdn) {
-        frappe.call({
-            "method": "microsynth.microsynth.purchasing.decrypt_access_password",
-            "args": {
-                "cdn": cdn
-            },
-            "callback": function(response) {
-                navigator.clipboard.writeText(response.message.password).then(function() {
-                    frappe.show_alert( __("Copied") );
-                  }, function() {
-                     frappe.show_alert( __("No access") );
-                });
-                if (response.message.warning) {
-                    frappe.msgprint({
-                        title: __('Warning'),
-                        indicator: 'orange',
-                        message: response.message.warning
+        if (locals[cdt][cdn].password === "*".repeat(locals[cdt][cdn].password.length)) {
+            /* from server */
+            frappe.call({
+                "method": "microsynth.microsynth.purchasing.decrypt_access_password",
+                "args": {
+                    "cdn": cdn
+                },
+                "callback": function(response) {
+                    navigator.clipboard.writeText(response.message.password).then(function() {
+                        frappe.show_alert( __("Copied") );
+                    }, function() {
+                        frappe.show_alert( __("No access") );
                     });
+                    if (response.message.warning) {
+                        frappe.msgprint({
+                            title: __('Warning'),
+                            indicator: 'orange',
+                            message: response.message.warning
+                        });
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            /* use password value */
+            navigator.clipboard.writeText(frappe.model.get_value(cdt, cdn, "password")).then(function() {
+                frappe.show_alert( __("Copied") );
+            }, function() {
+                frappe.show_alert( __("No access") );
+            });
+        }
     }
 });
