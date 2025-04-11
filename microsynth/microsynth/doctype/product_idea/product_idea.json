@@ -72,8 +72,8 @@
    "options": "Contact"
   }
  ],
- "modified": "2025-02-26 09:48:05.796986",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:39:38.810156",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Product Idea",
  "owner": "Administrator",
@@ -97,6 +97,10 @@
    "report": 1,
    "role": "Sales User",
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

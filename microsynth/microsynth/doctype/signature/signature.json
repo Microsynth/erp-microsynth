@@ -43,8 +43,8 @@
    "fieldtype": "Column Break"
   }
  ],
- "modified": "2025-01-27 13:39:49.313353",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:40:35.998231",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Signature",
  "owner": "rolf.suter@microsynth.ch",
@@ -86,6 +86,10 @@
    "print": 1,
    "read": 1,
    "role": "Microsynth User"
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

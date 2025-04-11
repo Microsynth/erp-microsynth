@@ -126,8 +126,8 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2024-11-25 16:56:53.430333",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:56:17.686932",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Label Log",
  "owner": "Administrator",
@@ -154,6 +154,10 @@
    "role": "Sales User",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

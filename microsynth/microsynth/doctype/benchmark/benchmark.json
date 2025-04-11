@@ -79,8 +79,8 @@
    "options": "Contact"
   }
  ],
- "modified": "2023-12-12 20:48:04.336185",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-04-11 16:48:13.388565",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Benchmark",
  "owner": "Administrator",
@@ -104,6 +104,10 @@
    "report": 1,
    "role": "Sales User",
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

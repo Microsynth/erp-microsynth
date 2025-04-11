@@ -74,7 +74,7 @@
    "label": "Delivery Date"
   }
  ],
- "modified": "2025-04-03 17:42:46.388646",
+ "modified": "2025-04-11 16:57:54.625140",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Tracking Code",
@@ -113,6 +113,10 @@
    "role": "Oligo Lab User",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

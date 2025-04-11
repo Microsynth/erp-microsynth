@@ -166,7 +166,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-01-07 16:35:39.287158",
+ "modified": "2025-04-11 16:41:33.020177",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Standing Quotation",
@@ -224,6 +224,10 @@
    "print": 1,
    "read": 1,
    "role": "Oligo Lab User"
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

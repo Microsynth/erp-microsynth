@@ -52,8 +52,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2022-09-06 14:44:27.679211",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:42:40.618209",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Flushbox Settings",
  "owner": "Administrator",
@@ -81,6 +81,10 @@
    "read": 1,
    "role": "Sales User",
    "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

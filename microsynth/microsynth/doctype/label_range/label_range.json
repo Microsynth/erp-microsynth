@@ -44,8 +44,8 @@
    "label": "Prefix"
   }
  ],
- "modified": "2024-05-29 15:24:02.344159",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:49:46.777408",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Label Range",
  "owner": "Administrator",
@@ -81,6 +81,10 @@
    "role": "Projects Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

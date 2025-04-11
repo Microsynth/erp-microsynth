@@ -34,8 +34,8 @@
    "options": "Brady Printer"
   }
  ],
- "modified": "2023-01-27 11:56:32.843367",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:44:48.931490",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
  "owner": "Administrator",
@@ -62,6 +62,10 @@
    "role": "Sales Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

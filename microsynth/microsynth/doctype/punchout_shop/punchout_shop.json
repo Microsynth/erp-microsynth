@@ -81,7 +81,7 @@
    "options": "Country"
   }
  ],
- "modified": "2025-04-08 10:24:43.032680",
+ "modified": "2025-04-11 16:33:29.102278",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Punchout Shop",
@@ -107,6 +107,10 @@
    "report": 1,
    "role": "Sales User",
    "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

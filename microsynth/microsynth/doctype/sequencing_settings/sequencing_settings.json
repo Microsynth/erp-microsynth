@@ -36,8 +36,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2024-04-16 10:25:20.073744",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:49:15.329209",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Sequencing Settings",
  "owner": "Administrator",
@@ -51,6 +51,10 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

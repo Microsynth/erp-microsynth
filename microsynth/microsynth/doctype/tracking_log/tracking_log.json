@@ -15,7 +15,7 @@
    "read_only": 1
   }
  ],
- "modified": "2025-01-17 14:57:00.704062",
+ "modified": "2025-04-11 16:41:01.087623",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Tracking Log",
@@ -38,6 +38,10 @@
    "read": 1,
    "role": "Accounts User",
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

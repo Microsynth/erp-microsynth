@@ -18,8 +18,8 @@
    "unique": 1
   }
  ],
- "modified": "2023-11-23 16:43:44.944896",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:47:40.388786",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Marketing Interest",
  "owner": "Administrator",
@@ -44,6 +44,10 @@
    "report": 1,
    "role": "Sales Manager",
    "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

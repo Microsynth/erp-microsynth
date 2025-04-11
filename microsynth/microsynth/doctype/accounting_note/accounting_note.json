@@ -124,8 +124,8 @@
    "options": "reference_doctype"
   }
  ],
- "modified": "2024-06-11 11:44:12.825056",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:50:11.183189",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Accounting Note",
  "owner": "Administrator",
@@ -164,6 +164,10 @@
    "role": "Accounts Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

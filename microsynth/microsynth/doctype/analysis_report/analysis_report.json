@@ -161,8 +161,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-11 15:17:55.118311",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-04-11 16:36:32.990820",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Analysis Report",
  "owner": "Administrator",
@@ -197,6 +197,10 @@
    "read": 1,
    "report": 1,
    "role": "NGS Lab User"
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

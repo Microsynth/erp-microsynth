@@ -19,8 +19,8 @@
    "reqd": 1
   }
  ],
- "modified": "2024-01-18 10:54:54.455896",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 16:57:06.124030",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Contact Lock",
  "owner": "rolf.suter@microsynth.ch",
@@ -36,6 +36,10 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

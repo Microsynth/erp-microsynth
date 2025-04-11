@@ -44,7 +44,7 @@
    "label": "Disabled"
   }
  ],
- "modified": "2024-10-17 11:12:52.637881",
+ "modified": "2025-04-11 16:55:51.602352",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Settings",
@@ -81,6 +81,10 @@
    "role": "QAU",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

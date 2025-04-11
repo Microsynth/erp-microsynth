@@ -52,7 +52,7 @@
    "label": "Minimum Qty"
   }
  ],
- "modified": "2023-11-23 11:58:36.547933",
+ "modified": "2025-04-11 16:47:12.201770",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Price Log",
@@ -75,6 +75,10 @@
    "read": 1,
    "report": 1,
    "role": "Sales Manager"
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

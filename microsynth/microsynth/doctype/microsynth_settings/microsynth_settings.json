@@ -174,7 +174,7 @@
   }
  ],
  "issingle": 1,
- "modified": "2024-09-09 16:07:11.397096",
+ "modified": "2025-04-11 16:54:39.306106",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
@@ -189,6 +189,10 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,
