@@ -34,8 +34,8 @@
    "options": "User"
   }
  ],
- "modified": "2024-10-16 10:37:57.339835",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 17:09:29.564759",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Process Owner",
  "owner": "Administrator",
@@ -51,6 +51,11 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

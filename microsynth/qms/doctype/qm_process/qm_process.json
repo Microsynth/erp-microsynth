@@ -70,8 +70,8 @@
    "options": "QM Classification Hierarchy Link"
   }
  ],
- "modified": "2024-08-20 15:51:41.105588",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 17:10:36.562163",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Process",
  "owner": "Administrator",
@@ -96,6 +96,11 @@
   {
    "read": 1,
    "role": "NGS Lab User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

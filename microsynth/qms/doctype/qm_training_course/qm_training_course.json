@@ -93,8 +93,8 @@
    "options": "Internal\nExternal"
   }
  ],
- "modified": "2024-02-15 16:18:46.035250",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 17:11:20.273963",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Training Course",
  "owner": "Administrator",
@@ -128,6 +128,11 @@
    "role": "QAU",
    "share": 1,
    "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

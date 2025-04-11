@@ -30,8 +30,8 @@
    "options": "QM Classification Hierarchy Link"
   }
  ],
- "modified": "2024-08-20 15:52:20.276783",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 17:10:13.753105",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Classification Hierarchy",
  "owner": "Administrator",
@@ -51,6 +51,11 @@
   {
    "read": 1,
    "role": "Microsynth User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "search_fields": "title",

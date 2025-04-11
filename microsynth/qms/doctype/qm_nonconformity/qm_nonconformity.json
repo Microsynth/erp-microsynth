@@ -459,7 +459,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-02-17 09:52:28.697272",
+ "modified": "2025-04-11 17:07:38.443393",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
@@ -506,6 +506,11 @@
   {
    "read": 1,
    "role": "NGS Lab User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

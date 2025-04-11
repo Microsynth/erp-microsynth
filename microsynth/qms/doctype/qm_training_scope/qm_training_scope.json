@@ -21,8 +21,8 @@
    "label": "Description"
   }
  ],
- "modified": "2024-02-15 10:38:21.485809",
- "modified_by": "Administrator",
+ "modified": "2025-04-11 17:11:39.242056",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Training Scope",
  "owner": "Administrator",
@@ -51,6 +51,11 @@
    "read": 1,
    "report": 1,
    "role": "Microsynth User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,

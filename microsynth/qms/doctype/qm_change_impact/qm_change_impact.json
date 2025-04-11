@@ -18,7 +18,7 @@
    "unique": 1
   }
  ],
- "modified": "2024-09-04 16:14:32.862317",
+ "modified": "2025-04-11 17:09:48.182764",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change Impact",
@@ -50,6 +50,11 @@
    "report": 1,
    "role": "QAU",
    "share": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "quick_entry": 1,
