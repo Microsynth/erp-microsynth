@@ -979,8 +979,8 @@ def place_order(content, client="webshop"):
                 item.item_name = express_shipping.item_name
                 item.description = "express shipping" 
 
-    # prepayment: hold order
-    if "Prepayment" in (customer.invoicing_method or ""):
+    # prepayment: hold order if there are any costs
+    if "Prepayment" in (customer.invoicing_method or "") and so_doc.grand_total != 0:
         so_doc.hold_order = 1
 
     # quotation rate override: if an item has a rate in the quotation, always take this 
