@@ -1847,6 +1847,38 @@ def set_distributor_amplikon():
         i += 1
 
 
+def set_distributor_ktrade_for_slovakia():
+    """
+    run
+    bench execute microsynth.microsynth.migration.set_distributor_ktrade_for_slovakia
+    """
+    from microsynth.microsynth.utils import get_customers_for_country, set_distributor_ktrade
+    from microsynth.microsynth.credits import has_credits
+
+    ktrade_customer_id = "11007"
+    price_list = frappe.get_value("Customer", ktrade_customer_id, "default_price_list")
+    print(f"{price_list=}")
+    customers = get_customers_for_country("Slovakia")
+
+    i = 0
+    length = len(customers)
+    for c in customers:
+        print(f"{int(100 * i / length)} % - process Customer '{c}'")
+        i += 1
+
+        if c == ktrade_customer_id:
+            print("Skip K-Trade customer")
+            continue
+        elif not has_credits(c):
+            set_distributor_ktrade(c)
+            customer = frappe.get_doc("Customer", c)
+            customer.default_price_list = price_list
+            customer.save()
+            frappe.db.commit()
+        else:
+            print(f"customer {c} has customer credits - do not set the distributor")
+
+
 def activate_easyrun_italy():
     """
     bench execute microsynth.microsynth.migration.activate_easyrun_italy

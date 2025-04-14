@@ -1677,6 +1677,18 @@ def configure_sales_manager(customer_id):
         #print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
 
 
+def set_distributor_ktrade(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
+    """
+    distributor = '11007'
+    set_distributor(customer_id, distributor, 'Oligos')
+    set_distributor(customer_id, distributor, 'Labels')
+    set_distributor(customer_id, distributor, 'Sequencing')
+    set_distributor(customer_id, distributor, 'FLA')
+    set_distributor(customer_id, distributor, 'Genetic Analysis')
+
+
 def set_default_distributor(customer_id):
     """
     Set the distributors if the Customer has none and its first shipping address is in Italy or Hungary.
@@ -1701,11 +1713,15 @@ def set_default_distributor(customer_id):
         set_distributor(customer_id, distributor, 'Sequencing')
         set_distributor(customer_id, distributor, 'Labels')
         set_distributor(customer_id, distributor, 'FLA')
+
     elif country == "Hungary":
         distributor = '832700'
         set_distributor(customer_id, distributor, 'Oligos')
         set_distributor(customer_id, distributor, 'Labels')
         set_distributor(customer_id, distributor, 'Sequencing')
+
+    elif country == "Slovakia":
+        set_distributor_ktrade(customer_id)
 
 
 def check_default_companies():
