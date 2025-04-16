@@ -6,26 +6,21 @@
  "engine": "InnoDB",
  "field_order": [
   "webshop_account",
-  "address_type",
   "column_break_3",
-  "customer",
   "contact",
-  "address",
-  "naming_series"
+  "naming_series",
+  "is_default",
+  "disabled"
  ],
  "fields": [
   {
    "fieldname": "webshop_account",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Webshop Account",
    "options": "Contact",
    "reqd": 1
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
   },
   {
    "fieldname": "contact",
@@ -33,20 +28,6 @@
    "in_list_view": 1,
    "label": "Contact",
    "options": "Contact",
-   "reqd": 1
-  },
-  {
-   "fieldname": "address",
-   "fieldtype": "Link",
-   "label": "Address",
-   "options": "Address",
-   "reqd": 1
-  },
-  {
-   "fieldname": "address_type",
-   "fieldtype": "Select",
-   "label": "Address Type",
-   "options": "\nShipping\nBilling",
    "reqd": 1
   },
   {
@@ -63,10 +44,22 @@
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default"
   }
  ],
- "modified": "2025-03-13 20:48:47.227672",
- "modified_by": "Administrator",
+ "modified": "2025-04-16 10:49:37.239946",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Webshop Address",
  "owner": "Administrator",
