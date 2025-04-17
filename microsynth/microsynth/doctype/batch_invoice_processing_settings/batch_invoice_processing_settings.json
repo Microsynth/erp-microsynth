@@ -28,8 +28,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2025-04-11 16:50:46.270521",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-17 09:20:07.618824",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Batch Invoice Processing Settings",
  "owner": "Administrator",
@@ -43,10 +43,6 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "read": 1,
-   "role": "Board Member"
   }
  ],
  "quick_entry": 1,
