@@ -627,7 +627,7 @@ def validate_sales_order_status(sales_order):
     so = frappe.get_doc("Sales Order", sales_order)
 
     if so.status in ['Completed', 'Cancelled', 'Closed']:
-        user = frappe.get_user()
+        user = frappe.get_user().name
         if user == 'bos@microsynth.ch':
             email_template = frappe.get_doc("Email Template", "Unable to create Delivery Note")
             rendered_subject = frappe.render_template(email_template.subject, {'web_order_id': so.web_order_id})
