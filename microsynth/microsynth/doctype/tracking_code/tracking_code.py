@@ -83,9 +83,14 @@ def check_tracking_code(web_order_id, tracking_code):
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '4933668294'}"
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '779487631663'}"
     """
-    sales_orders = frappe.get_all("Sales Order", 
-        filters = { 'web_order_id': web_order_id, 'docstatus': 1 },
-        fields = ['name', 'contact_email', 'contact_display'] )
+    # tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'sales_order', 'tracking_code'])
+    # if len(tracking_codes) > 0:
+    #     msg = f"The tracking code {tracking_code} has already been stored for Sales Order {tracking_codes[0]['sales_order']}."
+    #     frappe.log_error(msg, "tracking_code.check_tracking_code")
+    #     frappe.throw(msg)
+    sales_orders = frappe.get_all("Sales Order",
+        filters={'web_order_id': web_order_id, 'docstatus': 1},
+        fields=['name', 'contact_email', 'contact_display'])
     
     if len(sales_orders) == 2:
         # check for intercompany case
@@ -102,13 +107,18 @@ def check_tracking_code(web_order_id, tracking_code):
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
             frappe.log_error(msg, "tracking_code.check_tracking_code")
             frappe.throw(msg)
+        tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'sales_order', 'tracking_code'])
+        if len(tracking_codes) > 0:
+            msg = f"For Sales Order {sales_orders[0]['name']}, the tracking code {tracking_codes[0]['tracking_code']} has already been stored."
+            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
         shipping_item = get_shipping_item(sales_order.items)
         if shipping_item is None:
-            frappe.throw(f"Sales Order '{sales_order.name}' does not have a shipping item")
+            frappe.throw(f"Sales Order '{sales_order.name}' does not have a shipping item.")
         if shipping_item not in TRACKING_URLS:
-            frappe.throw(f"Sales Order '{sales_order.name}' has the shipping item '{shipping_item}' without tracking code")
+            frappe.throw(f"Sales Order '{sales_order.name}' has the shipping item '{shipping_item}' without tracking.")
 
         if shipping_item == '1126':  # FedEx
             regex_str = '^7\d{11}$'
