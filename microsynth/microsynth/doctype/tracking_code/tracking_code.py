@@ -87,6 +87,16 @@ def check_tracking_code(web_order_id, tracking_code):
         filters = { 'web_order_id': web_order_id, 'docstatus': 1 },
         fields = ['name', 'contact_email', 'contact_display'] )
     
+    if len(sales_orders) == 2:
+        # check for intercompany case
+        intercompany_sales_orders = frappe.get_all("Sales Order", filters = {'web_order_id': web_order_id, 'docstatus': 1, 'is_intercompany': 1}, fields = ['name', 'contact_email', 'contact_display'])
+        if len(intercompany_sales_orders) == 1:
+            sales_orders = intercompany_sales_orders
+        else:
+            msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}\n\n{len(intercompany_sales_orders)} of them are intercompany."
+            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            frappe.throw(msg)
+    
     if len(sales_orders) > 0:
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
