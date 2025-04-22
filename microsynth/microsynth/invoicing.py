@@ -1480,8 +1480,9 @@ Your administration team<br><br>{footer}"
 
             for so_id in po_nos:
                 # check if the Sales Order with so_id has docstatus 1
-                so_doc = frappe.get_doc("Sales Order", so_id)
-                if so_doc.docstatus != 1:
+                so_docstatus = frappe.get_value("Sales Order", so_id, "docstatus")
+                if so_docstatus != 1:
+                    # TODO: Search valid version and use it instead?
                     email_template = frappe.get_doc("Email Template", "Unable to invoice Sales Order")
                     rendered_subject = frappe.render_template(email_template.subject, {'sales_order_id': sales_invoice.name})
                     rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_doc.name})
@@ -1515,6 +1516,7 @@ Your administration team<br><br>{footer}"
                 transmit_sales_invoice(si_doc.name)
 
                 # close SO-LYO (there will be no delviery note)
+                so_doc = frappe.get_doc("Sales Order", so_id)
                 so_doc.update_status("Closed")
         else:
             return
