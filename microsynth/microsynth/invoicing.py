@@ -1479,6 +1479,16 @@ Your administration team<br><br>{footer}"
                 po_nos.add(po_no)
 
             for so_id in po_nos:
+                # check if the Sales Order with so_id has docstatus 1
+                so_doc = frappe.get_doc("Sales Order", so_id)
+                if so_doc.docstatus != 1:
+                    email_template = frappe.get_doc("Email Template", "Unable to invoice Sales Order")
+                    rendered_subject = frappe.render_template(email_template.subject, {'sales_order_id': sales_invoice.name})
+                    rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_doc.name})
+                    send_email_from_template(email_template, rendered_content, rendered_subject)
+                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has docstatus {so_doc.docstatus}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
+                    frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                    continue
                 # create SI-LYO from SO-LYO
                 si_content = make_sales_invoice_from_so(so_id)
                 si_doc = frappe.get_doc(si_content)
@@ -1496,7 +1506,7 @@ Your administration team<br><br>{footer}"
                    (si_doc.get('items') and dn_doc.get('items') and len(si_doc.items) != len(dn_doc.items)):
                     si_doc = adjust_si_to_dn(dn_doc, si_doc)  # should be call by reference but just for safety
                 if si_doc.total > dn_doc.total:
-                    frappe.log_error(f"Total of Sales Invoice {si_doc.name} ({si_doc.total}) is greater than total of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(f"Total (before discount) of Sales Invoice {si_doc.name} ({si_doc.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
                     continue
                 si_doc.insert(ignore_permissions=True)
                 si_doc.submit()
@@ -1505,7 +1515,6 @@ Your administration team<br><br>{footer}"
                 transmit_sales_invoice(si_doc.name)
 
                 # close SO-LYO (there will be no delviery note)
-                so_doc = frappe.get_doc("Sales Order", so_id)
                 so_doc.update_status("Closed")
         else:
             return
