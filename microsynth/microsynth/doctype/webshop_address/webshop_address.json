@@ -5,8 +5,8 @@
  "engine": "InnoDB",
  "field_order": [
   "contact",
-  "is_default_shipping_contact",
-  "is_default_billing_contact",
+  "is_default_shipping",
+  "is_default_billing",
   "disabled"
  ],
  "fields": [
@@ -30,7 +30,7 @@
   {
    "columns": 2,
    "default": "0",
-   "fieldname": "is_default_shipping_contact",
+   "fieldname": "is_default_shipping",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Default Shipping"
@@ -38,14 +38,14 @@
   {
    "columns": 2,
    "default": "0",
-   "fieldname": "is_default_billing_contact",
+   "fieldname": "is_default_billing",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Default Billing"
   }
  ],
  "istable": 1,
- "modified": "2025-04-23 08:04:49.290332",
+ "modified": "2025-04-23 12:03:21.603266",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Webshop Address",

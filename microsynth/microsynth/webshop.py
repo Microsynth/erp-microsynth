@@ -2151,9 +2151,8 @@ def get_webshop_addresses(webshop_account):
         webshop_address['customer'] = get_customer_dto(customer)
         webshop_address['contact'] = contact_dto
         webshop_address['address'] = get_address_dto(address)
-        webshop_address['address_type'] = address.address_type
-        webshop_address['is_default_shipping_contact'] = a.is_default_shipping_contact
-        webshop_address['is_default_billing_contact'] = a.is_default_billing_contact
+        webshop_address['is_default_shipping'] = a.is_default_shipping
+        webshop_address['is_default_billing'] = a.is_default_billing
         addresses.append(webshop_address)
 
     return {
@@ -2162,3 +2161,15 @@ def get_webshop_addresses(webshop_account):
         'webshop_account': webshop_addresses.name,
         'webshop_addresses': addresses,
     }
+
+
+def create_webshop_address(webshop_account, webshop_address):
+    return None
+
+
+def update_webshop_address(webshop_account, webshop_address):
+    return None
+
+
+def delete_webshop_address(webshop_account, contact_id):
+    return None
