@@ -2079,3 +2079,86 @@ def get_quotation_pdf(quotation_id):
         return {'success': True, 'message': 'OK', 'base64string': encoded_string}
     except Exception as err:
         return {'success': False, 'message': err, 'base64string': None}
+
+
+def get_customer_dto(customer):
+    customer_dto = {}
+    customer_dto['name'] = customer.name
+    customer_dto['customer_name'] = customer.customer_name
+    customer_dto['tax_id'] = customer.tax_id
+    
+    return customer_dto
+
+
+def get_contact_dto(contact):
+    from microsynth.microsynth.utils import get_customer
+
+    contact_dto = {}
+    contact_dto['name'] = contact.name
+    contact_dto['first_name'] = contact.first_name
+    contact_dto['last_name'] = contact.last_name
+
+    contact_dto['salutation'] = contact.salutation
+    contact_dto['title'] = contact.designation
+    contact_dto['institute'] = contact.institute
+    contact_dto['department'] = contact.department
+    contact_dto['room'] = contact.room
+
+    contact_dto['status'] = contact.status
+    contact_dto['source'] = contact.source
+    contact_dto['email'] = contact.email_id
+
+    contact_dto['address'] = contact.address
+    contact_dto['customer'] = get_customer(contact.name)
+
+    return contact_dto
+
+
+def get_address_dto(address):
+    address_dto = {}
+    address_dto['name'] = address.name
+    address_dto['address_type'] = address.address_type
+    address_dto['overwrite_company'] = address.overwrite_company
+    address_dto['address_line1'] = address.address_line1
+    address_dto['address_line2'] = address.address_line2
+    address_dto['pincode'] = address.pincode
+    address_dto['city'] = address.city
+    address_dto['country'] = address.country
+    # address_dto['is_shipping_address'] = address.is_shipping_address
+    # address_dto['is_primary_address'] = address.is_primary_address
+    address_dto['geo_lat'] = address.geo_lat
+    address_dto['geo_long'] = address.geo_long
+        
+    return address_dto
+
+
+@frappe.whitelist()
+def get_webshop_addresses(webshop_account):
+    """
+    bench execute microsynth.microsynth.webshop.get_webshop_addresses --kwargs "{'webshop_account':'215856'}"
+    """
+    webshop_addresses = frappe.get_doc("Webshop Addresses", webshop_account)
+    addresses = []
+    
+    for a in webshop_addresses.addresses:
+        contact = frappe.get_doc("Contact", a.contact)
+        contact_dto = get_contact_dto(contact)
+
+        address = frappe.get_doc("Address", contact.address)        
+        customer = frappe.get_doc("Customer", contact_dto['customer'])
+
+        webshop_address = {}
+        webshop_address['customer'] = get_customer_dto(customer)
+        webshop_address['contact'] = contact_dto
+        webshop_address['address'] = get_address_dto(address)
+        webshop_address['address_type'] = address.address_type
+        webshop_address['is_default_shipping_contact'] = a.is_default_shipping_contact
+        webshop_address['is_default_billing_contact'] = a.is_default_billing_contact
+        addresses.append(webshop_address)
+
+    return {
+        'success': True, 
+        'message': "OK", 
+        'webshop_account': webshop_addresses.name,
+        'webshop_addresses': addresses,
+    }
