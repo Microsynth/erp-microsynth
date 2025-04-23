@@ -13,7 +13,7 @@
   "column_break_4",
   "qm_process",
   "matrix",
-  "device_type",
+  "device_model",
   "iso_17025_section",
   "test_technique",
   "quality_control",
@@ -69,15 +69,6 @@
    "fieldname": "matrix",
    "fieldtype": "Data",
    "label": "Matrix",
-   "reqd": 1
-  },
-  {
-   "fieldname": "device_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Device Name",
-   "options": "QM Device Name",
    "reqd": 1
   },
   {
@@ -227,11 +218,20 @@
   {
    "fieldname": "section_break_2",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "device_model",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Device Model",
+   "options": "QM Device Model",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-08 14:43:01.981375",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 09:18:09.626835",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",

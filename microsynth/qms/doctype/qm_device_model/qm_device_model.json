@@ -21,7 +21,7 @@
  "modified": "2025-03-26 14:49:52.317439",
  "modified_by": "Administrator",
  "module": "QMS",
- "name": "QM Device Name",
+ "name": "QM Device Model",
  "owner": "Administrator",
  "permissions": [
   {
