@@ -5,11 +5,13 @@
  "engine": "InnoDB",
  "field_order": [
   "contact",
-  "is_default",
+  "is_default_shipping_contact",
+  "is_default_billing_contact",
   "disabled"
  ],
  "fields": [
   {
+   "columns": 3,
    "fieldname": "contact",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -18,23 +20,33 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_default",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Default"
-  },
-  {
+   "columns": 2,
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Disabled"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "is_default_shipping_contact",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Shipping"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "is_default_billing_contact",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Billing"
   }
  ],
  "istable": 1,
- "modified": "2025-04-16 11:33:35.299034",
- "modified_by": "Administrator",
+ "modified": "2025-04-23 08:04:49.290332",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Webshop Address",
  "owner": "Administrator",
