@@ -101,8 +101,8 @@
    "read_only": 1
   }
  ],
- "modified": "2025-04-11 16:55:25.749663",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 14:01:22.108189",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sample",
  "owner": "Administrator",
@@ -133,6 +133,10 @@
   {
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "quick_entry": 1,

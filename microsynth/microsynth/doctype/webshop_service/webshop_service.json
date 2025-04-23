@@ -15,8 +15,8 @@
    "unique": 1
   }
  ],
- "modified": "2025-04-11 16:43:23.015167",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 13:59:26.595082",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Webshop Service",
  "owner": "Administrator",
@@ -45,6 +45,10 @@
   {
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "quick_entry": 1,

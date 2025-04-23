@@ -150,8 +150,8 @@
    "label": "Specification"
   }
  ],
- "modified": "2025-04-11 16:59:41.077156",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 14:00:50.957192",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo",
  "owner": "Administrator",
@@ -182,6 +182,10 @@
   {
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "quick_entry": 1,

@@ -81,8 +81,8 @@
    "options": "Country"
   }
  ],
- "modified": "2025-04-11 16:33:29.102278",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 14:00:13.099310",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Punchout Shop",
  "owner": "rolf.suter@microsynth.ch",
@@ -111,6 +111,10 @@
   {
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "quick_entry": 1,

@@ -166,8 +166,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-11 16:41:33.020177",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-04-23 13:06:41.174879",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Standing Quotation",
  "owner": "Administrator",
@@ -228,6 +228,11 @@
   {
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "sort_field": "modified",
