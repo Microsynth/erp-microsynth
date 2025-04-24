@@ -109,8 +109,8 @@ def check_tracking_code(web_order_id, tracking_code):
             frappe.throw(msg)
         tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'sales_order', 'tracking_code'])
         if len(tracking_codes) > 0:
-            msg = f"For Sales Order {sales_orders[0]['name']}, the tracking code {tracking_codes[0]['tracking_code']} has already been stored."
-            frappe.log_error(msg, "tracking_code.check_tracking_code")
+            msg = f"For Sales Order {sales_orders[0]['name']}, the tracking code {tracking_codes[0]['tracking_code']} has already been stored. Not going to store the tracking code {tracking_code} for Sales Order {sales_orders[0]['name']}."
+            #frappe.log_error(msg, "tracking_code.check_tracking_code")
             frappe.throw(msg)
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
