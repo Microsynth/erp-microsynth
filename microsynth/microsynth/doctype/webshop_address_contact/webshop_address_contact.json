@@ -1,0 +1,58 @@
+{
+ "creation": "2025-04-24 15:33:19.793657",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "contact",
+  "is_default_shipping",
+  "is_default_billing",
+  "disabled"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Contact",
+   "options": "Contact",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "is_default_shipping",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Shipping"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "is_default_billing",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Billing"
+  },
+  {
+   "columns": 2,
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-04-24 15:35:29.661284",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Webshop Address Contact",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -2079,3 +2079,157 @@ def get_quotation_pdf(quotation_id):
         return {'success': True, 'message': 'OK', 'base64string': encoded_string}
     except Exception as err:
         return {'success': False, 'message': err, 'base64string': None}
+
+
+def get_customer_dto(customer):
+    customer_dto = {
+        'name': customer.name,
+        'customer_name': customer.customer_name,
+        'tax_id': customer.tax_id
+    }
+    return customer_dto
+
+
+def get_contact_dto(contact):
+    from microsynth.microsynth.utils import get_customer
+
+    contact_dto = {
+        'name': contact.name,
+        'first_name': contact.first_name,
+        'last_name': contact.last_name,
+        'salutation': contact.salutation,
+        'title': contact.designation,
+        'institute': contact.institute,
+        'department': contact.department,
+        'room': contact.room,
+        'status': contact.status,
+        'source': contact.source,
+        'email': contact.email_id,
+        'address': contact.address,
+        'customer': get_customer(contact.name)
+    }
+    return contact_dto
+
+
+def get_address_dto(address):
+    address_dto = {
+        'name': address.name,
+        'address_type': address.address_type,
+        'overwrite_company': address.overwrite_company,
+        'address_line1': address.address_line1,
+        'address_line2': address.address_line2,
+        'pincode': address.pincode,
+        'city': address.city,
+        'country': address.country,
+        # 'is_shipping_address': address.is_shipping_address,
+        # 'is_primary_address': address.is_primary_address,
+        'geo_lat': address.geo_lat,
+        'geo_long': address.geo_long
+    }
+    return address_dto
+
+
+def get_webshop_address_dtos(webshop_addresses):
+    addresses = []
+    
+    for a in webshop_addresses.addresses:
+        if a.disabled:
+            continue
+
+        contact = frappe.get_doc("Contact", a.contact)
+        contact_dto = get_contact_dto(contact)
+
+        address = frappe.get_doc("Address", contact.address)        
+        customer = frappe.get_doc("Customer", contact_dto['customer'])
+
+        webshop_address = {
+            'customer': get_customer_dto(customer),
+            'contact': contact_dto,
+            'address': get_address_dto(address),
+            'is_default_shipping': a.is_default_shipping,
+            'is_default_billing': a.is_default_billing
+        }
+        addresses.append(webshop_address)
+    return addresses
+
+
+@frappe.whitelist()
+def get_webshop_addresses(webshop_account):
+    """
+    bench execute microsynth.microsynth.webshop.get_webshop_addresses --kwargs "{'webshop_account':'215856'}"
+    """
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+
+    return {
+        'success': True, 
+        'message': "OK", 
+        'webshop_account': webshop_addresses.name,
+        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+    }
+
+
+@frappe.whitelist()
+def create_webshop_address(webshop_account, webshop_address):
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+
+
+    #TODO 
+    # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
+    # create an address if it does not yet exist for the customer
+    # create a contact
+    # append a webshop_address entry with above contact id to webshop_addresses.addresses
+
+    return {
+        'success': True, 
+        'message': "OK", 
+        'webshop_account': webshop_addresses.name,
+        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+    }
+
+
+@frappe.whitelist()
+def update_webshop_address(webshop_account, webshop_address):
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+
+    #TODO 
+    # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
+    # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
+    # update customer/contact/address if not used 
+    #     --> use a common function together with delete_webshop_address endpoint
+    #         frappe.desk.form.linked_with.get_linked_docs
+    # create new customer/contact/address if used
+    # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
+
+    return {
+        'success': True, 
+        'message': "OK", 
+        'webshop_account': webshop_addresses.name,
+        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+    }
+
+
+@frappe.whitelist()
+def delete_webshop_address(webshop_account, contact_id):
+    """
+    bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
+    """
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+    
+    # TODO 
+    # check if the provided contact_id is part of the webshop_addresses. send an error if not.
+
+    for a in webshop_addresses.addresses:
+        if a.contact == contact_id:
+            a.disabled = True
+
+    webshop_addresses.save()
+
+    # TODO
+    # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+
+    return {
+        'success': True, 
+        'message': "OK", 
+        'webshop_account': webshop_addresses.name,
+        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+    }
