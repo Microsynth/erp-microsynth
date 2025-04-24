@@ -22,10 +22,10 @@
    "fieldname": "addresses",
    "fieldtype": "Table",
    "label": "Addresses",
-   "options": "Webshop Address"
+   "options": "Webshop Address Contact"
   }
  ],
- "modified": "2025-04-16 11:32:14.809117",
+ "modified": "2025-04-24 15:37:05.468371",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Webshop Addresses",
