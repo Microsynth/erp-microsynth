@@ -1,0 +1,48 @@
+{
+ "autoname": "field:webshop_account",
+ "creation": "2025-04-24 15:43:59.113580",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "webshop_account",
+  "addresses"
+ ],
+ "fields": [
+  {
+   "fieldname": "webshop_account",
+   "fieldtype": "Link",
+   "label": "Webshop Account",
+   "options": "Contact",
+   "unique": 1
+  },
+  {
+   "fieldname": "addresses",
+   "fieldtype": "Table",
+   "label": "Addresses",
+   "options": "Webshop Address Contact"
+  }
+ ],
+ "modified": "2025-04-24 15:46:04.382340",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Webshop Address",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

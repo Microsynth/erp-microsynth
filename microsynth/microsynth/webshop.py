@@ -2158,7 +2158,7 @@ def get_webshop_addresses(webshop_account):
     """
     bench execute microsynth.microsynth.webshop.get_webshop_addresses --kwargs "{'webshop_account':'215856'}"
     """
-    webshop_addresses = frappe.get_doc("Webshop Addresses", webshop_account)
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
     return {
         'success': True, 
@@ -2170,7 +2170,7 @@ def get_webshop_addresses(webshop_account):
 
 @frappe.whitelist()
 def create_webshop_address(webshop_account, webshop_address):
-    webshop_addresses = frappe.get_doc("Webshop Addresses", webshop_account)
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
 
     #TODO 
@@ -2189,7 +2189,7 @@ def create_webshop_address(webshop_account, webshop_address):
 
 @frappe.whitelist()
 def update_webshop_address(webshop_account, webshop_address):
-    webshop_addresses = frappe.get_doc("Webshop Addresses", webshop_account)
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
     #TODO 
     # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
@@ -2213,7 +2213,7 @@ def delete_webshop_address(webshop_account, contact_id):
     """
     bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
     """
-    webshop_addresses = frappe.get_doc("Webshop Addresses", webshop_account)
+    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
     
     # TODO 
     # check if the provided contact_id is part of the webshop_addresses. send an error if not.
