@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-05-23 10:43:40.897828",
+ "modified": "2025-04-24 12:06:52.492872",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Customer Accounts Overview",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Auditor"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

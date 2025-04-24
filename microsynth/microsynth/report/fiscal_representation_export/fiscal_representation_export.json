@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-04-20 17:43:40.249398",
+ "modified": "2025-04-24 12:09:01.729487",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Fiscal Representation Export",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Auditor"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

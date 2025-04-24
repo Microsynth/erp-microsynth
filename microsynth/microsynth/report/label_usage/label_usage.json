@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-02-17 11:17:24.693321",
+ "modified": "2025-04-24 11:57:55.616924",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Label Usage",
@@ -34,6 +34,15 @@
   },
   {
    "role": "Oligo Lab User"
+  },
+  {
+   "role": "NGS Lab User"
+  },
+  {
+   "role": "Board Member"
+  },
+  {
+   "role": "Order Biller"
   }
  ]
 }

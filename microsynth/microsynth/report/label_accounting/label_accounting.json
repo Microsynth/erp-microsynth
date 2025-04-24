@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-12-12 16:36:48.412155",
+ "modified": "2025-04-24 12:07:28.610568",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Label Accounting",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Accounts Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

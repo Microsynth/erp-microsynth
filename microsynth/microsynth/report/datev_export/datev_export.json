@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-03-07 21:46:36.933514",
+ "modified": "2025-04-24 12:09:30.743820",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "DATEV Export",
@@ -22,6 +22,9 @@
   },
   {
    "role": "Accounts User"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

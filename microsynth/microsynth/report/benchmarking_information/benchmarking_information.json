@@ -1,13 +1,13 @@
 {
  "add_total_row": 0,
  "creation": "2024-03-11 16:41:15.059741",
- "disable_prepared_report": 0,
+ "disable_prepared_report": 1,
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-03-11 16:59:40.526687",
+ "modified": "2025-04-24 11:54:55.420720",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Benchmarking Information",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Sales Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

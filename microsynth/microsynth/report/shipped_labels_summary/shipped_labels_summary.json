@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-05-29 10:22:28.754514",
+ "modified": "2025-04-24 11:55:25.993309",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Shipped Labels Summary",
@@ -22,6 +22,9 @@
   },
   {
    "role": "Sales User"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

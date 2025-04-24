@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-07-19 09:06:24.706787",
+ "modified": "2025-04-24 12:05:48.201171",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Open Quotations",
@@ -34,6 +34,12 @@
   },
   {
    "role": "Oligo Lab User"
+  },
+  {
+   "role": "Board Member"
+  },
+  {
+   "role": "Order Biller"
   }
  ]
 }

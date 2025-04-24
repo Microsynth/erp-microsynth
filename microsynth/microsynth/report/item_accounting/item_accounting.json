@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-03-12 15:49:31.074738",
+ "modified": "2025-04-24 12:03:15.762010",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Item Accounting",
@@ -19,6 +19,9 @@
  "roles": [
   {
    "role": "Accounts User"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

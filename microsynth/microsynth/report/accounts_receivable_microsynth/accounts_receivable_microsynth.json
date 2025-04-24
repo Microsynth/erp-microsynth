@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-02-25 12:23:54.627063",
+ "modified": "2025-04-24 12:13:26.135531",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Accounts Receivable Microsynth",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Sales Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

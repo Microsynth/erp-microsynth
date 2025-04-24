@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-05-29 10:22:42.086415",
+ "modified": "2025-04-24 11:56:13.948803",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Open Sales Orders",
@@ -34,6 +34,15 @@
   },
   {
    "role": "Oligo Lab User"
+  },
+  {
+   "role": "NGS Lab User"
+  },
+  {
+   "role": "Order Biller"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-09-19 15:15:41.775654",
+ "modified": "2025-04-24 12:07:44.441241",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Revenue Export",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Sales Manager Extended"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

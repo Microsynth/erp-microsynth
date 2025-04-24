@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-05-29 10:22:36.205568",
+ "modified": "2025-04-24 11:55:52.201562",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Same Day Oligos",
@@ -34,6 +34,9 @@
   },
   {
    "role": "Oligo Lab User"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-12-09 14:24:16.868446",
+ "modified": "2025-04-24 11:57:33.340811",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Label Manager",
@@ -22,6 +22,12 @@
   },
   {
    "role": "Sales User"
+  },
+  {
+   "role": "Board Member"
+  },
+  {
+   "role": "Order Biller"
   }
  ]
 }

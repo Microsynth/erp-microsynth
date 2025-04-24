@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-01-24 10:58:28.461382",
+ "modified": "2025-04-24 12:07:14.942742",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Invoice Summary",
@@ -28,6 +28,9 @@
   },
   {
    "role": "Sales Manager Extended"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

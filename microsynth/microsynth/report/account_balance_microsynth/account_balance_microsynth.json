@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-07-19 14:53:21.917996",
+ "modified": "2025-04-24 12:05:26.488813",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Account Balance Microsynth",
@@ -31,6 +31,9 @@
   },
   {
    "role": "Accounts Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

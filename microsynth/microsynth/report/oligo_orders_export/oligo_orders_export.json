@@ -1,13 +1,13 @@
 {
  "add_total_row": 0,
  "creation": "2022-12-20 09:03:29.778686",
- "disable_prepared_report": 0,
+ "disable_prepared_report": 1,
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-06-08 11:07:58.394185",
+ "modified": "2025-04-24 12:08:24.640194",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Oligo Orders Export",
@@ -34,6 +34,9 @@
   },
   {
    "role": "Oligo Lab User"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

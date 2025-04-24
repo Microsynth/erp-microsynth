@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2023-04-11 11:12:49.950459",
+ "modified": "2025-04-24 12:09:16.433165",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Customer Payments",
@@ -25,6 +25,9 @@
   },
   {
    "role": "Auditor"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }

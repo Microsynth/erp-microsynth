@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2024-08-19 13:30:46.499323",
+ "modified": "2025-04-24 11:56:27.129703",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Compare Price Lists",
@@ -49,6 +49,9 @@
   },
   {
    "role": "Sales Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }
