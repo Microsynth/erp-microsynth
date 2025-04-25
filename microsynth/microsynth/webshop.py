@@ -2158,54 +2158,77 @@ def get_webshop_addresses(webshop_account):
     """
     bench execute microsynth.microsynth.webshop.get_webshop_addresses --kwargs "{'webshop_account':'215856'}"
     """
-    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
-    return {
-        'success': True, 
-        'message': "OK", 
-        'webshop_account': webshop_addresses.name,
-        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-    }
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
 
 
 @frappe.whitelist()
 def create_webshop_address(webshop_account, webshop_address):
-    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
+        #TODO 
+        # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
+        # create an address if it does not yet exist for the customer
+        # create a contact
+        # append a webshop_address entry with above contact id to webshop_addresses.addresses
 
-    #TODO 
-    # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
-    # create an address if it does not yet exist for the customer
-    # create a contact
-    # append a webshop_address entry with above contact id to webshop_addresses.addresses
-
-    return {
-        'success': True, 
-        'message': "OK", 
-        'webshop_account': webshop_addresses.name,
-        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-    }
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
 
 
 @frappe.whitelist()
 def update_webshop_address(webshop_account, webshop_address):
-    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
-    #TODO 
-    # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
-    # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-    # update customer/contact/address if not used 
-    #     --> use a common function together with delete_webshop_address endpoint
-    #         frappe.desk.form.linked_with.get_linked_docs
-    # create new customer/contact/address if used
-    # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
+        #TODO 
+        # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
+        # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
+        # update customer/contact/address if not used 
+        #     --> use a common function together with delete_webshop_address endpoint
+        #         frappe.desk.form.linked_with.get_linked_docs
+        # create new customer/contact/address if used
+        # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
 
-    return {
-        'success': True, 
-        'message': "OK", 
-        'webshop_account': webshop_addresses.name,
-        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-    }
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
 
 
 @frappe.whitelist()
@@ -2213,23 +2236,31 @@ def delete_webshop_address(webshop_account, contact_id):
     """
     bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
     """
-    webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-    
-    # TODO 
-    # check if the provided contact_id is part of the webshop_addresses. send an error if not.
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        
+        # TODO 
+        # check if the provided contact_id is part of the webshop_addresses. send an error if not.
 
-    for a in webshop_addresses.addresses:
-        if a.contact == contact_id:
-            a.disabled = True
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                a.disabled = True
 
-    webshop_addresses.save()
+        webshop_addresses.save()
 
-    # TODO
-    # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+        # TODO
+        # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
 
-    return {
-        'success': True, 
-        'message': "OK", 
-        'webshop_account': webshop_addresses.name,
-        'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-    }
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }

@@ -23,8 +23,8 @@
    "options": "Webshop Address Contact"
   }
  ],
- "modified": "2025-04-24 15:46:04.382340",
- "modified_by": "Administrator",
+ "modified": "2025-04-25 12:08:22.960308",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Webshop Address",
  "owner": "Administrator",
@@ -39,6 +39,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Webshop",
    "write": 1
   }
  ],
