@@ -14,12 +14,14 @@ def get_columns():
         {"label": "Due Date", "fieldname": "due_date", "fieldtype": "Date", "width": 80},
         {"label": "Outstanding", "fieldname": "outstanding_amount", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": "Reminders", "fieldname": "reminder_count", "fieldtype": "Int", "width": 80},
-        {"label": "Phone Numbers", "fieldname": "phone_numbers", "fieldtype": "Data", "width": 240},
+        {"label": "Phone Numbers", "fieldname": "phone_numbers", "fieldtype": "Data", "width": 230},
         {"label": "Contact Person", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 105},
-        {"label": "Contact Person Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 150},
+        {"label": "Contact Person Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 135},
+        {"label": "Note", "fieldname": "note", "fieldtype": "Data", "width": 195},
+        {"label": "Remarks", "fieldname": "remarks", "fieldtype": "Data", "width": 195},
+        {"label": "Accounting Note ID", "fieldname": "accounting_note_id", "fieldtype": "Link", "options": "Accounting Note", "width": 130},
         {"label": "Invoice to", "fieldname": "invoice_to", "fieldtype": "Link", "options": "Contact", "width": 75},
-        {"label": "Reminder to", "fieldname": "reminder_to", "fieldtype": "Link", "options": "Contact", "width": 85},
-        # TODO: Notes column with double click handler to Accounting Notes
+        {"label": "Reminder to", "fieldname": "reminder_to", "fieldtype": "Link", "options": "Contact", "width": 85}
     ]
 
 
@@ -41,7 +43,37 @@ def get_data(filters=None):
             `tabSales Invoice`.`contact_person`,
             `tabSales Invoice`.`contact_display`,
             `tabCustomer`.`invoice_to`,
-            `tabCustomer`.`reminder_to`
+            `tabCustomer`.`reminder_to`,
+            (SELECT `tabAccounting Note`.`name`
+                FROM `tabAccounting Note`
+                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
+                WHERE 
+                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
+                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
+                GROUP BY `tabAccounting Note`.`name`
+                ORDER BY `tabAccounting Note`.`date` ASC
+                LIMIT 1
+            ) AS `accounting_note_id`,
+            (SELECT `tabAccounting Note`.`note`
+                FROM `tabAccounting Note`
+                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
+                WHERE 
+                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
+                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
+                GROUP BY `tabAccounting Note`.`name`
+                ORDER BY `tabAccounting Note`.`date` ASC
+                LIMIT 1
+            ) AS `note`,
+            (SELECT `tabAccounting Note`.`remarks`
+                FROM `tabAccounting Note`
+                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
+                WHERE 
+                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
+                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
+                GROUP BY `tabAccounting Note`.`name`
+                ORDER BY `tabAccounting Note`.`date` ASC
+                LIMIT 1
+            ) AS `remarks`
         FROM
             `tabSales Invoice`
         LEFT JOIN
@@ -91,3 +123,31 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
+
+
+@frappe.whitelist()
+def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id):
+    frappe.log_error(f"{accounting_note_id=}")
+    if accounting_note_id:
+        accounting_note = frappe.get_doc("Accounting Note", accounting_note_id)
+        accounting_note.note = note
+        accounting_note.remarks = remarks
+        accounting_note.save()
+        frappe.db.commit()
+    elif sales_invoice_id:
+        # Create a new Accounting Note
+        si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+        accounting_note_doc = frappe.get_doc({
+            'doctype': 'Accounting Note',
+            'note': note,
+            'remarks': remarks,
+            'date': si_doc.posting_date,
+            'account': si_doc.debit_to,
+            'reference_doctype': 'Sales Invoice',
+            'reference_name': si_doc.name,
+            'amount': si_doc.outstanding_amount,
+            'currency': si_doc.currency
+        })
+        accounting_note_doc.insert()
+    else:
+        frappe.throw("Unable to edit or create an Accounting Note. Please provide an Accounting Note ID or a Sales Invoice ID.")
