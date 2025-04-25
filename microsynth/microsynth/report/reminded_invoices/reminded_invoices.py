@@ -27,94 +27,59 @@ def get_columns():
 
 def get_data(filters=None):
     data = frappe.db.sql("""
+        WITH contact_phones AS (
+            SELECT
+                `tabContact`.`name` AS contact_name,
+                GROUP_CONCAT(`tabContact Phone`.`phone` SEPARATOR ', ') AS contact_phone_numbers
+            FROM `tabContact`
+            LEFT JOIN `tabContact Phone` ON `tabContact`.`name` = `tabContact Phone`.`parent`
+            GROUP BY `tabContact`.`name`
+        )
         SELECT
-            `tabSales Invoice`.`name` AS `sales_invoice`,
-            `tabSales Invoice`.`customer`,
-            `tabSales Invoice`.`customer_name`,
-            `tabSales Invoice`.`posting_date`,
-            `tabSales Invoice`.`due_date`,
-            `tabSales Invoice`.`outstanding_amount`,
-            `tabSales Invoice`.`currency`,
-            COUNT(`tabPayment Reminder Invoice`.`parent`) AS `reminder_count`,
+            sales_invoice.`name` AS sales_invoice,
+            sales_invoice.`customer` AS customer,
+            sales_invoice.`customer_name` AS customer_name,
+            sales_invoice.`posting_date` AS posting_date,
+            sales_invoice.`due_date` AS due_date,
+            sales_invoice.`outstanding_amount` AS outstanding_amount,
+            sales_invoice.`currency` AS currency,
+            COUNT(payment_reminder_invoice.`parent`) AS reminder_count,
             CONCAT_WS(', ',
-                IFNULL(`reminder_phones`.`phones`, NULL),
-                IFNULL(`invoice_phones`.`phones`, NULL)
-            ) AS `phone_numbers`,
-            `tabSales Invoice`.`contact_person`,
-            `tabSales Invoice`.`contact_display`,
-            `tabCustomer`.`invoice_to`,
-            `tabCustomer`.`reminder_to`,
-            (SELECT `tabAccounting Note`.`name`
-                FROM `tabAccounting Note`
-                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
-                WHERE 
-                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
-                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
-                GROUP BY `tabAccounting Note`.`name`
-                ORDER BY `tabAccounting Note`.`date` ASC
-                LIMIT 1
-            ) AS `accounting_note_id`,
-            (SELECT `tabAccounting Note`.`note`
-                FROM `tabAccounting Note`
-                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
-                WHERE 
-                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
-                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
-                GROUP BY `tabAccounting Note`.`name`
-                ORDER BY `tabAccounting Note`.`date` ASC
-                LIMIT 1
-            ) AS `note`,
-            (SELECT `tabAccounting Note`.`remarks`
-                FROM `tabAccounting Note`
-                LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
-                WHERE 
-                    `tabAccounting Note`.`reference_name` = `tabSales Invoice`.`name`
-                    OR `tabAccounting Note Reference`.`reference_name` = `tabSales Invoice`.`name`
-                GROUP BY `tabAccounting Note`.`name`
-                ORDER BY `tabAccounting Note`.`date` ASC
-                LIMIT 1
-            ) AS `remarks`
-        FROM
-            `tabSales Invoice`
-        LEFT JOIN
-            `tabPayment Reminder Invoice` ON `tabPayment Reminder Invoice`.`sales_invoice` = `tabSales Invoice`.`name`
-        LEFT JOIN
-            `tabPayment Reminder` ON `tabPayment Reminder Invoice`.`parent` = `tabPayment Reminder`.`name`
-        LEFT JOIN
-            `tabCustomer` ON `tabSales Invoice`.`customer` = `tabCustomer`.`name`
-        LEFT JOIN
-            (
-                SELECT
-                    `tabContact`.`name` AS `contact_name`,
-                    GROUP_CONCAT(`tabContact Phone`.`phone` SEPARATOR ', ') AS `phones`
-                FROM
-                    `tabContact`
-                LEFT JOIN
-                    `tabContact Phone` ON `tabContact`.`name` = `tabContact Phone`.`parent`
-                GROUP BY
-                    `tabContact`.`name`
-            ) AS `reminder_phones` ON `tabCustomer`.`reminder_to` = `reminder_phones`.`contact_name`
-        LEFT JOIN
-            (
-                SELECT
-                    `tabContact`.`name` AS `contact_name`,
-                    GROUP_CONCAT(`tabContact Phone`.`phone` SEPARATOR ', ') AS `phones`
-                FROM
-                    `tabContact`
-                LEFT JOIN
-                    `tabContact Phone` ON `tabContact`.`name` = `tabContact Phone`.`parent`
-                GROUP BY
-                    `tabContact`.`name`
-            ) AS `invoice_phones` ON `tabCustomer`.`invoice_to` = `invoice_phones`.`contact_name`
+                NULLIF(reminder_contact_phones.`contact_phone_numbers`, NULL),
+                NULLIF(invoice_contact_phones.`contact_phone_numbers`, NULL)
+            ) AS phone_numbers,
+            sales_invoice.`contact_person` AS contact_person,
+            sales_invoice.`contact_display` AS contact_display,
+            customer.`invoice_to` AS invoice_to,
+            customer.`reminder_to` AS reminder_to,
+            earliest_accounting_note.`accounting_note_id` AS accounting_note_id,
+            earliest_accounting_note.`note`,
+            earliest_accounting_note.`remarks`
+        FROM `tabSales Invoice` AS sales_invoice
+        LEFT JOIN `tabPayment Reminder Invoice` AS payment_reminder_invoice ON payment_reminder_invoice.`sales_invoice` = sales_invoice.`name`
+        LEFT JOIN `tabPayment Reminder` AS payment_reminder ON payment_reminder_invoice.`parent` = payment_reminder.`name`
+        LEFT JOIN `tabCustomer` AS customer ON sales_invoice.`customer` = customer.`name`
+        LEFT JOIN contact_phones AS reminder_contact_phones ON customer.`reminder_to` = reminder_contact_phones.`contact_name`
+        LEFT JOIN contact_phones AS invoice_contact_phones ON customer.`invoice_to` = invoice_contact_phones.`contact_name`
+        LEFT JOIN (
+            SELECT
+                accounting_note.`name` AS accounting_note_id,
+                accounting_note.`note`,
+                accounting_note.`remarks`,
+                COALESCE(accounting_note.`reference_name`, accounting_note_reference.`reference_name`) AS related_invoice,
+                MIN(accounting_note.`date`) AS earliest_accounting_note_date
+            FROM `tabAccounting Note` AS accounting_note
+            LEFT JOIN `tabAccounting Note Reference` AS accounting_note_reference
+                ON accounting_note_reference.`parent` = accounting_note.`name`
+            GROUP BY COALESCE(accounting_note.`reference_name`, accounting_note_reference.`reference_name`)
+        ) AS earliest_accounting_note ON earliest_accounting_note.`related_invoice` = sales_invoice.`name`
         WHERE
-            `tabSales Invoice`.`docstatus` = 1
-            AND `tabSales Invoice`.`outstanding_amount` > 0
-            AND `tabSales Invoice`.`due_date` < NOW()
-            AND `tabPayment Reminder`.`docstatus` = 1
-        GROUP BY
-            `tabSales Invoice`.`name`
-        ORDER BY
-            `reminder_count` DESC;
+            sales_invoice.`docstatus` = 1
+            AND sales_invoice.`outstanding_amount` > 0
+            AND sales_invoice.`due_date` < NOW()
+            AND payment_reminder.`docstatus` = 1
+        GROUP BY sales_invoice.`name`
+        ORDER BY reminder_count DESC;
         """, as_dict=True)
     return data
 
@@ -127,7 +92,6 @@ def execute(filters=None):
 
 @frappe.whitelist()
 def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id):
-    frappe.log_error(f"{accounting_note_id=}")
     if accounting_note_id:
         accounting_note = frappe.get_doc("Accounting Note", accounting_note_id)
         accounting_note.note = note

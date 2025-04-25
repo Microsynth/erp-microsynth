@@ -32,12 +32,11 @@ function edit_cell(accounting_note_id, note, remarks, sales_invoice_id) {
         'fields': [
             {'fieldname': 'sales_invoice_id', 'fieldtype': 'Link', 'options': "Sales Invoice", 'label': __('Sales Invoice'), 'read_only': 1, 'default': sales_invoice_id},
             {'fieldname': 'accounting_note_id', 'fieldtype': 'Link', 'options': "Accounting Note", 'label': __('Accounting Note'), 'read_only': 1, 'default': accounting_note_id},
-            {'fieldname': 'note', 'fieldtype': 'Data', 'label': __('Note'), 'reqd': 1, 'default': note},
-            {'fieldname': 'remarks', 'fieldtype': 'Small Text', 'label': __('Remarks'), 'default': remarks}
+            {'fieldname': 'note', 'fieldtype': 'Data', 'label': __('Note'), 'reqd': 1, 'default': note, 'description': 'Short summary'},
+            {'fieldname': 'remarks', 'fieldtype': 'Small Text', 'label': __('Remarks'), 'default': remarks, 'description': 'Optional, detailed description or proceedings'}
         ],
         'primary_action': function(){
             d.hide();
-            console.log("accounting_note_id: " + accounting_note_id);
             var values = d.get_values();
             frappe.call({
                 'method': "microsynth.microsynth.report.reminded_invoices.reminded_invoices.set_accounting_note",
@@ -54,7 +53,7 @@ function edit_cell(accounting_note_id, note, remarks, sales_invoice_id) {
             });
         },
         'primary_action_label': __('Save'),
-        'title': __('Edit Accounting Note')
+        'title': accounting_note_id ? __('Edit Accounting Note') : __('Create a new Accounting Note')
     });
     d.show();
 }
