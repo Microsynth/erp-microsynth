@@ -2238,9 +2238,20 @@ def delete_webshop_address(webshop_account, contact_id):
     """
     try:
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-        
-        # TODO 
+
         # check if the provided contact_id is part of the webshop_addresses. send an error if not.
+        found = False
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                found = True
+                break
+        if not found:
+            return {
+                'success': False,
+                'message': f"The given {contact_id=} is not part of the given {webshop_account=}.",
+                'webshop_account': webshop_account,
+                'webshop_addresses': [],
+            }
 
         for a in webshop_addresses.addresses:
             if a.contact == contact_id:
@@ -2264,3 +2275,10 @@ def delete_webshop_address(webshop_account, contact_id):
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
+
+
+def check_usage(customer, contact, address):
+    """
+    TODO
+    """
+    from frappe.desk.form.linked_with import get_linked_docs
