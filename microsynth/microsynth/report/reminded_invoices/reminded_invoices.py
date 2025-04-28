@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.utils.data import today
 
 
 def get_columns():
@@ -117,7 +118,7 @@ def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id):
             'doctype': 'Accounting Note',
             'note': note,
             'remarks': remarks,
-            'date': si_doc.posting_date,
+            'date': today(),
             'account': si_doc.debit_to,
             'reference_doctype': 'Sales Invoice',
             'reference_name': si_doc.name,

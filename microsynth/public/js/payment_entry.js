@@ -144,7 +144,7 @@ function create_accounting_note(frm) {
         frappe.call({
             'method': 'microsynth.microsynth.report.accounting_note_overview.accounting_note_overview.create_accounting_note',
             'args': {
-                'date': frm.doc.posting_date,
+                'date': frappe.datetime.get_today(),
                 'note': frm.doc.party_name ? frm.doc.party_name : "",  // empty string as fallback if party_name does not exists
                 'reference_doctype': frm.doc.doctype,
                 'reference_name': frm.doc.name,

@@ -28,7 +28,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Transaction Date",
+   "label": "Date",
    "reqd": 1
   },
   {
@@ -124,7 +124,7 @@
    "options": "reference_doctype"
   }
  ],
- "modified": "2025-04-11 16:50:11.183189",
+ "modified": "2025-04-28 15:18:54.921999",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Accounting Note",
