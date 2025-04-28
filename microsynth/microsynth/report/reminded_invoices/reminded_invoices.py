@@ -52,27 +52,39 @@ def get_data(filters=None):
             sales_invoice.`contact_display` AS contact_display,
             customer.`invoice_to` AS invoice_to,
             customer.`reminder_to` AS reminder_to,
-            earliest_accounting_note.`accounting_note_id` AS accounting_note_id,
-            earliest_accounting_note.`note`,
-            earliest_accounting_note.`remarks`
+            (
+                SELECT accounting_note.note
+                FROM `tabAccounting Note` AS accounting_note
+                LEFT JOIN `tabAccounting Note Reference` AS reference ON reference.parent = accounting_note.name
+                WHERE reference.reference_name = sales_invoice.name
+                    OR accounting_note.reference_name = sales_invoice.name
+                ORDER BY accounting_note.creation ASC
+                LIMIT 1
+            ) AS note,
+            (
+                SELECT accounting_note.remarks
+                FROM `tabAccounting Note` AS accounting_note
+                LEFT JOIN `tabAccounting Note Reference` AS reference ON reference.parent = accounting_note.name
+                WHERE reference.reference_name = sales_invoice.name
+                    OR accounting_note.reference_name = sales_invoice.name
+                ORDER BY accounting_note.creation ASC
+                LIMIT 1
+            ) AS remarks,
+            (
+                SELECT accounting_note.name
+                FROM `tabAccounting Note` AS accounting_note
+                LEFT JOIN `tabAccounting Note Reference` AS reference ON reference.parent = accounting_note.name
+                WHERE reference.reference_name = sales_invoice.name
+                    OR accounting_note.reference_name = sales_invoice.name
+                ORDER BY accounting_note.date ASC, accounting_note.creation ASC
+                LIMIT 1
+            ) AS accounting_note_id
         FROM `tabSales Invoice` AS sales_invoice
         LEFT JOIN `tabPayment Reminder Invoice` AS payment_reminder_invoice ON payment_reminder_invoice.`sales_invoice` = sales_invoice.`name`
         LEFT JOIN `tabPayment Reminder` AS payment_reminder ON payment_reminder_invoice.`parent` = payment_reminder.`name`
         LEFT JOIN `tabCustomer` AS customer ON sales_invoice.`customer` = customer.`name`
         LEFT JOIN contact_phones AS reminder_contact_phones ON customer.`reminder_to` = reminder_contact_phones.`contact_name`
         LEFT JOIN contact_phones AS invoice_contact_phones ON customer.`invoice_to` = invoice_contact_phones.`contact_name`
-        LEFT JOIN (
-            SELECT
-                accounting_note.`name` AS accounting_note_id,
-                accounting_note.`note`,
-                accounting_note.`remarks`,
-                COALESCE(accounting_note.`reference_name`, accounting_note_reference.`reference_name`) AS related_invoice,
-                MIN(accounting_note.`date`) AS earliest_accounting_note_date
-            FROM `tabAccounting Note` AS accounting_note
-            LEFT JOIN `tabAccounting Note Reference` AS accounting_note_reference
-                ON accounting_note_reference.`parent` = accounting_note.`name`
-            GROUP BY COALESCE(accounting_note.`reference_name`, accounting_note_reference.`reference_name`)
-        ) AS earliest_accounting_note ON earliest_accounting_note.`related_invoice` = sales_invoice.`name`
         WHERE
             sales_invoice.`docstatus` = 1
             AND sales_invoice.`outstanding_amount` > 0
