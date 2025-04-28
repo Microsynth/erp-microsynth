@@ -57,30 +57,43 @@ frappe.tracking_codes = {
                                     clear_fields();
                                     web_order_id = null;
                                     tracking_code = null;
-                                }, 300 );
+                                }, 300);
                             } else {
-                                frappe.confirm(
-                                    __("Are you sure that the tracking code '" + tracking_code + "' and the Web Order ID '" + web_order_id + "' are correct?<br>" + r.message.message),
-                                    function () {
-                                        // yes
-                                        create_tracking_code(web_order_id, tracking_code);
-                                        setTimeout(function() { 
-                                            clear_fields();
-                                            web_order_id = null;
-                                            tracking_code = null;
-                                        }, 300 );
-                                        frappe.show_alert( __("Created Tracking Code anyway.") );
-                                    },
-                                    function () {
-                                        // no
-                                        setTimeout(function() { 
-                                            clear_fields();
-                                            web_order_id = null;
-                                            tracking_code = null;
-                                        }, 300 );
-                                        frappe.show_alert( __("Please enter Web Order ID and tracking code again.") );
-                                    }
-                                );
+                                if (r.message.is_critical) {
+                                    frappe.msgprint({
+                                        title: __('Error'),
+                                        indicator: 'red',
+                                        message: 'No Tracking Code created:<br><br>' + r.message.message
+                                    });
+                                    setTimeout(function() { 
+                                        clear_fields();
+                                        web_order_id = null;
+                                        tracking_code = null;
+                                    }, 250);
+                                } else {
+                                    frappe.confirm(
+                                        __("Are you sure that the tracking code '" + tracking_code + "' and the Web Order ID '" + web_order_id + "' are correct?<br>" + r.message.message),
+                                        function () {
+                                            // yes
+                                            create_tracking_code(web_order_id, tracking_code);
+                                            setTimeout(function() { 
+                                                clear_fields();
+                                                web_order_id = null;
+                                                tracking_code = null;
+                                            }, 300);
+                                            frappe.show_alert( __("Created Tracking Code anyway.") );
+                                        },
+                                        function () {
+                                            // no
+                                            setTimeout(function() { 
+                                                clear_fields();
+                                                web_order_id = null;
+                                                tracking_code = null;
+                                            }, 300);
+                                            frappe.show_alert( __("Please enter Web Order ID and tracking code again.") );
+                                        }
+                                    );
+                                }
                             }
                         }
                     })

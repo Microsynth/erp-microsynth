@@ -87,7 +87,7 @@ def check_tracking_code(web_order_id, tracking_code):
     # if len(tracking_codes) > 0:
     #     msg = f"The tracking code {tracking_code} has already been stored for Sales Order {tracking_codes[0]['sales_order']}."
     #     frappe.log_error(msg, "tracking_code.check_tracking_code")
-    #     frappe.throw(msg)
+    #     return {'success': False, 'is_critical': True, 'message': msg}
     sales_orders = frappe.get_all("Sales Order",
         filters={'web_order_id': web_order_id, 'docstatus': 1},
         fields=['name', 'contact_email', 'contact_display'])
@@ -100,25 +100,23 @@ def check_tracking_code(web_order_id, tracking_code):
         else:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}\n\n{len(intercompany_sales_orders)} of them are intercompany."
             frappe.log_error(msg, "tracking_code.check_tracking_code")
-            frappe.throw(msg)
-    
+            return {'success': False, 'is_critical': True, 'message': msg}
     if len(sales_orders) > 0:
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
             frappe.log_error(msg, "tracking_code.check_tracking_code")
-            frappe.throw(msg)
+            return {'success': False, 'is_critical': True, 'message': msg}
         tracking_codes = frappe.get_all("Tracking Code", filters={'sales_order': sales_orders[0]['name']}, fields=['name', 'sales_order', 'tracking_code'])
         if len(tracking_codes) > 0:
             msg = f"For Sales Order {sales_orders[0]['name']}, the tracking code {tracking_codes[0]['tracking_code']} has already been stored. Not going to store the tracking code {tracking_code} for Sales Order {sales_orders[0]['name']}."
-            #frappe.log_error(msg, "tracking_code.check_tracking_code")
-            frappe.throw(msg)
+            return {'success': False, 'is_critical': True, 'message': msg}
         sales_order = frappe.get_doc("Sales Order", sales_orders[0]['name'])
 
         shipping_item = get_shipping_item(sales_order.items)
         if shipping_item is None:
-            frappe.throw(f"Sales Order '{sales_order.name}' does not have a shipping item.")
+            return {'success': False, 'is_critical': True, 'message': f"Sales Order '{sales_order.name}' does not have a shipping item."}
         if shipping_item not in TRACKING_URLS:
-            frappe.throw(f"Sales Order '{sales_order.name}' has the shipping item '{shipping_item}' without tracking.")
+            return {'success': False, 'is_critical': True, 'message': f"Sales Order '{sales_order.name}' has the shipping item '{shipping_item}' without tracking."}
 
         if shipping_item == '1126':  # FedEx
             regex_str = '^7\d{11}$'
@@ -133,13 +131,13 @@ def check_tracking_code(web_order_id, tracking_code):
         else:
             msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."
             frappe.log_error(msg, "tracking_code.check_tracking_code")
-            return {'success': False, 'message': msg}
+            return {'success': False, 'is_critical': False, 'message': msg}
         pattern = re.compile(regex_str)
         if pattern.match(tracking_code):
-            return {'success': True, 'message': 'OK'}
+            return {'success': True, 'is_critical': False, 'message': 'OK'}
         else:
             msg = f"The tracking code '{tracking_code}' does <b>not</b> match the pattern expected for Shipping Item {shipping_item}.<br><br>If you see this often when you are sure that the tracking code is correct, please tell IT App to adapt the patterns."
-            return {'success': False, 'message': msg}
+            return {'success': False, 'is_critical': False, 'message': msg}
 
 
 def prepare_tracking_log(file_id):
