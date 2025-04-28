@@ -3,16 +3,6 @@
 
 frappe.ui.form.on('QM Analytical Procedure', {
     refresh: function(frm) {
-        if (frm.doc.regulatory_classification == 'GMP') {
-            cur_frm.set_df_property('iso_17025_section', 'hidden', true);
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', false);
-        } else if (frm.doc.regulatory_classification == 'ISO 17025') {
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', true);
-            cur_frm.set_df_property('iso_17025_section', 'hidden', false);
-        } else {
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', true);
-            cur_frm.set_df_property('iso_17025_section', 'hidden', true);
-        }
         if (!frm.doc.__islocal && frm.doc.docstatus < 2) {
             cur_frm.add_custom_button(__("Add Study"), function() {
                 create_qm_study();
@@ -27,18 +17,6 @@ frappe.ui.form.on('QM Analytical Procedure', {
                     cur_frm.set_df_property('overview', 'options', r.message);
                 }
             });
-        }
-    },
-    regulatory_classification: function(frm) {
-        if (frm.doc.regulatory_classification == 'GMP') {
-            cur_frm.set_df_property('iso_17025_section', 'hidden', true);
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', false);
-        } else if (frm.doc.regulatory_classification == 'ISO 17025') {
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', true);
-            cur_frm.set_df_property('iso_17025_section', 'hidden', false);
-        } else {
-            cur_frm.set_df_property('gmp_assays_section', 'hidden', true);
-            cur_frm.set_df_property('iso_17025_section', 'hidden', true);
         }
     }
 });

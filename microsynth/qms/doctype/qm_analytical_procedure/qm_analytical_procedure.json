@@ -72,6 +72,7 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.regulatory_classification ==\"ISO 17025\"",
    "fieldname": "iso_17025_section",
    "fieldtype": "Section Break",
    "label": "ISO 17025"
@@ -207,6 +208,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.regulatory_classification ==\"GMP\"",
    "fieldname": "gmp_assay_section",
    "fieldtype": "Section Break",
    "label": "GMP Assay"
@@ -230,8 +232,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-23 09:18:09.626835",
- "modified_by": "Administrator",
+ "modified": "2025-04-28 14:17:37.521350",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",
