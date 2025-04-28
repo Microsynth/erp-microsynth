@@ -302,6 +302,13 @@ def get_data():
                    },
                    {
                        "type": "report",
+                       "name": "Reminded Invoices",
+                       "label": _("Reminded Invoices"),
+                       "doctype": _("Sales Invoice"),
+                       "is_query_report": True
+                   },
+                   {
+                       "type": "report",
                        "name": "Accounting Note Overview",
                        "label": _("Accounting Note Overview"),
                        "doctype": _("Accounting Note"),
