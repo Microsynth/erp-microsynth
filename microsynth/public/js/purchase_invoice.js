@@ -1,3 +1,12 @@
+
+// extend/create dashboard
+cur_frm.dashboard.add_transactions([
+    {
+        'label': __("Payment"),
+        'items': ["Payment Proposal"]
+    }
+]);
+
 /* Custom script extension for Purchase Invoice */
 // iframe interaction handler for invoice entry
 window.onmessage = function(e) {
