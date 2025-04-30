@@ -9,6 +9,7 @@ import frappe
 import json
 import re
 import base64
+from frappe.model.delete_doc import check_if_doc_is_linked, get_linked_doctypes
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
@@ -2277,8 +2278,8 @@ def delete_webshop_address(webshop_account, contact_id):
 
         webshop_addresses.save()
 
-        # TODO: trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
-        #frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, customer=None, contact=None, address=None)
+        # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+        frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, contact_id=contact_id)
 
         return {
             'success': True, 
@@ -2295,49 +2296,65 @@ def delete_webshop_address(webshop_account, contact_id):
         }
 
 
-def delete_if_unused(customer, contact, address):
+def delete_if_unused(contact_id):
     """
-    Wrapper to start an asyncronous job for the function async_are_used
-    """        
-    if not are_used(customer, contact, address):
-        pass
-        # TODO: What to delete?
+    Delete the given Contact and its Address if both are unused.
+    If both are unused, delete the Customer of the given Contact if it is unused too.
+    """
+    address_id = frappe.get_value('Contact', contact_id, 'address')
+    customer_id = get_customer(contact_id)
+    if not is_address_used(address_id) and not is_contact_used(contact_id):
+        address_doc = frappe.get_doc('Address', address_id)
+        address_doc.delete()
+        contact_doc = frappe.get_doc('Contact', contact_id)
+        contact_doc.delete()
+    else:
+        return
+    if not is_customer_used(customer_id):
+        customer_doc = frappe.get_doc('Customer', customer_id)
+        customer_doc.delete()
 
 
-def are_used(customer, contact, address):
-    """
-    Return False if there are no linked docs for the given Customer and Contact and the Address is only linked on one Contact but no other docs.
-    """
-    from frappe.desk.form.linked_with import get_linked_docs  # not really used in the core
-    from frappe.model.delete_doc import get_linked_doctypes
+def is_customer_used(customer_id):
+    #from frappe.desk.form.linked_with import get_linked_docs  # not really used in the core
     try:
-        customer_doc = frappe.get_doc("Customer", customer)
-        contact_doc = frappe.get_doc("Contact", contact)
+        customer_doc = frappe.get_doc("Customer", customer_id)
         # Check if it's linked to other documents
-        customer_doc.check_if_linked_documents_exist()
-        contact_doc.check_if_linked_documents_exist()
+        check_if_doc_is_linked(customer_doc)
     except frappe.LinkExistsError as e:
         return True
-    # except frappe.DoesNotExistError:
-    #     pass
-    # except Exception as e:
-    #     pass
     else:
-        # Customer and Contact are not linked
-        # Check if the given Address is only linked on one Contact
-        # Get linked doctypes and linked document details
-        linked_docs = get_linked_doctypes('Address', address)
-        # Print out the linked doctypes and document info
-        for linked_doctype, links in linked_docs.items():
-            if linked_doctype == 'Address':
-                continue
-            else:
-                return True
-            # frappe.msgprint(f"Linked in Doctype: {linked_doctype}")
-            # for link in links:
-            #     # Each link includes 'name' of the linked doc and the 'fieldname' used
-            #     frappe.msgprint(f" - Linked Doc: {link.get('name')}, via field: {link.get('fieldname')}")
-        if len(linked_docs) == 1:
-            return False
+        return False
+
+
+def is_contact_used(contact_id):
+    try:
+        contact_doc = frappe.get_doc("Contact", contact_id)
+        # Check if it's linked to other documents
+        check_if_doc_is_linked(contact_doc)
+    except frappe.LinkExistsError as e:
+        return True
+    else:
+        return False
+
+
+def is_address_used(address_id):
+    """
+    Check if the given Address is only linked on one Contact
+    """
+    # Get linked doctypes and linked document details
+    linked_docs = get_linked_doctypes('Address', address_id)
+    # Print out the linked doctypes and document info
+    for linked_doctype, links in linked_docs.items():
+        if linked_doctype == 'Address':
+            continue
         else:
             return True
+        # print(f"Linked in Doctype: {linked_doctype}")
+        # for link in links:
+        #     # Each link includes 'name' of the linked doc and the 'fieldname' used
+        #     print(f" - Linked Doc: {link.get('name')}, via field: {link.get('fieldname')}")
+    if len(linked_docs) == 1:
+        return False
+    else:
+        return True
