@@ -2180,19 +2180,49 @@ def get_webshop_addresses(webshop_account):
 @frappe.whitelist()
 def create_webshop_address(webshop_account, webshop_address):
     try:
+        if type(webshop_address) == str:
+            webshop_address = json.loads(webshop_address)
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        
+        webshop_account_customer = get_customer(webshop_account)
 
-        #TODO 
         # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
+        if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
+            user_data = {
+                'customer': webshop_address['customer'],
+                'contact': webshop_address['contact'],
+                'addresses': [webshop_address['address']]
+            }
+            register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
+            # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address
         # create an address if it does not yet exist for the customer
+        address = webshop_address['address']
+        address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
+        address['customer_id'] = webshop_account_customer
+        address_id = update_address(address)
         # create a contact
+        contact = webshop_address['contact']
+        contact['person_id'] = contact['name']    # Extend contact object to use the legacy update_contact function
+        contact['customer_id'] = webshop_account_customer
+        contact['status'] = "Passive"  # TODO?
+        contact_id = update_contact(contact)
+        # create Contact Lock
+        lock_contact_by_name(contact_id)
+
         # append a webshop_address entry with above contact id to webshop_addresses.addresses
+        webshop_addresses.append('addresses', {
+            'contact': contact_id,
+            'is_default_shipping': 0,
+            'is_default_billing': 0,
+            'disabled': 0
+        })        
+        webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
 
         return {
             'success': True, 
             'message': "OK", 
             'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+            'webshop_addresses': webshop_address_dtos,
         }
     except Exception as err:
         return {
@@ -2208,9 +2238,9 @@ def update_webshop_address(webshop_account, webshop_address):
     """
     bench execute microsynth.microsynth.webshop.update_webshop_address --kwargs "{'webshop_account': '215856', 'webshop_address': ''}"
     """
-    if type(webshop_address) == str:
-        webshop_address = json.loads(webshop_address)
     try:
+        if type(webshop_address) == str:
+            webshop_address = json.loads(webshop_address)
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
         # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
