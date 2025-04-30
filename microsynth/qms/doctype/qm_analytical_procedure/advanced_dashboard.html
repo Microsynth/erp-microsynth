@@ -1,0 +1,25 @@
+<div class="row">
+    <div class="col-sm-6">
+        {% if studies %}
+            <h6>{{ _("Studies") }}</h6>
+            {% for s in studies %}
+                <a href="/desk#Form/QM Study/{{ s.name }}">
+                    <i class="fa fa-chain"></i>
+                    {{ s.title }}
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="col-sm-6">
+        {% if qm_documents %}
+            <h6>{{ _("Related documents") }}</h6>
+            {% for d in qm_documents %}
+                <a href="/desk#Form/QM Document/{{ d }}">
+                    <i class="fa fa-chain"></i>
+                    {{ d.split("-")[0] }}
+                </a><br>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
