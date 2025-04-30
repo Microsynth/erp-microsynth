@@ -2277,8 +2277,8 @@ def delete_webshop_address(webshop_account, contact_id):
 
         webshop_addresses.save()
 
-        # TODO
-        # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+        # TODO: trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+        #frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, customer=None, contact=None, address=None)
 
         return {
             'success': True, 
@@ -2295,8 +2295,49 @@ def delete_webshop_address(webshop_account, contact_id):
         }
 
 
-def check_usage(customer, contact, address):
+def delete_if_unused(customer, contact, address):
     """
-    TODO
+    Wrapper to start an asyncronous job for the function async_are_used
+    """        
+    if not are_used(customer, contact, address):
+        pass
+        # TODO: What to delete?
+
+
+def are_used(customer, contact, address):
     """
-    from frappe.desk.form.linked_with import get_linked_docs
+    Return False if there are no linked docs for the given Customer and Contact and the Address is only linked on one Contact but no other docs.
+    """
+    from frappe.desk.form.linked_with import get_linked_docs  # not really used in the core
+    from frappe.model.delete_doc import get_linked_doctypes
+    try:
+        customer_doc = frappe.get_doc("Customer", customer)
+        contact_doc = frappe.get_doc("Contact", contact)
+        # Check if it's linked to other documents
+        customer_doc.check_if_linked_documents_exist()
+        contact_doc.check_if_linked_documents_exist()
+    except frappe.LinkExistsError as e:
+        return True
+    # except frappe.DoesNotExistError:
+    #     pass
+    # except Exception as e:
+    #     pass
+    else:
+        # Customer and Contact are not linked
+        # Check if the given Address is only linked on one Contact
+        # Get linked doctypes and linked document details
+        linked_docs = get_linked_doctypes('Address', address)
+        # Print out the linked doctypes and document info
+        for linked_doctype, links in linked_docs.items():
+            if linked_doctype == 'Address':
+                continue
+            else:
+                return True
+            # frappe.msgprint(f"Linked in Doctype: {linked_doctype}")
+            # for link in links:
+            #     # Each link includes 'name' of the linked doc and the 'fieldname' used
+            #     frappe.msgprint(f" - Linked Doc: {link.get('name')}, via field: {link.get('fieldname')}")
+        if len(linked_docs) == 1:
+            return False
+        else:
+            return True
