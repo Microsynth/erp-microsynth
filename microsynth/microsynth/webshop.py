@@ -9,7 +9,7 @@ import frappe
 import json
 import re
 import base64
-from frappe.model.delete_doc import check_if_doc_is_linked, get_linked_doctypes
+from frappe.model.delete_doc import check_if_doc_is_linked #, get_linked_doctypes #TODO: The function get_linked_doctypes does not exist here!
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
@@ -2373,7 +2373,9 @@ def is_address_used(address_id):
     Check if the given Address is only linked on one Contact
     """
     # Get linked doctypes and linked document details
-    linked_docs = get_linked_doctypes('Address', address_id)
+
+    # TODO use correct function to retrieve linked documents
+    linked_docs = None # get_linked_doctypes('Address', address_id)
     # Print out the linked doctypes and document info
     for linked_doctype, links in linked_docs.items():
         if linked_doctype == 'Address':
