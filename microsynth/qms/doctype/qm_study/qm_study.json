@@ -13,7 +13,7 @@
   "document_name",
   "amended_from",
   "section_break_7",
-  "comments",
+  "summary",
   "naming_series"
  ],
  "fields": [
@@ -63,11 +63,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "comments",
-   "fieldtype": "Text",
-   "label": "Comments"
-  },
-  {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
@@ -82,10 +77,15 @@
    "in_standard_filter": 1,
    "label": "Title",
    "reqd": 1
+  },
+  {
+   "fieldname": "summary",
+   "fieldtype": "Text",
+   "label": "Summary"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-04 17:16:07.639194",
+ "modified": "2025-04-30 12:01:56.273987",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Study",
