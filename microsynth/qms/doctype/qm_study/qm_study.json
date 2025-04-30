@@ -85,7 +85,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-30 12:01:56.273987",
+ "modified": "2025-04-30 17:05:18.135060",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Study",
@@ -110,14 +110,22 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "QAU",
-   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Contract Research User",
    "submit": 1,
    "write": 1
   }
