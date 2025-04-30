@@ -5122,3 +5122,47 @@ def change_payable_account_on_supplier(company, old_account, new_account, exclud
                 else:
                     print(f"### Supplier {supplier.name} ({supplier.supplier_name}) has Account '{account.account}' for Company {company}.")
         supplier_doc.save()
+
+
+def find_missing_web_order_ids(input_filepath, output_filepath):
+    """
+    Read an export of the Webshop table Orders assuming that the Web Order ID is in the second column with index 1.
+    For each Web Order ID: Search all submitted Sales Orders in the ERP.
+    If no submitted Sales Order was found in the ERP, write the corresponding line from the input file to the output file.
+    Could be more efficient by doing just one DB query and using some hash tables in Python.
+
+    bench execute microsynth.microsynth.migration.find_missing_web_order_ids --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-04-30_Webshop_orders_2024_without_oligo_or_sequencing.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-04-30_ERP_missing_web_order_ids_from_2024.csv'}"
+    """
+    import io
+
+    # Read the file in binary mode to get raw bytes
+    with open(input_filepath, "rb") as input_file:
+        raw = input_file.read()
+
+    # Split only on CRLF (\r\n) — treat this as the true line ending
+    lines = raw.split(b'\r\n')
+    # Decode each line from bytes to string
+    decoded_lines = [line.decode('utf-8') for line in lines]
+    # Join the lines using '\n' to form a consistent CSV block
+    csv_content = '\n'.join(decoded_lines)
+    # Use csv.reader to parse the cleaned content
+    csv_reader = csv.reader(io.StringIO(csv_content), delimiter=';')
+    counter = 0
+
+    with open(output_filepath, mode='w') as output_file:
+        writer = csv.writer(output_file, delimiter=';')
+        writer.writerow(next(csv_reader))
+        for i, line in enumerate(csv_reader):
+            if i % 100 == 0:
+                print(f"Processing line {i} ...")
+            if len(line) != 56:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            web_order_id = line[1].strip()
+            submitted_sales_orders = frappe.get_all("Sales Order", filters=[['docstatus', '<', '2'], ['web_order_id', '=', web_order_id]], fields=['name'])
+            if len(submitted_sales_orders) == 0:
+                writer.writerow(line)
+                counter += 1
+            # else:
+            #     print(f"Found {len(submitted_sales_orders)} submitted Sales Order for Web Order ID {web_order_id}.")
+    print(f"Wrote {counter} lines to {output_filepath}.")
