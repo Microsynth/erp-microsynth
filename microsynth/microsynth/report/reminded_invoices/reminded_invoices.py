@@ -8,7 +8,7 @@ from frappe.utils.data import today
 
 def get_columns():
     return [
-        {"label": "Invoice", "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
+        {"label": "Sales Invoice", "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 230},
         {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 90},

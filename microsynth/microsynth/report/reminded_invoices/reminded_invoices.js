@@ -13,7 +13,7 @@ frappe.query_reports["Reminded Invoices"] = {
             cur_page.container.addEventListener("dblclick", function(event) {
                 let row = event.delegatedTarget.getAttribute("data-row-index");
                 let column = event.delegatedTarget.getAttribute("data-col-index");
-                if (parseInt(column) === 11) {
+                if (parseInt(column) === 12) {
                     let accounting_note_id = frappe.query_report.data[row].accounting_note_id;
                     let note = frappe.query_report.data[row].note;
                     let remarks = frappe.query_report.data[row].remarks;
