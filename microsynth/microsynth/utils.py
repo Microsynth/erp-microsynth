@@ -1656,7 +1656,9 @@ def set_sales_manager(customer):
     if country == "Italy":
         customer.account_manager = "servizioclienticer@dgroup.it"
     elif country == "Slovakia" and customer.name not in ("11007", "37332309"):
-            customer.account_manager = "ktrade@ktrade.sk"
+        customer.account_manager = "ktrade@ktrade.sk"
+    # elif country == "Cyprus" and customer.name not in ("837936"):
+    #     customer.account_manager = ""
     else:
         customer.account_manager = frappe.get_value("Territory", customer.territory, "sales_manager")
 
@@ -1682,6 +1684,18 @@ def set_distributor_ktrade(customer_id):
     bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
     """
     distributor = '11007'
+    set_distributor(customer_id, distributor, 'Oligos')
+    set_distributor(customer_id, distributor, 'Labels')
+    set_distributor(customer_id, distributor, 'Sequencing')
+    set_distributor(customer_id, distributor, 'FLA')
+    set_distributor(customer_id, distributor, 'Genetic Analysis')
+
+
+def set_distributor_elincou(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
+    """
+    distributor = '837936'
     set_distributor(customer_id, distributor, 'Oligos')
     set_distributor(customer_id, distributor, 'Labels')
     set_distributor(customer_id, distributor, 'Sequencing')
@@ -1722,6 +1736,9 @@ def set_default_distributor(customer_id):
 
     elif country == "Slovakia":
         set_distributor_ktrade(customer_id)
+
+    elif country == "Cyprus":
+        set_distributor_elincou(customer_id)
 
 
 def check_default_companies():
