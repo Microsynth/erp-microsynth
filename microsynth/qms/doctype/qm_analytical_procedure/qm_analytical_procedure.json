@@ -176,12 +176,14 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "created_on",
    "fieldtype": "Date",
    "label": "Created On",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "created_by",
    "fieldtype": "Link",
    "label": "Created By",
@@ -232,8 +234,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-02 12:12:21.171983",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-05-02 14:09:37.713590",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",
