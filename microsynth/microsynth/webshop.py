@@ -2195,12 +2195,13 @@ def create_webshop_address(webshop_account, webshop_address):
             }
             register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
             # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address
-        # create an address if it does not yet exist for the customer
+
+        # create an Address if it does not yet exist for the Customer
         address = webshop_address['address']
         address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = webshop_account_customer
         address_id = update_address(address)
-        # create a contact
+        # create a Contact
         contact = webshop_address['contact']
         contact['person_id'] = contact['name']    # Extend contact object to use the legacy update_contact function
         contact['customer_id'] = webshop_account_customer
@@ -2242,28 +2243,35 @@ def update_webshop_address(webshop_account, webshop_address):
         if type(webshop_address) == str:
             webshop_address = json.loads(webshop_address)
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        customer_id = webshop_address.get('customer').get('name')
+        contact_id = webshop_address.get('contact').get('name')
+        address_id = webshop_address.get('address').get('name')
 
         # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
         found = False
         for a in webshop_addresses.addresses:
-            if a.contact == webshop_address.get('contact').get('name'):
+            if a.contact == contact_id:
                 found = True
                 break
         if not found:
             return {
                 'success': False,
-                'message': f"The given Contact '{webshop_address.get('contact').get('name')}' is not part of the given {webshop_account=}.",
+                'message': f"The given Contact '{contact_id}' is not part of the given {webshop_account=}.",
                 'webshop_account': webshop_account,
                 'webshop_addresses': [],
             }
 
         #TODO
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        # update customer/contact/address if not used 
-        #     --> use a common function together with delete_webshop_address endpoint
-        #         frappe.desk.form.linked_with.get_linked_docs
-        # create new customer/contact/address if used
-        # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
+        if not is_customer_used(customer_id) and not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
+            pass
+            # update customer/contact/address if not used 
+            #     --> use a common function together with delete_webshop_address endpoint
+            #         frappe.desk.form.linked_with.get_linked_docs
+        else:
+            pass
+            # create new customer/contact/address if used
+            # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
 
         return {
             'success': True, 
