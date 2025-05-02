@@ -84,6 +84,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "chapter",
    "fieldtype": "Int",
    "in_standard_filter": 1,
@@ -240,6 +241,7 @@
    "options": "Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -300,7 +302,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-11 17:05:26.486264",
+ "modified": "2025-05-02 16:42:03.129779",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
