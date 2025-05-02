@@ -1,0 +1,30 @@
+{
+ "creation": "2025-05-02 16:09:19.390042",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "device_model"
+ ],
+ "fields": [
+  {
+   "fieldname": "device_model",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Device Model",
+   "options": "QM Device Model",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-05-02 16:09:19.390042",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM AP Device Model",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

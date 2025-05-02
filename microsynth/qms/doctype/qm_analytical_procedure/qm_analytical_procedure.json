@@ -13,7 +13,7 @@
   "column_break_4",
   "qm_process",
   "matrix",
-  "device_model",
+  "device_models",
   "iso_17025_section",
   "test_technique",
   "quality_control",
@@ -224,17 +224,16 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "device_model",
-   "fieldtype": "Link",
-   "in_list_view": 1,
+   "fieldname": "device_models",
+   "fieldtype": "Table MultiSelect",
    "in_standard_filter": 1,
-   "label": "Device Model",
-   "options": "QM Device Model",
+   "label": "Device Models",
+   "options": "QM AP Device Model",
    "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-02 14:09:37.713590",
+ "modified": "2025-05-02 16:10:47.116432",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Analytical Procedure",
