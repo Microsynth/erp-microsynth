@@ -232,7 +232,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-30 17:03:28.865268",
+ "modified": "2025-05-02 12:12:21.171983",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
@@ -269,6 +269,7 @@
    "report": 1,
    "role": "Contract Research User",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
