@@ -9,7 +9,7 @@ import frappe
 import json
 import re
 import base64
-from frappe.model.delete_doc import check_if_doc_is_linked #, get_linked_doctypes #TODO: The function get_linked_doctypes does not exist here!
+from frappe.desk.form.linked_with import get_linked_docs
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer
 from microsynth.microsynth.taxes import find_dated_tax_template
@@ -2338,6 +2338,7 @@ def delete_if_unused(contact_id):
         address_doc.delete()
         contact_doc = frappe.get_doc('Contact', contact_id)
         contact_doc.delete()
+        frappe.db.commit()
     else:
         return
     if not is_customer_used(customer_id):
@@ -2346,47 +2347,92 @@ def delete_if_unused(contact_id):
 
 
 def is_customer_used(customer_id):
-    #from frappe.desk.form.linked_with import get_linked_docs  # not really used in the core
-    try:
-        customer_doc = frappe.get_doc("Customer", customer_id)
-        # Check if it's linked to other documents
-        check_if_doc_is_linked(customer_doc)
-    except frappe.LinkExistsError as e:
-        return True
-    else:
-        return False
+    """
+    Check if the given Customer is used on one of the below DocTypes
+
+    bench execute microsynth.microsynth.webshop.is_customer_used --kwargs "{'customer_id': '839115'}"
+    """
+    linked_doctypes = {
+        'Sales Order': {'fieldname': ['customer', 'order_customer']},
+        'Delivery Note': {'fieldname': ['customer', 'order_customer']},
+        'Purchase Order': {'fieldname': ['customer']},
+        'Sales Invoice': {'fieldname': ['customer', 'order_customer']},
+        'Payment Reminder': {'fieldname': ['customer']},
+        'ERPNextSwiss Settings': {'fieldname': ['default_customer']},
+        'Standing Quotation': {'fieldname': ['customer']},
+        'Sequencing Label': {'fieldname': ['customer']},
+        'Oligo': {'fieldname': ['customer']},
+        'Sample': {'fieldname': ['customer']},
+        'Analysis Report': {'fieldname': ['customer']},
+        'Label Log': {'fieldname': ['customer']},
+        'Intercompany Settings': {'child_doctype': 'Intercompany Settings Account', 'fieldname': ['party'], 'doctype_fieldname': 'party_type'},
+        'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['customer']},
+        'QM Change': {'child_doctype': 'QM Change Customer', 'fieldname': ['customer']},
+        'QM Document': {'child_doctype': 'QM Document Customer', 'fieldname': ['customer']},
+        'QM Nonconformity': {'child_doctype': 'QM Nonconformity Customer', 'fieldname': ['customer']},
+        'QM Analytical Procedure': {'child_doctype': 'Customer Link', 'fieldname': ['customer']},
+        'Contact': {'child_doctype': 'Dynamic Link', 'fieldname': ['link_name'], 'doctype_fieldname': 'link_doctype'},
+        'Address': {'child_doctype': 'Dynamic Link', 'fieldname': ['link_name'], 'doctype_fieldname': 'link_doctype'},
+        'Journal Entry': {'child_doctype': 'Journal Entry Account', 'fieldname': ['party'], 'doctype_fieldname': 'party_type'},
+        'Quotation': {'fieldname': ['party_name'], 'doctype_fieldname': 'quotation_to'},
+        'Payment Entry': {'fieldname': ['party'], 'doctype_fieldname': 'party_type'}
+    }
+    linked_docs = get_linked_docs('Customer', customer_id, linked_doctypes)
+    print(linked_docs)
+    return len(linked_docs) > 0
 
 
 def is_contact_used(contact_id):
-    try:
-        contact_doc = frappe.get_doc("Contact", contact_id)
-        # Check if it's linked to other documents
-        check_if_doc_is_linked(contact_doc)
-    except frappe.LinkExistsError as e:
-        return True
-    else:
-        return False
+    """
+    Check if the given Contact is used on one of the below DocTypes
+
+    bench execute microsynth.microsynth.webshop.is_contact_used --kwargs "{'contact_id': '243482'}"
+    """
+    linked_doctypes = {
+        'Supplier Quotation': {'fieldname': ['contact_person']},
+        'Quotation': {'fieldname': ['contact_person', 'shipping_contact']},
+        'Customer': {'fieldname': ['customer_primary_contact', 'invoice_to', 'reminder_to']},
+        'Sales Order': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
+        'Purchase Receipt': {'fieldname': ['contact_person']},
+        'Delivery Note': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
+        'Purchase Invoice': {'fieldname': ['contact_person']},
+        'Purchase Order': {'fieldname': ['contact_person', 'customer_contact_person']},
+        'Sales Invoice': {'fieldname': ['contact_person', 'invoice_to', 'shipping_contact']},
+        'Payment Entry': {'fieldname': ['contact_person']},
+        'Product Idea': {'fieldname': ['contact_person']},
+        'Benchmark': {'fieldname': ['contact_person']},
+        'Standing Quotation': {'fieldname': ['contact']},
+        'Contact Note': {'fieldname': ['contact_person']},
+        'Sequencing Label': {'fieldname': ['contact', 'registered_to']},
+        'Punchout Shop': {'fieldname': ['billing_contact']},
+        'Analysis Report': {'fieldname': ['contact_person']},
+        'Label Log': {'fieldname': ['contact', 'registered_to']}
+    }
+    linked_docs = get_linked_docs('Contact', contact_id, linked_doctypes)
+    #print(linked_docs)
+    return len(linked_docs) > 0
 
 
 def is_address_used(address_id):
     """
-    Check if the given Address is only linked on one Contact
-    """
-    # Get linked doctypes and linked document details
+    Check if the given Address is used on one of the below DocTypes
 
-    # TODO use correct function to retrieve linked documents
-    linked_docs = None # get_linked_doctypes('Address', address_id)
-    # Print out the linked doctypes and document info
-    for linked_doctype, links in linked_docs.items():
-        if linked_doctype == 'Address':
-            continue
-        else:
-            return True
-        # print(f"Linked in Doctype: {linked_doctype}")
-        # for link in links:
-        #     # Each link includes 'name' of the linked doc and the 'fieldname' used
-        #     print(f" - Linked Doc: {link.get('name')}, via field: {link.get('fieldname')}")
-    if len(linked_docs) == 1:
-        return False
-    else:
-        return True
+    bench execute microsynth.microsynth.webshop.is_address_used --kwargs "{'address_id': '215856'}"
+    """
+    linked_doctypes = {
+        'Supplier Quotation': {'fieldname': ['supplier_address']},
+        'Quotation': {'fieldname': ['customer_address', 'shipping_address_name']},
+        'Customer': {'fieldname': ['customer_primary_address']},
+        'Sales Order': {'fieldname': ['customer_address', 'shipping_address_name', 'company_address']},
+        'Purchase Receipt': {'fieldname': ['shipping_address', 'supplier_address']},
+        'Delivery Note': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
+        'Purchase Invoice': {'fieldname': ['shipping_address', 'supplier_address']},
+        'Purchase Order': {'fieldname': ['shipping_address', 'supplier_address']},
+        'Sales Invoice': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
+        'Standing Quotation': {'fieldname': ['address']},
+        'Punchout Shop': {'fieldname': ['billing_address']},
+        'Analysis Report': {'fieldname': ['address']},
+        'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
+    }
+    linked_docs = get_linked_docs('Address', address_id, linked_doctypes)
+    return len(linked_docs) > 0
