@@ -5,7 +5,7 @@
             {% for s in studies %}
                 <a href="/desk#Form/QM Study/{{ s.name }}">
                     <i class="fa fa-chain"></i>
-                    {{ s.title }}
+                    {{ s.title }} {% if s.completion_date %}(completed {{ s.completion_date.strftime('%d.%m.%Y') }}){% else %}(no completion date){% endif %}
                 </a><br>
             {% endfor %}
         {% endif %}

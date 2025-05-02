@@ -66,10 +66,13 @@ def get_studies(qmap_id):
     studies = frappe.db.sql(f"""
         SELECT 
             `tabQM Study`.`name`,
-            `tabQM Study`.`title`
+            `tabQM Study`.`title`,
+            `tabQM Study`.`type`,
+            `tabQM Study`.`completion_date`
         FROM `tabQM Study`
         WHERE 
             `tabQM Study`.`document_type` = "QM Analytical Procedure"
             AND `tabQM Study`.`document_name` = "{qmap_id}"
+        -- ORDER BY `tabQM Study`.`completion_date`
         ;""", as_dict=True)
     return studies
