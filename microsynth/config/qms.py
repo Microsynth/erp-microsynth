@@ -92,6 +92,31 @@ def get_data():
             ]
         },
         {
+            "label": _("Analytical Procedures"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                       "type": "doctype",
+                       "name": "QM Analytical Procedure",
+                       "label": _("Analytical Procedure"),
+                       "description": _("Analytical Procedure")
+                    },
+                    {
+                       "type": "doctype",
+                       "name": "QM Study",
+                       "label": _("QM Study"),
+                       "description": _("QM Study")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Test Methods 17025",
+                        "label": _("Test Methods 17025"),
+                        "doctype": "QM Analytical Procedure",
+                        "is_query_report": True
+                    },
+            ]
+        },
+        {
             "label": _("Complaints"),
             "icon": "octicon octicon-file-submodule",
             "items": [
