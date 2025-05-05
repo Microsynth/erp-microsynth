@@ -157,8 +157,8 @@ frappe.ui.form.on('QM Document', {
             
             // prevent document type changes after the document number has been assigned
             cur_frm.set_df_property('document_type', 'read_only', true);
-            cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('chapter', 'read_only', true);
+            //cur_frm.set_df_property('qm_process', 'read_only', true);
+            //cur_frm.set_df_property('chapter', 'read_only', true);
         }
 
         // allow the creator to sign a document (after pingpong review)
