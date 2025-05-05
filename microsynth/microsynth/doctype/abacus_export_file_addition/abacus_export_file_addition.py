@@ -18,7 +18,7 @@ class AbacusExportFileAddition(Document):
         set_export_flag("Journal Entry", get_sql_list(self.get_docs("Journal Entry")), 0)
         return
 
-    # find all transactions, add the to references and mark as collected
+    # find all transactions, add them to references and mark as collected
     def get_transactions(self):
         account_list_str = get_sql_list(self.get_account_list())
         # get all documents
@@ -236,3 +236,23 @@ def get_account_number(account_name):
         return frappe.get_value("Account", account_name, "account_number")
     else:
         return None
+
+
+@frappe.whitelist()
+def create_from_existing(dn, from_date, to_date):
+    old_doc = frappe.get_doc("Abacus Export File Addition", dn)
+
+    new_doc = frappe.get_doc({
+        'doctype': 'Abacus Export File Addition',
+        'from_date': from_date,
+        'to_date': to_date,
+        'from_date': from_date,
+    }).insert()
+
+    for old_account in old_doc.accounts:
+        new_doc.append('accounts', {
+            'account': old_account.account
+        })
+    new_doc.save()
+    
+    return new_doc.name

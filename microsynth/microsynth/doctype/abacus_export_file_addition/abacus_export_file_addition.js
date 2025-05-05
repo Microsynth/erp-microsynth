@@ -28,6 +28,10 @@ frappe.ui.form.on('Abacus Export File Addition', {
                     }
                 });
             }).addClass("btn-primary");
+
+            frm.add_custom_button(__('Create new'), function() {
+                create_from_existing(frm);
+            });
         }
     },
     'validate': function(frm) {
@@ -56,4 +60,37 @@ function download(filename, content) {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+}
+
+
+function create_from_existing(frm) {
+    var d = new frappe.ui.Dialog({
+        'fields': [
+            {'fieldname': 'company', 'fieldtype': 'Link', 'options': "Company", 'label': __('Company'), 'read_only': 1, 'default': frm.doc.company},
+            {'fieldname': 'from_date', 'fieldtype': 'Date', 'label': __('From date'), 'reqd': 1},
+            {'fieldname': 'to_date', 'fieldtype': 'Date', 'label': __('To date'), 'reqd': 1}
+        ],
+        'primary_action': function(){
+            d.hide();
+            var values = d.get_values();
+            frappe.call({
+                'method': "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.create_from_existing",
+                'args':{
+                    'dn': frm.doc.name,
+                    'from_date': values.from_date,
+                    'to_date': values.to_date
+                },
+                'callback': function(r) {
+                    if (r.message) {
+                        frappe.set_route("Form", "Abacus Export File Addition", r.message);
+                    } else {
+                        frappe.show_alert("Internal Error")
+                    }
+                }
+            });
+        },
+        'primary_action_label': __('Create'),
+        'title': __('Create a new AEFA based on ' + frm.doc.name)
+    });
+    d.show();
 }
