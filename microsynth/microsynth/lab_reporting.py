@@ -493,7 +493,7 @@ def set_sample_labels_processed(samples):
     return {'success': True, 'message': 'OK'}
 
 
-def check_mycoplasma_sales_order_completion():
+def check_mycoplasma_sales_order_completion(verbose=False):
     """
     Find Mycoplasma Sales Orders that have no Delivery Note and are not Closed or Cancelled.
     Check if all their Samples are Processed. If yes, create a Delivery Note in Draft status.
@@ -501,15 +501,31 @@ def check_mycoplasma_sales_order_completion():
     bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
     """
     open_mycoplasma_sales_orders = frappe.db.sql("""
-        SELECT `tabSales Order`.`name`
-        FROM `tabSales Order`
-        LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
-        WHERE `tabSales Order`.`docstatus` = 1
-          AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
-          AND `tabSales Order`.`product_type` = "Genetic Analysis"
-          AND `tabSales Order`.`per_delivered` < 100
-          AND `tabSales Order Item`.`item_code` IN ('6032', '6033');
-    """, as_dict=True)
+            SELECT `tabSales Order`.`name`,
+                `tabSales Order`.`web_order_id`
+            FROM `tabSales Order`
+            LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+            LEFT JOIN `tabDelivery Note Item` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+            LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+            WHERE `tabSales Order`.`docstatus` = 1
+                AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
+                AND `tabSales Order`.`product_type` = "Genetic Analysis"
+                AND `tabSales Order`.`per_delivered` < 100
+                AND `tabSales Order Item`.`item_code` IN ('6032', '6033')
+                AND (
+                    `tabSales Order`.`web_order_id` IS NULL
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM `tabDelivery Note`
+                        WHERE `tabDelivery Note`.`web_order_id` = `tabSales Order`.`web_order_id`
+                            AND `tabDelivery Note`.`docstatus` < 2
+                    )
+                )
+            GROUP BY `tabSales Order`.`name`
+            HAVING COUNT(`tabDelivery Note Item`.`parent`) = 0;
+        """, as_dict=True)
+    if verbose:
+        print(f"Found {len(open_mycoplasma_sales_orders)} open Mycoplasma Sales Orders.")
 
     # check completion of each Mycoplasma Sales Order: Sequencing Labels of this order on processed
     for sales_order in open_mycoplasma_sales_orders:
@@ -534,6 +550,8 @@ def check_mycoplasma_sales_order_completion():
             for sample_label in samples:
                 if sample_label['status'] != 'processed':
                     pending_samples = True
+                    if verbose:
+                        print(f"Sales Order {sales_order['name']} has Sample {sample_label['name']} with status {sample_label['status']}.")
                     break
             if pending_samples:
                 continue
@@ -544,7 +562,7 @@ def check_mycoplasma_sales_order_completion():
 
             if customer.disabled:
                 frappe.log_error(f"Customer '{customer.name}' of Sales Order '{sales_order['name']}' is disabled. Cannot create a Delivery Note.", "lab_reporting.check_mycoplasma_sales_order_completion")
-                return
+                continue
             
             # create Delivery Note (leave on draft: submitted in a batch process later on)
             dn_content = make_delivery_note(sales_order['name'])
@@ -556,6 +574,8 @@ def check_mycoplasma_sales_order_completion():
             dn.flags.ignore_missing = True
             dn.insert(ignore_permissions=True)
             frappe.db.commit()
+            if verbose:
+                print(f"Created Delivery Note {dn.name} for Sales Order {sales_order['name']}.")
 
         except Exception as err:
             frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}", "lab_reporting.check_mycoplasma_sales_order_completion")
