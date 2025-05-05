@@ -12,6 +12,12 @@ cur_frm.dashboard.add_transactions([
 /* Custom script extension for Sales Order */
 frappe.ui.form.on('Sales Order', {
     refresh(frm) {
+        // allow Accounts Manager to add Web Order ID if not yet set
+        if (frm.doc.docstatus == 1 && !frm.doc.web_order_id && frappe.user.has_role("Accounts Manager")) {
+            cur_frm.set_df_property('web_order_id', 'read_only', false);
+        } else if (frm.doc.docstatus > 0) {
+            cur_frm.set_df_property('web_order_id', 'read_only', true);
+        }
         // remove Menu > Email if document is not valid
         if (frm.doc.docstatus != 1) {
             var target ="span[data-label='" + __("Email") + "']";
