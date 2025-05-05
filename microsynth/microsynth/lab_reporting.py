@@ -668,3 +668,25 @@ def check_submit_mycoplasma_delivery_note(delivery_note):
 
     except Exception as err:
         frappe.log_error(f"Cannot process Delivery Note '{delivery_note.name}': \n{err}", "lab_reporting.check_submit_mycoplasma_delivery_note")
+
+
+def submit_mycoplasma_delivery_notes():
+    """
+    Checks all delivery note drafts of product type sequencing and submits them if eligible.
+
+    bench execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes
+    """
+    delivery_notes = frappe.db.sql(f"""
+        SELECT `tabDelivery Note`.`name`
+        FROM `tabDelivery Note`
+        LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+        WHERE `tabDelivery Note`.`docstatus` = 0
+            AND `tabDelivery Note`.`product_type` = "Genetic Analysis"
+            AND `tabDelivery Note Item`.`item_code` IN ('6032', '6033')
+        GROUP BY `tabDelivery Note`.`name`
+    ;""", as_dict=True)
+    #print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts.")
+
+    for dn in delivery_notes:
+        check_submit_mycoplasma_delivery_note(dn.name)
+        frappe.db.commit()
