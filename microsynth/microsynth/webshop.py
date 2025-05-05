@@ -2177,6 +2177,35 @@ def get_webshop_addresses(webshop_account):
         }
 
 
+def create_customer(webshop_address):
+    user_data = {
+        'customer': webshop_address['customer'],
+        'contact': webshop_address['contact'],
+        'addresses': [webshop_address['address']]
+    }
+    register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
+    # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address
+
+
+def create_contact(webshop_address, customer):
+    contact = webshop_address['contact']
+    contact['person_id'] = contact['name']    # Extend contact object to use the legacy update_contact function
+    contact['customer_id'] = customer
+    contact['status'] = "Passive"  # TODO?
+    contact_id = update_contact(contact)
+    # create Contact Lock
+    lock_contact_by_name(contact_id)
+    return contact_id
+
+
+def create_address(webshop_address, customer):
+    address = webshop_address['address']
+    address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
+    address['customer_id'] = customer
+    address_id = update_address(address)
+    return address_id
+
+
 @frappe.whitelist()
 def create_webshop_address(webshop_account, webshop_address):
     try:
@@ -2188,27 +2217,12 @@ def create_webshop_address(webshop_account, webshop_address):
 
         # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
         if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
-            user_data = {
-                'customer': webshop_address['customer'],
-                'contact': webshop_address['contact'],
-                'addresses': [webshop_address['address']]
-            }
-            register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
-            # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address
+            create_customer(webshop_address)            
 
         # create an Address if it does not yet exist for the Customer
-        address = webshop_address['address']
-        address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
-        address['customer_id'] = webshop_account_customer
-        address_id = update_address(address)
+        address_id = create_address(webshop_address, webshop_account_customer)
         # create a Contact
-        contact = webshop_address['contact']
-        contact['person_id'] = contact['name']    # Extend contact object to use the legacy update_contact function
-        contact['customer_id'] = webshop_account_customer
-        contact['status'] = "Passive"  # TODO?
-        contact_id = update_contact(contact)
-        # create Contact Lock
-        lock_contact_by_name(contact_id)
+        contact_id = create_contact(webshop_address, webshop_account_customer)
 
         # append a webshop_address entry with above contact id to webshop_addresses.addresses
         webshop_addresses.append('addresses', {
@@ -2216,7 +2230,7 @@ def create_webshop_address(webshop_account, webshop_address):
             'is_default_shipping': 0,
             'is_default_billing': 0,
             'disabled': 0
-        })        
+        })
         webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
 
         return {
@@ -2260,18 +2274,30 @@ def update_webshop_address(webshop_account, webshop_address):
                 'webshop_account': webshop_account,
                 'webshop_addresses': [],
             }
-
-        #TODO
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
         if not is_customer_used(customer_id) and not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
-            pass
-            # update customer/contact/address if not used 
-            #     --> use a common function together with delete_webshop_address endpoint
-            #         frappe.desk.form.linked_with.get_linked_docs
+            # update customer/contact/address if not used
+            customer = webshop_address['contact']
+            customer['customer_id'] = customer['name']
+            update_customer(customer)
+            contact = webshop_address['contact']
+            contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
+            contact_id = update_contact(contact)
+            address = webshop_address['address']
+            address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
+            address_id = update_address(address)
         else:
-            pass
             # create new customer/contact/address if used
+            customer_id = None  # TODO: Create Customer
+            address_id = create_address(webshop_address, customer_id)
+            contact_id = create_contact(webshop_address, customer_id)
             # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
+            webshop_addresses.append('addresses', {
+                'contact': contact_id,
+                'is_default_shipping': 0,
+                'is_default_billing': 0,
+                'disabled': 0
+            })
 
         return {
             'success': True, 
