@@ -2184,7 +2184,10 @@ def create_customer(webshop_address):
         'addresses': [webshop_address['address']]
     }
     register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
-    # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address
+    # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address:
+    # It is assumed in utils.check_new_customers_taxid (executed daily), that every enabled Customer has a Shipping Address
+    # Several functions called in configure_new_customer use utils.get_first_shipping_address
+    # TODO: Enabled Customers without a Shipping Address are disabled every night
 
 
 def create_contact(webshop_address, customer):
