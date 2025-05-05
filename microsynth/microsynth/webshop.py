@@ -2177,24 +2177,24 @@ def get_webshop_addresses(webshop_account):
         }
 
 
-def create_customer(webshop_address):
-    user_data = {
-        'customer': webshop_address['customer'],
-        'contact': webshop_address['contact'],
-        'addresses': [webshop_address['address']]
-    }
-    register_user(user_data)  # TODO: customer, contact, invoice_contact, shipping and billing address needed
-    # TODO: consider usage of get_first_shipping_address regarding Customers without a Shipping Address:
+# def create_customer(webshop_address):
+#     user_data = {
+#         'customer': webshop_address['customer'],
+#         'contact': webshop_address['contact'],
+#         'addresses': [webshop_address['address']]
+#     }
+#     register_user(user_data)  # customer, contact, invoice_contact, shipping and billing address needed
+    # consider usage of get_first_shipping_address regarding Customers without a Shipping Address:
     # It is assumed in utils.check_new_customers_taxid (executed daily), that every enabled Customer has a Shipping Address
     # Several functions called in configure_new_customer use utils.get_first_shipping_address
-    # TODO: Enabled Customers without a Shipping Address are disabled every night
+    # Enabled Customers without a Shipping Address are disabled every night
 
 
 def create_contact(webshop_address, customer):
     contact = webshop_address['contact']
-    contact['person_id'] = contact['name']    # Extend contact object to use the legacy update_contact function
+    contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
     contact['customer_id'] = customer
-    contact['status'] = "Passive"  # TODO?
+    contact['status'] = "Passive"
     contact_id = update_contact(contact)
     # create Contact Lock
     lock_contact_by_name(contact_id)
@@ -2203,7 +2203,7 @@ def create_contact(webshop_address, customer):
 
 def create_address(webshop_address, customer):
     address = webshop_address['address']
-    address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
+    address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
     address['customer_id'] = customer
     address_id = update_address(address)
     return address_id
@@ -2218,9 +2218,12 @@ def create_webshop_address(webshop_account, webshop_address):
         
         webshop_account_customer = get_customer(webshop_account)
 
+        if webshop_address['address']['address_type'] == 'Billing':
+            raise NotImplementedError("No implementation for Address Type Billing so far.")
+
         # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
-        if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
-            create_customer(webshop_address)            
+        # if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
+        #     create_customer(webshop_address)
 
         # create an Address if it does not yet exist for the Customer
         address_id = create_address(webshop_address, webshop_account_customer)
@@ -2277,12 +2280,15 @@ def update_webshop_address(webshop_account, webshop_address):
                 'webshop_account': webshop_account,
                 'webshop_addresses': [],
             }
+        if webshop_address.get('address').get('address_type') == 'Billing':
+            raise NotImplementedError("No implementation for Address Type Billing so far.")
+
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_customer_used(customer_id) and not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
+        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
             # update customer/contact/address if not used
-            customer = webshop_address['contact']
-            customer['customer_id'] = customer['name']
-            update_customer(customer)
+            # customer = webshop_address['contact']
+            # customer['customer_id'] = customer['name']
+            # update_customer(customer)
             contact = webshop_address['contact']
             contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
             contact_id = update_contact(contact)
@@ -2291,7 +2297,6 @@ def update_webshop_address(webshop_account, webshop_address):
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
-            customer_id = None  # TODO: Create Customer
             address_id = create_address(webshop_address, customer_id)
             contact_id = create_contact(webshop_address, customer_id)
             # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
