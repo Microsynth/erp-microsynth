@@ -13,7 +13,7 @@
 <accounting_info booking_text="Aufwand" account_no="{{ first_item.get('expense_account').split(" - ")[0] }}" />
 {%- endif %}
 <invoice_party>
-    <address street="{{ doc.address_line1 }}" name="{{ doc.party_name }}" zip="{{ doc.pincode }}" city="{{ doc.city }}" party_id="{{ doc.party_number or doc.customer or doc.supplier }}" />
+    <address street="{{ xml_normalize((doc.address_line1 or "-"), 41) }}" name="{{ doc.party_name }}" zip="{{ doc.pincode }}" city="{{ doc.city }}" party_id="{{ doc.party_number or doc.customer or doc.supplier }}" />
     <booking_info_bp bp_account_no="{{ doc.party_number or "99999" }}"/>
 </invoice_party>
 {%- set company = frappe.get_doc("Company", doc.company) %}
@@ -34,7 +34,7 @@
         ></account>
     {%- else %}
         {%- set company_address = frappe.get_doc("Address", doc.shipping_address) %}
-        <address street="{{ doc.address_line1 }}" zip="{{ doc.pincode }}" city="{{ doc.city }}" name="{{ doc.party_name }}"></address>
+        <address street="{{ xml_normalize((doc.address_line1 or "-"), 41) }}" zip="{{ doc.pincode }}" city="{{ doc.city }}" name="{{ doc.party_name }}"></address>
         {%- set account = frappe.get_doc("Account", doc.credit_to) %}
         <account bank_name="{{ account.bank_name or "?" }}"
              {%- if account.iban %} iban="{{ (account.iban).replace(' ', '') }}"{% endif %}
@@ -62,7 +62,7 @@
     <tax_line tax="0.00" currency="{{ doc.currency }}" />
 {%- else %}
     {%- for t in doc.taxes %}
-        <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" {% if t.rate != 0 and doc.net_total != 0 %} tax_amount="{{ "{:.2f}".format(doc.total_taxes_and_charges) }}"{% endif %} currency="{{ doc.currency }}" />
+        <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" {% if t.rate != 0 and doc.net_total != 0 %} tax_amount="{{ "{:.2f}".format(doc.tax_amount) }}"{% endif %} currency="{{ doc.currency }}" />
     {%- endfor %}
 {%- endif %}
 </total_amount>
