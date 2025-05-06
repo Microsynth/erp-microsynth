@@ -48,7 +48,11 @@ naming_code = {
 
 class QMDocument(Document):
     def autoname(self):
-        if self.import_name:
+        if self.prev_doc:
+            parts = self.prev_doc.split("-")
+            parts[-1] = f"{self.version:02d}"
+            self.name = "-".join(parts)
+        elif self.import_name:
             # in the case of an import, override naming generator by import name
             self.name = self.import_name
         else:
@@ -187,6 +191,7 @@ def create_new_version(doc, user):
     new_doc.valid_from = None
     new_doc.valid_till = None
     new_doc.status = "Draft"
+    new_doc.prev_doc = doc
     new_doc.insert()
     frappe.db.commit()
     return {'name': new_doc.name, 'url': get_url_to_form("QM Document", new_doc.name)}

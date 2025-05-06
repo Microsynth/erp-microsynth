@@ -20,6 +20,7 @@
   "status",
   "classification_level",
   "amended_from",
+  "prev_doc",
   "meta_data_section",
   "created_on",
   "reviewed_on",
@@ -301,11 +302,19 @@
    "fieldtype": "Select",
    "label": "Registered externally",
    "options": "\nyes\nno"
+  },
+  {
+   "fieldname": "prev_doc",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Previous Document",
+   "options": "QM Document",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-05 16:41:38.067370",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-05-06 12:44:20.045969",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
