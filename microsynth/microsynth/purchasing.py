@@ -431,7 +431,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'item_name': item_name[:140],
                 'item_group': 'Purchasing',
                 'stock_uom': 'Pcs',
-                'is_stock_item': 1 if internal_code else 0,
+                'is_stock_item': 1,  # if internal_code else 0,
                 'description': item_name,
                 'is_purchase_item': 1,
                 'is_sales_item': 0
