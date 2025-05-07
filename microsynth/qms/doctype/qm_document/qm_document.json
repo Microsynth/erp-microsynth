@@ -20,6 +20,7 @@
   "status",
   "classification_level",
   "amended_from",
+  "prev_doc",
   "meta_data_section",
   "created_on",
   "reviewed_on",
@@ -62,6 +63,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "1",
    "fetch_from": "qm_process.process_number",
    "fieldname": "process_number",
@@ -73,6 +75,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "1",
    "fetch_from": "qm_process.subprocess_number",
    "fieldname": "subprocess_number",
@@ -84,6 +87,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "chapter",
    "fieldtype": "Int",
    "in_standard_filter": 1,
@@ -240,6 +244,7 @@
    "options": "Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -297,11 +302,19 @@
    "fieldtype": "Select",
    "label": "Registered externally",
    "options": "\nyes\nno"
+  },
+  {
+   "fieldname": "prev_doc",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Previous Document",
+   "options": "QM Document",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-11 17:05:26.486264",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2025-05-06 12:44:20.045969",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "QMS",
  "name": "QM Document",
  "owner": "Administrator",
