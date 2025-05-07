@@ -623,10 +623,12 @@ def has_intercompany_order(sales_order_id, po_no):
     if po_no and po_no.startswith("SO-"):
         if frappe.db.exists("Sales Order", po_no):
             return po_no
-    
-    sales_orders = frappe.get_all("Sales Order", filters=[['po_no', '=', sales_order_id], ['docstatus', '=', 1]], fields=['name'])
-    if len(sales_orders) > 0:
-        return sales_orders[0]['name']
+    if sales_order_id:
+        sales_orders = frappe.get_all("Sales Order", filters=[['po_no', '=', sales_order_id], ['docstatus', '=', 1]], fields=['name'])
+        if len(sales_orders) > 0:
+            return sales_orders[0]['name']
+        else:
+            return None
     else:
         return None
 

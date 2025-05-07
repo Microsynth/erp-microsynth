@@ -39,6 +39,15 @@ frappe.ui.form.on('Delivery Note', {
 				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
 			});
 		}
+
+        // link intercompany order
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
+            has_intercompany_order(frm).then(response => {
+                if (response.message){
+                    frm.dashboard.add_comment("Please also see <a href='/desk#Form/Sales Order/" + response.message + "'>" + response.message + "</a>", 'green', true);
+                }
+            });
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -105,4 +114,15 @@ function check_prevdoc_rates(frm) {
     } else {
         locals.prevdoc_checked = true;
     }
+}
+
+
+function has_intercompany_order(frm) {
+    return frappe.call({
+        "method": "microsynth.microsynth.utils.has_intercompany_order",
+        "args": {
+            "sales_order_id": null,
+            "po_no": frm.doc.po_no
+        }
+    });
 }
