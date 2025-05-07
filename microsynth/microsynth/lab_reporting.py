@@ -498,7 +498,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
     Find Mycoplasma Sales Orders that have no Delivery Note and are not Closed or Cancelled.
     Check if all their Samples are Processed. If yes, create a Delivery Note in Draft status.
 
-    bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
+    bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion --kwargs "{'verbose': True}"
     """
     open_mycoplasma_sales_orders = frappe.db.sql("""
             SELECT `tabSales Order`.`name`,
@@ -506,7 +506,9 @@ def check_mycoplasma_sales_order_completion(verbose=False):
             FROM `tabSales Order`
             LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
             LEFT JOIN `tabDelivery Note Item` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+                                                 AND `tabDelivery Note Item`.`docstatus` < 2
             LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+                                            AND `tabDelivery Note`.`docstatus` < 2
             WHERE `tabSales Order`.`docstatus` = 1
                 AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
                 AND `tabSales Order`.`product_type` = "Genetic Analysis"
@@ -531,6 +533,8 @@ def check_mycoplasma_sales_order_completion(verbose=False):
     for sales_order in open_mycoplasma_sales_orders:
         if not validate_sales_order(sales_order['name']):
             # validate_sales_order writes to the error log in case of an issue
+            if verbose:
+                print(f"Sales Order {sales_order['name']} is not valid (check utils.validate_sales_order).")
             continue
         try:
             samples = frappe.db.sql(f"""
