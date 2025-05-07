@@ -233,8 +233,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-02 16:10:47.116432",
- "modified_by": "Administrator",
+ "modified": "2025-05-07 09:20:18.295201",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
  "owner": "Administrator",
@@ -252,6 +252,8 @@
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -260,6 +262,7 @@
    "read": 1,
    "report": 1,
    "role": "QAU",
+   "submit": 1,
    "write": 1
   },
   {
