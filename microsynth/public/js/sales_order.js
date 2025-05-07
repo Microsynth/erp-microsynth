@@ -28,6 +28,15 @@ frappe.ui.form.on('Sales Order', {
             frappe.msgprint( __("Please set a Product Type"), __("Validation") );
         }
 
+        // link intercompany order
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
+            has_intercompany_order(frm).then(response => {
+                if (response.message){
+                    frm.dashboard.add_comment("Please also see <a href='/desk#Form/Sales Order/" + response.message + "'>" + response.message + "</a>", 'green', true);
+                }
+            });
+        }
+
         // emphasize the usage of a manually created Customer
         if (!frm.doc.__islocal && frm.doc.docstatus == 0 && !(/^\d+$/.test(frm.doc.customer))) {
             cur_frm.dashboard.clear_comment();
@@ -41,7 +50,7 @@ frappe.ui.form.on('Sales Order', {
                     "args": {
                         "sales_order_id": frm.doc.name
                     }
-                })
+                });
             });
         } else {
             prepare_naming_series(frm);             // common function
@@ -131,6 +140,17 @@ frappe.ui.form.on('Sales Order Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function has_intercompany_order(frm) {
+    return frappe.call({
+        "method": "microsynth.microsynth.utils.has_intercompany_order",
+        "args": {
+            "sales_order_id": frm.doc.name,
+            "po_no": frm.doc.po_no
+        }
+    });
+}
 
 
 function link_quote(sales_order) {

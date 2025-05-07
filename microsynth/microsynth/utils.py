@@ -610,6 +610,27 @@ def get_supplier_for_product_type(company, product_type):
     else:
         return None
 
+
+@frappe.whitelist()
+def has_intercompany_order(sales_order_id, po_no):
+    """
+    Check if the PO corresponds to an existing Sales Order or
+    if there is a submitted Sales Order that has the given sales_order_id as po_no.
+    If yes, return the (first) Sales Order ID, else None
+
+    bench execute microsynth.microsynth.utils.has_intercompany_order --kwargs "{'sales_order_id': 'SO-BAL-25017491', 'po_no': 'SO-LYO-25000606'}"
+    """
+    if po_no and po_no.startswith("SO-"):
+        if frappe.db.exists("Sales Order", po_no):
+            return po_no
+    
+    sales_orders = frappe.get_all("Sales Order", filters=[['po_no', '=', sales_order_id], ['docstatus', '=', 1]], fields=['name'])
+    if len(sales_orders) > 0:
+        return sales_orders[0]['name']
+    else:
+        return None
+
+
 def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
