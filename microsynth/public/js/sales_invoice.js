@@ -210,7 +210,7 @@ function has_intercompany_orders(frm) {
     return frappe.call({
         "method": "microsynth.microsynth.utils.has_intercompany_orders",
         "args": {
-            "po_no": frm.doc.po_no
+            "po_no": frm.doc.po_no || null
         }
     });
 }

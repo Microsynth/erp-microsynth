@@ -147,7 +147,7 @@ function has_intercompany_order(frm) {
         "method": "microsynth.microsynth.utils.has_intercompany_order",
         "args": {
             "sales_order_id": frm.doc.name,
-            "po_no": frm.doc.po_no
+            "po_no": frm.doc.po_no || null
         }
     });
 }
