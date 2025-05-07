@@ -711,7 +711,7 @@ def validate_sales_order(sales_order):
     # Check if delivery notes exists. consider also deliver notes with the same web_order_id
     web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
     if web_order_id:
-        web_order_id_condition = f"OR `tabDelivery Note`.`web_order_id` = {web_order_id}"
+        web_order_id_condition = f" OR `tabDelivery Note`.`web_order_id` = '{web_order_id}' "
     else:
         web_order_id_condition = ""
 
@@ -719,9 +719,9 @@ def validate_sales_order(sales_order):
         SELECT `tabDelivery Note Item`.`parent`
         FROM `tabDelivery Note Item`
         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
-            AND `tabDelivery Note Item`.`docstatus` < 2)
-            {web_order_id_condition};
+        WHERE `tabDelivery Note Item`.`docstatus` < 2
+            AND (`tabDelivery Note Item`.`against_sales_order` = '{sales_order}'
+                {web_order_id_condition});
         """, as_dict=True)
 
     if len(delivery_notes) > 0:
