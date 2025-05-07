@@ -14,7 +14,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import get_customer
-from microsynth.microsynth.utils import validate_sales_order
+from microsynth.microsynth.utils import validate_sales_order_status
 
 
 def find_sales_orders(web_order_id):
@@ -531,10 +531,10 @@ def check_mycoplasma_sales_order_completion(verbose=False):
 
     # check completion of each Mycoplasma Sales Order: Sequencing Labels of this order on processed
     for sales_order in open_mycoplasma_sales_orders:
-        if not validate_sales_order(sales_order['name']):
-            # validate_sales_order writes to the error log in case of an issue
+        if not validate_sales_order_status(sales_order['name']):
+            # validate_sales_order_status writes to the error log in case of an issue
             if verbose:
-                print(f"Sales Order {sales_order['name']} is not valid (check utils.validate_sales_order).")
+                print(f"Sales Order {sales_order['name']} is not valid (check utils.validate_sales_order_status and the Error Log).")
             continue
         try:
             samples = frappe.db.sql(f"""
