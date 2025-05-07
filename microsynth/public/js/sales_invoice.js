@@ -160,6 +160,15 @@ frappe.ui.form.on('Sales Invoice', {
             // reset form html, in case of opening the form after a previous credit
             cur_frm.set_df_property('customer_credit_booking_html', 'options', "<div></div>");
         }
+
+        // link intercompany invoice
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1 && frm.doc.po_no.startsWith('SO-')) {
+            has_intercompany_orders(frm).then(response => {
+                if (response.message){
+                    frm.dashboard.add_comment("Please also see " + response.message, 'green', true);
+                }
+            });
+        }
     },
     company(frm) {
         set_naming_series(frm);                 // common function
@@ -195,6 +204,16 @@ frappe.ui.form.on('Sales Invoice Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function has_intercompany_orders(frm) {
+    return frappe.call({
+        "method": "microsynth.microsynth.utils.has_intercompany_orders",
+        "args": {
+            "po_no": frm.doc.po_no
+        }
+    });
+}
 
 
 function clear_credits(frm) {

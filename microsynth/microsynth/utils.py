@@ -633,6 +633,29 @@ def has_intercompany_order(sales_order_id, po_no):
         return None
 
 
+@frappe.whitelist()
+def has_intercompany_orders(po_no):
+    """
+    Check if the PO corresponds to existing Sales Orders.
+    If yes, return the a html link list, else None
+
+    bench execute microsynth.microsynth.utils.has_intercompany_orders --kwargs "{'sales_invoice_id': 'SO-BAL-25017491', 'po_no': 'SO-LYO-25000606'}"
+    """
+    if po_no and po_no.startswith("SO-"):
+        html_parts = []
+        sales_order_ids = po_no.split(',')
+        for so_id in sales_order_ids:
+            so_id = so_id.strip()
+            if frappe.db.exists("Sales Order", so_id):
+                html_parts.append("<a href='/desk#Form/Sales Order/" + so_id + "'>" + so_id + "</a>")
+        if len(html_parts) > 0:
+            return ', '.join(html_parts)
+        else:
+            return None
+    else:
+        return None
+
+
 def validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted, has an allowed
