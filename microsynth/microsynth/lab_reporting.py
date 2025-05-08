@@ -560,15 +560,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
             if pending_samples:
                 continue
 
-            # all processed: create delivery
-            customer_name = frappe.get_value("Sales Order", sales_order['name'], 'customer')
-            customer = frappe.get_doc("Customer", customer_name)
-
-            if customer.disabled:
-                frappe.log_error(f"Customer '{customer.name}' of Sales Order '{sales_order['name']}' is disabled. Cannot create a Delivery Note.", "lab_reporting.check_mycoplasma_sales_order_completion")
-                continue
-            
-            # create Delivery Note (leave on draft: submitted in a batch process later on)
+            # all processed: create Delivery Note (leave on draft: submitted in a batch process later on)
             dn_content = make_delivery_note(sales_order['name'])
             dn = frappe.get_doc(dn_content)
             company = frappe.get_value("Sales Order", sales_order, "company")
@@ -582,43 +574,49 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                 print(f"Created Delivery Note {dn.name} for Sales Order {sales_order['name']}.")
 
         except Exception as err:
-            frappe.log_error(f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}", "lab_reporting.check_mycoplasma_sales_order_completion")
+            msg = f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}"
+            frappe.log_error(msg, "lab_reporting.check_mycoplasma_sales_order_completion")
+            if verbose:
+                print(msg)
 
 
-def check_submit_mycoplasma_delivery_note(delivery_note):
+def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
     """
     Check if the delivery note is eligible for autocompletion and submit it.
 
-    run
-    bench execute microsynth.microsynth.lab_reporting.check_submit_mycoplasma_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508'}"
+    bench execute microsynth.microsynth.lab_reporting.check_submit_mycoplasma_delivery_note --kwargs "{'delivery_note': 'DN-BAL-24050508', 'verbose': True}"
     """
     try:
         delivery_note = frappe.get_doc("Delivery Note", delivery_note)
 
         if delivery_note.docstatus != 0:
             msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
-            print(msg)
+            if verbose:
+                print(msg)
             frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
             return
 
         sales_orders = []
         for i in delivery_note.items:
             if i.item_code not in ['6032', '6033']:
-                print(f"Delivery Note '{delivery_note.name}': Item '{i.item_code}' is not allowed for autocompletion")
+                if verbose:
+                    print(f"Delivery Note '{delivery_note.name}': Item '{i.item_code}' is not allowed for autocompletion")
                 return
             if i.against_sales_order and (i.against_sales_order not in sales_orders):
                 sales_orders.append(i.against_sales_order)
 
         if len(sales_orders) != 1:
-            msg = f"Delivery Note '{delivery_note.name}' is derived from {len(sales_orders)} Sales Orders"
-            print(msg)
+            msg = f"Delivery Note '{delivery_note.name}' is derived from {len(sales_orders)} Sales Orders. Not going to submit it."
+            if verbose:
+                print(msg)
             frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
             return
 
         # Check that the delivery note was created at least 7 days ago
         time_between_insertion = datetime.today() - delivery_note.creation
         if time_between_insertion.days <= 7:
-            print(f"Delivery Note '{delivery_note.name}' is not older than 7 days and was created on {delivery_note.creation}")
+            if verbose:
+                print(f"Delivery Note '{delivery_note.name}' is not older than 7 days and was created on {delivery_note.creation}. Not going to submit it.")
             return
 
         # Check that the Delivery Note does not contain a Sample with a Barcode Label associated with more than one Sample
@@ -631,7 +629,10 @@ def check_submit_mycoplasma_delivery_note(delivery_note):
                 for s in samples:
                     url = get_url_to_form("Sample", s['name'])
                     sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
-                frappe.log_error(f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}")
+                msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}"
+                frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+                if verbose:
+                    print(msg)
                 # Create Email Template with the Name and Subject "Mycoplasma Barcode used multiple times", Sender erp@microsynth.ch,
                 # Sender Full Name "Microsynth ERP", Recipients SWö, CC Recipients RSu, JPe and the following response?:
                 """
@@ -671,14 +672,17 @@ def check_submit_mycoplasma_delivery_note(delivery_note):
         delivery_note.submit()
 
     except Exception as err:
-        frappe.log_error(f"Cannot process Delivery Note '{delivery_note.name}': \n{err}", "lab_reporting.check_submit_mycoplasma_delivery_note")
+        msg = f"Cannot process Delivery Note '{delivery_note.name}': \n{err}"
+        frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+        if verbose:
+            print(msg)
 
 
-def submit_mycoplasma_delivery_notes():
+def submit_mycoplasma_delivery_notes(verbose=False):
     """
     Checks all delivery note drafts of product type sequencing and submits them if eligible.
 
-    bench execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes
+    bench execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes --kwargs "{'verbose': True}"
     """
     delivery_notes = frappe.db.sql(f"""
         SELECT `tabDelivery Note`.`name`
@@ -689,8 +693,9 @@ def submit_mycoplasma_delivery_notes():
             AND `tabDelivery Note Item`.`item_code` IN ('6032', '6033')
         GROUP BY `tabDelivery Note`.`name`
     ;""", as_dict=True)
-    #print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts.")
+    if verbose:
+        print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts.")
 
     for dn in delivery_notes:
-        check_submit_mycoplasma_delivery_note(dn.name)
+        check_submit_mycoplasma_delivery_note(dn.get('name'), verbose)
         frappe.db.commit()
