@@ -497,6 +497,9 @@ def check_mycoplasma_sales_order_completion(verbose=False):
     """
     Find Mycoplasma Sales Orders that have no Delivery Note and are not Closed or Cancelled.
     Check if all their Samples are Processed. If yes, create a Delivery Note in Draft status.
+    Should be run by a daily (or hourly?) cronjob:
+    # check mycoplasma sales orders for completion
+    25 15 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion
 
     bench execute microsynth.microsynth.lab_reporting.check_mycoplasma_sales_order_completion --kwargs "{'verbose': True}"
     """
@@ -683,6 +686,9 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
 def submit_mycoplasma_delivery_notes(verbose=False):
     """
     Checks all delivery note drafts of product type sequencing and submits them if eligible.
+    Should be run by a daily cronjob:
+    # submit mycoplasma delivery notes with defined items
+    20 15 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes
 
     bench execute microsynth.microsynth.lab_reporting.submit_mycoplasma_delivery_notes --kwargs "{'verbose': True}"
     """
