@@ -2430,27 +2430,64 @@ def is_contact_used(contact_id):
 
     bench execute microsynth.microsynth.webshop.is_contact_used --kwargs "{'contact_id': '243482'}"
     """
-    linked_doctypes = {
-        # 'Supplier Quotation': {'fieldname': ['contact_person']},
-        'Quotation': {'fieldname': ['contact_person', 'shipping_contact']},
-        'Customer': {'fieldname': ['customer_primary_contact', 'invoice_to', 'reminder_to']},
-        'Sales Order': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
-        # 'Purchase Receipt': {'fieldname': ['contact_person']},
-        # 'Delivery Note': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
-        # 'Purchase Invoice': {'fieldname': ['contact_person']},
-        # 'Purchase Order': {'fieldname': ['contact_person', 'customer_contact_person']},
-        'Sales Invoice': {'fieldname': ['contact_person', 'invoice_to', 'shipping_contact']},
-        # 'Payment Entry': {'fieldname': ['contact_person']},
-        # 'Product Idea': {'fieldname': ['contact_person']},
-        # 'Benchmark': {'fieldname': ['contact_person']},
-        # 'Standing Quotation': {'fieldname': ['contact']},
-        # 'Contact Note': {'fieldname': ['contact_person']},
-        # 'Sequencing Label': {'fieldname': ['contact', 'registered_to']},
-        # 'Punchout Shop': {'fieldname': ['billing_contact']},
-        # 'Analysis Report': {'fieldname': ['contact_person']},
-        # 'Label Log': {'fieldname': ['contact', 'registered_to']}
-    }
-    linked_docs = get_linked_docs('Contact', contact_id, linked_doctypes)
+    # linked_doctypes = {
+    #     # 'Supplier Quotation': {'fieldname': ['contact_person']},
+    #     'Quotation': {'fieldname': ['contact_person', 'shipping_contact']},
+    #     'Customer': {'fieldname': ['customer_primary_contact', 'invoice_to', 'reminder_to']},
+    #     'Sales Order': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
+    #     # 'Purchase Receipt': {'fieldname': ['contact_person']},
+    #     # 'Delivery Note': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
+    #     # 'Purchase Invoice': {'fieldname': ['contact_person']},
+    #     # 'Purchase Order': {'fieldname': ['contact_person', 'customer_contact_person']},
+    #     'Sales Invoice': {'fieldname': ['contact_person', 'invoice_to', 'shipping_contact']},
+    #     # 'Payment Entry': {'fieldname': ['contact_person']},
+    #     # 'Product Idea': {'fieldname': ['contact_person']},
+    #     # 'Benchmark': {'fieldname': ['contact_person']},
+    #     # 'Standing Quotation': {'fieldname': ['contact']},
+    #     # 'Contact Note': {'fieldname': ['contact_person']},
+    #     # 'Sequencing Label': {'fieldname': ['contact', 'registered_to']},
+    #     # 'Punchout Shop': {'fieldname': ['billing_contact']},
+    #     # 'Analysis Report': {'fieldname': ['contact_person']},
+    #     # 'Label Log': {'fieldname': ['contact', 'registered_to']}
+    # }
+    # linked_docs = get_linked_docs('Contact', contact_id, linked_doctypes)
+    sql_query = """
+        SELECT 'Quotation' AS doctype,
+            `tabQuotation`.`name`
+        FROM `tabQuotation`
+        WHERE `tabQuotation`.`contact_person` = %(contact_id)s
+        OR `tabQuotation`.`shipping_contact` = %(contact_id)s
+
+        UNION
+
+        SELECT 'Customer' AS doctype,
+            `tabCustomer`.`name`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`customer_primary_contact` = %(contact_id)s
+        OR `tabCustomer`.`invoice_to` = %(contact_id)s
+        OR `tabCustomer`.`reminder_to` = %(contact_id)s
+
+        UNION
+
+        SELECT 'Sales Order' AS doctype,
+            `tabSales Order`.`name`
+        FROM `tabSales Order`
+        WHERE `tabSales Order`.`contact_person` = %(contact_id)s
+        OR `tabSales Order`.`shipping_contact` = %(contact_id)s
+        OR `tabSales Order`.`invoice_to` = %(contact_id)s
+
+        UNION
+
+        SELECT 'Sales Invoice' AS doctype,
+            `tabSales Invoice`.`name`
+        FROM `tabSales Invoice`
+        WHERE `tabSales Invoice`.`contact_person` = %(contact_id)s
+        OR `tabSales Invoice`.`invoice_to` = %(contact_id)s
+        OR `tabSales Invoice`.`shipping_contact` = %(contact_id)s;
+        """
+    # Use %(contact_id)s with parameter binding to safely escape input and prevent SQL injection.
+    # Avoid f-strings for SQL to prevent security risks and ensure query correctness.
+    linked_docs = frappe.db.sql(sql_query, {'contact_id': contact_id}, as_dict=True)
     #print(linked_docs)
     return len(linked_docs) > 0
 
@@ -2461,20 +2498,47 @@ def is_address_used(address_id):
 
     bench execute microsynth.microsynth.webshop.is_address_used --kwargs "{'address_id': '215856'}"
     """
-    linked_doctypes = {
-        # 'Supplier Quotation': {'fieldname': ['supplier_address']},
-        'Quotation': {'fieldname': ['customer_address', 'shipping_address_name']},
-        # 'Customer': {'fieldname': ['customer_primary_address']},
-        'Sales Order': {'fieldname': ['customer_address', 'shipping_address_name', 'company_address']},
-        # 'Purchase Receipt': {'fieldname': ['shipping_address', 'supplier_address']},
-        # 'Delivery Note': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
-        # 'Purchase Invoice': {'fieldname': ['shipping_address', 'supplier_address']},
-        # 'Purchase Order': {'fieldname': ['shipping_address', 'supplier_address']},
-        'Sales Invoice': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
-        # 'Standing Quotation': {'fieldname': ['address']},
-        # 'Punchout Shop': {'fieldname': ['billing_address']},
-        # 'Analysis Report': {'fieldname': ['address']},
-        # 'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
-    }
-    linked_docs = get_linked_docs('Address', address_id, linked_doctypes)
+    # linked_doctypes = {
+    #     # 'Supplier Quotation': {'fieldname': ['supplier_address']},
+    #     'Quotation': {'fieldname': ['customer_address', 'shipping_address_name']},
+    #     # 'Customer': {'fieldname': ['customer_primary_address']},
+    #     'Sales Order': {'fieldname': ['customer_address', 'shipping_address_name', 'company_address']},
+    #     # 'Purchase Receipt': {'fieldname': ['shipping_address', 'supplier_address']},
+    #     # 'Delivery Note': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
+    #     # 'Purchase Invoice': {'fieldname': ['shipping_address', 'supplier_address']},
+    #     # 'Purchase Order': {'fieldname': ['shipping_address', 'supplier_address']},
+    #     'Sales Invoice': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
+    #     # 'Standing Quotation': {'fieldname': ['address']},
+    #     # 'Punchout Shop': {'fieldname': ['billing_address']},
+    #     # 'Analysis Report': {'fieldname': ['address']},
+    #     # 'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
+    # }
+    # linked_docs = get_linked_docs('Address', address_id, linked_doctypes)
+    sql_query = """
+        SELECT 'Quotation' AS doctype,
+            `tabQuotation`.`name`
+        FROM `tabQuotation`
+        WHERE `tabQuotation`.`customer_address` = %(address_id)s
+            OR `tabQuotation`.`shipping_address_name` = %(address_id)s
+
+        UNION
+
+        SELECT 'Sales Order' AS doctype,
+            `tabSales Order`.`name`
+        FROM `tabSales Order`
+        WHERE `tabSales Order`.`customer_address` = %(address_id)s
+            OR `tabSales Order`.`shipping_address_name` = %(address_id)s
+            OR `tabSales Order`.`company_address` = %(address_id)s
+
+        UNION
+
+        SELECT 'Sales Invoice' AS doctype,
+            `tabSales Invoice`.`name`
+        FROM `tabSales Invoice`
+        WHERE `tabSales Invoice`.`customer_address` = %(address_id)s
+            OR `tabSales Invoice`.`shipping_address_name` = %(address_id)s
+            OR `tabSales Invoice`.`company_address` = %(address_id)s;
+        """
+    linked_docs = frappe.db.sql(sql_query, {'address_id': address_id}, as_dict=True)
+    #print(linked_docs)
     return len(linked_docs) > 0
