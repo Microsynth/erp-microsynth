@@ -670,6 +670,8 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
                 return
 
         delivery_note.submit()
+        if verbose:
+            print(f"Submitted Delivery Note {delivery_note.name}.")
 
     except Exception as err:
         msg = f"Cannot process Delivery Note '{delivery_note.name}': \n{err}"
