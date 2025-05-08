@@ -1,4 +1,14 @@
 frappe.ui.form.on('User', {
+    before_save(frm) {
+        if (!frm.doc.enabled) {
+            frappe.call({
+                "method":"microsynth.microsynth.doctype.user_settings.user_settings.disable_user_settings",
+                "args":{
+                    "email": frm.doc.name
+                }
+            })
+        }        
+    },
     validate(frm) {
         if (frm.doc.new_password) {
             // check that this password is different from approval password
