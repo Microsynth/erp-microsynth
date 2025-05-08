@@ -2420,7 +2420,7 @@ def is_customer_used(customer_id):
         'Payment Entry': {'fieldname': ['party'], 'doctype_fieldname': 'party_type'}
     }
     linked_docs = get_linked_docs('Customer', customer_id, linked_doctypes)
-    print(linked_docs)
+    #print(linked_docs)
     return len(linked_docs) > 0
 
 
@@ -2431,24 +2431,24 @@ def is_contact_used(contact_id):
     bench execute microsynth.microsynth.webshop.is_contact_used --kwargs "{'contact_id': '243482'}"
     """
     linked_doctypes = {
-        'Supplier Quotation': {'fieldname': ['contact_person']},
+        # 'Supplier Quotation': {'fieldname': ['contact_person']},
         'Quotation': {'fieldname': ['contact_person', 'shipping_contact']},
         'Customer': {'fieldname': ['customer_primary_contact', 'invoice_to', 'reminder_to']},
         'Sales Order': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
-        'Purchase Receipt': {'fieldname': ['contact_person']},
-        'Delivery Note': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
-        'Purchase Invoice': {'fieldname': ['contact_person']},
-        'Purchase Order': {'fieldname': ['contact_person', 'customer_contact_person']},
+        # 'Purchase Receipt': {'fieldname': ['contact_person']},
+        # 'Delivery Note': {'fieldname': ['contact_person', 'shipping_contact', 'invoice_to']},
+        # 'Purchase Invoice': {'fieldname': ['contact_person']},
+        # 'Purchase Order': {'fieldname': ['contact_person', 'customer_contact_person']},
         'Sales Invoice': {'fieldname': ['contact_person', 'invoice_to', 'shipping_contact']},
-        'Payment Entry': {'fieldname': ['contact_person']},
-        'Product Idea': {'fieldname': ['contact_person']},
-        'Benchmark': {'fieldname': ['contact_person']},
-        'Standing Quotation': {'fieldname': ['contact']},
-        'Contact Note': {'fieldname': ['contact_person']},
-        'Sequencing Label': {'fieldname': ['contact', 'registered_to']},
-        'Punchout Shop': {'fieldname': ['billing_contact']},
-        'Analysis Report': {'fieldname': ['contact_person']},
-        'Label Log': {'fieldname': ['contact', 'registered_to']}
+        # 'Payment Entry': {'fieldname': ['contact_person']},
+        # 'Product Idea': {'fieldname': ['contact_person']},
+        # 'Benchmark': {'fieldname': ['contact_person']},
+        # 'Standing Quotation': {'fieldname': ['contact']},
+        # 'Contact Note': {'fieldname': ['contact_person']},
+        # 'Sequencing Label': {'fieldname': ['contact', 'registered_to']},
+        # 'Punchout Shop': {'fieldname': ['billing_contact']},
+        # 'Analysis Report': {'fieldname': ['contact_person']},
+        # 'Label Log': {'fieldname': ['contact', 'registered_to']}
     }
     linked_docs = get_linked_docs('Contact', contact_id, linked_doctypes)
     #print(linked_docs)
@@ -2462,19 +2462,19 @@ def is_address_used(address_id):
     bench execute microsynth.microsynth.webshop.is_address_used --kwargs "{'address_id': '215856'}"
     """
     linked_doctypes = {
-        'Supplier Quotation': {'fieldname': ['supplier_address']},
+        # 'Supplier Quotation': {'fieldname': ['supplier_address']},
         'Quotation': {'fieldname': ['customer_address', 'shipping_address_name']},
-        'Customer': {'fieldname': ['customer_primary_address']},
+        # 'Customer': {'fieldname': ['customer_primary_address']},
         'Sales Order': {'fieldname': ['customer_address', 'shipping_address_name', 'company_address']},
-        'Purchase Receipt': {'fieldname': ['shipping_address', 'supplier_address']},
-        'Delivery Note': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
-        'Purchase Invoice': {'fieldname': ['shipping_address', 'supplier_address']},
-        'Purchase Order': {'fieldname': ['shipping_address', 'supplier_address']},
+        # 'Purchase Receipt': {'fieldname': ['shipping_address', 'supplier_address']},
+        # 'Delivery Note': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
+        # 'Purchase Invoice': {'fieldname': ['shipping_address', 'supplier_address']},
+        # 'Purchase Order': {'fieldname': ['shipping_address', 'supplier_address']},
         'Sales Invoice': {'fieldname': ['customer_address', 'company_address', 'shipping_address_name']},
-        'Standing Quotation': {'fieldname': ['address']},
-        'Punchout Shop': {'fieldname': ['billing_address']},
-        'Analysis Report': {'fieldname': ['address']},
-        'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
+        # 'Standing Quotation': {'fieldname': ['address']},
+        # 'Punchout Shop': {'fieldname': ['billing_address']},
+        # 'Analysis Report': {'fieldname': ['address']},
+        # 'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
     }
     linked_docs = get_linked_docs('Address', address_id, linked_doctypes)
     return len(linked_docs) > 0
