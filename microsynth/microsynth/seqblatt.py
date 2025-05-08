@@ -152,7 +152,9 @@ def check_sales_order_completion():
             `tabSales Order`.`web_order_id`
         FROM `tabSales Order`
         LEFT JOIN `tabDelivery Note Item` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+                                          AND `tabDelivery Note Item`.`docstatus` < 2
         LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+                                     AND `tabDelivery Note`.`docstatus` < 2
         WHERE `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` NOT IN ("Closed", "Completed")
             AND `tabSales Order`.`product_type` = "Sequencing"
