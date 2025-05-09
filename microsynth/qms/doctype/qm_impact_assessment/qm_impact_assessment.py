@@ -53,4 +53,4 @@ def cancel(impact_assessment):
             impact_assessment_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Impact Assessment", impact_assessment_doc.name)
+            frappe.throw(f"Unable to cancel QM Impact Assessment {impact_assessment}:\n{err}")

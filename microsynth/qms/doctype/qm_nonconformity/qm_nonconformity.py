@@ -220,7 +220,7 @@ def cancel(nc):
             nc_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Nonconformity", nc_doc.name)
+            frappe.throw(f"Unable to cancel QM Nonconformity {nc}:\n{err}")
 
 
 @frappe.whitelist()

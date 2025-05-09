@@ -122,7 +122,7 @@ def cancel(action):
             action_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Action", action_doc.name)
+            frappe.throw(f"Unable to cancel QM Action {action}:\n{err}")
 
 
 @frappe.whitelist()
