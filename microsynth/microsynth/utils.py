@@ -2563,6 +2563,23 @@ def user_has_role(user, role):
     return len(role_matches) > 0
 
 
+# def user_has_roles(user, roles):
+#     """
+#     Check if a given user has at least one of the given roles.
+
+#     bench execute microsynth.microsynth.utils.user_has_roles --kwargs "{'user': 'rolf.suter@microsynth.ch', 'roles': ['Robot', 'Blogger']}"
+#     """
+#     role_matches = frappe.db.sql(f"""
+#         SELECT `parent`, `role`
+#         FROM `tabHas Role`
+#         WHERE `parent` = "{user}"
+#           AND `role` IN ({get_sql_list(roles)})
+#           AND `parenttype` = "User";
+#         """, as_dict=True)
+
+#     return len(role_matches) > 0
+
+
 @frappe.whitelist()
 def get_potential_contact_duplicates(contact_id):
     """
@@ -2635,6 +2652,32 @@ def set_module_for_all_users(module):
     users = frappe.get_all("User", fields=['name'])
     for user in users:
         set_module_for_one_user(module, user['name'])
+
+
+def set_module_according_to_role(user, role_module_mapping):
+    """
+    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'role_module_mapping': {}}"
+    """
+    # exclude some roles
+    if user_has_role(user, 'System Manager'):
+        return
+    modules = set()
+    for role in role_module_mapping.keys():
+        if user_has_role(user, role):
+            modules.add(role_module_mapping[role])
+    home_settings = {'modules_by_category': {'Administration': [], 'Modules': list(modules), 'Places': [], 'Domains': []}}
+    s = frappe.parse_json(home_settings)
+    frappe.cache().hset('home_settings', user, s)  # update cached value (s as dict)
+    frappe.db.set_value('User', user, 'home_settings', json.dumps(home_settings))  # also update database value
+
+
+def set_modules_for_all_users(role_module_mapping):
+    """
+    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {}}"
+    """
+    enabled_users = frappe.get_all("User", filters={'enabled': 1}, fields=['name'])
+    for user in enabled_users:
+        set_module_according_to_role(user, role_module_mapping)
 
 
 @frappe.whitelist()
