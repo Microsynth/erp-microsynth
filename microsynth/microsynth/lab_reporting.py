@@ -551,7 +551,8 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                     `tabSample Link`.`parent` = "{sales_order['name']}"
                     AND `tabSample Link`.`parenttype` = "Sales Order"
                 ;""", as_dict=True)
-
+            if len(samples) == 0:
+                continue
             pending_samples = False
             # check status of label assigned to each sample
             for sample_label in samples:
