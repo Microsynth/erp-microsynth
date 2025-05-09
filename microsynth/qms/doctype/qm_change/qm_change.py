@@ -176,7 +176,8 @@ def cancel(change):
             change_doc.cancel()
             frappe.db.commit()
         except Exception as err:
-            force_cancel("QM Change", change_doc.name)
+            frappe.throw(f"Unable to cancel QM Change {change}:\n{err}")
+            #force_cancel("QM Change", change_doc.name)  # won't work for non-Draft documents
 
 
 @frappe.whitelist()

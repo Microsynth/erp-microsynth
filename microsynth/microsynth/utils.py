@@ -2514,6 +2514,7 @@ def force_cancel(dt, dn):
     except Exception as err:
         frappe.log_error(err, "Force cancel failed on {dt}:{dn}".format(dt=dt, dn=dn) )
     else:
+        # TODO: If dn has not docstatus 0, it will not be set to docstatus 2, but will be commented:
         new_comment = frappe.get_doc({
             'doctype': 'Comment',
             'comment_type': "Comment",
