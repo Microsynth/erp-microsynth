@@ -2104,9 +2104,12 @@ def get_contact_dto(contact):
         'institute': contact.institute,
         'department': contact.department,
         'room': contact.room,
+        'group_leader': contact.group_leader,
+        'email': contact.email_id,
+        'email_cc': contact.email_id, #TODO fetch correct CC mail address
+        'phone': contact.phone,
         'status': contact.status,
         'source': contact.source,
-        'email': contact.email_id,
         'address': contact.address,
         'customer': get_customer(contact.name)
     }
