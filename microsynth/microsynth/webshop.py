@@ -131,6 +131,7 @@ def register_user(user_data, client="webshop"):
     user_data['contact']['person_id'] = user_data['contact']['name']    # Extend contact object to use the legacy update_contact function
     user_data['contact']['customer_id'] = customer.name
     user_data['contact']['status'] = "Open"
+    user_data['contact']['has_webshop_account'] = 1
     contact_name = update_contact(user_data['contact'])
 
     # Create Contact Lock
