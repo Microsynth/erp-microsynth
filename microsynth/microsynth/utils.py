@@ -2656,24 +2656,32 @@ def set_module_for_all_users(module):
 
 def set_module_according_to_role(user, role_module_mapping):
     """
-    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'role_module_mapping': {}}"
+    bench execute microsynth.microsynth.utils.set_module_according_to_role --kwargs "{'user': 'firstname.lastname@microsynth.ch', 'role_module_mapping': {}}"
     """
     # exclude some roles
     if user_has_role(user, 'System Manager'):
         return
+    if type(role_module_mapping) == str:
+        role_module_mapping = json.loads(role_module_mapping)
     modules = set()
     for role in role_module_mapping.keys():
         if user_has_role(user, role):
-            modules.add(role_module_mapping[role])
+            for module in role_module_mapping[role]:
+                modules.add(module)
     home_settings = {'modules_by_category': {'Administration': [], 'Modules': list(modules), 'Places': [], 'Domains': []}}
     s = frappe.parse_json(home_settings)
-    frappe.cache().hset('home_settings', user, s)  # update cached value (s as dict)
+    #frappe.cache().hset('home_settings', user, s)  # update cached value (s as dict)
+    #TODO: TypeError: unhashable type: '_dict'
+    old_home_settings = frappe.db.get_value('User', user, 'home_settings')
     frappe.db.set_value('User', user, 'home_settings', json.dumps(home_settings))  # also update database value
+    print(f"Changed the home_settings of user {user} from {old_home_settings} to {home_settings}.")
 
 
 def set_modules_for_all_users(role_module_mapping):
     """
-    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {}}"
+    role_module_mapping has to be a dictionary or its string representation mapping roles (strings) to a list of modules (list of strings) each.
+
+    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {'QM User': ['QMS'], 'QAU': ['Microsynth', 'QMS']}}"
     """
     enabled_users = frappe.get_all("User", filters={'enabled': 1}, fields=['name'])
     for user in enabled_users:
