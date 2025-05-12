@@ -50,16 +50,15 @@ frappe.ui.form.on('QM Document', {
         // prepare attachment watcher (to get events/refresh when an attachment is removed or added)
         setup_attachment_watcher(frm);
 
-        // only allow QAU to set/change field "Registered Externally"
-        if (frappe.user.has_role("QAU") && frm.doc.status != 'Invalid') {
-            cur_frm.set_df_property('registered_externally', 'read_only', false);
-            cur_frm.set_df_property('qm_process', 'read_only', false);
-            cur_frm.set_df_property('chapter', 'read_only', false);
-        } else {
-            cur_frm.set_df_property('registered_externally', 'read_only', true);
-            cur_frm.set_df_property('qm_process', 'read_only', true);
-            cur_frm.set_df_property('chapter', 'read_only', true);
-        }
+        const isQAU = frappe.user.has_role('QAU');
+        const isInvalid = frm.doc.status === 'Invalid';
+        const isNew = frm.doc.__islocal;
+
+        // only allow QAU to set/change field "Registered Externally" but not in status Invalid
+        frm.set_df_property('registered_externally', 'read_only', !(isQAU && !isInvalid));
+        // ensure write access to Process and Chapter before the first save
+        frm.set_df_property('qm_process', 'read_only', !(isQAU || isNew));
+        frm.set_df_property('chapter', 'read_only', !(isQAU || isNew));
 
         // Only creator and QAU can change these fields in Draft status: Title, Company, Classification Level, linked Documents
         if (!(["Draft"].includes(frm.doc.status) && (frappe.session.user === frm.doc.created_by || frappe.user.has_role('QAU'))) && !frm.doc.__islocal) {
