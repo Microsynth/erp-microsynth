@@ -454,12 +454,13 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'supplier_part_no': supplier_item_id,
                 'substitute_status': ''
             })
-            #if account:
-                # item.append("item_defaults", {
-                #     'company': company,
-                #     'expense_account': account_name,
-                #     'default_supplier': supplier_mapping[supplier_index]
-                # })  # TODO: Error: "Cannot set multiple Item Defaults for a company."
+            if account:
+                item.item_defaults = []
+                item.append("item_defaults", {
+                    'company': company,
+                    'expense_account': account_name,
+                    'default_supplier': supplier_mapping[supplier_index]
+                })
             item.save()
             print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
             if imported_counter % 1000 == 0:
