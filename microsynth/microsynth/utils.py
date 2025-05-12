@@ -680,7 +680,7 @@ def validate_sales_order_status(sales_order):
             so_url_string = f"<a href={get_url_to_form('Sales Order', so.name)}>{so.name}</a>"
             rendered_content = frappe.render_template(email_template.response, {'sales_order_id': so_url_string, 'web_order_id': so.web_order_id, 'status': so.status})
             send_email_from_template(email_template, rendered_content, rendered_subject)
-            frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\nSent an email to {email_template.recipient}.', 'utils.validate_sales_order_status')
+            #frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\nSent an email to {email_template.recipients}.', 'utils.validate_sales_order_status')
         else:
             frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\n{user=}', 'utils.validate_sales_order_status')
         return False
