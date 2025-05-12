@@ -2199,6 +2199,7 @@ def create_contact(webshop_address, customer):
     contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
     contact['customer_id'] = customer
     contact['status'] = "Passive"
+    contact['phone_number'] = contact.get('phone')
     contact_id = update_contact(contact)
     # create Contact Lock
     lock_contact_by_name(contact_id)
@@ -2295,6 +2296,7 @@ def update_webshop_address(webshop_account, webshop_address):
             # update_customer(customer)
             contact = webshop_address['contact']
             contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
+            contact['phone_number'] = contact.get('phone')
             contact_id = update_contact(contact)
             address = webshop_address['address']
             address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
