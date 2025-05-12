@@ -341,7 +341,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-24_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-24_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-02-24_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-06_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-12_TEST_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -423,7 +423,10 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
             
-            item_code = f"P{int(item_id):0{5}d}"
+            if internal_code:
+                item_code = f"P00{int(internal_code):0{4}d}"
+            else:
+                item_code = f"P01{int(item_id):0{4}d}"
 
             item = frappe.get_doc({
                 'doctype': "Item",
@@ -466,7 +469,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-02-17_Lieferanten_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-02-24_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
