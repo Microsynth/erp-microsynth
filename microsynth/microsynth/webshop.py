@@ -2259,141 +2259,6 @@ def create_webshop_address(webshop_account, webshop_address):
         }
 
 
-@frappe.whitelist()
-def update_webshop_address(webshop_account, webshop_address):
-    """
-    bench execute microsynth.microsynth.webshop.update_webshop_address --kwargs "{'webshop_account': '215856', 'webshop_address': ''}"
-    """
-    try:
-        if type(webshop_address) == str:
-            webshop_address = json.loads(webshop_address)
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-        customer_id = webshop_address.get('customer').get('name')
-        contact_id = webshop_address.get('contact').get('name')
-        address_id = webshop_address.get('address').get('name')
-
-        # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
-        found = False
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                found = True
-                break
-        if not found:
-            return {
-                'success': False,
-                'message': f"The given Contact '{contact_id}' is not part of the given {webshop_account=}.",
-                'webshop_account': webshop_account,
-                'webshop_addresses': [],
-            }
-        if webshop_address.get('address').get('address_type') == 'Billing':
-            raise NotImplementedError("No implementation for Address Type Billing so far.")
-
-        # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
-            # update customer/contact/address if not used
-            # customer = webshop_address['contact']
-            # customer['customer_id'] = customer['name']
-            # update_customer(customer)
-            contact = webshop_address['contact']
-            contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
-            contact['phone_number'] = contact.get('phone')
-            contact_id = update_contact(contact)
-            address = webshop_address['address']
-            address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
-            address_id = update_address(address)
-        else:
-            # create new customer/contact/address if used
-            address_id = create_address(webshop_address, customer_id)
-            contact_id = create_contact(webshop_address, customer_id)
-            # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
-            webshop_addresses.append('addresses', {
-                'contact': contact_id,
-                'is_default_shipping': 0,
-                'is_default_billing': 0,
-                'disabled': 0
-            })
-
-        return {
-            'success': True, 
-            'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-        }
-    except Exception as err:
-        return {
-            'success': False,
-            'message': err,
-            'webshop_account': webshop_account,
-            'webshop_addresses': [],
-        }
-
-
-@frappe.whitelist()
-def delete_webshop_address(webshop_account, contact_id):
-    """
-    bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
-    """
-    try:
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-
-        # check if the provided contact_id is part of the webshop_addresses. send an error if not.
-        found = False
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                found = True
-                break
-        if not found:
-            return {
-                'success': False,
-                'message': f"The given {contact_id=} is not part of the given {webshop_account=}.",
-                'webshop_account': webshop_account,
-                'webshop_addresses': [],
-            }
-
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                a.disabled = True
-
-        webshop_addresses.save()
-
-        # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
-        frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, contact_id=contact_id)
-
-        return {
-            'success': True, 
-            'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
-        }
-    except Exception as err:
-        return {
-            'success': False,
-            'message': err,
-            'webshop_account': webshop_account,
-            'webshop_addresses': [],
-        }
-
-
-def delete_if_unused(contact_id):
-    """
-    Delete the given Contact and its Address if both are unused.
-    If both are unused, delete the Customer of the given Contact if it is unused too.
-    """
-    address_id = frappe.get_value('Contact', contact_id, 'address')
-    customer_id = get_customer(contact_id)
-    if not is_address_used(address_id) and not is_contact_used(contact_id):
-        address_doc = frappe.get_doc('Address', address_id)
-        address_doc.delete()
-        contact_doc = frappe.get_doc('Contact', contact_id)
-        contact_doc.delete()
-        frappe.db.commit()
-    else:
-        return
-    if not is_customer_used(customer_id):
-        customer_doc = frappe.get_doc('Customer', customer_id)
-        customer_doc.delete()
-
-
 def is_customer_used(customer_id):
     """
     Check if the given Customer is used on one of the below DocTypes
@@ -2548,3 +2413,138 @@ def is_address_used(address_id):
     linked_docs = frappe.db.sql(sql_query, {'address_id': address_id}, as_dict=True)
     #print(linked_docs)
     return len(linked_docs) > 0
+
+
+@frappe.whitelist()
+def update_webshop_address(webshop_account, webshop_address):
+    """
+    bench execute microsynth.microsynth.webshop.update_webshop_address --kwargs "{'webshop_account': '215856', 'webshop_address': ''}"
+    """
+    try:
+        if type(webshop_address) == str:
+            webshop_address = json.loads(webshop_address)
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        customer_id = webshop_address.get('customer').get('name')
+        contact_id = webshop_address.get('contact').get('name')
+        address_id = webshop_address.get('address').get('name')
+
+        # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
+        found = False
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                found = True
+                break
+        if not found:
+            return {
+                'success': False,
+                'message': f"The given Contact '{contact_id}' is not part of the given {webshop_account=}.",
+                'webshop_account': webshop_account,
+                'webshop_addresses': [],
+            }
+        if webshop_address.get('address').get('address_type') == 'Billing':
+            raise NotImplementedError("No implementation for Address Type Billing so far.")
+
+        # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
+        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
+            # update customer/contact/address if not used
+            # customer = webshop_address['contact']
+            # customer['customer_id'] = customer['name']
+            # update_customer(customer)
+            contact = webshop_address['contact']
+            contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
+            contact['phone_number'] = contact.get('phone')
+            contact_id = update_contact(contact)
+            address = webshop_address['address']
+            address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
+            address_id = update_address(address)
+        else:
+            # create new customer/contact/address if used
+            address_id = create_address(webshop_address, customer_id)
+            contact_id = create_contact(webshop_address, customer_id)
+            # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
+            webshop_addresses.append('addresses', {
+                'contact': contact_id,
+                'is_default_shipping': 0,
+                'is_default_billing': 0,
+                'disabled': 0
+            })
+
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
+
+
+def delete_if_unused(contact_id):
+    """
+    Delete the given Contact and its Address if both are unused.
+    If both are unused, delete the Customer of the given Contact if it is unused too.
+    """
+    address_id = frappe.get_value('Contact', contact_id, 'address')
+    customer_id = get_customer(contact_id)
+    if not is_address_used(address_id) and not is_contact_used(contact_id):
+        address_doc = frappe.get_doc('Address', address_id)
+        address_doc.delete()
+        contact_doc = frappe.get_doc('Contact', contact_id)
+        contact_doc.delete()
+        frappe.db.commit()
+    else:
+        return
+    if not is_customer_used(customer_id):
+        customer_doc = frappe.get_doc('Customer', customer_id)
+        customer_doc.delete()
+
+
+@frappe.whitelist()
+def delete_webshop_address(webshop_account, contact_id):
+    """
+    bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
+    """
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+
+        # check if the provided contact_id is part of the webshop_addresses. send an error if not.
+        found = False
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                found = True
+                break
+        if not found:
+            return {
+                'success': False,
+                'message': f"The given {contact_id=} is not part of the given {webshop_account=}.",
+                'webshop_account': webshop_account,
+                'webshop_addresses': [],
+            }
+
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                a.disabled = True
+
+        webshop_addresses.save()
+
+        # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
+        frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, contact_id=contact_id)
+
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
