@@ -2660,6 +2660,7 @@ def set_module_according_to_role(user, role_module_mapping):
     """
     # exclude some roles
     if user_has_role(user, 'System Manager'):
+        print(f"User {user} has role System Manager. Not going to change modules.")
         return
     if type(role_module_mapping) == str:
         role_module_mapping = json.loads(role_module_mapping)
@@ -2685,7 +2686,7 @@ def set_modules_for_all_users(role_module_mapping):
     """
     enabled_users = frappe.get_all("User", filters={'enabled': 1}, fields=['name'])
     for user in enabled_users:
-        set_module_according_to_role(user, role_module_mapping)
+        set_module_according_to_role(user['name'], role_module_mapping)
 
 
 @frappe.whitelist()
