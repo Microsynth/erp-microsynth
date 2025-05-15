@@ -248,7 +248,7 @@ def create_invoice(file_name, invoice, settings):
             
             pinv_doc.append("items", {
                 'item_code': item.get('item_code'),
-                'item_name': item.get('item_name'),
+                'item_name': (item.get('item_name') or item.get('item_code'))[:140],
                 'qty': flt(item.get("qty")),
                 'rate': flt(item.get("net_price"))
             })
