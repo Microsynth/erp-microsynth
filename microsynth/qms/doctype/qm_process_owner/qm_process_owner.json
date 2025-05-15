@@ -34,7 +34,7 @@
    "options": "User"
   }
  ],
- "modified": "2025-04-11 17:09:29.564759",
+ "modified": "2025-05-15 11:45:59.388773",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Process Owner",
@@ -55,7 +55,15 @@
   {
    "print": 1,
    "read": 1,
+   "report": 1,
    "role": "Board Member"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU"
   }
  ],
  "quick_entry": 1,
