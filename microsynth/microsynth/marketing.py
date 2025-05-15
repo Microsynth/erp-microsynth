@@ -2,9 +2,10 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.utils import get_url_to_form
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from microsynth.microsynth.utils import get_customer
+from microsynth.microsynth.utils import get_customer, send_email_from_template
 
 
 def update_marketing_classification(contact_id):
@@ -349,3 +350,51 @@ def lock_contact(self, event=None):
     lock_contact_by_name(self.name)
     frappe.db.commit()
     return
+
+
+def notify_new_webshop_registrations(sales_managers, previous_days=7):
+    """
+    Takes a list of Sales Managers and a number of days.
+    Notify each Sales Manager about all new enabled Contacts created in the last given days
+    and associated with one of their Customers if there are any.
+
+    bench execute microsynth.microsynth.marketing.notify_new_webshop_registrations --kwargs "{'sales_managers': ['lukas.hartl@microsynth.ch', 'elges.lardi@microsynth.ch'], 'previous_days': 30}"
+    """
+    for sales_manager in sales_managers:
+        sql_query = """
+            SELECT DISTINCT
+                `tabContact`.`name`,
+                `tabContact`.`full_name`,
+                `tabContact`.`email_id`,
+                `tabContact`.`creation`,
+                `tabCustomer`.`name` AS `customer_id`,
+                `tabCustomer`.`customer_name`
+            FROM 
+                `tabContact`
+            JOIN 
+                `tabDynamic Link` ON `tabDynamic Link`.`parent` = `tabContact`.`name`
+            JOIN 
+                `tabCustomer` ON `tabCustomer`.`name` = `tabDynamic Link`.`link_name`
+            WHERE 
+                `tabDynamic Link`.`link_doctype` = 'Customer'
+                AND `tabCustomer`.`account_manager` = %(sales_manager)s
+                AND `tabContact`.`creation` >= DATE_SUB(NOW(), INTERVAL %(previous_days)s DAY)
+                AND `tabContact`.`status` != "Disabled"
+            ORDER BY 
+                `tabContact`.`creation` DESC;
+            """
+        new_contacts = frappe.db.sql(sql_query, {"sales_manager": sales_manager, "previous_days": previous_days}, as_dict=True)
+        if len(new_contacts) > 0:
+            first_name = frappe.get_value("User", sales_manager, "first_name")
+            contacts_list_str = "<ul>"
+            for c in new_contacts:
+                contact_url_str = f"<a href={get_url_to_form('Contact', c['name'])}>{c['name']}</a>"
+                customer_url_str = f"<a href={get_url_to_form('Customer', c['customer_id'])}>{c['customer_id']}</a>"
+                email_str = f'<a href="mailto:{c["email_id"]}">{c["email_id"]}</a>'
+                contact_str = f"<li>Contact {contact_url_str} ({c['full_name']}, {email_str}), Customer {customer_url_str} ({c['customer_name']}), registered {c['creation']}</li>"
+                contacts_list_str += contact_str
+            contacts_list_str += "</ul>"
+            # Send an automatic email
+            email_template = frappe.get_doc("Email Template", "New Webshop Registrations")  # TODO: Create
+            rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'contacts_list_str': contacts_list_str})
+            send_email_from_template(email_template, rendered_content)
