@@ -199,18 +199,30 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
             if sops != 'NA':
                 sop_list = sops.split(';')
                 for sop in sop_list:
-                    valid_qm_docs = frappe.get_all('QM Document', filters=[['name', 'LIKE', f'{sop}%'], ['status', '=', 'Valid']], fields=['name', 'title'])
+                    valid_qm_docs = frappe.get_all('QM Document',
+                                                   filters=[['name', 'LIKE', f'{sop}%'], ['status', '=', 'Valid']],
+                                                   fields=['name', 'title'])
                     if len(valid_qm_docs) == 0:
-                        print(f"Found no Valid QM Document with an ID like '{sop}'. Unable to link.")
-                        continue
+                        if current_status != 'Discontinued':
+                            print(f"WARNING: Found no Valid QM Document with an ID like '{sop}', but current_status is not 'Discontinued'.")
+                        qm_docs = frappe.get_all('QM Document',
+                                                   filters=[['name', 'LIKE', f'{sop}%']],
+                                                   fields=['name', 'title', 'version'],
+                                                   order_by='version DESC')
+                        if len(qm_docs) > 0:
+                            qm_doc_to_link = qm_docs[0]
+                        else:
+                            print(f"Found no QM Document with an ID like '{sop}'. Unable to link.")
+                            continue
                     elif len(valid_qm_docs) == 1:
-                        qmap_doc.append("qm_documents", {
-                            'qm_document': valid_qm_docs[0]['name'],
-                            'title': valid_qm_docs[0]['title']
-                        })
+                        qm_doc_to_link = valid_qm_docs[0]
                     else:
                         print(f"Found {len(valid_qm_docs)} Valid QM Document with an ID like '{sop}': {valid_qm_docs}. Unable to link.")
                         continue
+                    qmap_doc.append("qm_documents", {
+                        'qm_document': qm_doc_to_link['name'],
+                        'title': qm_doc_to_link['title']
+                    })
 
             try:
                 qmap_doc.insert()
