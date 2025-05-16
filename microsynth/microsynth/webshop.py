@@ -11,7 +11,7 @@ import re
 import base64
 from frappe.desk.form.linked_with import get_linked_docs
 from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer, to_bool
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -2151,8 +2151,8 @@ def get_webshop_address_dtos(webshop_addresses):
             'customer': get_customer_dto(customer),
             'contact': contact_dto,
             'address': get_address_dto(address),
-            'is_default_shipping': a.is_default_shipping,
-            'is_default_billing': a.is_default_billing
+            'is_default_shipping': to_bool(a.is_default_shipping),
+            'is_default_billing': to_bool(a.is_default_billing)
         }
         addresses.append(webshop_address)
     return addresses

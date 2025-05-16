@@ -362,6 +362,16 @@ def replace_none(input):
     return input if (input != None) else ""
 
 
+def to_bool(input):
+    """
+    Return the boolean True if the input evaluates to true else return the boolean False.
+    """
+    if input:
+        return True
+    else:
+        return False
+
+
 def get_name(contact):
     """
     Assembles the first name and last name of a contact 
