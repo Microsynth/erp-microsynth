@@ -811,7 +811,7 @@ def update_contact(contact_data):
         contact.unsubscribed = 1
     if 'room' in contact_data:
         contact.room = contact_data['room']
-    if 'has_webshop_account' in contact_data:
+    if 'has_webshop_account' in contact_data and contact_data['has_webshop_account'] is not None:
         contact.has_webshop_account = contact_data['has_webshop_account']
     if 'source' in contact_data:
         contact.source = contact_data['source']
