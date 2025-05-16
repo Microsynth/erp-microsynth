@@ -470,7 +470,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-13_supplier_mapping_TEST-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -614,6 +614,9 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 supplier_doc.save()
                 print(f"INFO: Supplier {supplier_doc.name} (Index {ext_creditor_number}): Changed country from {old_country} to {supplier_doc.country}.")
                 continue
+
+            if not web_url.startswith('http'):
+                web_url = f'https://{web_url}'
 
             new_supplier = frappe.get_doc({
                 'doctype': 'Supplier',
