@@ -247,7 +247,7 @@ def create_ups_batch_file(sales_orders):
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
         # TODO: Store a mapping from Shipping Item Codes to UPS Service Types somewhere in the ERP settings
-        if not label_data or not label_data['shipping_service'] or (not 'UPS' in label_data['shipping_service']):
+        if not label_data or not label_data['shipping_service'] or (not 'UPS' in label_data['shipping_service'] and label_data['shipping_service'] != 'France'):
             continue
         address = frappe.get_doc("Address", sales_order.shipping_address_name)
         # Check if all values exist
@@ -277,6 +277,11 @@ def create_ups_batch_file(sales_orders):
             frappe.log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
+        if not phone:
+            frappe.log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters", "create_ups_batch_file")
+            continue
+        if not phone.isdigit():
+            frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
         weight = '"0,1"'
         customer_name = (sales_order.order_customer_display or sales_order.customer_name).replace(',', '')[:35]
         lines_to_write.append(f"{sales_order.contact_display.replace(',', '')[:35]},{customer_name},{country_code.upper()},{address.address_line1.replace(',', '')[:35]},,,{address.city.replace(',', '')[:30]},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,11,,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
