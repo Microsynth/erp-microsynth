@@ -378,6 +378,7 @@ def notify_new_webshop_registrations(sales_managers, previous_days=7):
             WHERE 
                 `tabDynamic Link`.`link_doctype` = 'Customer'
                 AND `tabCustomer`.`account_manager` = %(sales_manager)s
+                AND `tabContact`.`has_webshop_account` = 1
                 AND `tabContact`.`creation` >= DATE_SUB(NOW(), INTERVAL %(previous_days)s DAY)
                 AND `tabContact`.`status` != "Disabled"
             ORDER BY 
