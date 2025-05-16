@@ -357,8 +357,14 @@ def notify_new_webshop_registrations(sales_managers, previous_days=7):
     Takes a list of Sales Managers and a number of days.
     Notify each Sales Manager about all new enabled Contacts created in the last given days
     and associated with one of their Customers if there are any.
+    Should be executed by a two cronjobs:
+    daily at 7:30 am:
+    30 7 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.marketing.notify_new_webshop_registrations --kwargs "{'sales_managers': ['firstname.lastname@microsynth.ch'], 'previous_days': 1}"
 
-    bench execute microsynth.microsynth.marketing.notify_new_webshop_registrations --kwargs "{'sales_managers': ['lukas.hartl@microsynth.ch', 'elges.lardi@microsynth.ch'], 'previous_days': 30}"
+    weekly on monday:
+    30 7 * * 1 cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.marketing.notify_new_webshop_registrations --kwargs "{'sales_managers': ['firstname.lastname@microsynth.ch'], 'previous_days': 7}"
+
+    bench execute microsynth.microsynth.marketing.notify_new_webshop_registrations --kwargs "{'sales_managers': ['firstname.lastname@microsynth.ch'], 'previous_days': 30}"
     """
     for sales_manager in sales_managers:
         sql_query = """
