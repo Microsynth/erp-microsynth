@@ -7,17 +7,13 @@ import json
 
 
 TRACKING_URLS = {
-    #'1010': "https://www.post.at/sv/sendungssuche?snr=",  # disabled
     '1101': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
     '1102': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
-    #'1103': "https://www.post.at/sv/sendungssuche?snr=",  # has no tracking anymore
-    #'1104': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",  # disabled
     '1105': "https://www.post.at/sv/sendungssuche?snr=",
-    #'1107': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",  # disabled
     '1108': "https://www.ups.com/track?tracknum=",
-    '1114': "https://www.ups.com/track?tracknum=",
+    '1113': "https://www.ups.com/track?tracknum=",
+    '1114': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
     '1117': "https://www.ups.com/track?tracknum=",
-    #'1119': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",  # disabled
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
     '1126': "https://www.fedex.com/fedextrack/?trknbr=",
@@ -49,11 +45,10 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1104': "Einschreiben",
         '1105': "EMS",    
         '1106': "Germany",
-        '1107': "DryIce",
         '1108': "UPS EXP DE",
         '1110': "Abholung",
         '1112': "Germany",
-        '1113': "DryIce",
+        '1113': "France",
         '1114': "UPS",
         '1115': "Germany",
         '1117': "UPS",
