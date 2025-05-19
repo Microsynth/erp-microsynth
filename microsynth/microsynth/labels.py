@@ -103,8 +103,10 @@ def get_label_data(sales_order):
     """
     Returns the data for printing a shipping label from a sales order.
     run
-    bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order':'SO-BAL-23015115'}"
+    bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order': 'SO-BAL-25025120'}"
     """
+    if type(sales_order) == str:
+        sales_order = frappe.get_doc('Sales Order', sales_order)
 
     if not sales_order.shipping_address_name:
         frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))

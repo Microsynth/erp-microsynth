@@ -39,11 +39,11 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
     
     SHIPPING_SERVICES = {
         '1100': "P.P.A",
-        '1101': "A-plus", 
-        '1102': "Express", 
+        '1101': "A-plus",
+        '1102': "Express",
         '1103': "Austria",
         '1104': "Einschreiben",
-        '1105': "EMS",    
+        '1105': "EMS",
         '1106': "Germany",
         '1108': "UPS EXP DE",
         '1110': "Abholung",
