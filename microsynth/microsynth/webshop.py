@@ -2128,8 +2128,8 @@ def get_address_dto(address):
         'country': address.country,
         # 'is_shipping_address': address.is_shipping_address,
         # 'is_primary_address': address.is_primary_address,
-        'geo_lat': address.geo_lat,
-        'geo_long': address.geo_long
+        'geo_lat': address.geo_lat if address.geo_lat is not None else None,
+        'geo_long': address.geo_long if address.geo_long != 0 else None
     }
     return address_dto
 
