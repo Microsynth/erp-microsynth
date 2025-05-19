@@ -2181,6 +2181,21 @@ def get_webshop_addresses(webshop_account):
         }
 
 
+def validate_webshop_address(webshop_address):
+    """
+    Check webshop_address object for consistency.
+    Throw an error in case of ID mismatch.
+    """
+    customer = webshop_address.get('customer')
+    contact = webshop_address.get('contact')
+    address = webshop_address.get('address')
+
+    if customer.get('name') != contact.get('customer'):
+        frappe.throw(f"Customer.name = '{customer.get('name')}', but Contact.customer = '{contact.get('customer')}'.")
+    if contact.get('address') != address.get('name'):
+        frappe.throw(f"Contact.address = '{contact.get('address')}', but Address.name = '{address.get('name')}'.")
+
+
 # def create_customer(webshop_address):
 #     user_data = {
 #         'customer': webshop_address['customer'],
@@ -2194,11 +2209,11 @@ def get_webshop_addresses(webshop_account):
     # Enabled Customers without a Shipping Address are disabled every night
 
 
-def create_contact(webshop_address, customer, address_id):
+def create_contact(webshop_address):
     contact = webshop_address['contact']
     contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
-    contact['customer_id'] = customer
-    contact['address'] = address_id
+    contact['customer_id'] = webshop_address.get('customer').get('name')
+    contact['address'] = webshop_address.get('address').get('name')
     contact['status'] = "Passive"
     contact['phone_number'] = contact.get('phone')
     contact_id = update_contact(contact)
@@ -2207,11 +2222,19 @@ def create_contact(webshop_address, customer, address_id):
     return contact_id
 
 
-def create_address(webshop_address, customer):
+def create_address(webshop_address):
+    if frappe.db.exists('Address', address['name']):
+        frappe.throw(f"There exists already an Address with the given name '{address['name']}'. Not going to create a new one.")
     address = webshop_address['address']
     address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
-    address['customer_id'] = customer
+    address['customer_id'] = webshop_address.get('customer').get('name')
     address_id = update_address(address)
+
+    if not address_id:
+        frappe.throw(f'Unable to create an Address with the given {webshop_address=}')
+    # check if address_id matches the one in webshop_address
+    if address_id != webshop_address.get('address').get('name'):
+        frappe.throw(f"Created Address '{address_id}', but different from Address.name = '{webshop_address.get('address').get('name')}' of the given webshop_address.")
     return address_id
 
 
@@ -2223,24 +2246,25 @@ def create_webshop_address(webshop_account, webshop_address):
 
         validate_webshop_address(webshop_address)
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-        webshop_account_customer = get_customer(webshop_account)
 
-        if webshop_address['address']['address_type'] == 'Billing':
+        if webshop_address['address']['address_type'] == 'Shipping':
+            webshop_account_customer = get_customer(webshop_account)
+            if webshop_account_customer != webshop_address['customer']['name']:
+                frappe.throw(f"Customer of Contact {webshop_account} ('{webshop_account_customer}'), but Customer.name = '{webshop_address['customer']['name']}'.")
+
+        elif webshop_address['address']['address_type'] == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
+        else:
+            raise NotImplementedError(f"No implementation for Address Type '{webshop_address['address']['address_type']}'.")
 
         # create a new customer if it is different from the customer of webshop_account and the new webshop_address is a billing address
         # if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
         #     create_customer(webshop_address)
 
         # create an Address if it does not yet exist for the Customer
-        address_id = create_address(webshop_address, webshop_account_customer)
-        if not address_id:
-            frappe.throw(f'Unable to create an Address with the given {webshop_address=}')
-        # check if address_id matches the one in webshop_address
-        if address_id != webshop_address.get('address').get('name'):
-            frappe.throw(f"Already created Address '{address_id}', but differnt from Address.name = '{webshop_address.get('address').get('name')}' of the given webshop_address.")
+        create_address(webshop_address)
         # create a Contact
-        contact_id = create_contact(webshop_address, webshop_account_customer, address_id)
+        contact_id = create_contact(webshop_address)
         if not contact_id:
             frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
         # append a webshop_address entry with above contact id to webshop_addresses.addresses
@@ -2423,21 +2447,6 @@ def is_address_used(address_id):
     return len(linked_docs) > 0
 
 
-def validate_webshop_address(webshop_address):
-    """
-    Check webshop_address object for consistency.
-    Throw an error in case of ID mismatch.
-    """
-    customer = webshop_address.get('customer')
-    contact = webshop_address.get('contact')
-    address = webshop_address.get('address')
-
-    if customer.get('name') != contact.get('customer'):
-        frappe.throw(f"Customer.name = '{customer.get('name')}', but Contact.customer = '{contact.get('customer')}'.")
-    if contact.get('address') != address.get('name'):
-        frappe.throw(f"Contact.address = '{contact.get('address')}', but Address.name = '{address.get('name')}'.")
-
-
 @frappe.whitelist()
 def update_webshop_address(webshop_account, webshop_address):
     """
@@ -2448,7 +2457,6 @@ def update_webshop_address(webshop_account, webshop_address):
             webshop_address = json.loads(webshop_address)
         validate_webshop_address(webshop_address)
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
-        customer_id = webshop_address.get('customer').get('name')
         contact_id = webshop_address.get('contact').get('name')
         address_id = webshop_address.get('address').get('name')
 
@@ -2483,13 +2491,8 @@ def update_webshop_address(webshop_account, webshop_address):
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
-            address_id = create_address(webshop_address, customer_id)
-            if not address_id:
-                frappe.throw(f'Unable to create an Address with the given {webshop_address=}')
-            # check if address_id matches the one in webshop_address
-            if address_id != webshop_address.get('address').get('name'):
-                frappe.throw(f"Already created Address '{address_id}', but differnt from Address.name = '{webshop_address.get('address').get('name')}' of the given webshop_address.")
-            contact_id = create_contact(webshop_address, customer_id, address_id)
+            create_address(webshop_address)
+            contact_id = create_contact(webshop_address)
             if not contact_id:
                 frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
             # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
