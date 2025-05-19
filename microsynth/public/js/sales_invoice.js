@@ -162,7 +162,7 @@ frappe.ui.form.on('Sales Invoice', {
         }
 
         // link intercompany invoice
-        if (!frm.doc.__islocal && frm.doc.docstatus == 1 && frm.doc.po_no.startsWith('SO-')) {
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1 && (frm.doc.po_no || "").startsWith('SO-')) {
             has_intercompany_orders(frm).then(response => {
                 if (response.message){
                     frm.dashboard.add_comment("Please also see " + response.message, 'green', true);
