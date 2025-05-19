@@ -404,4 +404,4 @@ def notify_new_webshop_registrations(sales_managers, previous_days=7):
             # Send an automatic email
             email_template = frappe.get_doc("Email Template", "New Webshop Registrations")
             rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'contacts_list_str': contacts_list_str})
-            send_email_from_template(email_template, rendered_content)
+            send_email_from_template(email_template, rendered_content, recipients=sales_manager)
