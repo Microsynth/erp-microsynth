@@ -93,11 +93,6 @@ def check_tracking_code(web_order_id, tracking_code):
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '4933668294'}"
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '779487631663'}"
     """
-    # tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'sales_order', 'tracking_code'])
-    # if len(tracking_codes) > 0:
-    #     msg = f"The tracking code {tracking_code} has already been stored for Sales Order {tracking_codes[0]['sales_order']}."
-    #     frappe.log_error(msg, "tracking_code.check_tracking_code")
-    #     return {'success': False, 'is_critical': True, 'message': msg}
     sales_orders = frappe.get_all("Sales Order",
         filters={'web_order_id': web_order_id, 'docstatus': 1},
         fields=['name', 'contact_email', 'contact_display'])
@@ -136,7 +131,7 @@ def check_tracking_code(web_order_id, tracking_code):
             regex_str = '^\d{10}$'
         elif shipping_item in ['1101', '1102']:  # Post CH
             regex_str = '^\d{18}$'
-        elif shipping_item in ['1108', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
+        elif shipping_item in ['1108', '1113', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
             regex_str = '^1ZH\d{4}X\d{10}$'
         else:
             msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."
@@ -329,7 +324,6 @@ def add_delivery_date_to_tracking_code(tracking_code, delivery_datetime):
     tracking_codes = frappe.get_all("Tracking Code", filters={'tracking_code': tracking_code}, fields=['name', 'tracking_code', 'delivery_date'])
     if len(tracking_codes) == 0:
         return f"Found no Tracking Code for '{tracking_code=}'. Going to skip."
-        #return ""
     else:
         for tracking_code in tracking_codes:
             # Check if there is already a delivery_datetime stored
