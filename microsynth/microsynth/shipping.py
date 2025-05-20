@@ -13,7 +13,7 @@ TRACKING_URLS = {
     '1108': "https://www.ups.com/track?tracknum=",
     '1113': "https://www.ups.com/track?tracknum=",
     '1114': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
-    '1117': "https://www.ups.com/track?tracknum=",
+    '1117': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
     '1126': "https://www.fedex.com/fedextrack/?trknbr=",
@@ -47,14 +47,15 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1106': "Germany",
         '1108': "UPS EXP DE",
         '1110': "Abholung",
-        '1112': "Germany",
-        '1113': "France",
-        '1114': "UPS",
-        '1115': "Germany",
-        '1117': "UPS",
-        '1119': "DHL Economy Select",  # only for EU
+        '1112': "EU Post DE",
+        '1113': "FR STD",  # UPS STD
+        '1114': "UPS",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
+        '1115': "EU Post DE",
+        '1117': "UPS",  # should be disabled once all open invoices are paid
+        '1118': "Post CH",
+        #'1119': "DHL Economy Select",  # only for EU, disabled
         '1120': "DHL CH",  # not for EU
-        '1122': "DHL",
+        #'1122': "DHL",  # disabled
         '1123': "DHL/CH", # for countries out of EU
         '1126': "FedEx",
         '1130': "Internal",
@@ -98,6 +99,9 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
             sh_serv = "Tartu UPS EXP"
         else:
             sh_serv = "Tartu"
+    # special case: Letgen
+    elif item_code == '1123' and cstm_ID in ['36796402', '837342']:
+        sh_serv = "Letgen"
 
     return (sh_serv)
 
