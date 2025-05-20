@@ -2223,9 +2223,9 @@ def create_contact(webshop_address):
 
 
 def create_address(webshop_address):
+    address = webshop_address['address']
     if frappe.db.exists('Address', address['name']):
         frappe.throw(f"There exists already an Address with the given name '{address['name']}'. Not going to create a new one.")
-    address = webshop_address['address']
     address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
     address['customer_id'] = webshop_address.get('customer').get('name')
     address_id = update_address(address)
