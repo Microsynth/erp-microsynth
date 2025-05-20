@@ -2274,6 +2274,7 @@ def create_webshop_address(webshop_account, webshop_address):
             'is_default_billing': 0,
             'disabled': 0
         })
+        webshop_addresses.save()
         webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
 
         return {
