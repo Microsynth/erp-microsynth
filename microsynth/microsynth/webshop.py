@@ -2196,6 +2196,17 @@ def validate_webshop_address(webshop_address):
         frappe.throw(f"Contact.address = '{contact.get('address')}', but Address.name = '{address.get('name')}'.")
 
 
+def validate_contact_in_webshop_addresses(webshop_addresses, contact_id):
+    found = False
+    for a in webshop_addresses.addresses:
+        if a.contact == contact_id:
+            if a.disabled:
+                frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given '{webshop_addresses.name}'.")
+            found = True
+            break
+    if not found:
+        frappe.throw(f"The given {contact_id=} is not part of the given webshop account '{webshop_addresses.name}'.")
+
 # def create_customer(webshop_address):
 #     user_data = {
 #         'customer': webshop_address['customer'],
@@ -2457,23 +2468,13 @@ def update_webshop_address(webshop_account, webshop_address):
         if type(webshop_address) == str:
             webshop_address = json.loads(webshop_address)
         validate_webshop_address(webshop_address)
+
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
         contact_id = webshop_address.get('contact').get('name')
         address_id = webshop_address.get('address').get('name')
 
-        # check if the provided webshop_address is part of the webshop_addresses (by contact.name). Send an error if it is not present.
-        found = False
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                found = True
-                break
-        if not found:
-            return {
-                'success': False,
-                'message': f"The given Contact '{contact_id}' is not part of the given {webshop_account=}.",
-                'webshop_account': webshop_account,
-                'webshop_addresses': [],
-            }
+        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
+        
         if webshop_address.get('address').get('address_type') == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
@@ -2547,14 +2548,7 @@ def delete_webshop_address(webshop_account, contact_id):
     try:
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
-        # check if the provided contact_id is part of the webshop_addresses. send an error if not.
-        found = False
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                found = True
-                break
-        if not found:
-            frappe.throw(f"The given {contact_id=} is not part of the given {webshop_account=}.")
+        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
 
         for a in webshop_addresses.addresses:
             if a.contact == contact_id:
@@ -2589,16 +2583,7 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
     try:
         webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
 
-        # check if the provided contact_id is part of the webshop_addresses and not deleted. send an error if not.
-        found = False
-        for a in webshop_addresses.addresses:
-            if a.contact == contact_id:
-                if a.disabled:
-                    frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given {webshop_account=}.")
-                found = True
-                break
-        if not found:
-            frappe.throw(f"The given {contact_id=} is not part of the given {webshop_account=}.")
+        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
 
         if address_type == "Shipping":
             for a in webshop_addresses.addresses:
