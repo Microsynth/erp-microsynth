@@ -2554,21 +2554,70 @@ def delete_webshop_address(webshop_account, contact_id):
                 found = True
                 break
         if not found:
-            return {
-                'success': False,
-                'message': f"The given {contact_id=} is not part of the given {webshop_account=}.",
-                'webshop_account': webshop_account,
-                'webshop_addresses': [],
-            }
+            frappe.throw(f"The given {contact_id=} is not part of the given {webshop_account=}.")
 
         for a in webshop_addresses.addresses:
             if a.contact == contact_id:
+                if a.is_default_shipping:
+                    frappe.throw(f"Cannot disable webshop address '{contact_id}' because it default shipping address.")
+                if a.is_default_billing:
+                    frappe.throw(f"Cannot disable webshop address '{contact_id}' because it default billing address.")
                 a.disabled = True
 
         webshop_addresses.save()
 
         # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
         frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, contact_id=contact_id)
+
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+        }
+    except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
+
+
+@frappe.whitelist()
+def set_default_webshop_address(webshop_account, address_type, contact_id):
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+
+        # check if the provided contact_id is part of the webshop_addresses and not deleted. send an error if not.
+        found = False
+        for a in webshop_addresses.addresses:
+            if a.contact == contact_id:
+                if a.disabled:
+                    frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given {webshop_account=}.")
+                found = True
+                break
+        if not found:
+            frappe.throw(f"The given {contact_id=} is not part of the given {webshop_account=}.")
+
+        if address_type == "Shipping":
+            for a in webshop_addresses.addresses:
+                if a.contact == contact_id:
+                    a.is_default_shipping = True
+                else:
+                    a.is_default_shipping = False
+
+        elif address_type == "Billing":
+            for a in webshop_addresses.addresses:
+                if a.contact == contact_id:
+                    a.is_default_billing = True
+                else:
+                    a.is_default_billing = False
+
+        else:
+            frappe.throw(f"Invalid address_type '{address_type}'. Allowed is 'Shipping' and 'Billing'")
+
+        webshop_addresses.save()
 
         return {
             'success': True, 
