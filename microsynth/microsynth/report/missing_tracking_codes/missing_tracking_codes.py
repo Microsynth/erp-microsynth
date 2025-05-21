@@ -4,7 +4,9 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-#from microsynth.microsynth.shipping import get_shipping_items_with_tracking
+from microsynth.microsynth.shipping import get_shipping_items_with_tracking
+from microsynth.microsynth.utils import get_sql_list
+
 
 
 def get_columns(filters):
@@ -30,7 +32,7 @@ def get_data(filters):
     if filters.get('item_code'):
         conditions += f" AND `tabSales Order Item`.`item_code` = '{filters.get('item_code')}' "
 
-    #tracking_shipping_items = get_shipping_items_with_tracking()
+    tracking_shipping_items = get_sql_list(get_shipping_items_with_tracking())
 
     query = f"""
         SELECT DISTINCT
@@ -56,7 +58,7 @@ def get_data(filters):
         WHERE `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` != 'Closed'
             AND `tabSales Order`.`transaction_date` >= DATE('{filters.get('from_date')}')
-            AND `tabSales Order Item`.`item_name` LIKE '%Track%'
+            AND `tabSales Order Item`.`item_code` IN ({tracking_shipping_items})
             AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
             AND `tabTracking Code`.`sales_order` IS NULL
             AND `tabDelivery Note`.`docstatus` != 2
