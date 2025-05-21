@@ -73,6 +73,7 @@ def link_quotation_to_order(sales_order, quotation):
     created_new_order = False
     if sales_order_doc.docstatus > 1:
         frappe.throw(f"Sales Order {sales_order} is cancelled. Unable to link.")
+        return None  # to satisfy linter
     elif sales_order_doc.docstatus == 1:
         sales_order_doc.cancel()
         new_so = frappe.get_doc(sales_order_doc.as_dict())

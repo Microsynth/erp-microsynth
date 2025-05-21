@@ -56,6 +56,9 @@ def get_email_subject(prm):
             subject = _("Microsynth Zahlungserinnerung") + subject_addition
         elif (prm.highest_level >= 2):
             subject = _("Microsynth Mahnung") + " " + subject_addition
+        else:
+            frappe.log_error(f"Payment Reminder {prm.name} has highest level 0.", "payment_reminder.get_email_subject")
+            subject = _("Microsynth Zahlungserinnerung") + subject_addition 
     else:
         subject = _("Microsynth Payment Reminder") + " " + subject_addition
     return subject

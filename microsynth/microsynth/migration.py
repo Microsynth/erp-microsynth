@@ -3933,6 +3933,7 @@ def calculate_prices_from_so(filepath):
             qty = cint(line[1])
             item_code = line[2]
             contact = line[3]
+            total = 0
             found = missing = False
             if '-' in order:
                 # assume it is a Sales Order ID

@@ -41,6 +41,7 @@ def execute(filters=None):
     return columns, data
 
 def get_columns(filters):
+    columns = []
     if filters.get("version") == "AT":
         columns = [
             {"label": _("satzart"), "fieldname": "entry_type", "fieldtype": "Data", "width": 20},

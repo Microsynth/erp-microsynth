@@ -191,6 +191,7 @@ def update_taxes(doc, event=None):
         date = doc.transaction_date
     else:
         frappe.throw(f"For this doctype {doc.doctype} this is not yet implemented")
+        return  # to satisfy linter
     
     if doc.get('product_type') in ["Oligos", "Material"]:
         category = "Material"

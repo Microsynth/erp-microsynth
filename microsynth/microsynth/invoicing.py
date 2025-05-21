@@ -951,6 +951,8 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         sender_network_id = "MICROSYNTH"
     elif mode == "Paynet":
         sender_network_id = settings.paynet_id
+    else:
+        sender_network_id = None
 
     # validate receiver ID
     if not(customer.invoice_network_id):
