@@ -10,7 +10,7 @@ def get_columns():
     return [
         {"label": _("Material Request"), "fieldname": "material_request", "fieldtype": "Link", "options": "Material Request", "width": 115},
         {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95},
-        {"label": _("Required By"), "fieldname": "required_by", "fieldtype": "Date", "width": 85},
+        {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 240},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         #{"label": _("Description"), "fieldname": "description", "fieldtype": "Data", "width": 200},
@@ -31,11 +31,12 @@ def get_data(filters):
         SELECT
             `tabMaterial Request`.`name` AS material_request,
             `tabMaterial Request`.`transaction_date`,
-            `tabMaterial Request Item`.`schedule_date` AS `required_by`,
+            `tabMaterial Request Item`.`schedule_date`,
             `tabMaterial Request Item`.`item_code`,
             `tabMaterial Request Item`.`item_name`,
             `tabMaterial Request Item`.`description`,
             `tabMaterial Request Item`.`qty`,
+            `tabMaterial Request Item`.`name` AS `material_request_item`,
             `tabItem Supplier`.`supplier`,
             `tabSupplier`.`supplier_name`,
             `tabItem Supplier`.`supplier_part_no`,

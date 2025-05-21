@@ -31,8 +31,6 @@ function create_purchase_order(filters) {
     if (!filters.supplier) {
         frappe.msgprint( __("Please set the Supplier filter"), __("Validation") );
     } else {
-        frappe.show_alert( __("Not yet implemented.") );
-        return;
         frappe.call({
             'method': "microsynth.microsynth.purchasing.create_po_from_open_mr",
             'args':{

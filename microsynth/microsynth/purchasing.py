@@ -106,6 +106,30 @@ def create_pi_from_si(sales_invoice):
     return new_pi
 
 
+@frappe.whitelist()
+def create_po_from_open_mr(filters):
+    from microsynth.microsynth.report.open_material_requests.open_material_requests import get_data as get_items
+    if type(filters) == str:
+        filters = json.loads(filters)
+    items = get_items(filters)
+    po_doc = frappe.get_doc({
+        'doctype': 'Purchase Order',
+        'supplier': filters.get('supplier')
+    })
+    for item in items:
+        po_doc.append('items', {
+            'item_code': item.get('item_code'),
+            'schedule_date': item.get('schedule_date'),
+            'qty': item.get('qty'),
+            'item_name': item.get('item_name'),
+            'material_request': item.get('material_request'),
+            'material_request_item': item.get('material_request_item')
+        })
+    po_doc.insert()
+    #po_doc.save()
+    return po_doc.name
+
+
 def fetch_assignee(dt, dn):
     assignees = frappe.db.sql(f"""SELECT `owner`
         FROM `tabToDo`
