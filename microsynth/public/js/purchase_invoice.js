@@ -40,6 +40,12 @@ frappe.ui.form.on('Purchase Invoice', {
             });
         }
 
+        if (frm.doc.docstatus == 1 && frm.doc.is_return && !frm.doc.return_against) {
+            frm.add_custom_button(__("Book as Deposit"), function() {
+                book_as_deposit(frm);
+            });
+        }
+
         if (frm.doc.in_approval) {
             cur_frm.set_df_property('approver', 'read_only', true);
         } else {
@@ -209,4 +215,21 @@ function reassign(frm) {
     __('Please choose a new approver'),
     __('Request approval')
     )
+}
+
+
+function book_as_deposit(frm) {
+    frappe.call({
+        'method': 'microsynth.microsynth.purchasing.book_as_deposit',
+        'args': {
+            'purchase_invoice_id': cur_frm.doc.name
+        },
+        "callback": function(response) {
+            if (response.message) {
+                window.open("/" + frappe.utils.get_form_link("Journal Entry", response.message), "_blank");
+            } else {
+                frappe.show_alert( __("Error: No Journal Entry created.") );
+            }
+        }
+    });
 }

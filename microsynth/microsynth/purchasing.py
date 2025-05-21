@@ -11,6 +11,7 @@ from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
+from datetime import datetime
 import json
 import csv
 import re
@@ -147,6 +148,46 @@ def is_already_assigned(dt, dn):
         return True
     else:
         return False
+
+
+@frappe.whitelist()
+def book_as_deposit(purchase_invoice_id):
+    """
+    bench execute microsynth.microsynth.purchasing.assign_purchase_invoices --kwargs "{'purchase_invoice_id': 'PI-2500612'}"
+    """
+    pi_doc = frappe.get_doc("Purchase Invoice", purchase_invoice_id)
+    jv = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'posting_date': datetime.now(),
+        'company': pi_doc.company,
+        'user_remark': 'Transfer posting as a deposit for later deduction from an purchase invoice',
+        'accounts': [
+            {
+                'account': pi_doc.credit_to,
+                'account_currency': pi_doc.currency,
+                'credit_in_account_currency': abs(pi_doc.grand_total),
+                'cost_center': pi_doc.items[0].cost_center,
+                'reference_type': 'Purchase Invoice',
+                'reference_name': pi_doc.name,
+                'party_type': 'Supplier',
+                'party': pi_doc.supplier
+            },
+            # TODO: How to set balance (Account Balance)?
+            {
+                'account': pi_doc.credit_to,
+                'account_currency': pi_doc.currency,
+                'debit_in_account_currency': abs(pi_doc.grand_total),
+                'cost_center': pi_doc.items[0].cost_center,
+                'party_type': 'Supplier',
+                'party': pi_doc.supplier,
+                'is_advance': 'Yes'
+            }
+        ]
+    })
+    jv.insert(ignore_permissions=True)
+    # jv.submit()
+    # frappe.db.commit()
+    return jv.name
 
 
 @frappe.whitelist()
