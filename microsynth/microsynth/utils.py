@@ -1028,7 +1028,7 @@ def add_webshop_services_for_italy(customer_id):
 
     country = frappe.get_value("Address", shipping_address, "Country")
     if country == "Italy":
-        add_webshop_service(customer_id, 'EasyRun')
+        #add_webshop_service(customer_id, 'EasyRun')  # moved to function set_webshop_services (Italy is part of Territory Rest of Europe (West))
         add_webshop_service(customer_id, 'DirectOligoOrders')
 
 
@@ -1258,6 +1258,20 @@ def set_invoice_to(customer):
     return
 
 
+def set_webshop_services(customer_id):
+    """
+    Set Webshop Service "EasyRun" for all Rest of Europe Territories.
+    Set Webshop Service "EcoliNightSeq" if Default Company is NOT Microsynth Austria GmbH.
+    """
+    customer = frappe.get_doc('Customer', customer_id)
+
+    if customer.territory in ['Rest of Europe (West)', 'Rest of Europe (East)', 'Rest of Europe (PL)']:
+        add_webshop_service(customer_id, 'EasyRun')
+
+    if customer.default_company and customer.default_company != 'Microsynth Austria GmbH':
+        add_webshop_service(customer_id, 'EcoliNightSeq')
+
+
 @frappe.whitelist()
 def configure_customer(customer):
     """
@@ -1281,6 +1295,7 @@ def configure_new_customer(customer):
     set_default_distributor(customer)
     set_default_company(customer)
     add_webshop_services_for_italy(customer)
+    set_webshop_services(customer)
 
 
 def get_alternative_account(account, currency):
