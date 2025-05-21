@@ -2117,6 +2117,8 @@ def get_contact_dto(contact):
 
 
 def get_address_dto(address):
+    if not address:
+        return None
     address_dto = {
         'name': address.name,
         'address_type': address.address_type,
@@ -2144,7 +2146,8 @@ def get_webshop_address_dtos(webshop_addresses):
         contact = frappe.get_doc("Contact", a.contact)
         contact_dto = get_contact_dto(contact)
 
-        address = frappe.get_doc("Address", contact.address)        
+        address = frappe.get_doc("Address", contact.address) if contact.address else None              #TODO handle Contacts without address. Check current implementation
+
         customer = frappe.get_doc("Customer", contact_dto['customer'])
 
         webshop_address = {
@@ -2197,6 +2200,9 @@ def validate_webshop_address(webshop_address):
 
 
 def validate_contact_in_webshop_addresses(webshop_addresses, contact_id):
+    """
+    Ensure that the webshop addresses contain the given contact and that the contact is active (not disabled).
+    """
     found = False
     for a in webshop_addresses.addresses:
         if a.contact == contact_id:
