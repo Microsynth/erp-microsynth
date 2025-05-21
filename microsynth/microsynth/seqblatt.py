@@ -237,7 +237,7 @@ def check_submit_delivery_note(delivery_note):
         delivery_note = frappe.get_doc("Delivery Note", delivery_note)
 
         if delivery_note.docstatus != 0:
-            msg = "Delivery Note '{0}' is not in Draft. docstatus: {1}".format(delivery_note.docstatus)
+            msg = f"Delivery Note '{delivery_note.name}' is not in Draft. docstatus: {delivery_note.docstatus}"
             print(msg)
             frappe.log_error(msg, "seqblatt.check_submit_delivery_note")
 

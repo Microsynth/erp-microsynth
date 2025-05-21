@@ -604,8 +604,8 @@ def parse_doc_id(doc_id, title):
         process_number = int(numbers[0])
         subprocess_number = int(numbers[1])
     except Exception as err:
-        print(f"{doc_id};{title};Unable to convert process number '{process_number}' or subprocess_number "
-              f"'{subprocess_number}' to an integer. Going to continue. Error = '{err}'")
+        print(f"{doc_id};{title};Unable to convert process number '{numbers[0]}' or subprocess_number "
+              f"'{numbers[1]}' to an integer. Going to continue. Error = '{err}'")
         return None
     if chapter:
         # try to convert chapter to int
@@ -757,7 +757,8 @@ def import_qm_documents(file_path, expected_line_length=24, only_attach_docx=Fal
             elif len(str(version)) == 2:
                 import_name = doc_id_new + "-" + str(version)
             else:
-                print(f"{doc_id_new};{title};Version '{version}' seems to be not between 1 and 99.")
+                print(f"{doc_id_new};{title};Version '{version}' seems to be not between 1 and 99. Unable to process.")
+                continue
 
             if '*' in import_name:
                 print(f"{doc_id_new};{title};Column 'Document ID NEW' should not contain any '*', but import_name = '{import_name}'. Going to continue.")

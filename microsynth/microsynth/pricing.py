@@ -454,14 +454,14 @@ def delete_item_price_duplicates(price_list, dry_run=True):
             print(f"{len(item_price_names)=} for {dup=}")
 
 
-def delete_item_price_duplicates(csv_file, dry_run=True):
+def delete_item_price_duplicates_by_file(csv_file, dry_run=True):
     """
     Takes a CSV file and deletes the Item Prices that are marked as to be deleted in the CSV file.
 
     Expected header of csv_file:
     0:Sales Manager; 1:Price List; 2:Item Code; 3:Item Name; 4:Minimum Quantity; 5:Item Price ID; 6:Delete?; 7:Rate; 8:Currency; 9:Valid from date; 10:Creation date; 11:Creator; 12:Last Modified date; 13:Last Modified by
     
-    bench execute microsynth.microsynth.pricing.delete_item_price_duplicates --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
+    bench execute microsynth.microsynth.pricing.delete_item_price_duplicates_by_file --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
     """
     import csv
     with open(csv_file) as file:
