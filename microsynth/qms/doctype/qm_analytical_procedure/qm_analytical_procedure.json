@@ -48,15 +48,18 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "company",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
+   "permlevel": 1,
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "description": "Measurand",
    "fieldname": "analyte",
    "fieldtype": "Link",
@@ -64,12 +67,15 @@
    "in_standard_filter": 1,
    "label": "Analyte",
    "options": "QM Analyte",
+   "permlevel": 1,
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "matrix",
    "fieldtype": "Data",
    "label": "Matrix",
+   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -89,17 +95,20 @@
    "label": "Quality Control"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "assay_name",
    "fieldtype": "Data",
    "in_standard_filter": 1,
    "label": "Assay Name"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "description",
    "fieldtype": "Text",
    "label": "Description"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "drug_product_name",
    "fieldtype": "Data",
    "label": "Drug Product Names"
@@ -111,6 +120,7 @@
    "options": "\nI: Identity\nII: Impurity (quantitative)\nIII:  Impurity (qualitative)\nIV: Active ingridients (quantitative)\nOther\nNA"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "type_of_assay",
    "fieldtype": "Select",
    "label": "Type of Assay",
@@ -123,12 +133,14 @@
    "options": "\nPCR\nddPCR\ndPCR\nqPCR\nSanger\nFLA\nNGS\nHPLC\nSpectrophotometer\nNA"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "analytical_steps",
    "fieldtype": "Table MultiSelect",
    "label": "Analytical Steps",
    "options": "QM AP Step Link"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "current_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -197,6 +209,7 @@
    "fieldtype": "Link",
    "label": "Process",
    "options": "QM Process",
+   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -226,16 +239,18 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "device_models",
    "fieldtype": "Table MultiSelect",
    "in_standard_filter": 1,
    "label": "Device Models",
    "options": "QM AP Device Model",
+   "permlevel": 1,
    "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-20 13:57:15.084580",
+ "modified": "2025-05-21 08:55:36.676904",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
@@ -276,6 +291,17 @@
    "role": "Contract Research User",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
    "write": 1
   }
  ],
