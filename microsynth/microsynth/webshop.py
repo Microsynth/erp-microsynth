@@ -2104,7 +2104,7 @@ def get_contact_dto(contact):
         'institute': contact.institute,
         'department': contact.department,
         'room': contact.room,
-        'group_leader': contact.group_leader,
+        # 'group_leader': contact.group_leader,
         'email': contact.email_id,
         'email_cc': contact.email_id, #TODO fetch correct CC mail address
         'phone': contact.phone,
@@ -2117,6 +2117,8 @@ def get_contact_dto(contact):
 
 
 def get_address_dto(address):
+    if not address:
+        return None
     address_dto = {
         'name': address.name,
         'address_type': address.address_type,
@@ -2144,7 +2146,8 @@ def get_webshop_address_dtos(webshop_addresses):
         contact = frappe.get_doc("Contact", a.contact)
         contact_dto = get_contact_dto(contact)
 
-        address = frappe.get_doc("Address", contact.address)        
+        address = frappe.get_doc("Address", contact.address) if contact.address else None              #TODO handle Contacts without address. Check current implementation
+
         customer = frappe.get_doc("Customer", contact_dto['customer'])
 
         webshop_address = {
@@ -2197,6 +2200,9 @@ def validate_webshop_address(webshop_address):
 
 
 def validate_contact_in_webshop_addresses(webshop_addresses, contact_id):
+    """
+    Ensure that the webshop addresses contain the given contact and that the contact is active (not disabled).
+    """
     found = False
     for a in webshop_addresses.addresses:
         if a.contact == contact_id:
@@ -2611,6 +2617,57 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
             'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
         }
     except Exception as err:
+        return {
+            'success': False,
+            'message': err,
+            'webshop_account': webshop_account,
+            'webshop_addresses': [],
+        }
+
+
+def get_account_settings_dto(webshop_address):
+    # TODO it's not ideal to fetch here the contact and the customer again
+    contact = frappe.get_doc("Contact", webshop_address["contact"]["name"])
+    customer = frappe.get_doc("Customer", webshop_address["customer"]["name"])
+    
+    services = []
+    for s in customer.webshop_service:
+        services.append(s.webshop_service)
+
+    account_settings_dto = {
+        'group_leader': contact.group_leader,
+        'institute_key': contact.institute_key,
+        'invoicing_method': customer.invoicing_method,
+        'webshop_services': services
+    }
+    return account_settings_dto
+
+
+@frappe.whitelist()
+def get_account_details(webshop_account):
+    """
+    bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account':'215856'}"
+    """
+    try:
+        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
+
+        for a in webshop_address_dtos: 
+            if a['contact']['name'] == webshop_account:
+                main_contact = a
+                break
+
+        print(f"{main_contact=}")
+
+        return {
+            'success': True, 
+            'message': "OK", 
+            'webshop_account': webshop_addresses.name,
+            'account_settings': get_account_settings_dto(main_contact),
+            'webshop_addresses': webshop_address_dtos
+        }
+    except Exception as err:
+        frappe.log_error(f"Unable to get account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.get_account_details")
         return {
             'success': False,
             'message': err,
