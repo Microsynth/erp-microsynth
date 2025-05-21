@@ -12,7 +12,7 @@ import json
 from frappe.utils import cint, flt, get_url_to_form
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, set_default_language, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account
+from microsynth.microsynth.utils import find_label, get_sql_list, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account, add_webshop_service
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -1881,12 +1881,65 @@ def set_distributor_ktrade_for_slovakia():
             print(f"customer {c} has customer credits - do not set the distributor")
 
 
+def activate_easyrun(territories):
+    """
+    Add the Webshop Service "EasyRun" for all enabled Customers with one of the given territories.
+
+    bench execute microsynth.microsynth.migration.activate_easyrun --kwargs "{'territories': ['Rest of Europe (West)', 'Rest of Europe (East)', 'Rest of Europe (PL)']}"
+    """
+    query = f"""
+        SELECT `tabCustomer`.`name`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`disabled` = 0
+        AND `tabCustomer`.`territory` IN ({get_sql_list(territories)})
+        AND `tabCustomer`.`name` NOT IN (
+            SELECT `tabWebshop Service Link`.`parent`
+            FROM `tabWebshop Service Link`
+            JOIN `tabWebshop Service` ON `tabWebshop Service Link`.`webshop_service` = `tabWebshop Service`.`name`
+            WHERE `tabWebshop Service`.`service_name` = 'EasyRun'
+            );
+        """
+    customers = frappe.db.sql(query, as_dict=True)
+    print(f"Going to process {len(customers)} Customers ...")
+    for i, c in enumerate(customers):
+        add_webshop_service(c['name'], 'EasyRun')
+        if i % 500 == 0 and i > 0:
+            frappe.db.commit()
+            print(f"##### INFO: Already processed {i}/{len(customers)} Customers.")
+
+
+def activate_ecolinightseq(blacklist_companies):
+    """
+    Add the Webshop Service "EcoliNightSeq" for all enabled Customers that have not a Default Company
+    in the given blacklist_companies.
+
+    bench execute microsynth.microsynth.migration.activate_ecolinightseq --kwargs "{'blacklist_companies': ['Microsynth Austria GmbH', 'Ecogenics GmbH']}"
+    """
+    query = f"""
+        SELECT `tabCustomer`.`name`
+        FROM `tabCustomer`
+        WHERE `tabCustomer`.`disabled` = 0
+        AND `tabCustomer`.`default_company` NOT IN ({get_sql_list(blacklist_companies)})
+        AND `tabCustomer`.`name` NOT IN (
+            SELECT `tabWebshop Service Link`.`parent`
+            FROM `tabWebshop Service Link`
+            JOIN `tabWebshop Service` ON `tabWebshop Service Link`.`webshop_service` = `tabWebshop Service`.`name`
+            WHERE `tabWebshop Service`.`service_name` = 'EcoliNightSeq'
+            );
+        """
+    customers = frappe.db.sql(query, as_dict=True)
+    print(f"Going to process {len(customers)} Customers ...")
+    for i, c in enumerate(customers):
+        add_webshop_service(c['name'], 'EcoliNightSeq')
+        if i % 500 == 0 and i > 0:
+            frappe.db.commit()
+            print(f"##### INFO: Already processed {i}/{len(customers)} Customers.")
+
+
 def activate_easyrun_italy():
     """
     bench execute microsynth.microsynth.migration.activate_easyrun_italy
     """
-    from microsynth.microsynth.utils import add_webshop_service
-
     query = """
         SELECT DISTINCT
             `tDLA`.`link_name` AS `name`
@@ -1925,15 +1978,12 @@ def activate_directoligoorders_carloerba():
     run
     bench execute microsynth.microsynth.migration.activate_directoligoorders_carloerba
     """
-    from microsynth.microsynth.utils import add_webshop_service
-
     customers = frappe.db.get_all("Customer",
         filters = [['account_manager', '=', 'servizioclienticer@dgroup.it']],
         fields = ['name', 'customer_name'])
     for customer in customers:
         print(f"process {customer['name']} {customer['customer_name']}")
         add_webshop_service(customer['name'], "DirectOligoOrders")
-    return
 
 
 def activate_fullplasmidseq_dach():
@@ -1941,8 +1991,6 @@ def activate_fullplasmidseq_dach():
     run
     bench execute microsynth.microsynth.migration.activate_fullplasmidseq_dach
     """
-    from microsynth.microsynth.utils import add_webshop_service
-
     query = """
         SELECT DISTINCT
             `tDLA`.`link_name` AS `name`
@@ -1968,16 +2016,12 @@ def activate_fullplasmidseq_dach():
         frappe.db.commit()
         i += 1
 
-    return
-
 
 def activate_fullplasmidseq_all_customers():
     """
     run
     bench execute microsynth.microsynth.migration.activate_fullplasmidseq_all_customers
     """
-    from microsynth.microsynth.utils import add_webshop_service
-
     customers = frappe.db.get_all("Customer",
         filters = {'disabled': 0 },
         fields = ['name'])
@@ -1990,8 +2034,6 @@ def activate_fullplasmidseq_all_customers():
         add_webshop_service(c.name, "FullPlasmidSeq")
         frappe.db.commit()
         i += 1
-
-    return
 
 
 def set_debtors():
