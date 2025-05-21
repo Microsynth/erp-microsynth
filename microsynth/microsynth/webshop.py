@@ -2136,29 +2136,45 @@ def get_address_dto(address):
     return address_dto
 
 
-def get_webshop_address_dtos(webshop_addresses):
-    addresses = []
-    
-    for a in webshop_addresses.addresses:
+def get_webshop_address_objects(webshop_address_doc):
+    webshop_addresses = []
+    for a in webshop_address_doc.addresses:
         if a.disabled:
             continue
 
         contact = frappe.get_doc("Contact", a.contact)
-        contact_dto = get_contact_dto(contact)
-
         address = frappe.get_doc("Address", contact.address) if contact.address else None              #TODO handle Contacts without address. Check current implementation
-
-        customer = frappe.get_doc("Customer", contact_dto['customer'])
+        customer = frappe.get_doc("Customer", get_customer(contact.name))
 
         webshop_address = {
-            'customer': get_customer_dto(customer),
-            'contact': contact_dto,
-            'address': get_address_dto(address),
+            'customer': customer,
+            'contact': contact,
+            'address': address,
             'is_default_shipping': to_bool(a.is_default_shipping),
             'is_default_billing': to_bool(a.is_default_billing)
         }
-        addresses.append(webshop_address)
-    return addresses
+        webshop_addresses.append(webshop_address)
+    return webshop_addresses
+
+
+def get_webshop_address_dtos(webshop_addresses):
+    webshop_address_dtos = []
+
+    for a in webshop_addresses:
+        webshop_address_dto = {
+            'customer': get_customer_dto(a["customer"]),
+            'contact': get_contact_dto(a["contact"]),
+            'address': get_address_dto(a["address"]),
+            'is_default_shipping': a["is_default_shipping"],
+            'is_default_billing': a["is_default_billing"]
+        }
+        webshop_address_dtos.append(webshop_address_dto)
+    return webshop_address_dtos
+
+
+def get_webshop_address_dtos_from_doc(webshop_address_doc):
+    webshop_address_objects = get_webshop_address_objects(webshop_address_doc)
+    return get_webshop_address_dtos(webshop_address_objects)
 
 
 @frappe.whitelist()
@@ -2167,15 +2183,16 @@ def get_webshop_addresses(webshop_account):
     bench execute microsynth.microsynth.webshop.get_webshop_addresses --kwargs "{'webshop_account':'215856'}"
     """
     try:
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
 
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+            'webshop_account': webshop_address_doc.name,
+            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
     except Exception as err:
+        frappe.log_error(f"Unable to get webshop addresses for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.get_webshop_addresses")
         return {
             'success': False,
             'message': err,
@@ -2199,12 +2216,12 @@ def validate_webshop_address(webshop_address):
         frappe.throw(f"Contact.address = '{contact.get('address')}', but Address.name = '{address.get('name')}'.")
 
 
-def validate_contact_in_webshop_addresses(webshop_addresses, contact_id):
+def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
     """
     Ensure that the webshop addresses contain the given contact and that the contact is active (not disabled).
     """
     found = False
-    for a in webshop_addresses.addresses:
+    for a in webshop_address_doc.addresses:
         if a.contact == contact_id:
             if a.disabled:
                 frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given '{webshop_addresses.name}'.")
@@ -2262,7 +2279,7 @@ def create_webshop_address(webshop_account, webshop_address):
             webshop_address = json.loads(webshop_address)
 
         validate_webshop_address(webshop_address)
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
 
         if webshop_address['address']['address_type'] == 'Shipping':
             webshop_account_customer = get_customer(webshop_account)
@@ -2285,22 +2302,23 @@ def create_webshop_address(webshop_account, webshop_address):
         if not contact_id:
             frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
         # append a webshop_address entry with above contact id to webshop_addresses.addresses
-        webshop_addresses.append('addresses', {
+        webshop_address_doc.append('addresses', {
             'contact': contact_id,
             'is_default_shipping': 0,
             'is_default_billing': 0,
             'disabled': 0
         })
-        webshop_addresses.save()
-        webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
+        webshop_address_doc.save()
+        webshop_address_dtos = get_webshop_address_dtos_from_doc(webshop_address_doc)
 
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
+            'webshop_account': webshop_address_doc.name,
             'webshop_addresses': webshop_address_dtos,
         }
     except Exception as err:
+        frappe.log_error(f"Unable to create webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.create_webshop_address")
         return {
             'success': False,
             'message': err,
@@ -2475,17 +2493,17 @@ def update_webshop_address(webshop_account, webshop_address):
             webshop_address = json.loads(webshop_address)
         validate_webshop_address(webshop_address)
 
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
         contact_id = webshop_address.get('contact').get('name')
         address_id = webshop_address.get('address').get('name')
 
-        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
+        validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id)
         
         if webshop_address.get('address').get('address_type') == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long
+        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long  # TODO if we consolidate the addresse, the second condition might cause an issue
             # update customer/contact/address if not used
             # customer = webshop_address['contact']
             # customer['customer_id'] = customer['name']
@@ -2499,25 +2517,39 @@ def update_webshop_address(webshop_account, webshop_address):
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
+            new_contact_id = webshop_address['contact']['name'] + "-1"      # TODO new version function
+            new_address_id = webshop_address['address']['name'] + "-1"      # TODO do not create new a new address if there is already one 
+
+            new_webshop_address = webshop_address
+            new_webshop_address['address']['name'] = new_address_id
+            new_webshop_address['contact']['name'] = new_contact_id
+            new_webshop_address['contact']['address'] = new_address_id
+            
+            validate_webshop_address(webshop_address)
+            
             create_address(webshop_address)
-            contact_id = create_contact(webshop_address)
-            if not contact_id:
+            returned_contact_id = create_contact(webshop_address)
+            if not returned_contact_id:
                 frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
             # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
-            webshop_addresses.append('addresses', {
-                'contact': contact_id,
+            webshop_address_doc.append('addresses', {
+                'contact': returned_contact_id,
                 'is_default_shipping': 0,
                 'is_default_billing': 0,
                 'disabled': 0
             })
+            # TODO: disable/remove old webshop address entry
+
+        webshop_address_doc.save()
 
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+            'webshop_account': webshop_address_doc.name,
+            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),       # TODO: reload from DB?
         }
     except Exception as err:
+        frappe.log_error(f"Unable to update webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_webshop_address")
         return {
             'success': False,
             'message': err,
@@ -2552,11 +2584,11 @@ def delete_webshop_address(webshop_account, contact_id):
     bench execute microsynth.microsynth.webshop.delete_webshop_address --kwargs "{'webshop_account':'215856', 'contact_id':'234007'}"
     """
     try:
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
 
-        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
+        validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id)
 
-        for a in webshop_addresses.addresses:
+        for a in webshop_address_doc.addresses:
             if a.contact == contact_id:
                 if a.is_default_shipping:
                     frappe.throw(f"Cannot disable webshop address '{contact_id}' because it default shipping address.")
@@ -2564,7 +2596,7 @@ def delete_webshop_address(webshop_account, contact_id):
                     frappe.throw(f"Cannot disable webshop address '{contact_id}' because it default billing address.")
                 a.disabled = True
 
-        webshop_addresses.save()
+        webshop_address_doc.save()
 
         # trigger an async background job that checks if the Customer/Contact/Address was used on Quotations/Sales Orders/Delivery Notes/Sales Invoices before. if not, delete it.
         frappe.enqueue(method=delete_if_unused, queue='long', timeout=600, is_async=True, contact_id=contact_id)
@@ -2572,10 +2604,11 @@ def delete_webshop_address(webshop_account, contact_id):
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+            'webshop_account': webshop_address_doc.name,
+            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
     except Exception as err:
+        frappe.log_error(f"Unable to delete webshop address with contact_id '{contact_id}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.delete_webshop_address")
         return {
             'success': False,
             'message': err,
@@ -2587,19 +2620,19 @@ def delete_webshop_address(webshop_account, contact_id):
 @frappe.whitelist()
 def set_default_webshop_address(webshop_account, address_type, contact_id):
     try:
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
 
-        validate_contact_in_webshop_addresses(webshop_addresses, contact_id)
+        validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id)
 
         if address_type == "Shipping":
-            for a in webshop_addresses.addresses:
+            for a in webshop_address_doc.addresses:
                 if a.contact == contact_id:
                     a.is_default_shipping = True
                 else:
                     a.is_default_shipping = False
 
         elif address_type == "Billing":
-            for a in webshop_addresses.addresses:
+            for a in webshop_address_doc.addresses:
                 if a.contact == contact_id:
                     a.is_default_billing = True
                 else:
@@ -2608,15 +2641,16 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         else:
             frappe.throw(f"Invalid address_type '{address_type}'. Allowed is 'Shipping' and 'Billing'")
 
-        webshop_addresses.save()
+        webshop_address_doc.save()
 
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
-            'webshop_addresses': get_webshop_address_dtos(webshop_addresses),
+            'webshop_account': webshop_address_doc.name,
+            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
     except Exception as err:
+        frappe.log_error(f"Unable to set default webshop address for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.set_default_webshop_address")
         return {
             'success': False,
             'message': err,
@@ -2625,19 +2659,15 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         }
 
 
-def get_account_settings_dto(webshop_address):
-    # TODO it's not ideal to fetch here the contact and the customer again
-    contact = frappe.get_doc("Contact", webshop_address["contact"]["name"])
-    customer = frappe.get_doc("Customer", webshop_address["customer"]["name"])
-    
+def get_account_settings_dto(webshop_address):    
     services = []
-    for s in customer.webshop_service:
+    for s in webshop_address.get('customer').webshop_service:
         services.append(s.webshop_service)
 
     account_settings_dto = {
-        'group_leader': contact.group_leader,
-        'institute_key': contact.institute_key,
-        'invoicing_method': customer.invoicing_method,
+        'group_leader': webshop_address.get('contact').group_leader,
+        'institute_key': webshop_address.get('contact').institute_key,
+        'invoicing_method': webshop_address.get('customer').invoicing_method,
         'webshop_services': services
     }
     return account_settings_dto
@@ -2649,21 +2679,21 @@ def get_account_details(webshop_account):
     bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account':'215856'}"
     """
     try:
-        webshop_addresses = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
+        webshop_addresses = get_webshop_address_objects(webshop_address_doc)
         webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
 
-        for a in webshop_address_dtos: 
-            if a['contact']['name'] == webshop_account:
+        for a in webshop_addresses: 
+            if a.get('contact').get('name') == webshop_account:
                 main_contact = a
                 break
-
-        print(f"{main_contact=}")
 
         return {
             'success': True, 
             'message': "OK", 
-            'webshop_account': webshop_addresses.name,
+            'webshop_account': webshop_address_doc.get('name'),
             'account_settings': get_account_settings_dto(main_contact),
+            'shipping_items': [],                            # TODO
             'webshop_addresses': webshop_address_dtos
         }
     except Exception as err:

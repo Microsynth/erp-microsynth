@@ -14,7 +14,7 @@ from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
 def get_customer(contact):
     """
-    Returns the customer for a contact ID.
+    Returns the customer ID for a contact ID.
 
     bench execute microsynth.microsynth.utils.get_customer --kwargs "{'contact': 215856 }"
     """
