@@ -2717,7 +2717,7 @@ def get_account_details(webshop_account):
             'message': "OK", 
             'webshop_account': webshop_address_doc.get('name'),
             'account_settings': get_account_settings_dto(main_contact),
-            'shipping_items': [],                            # TODO
+            'shipping_items': get_contact_shipping_items(main_contact),
             'webshop_addresses': webshop_address_dtos
         }
     except Exception as err:
