@@ -80,7 +80,7 @@ def get_studies(qmap_id):
 
 def import_analytical_procedures(input_file_path, expected_line_length=16):
     """
-    bench execute microsynth.qms.doctype.qm_analytical_procedure.qm_analytical_procedure.import_analytical_procedures --kwargs "{'input_file_path': '/mnt/erp_share/JPe/250516_Test-Import_AP.csv'}"
+    bench execute microsynth.qms.doctype.qm_analytical_procedure.qm_analytical_procedure.import_analytical_procedures --kwargs "{'input_file_path': '/mnt/erp_share/JPe/250520_Assays_Import_ERP_Jens_v02.csv'}"
     """
     import csv
 
