@@ -2483,6 +2483,30 @@ def is_address_used(address_id):
     return len(linked_docs) > 0
 
 
+def increase_version(name):
+    """
+    Takes an ID and increases the version assuming that name ends with -n if it already has version n+1.
+
+    bench execute microsynth.microsynth.webshop.increase_version --kwargs "{'name': '215856'}"
+    """
+    if not '-' in name:
+        return name + "-1"
+    else:
+        parts = name.split('-')
+        if len(parts) != 2:
+            msg = f"Unable to increase version of ID '{name}'. Most likely it contains more than one dash ('-')."
+            frappe.log_error(msg, 'webshop.increase_version')
+            frappe.throw(msg)
+        try:
+            version = int(parts[-1])
+        except Exception as err:
+            msg = f"Unable to increase version of ID '{name}'. The part after the last dash is not convertible to an integer."
+            frappe.log_error(msg, 'webshop.increase_version')
+            frappe.throw(msg)
+        else:
+            return parts[0] + '-' + str(version + 1)
+
+
 @frappe.whitelist()
 def update_webshop_address(webshop_account, webshop_address):
     """
@@ -2517,8 +2541,8 @@ def update_webshop_address(webshop_account, webshop_address):
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
-            new_contact_id = webshop_address['contact']['name'] + "-1"      # TODO new version function
-            new_address_id = webshop_address['address']['name'] + "-1"      # TODO do not create new a new address if there is already one 
+            new_contact_id = increase_version(webshop_address['contact']['name'])
+            new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one 
 
             new_webshop_address = webshop_address
             new_webshop_address['address']['name'] = new_address_id
