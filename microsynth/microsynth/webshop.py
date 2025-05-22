@@ -122,10 +122,13 @@ def register_user(user_data, client="webshop"):
     customer = frappe.get_doc("Customer", user_data['customer']['name'])
 
     # Create addresses
-    shipping_address = {}
+    shipping_address_dict = {}
+    billing_address_dict = {}
     for address in user_data['addresses']:
         if address['name'] == user_data['contact']['name']:
-            shipping_address = address
+            shipping_address_dict = address
+        if address['name'] == user_data['invoice_contact']['name']:
+            billing_address_dict = address
         address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = customer.name
         address_id = update_address(address)
@@ -183,13 +186,26 @@ def register_user(user_data, client="webshop"):
     configure_new_customer(customer.name)
 
     # create a new Webshop Address
-    user_data['contact']['customer'] = customer.name
+    # webshop_address_doc = frappe.get_doc({
+    #         'doctype': 'Webshop Address',
+    #         'webshop_account': contact_name,
+    #     })
+    # webshop_address_doc.insert()
+    # user_data['contact']['customer'] = customer.name
     # create_webshop_address(contact_name, {
-    #     'customer': customer,
+    #     'customer': customer.as_dict(),
     #     'contact': user_data['contact'],
-    #     'address': shipping_address,
+    #     'address': shipping_address_dict,
     #     'is_default_shipping': 1,
     #     'is_default_billing': 0
+    # })
+    # user_data['invoice_contact']['customer'] = customer.name
+    # create_webshop_address(contact_name, {
+    #     'customer': customer.as_dict(),
+    #     'contact': user_data['invoice_contact'],
+    #     'address': billing_address_dict,
+    #     'is_default_shipping': 0,
+    #     'is_default_billing': 1
     # })
 
     if not error:
@@ -2310,6 +2326,7 @@ def create_webshop_address(webshop_account, webshop_address):
         #     create_customer(webshop_address)
 
         # create an Address if it does not yet exist for the Customer
+        # TODO: Only create a new Address if it does not already exist for this Customer
         create_address(webshop_address)
         # create a Contact
         contact_id = create_contact(webshop_address)
