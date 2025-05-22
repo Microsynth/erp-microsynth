@@ -2542,28 +2542,33 @@ def update_webshop_address(webshop_account, webshop_address):
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
+            from copy import deepcopy
             new_contact_id = increase_version(webshop_address['contact']['name'])
-            new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one 
-
-            new_webshop_address = webshop_address  # TODO: Is this a reference copy (no deep copy) by intention? Why is new_webshop_address not used afterwards?
+            new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one
+            new_webshop_address = deepcopy(webshop_address)
             new_webshop_address['address']['name'] = new_address_id
             new_webshop_address['contact']['name'] = new_contact_id
             new_webshop_address['contact']['address'] = new_address_id
             
-            validate_webshop_address(webshop_address)
+            validate_webshop_address(new_webshop_address)
             
-            create_address(webshop_address)
-            returned_contact_id = create_contact(webshop_address)
+            create_address(new_webshop_address)
+            returned_contact_id = create_contact(new_webshop_address)
             if not returned_contact_id:
                 frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
-            # if a new customer/contact/address was created, append a webshop_address entry with the contact id to webshop_addresses.addresses
-            webshop_address_doc.append('addresses', {
-                'contact': returned_contact_id,
-                'is_default_shipping': 0,
-                'is_default_billing': 0,
-                'disabled': 0
-            })
-            # TODO: disable/remove old webshop address entry
+
+            for a in webshop_address_doc.addresses:
+                if a.contact == contact_id:
+                    # append the newly created webshop_address entry with the contact id to webshop_addresses.addresses
+                    webshop_address_doc.append('addresses', {
+                        'contact': returned_contact_id,
+                        'is_default_shipping': a.is_default_shipping,
+                        'is_default_billing': a.is_default_billing,
+                        'disabled': 0
+                    })
+                    a.disabled = 1
+                    a.is_default_shipping = 0
+                    a.is_default_billing = 0
 
         webshop_address_doc.save()
 
@@ -2571,7 +2576,7 @@ def update_webshop_address(webshop_account, webshop_address):
             'success': True, 
             'message': "OK", 
             'webshop_account': webshop_address_doc.name,
-            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),       # TODO: reload from DB?
+            'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
     except Exception as err:
         frappe.log_error(f"Unable to update webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_webshop_address")
@@ -2579,7 +2584,7 @@ def update_webshop_address(webshop_account, webshop_address):
             'success': False,
             'message': err,
             'webshop_account': webshop_account,
-            'webshop_addresses': [],
+            'webshop_addresses': []
         }
 
 
