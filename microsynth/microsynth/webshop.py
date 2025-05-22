@@ -2712,12 +2712,17 @@ def get_account_details(webshop_account):
         for s in main_contact.get('customer').webshop_service:
             services.append(s.webshop_service)
 
+        shipping_items_response = get_contact_shipping_items(main_contact.get('contact').get('name'))
+        if shipping_items_response.get('currency') != main_contact.get('customer').default_currency:
+            frappe.throw(f"The currency of the shipping items ({shipping_items_response.get('currency')}) does not match the customer's default currency {main_contact.get('customer').default_currency}.")
+
         return {
             'success': True, 
             'message': "OK", 
             'webshop_account': webshop_address_doc.get('name'),
             'account_settings': get_account_settings_dto(main_contact),
-            'shipping_items': get_contact_shipping_items(main_contact.get('contact').get('name')),
+            'currency': main_contact.get('customer').default_currency,
+            'shipping_items': shipping_items_response.get('shipping_items'),
             'webshop_addresses': webshop_address_dtos,
             'webshop_services': services
         }
@@ -2727,6 +2732,7 @@ def get_account_details(webshop_account):
             'success': False,
             'message': err,
             'webshop_account': webshop_account,
+            'currency': None,
             'shipping_items': [],
             'webshop_addresses': [],
             'webshop_services': []
