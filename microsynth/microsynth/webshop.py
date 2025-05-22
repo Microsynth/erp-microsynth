@@ -2224,11 +2224,11 @@ def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
     for a in webshop_address_doc.addresses:
         if a.contact == contact_id:
             if a.disabled:
-                frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given '{webshop_addresses.name}'.")
+                frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given '{webshop_address_doc.name}'.")
             found = True
             break
     if not found:
-        frappe.throw(f"The given {contact_id=} is not part of the given webshop account '{webshop_addresses.name}'.")
+        frappe.throw(f"The given {contact_id=} is not part of the given webshop account '{webshop_address_doc.name}'.")
 
 
 # def create_customer(webshop_address):
