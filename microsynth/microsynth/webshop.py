@@ -122,7 +122,10 @@ def register_user(user_data, client="webshop"):
     customer = frappe.get_doc("Customer", user_data['customer']['name'])
 
     # Create addresses
+    shipping_address = {}
     for address in user_data['addresses']:
+        if address['name'] == user_data['contact']['name']:
+            shipping_address = address
         address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = customer.name
         address_id = update_address(address)
@@ -178,6 +181,16 @@ def register_user(user_data, client="webshop"):
 
     # some more administration
     configure_new_customer(customer.name)
+
+    # create a new Webshop Address
+    user_data['contact']['customer'] = customer.name
+    # create_webshop_address(contact_name, {
+    #     'customer': customer,
+    #     'contact': user_data['contact'],
+    #     'address': shipping_address,
+    #     'is_default_shipping': 1,
+    #     'is_default_billing': 0
+    # })
 
     if not error:
         return {'success': True, 'message': "OK"}
