@@ -2093,7 +2093,7 @@ def get_customer_dto(customer):
 
 
 def get_contact_dto(contact):
-    from microsynth.microsynth.utils import get_customer
+    #from microsynth.microsynth.utils import get_customer  # already imported
 
     contact_dto = {
         'name': contact.name,
@@ -2229,6 +2229,7 @@ def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
             break
     if not found:
         frappe.throw(f"The given {contact_id=} is not part of the given webshop account '{webshop_addresses.name}'.")
+
 
 # def create_customer(webshop_address):
 #     user_data = {
@@ -2695,7 +2696,7 @@ def get_account_settings_dto(webshop_address):
 @frappe.whitelist()
 def get_account_details(webshop_account):
     """
-    bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account':'215856'}"
+    bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account': '215856'}"
     """
     try:
         webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
@@ -2729,4 +2730,46 @@ def get_account_details(webshop_account):
             'shipping_items': [],
             'webshop_addresses': [],
             'webshop_services': []
+        }
+
+
+def update_account_settings(webshop_account, account_settings):
+    """
+    TODO: Is it allowed to change the Group Leader of a webshop_account belonging to a Customer that has not Invoicing Method 'Email' or 'Post'?
+
+    bench execute microsynth.microsynth.webshop.update_account_settings --kwargs "{'webshop_account': '243755', 'account_settings': {'group_leader': 'me', 'institute_key': 'de_göt_06_05', 'invoicing_method': 'Post'}}"
+    """
+    try:
+        if type(account_settings) == str:
+            account_settings = json.loads(account_settings)
+        customer_id = get_customer(webshop_account)
+        customer_doc = frappe.get_doc("Customer", customer_id)
+        if customer_doc.invoicing_method not in ['Email', 'Post']:
+            frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
+        contact_doc = frappe.get_doc("Contact", webshop_account)
+        if account_settings.get('institute_key') != contact_doc.institute_key:
+            frappe.throw(f"Not allowed to change Institute Key of Contact {contact_doc.name} from '{contact_doc.institute_key}' to '{account_settings.get('institute_key')}'.")
+        if contact_doc.group_leader != account_settings.get('group_leader'):
+            contact_doc.group_leader = account_settings.get('group_leader')
+            contact_doc.save()
+        if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
+            customer_doc.invoicing_method = account_settings.get('invoicing_method')
+            customer_doc.save()
+        return {
+            'success': True,
+            'message': "OK",
+            'webshop_account': contact_doc.name,
+            'account_settings': {
+                'group_leader': contact_doc.group_leader,
+                'institute_key': contact_doc.institute_key,
+                'invoicing_method': customer_doc.invoicing_method
+            }
+        }   
+    except Exception as err:
+        frappe.log_error(f"Unable to update account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_account_settings")
+        return {
+            'success': False,
+            'message': str(err),
+            'webshop_account': webshop_account,
+            'account_settings': account_settings
         }
