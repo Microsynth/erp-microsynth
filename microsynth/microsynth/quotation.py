@@ -2,24 +2,28 @@
 # Copyright (c) 2023, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
+from datetime import datetime
 import frappe
 from frappe.model.mapper import get_mapped_doc
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
-from datetime import datetime
 
 
 @frappe.whitelist()
 def make_quotation(contact_name):
+    """
+    bench execute microsynth.microsynth.quotation.make_quotation --kwargs "{'contact_name': '1234'}"
+    """
     doc = get_mapped_doc(
         "Contact", 
-        contact_name, 
+        contact_name,
         {"Contact": { "doctype": "Quotation"}})
-    
+
     contact = frappe.get_doc('Contact', contact_name)
     if len(contact.links) != 1:
-        frappe.log_error(f"WARNING: Contact.links has length {len(contact.links)} != 1 for Contact {contact_name} and Quotation {doc.name}. "
-                         f"Took contact.links[0].link_name for Quotation.party_name but might be wrong. Please check Contact {contact_name} "
-                         f"and Quotation {doc.name}.", 'microsynth.quotation.make_quotation')
+        msg = f"WARNING: Contact.links has length {len(contact.links)} for Contact {contact_name} "\
+            f"and Quotation {doc.name}. Took contact.links[0].link_name for Quotation.party_name "\
+            f"but might be wrong. Please check Contact {contact_name} and Quotation {doc.name}."
+        frappe.log_error(msg, 'microsynth.quotation.make_quotation')
 
     doc.party_name = contact.links[0].link_name
     doc.contact_person = contact_name
@@ -28,12 +32,15 @@ def make_quotation(contact_name):
     doc.territory = customer.territory
     doc.currency = customer.default_currency
     doc.selling_price_list = customer.default_price_list
-    doc.conversion_rate = get_exchange_rate(from_currency=doc.currency, company=doc.company, date=datetime.today().date())
+    doc.conversion_rate = get_exchange_rate(from_currency=doc.currency,
+                                            company=doc.company,
+                                            date=datetime.today().date())
     doc.sales_manager = customer.account_manager
     invoice_to = customer.invoice_to
     doc.customer_address = frappe.get_value('Contact', invoice_to, 'address')
     doc.shipping_address_name = frappe.get_value('Contact', doc.contact_person, 'address')
-    doc.source = None   # Prevent inserting Contact.source or Address.source to the Quotation.source field
+    # Prevent inserting Contact.source or Address.source to the Quotation.source field
+    doc.source = None
     doc.quotation_type = None
     return doc
 
@@ -74,7 +81,7 @@ def link_quotation_to_order(sales_order, quotation):
     if sales_order_doc.docstatus > 1:
         frappe.throw(f"Sales Order {sales_order} is cancelled. Unable to link.")
         return None  # to satisfy linter
-    elif sales_order_doc.docstatus == 1:
+    if sales_order_doc.docstatus == 1:
         sales_order_doc.cancel()
         new_so = frappe.get_doc(sales_order_doc.as_dict())
         new_so.name = None
