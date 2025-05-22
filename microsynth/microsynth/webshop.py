@@ -2528,7 +2528,7 @@ def update_webshop_address(webshop_account, webshop_address):
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long  # TODO if we consolidate the addresse, the second condition might cause an issue
+        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
             # update customer/contact/address if not used
             # customer = webshop_address['contact']
             # customer['customer_id'] = customer['name']
@@ -2545,7 +2545,7 @@ def update_webshop_address(webshop_account, webshop_address):
             new_contact_id = increase_version(webshop_address['contact']['name'])
             new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one 
 
-            new_webshop_address = webshop_address
+            new_webshop_address = webshop_address  # TODO: Is this a reference copy (no deep copy) by intention? Why is new_webshop_address not used afterwards?
             new_webshop_address['address']['name'] = new_address_id
             new_webshop_address['contact']['name'] = new_contact_id
             new_webshop_address['contact']['address'] = new_address_id
