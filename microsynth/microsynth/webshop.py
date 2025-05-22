@@ -2683,16 +2683,11 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         }
 
 
-def get_account_settings_dto(webshop_address):    
-    services = []
-    for s in webshop_address.get('customer').webshop_service:
-        services.append(s.webshop_service)
-
+def get_account_settings_dto(webshop_address):
     account_settings_dto = {
         'group_leader': webshop_address.get('contact').group_leader,
         'institute_key': webshop_address.get('contact').institute_key,
-        'invoicing_method': webshop_address.get('customer').invoicing_method,
-        'webshop_services': services
+        'invoicing_method': webshop_address.get('customer').invoicing_method
     }
     return account_settings_dto
 
@@ -2712,13 +2707,18 @@ def get_account_details(webshop_account):
                 main_contact = a
                 break
 
+        services = []
+        for s in main_contact.get('customer').webshop_service:
+            services.append(s.webshop_service)
+
         return {
             'success': True, 
             'message': "OK", 
             'webshop_account': webshop_address_doc.get('name'),
             'account_settings': get_account_settings_dto(main_contact),
-            'shipping_items': get_contact_shipping_items(main_contact),
-            'webshop_addresses': webshop_address_dtos
+            'shipping_items': get_contact_shipping_items(main_contact.get('contact').get('name')),
+            'webshop_addresses': webshop_address_dtos,
+            'webshop_services': services
         }
     except Exception as err:
         frappe.log_error(f"Unable to get account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.get_account_details")
@@ -2726,5 +2726,7 @@ def get_account_details(webshop_account):
             'success': False,
             'message': err,
             'webshop_account': webshop_account,
+            'shipping_items': [],
             'webshop_addresses': [],
+            'webshop_services': []
         }
