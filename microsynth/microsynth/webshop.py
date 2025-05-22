@@ -2741,26 +2741,32 @@ def get_account_details(webshop_account):
 
 def update_account_settings(webshop_account, account_settings):
     """
-    TODO: Is it allowed to change the Group Leader of a webshop_account belonging to a Customer that has not Invoicing Method 'Email' or 'Post'?
-
     bench execute microsynth.microsynth.webshop.update_account_settings --kwargs "{'webshop_account': '243755', 'account_settings': {'group_leader': 'me', 'institute_key': 'de_göt_06_05', 'invoicing_method': 'Post'}}"
     """
     try:
         if type(account_settings) == str:
             account_settings = json.loads(account_settings)
-        customer_id = get_customer(webshop_account)
-        customer_doc = frappe.get_doc("Customer", customer_id)
-        if customer_doc.invoicing_method not in ['Email', 'Post']:
-            frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
+
         contact_doc = frappe.get_doc("Contact", webshop_account)
+
         if account_settings.get('institute_key') != contact_doc.institute_key:
             frappe.throw(f"Not allowed to change Institute Key of Contact {contact_doc.name} from '{contact_doc.institute_key}' to '{account_settings.get('institute_key')}'.")
+
+        customer_id = get_customer(webshop_account)
+        customer_doc = frappe.get_doc("Customer", customer_id)
+
+        if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
+            if customer_doc.invoicing_method not in ['Email', 'Post']:
+                frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
+            if account_settings.get('invoicing_method') not in ['Email', 'Post']:
+                frappe.throw(f"Not allowed to change to Invoicing Method '{customer_doc.invoicing_method}'.")
+            customer_doc.invoicing_method = account_settings.get('invoicing_method')
+            customer_doc.save()
+
         if contact_doc.group_leader != account_settings.get('group_leader'):
             contact_doc.group_leader = account_settings.get('group_leader')
             contact_doc.save()
-        if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
-            customer_doc.invoicing_method = account_settings.get('invoicing_method')
-            customer_doc.save()
+
         return {
             'success': True,
             'message': "OK",
