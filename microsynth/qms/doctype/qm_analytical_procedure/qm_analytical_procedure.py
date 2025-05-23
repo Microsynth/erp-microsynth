@@ -62,16 +62,17 @@ class QMAnalyticalProcedure(Document):
 
 def get_studies(qmap_id):
     """
+    Fetch a list of all linked submitted QM Studies
     """
     studies = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Study`.`name`,
             `tabQM Study`.`title`,
             `tabQM Study`.`type`,
             `tabQM Study`.`completion_date`
         FROM `tabQM Study`
-        WHERE 
-            `tabQM Study`.`document_type` = "QM Analytical Procedure"
+        WHERE `tabQM Study`.`docstatus` = 1
+            AND `tabQM Study`.`document_type` = "QM Analytical Procedure"
             AND `tabQM Study`.`document_name` = "{qmap_id}"
         -- ORDER BY `tabQM Study`.`completion_date`
         ;""", as_dict=True)
@@ -110,7 +111,7 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
             process = line[3].strip()
             analyte = line[4].strip()
             matrix = line[5].strip()
-            test_instrument = line[6].strip()
+            test_instruments = line[6].strip().split(';')
             assay_name = line[7].strip()
             description = line[8].strip()
             drug_product_name = line[9].strip()
@@ -131,7 +132,7 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
             elif len(qm_processes) > 1:
                 print(f"Found the following {len(qm_processes)} QM Processes for process '{process}': {qm_processes}. Going to continue with the next Analytical Procedure.")
                 continue
-            
+
             # create a new QM Analyte if necessary
             if not frappe.db.exists('QM Analyte', analyte):
                 qm_analyte = frappe.get_doc({
@@ -139,15 +140,7 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
                     'title': analyte
                 })
                 qm_analyte.insert()
-            
-            # create a new QM Device Model if necessary
-            if not frappe.db.exists('QM Device Model', test_instrument):
-                qm_device_model = frappe.get_doc({
-                    'doctype': 'QM Device Model',
-                    'title': test_instrument
-                })
-                qm_device_model.insert()
-            
+
             # check ICH class
             if not ich_class in ich_class_mapping:
                 print(f"Unknown ICH class '{ich_class}'. Going to continue with the next Analytical Procedure.")
@@ -169,10 +162,19 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
                 'method': test_method,
                 'current_status': current_status
             })
-            # add device model
-            qmap_doc.append("device_models", {
-                'device_model': test_instrument
-            })
+
+            # create a new QM Device Model if necessary
+            for test_instrument in test_instruments:
+                if not frappe.db.exists('QM Device Model', test_instrument):
+                    qm_device_model = frappe.get_doc({
+                        'doctype': 'QM Device Model',
+                        'title': test_instrument
+                    })
+                    qm_device_model.insert()
+                # add device model
+                qmap_doc.append("device_models", {
+                    'device_model': test_instrument
+                })
 
             # split analytical_steps and create new QM Analytical Steps if necessary
             qmas_list = analytical_steps.split(';')
@@ -183,18 +185,18 @@ def import_analytical_procedures(input_file_path, expected_line_length=16):
                         'title': step
                     })
                     qm_device_model.insert()
-                
+
                 step_entry = {
                     'step': step
                 }
                 qmap_doc.append("analytical_steps", step_entry)
-            
+
             # Append Customer Name
             if customer_name != 'NA':
                 qmap_doc.append("customers", {
                     'customer_name': customer_name
                 })
-            
+
             # Fetch and add SOPs
             if sops != 'NA':
                 sop_list = sops.split(';')
