@@ -501,13 +501,14 @@ def contact_exists(contact, client="webshop"):
 
 
 @frappe.whitelist()
-def address_exists(address, client="webshop"):
+def address_exists(address):
     """
     Checks if an address record exists
     """
     if type(address) == str:
         address = json.loads(address)
     sql_query = """SELECT 
+            `tabAddress`.`name` AS `address_id`,
             `tabAddress`.`name` AS `person_id`,
             `tabDynamic Link`.`link_name` AS `customer_id`
         FROM `tabAddress`
@@ -515,7 +516,8 @@ def address_exists(address, client="webshop"):
             `tabDynamic Link`.`parent` = `tabAddress`.`name`
             AND `tabDynamic Link`.`parenttype` = "Address"
             AND `tabDynamic Link`.`link_doctype` = "Customer"
-        WHERE `address_line1` LIKE "{0}" """.format(
+        WHERE `address_line1` LIKE "{0}" 
+            AND `tabAddress`.`disabled` = 0""".format(
             address['address_line1'] if 'address_line1' in address else "%")
     # Note: These statements need the "is not None" term. Simplification to only "contact['...']" will corrupt the API.
     if 'address_line2' in address:
@@ -534,13 +536,19 @@ def address_exists(address, client="webshop"):
         sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
     if 'city' in address:
         sql_query += """ AND `city` = "{0}" """.format(address['city'])
+    if 'country' in address:
+        sql_query += """ AND `country` = "{0}" """.format(address['country'])        
+    if 'address_type' in address and address['address_type'] is not None:
+        sql_query += """ AND `address_type` = "{0}" """.format(address['address_type'])
+
+    sql_query += """ ORDER BY `tabAddress`.`creation` """
 
     addresses = frappe.db.sql(sql_query, as_dict=True)
     
     if len(addresses) > 0:
         return {'success': True, 'message': "OK", 'addresses': addresses}
     else: 
-        return {'success': False, 'message': "Address not found"}
+        return {'success': False, 'message': "Address not found or disabled."}
 
 
 @frappe.whitelist()
