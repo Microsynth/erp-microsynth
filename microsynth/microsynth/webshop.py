@@ -30,6 +30,39 @@ def ping():
     return "pong"
 
 
+def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_contact):
+    """
+    Takes three Contact IDs.
+    Checks if there exists no Webshop Address for the given webshop_account.
+    Creates a new Webshop Address Doc and appends the default shipping and billing contact.
+    """
+    if frappe.db.exists("Webshop Address", webshop_account):
+        msg = f"There exists already a Webshop Address '{webshop_account}'. Unable to create a new one."
+        frappe.log_error(msg, "webshop.initialize_webshop_address_doc")
+        frappe.throw(msg)
+    # create a new Webshop Address
+    webshop_address_doc = frappe.get_doc({
+            'doctype': 'Webshop Address',
+            'webshop_account': webshop_account,
+        })
+    webshop_address_doc.insert()
+    # add default shipping contact
+    webshop_address_doc.append('addresses', {
+        'contact': shipping_contact,
+        'is_default_shipping': 1,
+        'is_default_billing': 0,
+        'disabled': 0
+    })
+    # add default billing contact
+    webshop_address_doc.append('addresses', {
+        'contact': billing_contact,
+        'is_default_shipping': 0,
+        'is_default_billing': 1,
+        'disabled': 0
+    })
+    webshop_address_doc.save()
+
+
 def validate_registration_data(user_data):
     '''
     Validate the user data provided with the register_user function.
@@ -186,27 +219,7 @@ def register_user(user_data, client="webshop"):
     configure_new_customer(customer.name)
 
     # create a new Webshop Address
-    # webshop_address_doc = frappe.get_doc({
-    #         'doctype': 'Webshop Address',
-    #         'webshop_account': contact_name,
-    #     })
-    # webshop_address_doc.insert()
-    # user_data['contact']['customer'] = customer.name
-    # create_webshop_address(contact_name, {
-    #     'customer': customer.as_dict(),
-    #     'contact': user_data['contact'],
-    #     'address': shipping_address_dict,
-    #     'is_default_shipping': 1,
-    #     'is_default_billing': 0
-    # })
-    # user_data['invoice_contact']['customer'] = customer.name
-    # create_webshop_address(contact_name, {
-    #     'customer': customer.as_dict(),
-    #     'contact': user_data['invoice_contact'],
-    #     'address': billing_address_dict,
-    #     'is_default_shipping': 0,
-    #     'is_default_billing': 1
-    # })
+    initialize_webshop_address_doc(contact_name, contact_name, invoice_contact_name)
 
     if not error:
         return {'success': True, 'message': "OK"}
