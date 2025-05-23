@@ -249,7 +249,7 @@ def create_ups_batch_file(sales_orders):
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
         # TODO: Store a mapping from Shipping Item Codes to UPS Service Types somewhere in the ERP settings
-        if not label_data or not label_data['shipping_service'] or (not 'UPS' in label_data['shipping_service'] and label_data['shipping_service'] != 'France'):
+        if not label_data or not label_data['shipping_service'] or (not 'UPS' in label_data['shipping_service'] and label_data['shipping_service'] != 'FR STD'):
             continue
         address = frappe.get_doc("Address", sales_order.shipping_address_name)
         # Check if all values exist
