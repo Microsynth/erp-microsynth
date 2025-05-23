@@ -2165,7 +2165,7 @@ def get_contact_dto(contact):
         'room': contact.room,
         # 'group_leader': contact.group_leader,
         'email': contact.email_id,
-        'email_cc': contact.email_id, #TODO fetch correct CC mail address
+        'email_cc': contact.email_id, #TODO fetch correct CC mail address (contact.email_ids --> filter out primary --> take first mail from list)
         'phone': contact.phone,
         'status': contact.status,
         'source': contact.source,
@@ -2355,9 +2355,16 @@ def create_webshop_address(webshop_account, webshop_address):
         # if webshop_address['customer']['name'] != webshop_account_customer and webshop_address['address']['address_type'] == 'Billing':
         #     create_customer(webshop_address)
 
-        # create an Address if it does not yet exist for the Customer
-        # TODO: Only create a new Address if it does not already exist for this Customer
-        create_address(webshop_address)
+        # Create an Address if it does not yet exist for the Customer
+        address_exists_response = address_exists(webshop_address['address'])
+
+        if address_exists_response.get('success'):
+            address_id = address_exists_response.get('addresses')[0].get('address_id')
+            webshop_address['contact']['address'] = address_id
+            frappe.log_error("1")
+        else:
+            address_id = create_address(webshop_address)
+
         # create a Contact
         contact_id = create_contact(webshop_address)
         if not contact_id:
