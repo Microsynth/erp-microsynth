@@ -35,6 +35,9 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
     Takes three Contact IDs.
     Checks if there exists no Webshop Address for the given webshop_account.
     Creates a new Webshop Address Doc and appends the default shipping and billing contact.
+
+    bench execute microsynth.microsynth.webshop.initialize_webshop_address_doc --kwargs "{'webshop_account':'215856', 'shipping_contact':'215856', 'billing_contact':'215856'}"
+
     """
     if frappe.db.exists("Webshop Address", webshop_account):
         msg = f"There exists already a Webshop Address '{webshop_account}'. Unable to create a new one."
@@ -45,7 +48,6 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
             'doctype': 'Webshop Address',
             'webshop_account': webshop_account,
         })
-    webshop_address_doc.insert()
     # add default shipping contact
     webshop_address_doc.append('addresses', {
         'contact': shipping_contact,
@@ -60,7 +62,7 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
         'is_default_billing': 1,
         'disabled': 0
     })
-    webshop_address_doc.save()
+    webshop_address_doc.insert()
 
 
 def validate_registration_data(user_data):
