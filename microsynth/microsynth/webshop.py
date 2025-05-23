@@ -287,7 +287,7 @@ def update_customer(customer, client="webshop"):
 
 
 @frappe.whitelist()
-def create_update_contact(contact, client="webshop"):
+def create_update_contact(contact):
     """
     This function will create or update a contact
     """
@@ -301,6 +301,13 @@ def create_update_contact(contact, client="webshop"):
         return{'success': False, 'message': "First Name missing"}
     contact_name = update_contact(contact)
     lock_contact_by_name(contact_name)
+
+    if contact.get('source') == "Registration":
+        billing_contact = frappe.get_value("Customer", contact.get('customer_id'), "invoice_to")
+        if not billing_contact:
+            frappe.throw(f"Customer '{contact.get('customer_id')}' has no 'Invoice to' contact.")
+        initialize_webshop_address_doc(contact_name, contact_name, billing_contact)
+
     if contact_name:
         return {'success': True, 'message': "OK"}
     else: 
