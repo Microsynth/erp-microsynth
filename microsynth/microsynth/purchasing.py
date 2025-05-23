@@ -932,3 +932,44 @@ def mark_purchase_invoices_of_payment_propsals_as_proposed(payment_proposal_ids)
         print(f"Process Payment Proposal {pp_id}")
         mark_purchase_invoices_as_proposed(pp_id)
 
+
+@frappe.whitelist()
+def get_batch_items(purchase_receipt):
+    purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
+    batch_items = []
+
+    for i, item in enumerate(purchase_receipt_doc.items):
+        item_doc = frappe.get_doc("Item", item.item_code)
+        if item_doc.has_batch_no:
+            batch_items.append({
+                "idx": item.idx,
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "existing_batch": item.batch_no,
+                "new_batch_id": "",
+                "new_batch_expiry": ""
+            })
+    return batch_items
+
+
+@frappe.whitelist()
+def create_batches_and_assign(purchase_receipt, batch_data):
+    batch_data = json.loads(batch_data) if isinstance(batch_data, str) else batch_data
+    purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
+
+    for row in batch_data:
+        batch_no = row.get('existing_batch')
+        if not batch_no and row.get('new_batch_id'):
+            batch = frappe.new_doc("Batch")
+            batch.batch_id = row['new_batch_id']
+            batch.item = row['item_code']
+            if row.get('new_batch_expiry'):
+                batch.expiry_date = row['new_batch_expiry']
+            batch.insert()
+            batch_no = batch.name
+
+        for item in purchase_receipt_doc.items:
+            if str(item.idx) == str(row['idx']):
+                item.batch_no = batch_no
+
+    purchase_receipt_doc.save()
