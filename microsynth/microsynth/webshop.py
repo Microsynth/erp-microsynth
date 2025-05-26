@@ -2782,7 +2782,7 @@ def get_account_details(webshop_account):
         webshop_address_dtos = get_webshop_address_dtos(webshop_addresses)
 
         for a in webshop_addresses: 
-            if a.get('contact').get('name') == webshop_account:
+            if a.get('contact').get('name').split('-')[0] == webshop_account:
                 main_contact = a
                 break
 
