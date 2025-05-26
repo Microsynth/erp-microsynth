@@ -5211,3 +5211,73 @@ def find_missing_web_order_ids(input_filepath, output_filepath):
             # else:
             #     print(f"Found {len(submitted_sales_orders)} submitted Sales Order for Web Order ID {web_order_id}.")
     print(f"Wrote {counter} lines to {output_filepath}.")
+
+
+def import_has_webshop_account(input_filepath):
+    """
+    Set Contact.has_webshop_account according to an export of the Wehshop table AspNetUsers.
+    Expected runtime: several hours
+
+    bench execute microsynth.microsynth.migration.import_has_webshop_account --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-26_Export_AspNetUsers_Webshop.txt'}"
+    """
+    contacts_to_disable = []
+    changes = 0
+    print(f"{datetime.now()}: Parsing Webshop Accounts from {input_filepath} ...")
+    with open(input_filepath, "r") as input_file:
+        csv_reader = csv.reader(input_file, delimiter='\t')
+        next(csv_reader)  # skip header
+        for counter, line in enumerate(csv_reader):
+            if len(line) != 35:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            if counter % 100 == 0:
+                frappe.db.commit()
+                print(f"INFO: Already processed {counter} Webshop Accounts.")
+            is_deleted = line[26]
+            person_id = line[29]
+            if not person_id:
+                print(f"Missing IdPerson for Id {line[0]}; skipping")
+                continue
+            if frappe.db.exists("Contact", person_id):
+                contact_doc = frappe.get_doc("Contact", person_id)
+                if is_deleted == "1" and contact_doc.status != "Disabled":
+                    print(f"WARNING: Person ID '{person_id}' is marked as deleted in the Webshop, but has status {contact_doc.status} in the ERP.")
+                    contacts_to_disable.append(person_id)
+                    # contact_doc.status = "Disabled"
+                    # contact_doc.save()
+                if not contact_doc.has_webshop_account:
+                    contact_to_disable = False
+                    address_to_disable = False
+                    if contact_doc.status == "Disabled":
+                        contact_doc.status = "Open"  # do not set to Passive to avoid sending an email
+                        contact_to_disable = True
+                    try:
+                        contact_doc.has_webshop_account = 1
+                        contact_doc.save()
+                    except frappe.exceptions.ValidationError as err:
+                        print(f"INFO: {str(err)}")
+                        if contact_doc.address:
+                            address_doc = frappe.get_doc("Address", contact_doc.address)
+                            if address_doc.disabled == 1:
+                                address_doc.disabled = 0
+                                address_doc.save()
+                                address_to_disable = True
+                                contact_doc = frappe.get_doc("Contact", person_id)  # necessary to avoid "Document has been modified after you have opened it" error
+                                contact_doc.has_webshop_account = 1
+                                contact_doc.save()
+                        else:
+                            print(f"WARNING: Contact {person_id} has no Address.")
+                    except Exception as err:
+                        print(f"ERROR: Got the following unexpected Error: {str(err)}")
+                    if contact_to_disable:
+                        contact_doc.status = "Disabled"
+                        contact_doc.save()
+                    if address_to_disable:
+                        address_doc.disabled = 1
+                        address_doc.save()
+                    changes += 1
+            else:
+                if is_deleted == "0":
+                    print(f"ERROR: Person ID '{person_id}' is not marked as deleted in the Webshop, but not found in the ERP.")
+    print(f"The following {len(contacts_to_disable)} Contacts are marked as deleted in the Webshop, but are not Disabled in the ERP: {contacts_to_disable}")
+    print(f"{datetime.now()}: Set 'Has Webshop Account' on {changes} Contacts.")
