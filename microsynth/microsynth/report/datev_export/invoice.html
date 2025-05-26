@@ -62,7 +62,7 @@
     <tax_line tax="0.00" currency="{{ doc.currency }}" />
 {%- else %}
     {%- for t in doc.taxes %}
-        <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" {% if t.rate != 0 and doc.net_total != 0 %} tax_amount="{{ "{:.2f}".format(doc.tax_amount) }}"{% endif %} currency="{{ doc.currency }}" />
+        <tax_line tax="{{ "{:.2f}".format(t.rate) }}" net_price_line_amount="{{ "{:.2f}".format(doc.net_total) }}" gross_price_line_amount="{{ "{:.2f}".format(doc.grand_total) }}" {% if t.rate != 0 and doc.net_total != 0 %} tax_amount="{{ "{:.2f}".format(t.tax_amount) }}"{% endif %} currency="{{ doc.currency }}" />
     {%- endfor %}
 {%- endif %}
 </total_amount>
