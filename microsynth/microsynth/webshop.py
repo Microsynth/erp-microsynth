@@ -157,13 +157,7 @@ def register_user(user_data, client="webshop"):
     customer = frappe.get_doc("Customer", user_data['customer']['name'])
 
     # Create addresses
-    shipping_address_dict = {}
-    billing_address_dict = {}
     for address in user_data['addresses']:
-        if address['name'] == user_data['contact']['name']:
-            shipping_address_dict = address
-        if address['name'] == user_data['invoice_contact']['name']:
-            billing_address_dict = address
         address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = customer.name
         address_id = update_address(address)
