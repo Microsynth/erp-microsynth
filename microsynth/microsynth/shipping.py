@@ -48,7 +48,7 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1108': "UPS EXP DE",
         '1110': "Abholung",
         '1112': "EU Post DE",
-        '1113': "FR STD",  # UPS STD
+        '1113': "UPS STD",
         '1114': "UPS",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
         '1115': "EU Post DE",
         '1117': "UPS",  # should be disabled once all open invoices are paid
