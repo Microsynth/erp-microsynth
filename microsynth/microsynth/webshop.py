@@ -2283,7 +2283,7 @@ def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
     for a in webshop_address_doc.addresses:
         if a.contact == contact_id:
             if a.disabled:
-                frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the given '{webshop_address_doc.name}'.")
+                frappe.throw(f"The given {contact_id=} is disabled for the webshop addresses of the webshop account '{webshop_address_doc.name}'.")
             found = True
             break
     if not found:
@@ -2590,7 +2590,7 @@ def update_webshop_address(webshop_account, webshop_address):
         address_id = webshop_address.get('address').get('name')
 
         validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id)
-        
+
         if webshop_address.get('address').get('address_type') == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
@@ -2603,6 +2603,7 @@ def update_webshop_address(webshop_account, webshop_address):
             contact = webshop_address['contact']
             contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
             contact['phone_number'] = contact.get('phone')
+            contact['customer_id'] = contact.get('customer')
             contact_id = update_contact(contact)
             address = webshop_address['address']
             address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
