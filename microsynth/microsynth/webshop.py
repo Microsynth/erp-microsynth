@@ -2757,10 +2757,15 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
 
 
 def get_account_settings_dto(webshop_address):
+    customer = webshop_address.get('customer')
     account_settings_dto = {
         'group_leader': webshop_address.get('contact').group_leader,
         'institute_key': webshop_address.get('contact').institute_key,
-        'invoicing_method': webshop_address.get('customer').invoicing_method
+        'default_company': customer.default_company,
+        'sales_manager': customer.account_manager,
+        'invoicing_method': customer.invoicing_method,
+        'po_required': customer.po_required,
+        'billing_address_readonly': customer.webshop_address_readonly
     }
     return account_settings_dto
 
