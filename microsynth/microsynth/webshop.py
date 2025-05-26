@@ -2764,8 +2764,8 @@ def get_account_settings_dto(webshop_address):
         'default_company': customer.default_company,
         'sales_manager': customer.account_manager,
         'invoicing_method': customer.invoicing_method,
-        'po_required': customer.po_required,
-        'billing_address_readonly': customer.webshop_address_readonly
+        'po_required': to_bool(customer.po_required),
+        'billing_address_readonly': to_bool(customer.webshop_address_readonly)
     }
     return account_settings_dto
 
