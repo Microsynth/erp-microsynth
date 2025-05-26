@@ -5281,3 +5281,40 @@ def import_has_webshop_account(input_filepath):
                     print(f"ERROR: Person ID '{person_id}' is not marked as deleted in the Webshop, but not found in the ERP.")
     print(f"The following {len(contacts_to_disable)} Contacts are marked as deleted in the Webshop, but are not Disabled in the ERP: {contacts_to_disable}")
     print(f"{datetime.now()}: Set 'Has Webshop Account' on {changes} Contacts.")
+
+
+def create_webshop_addresses():
+    """
+    Create a Webshop Address for all enabled Contacts that have a Webshop Account and not yet a Webshop Address
+
+    bench execute microsynth.microsynth.migration.create_webshop_addresses
+    """
+    from microsynth.microsynth.webshop import initialize_webshop_address_doc
+    sql_query = """
+        SELECT `tabContact`.`name`,
+            `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`invoice_to`
+        FROM `tabContact`
+        LEFT JOIN `tabWebshop Address` ON `tabWebshop Address`.`webshop_account` = `tabContact`.`name`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND `tabContact`.`has_webshop_account` = 1
+            AND `tabWebshop Address`.`webshop_account` IS NULL
+        ;"""
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+    print(f"There are {len(contacts)} non-Disabled Contacts with a Webshop Account, but without a Webshop Address.")
+    for i, contact in enumerate(contacts):
+        if i % 200 == 0:
+            print(f"Already processed {i}/{len(contacts)} Contacts.")
+            frappe.db.commit()
+        contact_id = contact.get('name')
+        if not contact.get('customer_id'):
+            print(f"Contact '{contact_id}' has no Customer.")
+            continue
+        if not contact.get('invoice_to'):
+            print(f"Customer '{contact.get('customer_id')}' of Contact '{contact_id}' has no Invoice To Contact.")
+            continue
+        initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
