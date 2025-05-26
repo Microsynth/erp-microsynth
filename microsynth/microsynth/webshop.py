@@ -2817,6 +2817,7 @@ def get_account_details(webshop_account):
         }
 
 
+@frappe.whitelist()
 def update_account_settings(webshop_account, account_settings):
     """
     bench execute microsynth.microsynth.webshop.update_account_settings --kwargs "{'webshop_account': '243755', 'account_settings': {'group_leader': 'me', 'institute_key': 'de_göt_06_05', 'invoicing_method': 'Post'}}"
