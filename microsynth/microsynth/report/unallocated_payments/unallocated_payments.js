@@ -36,7 +36,7 @@ frappe.query_reports["Unallocated Payments"] = {
             "fieldname": "payment_type",
             "label": __("Payment Type"),
             "fieldtype": "Link",
-            "options": "Mode payment_type Payment",
+            "options": "Payment Type",
             "reqd": 0
         },
         {
