@@ -3100,3 +3100,23 @@ def get_sql_list(list):
         return (','.join('"{0}"'.format(e) for e in list))
     else:
         return '""'
+
+
+@frappe.whitelist()
+def change_contact_customer(contact_name, new_customer_id):
+    contact = frappe.get_doc("Contact", contact_name)
+
+    if len(contact.links) != 1:
+        frappe.throw("This action is only allowed when there is exactly one link. Please contact IT App.")
+    
+    link = contact.links[0]
+    
+    if link.link_doctype != "Customer":
+        frappe.throw(f"The only link links to '{link.link_doctype}', but expected a link to a Customer. Please contact IT App.")
+
+    link.link_name = new_customer_id
+    link.link_title = new_customer_id  # TODO: Use Customer.customer_name instead?
+    contact.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"status": "success"}

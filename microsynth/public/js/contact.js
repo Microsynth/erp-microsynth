@@ -47,6 +47,13 @@ frappe.ui.form.on('Contact', {
             cur_frm.set_value("source", "Manual");
         }
 
+        // lock Links table of webshop account contacts
+        if (!frm.doc.__islocal && frm.doc.has_webshop_account) {
+            cur_frm.set_df_property('links', 'read_only', true);
+            cur_frm.get_field("links").grid.fields_map['link_doctype'].read_only = 1;
+            cur_frm.get_field("links").grid.fields_map['link_name'].read_only = 1;
+        }
+
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
@@ -112,6 +119,13 @@ frappe.ui.form.on('Contact', {
             frm.add_custom_button(__("Customer"), function() {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
+
+            if (!frm.doc.__islocal && frm.doc.has_webshop_account) {
+                // Button to change the customer
+                frm.add_custom_button(__("Change Customer"), function() {
+                    change_customer(frm);
+                });
+            }            
 
             if (frm.doc.status === 'Lead' || frm.doc.contact_classification === 'Lead') {
                 var dashboard_comment_color = 'green';
@@ -211,6 +225,40 @@ function update_address_links(frm) {
             }
         })
     }
+}
+
+
+function change_customer(frm) {
+    if (frm.doc.links.length !== 1) {
+        frappe.msgprint(__('This action is only allowed when there is exactly one Customer linked. Please contact IT App.'));
+        return;
+    }
+    frappe.prompt([
+        {
+            'fieldname': 'new_customer',
+            'label': 'New Customer',
+            'fieldtype': 'Link',
+            'options': 'Customer',
+            'reqd': 1
+        }
+    ],
+    function (values) {
+        frappe.call({
+            method: 'microsynth.microsynth.utils.change_contact_customer',
+            args: {
+                'contact_name': frm.doc.name,
+                'new_customer_id': values.new_customer
+            },
+            callback: function (r) {
+                if (!r.exc) {
+                    frappe.msgprint(__('Customer link updated.'));
+                    frm.reload_doc();
+                }
+            }
+        });
+    },
+    __('Change Customer'),
+    __('Change'));
 }
 
 
