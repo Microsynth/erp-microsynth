@@ -6,12 +6,14 @@ frappe.ui.form.on('Purchase Order', {
         }
 
         setTimeout(function () {
-            cur_frm.fields_dict.items.grid.get_field('item_code').get_query =  
-                function() {
-                    return {
+            cur_frm.fields_dict.items.grid.get_field('item_code').get_query = 
+                function(frm, dt, dn) {
+                    return { 
+                        query: "microsynth.microsynth.filters.find_purchasing_items",
                         filters: {
-                            "is_purchase_item": 1,
-                            "item_group": "Purchasing"
+                            "supplier": cur_frm.doc.supplier,
+                            "item_group": 'Purchasing',
+                            "disabled": 0
                         }
                     };
                 };
