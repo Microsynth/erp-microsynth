@@ -3103,20 +3103,27 @@ def get_sql_list(list):
 
 
 @frappe.whitelist()
-def change_contact_customer(contact_name, new_customer_id):
-    contact = frappe.get_doc("Contact", contact_name)
+def change_contact_customer(contact_id, new_customer_id):
+    contact_doc = frappe.get_doc("Contact", contact_id)
 
-    if len(contact.links) != 1:
+    if len(contact_doc.links) != 1:
         frappe.throw("This action is only allowed when there is exactly one link. Please contact IT App.")
     
-    link = contact.links[0]
+    link = contact_doc.links[0]
     
     if link.link_doctype != "Customer":
         frappe.throw(f"The only link links to '{link.link_doctype}', but expected a link to a Customer. Please contact IT App.")
+    
+    customer_doc = frappe.get_doc("Customer", new_customer_id)
+
+    if not customer_doc.invoice_to:
+        frappe.throw(f"The new Customer '{new_customer_id}' has no Invoice to Contact. Unable to link.")
+    
+    # TODO: update the Default Billing Contact of the corresponding Webshop Address
 
     link.link_name = new_customer_id
     link.link_title = new_customer_id  # TODO: Use Customer.customer_name instead?
-    contact.save(ignore_permissions=True)
+    contact_doc.save(ignore_permissions=True)
     frappe.db.commit()
 
     return {"status": "success"}
