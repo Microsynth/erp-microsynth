@@ -25,7 +25,6 @@ frappe.ui.form.on('QM Analytical Procedure', {
                 cur_frm.set_df_property('qm_process', 'read_only', 0);
                 cur_frm.set_df_property('matrix', 'read_only', 0);
                 cur_frm.set_df_property('device_models', 'read_only', 0);
-                console.log('000');
             }
             else {
                 cur_frm.set_df_property('company', 'read_only', 1);
@@ -33,7 +32,6 @@ frappe.ui.form.on('QM Analytical Procedure', {
                 cur_frm.set_df_property('qm_process', 'read_only', 1);
                 cur_frm.set_df_property('matrix', 'read_only', 1);
                 cur_frm.set_df_property('device_models', 'read_only', 1);
-                console.log('111');
             }
         }
     }
