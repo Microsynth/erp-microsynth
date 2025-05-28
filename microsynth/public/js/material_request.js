@@ -5,13 +5,14 @@ frappe.ui.form.on('Material Request', {
             prepare_naming_series(frm);             // common function
         }
 
-	    setTimeout(function () {
-            cur_frm.fields_dict.items.grid.get_field('item_code').get_query =  
-                function() {
-                    return {
+        setTimeout(function () {
+            cur_frm.fields_dict.items.grid.get_field('item_code').get_query = 
+                function(frm, dt, dn) {
+                    return { 
+                        query: "microsynth.microsynth.filters.find_purchasing_items",
                         filters: {
-                            "is_purchase_item": 1,
-                            "item_group": "Purchasing"
+                            "item_group": 'Purchasing',
+                            "disabled": 0
                         }
                     };
                 };
