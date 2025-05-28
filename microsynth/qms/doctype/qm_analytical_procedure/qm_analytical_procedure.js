@@ -18,6 +18,24 @@ frappe.ui.form.on('QM Analytical Procedure', {
                 }
             });
         }
+        if (frm.doc.docstatus === 1) {
+            if (frappe.user.has_role("QAU")) {
+                cur_frm.set_df_property('company', 'read_only', 0);
+                cur_frm.set_df_property('analyte', 'read_only', 0);
+                cur_frm.set_df_property('qm_process', 'read_only', 0);
+                cur_frm.set_df_property('matrix', 'read_only', 0);
+                cur_frm.set_df_property('device_models', 'read_only', 0);
+                console.log('000');
+            }
+            else {
+                cur_frm.set_df_property('company', 'read_only', 1);
+                cur_frm.set_df_property('analyte', 'read_only', 1);
+                cur_frm.set_df_property('qm_process', 'read_only', 1);
+                cur_frm.set_df_property('matrix', 'read_only', 1);
+                cur_frm.set_df_property('device_models', 'read_only', 1);
+                console.log('111');
+            }
+        }
     }
 });
 

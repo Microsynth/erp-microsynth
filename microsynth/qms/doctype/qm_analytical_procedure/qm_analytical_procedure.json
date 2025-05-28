@@ -55,7 +55,6 @@
    "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
-   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -67,7 +66,6 @@
    "in_standard_filter": 1,
    "label": "Analyte",
    "options": "QM Analyte",
-   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -75,7 +73,6 @@
    "fieldname": "matrix",
    "fieldtype": "Data",
    "label": "Matrix",
-   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -205,11 +202,11 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "label": "Process",
    "options": "QM Process",
-   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -245,12 +242,11 @@
    "in_standard_filter": 1,
    "label": "Device Models",
    "options": "QM AP Device Model",
-   "permlevel": 1,
    "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-23 08:50:23.464509",
+ "modified": "2025-05-28 14:32:31.522004",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
@@ -272,18 +268,6 @@
    "write": 1
   },
   {
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
    "amend": 1,
    "cancel": 1,
    "create": 1,
@@ -298,17 +282,6 @@
    "write": 1
   },
   {
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "QAU",
-   "write": 1
-  },
-  {
    "create": 1,
    "email": 1,
    "print": 1,
@@ -318,14 +291,6 @@
    "share": 1,
    "submit": 1,
    "write": 1
-  },
-  {
-   "email": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Contract Research User"
   }
  ],
  "sort_field": "modified",
