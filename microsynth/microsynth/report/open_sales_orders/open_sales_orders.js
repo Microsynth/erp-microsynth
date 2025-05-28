@@ -47,5 +47,8 @@ frappe.query_reports["Open Sales Orders"] = {
             "hidden": 1,
             "default": 1
         }
-	]
+	],
+    "onload": (report) => {
+        hide_chart_buttons();
+    }
 };
