@@ -1695,7 +1695,7 @@ def configure_territory(customer_id):
             else:
                 first_name = frappe.get_value("User", customer.owner, "first_name")
                 recipient = customer.owner
-                reason = 'You are receiving this email because you have created the Customer in the ERP.<br>'
+                reason = 'You are receiving this email because you have created the Customer in the ERP and someone has saved it.<br>'
             customer_href = f"<a href={get_url_to_form('Customer', customer_id)}>{customer_id}</a>"
             rendered_subject = frappe.render_template(email_template.subject, {'customer_id': customer_id})
             rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'customer_href': customer_href, 'reason': reason})
