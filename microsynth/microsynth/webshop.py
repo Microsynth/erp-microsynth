@@ -2858,3 +2858,26 @@ def update_account_settings(webshop_account, account_settings):
             'webshop_account': webshop_account,
             'account_settings': account_settings
         }
+
+
+def change_default_billing_address(webshop_account_id, new_invoice_to_contact_id):
+    """
+    bench execute microsynth.microsynth.webshop.change_default_billing_address --kwargs "{'webshop_account_id': '243755', 'new_invoice_to_contact': '812881'}"
+    """
+    webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account_id)
+
+    found = False
+    for row in webshop_address_doc.addresses:
+        if row.is_default_billing:
+            if found:
+                msg = f"Webshop Address {webshop_address_doc.name} has more than one default billing Contact. Please contact IT App."
+                frappe.log_error(msg, 'utils.change_default_billing_address')
+                frappe.throw(msg)
+            row.contact = new_invoice_to_contact_id
+            found = True
+    if not found:
+        msg = f"Webshop Address {webshop_address_doc.name} has no default billing Contact. Please contact IT App."
+        frappe.log_error(msg, 'utils.change_default_billing_address')
+        frappe.throw(msg)
+
+    webshop_address_doc.save()
