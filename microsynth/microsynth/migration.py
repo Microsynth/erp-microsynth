@@ -12,7 +12,7 @@ import json
 from frappe.utils import cint, flt, get_url_to_form
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, get_sql_list, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account, add_webshop_service
+from microsynth.microsynth.utils import find_label, get_sql_list, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account, add_webshop_service, get_customer
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
@@ -5318,3 +5318,36 @@ def create_webshop_addresses():
             print(f"Customer '{contact.get('customer_id')}' of Contact '{contact_id}' has no Invoice To Contact.")
             continue
         initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
+
+
+def check_webshop_address_billing():
+    """
+    Checks for all Webshop Addresses, if the default billing Contact is equals
+    the Invoice to Contact of the Customer of the Webshop Account Contact.
+    If not, a warning is printed.
+
+    bench execute microsynth.microsynth.migration.check_webshop_address_billing
+    """
+    webshop_addresses = frappe.get_all("Webshop Address", fields=['name'])
+    print(f"Going to check {len(webshop_addresses)} Webshop Addresses ...")
+
+    for we in webshop_addresses:
+        webshop_address_doc = frappe.get_doc("Webshop Address", we['name'])
+        customer_id = get_customer(webshop_address_doc.webshop_account)
+        invoice_to_contact = frappe.get_value("Customer", customer_id, "invoice_to")
+        default_billing_contact = None
+        found = False
+
+        for row in webshop_address_doc.addresses:
+            if row.is_default_billing:
+                if found:
+                    print(f"ERROR: Webshop Address {webshop_address_doc.name} has more than one default billing Contact.")
+                    continue
+                default_billing_contact = row.contact
+                found = True
+        if not found:
+            print(f"ERROR: Webshop Address {webshop_address_doc.name} has no default billing Contact.")
+            continue
+
+        if default_billing_contact != invoice_to_contact:
+            print(f"WARNING: Webshop Address {webshop_address_doc.name} has the Default Billing Contact {default_billing_contact} but the Customer {customer_id} of Contact {webshop_address_doc.webshop_account} has the Invoice to Contact {invoice_to_contact}.")
