@@ -453,7 +453,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             annual_consumption_budget = line[17].strip()
             order_quantity_6mt = line[18].strip()
             threshold = line[19].strip()
-            shelf_life  = line[20].strip()  # Haltbarkeit
+            shelf_life_in_years  = line[20].strip()  # Haltbarkeit
             process_critical = line[21].strip()
             quality_control = line[22].strip()
             quality_list = line[23].strip()
@@ -488,6 +488,14 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
             
+            shelf_life_in_days = None
+            if shelf_life_in_years:
+                try:
+                    shelf_life_in_years = float(shelf_life_in_years)
+                    shelf_life_in_days = int(shelf_life_in_years * 365)
+                except Exception as err:
+                    print(f"ERROR: Unable to convert {shelf_life_in_years=} into days. Going to continue with the next supplier item.")
+            
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
             else:
@@ -501,6 +509,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'stock_uom': 'Pcs',
                 'is_stock_item': 1,  # if internal_code else 0,
                 'description': item_name,
+                'shelf_life_in_days': shelf_life_in_days,
                 'is_purchase_item': 1,
                 'is_sales_item': 0
             })
