@@ -303,7 +303,6 @@ function preview_address(frm, customer) {
                     ],
                     'primary_action': function(){
                         //var values = d.get_values();
-                        console.log("201");
                         frappe.call({
                             "method": "microsynth.microsynth.labels.print_contact_shipping_label",
                             "args": {

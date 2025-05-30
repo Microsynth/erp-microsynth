@@ -254,7 +254,7 @@ async function print_labels(frm) {
         ],
         'primary_action_label': __('Print'),
         primary_action(values) {
-            console.log("Labels to print:", values.label_table);
+            //console.log("Labels to print:", values.label_table);
             // call to print
             frappe.call({
                 'method': "microsynth.microsynth.labels.print_purchasing_labels",

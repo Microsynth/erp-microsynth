@@ -84,7 +84,7 @@ function create_from_existing(frm) {
                     if (r.message) {
                         frappe.set_route("Form", "Abacus Export File Addition", r.message);
                     } else {
-                        frappe.show_alert("Internal Error")
+                        frappe.show_alert("Internal Error");
                     }
                 }
             });

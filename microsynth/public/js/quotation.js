@@ -247,8 +247,6 @@ function pull_item_service_specification(item_code, quotation_group) {
 
 
 function follow_up(frm){
-    console.log(frm.doc.name);
-    console.log(frm.doc.contact_person);
     frappe.model.open_mapped_doc({
         'method': 'microsynth.microsynth.doctype.contact_note.contact_note.create_new_follow_up',
         'args': {

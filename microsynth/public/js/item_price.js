@@ -4,7 +4,6 @@
 
 frappe.ui.form.on('Item Price', {
     refresh(frm) {
-        console.log()
         if (frm.doc.price_list.includes('Sales Prices')) {
             if (frappe.user.has_role("Sales Manager Extended")) {
                 frm.add_custom_button(__("Change reference price"), function() {
