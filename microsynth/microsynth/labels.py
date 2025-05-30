@@ -292,3 +292,64 @@ def create_ups_batch_file(sales_orders):
         with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
             for line in lines_to_write:
                 file.write(line)
+
+
+@frappe.whitelist()
+def print_purchasing_labels(label_table):
+    import json
+    purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
+    label_printer_ip = "192.0.1.73"
+    label_printer_port = 9100
+    user = frappe.get_user().name
+    username = frappe.get_value("User", user, "username")
+
+    if isinstance(label_table, str):
+        label_table = json.loads(label_table)
+    try:
+        for row in label_table:
+            row['username'] = username
+            labels_to_print = int(row.get("labels_to_print") or 0)
+            if labels_to_print <= 0:
+                continue
+
+            for _ in range(labels_to_print):
+                # Render the label
+                content = frappe.render_template(
+                    purchase_label_template,
+                    {"row": row}
+                )
+                frappe.log_error(content, "content")
+                #print_raw(label_printer_ip, label_printer_port, content)
+    except Exception as err:
+        frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")
+        frappe.throw(f"Error printing labels: {err}")
+
+
+def print_test_purchasing_label_novexx():
+    """    
+    bench execute microsynth.microsynth.labels.print_test_purchasing_label_novexx
+    """    
+    content = '''
+#!A1
+#IMS22/30   
+#N13
+#ER
+
+#T28#J10#YN101/2U/40///Receipt date / initials: JPe#G
+
+#T24#J15#YN101/2U/50///30.05.2025#G
+
+#T20#J15#YN101/2U/50///Shelf life: 30.05.2026#G
+
+#T16#J15#YN101/2U/50///test#G
+  #T16#J10 #IDM/3R12S12/6///1234
+  #T13#J15#YN101/2U/50///1234  
+
+#T9#J10#YN101/2U/40///Opening date / initials:#G
+
+#T6#J10#YN101/2U/40/// #G
+
+#Q1/
+#!P1
+'''
+    print_raw('192.0.1.73', 9100, content)

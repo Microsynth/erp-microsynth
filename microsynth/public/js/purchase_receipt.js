@@ -165,6 +165,118 @@ function enter_batches(frm) {
 }
 
 
-function print_labels(frm) {
-    frappe.msgprint("Label printing is not yet implemented.");
+async function print_labels(frm) {
+    let items = frm.doc.items;
+    if (!items || items.length === 0) {
+        frappe.msgprint(__('No items found.'));
+        return;
+    }
+    const rows = [];
+
+    for (const pr_item of items) {
+        const item = await frappe.db.get_doc('Item', pr_item.item_code);
+
+        let labels_to_print = pr_item.qty;
+
+        // Handle UOM conversion if needed
+        if (pr_item.uom !== pr_item.stock_uom && Array.isArray(item.uoms)) {
+            const uom_entry = item.uoms.find(u => u.uom === pr_item.uom);
+            if (uom_entry && uom_entry.conversion_factor) {
+                labels_to_print = pr_item.qty * uom_entry.conversion_factor;
+            }
+        }
+
+        // Calculate shelf life date
+        const shelf_life_days = item.shelf_life_in_days || 0;
+        const shelf_life_date = frappe.datetime.add_days(frappe.datetime.get_today(), shelf_life_days);
+
+        let internal_code = '';
+        if (item.name.length >= 5 && item.name.charAt(item.name.length - 5) === '0') {
+            internal_code = item.name.slice(-4);
+        }
+
+        rows.push({
+            'labels_to_print': Math.round(labels_to_print),
+            'item_name': item.item_name,
+            'shelf_life_date': shelf_life_date,
+            'material_code': item.material_code,
+            'internal_code': internal_code
+        });
+    }
+
+    const d = new frappe.ui.Dialog({
+        'title': __('Print Labels'),
+        'size': 'extra-large',
+        'fields': [
+            {
+                'fieldname': 'label_table',
+                'fieldtype': 'Table',
+                'label': __('Labels to Print'),
+                'cannot_add_rows': true,
+                'data': rows,
+                'get_data': () => rows,
+                'fields': [
+                    {
+                        'fieldname': 'labels_to_print',
+                        'fieldtype': 'Int',
+                        'label': __('Number of Labels'),
+                        'in_list_view': 1,
+                        'in_place_edit': 1,
+                        'reqd': 1
+                    },
+                    {
+                        'fieldname': 'item_name',
+                        'fieldtype': 'Data',
+                        'label': __('Item Name'),
+                        'read_only': 1,
+                        'in_list_view': 1
+                    },
+                    {
+                        'fieldname': 'shelf_life_date',
+                        'fieldtype': 'Date',
+                        'label': __('Shelf Life Date'),
+                        'in_list_view': 1
+                    },
+                    {
+                        'fieldname': 'material_code',
+                        'fieldtype': 'Data',
+                        'label': __('Material Code'),
+                        'in_list_view': 1
+                    },
+                    {
+                        'fieldname': 'internal_code',
+                        'fieldtype': 'Data',
+                        'label': __('Internal Code'),
+                        'in_list_view': 1
+                    }
+                ]
+            }
+        ],
+        'primary_action_label': __('Print'),
+        primary_action(values) {
+            console.log("Labels to print:", values.label_table);
+            // call to print
+            frappe.call({
+                'method': "microsynth.microsynth.labels.print_purchasing_labels",
+                'args': {
+                    label_table: JSON.stringify(values.label_table)
+                },
+                'callback': function(r) {
+                    frappe.msgprint(__('Labels sent to printer.'));
+                }
+            });
+            //frappe.show_alert("Printing is not yet implemented.");
+            d.hide();
+        }
+    });
+
+    d.show();
+
+    // Make modal wider
+    setTimeout(function () {
+        const modals = document.getElementsByClassName("modal-dialog");
+        if (modals.length > 0) {
+            modals[modals.length - 1].style.width = "1200px";
+        }
+    }, 300);
 }
