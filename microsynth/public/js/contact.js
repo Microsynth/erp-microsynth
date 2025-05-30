@@ -97,8 +97,8 @@ frappe.ui.form.on('Contact', {
         // Show buttons if a customer is linked
         if ((frm.doc.links) && (frm.doc.links.length > 0) && (frm.doc.links[0].link_doctype === "Customer")) {
 
-            // Webshop button (show only if Contact ID is numeric)
-            if (/^\d+$/.test(frm.doc.name)){
+            // Webshop button
+            if (!frm.doc.__islocal && frm.doc.has_webshop_account){
                 frm.add_custom_button(__("Webshop"), function() {
                     frappe.call({
                         "method": "microsynth.microsynth.utils.get_webshop_url",
