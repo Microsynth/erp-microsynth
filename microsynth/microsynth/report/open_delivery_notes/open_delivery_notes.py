@@ -14,7 +14,7 @@ def get_columns():
         {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
-        {"label": _("PO No"), "fieldname": "po_no", "fieldtype": "Data", "width": 200},
+        {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 200},
         {"label": _("Is Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 85},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 105},
