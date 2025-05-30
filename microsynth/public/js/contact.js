@@ -120,7 +120,7 @@ frappe.ui.form.on('Contact', {
                 frappe.set_route("Form", "Customer", frm.doc.links[0].link_name);
             });
 
-            if (!frm.doc.__islocal && frm.doc.has_webshop_account && frm.doc.status != "Disabled") {
+            if (!frm.doc.__islocal && frm.doc.status != "Disabled") {
                 // Button to change the customer
                 frm.add_custom_button(__("Change Customer"), function() {
                     change_customer(frm);
