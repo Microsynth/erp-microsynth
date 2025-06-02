@@ -10,13 +10,12 @@ import json
 import re
 import base64
 from frappe.desk.form.linked_with import get_linked_docs
-from microsynth.microsynth.migration import update_contact, update_address, robust_get_country
 from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer, to_bool
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.invoicing import set_income_accounts
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 import traceback
@@ -36,8 +35,7 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
     Checks if there exists no Webshop Address for the given webshop_account.
     Creates a new Webshop Address Doc and appends the default shipping and billing contact.
 
-    bench execute microsynth.microsynth.webshop.initialize_webshop_address_doc --kwargs "{'webshop_account':'215856', 'shipping_contact':'215856', 'billing_contact':'215856'}"
-
+    bench execute microsynth.microsynth.webshop.initialize_webshop_address_doc --kwargs "{'webshop_account': '215856', 'shipping_contact': '215856', 'billing_contact': '71921'}"
     """
     if frappe.db.exists("Webshop Address", webshop_account):
         msg = f"There exists already a Webshop Address '{webshop_account}'. Unable to create a new one."
@@ -63,6 +61,199 @@ def initialize_webshop_address_doc(webshop_account, shipping_contact, billing_co
         'disabled': 0
     })
     webshop_address_doc.insert()
+
+
+def parse_date(date_str):
+    for format_str in ("%Y-%m-%dT%H:%M:%S", "%d.%m.%Y %H:%M:%S", "%d.%m.%Y"):
+        try:
+            return datetime.strptime(date_str, format_str)
+        except (ValueError, TypeError):
+            continue
+    print(f"failed to parse date: {date_str}")
+    return None
+
+
+def update_contact(contact_data):
+    """
+    Update or create a contact record. If no first_name is provided, set it to "-".
+
+    Note: Does not initialize the status "Open", in contrast to the update_customer function.
+    This, to differentiate between contacts originating from punchout orders and conventional registrations.
+    """
+    person_id = contact_data.get('name')
+    if not person_id:
+        return None
+
+    first_name = contact_data.get('first_name') or "-"
+
+    # Check if contact exists
+    if not frappe.db.exists("Contact", person_id):
+        print(f"Creating contact {person_id}...")
+        frappe.db.sql(
+            """INSERT INTO `tabContact` (`name`, `first_name`) VALUES (%s, %s)""",
+            (person_id, first_name)
+        )
+    contact = frappe.get_doc("Contact", person_id)
+
+    # Name fields
+    contact.first_name = first_name
+    contact.last_name = contact_data.get('last_name')
+    contact.full_name = f"{contact.first_name}{' ' if contact.last_name else ''}{contact.last_name or ''}"
+
+    # Optional fields
+    for field in ['status', 'institute', 'department', 'institute_key', 'group_leader', 'address', 'room', 'has_webshop_account', 'source', 'punchout_identifier']:
+        if field in contact_data:
+            setattr(contact, field, contact_data[field])  # built-in Python function, no import needed
+
+    if 'title' in contact_data:
+        contact.designation = contact_data['title']
+
+    salutation = contact_data.get('salutation')
+    if salutation:
+        if not frappe.db.exists("Salutation", salutation):
+            frappe.get_doc({'doctype': 'Salutation', 'salutation': salutation}).insert()
+        contact.salutation = salutation
+
+    # Newsletter preferences
+    newsletter_state = contact_data.get('newsletter_registration_state', "")
+    contact.receive_newsletter = newsletter_state if newsletter_state in ["registered", "unregistered", "pending", "bounced"] else ""
+
+    if 'newsletter_registration_date' in contact_data:
+        contact.subscribe_date = parse_date(contact_data['newsletter_registration_date'])
+
+    if 'newsletter_unregistration_date' in contact_data:
+        contact.unsubscribe_date = parse_date(contact_data['newsletter_unregistration_date'])
+    
+    contact.unsubscribed = 0 if contact_data.get('receive_updates_per_email') == "Mailing" else 1
+
+    # Email
+    contact.email_ids = []
+    for key, is_primary in [('email', 1), ('email_cc', 0)]:
+        email = contact_data.get(key)
+        if email:
+            contact.append("email_ids", {'email_id': email, 'is_primary': is_primary})
+
+    # Phone
+    contact.phone_nos = []
+    phone_number = contact_data.get('phone_number')
+    if phone_number:
+        country = contact_data.get('phone_country', "")
+        number = f"{country} {phone_number}".strip()
+        contact.append("phone_nos", {'phone': number, 'is_primary_phone': 1})
+
+    # Link to Customer
+    contact.links = []
+    customer_id = contact_data.get('customer_id')
+    if customer_id:
+        contact.append("links", {
+            'link_doctype': "Customer",
+            'link_name': customer_id
+        })    
+
+    # Set/Override address if contact_address exists
+    contact_address = contact_data.get('contact_address')
+    if contact_address and frappe.db.exists("Address", contact_address):
+        contact.address = contact_address
+
+    try:
+        contact.save(ignore_permissions=True)
+        return contact.name
+    except Exception as err:
+        msg = f"Failed to save contact: {err}"
+        print(msg)
+        frappe.log_error(msg)
+        return None
+
+
+def robust_get_country(country_name_or_code):
+    """
+    Robust country finder: accepts country name or ISO code.
+    Falls back to system default if not found.
+    """
+    if frappe.db.exists("Country", country_name_or_code):
+        return country_name_or_code
+
+    # Try ISO code lookup (case-insensitive)
+    code = (country_name_or_code or "").strip().lower()
+    countries = frappe.get_all("Country", filters={'code': code}, fields=['name'], limit=1)
+
+    if countries:
+        return countries[0]['name']
+
+    # Fallback to global default
+    return frappe.defaults.get_global_default('country')
+
+
+def update_address(address_data, is_deleted=False, customer_id=None):
+    """
+    Processes data to update an address record.
+    """
+    person_id = address_data.get('name')
+    address_line1 = address_data.get('address_line1')
+
+    if not person_id or not address_line1:
+        return None
+
+    # Insert address if not exists
+    if not frappe.db.exists("Address", person_id):
+        print(f"Creating address {person_id}...")
+        frappe.db.sql("""
+            INSERT INTO `tabAddress` (`name`, `address_line1`) 
+            VALUES (%s, %s)
+        """, (person_id, address_line1))
+
+    print(f"Updating address {person_id}...")
+
+    address = frappe.get_doc("Address", person_id)
+
+    # Set address title
+    customer_name = address_data.get('customer_name')
+    if customer_name and address_line1:
+        address.address_title = f"{customer_name} - {address_line1}"
+
+    # Set fields
+    for field in ['overwrite_company', 'address_line1', 'address_line2', 'pincode', 'city', 'source', 'customer_address_id']:
+        if field in address_data:
+            setattr(address, field, address_data[field])
+
+    # Set country via helper
+    if 'country' in address_data:
+        address.country = robust_get_country(address_data['country'])
+
+    # Link to customer
+    if customer_id or 'customer_id' in address_data:
+        address.links = []
+        if not is_deleted:
+            address.append("links", {
+                'link_doctype': "Customer",
+                'link_name': customer_id or address_data['customer_id']
+            })
+
+    # Determine address type
+    address_type = address_data.get('address_type')
+    if address_type in ("INV", "Billing"):
+        address.is_primary_address = 1
+        address.is_shipping_address = 0
+        address.address_type = "Billing"
+    else:
+        address.is_primary_address = 0
+        address.is_shipping_address = 1
+        address.address_type = "Shipping"
+
+    # Allow overrides if explicitly provided
+    if 'is_primary_address' in address_data:
+        address.is_primary_address = address_data['is_primary_address']
+    if 'is_shipping_address' in address_data:
+        address.is_shipping_address = address_data['is_shipping_address']
+
+    try:
+        address.save(ignore_permissions=True)
+        return address.name
+    except Exception as err:
+        msg = f"Failed to save address: {err}"
+        print(msg)
+        frappe.log_error(msg)
+        return None
 
 
 def validate_registration_data(user_data):
@@ -158,12 +349,10 @@ def register_user(user_data, client="webshop"):
 
     # Create addresses
     for address in user_data['addresses']:
-        address['person_id'] = address['name']      # Extend address object to use the legacy update_address function
         address['customer_id'] = customer.name
         address_id = update_address(address)
 
     # Create contact
-    user_data['contact']['person_id'] = user_data['contact']['name']    # Extend contact object to use the legacy update_contact function
     user_data['contact']['customer_id'] = customer.name
     user_data['contact']['status'] = "Open"
     user_data['contact']['has_webshop_account'] = 1
@@ -173,7 +362,6 @@ def register_user(user_data, client="webshop"):
     lock_contact_by_name(contact_name)
 
     # Create invoice contact
-    user_data['invoice_contact']['person_id'] = user_data['invoice_contact']['name']    # Extend invoice_contact object to use the legacy update_contact function
     user_data['invoice_contact']['customer_id'] = customer.name
     user_data['invoice_contact']['status'] = "Open"
     invoice_contact_name = update_contact(user_data['invoice_contact'])
@@ -2299,7 +2487,6 @@ def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
 
 def create_contact(webshop_address):
     contact = webshop_address['contact']
-    contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
     contact['customer_id'] = webshop_address.get('customer').get('name')
     contact['address'] = webshop_address.get('address').get('name')
     contact['status'] = "Passive"
@@ -2314,7 +2501,6 @@ def create_address(webshop_address):
     address = webshop_address['address']
     if frappe.db.exists('Address', address['name']):
         frappe.throw(f"There exists already an Address with the given name '{address['name']}'. Not going to create a new one.")
-    address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
     address['customer_id'] = webshop_address.get('customer').get('name')
     address_id = update_address(address)
 
@@ -2595,12 +2781,10 @@ def update_webshop_address(webshop_account, webshop_address):
             # customer['customer_id'] = customer['name']
             # update_customer(customer)
             contact = webshop_address['contact']
-            contact['person_id'] = contact['name']  # Extend contact object to use the legacy update_contact function
             contact['phone_number'] = contact.get('phone')
             contact['customer_id'] = contact.get('customer')
             contact_id = update_contact(contact)
             address = webshop_address['address']
-            address['person_id'] = address['name']  # Extend address object to use the legacy update_address function
             address_id = update_address(address)
         else:
             # create new customer/contact/address if used
