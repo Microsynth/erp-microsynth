@@ -3,24 +3,24 @@
 #N13
 #ER
 
-{# Line 1: smaller font, Receipt date / initials: username #}
-#T28#J10#YN101/2U/40///Receipt date / initials: {{ row.username }}#G
+{# Line 1: Receipt date / initials: username #}
+#T1#J20#YN101//28///Receipt date / initials: {{ row.username }}#G
 
-{# Line 2: larger font, current date #}
-#T24#J15#YN101/2U/50///{{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }}#G
+{# Line 2: current date #}
+#T1#J17#YN101//38///{{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }}#G
 
-{# Line 3: larger font, shelf life date #}
-#T20#J15#YN101/2U/50///Shelf life: {{ frappe.utils.formatdate(row.shelf_life_date, 'dd.MM.yyyy') }}#G
+{# Line 3: shelf life date #}
+#T1#J14.2#YN101//34///Shelf life: {{ frappe.utils.formatdate(row.shelf_life_date, 'dd.MM.yyyy') }}#G
 
-{# Line 4: larger font, material_code, 2D barcode + internal_code #}
-#T16#J15#YN101/2U/50///{{ row.material_code }}#G
+{# Line 4: material_code, 2D barcode + internal_code #}
+#T1#J9#YN101//50///{{ row.material_code }}#G
 {%- if row.internal_code %}
-  #T16#J10 #IDM/3R12S12/6///{{ row.internal_code }}
-  #T13#J15#YN101/2U/50///{{ row.internal_code }}  {# internal code text #}
+#T11#J13.6#IDM/3R12S12/6///{{ row.internal_code }}
+#T18#J9#YN101//40///{{ row.internal_code }}  {# internal code text #}
 {%- endif %}
 
-{# Line 5: smaller font, fixed text #}
-#T9#J10#YN101/2U/40///Opening date / initials:#G
+{# Line 5: Opening date / initials: #}
+#T1#J5.8#YN101//28///Opening date / initials:#G
 
 {# Line 6: empty line #}
 #T6#J10#YN101/2U/40/// #G
