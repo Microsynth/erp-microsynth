@@ -32,6 +32,10 @@ frappe.ui.form.on('Delivery Note', {
             var target ="span[data-label='" + __("Email") + "']";
             $(target).parent().parent().remove();
         }
+
+        if (!frm.doc.product_type && cur_frm.doc.docstatus == 0 && !frm.doc.__islocal) {
+            frappe.msgprint( __("Please set a Product Type"), __("Validation") );
+        }
         
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
