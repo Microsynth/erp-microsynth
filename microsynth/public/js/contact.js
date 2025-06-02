@@ -244,7 +244,7 @@ function change_customer(frm) {
     ],
     function (values) {
         frappe.call({
-            method: 'microsynth.microsynth.utils.change_contact_customer',
+            method: 'microsynth.microsynth.webshop.change_contact_customer',
             args: {
                 'contact_id': frm.doc.name,
                 'new_customer_id': values.new_customer

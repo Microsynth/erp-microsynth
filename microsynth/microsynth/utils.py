@@ -3100,37 +3100,3 @@ def get_sql_list(list):
         return (','.join('"{0}"'.format(e) for e in list))
     else:
         return '""'
-
-
-@frappe.whitelist()
-def change_contact_customer(contact_id, new_customer_id):
-    """
-    bench execute microsynth.microsynth.utils.change_contact_customer --kwargs "{'contact_id': '243755', 'new_customer_id': '8003'}"
-    """
-    from microsynth.microsynth.webshop import change_default_billing_address
-
-    contact_doc = frappe.get_doc("Contact", contact_id)
-
-    if len(contact_doc.links) != 1:
-        frappe.throw("This action is only allowed when there is exactly one link. Please contact IT App.")
-    
-    link = contact_doc.links[0]
-    
-    if link.link_doctype != "Customer":
-        frappe.throw(f"The only link links to '{link.link_doctype}', but expected a link to a Customer. Please contact IT App.")
-    
-    customer_doc = frappe.get_doc("Customer", new_customer_id)
-
-    if not customer_doc.invoice_to:
-        frappe.throw(f"The new Customer '{new_customer_id}' has no Invoice to Contact. Unable to link.")
-    
-    # update the Default Billing Contact of the corresponding Webshop Address
-    if contact_doc.has_webshop_account:
-        change_default_billing_address(contact_id, customer_doc.invoice_to)
-
-    link.link_name = new_customer_id
-    link.link_title = new_customer_id  # TODO: Use Customer.customer_name instead?
-    contact_doc.save(ignore_permissions=True)
-    frappe.db.commit()
-
-    return {"status": "success"}
