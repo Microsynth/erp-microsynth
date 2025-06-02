@@ -2871,13 +2871,13 @@ def change_default_billing_address(webshop_account_id, new_invoice_to_contact_id
         if row.is_default_billing:
             if found:
                 msg = f"Webshop Address {webshop_address_doc.name} has more than one default billing Contact. Please contact IT App."
-                frappe.log_error(msg, 'utils.change_default_billing_address')
+                frappe.log_error(msg, 'webshop.change_default_billing_address')
                 frappe.throw(msg)
             row.contact = new_invoice_to_contact_id
             found = True
     if not found:
         msg = f"Webshop Address {webshop_address_doc.name} has no default billing Contact. Please contact IT App."
-        frappe.log_error(msg, 'utils.change_default_billing_address')
+        frappe.log_error(msg, 'webshop.change_default_billing_address')
         frappe.throw(msg)
 
     webshop_address_doc.save()
@@ -2886,7 +2886,7 @@ def change_default_billing_address(webshop_account_id, new_invoice_to_contact_id
 @frappe.whitelist()
 def change_contact_customer(contact_id, new_customer_id):
     """
-    bench execute microsynth.microsynth.utils.change_contact_customer --kwargs "{'contact_id': '243755', 'new_customer_id': '8003'}"
+    bench execute microsynth.microsynth.webshop.change_contact_customer --kwargs "{'contact_id': '243755', 'new_customer_id': '8003'}"
     """
     contact_doc = frappe.get_doc("Contact", contact_id)
 
@@ -2913,3 +2913,39 @@ def change_contact_customer(contact_id, new_customer_id):
     frappe.db.commit()
 
     return {"status": "success"}
+
+
+def create_webshop_addresses():
+    """
+    Create a Webshop Address for all enabled Contacts that have a Webshop Account and not yet a Webshop Address
+
+    bench execute microsynth.microsynth.webshop.create_webshop_addresses
+    """
+    sql_query = """
+        SELECT `tabContact`.`name`,
+            `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`invoice_to`
+        FROM `tabContact`
+        LEFT JOIN `tabWebshop Address` ON `tabWebshop Address`.`webshop_account` = `tabContact`.`name`
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
+                                              AND `tDLA`.`link_doctype` = "Customer"
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
+        WHERE `tabContact`.`status` != 'Disabled'
+            AND `tabContact`.`has_webshop_account` = 1
+            AND `tabWebshop Address`.`webshop_account` IS NULL
+        ;"""
+    contacts = frappe.db.sql(sql_query, as_dict=True)
+    print(f"There are {len(contacts)} non-Disabled Contacts with a Webshop Account, but without a Webshop Address.")
+    for i, contact in enumerate(contacts):
+        if i % 200 == 0:
+            print(f"Already processed {i}/{len(contacts)} Contacts.")
+            frappe.db.commit()
+        contact_id = contact.get('name')
+        if not contact.get('customer_id'):
+            print(f"Contact '{contact_id}' has no Customer.")
+            continue
+        if not contact.get('invoice_to'):
+            print(f"Customer '{contact.get('customer_id')}' of Contact '{contact_id}' has no Invoice To Contact.")
+            continue
+        initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
