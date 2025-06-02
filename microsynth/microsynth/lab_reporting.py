@@ -628,49 +628,35 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
-                # Only log an error
                 sample_details = ""
                 for s in samples:
                     url = get_url_to_form("Sample", s['name'])
                     sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
-                msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}"
+                msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}\n\nGoing to send an automatic email."
                 frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
                 if verbose:
                     print(msg)
-                # Create Email Template with the Name and Subject "Mycoplasma Barcode used multiple times", Sender erp@microsynth.ch,
-                # Sender Full Name "Microsynth ERP", Recipients SWö, CC Recipients RSu, JPe and the following response?:
-                """
-                Dear Stefan,
-
-                this is an automatic email to inform you that Delivery Note '{{ delivery_note_name }}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{{ barcode_label }}' that is used for {{ len_samples }} different Samples:
-
-                {{ sample_details }}
-
-                Please check these Samples. If you are sure that there is no problem, please submit '{{ delivery_note_name }}' manually in the ERP.
-                If one of those Samples is on a Sales Order that was not processed and will not be processed, please comment and cancel this Sales Order.
-
-                Best regards,
-                Jens
-                """
-                # email_template = frappe.get_doc("Email Template", "Mycoplasma Barcode used multiple times")
-                # values_to_render = {
-                #     'delivery_note_name': delivery_note.name,
-                #     'barcode_label': barcode_label,
-                #     'len_samples': len(samples),
-                #     'sample_details': sample_details
-                # }
-                # rendered_message = frappe.render_template(email_template.response, values_to_render)
-                # #non_html_message = rendered_message.replace("<br>","\n")
-                # #print(non_html_message)
-                # make(
-                #     recipients = email_template.recipients,
-                #     sender = email_template.sender,
-                #     sender_full_name = email_template.sender_full_name,
-                #     cc = email_template.cc_recipients,
-                #     subject = email_template.subject,
-                #     content = rendered_message,
-                #     send_email = True
-                #     )
+                email_template = frappe.get_doc("Email Template", "Mycoplasma barcode label used multiple times")
+                dn_url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
+                values_to_render = {
+                    'dn_url_string': dn_url_string,
+                    'barcode_label': barcode_label,
+                    'len_samples': len(samples),
+                    'sample_details': sample_details
+                }
+                rendered_message = frappe.render_template(email_template.response, values_to_render)
+                if verbose:
+                    non_html_message = rendered_message.replace("<br>","\n")
+                    print(non_html_message)
+                make(
+                    recipients = email_template.recipients,
+                    sender = email_template.sender,
+                    sender_full_name = email_template.sender_full_name,
+                    cc = email_template.cc_recipients,
+                    subject = email_template.subject,
+                    content = rendered_message,
+                    send_email = True
+                    )
                 return
 
         delivery_note.submit()
