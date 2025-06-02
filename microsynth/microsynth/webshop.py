@@ -73,7 +73,7 @@ def parse_date(date_str):
     return None
 
 
-def update_contact(contact_data):
+def create_update_contact_doc(contact_data):
     """
     Update or create a contact record. If no first_name is provided, set it to "-".
 
@@ -101,18 +101,12 @@ def update_contact(contact_data):
     contact.full_name = f"{contact.first_name}{' ' if contact.last_name else ''}{contact.last_name or ''}"
 
     # Optional fields
-    for field in ['status', 'institute', 'department', 'institute_key', 'group_leader', 'address', 'room', 'has_webshop_account', 'source', 'punchout_identifier']:
+    for field in ['status', 'institute', 'department', 'institute_key', 'group_leader', 'address', 'room', 'has_webshop_account', 'source', 'punchout_identifier', 'salutation']:
         if field in contact_data:
             setattr(contact, field, contact_data[field])  # built-in Python function, no import needed
 
     if 'title' in contact_data:
         contact.designation = contact_data['title']
-
-    salutation = contact_data.get('salutation')
-    if salutation:
-        if not frappe.db.exists("Salutation", salutation):
-            frappe.get_doc({'doctype': 'Salutation', 'salutation': salutation}).insert()
-        contact.salutation = salutation
 
     # Newsletter preferences
     newsletter_state = contact_data.get('newsletter_registration_state', "")
@@ -184,7 +178,7 @@ def robust_get_country(country_name_or_code):
     return frappe.defaults.get_global_default('country')
 
 
-def update_address(address_data, is_deleted=False, customer_id=None):
+def create_update_address_doc(address_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record.
     """
@@ -350,13 +344,13 @@ def register_user(user_data, client="webshop"):
     # Create addresses
     for address in user_data['addresses']:
         address['customer_id'] = customer.name
-        address_id = update_address(address)
+        address_id = create_update_address_doc(address)
 
     # Create contact
     user_data['contact']['customer_id'] = customer.name
     user_data['contact']['status'] = "Open"
     user_data['contact']['has_webshop_account'] = 1
-    contact_name = update_contact(user_data['contact'])
+    contact_name = create_update_contact_doc(user_data['contact'])
 
     # Create Contact Lock
     lock_contact_by_name(contact_name)
@@ -364,7 +358,7 @@ def register_user(user_data, client="webshop"):
     # Create invoice contact
     user_data['invoice_contact']['customer_id'] = customer.name
     user_data['invoice_contact']['status'] = "Open"
-    invoice_contact_name = update_contact(user_data['invoice_contact'])
+    invoice_contact_name = create_update_contact_doc(user_data['invoice_contact'])
 
     # Create Contact Lock for invoice contact
     lock_contact_by_name(invoice_contact_name)
@@ -481,7 +475,7 @@ def create_update_contact(contact):
         return {'success': False, 'message': "Person ID missing"}
     if not 'first_name' in contact:
         return{'success': False, 'message': "First Name missing"}
-    contact_name = update_contact(contact)
+    contact_name = create_update_contact_doc(contact)
     lock_contact_by_name(contact_name)
 
     if contact.get('source') == "Registration":
@@ -511,7 +505,7 @@ def create_update_address(address=None, client="webshop"):
         return {'success': False, 'message': "Address line 1 missing"}
     if not 'city' in address:
         return {'success': False, 'message': "City missing"}
-    address_id = update_address(address)
+    address_id = create_update_address_doc(address)
     if address_id:
         return {'success': True, 'message': "OK"}
     else: 
@@ -2486,23 +2480,29 @@ def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
 
 
 def create_contact(webshop_address):
+    """
+    Use a webshop address to create a contact with the create_update_contact_doc function.
+    """
     contact = webshop_address['contact']
     contact['customer_id'] = webshop_address.get('customer').get('name')
     contact['address'] = webshop_address.get('address').get('name')
     contact['status'] = "Passive"
     contact['phone_number'] = contact.get('phone')
-    contact_id = update_contact(contact)
+    contact_id = create_update_contact_doc(contact)
     # create Contact Lock
     lock_contact_by_name(contact_id)
     return contact_id
 
 
 def create_address(webshop_address):
+    """
+    Use a webshop address to create an address with the create_update_address_doc function.
+    """
     address = webshop_address['address']
     if frappe.db.exists('Address', address['name']):
         frappe.throw(f"There exists already an Address with the given name '{address['name']}'. Not going to create a new one.")
     address['customer_id'] = webshop_address.get('customer').get('name')
-    address_id = update_address(address)
+    address_id = create_update_address_doc(address)
 
     if not address_id:
         frappe.throw(f'Unable to create an Address with the given {webshop_address=}')
@@ -2783,9 +2783,9 @@ def update_webshop_address(webshop_account, webshop_address):
             contact = webshop_address['contact']
             contact['phone_number'] = contact.get('phone')
             contact['customer_id'] = contact.get('customer')
-            contact_id = update_contact(contact)
+            contact_id = create_update_contact_doc(contact)
             address = webshop_address['address']
-            address_id = update_address(address)
+            address_id = create_update_address_doc(address)
         else:
             # create new customer/contact/address if used
             from copy import deepcopy
