@@ -11,9 +11,9 @@ def get_columns():
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": _("Party Type"), "fieldname": "party_type", "fieldtype": "Data", "width": 80},
         {"label": _("Party"), "fieldname": "party", "fieldtype": "Data", "width": 145},
-        {"label": _("Paid Amount"), "fieldname": "paid_amount", "fieldtype": "Currency", "width": 100},
-        {"label": _("Received Amount"), "fieldname": "received_amount", "fieldtype": "Currency", "width": 115},
-        {"label": _("Unallocated Amount"), "fieldname": "unallocated_amount", "fieldtype": "Currency", "width": 130},
+        {"label": _("Paid Amount"), "fieldname": "paid_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": _("Received Amount"), "fieldname": "received_amount", "fieldtype": "Currency", "options": "currency", "width": 115},
+        {"label": _("Unallocated Amount"), "fieldname": "unallocated_amount", "fieldtype": "Currency", "options": "currency", "width": 130},
         #{"label": _("Mode of Payment"), "fieldname": "mode_of_payment", "fieldtype": "Data", "width": 115},
         {"label": _("Payment Type"), "fieldname": "payment_type", "fieldtype": "Data", "width": 105},
         {"label": _("Reference No"), "fieldname": "reference_no", "fieldtype": "Data", "width": 205},
@@ -40,7 +40,7 @@ def get_data(filters=None):
     if filters.get("company"):
         conditions += " AND `tabPayment Entry`.`company` = %(company)s "
 
-    return frappe.db.sql(f"""
+    data = frappe.db.sql(f"""
         SELECT 
             `tabPayment Entry`.`name`,
             `tabPayment Entry`.`posting_date`,
@@ -49,6 +49,8 @@ def get_data(filters=None):
             `tabPayment Entry`.`paid_amount`,
             `tabPayment Entry`.`received_amount`,
             `tabPayment Entry`.`unallocated_amount`,
+            `tabPayment Entry`.`paid_from_account_currency`,
+            `tabPayment Entry`.`paid_to_account_currency`,
             `tabPayment Entry`.`mode_of_payment`,
             `tabPayment Entry`.`payment_type`,
             `tabPayment Entry`.`reference_no`,
@@ -61,6 +63,13 @@ def get_data(filters=None):
             AND `tabPayment Entry`.`unallocated_amount` != 0 
             {conditions}
     """, filters, as_dict=True)
+
+    for row in data:
+        if row.get('payment_type') == 'Pay':
+            row['currency'] = row.get('paid_to_account_currency')
+        else:
+            row['currency'] = row.get('paid_from_account_currency')
+    return data
 
 
 def execute(filters=None):
