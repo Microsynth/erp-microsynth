@@ -2330,6 +2330,12 @@ def get_customer_dto(customer):
 def get_contact_dto(contact):
     #from microsynth.microsynth.utils import get_customer  # already imported
 
+    # find the first non-primary if available
+    cc_email = None
+    if hasattr(contact, 'email_ids'):
+        non_primary_emails = [e.email_id for e in contact.email_ids if not e.is_primary]
+        cc_email = non_primary_emails[0] if non_primary_emails else None
+
     contact_dto = {
         'name': contact.name,
         'first_name': contact.first_name,
@@ -2341,7 +2347,7 @@ def get_contact_dto(contact):
         'room': contact.room,
         # 'group_leader': contact.group_leader,
         'email': contact.email_id,
-        'email_cc': contact.email_id, #TODO fetch correct CC mail address (contact.email_ids --> filter out primary --> take first mail from list)
+        'email_cc': cc_email,
         'phone': contact.phone,
         'status': contact.status,
         'source': contact.source,
