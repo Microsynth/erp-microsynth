@@ -69,29 +69,30 @@ def get_data(filters, short=False):
             `tabSales Invoice`.`customer_group` AS `customer_group`,
             `tabSales Invoice`.`remarks` AS `remarks`,
             `tabSales Invoice`.`po_no` AS `customer_po`,
-            `debit`.`account_currency` AS `currency`,
-            SUM(`debit`.`debit_in_account_currency`) - SUM(`debit`.`credit_in_account_currency`) AS `invoiced_amount`,
-            SUM(`credit`.`credit_in_account_currency`) - SUM(`credit`.`debit_in_account_currency`)  AS `paid_amount`,
-            SUM(`return`.`credit_in_account_currency`) - SUM(`return`.`debit_in_account_currency`)  AS `credit_note`
+            (SELECT `currency`.`account_currency`
+             FROM `tabGL Entry` AS `currency`
+             WHERE `currency`.`voucher_no` = `tabSales Invoice`.`name`
+               AND `currency`.`account` {rec_filter}) AS `currency`,
+            (SELECT SUM(`debit`.`debit_in_account_currency`) - SUM(`debit`.`credit_in_account_currency`)
+             FROM `tabGL Entry` AS `debit`
+             WHERE `debit`.`voucher_no` = `tabSales Invoice`.`name`
+               AND `debit`.`account` {rec_filter}) AS `invoiced_amount`,
+            (SELECT SUM(`credit`.`credit_in_account_currency`) - SUM(`credit`.`debit_in_account_currency`)
+             FROM `tabGL Entry` AS `credit`
+             WHERE `credit`.`against_voucher` = `tabSales Invoice`.`name`
+               AND `credit`.`voucher_type` != "Sales Invoice"
+               AND `credit`.`account` {rec_filter}) AS `paid_amount`,
+            (SELECT SUM(`return`.`credit_in_account_currency`) - SUM(`return`.`debit_in_account_currency`)
+             FROM `tabGL Entry` AS `return`
+             WHERE `return`.`against_voucher` = `tabSales Invoice`.`name`
+               AND `return`.`voucher_no` != `tabSales Invoice`.`name`
+               AND `return`.`voucher_type` = "Sales Invoice"
+               AND `return`.`account` {rec_filter}) AS `credit_note`
         FROM `tabSales Invoice`
-        LEFT JOIN `tabGL Entry` AS `debit` ON 
-            (`debit`.`voucher_no` = `tabSales Invoice`.`name` 
-             AND `debit`.`account` {rec_filter})
-        LEFT JOIN `tabGL Entry` AS `credit` ON 
-            (`credit`.`against_voucher` = `tabSales Invoice`.`name` 
-             AND `credit`.`voucher_type` != "Sales Invoice"
-             AND `credit`.`account` {rec_filter})
-        LEFT JOIN `tabGL Entry` AS `return` ON 
-            (`return`.`against_voucher` = `tabSales Invoice`.`name` 
-             AND `return`.`voucher_no` != `tabSales Invoice`.`name`
-             AND `return`.`voucher_type` = "Sales Invoice"
-             AND `return`.`account` {rec_filter})
         WHERE 
             `tabSales Invoice`.`posting_date` BETWEEN "{from_date}" AND "{to_date}"
             AND `tabSales Invoice`.`company` = "{company}"
-            AND `debit`.`name` IS NOT NULL
             {matching_query}
-        GROUP BY `tabSales Invoice`.`name`
         ORDER BY `tabSales Invoice`.`posting_date` ASC;
     """.format(
         from_date=filters.from_date, 
