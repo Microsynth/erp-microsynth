@@ -48,8 +48,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2025-04-17 09:18:30.121754",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-06-03 16:10:59.361431",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings",
  "owner": "Administrator",
@@ -63,6 +63,10 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager"
   }
  ],
  "sort_field": "modified",
