@@ -9,7 +9,14 @@ frappe.query_reports["Pricing Configurator"] = {
             "label": __("Price List"),
             "fieldtype": "Link",
             "options": "Price List",
-            "reqd": 1
+            "reqd": 1,
+            "get_query": function() {
+                return {
+                    "filters": {
+                        "selling": 1
+                    }
+                };
+            }
         },
         {
             "fieldname":"item_group",
