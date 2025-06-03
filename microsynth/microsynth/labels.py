@@ -331,21 +331,21 @@ def print_test_purchasing_label_novexx():
     """    
     content = '''
 #!A1
-#IMS22/30   
+#IMS30/22
 #N13
 #ER
 
-#T1#J20#YN101//28///Receipt date / initials: JPe#G
+#T1.4#J19.7#YN101//28///Receipt date / initials: JPe#G
 
-#T1#J17#YN101//38///30.05.2025#G
+#T1.4#J17#YN101//35///30.05.2025#G
 
-#T1#J14.2#YN101//34///Shelf life: 30.05.2026#G
+#T1.4#J14.2#YN101//35///Shelf life: 31.12.2026#G
 
-#T1#J9#YN101//50///test#G
-#T11#J13.6#IDM/3R12S12/6///1234
-#T18#J9#YN101//40///1234
+#T1.4#J9#YN101//50///kurzn#G
+#T13#J13.8#IDM/3R12S12/6///1234
+#T20#J9#YN101//50///1234
 
-#T1#J5.8#YN101//28///Opening date / initials:#G
+#T1.4#J5.8#YN101//28///Opening date / initials:#G
 
 #Q1/
 #!P1

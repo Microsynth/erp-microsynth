@@ -1,29 +1,28 @@
 #!A1
-#IMS22/30   {# label size: 22 x 30 mm #}
+#IMS30/22   {# label size: 30 x 22 mm #}
 #N13
 #ER
 
 {# Line 1: Receipt date / initials: username #}
-#T1#J20#YN101//28///Receipt date / initials: {{ row.username }}#G
+#T1.4#J19.7#YN101//28///Receipt date / initials: {{ row.username }}#G
 
 {# Line 2: current date #}
-#T1#J17#YN101//38///{{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }}#G
+#T1.4#J17#YN101//35///{{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }}#G
 
 {# Line 3: shelf life date #}
-#T1#J14.2#YN101//34///Shelf life: {{ frappe.utils.formatdate(row.shelf_life_date, 'dd.MM.yyyy') }}#G
+#T1.4#J14.2#YN101//35///Shelf life: {{ frappe.utils.formatdate(row.shelf_life_date, 'dd.MM.yyyy') }}#G
 
 {# Line 4: material_code, 2D barcode + internal_code #}
-#T1#J9#YN101//50///{{ row.material_code }}#G
+#T1.4#J9#YN101//50///{{ row.material_code }}#G
 {%- if row.internal_code %}
-#T11#J13.6#IDM/3R12S12/6///{{ row.internal_code }}
-#T18#J9#YN101//40///{{ row.internal_code }}  {# internal code text #}
+#T13#J13.8#IDM/3R12S12/6///{{ row.internal_code }}
+#T20#J9#YN101//50///{{ row.internal_code }}
 {%- endif %}
 
 {# Line 5: Opening date / initials: #}
-#T1#J5.8#YN101//28///Opening date / initials:#G
+#T1.4#J5.8#YN101//28///Opening date / initials:#G
 
 {# Line 6: empty line #}
-#T6#J10#YN101/2U/40/// #G
 
 #Q1/
 #!P1

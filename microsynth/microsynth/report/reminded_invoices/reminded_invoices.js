@@ -4,7 +4,7 @@
 
 frappe.query_reports["Reminded Invoices"] = {
 	"filters": [
-		// TODO
+		// currently no demand for filters
 	],
     "onload": (report) => {
         if (!locals.double_click_handler) {
