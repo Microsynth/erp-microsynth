@@ -11,8 +11,10 @@ def get_columns():
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("Invoice Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": _("Invoice Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": _("Invoice Base Total"), "fieldname": "base_total", "fieldtype": "Currency", "options": "CHF", "width": 120},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 180},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "options": "Customer", "width": 300},
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200},
         {"label": _("Quotation"), "fieldname": "quotation", "fieldtype": "Link", "options": "Quotation", "width": 100},
         {"label": _("Quotation Date"), "fieldname": "quotation_date", "fieldtype": "Date", "width": 100},
         {"label": _("Quotation Owner"), "fieldname": "quotation_owner", "fieldtype": "Link", "options": "User", "width": 200}
@@ -32,15 +34,19 @@ def get_data(filters):
             `tabSales Invoice`.`posting_date`,
             `tabSales Invoice`.`customer`,
             `tabSales Invoice`.`customer_name`,
+            `tabCustomer`.`territory`,
             `tabQuotation`.`name` AS `quotation`,
             `tabQuotation`.`transaction_date` AS `quotation_date`,
             `tabQuotation`.`owner` AS `quotation_owner`,
             `tabSales Invoice`.`total`,
-            `tabSales Invoice`.`currency`
+            `tabSales Invoice`.`currency`,
+            `tabSales Invoice`.`base_total`
         FROM
             `tabSales Invoice`
         INNER JOIN
             `tabSales Invoice Item` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+        INNER JOIN
+            `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
         LEFT JOIN
             `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Invoice Item`.`sales_order`
         LEFT JOIN
