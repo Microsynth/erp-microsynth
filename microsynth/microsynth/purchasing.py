@@ -984,3 +984,82 @@ def create_batches_and_assign(purchase_receipt, batch_data):
                 item.batch_no = batch_no
 
     purchase_receipt_doc.save()
+
+
+def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, supplier_id=None):
+    """
+    bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'PUR_Merck', 'currency': 'CHF', 'column_assignment': {'supplier_part_no': 0, 'item_name': 1, 'rate': 3}, 'input_filepath': '/mnt/erp_share/JPe/2025-06-04_PUR_Merck_prices.csv'}"
+    """
+    if type(column_assignment) == str:
+        column_assignment = json.loads(column_assignment)
+    if not 'supplier_part_no' in column_assignment or not 'rate' in column_assignment:
+        print("Please provide the column index of supplier_part_no and rate in the column_assignment.")
+        return
+    if not frappe.db.exists('Price List', price_list_name):
+        price_list_doc = frappe.get_doc({
+            'doctype': 'Price List',
+            'price_list_name': price_list_name,
+            'buying': 1,
+            'selling': 0,
+            'enabled': 1,
+            'currency': currency
+        }).insert()
+    with open(input_filepath) as file:
+        print(f"INFO: Parsing Supplier prices from '{input_filepath}' ...")
+        csv_reader = csv.reader(file, delimiter=";")
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != expected_line_length:
+                print(f"ERROR: Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
+                continue
+            supplier_part_no = line[int(column_assignment.get('supplier_part_no'))].strip()
+            item_name = line[int(column_assignment.get('item_name'))].strip()
+            rate = float(line[int(column_assignment.get('rate'))].strip().replace('’', ''))
+            # try to find Item according to Supplier Part Number
+            item_codes = frappe.get_all(
+                "Item Supplier",
+                filters={"supplier_part_no": supplier_part_no},
+                fields=["parent"],  # 'parent' is the Item code
+                distinct=True
+            )
+            # Extract the item codes from result
+            item_code_list = [row["parent"] for row in item_codes]
+            if len(item_code_list) == 0:
+                print(f"Found no Item for the given Supplier Part Number '{supplier_part_no}'. Going to continue.")
+                # TODO: Create it? If yes, how to determine the Item Code?
+                continue
+                item = frappe.get_doc({
+                    'doctype': 'Item',
+                    'item_code': '',  # TODO?
+                    'item_name': item_name[:140],
+                    'item_group': 'Purchasing',
+                    'stock_uom': 'Pcs',
+                    'is_stock_item': 1,
+                    'description': item_name,
+                    'is_purchase_item': 1,
+                    'is_sales_item': 0,
+                })
+                if supplier_id:
+                    item.append('supplier_items', {
+                        'supplier': supplier_id,
+                        'supplier_part_no': supplier_part_no,
+                        'substitute_status': ''
+                    })
+                item.insert()
+                item_code = item.item_code
+            elif len(item_code_list) > 1:
+                print(f"Found the following {len(item_code_list)} Items for the given Supplier Part Number '{supplier_part_no}': {item_code_list}")
+                continue
+            elif len(item_code_list) == 1:
+                item_code = item_code_list[0]
+            item_price_doc = frappe.get_doc({
+                'doctype': 'Item Price',
+                'item_code': item_code,
+                'min_qty': 1,
+                'price_list': price_list_name,
+                'buying': 0,
+                'selling': 1,
+                'currency': currency,
+                'price_list_rate': rate
+            })
+            item_price_doc.insert()
