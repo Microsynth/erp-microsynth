@@ -32,6 +32,7 @@ function edit_cell(accounting_note_id, note, remarks, sales_invoice_id) {
         'fields': [
             {'fieldname': 'sales_invoice_id', 'fieldtype': 'Link', 'options': "Sales Invoice", 'label': __('Sales Invoice'), 'read_only': 1, 'default': sales_invoice_id},
             {'fieldname': 'accounting_note_id', 'fieldtype': 'Link', 'options': "Accounting Note", 'label': __('Accounting Note'), 'read_only': 1, 'default': accounting_note_id},
+            {'fieldname': 'payment_reminder_id', 'fieldtype': 'Link', 'options': "Payment Reminder", 'label': __('Payment Reminder'), 'description': 'This note will be linked to all contained Sales Invoices.', 'hidden': accounting_note_id ? 1 : 0},
             {'fieldname': 'note', 'fieldtype': 'Data', 'label': __('Note'), 'reqd': 1, 'default': note, 'description': 'Short summary'},
             {'fieldname': 'remarks', 'fieldtype': 'Small Text', 'label': __('Remarks'), 'default': remarks, 'description': 'Optional, detailed description or proceedings'}
         ],
@@ -44,7 +45,8 @@ function edit_cell(accounting_note_id, note, remarks, sales_invoice_id) {
                     'accounting_note_id': accounting_note_id,
                     'note': values.note,
                     'remarks': values.remarks || null,
-                    'sales_invoice_id': sales_invoice_id
+                    'sales_invoice_id': sales_invoice_id,
+                    'payment_reminder_id': values.payment_reminder_id || null
                 },
                 'callback': function(r)
                 {

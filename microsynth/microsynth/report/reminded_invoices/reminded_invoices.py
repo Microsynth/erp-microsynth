@@ -106,7 +106,7 @@ def execute(filters=None):
 
 
 @frappe.whitelist()
-def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id):
+def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id, payment_reminder_id):
     if accounting_note_id:
         accounting_note = frappe.get_doc("Accounting Note", accounting_note_id)
         accounting_note.note = note
@@ -127,6 +127,14 @@ def set_accounting_note(accounting_note_id, note, remarks, sales_invoice_id):
             'amount': si_doc.outstanding_amount,
             'currency': si_doc.currency
         })
+        if payment_reminder_id:
+            prm_doc = frappe.get_doc("Payment Reminder", payment_reminder_id)
+            for si in prm_doc.sales_invoices:
+                if si.sales_invoice != sales_invoice_id:
+                    accounting_note_doc.append('related_documents', {
+                        'reference_doctype': 'Sales Invoice',
+                        'reference_name': si.sales_invoice
+                    })
         accounting_note_doc.insert()
     else:
         frappe.throw("Unable to edit or create an Accounting Note. Please provide an Accounting Note ID or a Sales Invoice ID.")
