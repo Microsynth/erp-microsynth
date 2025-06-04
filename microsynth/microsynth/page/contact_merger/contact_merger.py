@@ -135,7 +135,7 @@ def merge_contacts(contact_1, contact_2, values):
             return {'error': f"Not allowed to merge punchout Contact: punchout_shop='{values['punchout_shop'] if 'punchout_shop' in values else None}', punchout_identifier='{values['punchout_identifier'] if 'punchout_identifier' in values else None}'", 'contact': None}
 
         # remove lock
-        frappe.db.sql(f"""DELETE FROM `tabContact Lock` WHERE `tabContact Lock`.`name` = '{contact_2}'; """)
+        frappe.db.sql(f"""DELETE FROM `tabContact Lock` WHERE `tabContact Lock`.`name` = '{contact_2}'; """)  # TODO: Contact Lock.contact instead Contact Lock.name
         frappe.db.commit()
 
         # rename_doc is a core function and deletes the old Contact (here contact_2)

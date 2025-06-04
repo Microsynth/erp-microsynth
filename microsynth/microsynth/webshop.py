@@ -2848,10 +2848,14 @@ def delete_if_unused(contact_id):
     address_id = frappe.get_value('Contact', contact_id, 'address')
     customer_id = get_customer(contact_id)
     if not is_address_used(address_id) and not is_contact_used(contact_id):
-        address_doc = frappe.get_doc('Address', address_id)
-        address_doc.delete()
+        # TODO: Delete link of Contact in Webshop Address (otherwise Contact cannot be deleted)
+        # remove Contact Lock
+        frappe.db.sql(f"""DELETE FROM `tabContact Lock` WHERE `tabContact Lock`.`contact` = '{contact_id}'; """)
+        frappe.db.commit()
         contact_doc = frappe.get_doc('Contact', contact_id)
         contact_doc.delete()
+        address_doc = frappe.get_doc('Address', address_id)
+        address_doc.delete()  # TODO: Ensure that the Webshop has the permission to delete an Address
         frappe.db.commit()
     else:
         return
@@ -2877,6 +2881,7 @@ def delete_webshop_address(webshop_account, contact_id):
                 if a.is_default_billing:
                     frappe.throw(f"Cannot disable webshop address '{contact_id}' because it default billing address.")
                 a.disabled = True
+                #a.delete()  # necessary in order to be able to delete the Contact
 
         webshop_address_doc.save()
 
