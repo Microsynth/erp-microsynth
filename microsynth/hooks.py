@@ -94,7 +94,8 @@ jenv = {
         "get_yearly_order_volume:microsynth.microsynth.utils.get_yearly_order_volume",
         "get_html_message:microsynth.microsynth.payment_reminder.get_html_message",
         "fetch_quotation:microsynth.microsynth.utils.fetch_quotation",
-        "xml_normalize:microsynth.microsynth.jinja.xml_normalize"
+        "xml_normalize:microsynth.microsynth.jinja.xml_normalize",
+        "get_customer_id_from_supplier:microsynth.microsynth.purchasing.get_customer_id_from_supplier"
     ]
 }
 

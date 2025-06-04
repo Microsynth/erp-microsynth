@@ -1063,3 +1063,15 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                 'price_list_rate': rate
             })
             item_price_doc.insert()
+
+
+def get_customer_id_from_supplier(supplier_id, company):
+    """
+    bench execute microsynth.microsynth.purchasing.get_customer_id_from_supplier --kwargs "{'supplier_id': 'S-00631', 'company': 'Microsynth Seqlab GmbH'}"
+    """
+    supplier_doc = frappe.get_doc("Supplier", supplier_id)
+
+    for shop in supplier_doc.supplier_shops:
+        if shop.company == company:
+            return shop.customer_id
+    return None
