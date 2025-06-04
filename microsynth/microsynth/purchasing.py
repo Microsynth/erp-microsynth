@@ -404,9 +404,9 @@ def remove_control_characters(input_string):
     return re.sub(r'[\x00-\x1F\x7F-\x9F]', '', input_string)
 
 
-def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=28):
+def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=29):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-06_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-12_TEST_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-04_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-12_TEST_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -460,7 +460,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             subgroup = line[24].strip()
             time_limit = line[25].strip()
             quantity_supplier = line[26].strip()
-            item_id = line[27].strip()  # Datensatznummer
+            material_code = line[27]  # Kurzname
+            item_id = line[28].strip()  # Datensatznummer
 
             if not item_name:
                 print(f"ERROR: Item with Index {item_id} has no Item name. Going to continue with the next supplier item.")
@@ -511,7 +512,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'description': item_name,
                 'shelf_life_in_days': shelf_life_in_days,
                 'is_purchase_item': 1,
-                'is_sales_item': 0
+                'is_sales_item': 0,
+                'material_code': material_code or None
             })
             item.insert()
             imported_counter += 1
