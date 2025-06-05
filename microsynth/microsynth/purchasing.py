@@ -11,6 +11,7 @@ from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
+from microsynth.microsynth.naming_series import get_naming_series
 from datetime import datetime
 import json
 import csv
@@ -406,7 +407,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=29):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-04_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-12_TEST_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-05-07_supplier_mapping.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-05_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-05_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -546,7 +547,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-05-13_supplier_mapping_TEST-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -986,7 +987,7 @@ def create_batches_and_assign(purchase_receipt, batch_data):
     purchase_receipt_doc.save()
 
 
-def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, supplier_id=None):
+def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, create_new_items=False, supplier_id=None, dry_run=True):
     """
     bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'PUR_Merck', 'currency': 'CHF', 'column_assignment': {'supplier_part_no': 0, 'item_name': 1, 'rate': 3}, 'input_filepath': '/mnt/erp_share/JPe/2025-06-04_PUR_Merck_prices.csv'}"
     """
@@ -996,14 +997,20 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
         print("Please provide the column index of supplier_part_no and rate in the column_assignment.")
         return
     if not frappe.db.exists('Price List', price_list_name):
-        price_list_doc = frappe.get_doc({
-            'doctype': 'Price List',
-            'price_list_name': price_list_name,
-            'buying': 1,
-            'selling': 0,
-            'enabled': 1,
-            'currency': currency
-        }).insert()
+        if dry_run:
+            print(f"Would create enabled Buying Price List '{price_list_name}' with Currency {currency}.")
+        else:
+            price_list_doc = frappe.get_doc({
+                'doctype': 'Price List',
+                'price_list_name': price_list_name,
+                'buying': 1,
+                'selling': 0,
+                'enabled': 1,
+                'currency': currency
+            }).insert()
+            print(f"Create enabled Buying Price List '{price_list_doc.name}' with Currency {currency}.")
+    else:
+        print(f"Price List '{price_list_name}' already exists. Going to extend it.")
     with open(input_filepath) as file:
         print(f"INFO: Parsing Supplier prices from '{input_filepath}' ...")
         csv_reader = csv.reader(file, delimiter=";")
@@ -1024,45 +1031,50 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
             )
             # Extract the item codes from result
             item_code_list = [row["parent"] for row in item_codes]
-            if len(item_code_list) == 0:
-                print(f"Found no Item for the given Supplier Part Number '{supplier_part_no}'. Going to continue.")
-                # TODO: Create it? If yes, how to determine the Item Code?
-                continue
-                item = frappe.get_doc({
-                    'doctype': 'Item',
-                    'item_code': '',  # TODO?
-                    'item_name': item_name[:140],
-                    'item_group': 'Purchasing',
-                    'stock_uom': 'Pcs',
-                    'is_stock_item': 1,
-                    'description': item_name,
-                    'is_purchase_item': 1,
-                    'is_sales_item': 0,
-                })
-                if supplier_id:
-                    item.append('supplier_items', {
-                        'supplier': supplier_id,
-                        'supplier_part_no': supplier_part_no,
-                        'substitute_status': ''
+            if len(item_code_list) == 0:                
+                if create_new_items:
+                    item = frappe.get_doc({
+                        'doctype': 'Item',
+                        'item_code': get_naming_series('Item'),  # TODO: Define Naming Scheme (naming_scheme.py)
+                        'item_name': item_name[:140],
+                        'item_group': 'Purchasing',
+                        'stock_uom': 'Pcs',
+                        'is_stock_item': 1,
+                        'description': item_name,
+                        'is_purchase_item': 1,
+                        'is_sales_item': 0,
                     })
-                item.insert()
-                item_code = item.item_code
+                    if supplier_id:
+                        item.append('supplier_items', {
+                            'supplier': supplier_id,
+                            'supplier_part_no': supplier_part_no,
+                            'substitute_status': ''
+                        })
+                    item.insert()
+                    item_code = item.item_code
+                else:
+                    print(f"Found no Item for the given Supplier Part Number '{supplier_part_no}' and {create_new_items=}. Going to continue.")
+                    continue
             elif len(item_code_list) > 1:
-                print(f"Found the following {len(item_code_list)} Items for the given Supplier Part Number '{supplier_part_no}': {item_code_list}")
+                print(f"Found the following {len(item_code_list)} Items for the given Supplier Part Number '{supplier_part_no}': {item_code_list}. Going to continue.")
                 continue
             elif len(item_code_list) == 1:
                 item_code = item_code_list[0]
-            item_price_doc = frappe.get_doc({
-                'doctype': 'Item Price',
-                'item_code': item_code,
-                'min_qty': 1,
-                'price_list': price_list_name,
-                'buying': 0,
-                'selling': 1,
-                'currency': currency,
-                'price_list_rate': rate
-            })
-            item_price_doc.insert()
+            if dry_run:
+                print(f"Would create an Item Price with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+            else:
+                item_price_doc = frappe.get_doc({
+                    'doctype': 'Item Price',
+                    'item_code': item_code,
+                    'min_qty': 1,
+                    'price_list': price_list_name,
+                    'buying': 0,
+                    'selling': 1,
+                    'currency': currency,
+                    'price_list_rate': rate
+                })
+                item_price_doc.insert()
+                print(f"Created Item Price {item_price_doc.name} with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
 
 
 def get_customer_id_from_supplier(supplier_id, company):
