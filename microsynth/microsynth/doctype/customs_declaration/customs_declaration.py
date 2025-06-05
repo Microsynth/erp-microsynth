@@ -30,7 +30,7 @@ class CustomsDeclaration(Document):
             doc.customs_declaration = None
             doc.save()
 
-        for dn in self.austria_dns:
+        for dn in self.eu_dns:
             doc = frappe.get_doc('Delivery Note', dn.delivery_note)
             doc.customs_declaration = None
             doc.save()
