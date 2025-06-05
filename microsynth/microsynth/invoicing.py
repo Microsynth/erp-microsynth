@@ -431,7 +431,7 @@ def make_invoice(delivery_note):
     if customer_invoicing_method == "Chorus":
         goodwill_days = 20
     else:
-        goodwill_days = 10
+        goodwill_days = 5
     # for payment reminders: set goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
     sales_invoice.submit()
@@ -515,7 +515,7 @@ def make_punchout_invoice(delivery_note):
     if customer_invoicing_method == "Chorus":
         goodwill_days = 20
     else:
-        goodwill_days = 10
+        goodwill_days = 5
     # for payment reminders: set goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
 
@@ -596,7 +596,7 @@ def make_collective_invoice(delivery_notes):
     if customer_invoicing_method == "Chorus":
         goodwill_days = 20
     else:
-        goodwill_days = 10
+        goodwill_days = 5
     # for payment reminders: set goodwill period
     sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
 
