@@ -9,6 +9,7 @@ def get_columns():
     return [
         {"label": _("Payment Entry"), "fieldname": "name", "fieldtype": "Link", "options": "Payment Entry", "width": 100},
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 155},
         {"label": _("Party Type"), "fieldname": "party_type", "fieldtype": "Data", "width": 80},
         {"label": _("Party"), "fieldname": "party", "fieldtype": "Data", "width": 145},
         {"label": _("Paid Amount"), "fieldname": "paid_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
@@ -44,6 +45,7 @@ def get_data(filters=None):
         SELECT 
             `tabPayment Entry`.`name`,
             `tabPayment Entry`.`posting_date`,
+            `tabPayment Entry`.`company`,
             `tabPayment Entry`.`party_type`,
             `tabPayment Entry`.`party`,
             `tabPayment Entry`.`paid_amount`,
