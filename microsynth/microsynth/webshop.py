@@ -182,23 +182,23 @@ def create_update_address_doc(address_data, is_deleted=False, customer_id=None):
     """
     Processes data to update an address record.
     """
-    person_id = address_data.get('name')
+    address_id = address_data.get('name')
     address_line1 = address_data.get('address_line1')
 
-    if not person_id or not address_line1:
+    if not address_id or not address_line1:
         return None
 
     # Insert address if not exists
-    if not frappe.db.exists("Address", person_id):
-        print(f"Creating address {person_id}...")
+    if not frappe.db.exists("Address", address_id):
+        print(f"Creating address {address_id}...")
         frappe.db.sql("""
             INSERT INTO `tabAddress` (`name`, `address_line1`) 
             VALUES (%s, %s)
-        """, (person_id, address_line1))
+        """, (address_id, address_line1))
 
-    print(f"Updating address {person_id}...")
+    print(f"Updating address {address_id}...")
 
-    address = frappe.get_doc("Address", person_id)
+    address = frappe.get_doc("Address", address_id)
 
     # Set address title
     customer_name = address_data.get('customer_name')
@@ -499,12 +499,19 @@ def create_update_address(address=None, client="webshop"):
         return {'success': False, 'message': "Address missing"}
     if type(address) == str:
         address = json.loads(address)
-    if not 'person_id' in address:
-        return {'success': False, 'message': "Person ID missing"}
+    if not 'person_id' in address and not 'name' in address:
+        return {'success': False, 'message': "Person ID or Address ID is missing"}
     if not 'address_line1' in address:
         return {'success': False, 'message': "Address line 1 missing"}
     if not 'city' in address:
         return {'success': False, 'message': "City missing"}
+    
+    if 'person_id' in address:
+        if 'name' in address:
+            if address.get('name') != address.get('person_id'):
+                return {'success': False, 'message': f"{address.get('name')=} does not match {address.get('person_id')=}"}
+        address['name'] = address.get('person_id')
+    
     address_id = create_update_address_doc(address)
     if address_id:
         return {'success': True, 'message': "OK"}
