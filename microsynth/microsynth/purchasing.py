@@ -11,7 +11,7 @@ from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
-from microsynth.microsynth.naming_series import get_naming_series
+from microsynth.microsynth.naming_series import get_next_purchasing_item_id
 from datetime import datetime
 import json
 import csv
@@ -1035,7 +1035,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                 if create_new_items:
                     item = frappe.get_doc({
                         'doctype': 'Item',
-                        'item_code': get_naming_series('Item'),  # TODO: Define Naming Scheme (naming_scheme.py)
+                        'item_code': get_next_purchasing_item_id(),
                         'item_name': item_name[:140],
                         'item_group': 'Purchasing',
                         'stock_uom': 'Pcs',
