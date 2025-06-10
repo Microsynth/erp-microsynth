@@ -507,7 +507,7 @@ def create_update_address(address=None, client="webshop"):
         return {'success': False, 'message': "City missing"}
     
     if 'person_id' in address:
-        if 'name' in address:
+        if 'name' in address and address.get('name') is not None:
             if address.get('name') != address.get('person_id'):
                 return {'success': False, 'message': f"{address.get('name')=} does not match {address.get('person_id')=}"}
         address['name'] = address.get('person_id')
