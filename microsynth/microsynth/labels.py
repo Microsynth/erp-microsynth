@@ -331,23 +331,22 @@ def print_test_purchasing_label_novexx():
     """    
     content = '''
 #!A1
-#IMS30/22
+#IMS30/22   
 #N13
 #ER
 
-#T1.4#J19.7#YN101//28///Receipt date / initials: JPe#G
+#T1.2#J19.5#YN101//28///Receipt: 10.06.2025 / JPe#G
 
-#T1.4#J17#YN101//35///30.05.2025#G
+#T1.2#J16.5#YN101//34///Shelf life: 10.06.2026#G
 
-#T1.4#J14.2#YN101//35///Shelf life: 31.12.2026#G
+#T1.2#J13#YN101//42///OxiPy2#G
+#T1.2#J9.4#YN101//42///1234
+#T15.4#J10#IDM/0R16S36/4///P012345:abcdefghijklmnopqrstuvwxyz0123456789ab
 
-#T1.4#J9#YN101//50///kurzn#G
-#T13#J13.8#IDM/3R12S12/6///1234
-#T20#J9#YN101//50///1234
 
-#T1.4#J5.8#YN101//28///Opening date / initials:#G
+#T1.2#J6.7#YN101//28///Opening date / initials:#G
 
 #Q1/
-#!P1
+#!P1l
 '''
     print_raw('192.0.1.79', 9100, content)
