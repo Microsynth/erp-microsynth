@@ -2474,7 +2474,6 @@ def apply_item_group_defaults(item_group):
         overwrite_item_defaults(item['name'])
 
 
-@frappe.whitelist()
 def overwrite_item_defaults(item):
     """
     Overwrite item.item_defaults with item_group_defaults from Item Group.
@@ -2508,6 +2507,10 @@ def overwrite_item_defaults(item):
                 'default_price_list': group_default.default_price_list
             })
     item.save()
+
+
+def item_after_insert(item, event):
+    overwrite_item_defaults(item.name)
 
 
 @frappe.whitelist()

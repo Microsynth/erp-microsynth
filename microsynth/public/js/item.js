@@ -9,17 +9,5 @@ frappe.ui.form.on('Item', {
         if (frm.doc.__islocal && frm.doc.item_group && frm.doc.item_group == 'Purchasing') {
             cur_frm.set_value('is_stock_item', true);
         }
-    },
-    
-    before_save(frm) {
-        // Set Item Defaults according to the Item Group when creating an item
-        if (frm.doc.__islocal) {
-            frappe.call({
-                "method": "microsynth.microsynth.utils.overwrite_item_defaults",
-                "args": {
-                    "item": frm.doc.name
-                }
-            });
-        }
     }
 });
