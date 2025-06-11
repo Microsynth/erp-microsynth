@@ -2460,9 +2460,15 @@ def validate_webshop_address(webshop_address):
 
     if customer.get('name') != contact.get('customer'):
         frappe.throw(f"Customer.name = '{customer.get('name')}', but Contact.customer = '{contact.get('customer')}'.")
-    if contact.get('address') != address.get('name'):
+
+    if address is not None and contact.get('address') != address.get('name'):
         frappe.throw(f"Contact.address = '{contact.get('address')}', but Address.name = '{address.get('name')}'.")
 
+    if address is None and contact.get('address') is not None:
+        frappe.throw(f"Contact.address = '{contact.get('address')}', but Address is NULL")
+
+    if (webshop_address.get('is_default_shipping') or webshop_address.get('is_default_billing')) and address is None:
+        frappe.throw(f"Cannot set missing address to default.")
 
 def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
     """
@@ -2498,7 +2504,7 @@ def create_contact(webshop_address):
     """
     contact = webshop_address['contact']
     contact['customer_id'] = webshop_address.get('customer').get('name')
-    contact['address'] = webshop_address.get('address').get('name')
+    contact['address'] = webshop_address.get('address').get('name') if webshop_address.get('address') else None
     contact['status'] = "Passive"
     contact['phone_number'] = contact.get('phone')
     contact_id = create_update_contact_doc(contact)
@@ -2509,7 +2515,7 @@ def create_contact(webshop_address):
 
 def create_address(webshop_address):
     """
-    Use a webshop address to create an address with the create_update_address_doc function.
+    Use a webshop address to create an address with the create_update_address_doc function. Returns None if the Webshop Address does not contain an address.
     """
     address = webshop_address['address']
     if frappe.db.exists('Address', address['name']):
@@ -2780,15 +2786,15 @@ def update_webshop_address(webshop_account, webshop_address):
 
         webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
         contact_id = webshop_address.get('contact').get('name')
-        address_id = webshop_address.get('address').get('name')
+        address_id = webshop_address.get('address').get('name') if webshop_address.get('address') is not None else None
 
         validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id)
 
-        if webshop_address.get('address').get('address_type') == 'Billing':
+        if webshop_address.get('address') and webshop_address.get('address').get('address_type') == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
         # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_contact_used(contact_id) and not is_address_used(address_id):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
+        if not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id)):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
             # update customer/contact/address if not used
             # customer = webshop_address['contact']
             # customer['customer_id'] = customer['name']
@@ -2797,21 +2803,29 @@ def update_webshop_address(webshop_account, webshop_address):
             contact['phone_number'] = contact.get('phone')
             contact['customer_id'] = contact.get('customer')
             contact_id = create_update_contact_doc(contact)
-            address = webshop_address['address']
-            address_id = create_update_address_doc(address)
+            if address_id:
+                address = webshop_address['address']
+                address_id = create_update_address_doc(address)
         else:
             # create new customer/contact/address if used
             from copy import deepcopy
             new_contact_id = increase_version(webshop_address['contact']['name'])
-            new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one
+            if address_id:
+                new_address_id = increase_version(webshop_address['address']['name'])  # TODO do not create new a new address if there is already one
+            else:
+                new_address_id = None
+
             new_webshop_address = deepcopy(webshop_address)
-            new_webshop_address['address']['name'] = new_address_id
+            if new_address_id:
+                new_webshop_address['address']['name'] = new_address_id
             new_webshop_address['contact']['name'] = new_contact_id
             new_webshop_address['contact']['address'] = new_address_id
-            
+
             validate_webshop_address(new_webshop_address)
-            
-            create_address(new_webshop_address)
+
+            if new_webshop_address['address'] is not None:
+                create_address(new_webshop_address)
+
             returned_contact_id = create_contact(new_webshop_address)
             if not returned_contact_id:
                 frappe.throw(f'Unable to create a Contact with the given {webshop_address=}')
