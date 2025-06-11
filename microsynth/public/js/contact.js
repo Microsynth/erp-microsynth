@@ -40,6 +40,15 @@ frappe.ui.form.on('Contact', {
             frappe.validated=false;
         }
     },
+    onload(frm) {
+        // Hide dashboard if Contact is versioned
+        // Regex: ends with a hyphen followed by 1 or 2 digits
+        const pattern = /-\d{1,2}$/;
+
+        if (frm.doc.name && pattern.test(frm.doc.name)) {
+            frm.dashboard.hide();
+        }
+    },
     refresh(frm) {
 
         // set Contact source
@@ -177,10 +186,13 @@ frappe.ui.form.on('Contact', {
                 open_mail_dialog(frm);
             }, __("Create"));
 
-            // Quotation button in Create menu
-            frm.add_custom_button(__("Quotation"), function() {
-                create_quotation(frm);
-            }, __("Create"));
+            // Only show Quotation button if name does not end with a hyphen followed by 1 or 2 digits
+            if (!((/-\d{1,2}$/).test(frm.doc.name))) {
+                // Quotation button in Create menu
+                frm.add_custom_button(__("Quotation"), function() {
+                    create_quotation(frm);
+                }, __("Create"));
+            }
 
             // Gecko export button in Create menu
             frm.add_custom_button(__("Gecko Export"), function() {
