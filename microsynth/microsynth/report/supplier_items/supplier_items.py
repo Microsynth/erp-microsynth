@@ -9,7 +9,7 @@ from frappe import _
 def get_columns():
     return [
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 470, "align": "left"},
-        #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 150},
+        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
         {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 90},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 80},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
@@ -39,6 +39,7 @@ def get_data(filters):
         SELECT
             `tabItem`.`name` AS item_code,
             `tabItem`.`item_name`,
+            `tabItem`.`material_code`,
             `tabItem Supplier`.`supplier`,
             `tabSupplier`.`supplier_name`,
             `tabItem Supplier`.`supplier_part_no`,
