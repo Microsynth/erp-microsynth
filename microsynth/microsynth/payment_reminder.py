@@ -185,3 +185,38 @@ def transmit_payment_reminder(self, event):
         print_payment_reminder(self)
     else:
         send_prm_email(self)
+
+
+def get_all_outstanding_invoices(customer):
+    """
+    Returns all Sales Invoice records for a given customer
+    where `outstanding_amount` > 0 and `docstatus` = 1.
+    """
+    if not customer:
+        return []
+
+    invoices = frappe.db.sql("""
+        SELECT
+            `tabSales Invoice`.`name`,
+            `tabSales Invoice`.`posting_date`,
+            `tabSales Invoice`.`due_date`,
+            `tabSales Invoice`.`outstanding_amount` AS `outstanding_amount`,
+            `tabSales Invoice`.`currency`,
+            `tabSales Invoice`.`rounded_total`,
+            `tabSales Invoice`.`conversion_rate`,
+            `tabSales Invoice`.`invoicing_method`,
+            `tabSales Invoice`.`debit_to`,
+            `tabAccount`.`account_currency`
+        FROM
+            `tabSales Invoice`
+        LEFT JOIN
+            `tabAccount` ON `tabAccount`.`name` = `tabSales Invoice`.`debit_to`
+        WHERE
+            `tabSales Invoice`.`customer` = %s
+            AND `tabSales Invoice`.`docstatus` = 1
+            AND `tabSales Invoice`.`outstanding_amount` > 0
+        ORDER BY
+            `tabSales Invoice`.`due_date` ASC
+    """, (customer,), as_dict=True)  # single-element tuple (tuple or list expected)
+
+    return invoices
