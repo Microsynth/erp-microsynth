@@ -58,9 +58,14 @@ frappe.contact_merger = {
             },
             'callback': function(r) {
                 if (r.message) {
-                    // console.log(r.message);
                     try {
                         document.getElementById("table_placeholder").innerHTML = r.message.html;
+
+                        // Save contact_2.has_webshop_account to a hidden data attribute
+                        document.getElementById("contact_2").dataset.hasWebshopAccount = r.message?.data?.contact_2?.has_webshop_account || "0";
+                        // Optional chaining (modern JavaScript)
+                        // ?. means "only access if the preceding is not null/undefined"
+
                         frappe.contact_merger.attach_toggle_handlers();
                     } catch {
                         frappe.msgprint( "An error occurred while loading the contacts." );
@@ -120,11 +125,16 @@ frappe.contact_merger = {
         for (var i = 0; i < buttons.length; i++) {
             values[buttons[i].dataset.fieldname] = buttons[i].dataset.value;
         }
-
-        // Show warning if Contact ID is numeric
-        if (/^\d+$/.test(document.getElementById("contact_2").value)){
-            frappe.confirm('Are you sure you want to <b>delete the Contact</b> with the numeric ID ' + document.getElementById("contact_2").value + ' by merging?<br>This <b>contact will lose</b> access to the <b>webshop account</b>.',
-            () => {
+        // Show a warning if Contact 2 has a Webshop Account
+        if (document.getElementById("contact_2").dataset.hasWebshopAccount == "1") {
+            frappe.confirm(
+                'Are you sure you want to <b>delete the Contact ' +
+                document.getElementById("contact_2").value +
+                ' with a Webshop Account</b> by merging it into ' +
+                document.getElementById("contact_1").value +
+                '?<br>Contact ' + document.getElementById("contact_2").value +
+                ' <b>will lose</b> its <b>access to the Webshop</b>.',
+                () => {
                 frappe.contact_merger.merge(values);
             }, () => {
                 frappe.show_alert('No merge done');
@@ -181,4 +191,3 @@ frappe.contact_merger = {
         }
     }
 }
-

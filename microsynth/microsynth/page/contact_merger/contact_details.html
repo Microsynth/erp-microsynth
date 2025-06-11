@@ -192,6 +192,11 @@
         <td {% if contact_1.owner != contact_2.owner %} bgcolor="#F6CDCE" {% endif %}>{{ contact_2.owner or '-' }}</td>
     </tr>
     <tr>
+        <td {% if contact_1.has_webshop_account != contact_2.has_webshop_account %} bgcolor="#F6CDCE" {% endif %}>{{ _("Has Webshop Account") }}</td>
+        <td {% if contact_1.has_webshop_account != contact_2.has_webshop_account %} bgcolor="#F6CDCE" {% endif %}>{{ "yes" if contact_1.has_webshop_account == 1 else "no" }}</td>
+        <td {% if contact_1.has_webshop_account != contact_2.has_webshop_account %} bgcolor="#F6CDCE" {% endif %}>{{ "yes" if contact_2.has_webshop_account == 1 else "no" }}</td>
+    </tr>
+    <tr>
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}>{{ _("Customer") }}</td>
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_1" data-fieldname="customer" data-value="{{ contact_1.customer }}">{{ contact_1.customer or "-" }}</button></td>
         <td {% if contact_1.customer != contact_2.customer %} bgcolor="#F6CDCE" {% endif %}><button class="btn btn-sm {% if not contact_1.customer %}btn-primary{% endif %} btn-toggle form_btn" id="btn_customer_2" data-fieldname="customer" data-value="{{ contact_2.customer }}">{{ contact_2.customer or "-" }}</button></td>
