@@ -2799,13 +2799,13 @@ def update_webshop_address(webshop_account, webshop_address):
             # customer = webshop_address['contact']
             # customer['customer_id'] = customer['name']
             # update_customer(customer)
+            if address_id:
+                address = webshop_address['address']
+                address_id = create_update_address_doc(address)
             contact = webshop_address['contact']
             contact['phone_number'] = contact.get('phone')
             contact['customer_id'] = contact.get('customer')
             contact_id = create_update_contact_doc(contact)
-            if address_id:
-                address = webshop_address['address']
-                address_id = create_update_address_doc(address)
         else:
             # create new customer/contact/address if used
             from copy import deepcopy
