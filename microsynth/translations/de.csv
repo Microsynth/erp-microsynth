@@ -61,5 +61,7 @@ DocType: Payment Reminder,"As per our accounting department, this invoice(s) is 
 DocType: Payment Reminder,"Please check the invoice(s) and report any dissension immediately to Microsynth.","Bitte prüfen Sie die Rechnung(en) und melden Sie allfällige Unstimmigkeiten umgehend an Microsynth."
 DocType: Payment Reminder,"Kind regards","Freundliche Grüsse"
 DocType: Payment Reminder,"Microsynth Administration","Microsynth Administration"
+DocType: Payment Reminder,"List of all outstanding invoices for customer","Liste aller ausstehenden Rechnungen für Kunden Nr."
+DocType: Payment Reminder,"Invoice amount","Rechnungsbetrag"
 DocType: Payment Reminder,"Page","Seite"
 DocType: Payment Reminder,"of","von"
