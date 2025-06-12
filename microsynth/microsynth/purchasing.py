@@ -1087,3 +1087,37 @@ def get_customer_id_from_supplier(supplier_id, company):
         if shop.company == company:
             return shop.customer_id
     return None
+
+
+def payment_proposal_after_insert(payment_proposal, event):
+    update_required = False
+    for p in payment_proposal.purchase_invoices:
+
+        if p.grand_total != p.amount:
+            query = """
+                SELECT `reference_type`, `reference_name`
+                FROM `tabPurchase Invoice Advance`
+                WHERE `parent` = %(purchase_invoice)s
+                AND `reference_type` = "Journal Entry"
+                """
+            advances = frappe.db.sql(query, { "purchase_invoice": p.purchase_invoice }, as_dict=True)
+
+            if len(advances) > 0:
+                for a in advances:
+                    jv_query = """
+                        SELECT 
+                            `tabJournal Entry Account`.`reference_name`,
+                            `tabPurchase Invoice`.`bill_no`
+                        FROM `tabJournal Entry Account`
+                        LEFT JOIN `tabPurchase Invoice` ON `tabPurchase Invoice`.`name` = `tabJournal Entry Account`.`reference_name`
+                        WHERE `tabJournal Entry Account`.`parent` = %(journal_entry)s
+                        AND `tabJournal Entry Account`.`reference_name` <> %(purchase_invoice)s
+                        AND `tabJournal Entry Account`.`reference_type` = "Purchase Invoice"
+                        """
+                    references = frappe.db.sql(jv_query, {"journal_entry": a.get('reference_name'), "purchase_invoice": p.purchase_invoice}, as_dict=True)
+                    if len(references) > 0:
+                        p.external_reference = p.external_reference + "," + ",".join( [r.get("bill_no") for r in (references or []) ] )
+                        update_required = True
+
+    if update_required:
+        payment_proposal.save()

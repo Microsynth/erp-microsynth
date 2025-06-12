@@ -189,6 +189,9 @@ doc_events = {
         "validate": "microsynth.microsynth.purchasing.validate_purchase_invoice"
         #"on_submit": "microsynth.microsynth.purchasing.reset_in_approval"
     },
+    "Payment Proposal":{
+        "after_insert": "microsynth.microsynth.purchasing.payment_proposal_after_insert"
+    },
     "Item": {
         "after_insert": "microsynth.microsynth.utils.item_after_insert"
     }
