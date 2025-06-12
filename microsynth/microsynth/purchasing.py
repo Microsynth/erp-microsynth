@@ -405,9 +405,9 @@ def remove_control_characters(input_string):
     return re.sub(r'[\x00-\x1F\x7F-\x9F]', '', input_string)
 
 
-def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=29):
+def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=34):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-05_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-05_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-12_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-12_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -440,7 +440,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             internal_code = line[3].strip()  # if given, Item should have "Maintain Stock"
             supplier_item_id = line[4].strip()
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
-            unit_size = line[6].strip()
+            unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
             supplier_quote = line[8].strip()
             list_price = line[9].strip()
@@ -450,7 +450,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             item_group = line[13].strip()
             group = line[14].strip()
             account = line[15].strip()
-            storage_localtion = line[16].strip()  # warehouse
+            storage_location = line[16].strip()  # warehouse
             annual_consumption_budget = line[17].strip()
             order_quantity_6mt = line[18].strip()
             threshold = line[19].strip()
@@ -463,6 +463,12 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             quantity_supplier = line[26].strip()
             material_code = line[27]  # Kurzname
             item_id = line[28].strip()  # Datensatznummer
+            ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0), int(line[33].strip() or 0)])
+
+            if ordered_2021_2025 == 0:
+                # do not import Items that were not ordered from 2021 to 2024
+                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024. Going to continue with the next supplier item.")
+                continue
 
             if not item_name:
                 print(f"ERROR: Item with Index {item_id} has no Item name. Going to continue with the next supplier item.")
@@ -516,29 +522,27 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'is_sales_item': 0,
                 'material_code': material_code or None
             })
+            if not supplier_index in supplier_mapping:
+                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}).")
+            else:
+                item.append("supplier_items", {
+                    'supplier': supplier_mapping[supplier_index],
+                    'supplier_part_no': supplier_item_id,
+                    'substitute_status': ''
+                })
+                if account:
+                    item.item_defaults = []
+                    item.append("item_defaults", {
+                        'company': company,
+                        'expense_account': account_name,
+                        'default_supplier': supplier_mapping[supplier_index]
+                    })
             item.insert()
             imported_counter += 1
 
             # write mapping of ERP Item ID to FM Index (Datensatznummer) to a file
             with open(output_filepath, 'a') as txt_file:
                 txt_file.write(f"{item.name};{item_id}\n")
-
-            if not supplier_index in supplier_mapping:
-                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}). Going to continue.")
-                continue
-            item.append("supplier_items", {
-                'supplier': supplier_mapping[supplier_index],
-                'supplier_part_no': supplier_item_id,
-                'substitute_status': ''
-            })
-            if account:
-                item.item_defaults = []
-                item.append("item_defaults", {
-                    'company': company,
-                    'expense_account': account_name,
-                    'default_supplier': supplier_mapping[supplier_index]
-                })
-            item.save()
             print(f"INFO: Successfully imported Item '{item.item_name}' ({item.name}).")
             if imported_counter % 1000 == 0:
                 frappe.db.commit()
