@@ -30,6 +30,185 @@ frappe.query_reports["Supplier Items"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
+
+        report.page.add_inner_button(__('Create new'), function() {
+            create_new_supplier_item();
+        }).addClass("btn-primary");
     }
 };
 
+
+function create_new_supplier_item() {
+    let dialog = new frappe.ui.Dialog({
+        title: 'New Purchasing Item',
+        fields: [
+            {
+                label: 'Internal Code',
+                fieldname: 'internal_code',
+                fieldtype: 'Data',
+                reqd: 0,
+                description: 'Optional 4-digit code',
+                maxlength: 4
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Item Code',
+                fieldname: 'item_code',
+                fieldtype: 'Data',
+                reqd: 1,
+                read_only: 1
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Material Code',
+                fieldname: 'material_code',
+                fieldtype: 'Data',
+                reqd: 0,
+                description: 'Oligo Modification Code / Slims Content Type',
+            },
+            { fieldtype: 'Section Break' },
+            {
+                label: 'Item Name',
+                fieldname: 'item_name',
+                fieldtype: 'Data',
+                reqd: 1
+            },
+            {
+                label: 'Shelf Life in Years',
+                fieldname: 'shelf_life_in_years',
+                fieldtype: 'Float',
+                reqd: 1
+            },
+            {
+                label: 'Default Unit of Measure (UOM)',
+                fieldname: 'stock_uom',
+                fieldtype: 'Link',
+                options: 'UOM',
+                reqd: 1
+            },
+            // {
+            //     label: 'Unit of Measure',
+            //     fieldname: 'uoms',
+            //     fieldtype: 'Table',
+            //     options: 'UOM Conversion Detail'  // TODO: Uncaught TypeError: this.docfields is undefined
+            // },
+            // {
+            //     label: 'Item Defaults',
+            //     fieldname: 'item_defaults',
+            //     fieldtype: 'Table',
+            //     options: 'Item Default'
+            // },
+            // {
+            //     label: 'Supplier Items',
+            //     fieldname: 'supplier_items',
+            //     fieldtype: 'Table',
+            //     options: 'Item Supplier'
+            // }
+            // --- One UOM Conversion ---
+            { fieldtype: 'Section Break', label: 'UOM Conversion' },
+            {
+                label: 'UOM',
+                fieldname: 'uom',
+                fieldtype: 'Link',
+                options: 'UOM'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Conversion Factor',
+                fieldname: 'conversion_factor',
+                fieldtype: 'Float'
+            },
+
+            // --- One Item Default ---
+            { fieldtype: 'Section Break', label: 'Item Default' },
+            {
+                label: 'Company',
+                fieldname: 'company',
+                fieldtype: 'Link',
+                options: 'Company'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Default Expense Account',
+                fieldname: 'expense_account',
+                fieldtype: 'Link',
+                options: 'Account'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Default Supplier',
+                fieldname: 'default_supplier',
+                fieldtype: 'Link',
+                options: 'Supplier'
+            },
+
+            // --- One Supplier Entry ---
+            { fieldtype: 'Section Break', label: 'Supplier Item' },
+            {
+                label: 'Supplier',
+                fieldname: 'supplier',
+                fieldtype: 'Link',
+                options: 'Supplier'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Supplier Part Number',
+                fieldname: 'supplier_part_no',
+                fieldtype: 'Data'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Substitute Status',
+                fieldname: 'substitute_status',
+                fieldtype: 'Select',
+                description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
+                options: '\nPotential\nVerified\nDiscontinued\nBlocked'
+            }
+        ],
+        primary_action_label: 'Create',
+        primary_action(values) {
+            frappe.call({
+                'method': 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',
+                'args': {
+                    'data': values
+                },
+                'callback': function(r) {
+                    if (!r.exc) {
+                        const link = frappe.utils.get_form_link('Item', r.message);
+                        frappe.msgprint({
+                            'title': __('Item Created'),
+                            'message': __('Item created: {0}', [`<a href="${link}" target="_blank">${r.message}</a>`]),
+                            'indicator': 'green'
+                        });
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    // Handle internal_code -> item_code auto-fill
+    dialog.fields_dict.internal_code.$input.on('change', function () {
+        const code = dialog.get_value('internal_code');
+        if (code && code.match(/^\d{4}$/)) {
+            dialog.set_value('item_code', 'P00' + code);
+        } else {
+            frappe.call({
+                'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
+                'callback': function (r) {
+                    dialog.set_value('item_code', r.message);
+                }
+            });
+        }
+    });
+
+    dialog.show();
+
+    // Trigger auto-fill on open
+    frappe.call({
+        'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
+        'callback': function (r) {
+            dialog.set_value('item_code', r.message);
+        }
+    });
+}

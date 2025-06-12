@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import json
 import frappe
 from frappe import _
 
@@ -63,3 +64,67 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
+
+
+@frappe.whitelist()
+def create_purchasing_item(data):
+
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    # Extract core fields
+    material_code = data.get('material_code')
+    item_code = data.get('item_code')
+    item_name = data.get('item_name')
+
+    # --- Validation ---
+    if frappe.db.exists("Item", item_code):
+        frappe.throw(_("An item with Item Code {0} already exists").format(item_code))
+
+    if frappe.db.exists("Item", {"item_name": item_name}):
+        frappe.throw(_("An item with Item Name {0} already exists").format(item_name))
+    
+    if material_code:
+        existing = frappe.db.exists("Item", {"material_code": material_code})
+        if existing:
+            frappe.throw(_("An item with Material Code {0} already exists: {1}").format(material_code, existing))
+
+    # --- Create Item ---
+    item = frappe.new_doc("Item")
+    item.item_code = item_code
+    item.item_name = item_name
+    item.material_code = material_code
+    item.stock_uom = data.get("stock_uom")
+    item.shelf_life_in_days = int(float(data.get("shelf_life_in_years") or 0) * 365)
+    item.item_group = "Purchasing"
+    item.is_purchase_item = 1
+    item.is_sales_item = 0
+    item.is_stock_item = 1
+
+    # --- UOM Conversion (single entry) ---
+    if data.get("uom"):
+        item.append("uoms", {
+            "uom": data.get("uom"),
+            "conversion_factor": data.get("conversion_factor") or 1.0
+        })
+
+    # --- Item Default (single entry) ---
+    if data.get("company"):
+        item.append("item_defaults", {
+            "company": data.get("company"),
+            "expense_account": data.get("expense_account"),
+            "default_supplier": data.get("default_supplier")
+        })
+
+    # --- Supplier Item (single entry) ---
+    if data.get("supplier"):
+        item.append("supplier_items", {
+            "supplier": data.get("supplier"),
+            "supplier_part_no": data.get("supplier_part_no"),
+            "substitute_status": data.get("substitute_status")
+        })
+
+    item.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return item.name
