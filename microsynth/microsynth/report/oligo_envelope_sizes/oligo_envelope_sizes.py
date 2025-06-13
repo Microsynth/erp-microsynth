@@ -24,10 +24,14 @@ def get_columns(filters):
 def get_data(filters):
     if not filters:
         return []
-    conditions = ""
-    
+    inner_conditions = ""
+    outer_conditions = ""
     if filters.get('date'):
-        conditions += f"AND DATE(`tabSales Order`.`label_printed_on`) = DATE('{filters.get('date')}')"
+        inner_conditions += f"AND DATE(`tabSales Order`.`label_printed_on`) = DATE('{filters.get('date')}')"
+    if filters.get('tracking') and filters.get('tracking') == 'no Tracking':
+        outer_conditions += f" AND `inner`.`items` LIKE '%1100%' "
+    elif filters.get('tracking') and filters.get('tracking') == 'Tracking':
+        outer_conditions += f" AND (`inner`.`items` LIKE '%1101%' OR `inner`.`items` LIKE '%1102%')"
 
     sql_query = f"""
         SELECT *
@@ -52,10 +56,11 @@ def get_data(filters):
             LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
             LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
             WHERE `tabDelivery Note`.`product_type` = 'Oligos'
-                {conditions}
+                {inner_conditions}
             GROUP BY `tabDelivery Note`.`name`
             ) AS `inner`
-        WHERE `inner`.`items` LIKE '%1100%'
+        WHERE TRUE
+            {outer_conditions}
         ;"""
     data = frappe.db.sql(sql_query, as_dict=True)
     
