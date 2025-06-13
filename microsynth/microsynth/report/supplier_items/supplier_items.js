@@ -47,7 +47,7 @@ function create_new_supplier_item() {
                 fieldname: 'internal_code',
                 fieldtype: 'Data',
                 reqd: 0,
-                description: 'Optional 4-digit code',
+                description: 'Optional 4-digit "EAN" code',
                 maxlength: 4
             },
             { fieldtype: 'Column Break' },
@@ -73,12 +73,14 @@ function create_new_supplier_item() {
                 fieldtype: 'Data',
                 reqd: 1
             },
+            { fieldtype: 'Section Break' },
             {
                 label: 'Shelf Life in Years',
                 fieldname: 'shelf_life_in_years',
                 fieldtype: 'Float',
                 reqd: 1
             },
+            { fieldtype: 'Column Break' },
             {
                 label: 'Default Unit of Measure (UOM)',
                 fieldname: 'stock_uom',
@@ -104,34 +106,22 @@ function create_new_supplier_item() {
             //     fieldtype: 'Table',
             //     options: 'Item Supplier'
             // }
-            // --- One UOM Conversion ---
-            { fieldtype: 'Section Break', label: 'UOM Conversion' },
-            {
-                label: 'UOM',
-                fieldname: 'uom',
-                fieldtype: 'Link',
-                options: 'UOM'
-            },
-            { fieldtype: 'Column Break' },
-            {
-                label: 'Conversion Factor',
-                fieldname: 'conversion_factor',
-                fieldtype: 'Float'
-            },
-
             // --- One Item Default ---
             { fieldtype: 'Section Break', label: 'Item Default' },
             {
                 label: 'Company',
                 fieldname: 'company',
                 fieldtype: 'Link',
-                options: 'Company'
+                options: 'Company',
+                default: 'Microsynth AG',
+                reqd: 1
             },
             { fieldtype: 'Column Break' },
             {
                 label: 'Default Expense Account',
                 fieldname: 'expense_account',
                 fieldtype: 'Link',
+                reqd: 1,
                 options: 'Account'
             },
             { fieldtype: 'Column Break' },
@@ -139,22 +129,34 @@ function create_new_supplier_item() {
                 label: 'Default Supplier',
                 fieldname: 'default_supplier',
                 fieldtype: 'Link',
-                options: 'Supplier'
+                reqd: 1,
+                options: 'Supplier',
+                onchange: function () {
+                    if (!dialog.get_value('supplier')) {
+                        dialog.set_value('supplier', dialog.get_value('default_supplier'));
+                    }
+                }
             },
-
             // --- One Supplier Entry ---
             { fieldtype: 'Section Break', label: 'Supplier Item' },
             {
                 label: 'Supplier',
                 fieldname: 'supplier',
                 fieldtype: 'Link',
-                options: 'Supplier'
+                reqd: 1,
+                options: 'Supplier',
+                onchange: function () {
+                    if (!dialog.get_value('default_supplier')) {
+                        dialog.set_value('default_supplier', dialog.get_value('supplier'));
+                    }
+                }
             },
             { fieldtype: 'Column Break' },
             {
                 label: 'Supplier Part Number',
                 fieldname: 'supplier_part_no',
-                fieldtype: 'Data'
+                fieldtype: 'Data',
+                reqd: 1
             },
             { fieldtype: 'Column Break' },
             {
@@ -163,6 +165,22 @@ function create_new_supplier_item() {
                 fieldtype: 'Select',
                 description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
                 options: '\nPotential\nVerified\nDiscontinued\nBlocked'
+            },
+            // --- One UOM Conversion ---
+            { fieldtype: 'Section Break', label: 'Additional UOM' },
+            {
+                label: 'UOM',
+                fieldname: 'uom',
+                fieldtype: 'Link',
+                options: 'UOM',
+                description: 'Unit of Measure'
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Conversion Factor',
+                fieldname: 'conversion_factor',
+                fieldtype: 'Float',
+                description: 'Factor to convert to default UOM'
             }
         ],
         primary_action_label: 'Create',
