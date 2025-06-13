@@ -407,7 +407,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=34):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-12_Lieferantenartikel_KNr_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-12_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-13_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-13_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-13_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -463,9 +463,12 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             quantity_supplier = line[26].strip()
             material_code = line[27]  # Kurzname
             item_id = line[28].strip()  # Datensatznummer
-            ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0), int(line[33].strip() or 0)])
-
-            if ordered_2021_2025 == 0:
+            try:
+                ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0)])
+            except ValueError as err:
+                print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]}. Going to continue with the next supplier item.")
+                continue
+            if ordered_2021_2025 == 0 and not line[33].strip():
                 # do not import Items that were not ordered from 2021 to 2024
                 print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024. Going to continue with the next supplier item.")
                 continue
@@ -551,7 +554,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-05-07_Merck_Lieferanten_6013_6156.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-05_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-13_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-13_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
