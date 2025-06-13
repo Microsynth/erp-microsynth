@@ -79,7 +79,7 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
                 new_customer_rate = round(new_customer_rate, 4)
                 set_rate(item_code, price_list['name'], min_qty, new_customer_rate)
             except Exception as e:
-                msg = f"Got the following exception when trying to save the new customer rate {new_customer_rate} for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
+                msg = f"Got the following exception when trying to save a new customer rate for item {item_code} with minimum quantity {min_qty} on Price List '{price_list['name']}':\n{e}"
                 print(msg)
                 frappe.log_error(msg, 'pricing.change_reference_rate')
             else:

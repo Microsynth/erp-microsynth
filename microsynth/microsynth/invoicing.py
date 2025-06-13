@@ -1487,9 +1487,9 @@ Your administration team<br><br>{footer}"
                     # TODO: Search valid version and use it instead?
                     email_template = frappe.get_doc("Email Template", "Unable to invoice Sales Order")
                     rendered_subject = frappe.render_template(email_template.subject, {'sales_order_id': sales_invoice.name})
-                    rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_doc.name})
+                    rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_id})
                     send_email_from_template(email_template, rendered_content, rendered_subject)
-                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has docstatus {so_doc.docstatus}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
+                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has docstatus {so_docstatus}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
                     frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
                 # create SI-LYO from SO-LYO

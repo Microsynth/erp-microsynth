@@ -65,7 +65,7 @@ def get_data(filters):
     """
     Returns a list of dictionaries with the data to be shown in the table of the pricing configurator.
     """
-    if type(filters) == str:
+    if isinstance(filters, str):
         filters = json.loads(filters)
     elif type(filters) == dict:
         pass

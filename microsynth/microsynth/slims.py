@@ -157,8 +157,11 @@ def sync(debug=False):
     return
         
 def get_modified_records(change_datetime):
-    if type(change_datetime) == datetime:
-        change_datetime = change_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(change_datetime, str):
+        # parse string into datetime object first
+        change_datetime = datetime.strptime(change_datetime, "%Y-%m-%d %H:%M:%S")
+    # now it's safe to format as string
+    change_datetime = change_datetime.strftime("%Y-%m-%d %H:%M:%S")
         
     changed_records = frappe.db.sql("""
             SELECT 

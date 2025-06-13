@@ -162,11 +162,13 @@ def print_shipping_label(sales_order_id):
 
     printer = choose_brady_printer(sales_order.company)
 
-    #print(content)
-    print_raw(printer.ip, printer.port, content)
-    sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sales_order.save()
-    frappe.db.commit()
+    if printer:
+        print_raw(printer.ip, printer.port, content)
+        sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sales_order.save()
+        frappe.db.commit()
+    else:
+        frappe.log_error(f"Found no Brady printer for Company '{sales_order.company}' and Sales Order '{sales_order_id}'.", "labels.print_shipping_label")
 
 
 @frappe.whitelist()
@@ -197,7 +199,10 @@ def print_contact_shipping_label(address_id, contact_id, customer_id):
     }
     content = frappe.render_template("microsynth/templates/includes/contact_address_label_brady.html", label_data)
     printer = choose_brady_printer(sender_company)
-    print_raw(printer.ip, printer.port, content)
+    if printer:
+        print_raw(printer.ip, printer.port, content)
+    else:
+        frappe.log_error(f"Found no Brady printer for Company '{sender_company}' and Address '{address_id}'.", "labels.print_contact_shipping_label")
 
 
 @frappe.whitelist()
@@ -214,8 +219,8 @@ def print_oligo_order_labels(sales_orders):
 
     for o in sales_orders:
         warning = ""
+        sales_order = frappe.get_doc("Sales Order", o)
         try:
-            sales_order = frappe.get_doc("Sales Order", o)
             label_data = get_label_data(sales_order)
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
             if not sales_order.label_printed_on:

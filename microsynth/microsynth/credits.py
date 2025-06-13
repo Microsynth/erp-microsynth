@@ -425,7 +425,7 @@ def get_total_credit_difference(company, currency, account, to_date):
         closing = totals.get('closing')
         return closing.get('debit_in_account_currency') - closing.get('credit_in_account_currency')
 
-    if type(to_date) == str:
+    if isinstance(to_date, str):
         to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
     credit_filters=frappe._dict({'company': company, 'to_date': to_date, 'currency': currency})
     credits = get_customer_credits(credit_filters)

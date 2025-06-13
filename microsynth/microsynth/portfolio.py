@@ -33,7 +33,10 @@ def get_sales_volume(contact):
         })
         
         yearly_volume += monthly_volume
-        
+    
+    if first_day_past_year is None or last_month_date is None:
+        frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_volume")
+        return data
     data.append({
         'date': "{0} - {1}".format(first_day_past_year.strftime("%d.%m.%Y"), last_month_date.strftime("%d.%m.%Y")),
         'volume': yearly_volume
@@ -112,7 +115,9 @@ def get_sales_qty(contact):
         })
         
         yearly_volume += monthly_volume
-        
+    if first_day_past_year is None or last_month_date is None:
+        frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_qty")
+        return data
     data.append({
         'date': "{0} - {1}".format(first_day_past_year.strftime("%d.%m.%Y"), last_month_date.strftime("%d.%m.%Y")),
         'quantity': yearly_volume
