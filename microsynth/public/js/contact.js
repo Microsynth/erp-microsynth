@@ -29,6 +29,24 @@ frappe.ui.form.on('Contact', {
         frappe.route_history = [];
 
         check_email_id(frm);
+
+        // If there is exactly one email_id, set it as is_primary
+        if (frm.doc.email_ids.length == 1 && !frm.doc.email_ids.some(e => e.is_primary)) {
+            frm.doc.email_ids[0].is_primary = 1;
+        }
+        if (frm.doc.phone_nos.length == 1 && !frm.doc.phone_nos.some(p => p.is_primary_phone) && !frm.doc.phone_nos[0].is_primary_mobile_no) {
+            frm.doc.phone_nos[0].is_primary_phone = 1;
+        }
+        // Reminder for primary email and phone
+        let emailPrimary = frm.doc.email_ids.filter(e => e.is_primary).length;
+        let phonePrimary = frm.doc.phone_nos.filter(p => p.is_primary_phone).length;
+
+        if (emailPrimary !== 1) {
+            frappe.msgprint(__('Please select exactly one primary Email.'));
+        }
+        if (phonePrimary !== 1) {
+            frappe.msgprint(__('Please select exactly one primary Phone Number.'));
+        }
     },
     validate(frm) {
         if (frm.doc.salutation && !['Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'].includes(frm.doc.salutation)) {
