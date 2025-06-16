@@ -2036,6 +2036,20 @@ def activate_fullplasmidseq_all_customers():
         i += 1
 
 
+def activate_invoicebydefaultcompany_france(blacklist_customers):
+    """
+    bench execute microsynth.microsynth.migration.activate_invoicebydefaultcompany_france --kwargs "{'blacklist_customers': ['35414300', '8003']}"
+    """
+    customers = frappe.db.get_all("Customer",
+        filters = [['disabled', '=', 0], ['territory', 'IN', ['Paris', 'France (Southeast)', 'France (Northwest)']]],
+        fields = ['name'])
+    
+    for customer in customers:
+        if customer['name'] in blacklist_customers:
+            continue
+        add_webshop_service(customer['name'], 'InvoiceByDefaultCompany')
+
+
 def set_debtors():
     """
     Set the debitor account
