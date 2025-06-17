@@ -407,7 +407,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=34):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-13_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-13_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-13_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-16_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-17_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-17_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -554,7 +554,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-13_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-13_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-16_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-17_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -752,11 +752,11 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 new_address.save()
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
             elif city or pincode or address_line1 or post_box:
-                print(f"WARNING: Ort, PLZ, Strasse or Postfach given, but missing required information (Land, Ort, Stasse oder Postfach) to create an address for Supplier with Index {ext_creditor_number} (external debitor number).")
+                print(f"WARNING: Ort, PLZ, Strasse or Postfach given, but missing required information (Land and Ort and Strasse or Postfach) to create an address for Supplier with Index {ext_creditor_number}.")
             
             if first_name or last_name or phone or email:
                 if not (first_name or last_name or company):
-                    print(f"WARNING: Got no first name, no second name and no company for Supplier with Index {ext_creditor_number} (external debitor number). Unable to import a Contact, going to continue.")
+                    print(f"WARNING: Got no first name, no second name and no company for Supplier with Index {ext_creditor_number}. Unable to import a Contact, going to continue.")
                     continue
                 new_contact = frappe.get_doc({
                     'doctype': 'Contact',
@@ -1040,25 +1040,29 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
             item_code_list = [row["parent"] for row in item_codes]
             if len(item_code_list) == 0:                
                 if create_new_items:
-                    item = frappe.get_doc({
-                        'doctype': 'Item',
-                        'item_code': get_next_purchasing_item_id(),
-                        'item_name': item_name[:140],
-                        'item_group': 'Purchasing',
-                        'stock_uom': 'Pcs',
-                        'is_stock_item': 1,
-                        'description': item_name,
-                        'is_purchase_item': 1,
-                        'is_sales_item': 0,
-                    })
-                    if supplier_id:
-                        item.append('supplier_items', {
-                            'supplier': supplier_id,
-                            'supplier_part_no': supplier_part_no,
-                            'substitute_status': ''
+                    if not dry_run:
+                        item = frappe.get_doc({
+                            'doctype': 'Item',
+                            'item_code': get_next_purchasing_item_id(),
+                            'item_name': item_name[:140],
+                            'item_group': 'Purchasing',
+                            'stock_uom': 'Pcs',
+                            'is_stock_item': 1,
+                            'description': item_name,
+                            'is_purchase_item': 1,
+                            'is_sales_item': 0,
                         })
-                    item.insert()
-                    item_code = item.item_code
+                        if supplier_id:
+                            item.append('supplier_items', {
+                                'supplier': supplier_id,
+                                'supplier_part_no': supplier_part_no,
+                                'substitute_status': ''
+                            })
+                        item.insert()
+                        item_code = item.item_code
+                        print(f"Created the new Item {item_code} for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
+                    else:
+                        print(f"Would create a new Item for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
                 else:
                     print(f"Found no Item for the given Supplier Part Number '{supplier_part_no}' and {create_new_items=}. Going to continue.")
                     continue
