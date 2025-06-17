@@ -71,6 +71,7 @@ def get_data(filters=None):
         WHERE 
             `tabSales Order`.`product_type` = "Labels"
             AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`status` != 'Closed'
             AND `tabSales Order`.`company` = "{company}"
             AND `tabSales Order`.`transaction_date` > '2022-12-22'
             AND `tabSales Order`.`hold_order` <> 1
