@@ -3038,28 +3038,27 @@ def update_account_settings(webshop_account, account_settings):
         if type(account_settings) == str:
             account_settings = json.loads(account_settings)
 
-        update_required = False
         contact_doc = frappe.get_doc("Contact", webshop_account)
 
+        # prevent changes of Contact.institute_key
         if account_settings.get('institute_key') is not None and account_settings.get('institute_key') != contact_doc.institute_key:
             frappe.throw(f"Not allowed to change Institute Key of Contact {contact_doc.name} from '{contact_doc.institute_key}' to '{account_settings.get('institute_key')}'.")
 
         customer_id = get_customer(webshop_account)
         customer_doc = frappe.get_doc("Customer", customer_id)
 
+        # Allow to change Customer.invoicing method only from Email to Post and back.
         if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
             if customer_doc.invoicing_method not in ['Email', 'Post']:
                 frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
             if account_settings.get('invoicing_method') not in ['Email', 'Post']:
                 frappe.throw(f"Not allowed to change to Invoicing Method '{customer_doc.invoicing_method}'.")
             customer_doc.invoicing_method = account_settings.get('invoicing_method')
-            update_required = True
+            customer_doc.save()
 
+        # Allow changing Contact.group_leader
         if contact_doc.group_leader != account_settings.get('group_leader'):
             contact_doc.group_leader = account_settings.get('group_leader')
-            update_required = True
-
-        if update_required:
             contact_doc.save()
 
         return {
