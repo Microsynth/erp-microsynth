@@ -214,6 +214,13 @@ def get_data():
                         "is_query_report": True
                     },
                     {
+                        "type": "report",
+                        "name": "Open Delivery Notes",
+                        "label": _("Open Delivery Notes"),
+                        "doctype": "Delivery Note",
+                        "is_query_report": True
+                    },
+                    {
                        "type": "report",
                        "name": "Customer Credits",
                        "label": _("Customer Credits"),
@@ -232,6 +239,13 @@ def get_data():
                         "name": "tracking_codes",
                         "label": _("Tracking Code Registration"),
                         "description": _("Tracking Codes")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Missing Tracking Codes",
+                        "label": _("Missing Tracking Codes"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
                     },
                     {
                         "type": "report",
