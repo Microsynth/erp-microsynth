@@ -246,36 +246,62 @@ def get_data():
             "label": _("Purchasing"),
             "icon": "fa fa-money",
             "items": [
-                   {
-                       "type": "page",
-                       "name": "invoice_entry",
-                       "label": _("Invoice Entry"),
-                       "description": _("Invoice Entry")
-                   },
-                   {
-                       "type": "page",
-                       "name": "approval-manager",
-                       "label": _("Approval Manager"),
-                       "description": _("Approval Manager")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Supplier",
-                       "label": _("Supplier"),
-                       "description": _("Supplier")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Purchase Invoice",
-                       "label": _("Purchase Invoice"),
-                       "description": _("Purchase Invoice")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Payment Proposal",
-                       "label": _("Payment Proposal"),
-                       "description": _("Payment Proposal")
-                   }
+                    {
+                        "type": "doctype",
+                        "name": "Supplier",
+                        "label": _("Supplier"),
+                        "description": _("Supplier")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Supplier Items",
+                        "label": _("Supplier Items"),
+                        "doctype": "Item",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Open Material Requests",
+                        "label": _("Open Material Requests"),
+                        "doctype": "Material Request",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Purchase Order",
+                        "label": _("Purchase Order"),
+                        "description": _("Purchase Order")
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Purchase Receipt",
+                        "label": _("Purchase Receipt"),
+                        "description": _("Purchase Receipt")
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Purchase Invoice",
+                        "label": _("Purchase Invoice"),
+                        "description": _("Purchase Invoice")
+                    },
+                    {
+                        "type": "page",
+                        "name": "invoice_entry",
+                        "label": _("Invoice Entry"),
+                        "description": _("Invoice Entry")
+                    },
+                    {
+                        "type": "page",
+                        "name": "approval-manager",
+                        "label": _("Approval Manager"),
+                        "description": _("Approval Manager")
+                    },                    
+                    {
+                        "type": "doctype",
+                        "name": "Payment Proposal",
+                        "label": _("Payment Proposal"),
+                        "description": _("Payment Proposal")
+                    }
             ]
         },
         {
