@@ -103,7 +103,8 @@ def get_next_purchasing_item_id():
         """, as_dict=True)
     if len(item_codes) == 0:
         highest_code = 0
-    highest_code = int(item_codes[0]['name'][1:])
+    else:
+        highest_code = int(item_codes[0]['name'][1:])
     if highest_code < 20000:
         highest_code = 19999
     if highest_code >= 999999:

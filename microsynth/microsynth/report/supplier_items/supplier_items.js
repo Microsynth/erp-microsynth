@@ -82,30 +82,12 @@ function create_new_supplier_item() {
             },
             { fieldtype: 'Column Break' },
             {
-                label: 'Default Unit of Measure (UOM)',
+                label: 'Stock Unit of Measure (UOM)',
                 fieldname: 'stock_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
                 reqd: 1
             },
-            // {
-            //     label: 'Unit of Measure',
-            //     fieldname: 'uoms',
-            //     fieldtype: 'Table',
-            //     options: 'UOM Conversion Detail'  // TODO: Uncaught TypeError: this.docfields is undefined
-            // },
-            // {
-            //     label: 'Item Defaults',
-            //     fieldname: 'item_defaults',
-            //     fieldtype: 'Table',
-            //     options: 'Item Default'
-            // },
-            // {
-            //     label: 'Supplier Items',
-            //     fieldname: 'supplier_items',
-            //     fieldtype: 'Table',
-            //     options: 'Item Supplier'
-            // }
             // --- One Item Default ---
             { fieldtype: 'Section Break', label: 'Item Default' },
             {
@@ -122,7 +104,8 @@ function create_new_supplier_item() {
                 fieldname: 'expense_account',
                 fieldtype: 'Link',
                 reqd: 1,
-                options: 'Account'
+                options: 'Account',
+                description: '"Kostenstelle"'
             },
             { fieldtype: 'Column Break' },
             {
@@ -169,18 +152,18 @@ function create_new_supplier_item() {
             // --- One UOM Conversion ---
             { fieldtype: 'Section Break', label: 'Additional UOM' },
             {
-                label: 'UOM',
+                label: 'Purchasing UOM',
                 fieldname: 'uom',
                 fieldtype: 'Link',
                 options: 'UOM',
-                description: 'Unit of Measure'
+                description: 'Purchasing Unit of Measure'
             },
             { fieldtype: 'Column Break' },
             {
                 label: 'Conversion Factor',
                 fieldname: 'conversion_factor',
                 fieldtype: 'Float',
-                description: 'Factor to convert to default UOM'
+                description: 'Factor to convert to stock UOM'
             }
         ],
         primary_action_label: 'Create',
