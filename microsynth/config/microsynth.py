@@ -329,6 +329,13 @@ def get_data():
                        "description": _("Bank Wizard")
                    },
                    {
+                       "type": "report",
+                       "name": "Unallocated Payments",
+                       "label": _("Unallocated Payments"),
+                       "doctype": _("Payment Entry"),
+                       "is_query_report": True
+                   },
+                   {
                        "type": "doctype",
                        "name": "Payment Proposal",
                        "label": _("Payment Proposal"),
