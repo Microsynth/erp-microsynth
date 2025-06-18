@@ -3030,15 +3030,18 @@ def get_account_details(webshop_account):
 @frappe.whitelist()
 def update_account_settings(webshop_account, account_settings):
     """
+    Webshop endpoint to update webshop account settings. Some fields are not allowed to be changed from the webshop. See code...
+
     bench execute microsynth.microsynth.webshop.update_account_settings --kwargs "{'webshop_account': '243755', 'account_settings': {'group_leader': 'me', 'institute_key': 'de_göt_06_05', 'invoicing_method': 'Post'}}"
     """
     try:
         if type(account_settings) == str:
             account_settings = json.loads(account_settings)
 
+        update_required = False
         contact_doc = frappe.get_doc("Contact", webshop_account)
 
-        if account_settings.get('institute_key') != contact_doc.institute_key:
+        if account_settings.get('institute_key') is not None and account_settings.get('institute_key') != contact_doc.institute_key:
             frappe.throw(f"Not allowed to change Institute Key of Contact {contact_doc.name} from '{contact_doc.institute_key}' to '{account_settings.get('institute_key')}'.")
 
         customer_id = get_customer(webshop_account)
@@ -3050,10 +3053,13 @@ def update_account_settings(webshop_account, account_settings):
             if account_settings.get('invoicing_method') not in ['Email', 'Post']:
                 frappe.throw(f"Not allowed to change to Invoicing Method '{customer_doc.invoicing_method}'.")
             customer_doc.invoicing_method = account_settings.get('invoicing_method')
-            customer_doc.save()
+            update_required = True
 
         if contact_doc.group_leader != account_settings.get('group_leader'):
             contact_doc.group_leader = account_settings.get('group_leader')
+            update_required = True
+
+        if update_required:
             contact_doc.save()
 
         return {
