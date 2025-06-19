@@ -19,6 +19,8 @@ def get_approvals(user):
             `tabPurchase Invoice`.`supplier_name`,
             `tabPurchase Invoice`.`posting_date`,
             `tabPurchase Invoice`.`due_date`,
+            `tabPurchase Invoice`.`is_return`,
+            `tabPurchase Invoice`.`return_type`,
             `tabPurchase Invoice`.`net_total`,
             `tabPurchase Invoice`.`total`,
             `tabPurchase Invoice`.`grand_total`,
