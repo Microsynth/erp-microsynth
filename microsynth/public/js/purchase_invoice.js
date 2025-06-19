@@ -72,6 +72,12 @@ frappe.ui.form.on('Purchase Invoice', {
             set_naming_series(frm);                 // common function
         }
     },
+    is_return(frm) {
+        // remove return_type if is_return was removed
+        if (!frm.doc.is_return && frm.doc.return_type) {
+            cur_frm.set_value('return_type', null);
+        }
+    },
     supplier(frm) {
         // fetch Default Item, Default Taxes, Payment Terms
         frappe.call({
