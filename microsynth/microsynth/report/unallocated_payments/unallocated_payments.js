@@ -46,5 +46,12 @@ frappe.query_reports["Unallocated Payments"] = {
             "options": "Company",
             "reqd": 0
         }
-    ]
+    ],
+    "onload": (report) => {
+        hide_chart_buttons();
+
+        report.page.add_inner_button(__('Create new'), function() {
+            create_new_supplier_item();
+        }).addClass("btn-primary");
+    }
 };
