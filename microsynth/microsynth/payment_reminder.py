@@ -71,19 +71,30 @@ def get_html_message(prm):
     frappe.local.lang = frappe.db.get_value("Payment Reminder", prm.name, "language")
     html = "<p>" + _("Dear Sir or Madam") + "</p><p><br></p>"
     if (prm.highest_level == 1):
-        html += "<p>" + _("The following invoice(s) has(have) already been due for payment.") + " "
-        html += _("We assume that the punctual payment has escaped your notice and would be grateful for a rapid settlement of the invoice(s).") + "</p>"
-        html += "<p>" + _("Should you have questions about the invoice(s), please feel free to contact us.") + "</p>"
-        html += "<p>" + _("If the payment has already been authorized, please ignore this message.") + "</p>"
+        html += "<p>" + _("While reconciling our accounts, we noticed that the following invoice(s) is/are overdue.") + " "
+        html += _("This may have simply escaped your attention during your daily business.") + " "
+        html += _("We kindly ask you to settle the outstanding amount within 5 days.").replace("within 5 days", "<b>within 5 days</b>") + "</p>"
+        html += "<p>" + _("If you have any questions or uncertainties, please do not hesitate to contact us:") + "<br>"
+        html += "&#128231; info@microsynth.ch &#8195; &#128222; +41 71 722 83 33" + "</p>"  # language independent
+        html += "<p>" + _("If payment has already been made in the meantime, please disregard this message.") + "</p>"
     elif (prm.highest_level == 2 or prm.highest_level == 3):
-        html += "<p>" + _("Everyday business life can be hectic and invoices can be forgotten.") + " "
-        html += _("We would therefore like to remind you a second time that the following invoice(s) is(are) due for payment.") + " "
-        html += _("Should you have questions about the invoice(s), please feel free to contact us.") + " "
-        html += _("Otherwise, we would be grateful for an immediate payment within 10 days.") + "</p>"
-        html += "<p>" + _("If the payment has already been authorized, please ignore this message.") + "</p>"
+        html += "<p>" + _("Despite our previous payment reminder, we have not yet received full payment for the invoice(s) listed below.") + " "
+        html += _("We would like to kindly remind you once again to settle the outstanding amounts within 5 days of receiving this notice.").replace("within 5 days", "<b>within 5 days</b>") + "</p>"
+        html += "<p>" + _("Please note that the invoices may be at different reminder levels.") + " "
+        html += _("You can find the current status in the overview below.") + "</p>"
+        html += "<p>" + _("If you have any questions or concerns, we will be happy to assist you:") + "<br>"
+        html += "&#128231; info@microsynth.ch &#8195; &#128222; +41 71 722 83 33" + "</p>"  # language independent
+        html += "<p>" + _("Thank you for your prompt attention and continued trust.") + "</p>"
     else:
-        html += "<p>" + _("As per our accounting department, this invoice(s) is (are) due for payment since a long time.") + " "
-        html += _("Please check the invoice(s) and report any dissension immediately to Microsynth.") + "</p>"
+        html += "<p>" + _("Despite several reminders, we have not yet received full payment for the invoice(s) listed below.") + " "
+        html += _("Some of these invoices may already be at advanced reminder levels.") + "</p>"
+        html += "<p><b>" + _("Please ensure that the outstanding amounts are paid no later than 5 days after receipt of this notice.") + "</b></p>"
+        html += "<p><b>" + _("Important Notice:") + "</b><br>"
+        html += "<p>" + _("This is the final reminder.") + " "
+        html += _("If payment is not received by the deadline, we reserve the right to initiate legal action and/or transfer the case to a collection agency or legal representative.") + "</p>"
+        html += "<p>" + _("If you have any questions or concerns, we are happy to assist you:") + "<br>"
+        html += "&#128231; info@microsynth.ch &#8195; &#128222; +41 71 722 83 33" + "</p>"  # language independent
+        html += "<p>" + _("Thank you for your immediate attention to this matter.") + "</p>"
     html += "<p><br>" + _("Kind regards") + "<br>" + _("Microsynth Administration") + "<br><br></p>"
     return html
 
