@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.utils import cint
-from microsynth.microsynth.purchasing import book_as_deposit
+from microsynth.microsynth.purchasing import book_as_deposit, has_available_advances
 
 
 @frappe.whitelist()
@@ -59,7 +59,7 @@ def get_approvals(user):
         pinv['due_date'] = frappe.utils.get_datetime(pinv['due_date']).strftime("%d.%m.%Y")
         pinv['net_total'] = "{:,.2f}".format(pinv['net_total']).replace(",", "'")
         pinv['grand_total'] = "{:,.2f}".format(pinv['grand_total']).replace(",", "'")
-
+        pinv['has_available_advances'] = has_available_advances(pinv['name'])
         # render html
         pinv['html'] = frappe.render_template("microsynth/microsynth/page/approval_manager/document.html", pinv)
 

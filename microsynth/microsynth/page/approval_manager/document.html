@@ -17,6 +17,12 @@
                 <button type="submit" class="btn btn-sm btn-primary" id="btn_reassign_{{ name }}">{{ _("Reassign") }}</button>
                 <button type="submit" class="btn btn-sm btn-success" id="btn_approve_{{ name }}" data-pinv="{{ name }}">{{ _("Approve") }}</button>
         </td>
+        {% if has_available_advances %}
+            <tr>
+                <td>{{ _("Advances") }}</td>
+                <td>{{ _("There are advances available. Please consider to apply up to two of them in the form view, section Advance Payments, button Get Advances Paid.") }}</td>
+            </tr>
+        {% endif %}
         <tr>
             <td>{{ _("Supplier") }}</td>
             <td>
