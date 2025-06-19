@@ -42,7 +42,8 @@ frappe.ui.form.on('Purchase Invoice', {
 
         if (frm.doc.docstatus == 1 && frm.doc.is_return && !frm.doc.return_against) {
             frm.add_custom_button(__("Book as Deposit"), function() {
-                book_as_deposit(frm);
+                frappe.msgprint("Will be automatically done right after approval if 'Is Return (Debit Note)', Return Type is 'Deduct from Invoice' and return_against is None.");
+                //book_as_deposit(frm);
             });
         }
 

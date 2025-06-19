@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.utils import cint
+from microsynth.microsynth.purchasing import book_as_deposit
 
 
 @frappe.whitelist()
@@ -77,6 +78,8 @@ def approve(pinv, user):
     # check if supplier has LSV/direct debit enabled, if so, mark invoice to not propose it for payment
     if cint(frappe.get_value("Supplier", pinv_doc.supplier, "direct_debit_enabled")):
         frappe.db.set_value("Purchase Invoice", pinv, "is_proposed", 1)
+    if pinv_doc.is_return and pinv_doc.return_against is None and pinv_doc.return_type == 'Deduct from Invoice':
+        book_as_deposit(pinv_doc.name)
     frappe.db.commit()
 
 
@@ -108,7 +111,6 @@ def reject(pinv, user, reason):
     #pinv_doc.save()
     frappe.db.set_value("Purchase Invoice", pinv, "reject_message", reason)
     frappe.db.commit()
-    return
 
 
 def add_comment(pinv, subject, comment, user):

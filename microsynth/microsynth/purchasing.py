@@ -186,7 +186,7 @@ def book_as_deposit(purchase_invoice_id):
         ]
     })
     jv.insert(ignore_permissions=True)
-    # jv.submit()
+    jv.submit()
     # frappe.db.commit()
     return jv.name
 
