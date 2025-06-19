@@ -1132,3 +1132,22 @@ def payment_proposal_after_insert(payment_proposal, event):
 
     if update_required:
         payment_proposal.save()
+
+
+@frappe.whitelist()
+def has_available_advances(purchase_invoice_id):
+    """
+    Returns true if there are advances available for the given Purchase Invoice ID or the given Purchase Invoice ID is an advance itself.
+
+    bench execute microsynth.microsynth.purchasing.has_available_advances --kwargs "{'purchase_invoice_id': 'PI-2500770'}"
+    """
+    try:
+        pi = frappe.get_doc("Purchase Invoice", purchase_invoice_id)
+
+        advances = pi.get_advance_entries()
+
+        return len(advances) > 0
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "purchasing.has_available_advances")
+        return False
