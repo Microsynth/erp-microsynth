@@ -3048,13 +3048,16 @@ def update_account_settings(webshop_account, account_settings):
         customer_doc = frappe.get_doc("Customer", customer_id)
 
         # Allow to change Customer.invoicing method only from Email to Post and back.
-        if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
-            if customer_doc.invoicing_method not in ['Email', 'Post']:
-                frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
-            if account_settings.get('invoicing_method') not in ['Email', 'Post']:
-                frappe.throw(f"Not allowed to change to Invoicing Method '{customer_doc.invoicing_method}'.")
-            customer_doc.invoicing_method = account_settings.get('invoicing_method')
-            customer_doc.save()
+        # TODO Fix webshop to not try to save the invoicing method if it is not Email or Post (Task #20829)
+        # TODO Remove hotfix line below
+        if customer_doc.invoicing_method in ['Email', 'Post']:      # Hotfix: ignore all changes of the invoicing method if the customer has an invoicing method other than Email or Post.
+            if customer_doc.invoicing_method != account_settings.get('invoicing_method'):
+                if customer_doc.invoicing_method not in ['Email', 'Post']:
+                    frappe.throw(f"Contact {webshop_account} belongs to Customer {customer_id} that has Invoicing Method {customer_doc.invoicing_method}.")
+                if account_settings.get('invoicing_method') not in ['Email', 'Post']:
+                    frappe.throw(f"Not allowed to change to Invoicing Method '{customer_doc.invoicing_method}'.")
+                customer_doc.invoicing_method = account_settings.get('invoicing_method')
+                customer_doc.save()
 
         # Allow changing Contact.group_leader
         if contact_doc.group_leader != account_settings.get('group_leader'):
