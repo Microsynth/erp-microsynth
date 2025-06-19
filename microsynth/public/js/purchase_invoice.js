@@ -63,6 +63,11 @@ frappe.ui.form.on('Purchase Invoice', {
         
         hide_in_words();
     },
+    before_save(frm) {
+        if (frm.doc.is_return && !frm.doc.return_type) {
+            frappe.msgprint("Please set a Return Type.");
+        }
+    },
     before_submit() {
         frappe.msgprint("Please use the Approval Manager to submit.");
         frappe.validated = false;
