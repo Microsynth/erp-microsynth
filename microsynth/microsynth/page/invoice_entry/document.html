@@ -30,7 +30,7 @@
                                 <td>{{ _("Supplier Invoice No") }}</td>
                                 <td><div id="bill_no_{{ name }}"></div></td>
                             </tr>
-                            <tr>
+                            <tr {% if total < 0 %}class="highlight-row"{% endif %} >
                                 <td>{{ _("Net Total") }}</td>
                                 <td>
                                     {% if allow_edit_net_amount %}
@@ -84,6 +84,10 @@
                                 <td>{{ _("Approver") }}</td>
                                 <td><div id="approver_{{ name }}"></div></td>
                             </tr>
+                            {% if is_return %}
+                                <td>{{ _("Return Type") }}</td>
+                                <td><div id="return_type_{{ name }}">{{ return_type }}</div></td>
+                            {% endif %}
                             <tr>
                                 <td>{{ _("Remarks") }}</td>
                                 <td><div id="remarks_{{ name }}"></div></td>

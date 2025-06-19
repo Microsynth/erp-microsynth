@@ -30,6 +30,8 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
             `tabPurchase Invoice`.`bill_date`,
             `tabPurchase Invoice`.`posting_date`,
             `tabPurchase Invoice`.`due_date`,
+            `tabPurchase Invoice`.`is_return`,
+            `tabPurchase Invoice`.`return_type`,
             `tabPurchase Invoice`.`net_total`,
             `tabPurchase Invoice`.`total`,
             `tabPurchase Invoice`.`grand_total`,
