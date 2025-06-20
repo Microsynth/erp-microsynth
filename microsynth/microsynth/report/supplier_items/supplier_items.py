@@ -15,7 +15,8 @@ def get_columns():
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 80},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
         {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 200, "align": "left"},
-        {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120}
+        {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120},
+        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 100}
     ]
 
 
@@ -46,12 +47,18 @@ def get_data(filters):
             `tabItem Supplier`.`supplier_part_no`,
             `tabItem Supplier`.`substitute_status`,
             `tabItem`.`item_group`,
-            `tabItem`.`stock_uom`
+            `tabItem`.`stock_uom`,
+            `tabItem Price`.`price_list_rate`,
+            `tabItem Price`.`currency`
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier`
             ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabSupplier`
             ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        LEFT JOIN `tabItem Price`
+            ON `tabItem Price`.`item_code` = `tabItem`.`name`
+            AND `tabItem Price`.`price_list` = `tabSupplier`.`default_price_list`
+            AND `tabItem Price`.`min_qty` = 1
         WHERE `tabItem`.`item_group` = 'Purchasing'
         {conditions}
     """.format(conditions=conditions)
