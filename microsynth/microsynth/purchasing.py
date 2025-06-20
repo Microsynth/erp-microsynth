@@ -1151,3 +1151,58 @@ def has_available_advances(purchase_invoice_id):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "purchasing.has_available_advances")
         return False
+
+
+@frappe.whitelist()
+def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=None, supplier_part_no=None):
+    # List to build WHERE clause conditions
+    filters = []
+    values = {}
+
+    # Filter: partial match on item_name
+    if item_name_part:
+        filters.append('`tabItem`.`item_name` LIKE %(item_name_part)s')
+        values['item_name_part'] = f'%{item_name_part}%'
+
+    # Filter: partial match on material_code
+    if material_code:
+        filters.append('`tabItem`.`material_code` LIKE %(material_code)s')
+        values['material_code'] = f'%{material_code}%'
+
+    # Filter: partial match on supplier_name
+    if supplier_name:
+        filters.append('`tabSupplier`.`supplier_name` LIKE %(supplier_name)s')
+        values['supplier_name'] = f'%{supplier_name}%'
+
+    # Filter: partial match on supplier_part_no
+    if supplier_part_no:
+        filters.append('`tabItem Supplier`.`supplier_part_no` LIKE %(supplier_part_no)s')
+        values['supplier_part_no'] = f'%{supplier_part_no}%'
+
+    # Only include active items from 'Purchasing' item group
+    filters.append('`tabItem`.`item_group` = "Purchasing"')
+    filters.append('`tabItem`.`disabled` = 0')
+
+    # Combine all WHERE conditions
+    where_clause = ' AND '.join(filters)
+
+    # SQL query joins Item with Supplier and Item Supplier tables
+    # Aggregates supplier data per item (MIN used to get the first entry per group)
+    query = f"""
+        SELECT
+            `tabItem`.`name`,
+            `tabItem`.`item_name`,
+            `tabItem`.`material_code`,
+            MIN(`tabItem Supplier`.`supplier`) AS supplier,
+            MIN(`tabSupplier`.`supplier_name`) AS supplier_name,
+            MIN(`tabItem Supplier`.`supplier_part_no`) AS supplier_part_no
+        FROM `tabItem`
+        LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
+        LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        WHERE {where_clause}
+        GROUP BY `tabItem`.`name`
+        LIMIT 10
+    """
+    items = frappe.db.sql(query, values, as_dict=True)
+
+    return items
