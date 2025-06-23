@@ -2502,6 +2502,9 @@ def create_contact(webshop_address):
     """
     Use a webshop address to create a contact with the create_update_contact_doc function.
     """
+
+    validate_webshop_address(webshop_address)
+
     contact = webshop_address['contact']
     contact['customer_id'] = webshop_address.get('customer').get('name')
     contact['address'] = webshop_address.get('address').get('name') if webshop_address.get('address') else None
@@ -2560,7 +2563,8 @@ def create_webshop_address(webshop_account, webshop_address):
         if address_exists_response.get('success'):
             address_id = address_exists_response.get('addresses')[0].get('address_id')
             webshop_address['contact']['address'] = address_id
-            frappe.log_error("1")
+            webshop_address['address']['name'] = address_id
+            frappe.log_error(f"Webshop account {webshop_account}: Link existing Address: {address_id}\n{webshop_address['contact']['address']=}\n{webshop_address['address']['name']=}", "webshop.create_webshop_address")
         else:
             address_id = create_address(webshop_address)
 
