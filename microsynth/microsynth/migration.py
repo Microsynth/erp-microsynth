@@ -5328,3 +5328,34 @@ def check_webshop_address_billing():
 
         if default_billing_contact != invoice_to_contact:
             print(f"WARNING: Webshop Address {webshop_address_doc.name} has the Default Billing Contact {default_billing_contact} but the Customer {customer_id} of Contact {webshop_address_doc.webshop_account} has the Invoice to Contact {invoice_to_contact}.")
+
+
+def add_shipping_item_to_customers(customers, shipping_item_code, rate, threshold, preferred_express):
+    """
+    Add the given Shipping Item with Qty 1 to each of the given Customers.
+
+    bench execute microsynth.microsynth.migration.add_shipping_item_to_customers --kwargs "{'customers': ['37640699', '832460'], 'shipping_item_code': '1126', 'rate': 75, 'threshold': 1500, 'preferred_express': 1}"
+    """
+    item_name = frappe.get_value('Item', shipping_item_code, 'item_name')
+    print(f"{item_name=}")
+    for customer_id in customers:
+        customer_doc = frappe.get_doc('Customer', customer_id)
+        already_has_item = False
+        for si in customer_doc.shipping_items:
+            if si.item == shipping_item_code:
+                already_has_item = True
+                break
+        if not already_has_item:
+            #print(f"Going to add Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency}, {threshold=} and {preferred_express=} to Customer {customer_id}.")
+            customer_doc.append("shipping_items", {
+                "item": shipping_item_code,
+                "item_name": item_name,
+                "qty": 1,
+                "rate": rate,
+                "threshold": threshold,
+                "preferred_express": preferred_express
+            })
+            customer_doc.save()
+            print(f"Sucessfully added Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency} to Customer {customer_id}.")
+        else:
+            print(f"Customer {customer_id} already has Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency}. Going to skip.")
