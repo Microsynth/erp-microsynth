@@ -37,6 +37,88 @@ function run() {
             }
         }
     });
+
+    // Scan data matrix code
+    $('#scanner_input').on('keypress', function (e) {
+        if (e.which === 13) {
+            let value = $(this).val().trim();
+            $(this).val(""); // Clear input
+            if (value.includes(":")) {
+                let [item_code, batch_no] = value.split(":");
+                frappe.call({
+                    'method': 'microsynth.templates.pages.material_counter.material_counter.get_item_details',
+                    'args': { 'item_code': item_code },
+                    callback: function (r) {
+                        if (r.message) {
+                            let item = r.message;
+                            let row = `
+                                <tr>
+                                    <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
+                                    <td>${item.name}</td>
+                                    <td>${item.item_name}</td>
+                                    <td>${item.material_code || ""}</td>
+                                    <td><input type="number" value="1" min="1" class="form-control qty-input"></td>
+                                    <td>${batch_no}</td>
+                                </tr>`;
+                            $('#item_table tbody').append(row);
+                        } else {
+                            frappe.msgprint(`Item ${item_code} not found.`);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // Handle remove row
+    $('#item_table').on('click', '.remove-row', function () {
+        $(this).closest('tr').remove();
+    });
+
+    // Check Out button
+    $('#checkout_button').on('click', function () {
+        let warehouse = $('#warehouse').val();
+        if (!warehouse) {
+            frappe.msgprint("Warehouse is required.");
+            return;
+        }
+
+        let items = [];
+        $('#item_table tbody tr').each(function () {
+            let cells = $(this).find('td');
+            items.push({
+                'item_code': $(cells[1]).text().trim(),
+                'qty': parseFloat($(cells[4]).find('input').val()) || 1,
+                'batch_no': $(cells[5]).text().trim()
+            });
+        });
+
+        if (!items.length) {
+            frappe.msgprint("No items to check out.");
+            return;
+        }
+
+        frappe.call({
+            'method': 'microsynth.templates.pages.material_counter.material_counter.create_stock_entry',
+            'args': {
+                'items': items,
+                'warehouse': warehouse
+            },
+            callback: function (r) {
+                if (r.message) {
+                    frappe.msgprint({
+                        'title': "Success",
+                        'message': "Stock Entry <b>" + r.message + "</b> was created.",
+                        'indicator': "green"
+                    });
+                    // Optionally clear the table
+                    $('#item_table tbody').empty();
+                } else {
+                    frappe.msgprint("Failed to create Stock Entry.");
+                }
+            }
+        });
+    });
 }
 
 function get_users_for_process(process) {

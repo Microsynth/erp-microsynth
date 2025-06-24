@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 import frappe
+import json
 
 
 @frappe.whitelist(allow_guest=True)
@@ -40,3 +41,42 @@ def get_user_names_by_process(qm_process, company=None):
         """
     full_names = frappe.db.sql(query, as_dict=True)
     return [''] + [fn['name'] for fn in full_names]
+
+
+@frappe.whitelist(allow_guest=True)
+def get_item_details(item_code):
+    if not item_code:
+        return None
+    item = frappe.get_value("Item", item_code, ["name", "item_name", "material_code"], as_dict=True)
+    return item
+
+
+@frappe.whitelist(allow_guest=True)
+def create_stock_entry(items, warehouse):
+    if isinstance(items, str):
+        items = json.loads(items)
+
+    if not warehouse or not items:
+        frappe.throw("Warehouse and items are required.")
+
+    company_code = warehouse[-3:]
+    company = frappe.get_value("Company", {"abbr": company_code}, "name") or company_code
+
+    stock_entry = frappe.new_doc("Stock Entry")
+    stock_entry.stock_entry_type = "Material Issue"
+    stock_entry.company = company
+    stock_entry.set_warehouse = warehouse
+
+    for item in items:
+        stock_entry.append("items", {
+            "item_code": item.get("item_code"),
+            "qty": item.get("qty"),
+            "batch_no": item.get("batch_no"),
+            "s_warehouse": warehouse
+        })
+
+    stock_entry.insert(ignore_permissions=True)
+    stock_entry.submit()
+    frappe.db.commit()
+
+    return stock_entry.name

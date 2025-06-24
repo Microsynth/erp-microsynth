@@ -19,7 +19,33 @@
                     <select class="form-control" placeholder="User" id="users">
                     </select>
                 </div>
+                <!-- Scanner Input -->
+                <label class="control-label" style="padding-right: 0px;">Scan Item</label>
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-barcode"></i></span>
+                    <input type="text" class="form-control" placeholder="Scan Data Matrix" id="scanner_input" autofocus>
+                </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Item Table -->
+<table class="table table-bordered" id="item_table" style="margin: 10px; width: 98%;">
+    <thead>
+        <tr>
+            <th>Action</th>
+            <th>Item</th>
+            <th>Item Name</th>
+            <th>Material Code</th>
+            <th>Qty</th>
+            <th>Batch No</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Checkout Button -->
+<div style="margin: 10px;">
+    <button type="button" class="btn btn-primary" id="checkout_button">Check Out</button>
 </div>
