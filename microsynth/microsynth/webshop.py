@@ -853,7 +853,9 @@ def request_quote(content, client="webshop"):
         return {'success': True, 'message': 'Quotation created', 
             'reference': qtn_doc.name}
     except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+        msg = f"Failed to create quotation for account {content['contact']}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.request_quote")
+        return {'success': False, 'message': msg, 'reference': None}
 
 
 @frappe.whitelist()
@@ -963,7 +965,9 @@ def get_item_prices(content, client="webshop"):
             so.set_missing_values()
             so.validate()
         except Exception as err:
-            return {'success': False, 'message': err, 'quotation': None}
+            msg = f"Error getting item prices for customer {content['customer']}: {err}. Check ERP Error Log for details."
+            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_item_prices")
+            return {'success': False, 'message': msg, 'quotation': None}
         # pick prices
         item_prices = []
         for i in so.items:
@@ -1208,7 +1212,9 @@ def place_order(content, client="webshop"):
         so_doc.insert(ignore_permissions=True)
 
     except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+        msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
+        return {'success': False, 'message': msg, 'reference': None}
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
@@ -1270,7 +1276,9 @@ def place_order(content, client="webshop"):
             'gross_amount': so_doc.grand_total
         }
     except Exception as err:
-        return {'success': False, 'message': err, 'reference': None}
+        msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
+        return {'success': False, 'message': msg, 'reference': None}
 
 
 def place_dropship_order(sales_order, intercompany_customer_name, supplier_company):
@@ -1394,8 +1402,9 @@ def order_quote(quotation_id, client="webshop"):
         sales_order.save()
         #sales_order.submit()
     except Exception as err:
-        frappe.log_error(f"Unable to create a Sales Order for Quotation {quotation_id}:\n{err}", "webshop.order_quote")
-        return {'success': False, 'message': err, 'reference': None}
+        msg = f"Error creating Sales Order for Quotation {quotation_id}: {err}. Check ERP Error Log for details."        
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.order_quote")
+        return {'success': False, 'message': msg, 'reference': None}
     else:
         return {'success': True, 'message': None, 'reference': sales_order.name}
 
@@ -1545,7 +1554,9 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
             contact.save(ignore_permissions=True)
             return {'success': True, 'message': None}
         except Exception as err:
-            return {'success': False, 'message': err}
+            msg = f"Error updating newsletter state for {person_id}: {err}. Check ERP Error Log for details."
+            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_newsletter_state")
+            return {'success': False, 'message': msg}
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
@@ -1573,7 +1584,9 @@ def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_i
             contact.save(ignore_permissions=True)
             return {'success': True, 'message': None}
         except Exception as err:
-            return {'success': False, 'message': err}
+            msg = f"Error updating punchout details for {person_id}: {err}. Check ERP Error Log for details."
+            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_punchout_details")
+            return {'success': False, 'message': msg}
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
@@ -1591,7 +1604,9 @@ def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
             address.save(ignore_permissions=True)
             return {'success': True, 'message': None}
         except Exception as err:
-            return {'success': False, 'message': err}
+            msg = f"Error updating GPS data for {person_id}: {err}. Check ERP Error Log for details."
+            frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_address_gps")
+            return {'success': False, 'message': msg}
     else: 
         return {'success': False, 'message': "Person ID not found"}
 
@@ -1651,7 +1666,9 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
         sinv = frappe.get_doc("Sales Invoice", sinv.name)   
         sinv.submit()
     except Exception as err:
-        return {'success': False, 'message': "Failed to create invoice: {0}".format(err)}
+        msg = f"Error creating Sales Invoice for Sales Order {sales_order}: {err}. Check ERP Error Log." 
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")       
+        return {'success': False, 'message': msg}
     frappe.db.commit()
 
     # create the payment record
@@ -1671,7 +1688,9 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
         pe.save()
         pe.submit()
     except Exception as err:
-        return {'success': False, 'message': "Failed to create payment: {0}".format(err)}
+        msg = f"Error creating Payment Entry for Sales Invoice {sinv.name} of Sales Order {sales_order}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
+        return {'success': False, 'message': msg}
     frappe.db.commit()
 
     # remove hold flag
@@ -1680,7 +1699,9 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     try:
         so_doc.save()
     except Exception as err:
-        return {'success': False, 'message': "Failed to update sales order {0}: {1}".format(sales_order, err)}
+        msg = f"Error updating Sales Order {sales_order} after payment: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
+        return {'success': False, 'message': msg}
     frappe.db.commit()
 
     return {'success': True, 'message': "OK", 'reference': sinv.name}
@@ -1730,7 +1751,9 @@ def get_unused_labels(contacts, items):
         labels = frappe.db.sql(sql_query, as_dict=True)
         return {'success': True, 'message': 'OK', 'labels': labels}
     except Exception as err:
-        return {'success': False, 'message': err, 'labels': None}
+        msg = f"Error fetching unused labels for contacts {contacts} and items {items}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_unused_labels")
+        return {'success': False, 'message': msg, 'labels': None}
 
 
 @frappe.whitelist()
@@ -1826,7 +1849,9 @@ def get_label_ranges():
                     "barcode_end_range": end
                 })
     except Exception as err:
-        return {'success': False, 'message': err, 'ranges': None}
+        msg = f"Error fetching label ranges: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_label_ranges")
+        return {'success': False, 'message': msg, 'ranges': None}
     return {'success': True, 'message': 'OK', 'ranges': ranges_to_return}
 
 
@@ -1918,7 +1943,9 @@ def get_registered_label_ranges(contacts):
         ranges = partition_into_ranges(sequencing_labels)
         return {'success': True, 'message': 'OK', 'ranges': ranges}
     except Exception as err:
-        return {'success': False, 'message': err, 'ranges': None}
+        msg = f"Error fetching registered label ranges for contacts {contacts}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_registered_label_ranges")
+        return {'success': False, 'message': msg, 'ranges': None}
 
 
 def check_label_range(item, prefix, first_int, second_int):
@@ -2049,7 +2076,9 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
         else:
             return {'success': False, 'message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
     except Exception as err:
-        return {'success': False, 'message': err, 'ranges': None}
+        msg = f"Error registering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.register_labels")                
+        return {'success': False, 'message': msg, 'ranges': None}
 
 
 @frappe.whitelist()
@@ -2073,7 +2102,9 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
             seq_label.save()
         return {'success': True, 'message': 'OK'}
     except Exception as err:
-        return {'success': False, 'message': err}
+        msg = f"Error unregistering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.unregister_labels")        
+        return {'success': False, 'message': msg}
 
 
 def check_and_get_label(label):
@@ -2147,7 +2178,9 @@ def set_label_submitted(labels):
         else:
             return {'success': success, 'message': 'There was at least one label that could not be set to status submitted. Please check the label messages.', 'labels': labels_to_return}
     except Exception as err:
-        return {'success': False, 'message': err, 'labels': None}
+        msg = f"Error setting labels to submitted: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_label_submitted")
+        return {'success': False, 'message': msg, 'labels': None}
 
 
 @frappe.whitelist()
@@ -2208,7 +2241,9 @@ def set_label_unused(labels):
             })
         return {'success': True, 'message': 'OK', 'labels': labels_set_unused}
     except Exception as err:
-        return {'success': False, 'message': err, 'labels': None}
+        msg = f"Error setting labels to unused: {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_label_unused")
+        return {'success': False, 'message': msg, 'labels': None}
 
 
 @frappe.whitelist()
@@ -2298,9 +2333,11 @@ def cancel_order(sales_order, web_order_id):
             'labels': labels
         }
     except Exception as err:
+        msg = f"Error cancelling Sales Order '{sales_order}' with Web Order ID '{web_order_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.cancel_order")
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             "sales_order": None,
             "web_order_id": None,
             'labels': None
@@ -2322,7 +2359,9 @@ def get_quotation_pdf(quotation_id):
         encoded_string = base64.b64encode(pdf)
         return {'success': True, 'message': 'OK', 'base64string': encoded_string}
     except Exception as err:
-        return {'success': False, 'message': err, 'base64string': None}
+        msg = f"Error creating PDF for Quotation '{quotation_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_quotation_pdf")
+        return {'success': False, 'message': msg, 'base64string': None}
 
 
 def get_customer_dto(customer):
@@ -2440,10 +2479,11 @@ def get_webshop_addresses(webshop_account):
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
     except Exception as err:
-        frappe.log_error(f"Unable to get webshop addresses for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.get_webshop_addresses")
+        msg = f"Error getting webshop addresses for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_webshop_addresses")
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -2589,10 +2629,11 @@ def create_webshop_address(webshop_account, webshop_address):
             'webshop_addresses': webshop_address_dtos,
         }
     except Exception as err:
-        frappe.log_error(f"Unable to create webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.create_webshop_address")
+        msg = f"Error creating webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_webshop_address")
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -2856,10 +2897,11 @@ def update_webshop_address(webshop_account, webshop_address):
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
     except Exception as err:
-        frappe.log_error(f"Unable to update webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_webshop_address")
+        msg = f"Error updating webshop address with contact_id '{webshop_address['contact']['name']}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_webshop_address")        
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': []
         }
@@ -2920,10 +2962,11 @@ def delete_webshop_address(webshop_account, contact_id):
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
     except Exception as err:
-        frappe.log_error(f"Unable to delete webshop address with contact_id '{contact_id}' for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.delete_webshop_address")
+        msg = f"Error deleting webshop address with contact_id '{contact_id}' for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.delete_webshop_address")        
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -2962,10 +3005,11 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
     except Exception as err:
-        frappe.log_error(f"Unable to set default webshop address for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.set_default_webshop_address")
+        msg = f"Error setting default webshop address for webshop_account '{webshop_account}' with contact_id '{contact_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_default_webshop_address")
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -3019,10 +3063,11 @@ def get_account_details(webshop_account):
             'webshop_services': services
         }
     except Exception as err:
-        frappe.log_error(f"Unable to get account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.get_account_details")
+        msg = f"Error getting account details for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_account_details")         
         return {
             'success': False,
-            'message': err,
+            'message': msg,
             'webshop_account': webshop_account,
             'currency': None,
             'shipping_items': [],
@@ -3079,10 +3124,11 @@ def update_account_settings(webshop_account, account_settings):
             }
         }   
     except Exception as err:
+        msg = f"Error updating account details for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
         frappe.log_error(f"Unable to update account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_account_settings")
         return {
             'success': False,
-            'message': str(err),
+            'message': msg,
             'webshop_account': webshop_account,
             'account_settings': account_settings
         }
