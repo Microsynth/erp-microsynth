@@ -7,6 +7,24 @@ function make() {
 }
 
 function run() {
+    // get command line parameters
+    var arguments = window.location.toString().split("?");
+    if (!arguments[arguments.length - 1].startsWith("http")) {
+        var args_raw = arguments[arguments.length - 1].split("&");
+        var args = {};
+        args_raw.forEach(function (arg) {
+            var kv = arg.split("=");
+            if (kv.length > 1) {
+                args[kv[0]] = kv[1];
+            }
+        });
+        if (args['warehouse']) {
+            let warehouse = decodeURI(args['warehouse']);
+            console.log(warehouse);
+            document.getElementById('warehouse').value = warehouse;
+        }
+    }
+    
     frappe.call({
         'method': 'microsynth.templates.pages.material_counter.material_counter.get_processes',
         'callback': function(r) {
