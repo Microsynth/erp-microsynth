@@ -1406,7 +1406,7 @@ def get_countries(client="webshop"):
     Returns all available countries
     """
     countries = frappe.db.sql(
-        """SELECT `country_name`, `code`, `export_code`, `default_currency`, `has_night_service`
+        """SELECT `country_name`, `code`, `export_code`, `default_currency`
            FROM `tabCountry`
            WHERE `disabled` = 0;""", as_dict=True)
            
