@@ -713,7 +713,12 @@ function setup_attachment_watcher(frm) {
                     for (const mutation of mutationList) {
                         if (mutation.type === "childList") {
                             console.log("An attachment added or removed.");
-                            cur_frm.reload_doc();
+                            if (cur_frm.is_dirty()) {
+                                cur_frm.save();
+                            }
+                            else {
+                                cur_frm.reload_doc();
+                            }
                         }
                     }
                 };
