@@ -9,14 +9,14 @@ from frappe import _
 
 def get_columns():
     return [
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 470, "align": "left"},
-        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
-        {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 90},
+        {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 180, "align": "left"},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 450, "align": "left"},
+        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 100},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 80},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
-        {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 200, "align": "left"},
-        {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 120},
-        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 100}
+        {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 100},
+        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 105},
+        {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
     ]
 
 
