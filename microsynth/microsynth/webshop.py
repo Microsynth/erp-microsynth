@@ -2819,6 +2819,40 @@ def increase_version(name):
             return parts[0] + '-' + str(version + 1)
 
 
+def webshop_print_addresses_differ(webshop_address_1, webshop_address_2):
+    """
+    Check if two webshop addresses differ in their printed fields. Requires that both webshop_address_1 and webshop_address_2 belong to the same customer otherwhise throws an error.
+
+    :param webshop_address_1: First webshop address to compare.
+    :param webshop_address_2: Second webshop address to compare.
+    :return: bool
+        -------------
+    Returns True if they differ, False otherwise.
+    """
+    if get_customer(webshop_address_1.get('contact').get('name')) != get_customer(webshop_address_2.get('contact').get('name')):
+        frappe.throw(f"Contacts {webshop_address_1.get('contact').get('name')} and {webshop_address_2.get('contact').get('name')} do not belong to the same Customer.")
+    contact_fields_to_check = [
+        'first_name', 'last_name', 'salutation', 'designation', 'institute', 'department', 'room'
+    ]
+    contacts_differ = False
+    for field in contact_fields_to_check:
+        if webshop_address_1.get('contact').get(field) != webshop_address_2.get('contact').get(field):
+            contacts_differ = True
+            break
+
+    address_fields_to_check = [
+        'overwrite_company', 'address_line1', 'address_line2',
+        'pincode', 'city', 'country',
+    ]
+    addresses_differ = False
+    for field in address_fields_to_check:
+        if webshop_address_1.get('address').get(field) != webshop_address_2.get('address').get(field):
+            addresses_differ = True
+            break
+
+    return contacts_differ or addresses_differ
+
+
 @frappe.whitelist()
 def update_webshop_address(webshop_account, webshop_address):
     """
@@ -2838,12 +2872,27 @@ def update_webshop_address(webshop_account, webshop_address):
         if webshop_address.get('address') and webshop_address.get('address').get('address_type') == 'Billing':
             raise NotImplementedError("No implementation for Address Type Billing so far.")
 
-        # check if the customer, contact or address of the webshop_address are used on Quotations, Sales Orders, Delivery Notes, Sales Invoices
-        if not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id)):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
-            # update customer/contact/address if not used
-            # customer = webshop_address['contact']
-            # customer['customer_id'] = customer['name']
-            # update_customer(customer)
+        # check if the print fields of the webshop_address differ from the existing webshop_address in the webshop_address_doc
+        for a in webshop_address_doc.addresses:
+            if a.contact == contact_id:
+                existing_contact = frappe.get_doc("Contact", contact_id)
+                existing_address = frappe.get_doc("Address", existing_contact.address) if existing_contact.address else None
+
+        if existing_contact is None:
+            frappe.throw(f"Contact with ID '{contact_id}' not found in the ERP. Cannot update webshop address.")
+
+        if existing_address is None:
+            frappe.throw(f"Address with ID '{address_id}' not found in the ERP. Cannot update webshop address.")
+
+        existing_print_address = {
+            'contact': get_contact_dto(existing_contact),
+            'address': get_address_dto(existing_address)
+        }
+        if not webshop_print_addresses_differ(webshop_address, existing_print_address) or (not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id))):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
+            # The new webshop_address does not differ from the existing webshop_address when printed or
+            # the existing contact and address are not used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
+
+            # Update the contact without creating a new one.
             if address_id:
                 address = webshop_address['address']
                 address_id = create_update_address_doc(address)
@@ -2852,6 +2901,9 @@ def update_webshop_address(webshop_account, webshop_address):
             contact['customer_id'] = contact.get('customer')
             contact_id = create_update_contact_doc(contact)
         else:
+            # TODO: Update the existing Contact for the non-printable fields (email, phone, etc.) as well
+
+
             # create new customer/contact/address if used
             from copy import deepcopy
             new_contact_id = increase_version(webshop_address['contact']['name'])
