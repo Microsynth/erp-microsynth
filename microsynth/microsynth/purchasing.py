@@ -114,9 +114,12 @@ def create_po_from_open_mr(filters):
     if type(filters) == str:
         filters = json.loads(filters)
     items = get_items(filters)
+    supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
-        'supplier': filters.get('supplier')
+        'supplier': filters.get('supplier'),
+        'currency': supplier_doc.default_currency,
+        'buying_price_list': supplier_doc.default_price_list
     })
     for item in items:
         po_doc.append('items', {
@@ -128,7 +131,6 @@ def create_po_from_open_mr(filters):
             'material_request_item': item.get('material_request_item')
         })
     po_doc.insert()
-    #po_doc.save()
     return po_doc.name
 
 
