@@ -43,30 +43,35 @@ function run() {
         if (e.which === 13) {
             let value = $(this).val().trim();
             $(this).val(""); // Clear input
+
+            let item_code, batch_no = "";
+    
             if (value.includes(":")) {
-                let [item_code, batch_no] = value.split(":");
-                frappe.call({
-                    'method': 'microsynth.templates.pages.material_counter.material_counter.get_item_details',
-                    'args': { 'item_code': item_code },
-                    callback: function (r) {
-                        if (r.message) {
-                            let item = r.message;
-                            let row = `
-                                <tr>
-                                    <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
-                                    <td>${item.name}</td>
-                                    <td>${item.item_name}</td>
-                                    <td>${item.material_code || ""}</td>
-                                    <td><input type="number" value="1" min="1" class="form-control qty-input"></td>
-                                    <td>${batch_no}</td>
-                                </tr>`;
-                            $('#item_table tbody').append(row);
-                        } else {
-                            frappe.msgprint(`Item ${item_code} not found.`);
-                        }
-                    }
-                });
+                [item_code, batch_no] = value.split(":");
+            } else {
+                item_code = value;
             }
+            frappe.call({
+                'method': 'microsynth.templates.pages.material_counter.material_counter.get_item_details',
+                'args': { 'item_code': item_code },
+                callback: function (r) {
+                    if (r.message) {
+                        let item = r.message;
+                        let row = `
+                            <tr>
+                                <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
+                                <td>${item.name}</td>
+                                <td>${item.item_name}</td>
+                                <td>${item.material_code || ""}</td>
+                                <td><input type="number" value="1" min="1" class="form-control qty-input"></td>
+                                <td>${batch_no}</td>
+                            </tr>`;
+                        $('#item_table tbody').append(row);
+                    } else {
+                        frappe.msgprint(`Item ${item_code} not found.`);
+                    }
+                }
+            });
         }
     });
 
@@ -86,11 +91,15 @@ function run() {
         let items = [];
         $('#item_table tbody tr').each(function () {
             let cells = $(this).find('td');
-            items.push({
+            let batch_no = $(cells[5]).text().trim();
+            let item = {
                 'item_code': $(cells[1]).text().trim(),
-                'qty': parseFloat($(cells[4]).find('input').val()) || 1,
-                'batch_no': $(cells[5]).text().trim()
-            });
+                'qty': parseFloat($(cells[4]).find('input').val()) || 1
+            };
+            if (batch_no) {
+                item['batch_no'] = batch_no;
+            }
+            items.push(item);
         });
 
         if (!items.length) {
@@ -111,8 +120,7 @@ function run() {
                         'message': "Stock Entry <b>" + r.message + "</b> was created.",
                         'indicator': "green"
                     });
-                    // Optionally clear the table
-                    $('#item_table tbody').empty();
+                    $('#item_table tbody').empty(); // Clear the table
                 } else {
                     frappe.msgprint("Failed to create Stock Entry.");
                 }

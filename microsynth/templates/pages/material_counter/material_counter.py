@@ -68,12 +68,15 @@ def create_stock_entry(items, warehouse):
     stock_entry.set_warehouse = warehouse
 
     for item in items:
-        stock_entry.append("items", {
+        item_row = {
             "item_code": item.get("item_code"),
             "qty": item.get("qty"),
-            "batch_no": item.get("batch_no"),
             "s_warehouse": warehouse
-        })
+        }
+        batch_no = item.get("batch_no")
+        if batch_no:
+            item_row["batch_no"] = batch_no
+        stock_entry.append("items", item_row)
 
     stock_entry.insert(ignore_permissions=True)
     stock_entry.submit()
