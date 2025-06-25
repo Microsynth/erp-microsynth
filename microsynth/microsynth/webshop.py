@@ -2890,9 +2890,9 @@ def update_webshop_address(webshop_account, webshop_address):
         }
         if not webshop_print_addresses_differ(webshop_address, existing_print_address) or (not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id))):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
             # The new webshop_address does not differ from the existing webshop_address when printed or
-            # the existing contact and address are not used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
+            # the existing contact and address are not yes used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
 
-            # Update the contact without creating a new one.
+            # Update the contact/address without creating a new one.
             if address_id:
                 address = webshop_address['address']
                 address_id = create_update_address_doc(address)
@@ -2901,10 +2901,19 @@ def update_webshop_address(webshop_account, webshop_address):
             contact['customer_id'] = contact.get('customer')
             contact_id = create_update_contact_doc(contact)
         else:
-            # TODO: Update the existing Contact for the non-printable fields (email, phone, etc.) as well
+            # Contact and Address differ in their printed fields and were used previously, so we need to create a new Contact and Address.
 
+            # Update the existing Contact for the non-printable fields (email, phone, etc.) as well.
+            # This is in most cases the Contact of the webshop account but might change in the future.
+            # The group leader is not updated here, because it is not part of the webshop_address['contact'] object
+            updated_existing_contact = get_contact_dto(existing_contact)
+            updated_existing_contact['phone'] = webshop_address['contact'].get('phone')
+            updated_existing_contact['email'] = webshop_address['contact'].get('email')
+            updated_existing_contact['email_cc'] = webshop_address['contact'].get('email_cc')
 
-            # create new customer/contact/address if used
+            existing_contact_id = create_update_contact_doc(updated_existing_contact)
+
+            # create new contact/address if used to maintain data integrity on existing Sales Orders, Delivery Notes, Sales Invoices, etc.
             from copy import deepcopy
             new_contact_id = increase_version(webshop_address['contact']['name'])
             if address_id:
@@ -2917,7 +2926,8 @@ def update_webshop_address(webshop_account, webshop_address):
                 new_webshop_address['address']['name'] = new_address_id
             new_webshop_address['contact']['name'] = new_contact_id
             new_webshop_address['contact']['address'] = new_address_id
-
+            new_webshop_address['contact'].pop('group_leader', None)  # remove group leader, because it is not part of the webshop_address['contact'] object according to the specification
+            # Do not remove phone, email, email_cc because they might be used on the new Contact (e.g. for the mail address of an invoice contact)
             validate_webshop_address(new_webshop_address)
 
             if new_webshop_address['address'] is not None:
