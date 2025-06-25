@@ -6,6 +6,7 @@ import datetime
 import frappe
 from frappe.utils import rounded
 
+
 def find_op_deviation_date(start_date, account, company):
     """
     bench execute microsynth.microsynth.troubleshooting.find_op_deviation_date --kwargs "{'company': '', 'account': '', 'start_date': '2025-01-01'}"
@@ -39,6 +40,7 @@ def find_op_deviation_date(start_date, account, company):
         start_date += datetime.timedelta(days=1)
 
     return
+
 
 def get_foreign_currency_balance(account, date):
     sql_query = """

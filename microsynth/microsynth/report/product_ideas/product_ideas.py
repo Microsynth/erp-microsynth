@@ -53,7 +53,7 @@ def get_data(filters):
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
             WHERE TRUE
                 {filter_conditions}
-        	""".format(filter_conditions=filter_conditions)
+            """.format(filter_conditions=filter_conditions)
 
     return frappe.db.sql(query, as_dict=True)
 

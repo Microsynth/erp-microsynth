@@ -7,7 +7,6 @@ from frappe import _
 import json
 
 
-
 def get_item_prices(price_list):
     simple_sql_query = """
         SELECT
@@ -24,6 +23,7 @@ def get_item_prices(price_list):
     """.format(price_list=price_list)
     data = frappe.db.sql(simple_sql_query, as_dict=True)
     return data
+
 
 def get_data():
     i = 0
@@ -44,7 +44,6 @@ def get_data():
         # i +=1
         # if i > 10: break
 
-
     print("-------------------")
 
     data = []
@@ -62,8 +61,6 @@ def get_data():
         # print(key, cust_rate)
         # print(key, mapped_prices[key].rate, (if key in mapped_ref_prices: mapped_ref_prices[key].rate))
 
-
-
         entry = {
             "item_code": mapped_ref_prices[key].item_code,
             "item_name": mapped_ref_prices[key].item_name,
@@ -79,8 +76,6 @@ def get_data():
 
     def sort_key(d):
         return d["item_code"]
-
-
 
     sorted_data =  sorted(data, key=sort_key, reverse=False)
 

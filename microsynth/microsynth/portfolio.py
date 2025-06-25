@@ -172,17 +172,17 @@ def get_product_type(contact):
 # ~ from frappe.utils import getdate
 
 # ~ def get_sales_volume(contact, from_date, to_date):
-	# ~ from_date = datetime.strptime(from_date, '%Y-%m-%d')
-	# ~ to_date = datetime.strptime(from_date, '%Y-%m-%d')
-	# ~ filters = {
-		# ~ "customer_name": customer_name,
-		# ~ "docstatus": 1,
-		# ~ "transaction_date": [">=", from_date],
-		# ~ "transaction_date": ["<=", to_date]
-	# ~ }
-	# ~ sales_orders = frappe.get_all("Sales Order", filters=filters, fields=["total"])
-	# ~ customer_name, from_date, to_date = get_date_year()
-	# ~ sql_query = """
+    # ~ from_date = datetime.strptime(from_date, '%Y-%m-%d')
+    # ~ to_date = datetime.strptime(from_date, '%Y-%m-%d')
+    # ~ filters = {
+        # ~ "customer_name": customer_name,
+        # ~ "docstatus": 1,
+        # ~ "transaction_date": [">=", from_date],
+        # ~ "transaction_date": ["<=", to_date]
+    # ~ }
+    # ~ sales_orders = frappe.get_all("Sales Order", filters=filters, fields=["total"])
+    # ~ customer_name, from_date, to_date = get_date_year()
+    # ~ sql_query = """
                     # ~ SELECT SUM(`total`) AS `total`
                     # ~ FROM `tabSales Order`
                     # ~ WHERE `customer_name` = '{customer_name}'
@@ -190,18 +190,18 @@ def get_product_type(contact):
                     # ~ AND `transaction_date` BETWEEN '{from_date}' AND '{to_date}'
                 # ~ """.format(customer_name=customer_name, from_date=from_date, to_date=to_date)
 
-	# ~ amount = frappe.db.sql(sql_query, as_dict=True)[0].total or 0
+    # ~ amount = frappe.db.sql(sql_query, as_dict=True)[0].total or 0
 
-	# ~ return amount
+    # ~ return amount
 
 # ~ def get_date_year():
-	# ~ customer = "CHUV"
-	# ~ to_date = getdate()
-	# ~ from_date = frappe.utils.add_years(to_date, -1)
+    # ~ customer = "CHUV"
+    # ~ to_date = getdate()
+    # ~ from_date = frappe.utils.add_years(to_date, -1)
 
-	# ~ return customer, from_date, to_date
+    # ~ return customer, from_date, to_date
 
 # ~ def get_report():
-	# ~ result = get_sales_volume(get_date_year)
+    # ~ result = get_sales_volume(get_date_year)
 
-	# ~ print(result)
+    # ~ print(result)

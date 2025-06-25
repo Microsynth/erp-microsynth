@@ -5,6 +5,7 @@
 import frappe
 from frappe import _
 
+
 def cleanup_languages():
     # this function will remove languages after migrate
     print("Removing unnecessary languages...")

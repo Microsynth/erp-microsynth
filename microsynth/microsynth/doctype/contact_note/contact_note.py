@@ -20,11 +20,11 @@ def create_new_follow_up(quotation):
                          quotation,
                          {
                             "Quotation": {
-			                    "doctype": "Contact Note",
-				                "field_map": {
+                                "doctype": "Contact Note",
+                                "field_map": {
                                     "contact_person": "contact_person"
                                 }
-		                    }
+                            }
                          },
                          None)
     doc.date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
