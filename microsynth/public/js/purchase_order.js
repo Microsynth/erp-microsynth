@@ -17,7 +17,7 @@ frappe.ui.form.on('Purchase Order', {
                         }
                     };
                 };
-	    }, 1000);
+        }, 1000);
         
         hide_in_words();
     },

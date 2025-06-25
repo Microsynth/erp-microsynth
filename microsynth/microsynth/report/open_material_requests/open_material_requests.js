@@ -3,8 +3,8 @@
 /* eslint-disable */
 
 frappe.query_reports["Open Material Requests"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             fieldname: "supplier",
             label: __("Supplier"),
             fieldtype: "Link",
@@ -17,7 +17,7 @@ frappe.query_reports["Open Material Requests"] = {
             options: "Company",
             default: "Microsynth AG"
         }
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
 

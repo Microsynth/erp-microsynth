@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 frappe.query_reports["Orders on Hold"] = {
-	"filters": [
+    "filters": [
 
-	]
+    ]
 };

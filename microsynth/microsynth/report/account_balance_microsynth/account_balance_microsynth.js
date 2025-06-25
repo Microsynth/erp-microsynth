@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 frappe.query_reports["Account Balance Microsynth"] = {
-	"filters": [
+    "filters": [
 
-	]
+    ]
 };

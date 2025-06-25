@@ -3,21 +3,21 @@
 /* eslint-disable */
 
 frappe.query_reports["Oligo envelope sizes"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "date",
             "label": __("Date"),
             "fieldtype": "Date",
-			"reqd": 1,
-			"default": frappe.datetime.get_today()
+            "reqd": 1,
+            "default": frappe.datetime.get_today()
         },
-		{
+        {
             "fieldname": "tracking",
             "label": __("Tracking"),
             "fieldtype": "Select",
-			"options": "no Tracking\nTracking",
-			"reqd": 1,
-			"default": 'no Tracking'
+            "options": "no Tracking\nTracking",
+            "reqd": 1,
+            "default": 'no Tracking'
         }
-	]
+    ]
 };

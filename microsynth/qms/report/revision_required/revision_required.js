@@ -3,14 +3,14 @@
 /* eslint-disable */
 
 frappe.query_reports["Revision Required"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "document_type",
             "label": __("Document Type"),
             "fieldtype": "Select",
             "options": "\nSOP\nLIST\nFORM\nFLOW\nCL\nQMH\nAPPX"
         }
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }

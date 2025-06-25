@@ -3,8 +3,8 @@
 /* eslint-disable */
 
 frappe.query_reports["Training Confirmations"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "user",
             "label": __("User"),
             "fieldtype": "Link",
@@ -16,7 +16,7 @@ frappe.query_reports["Training Confirmations"] = {
             "fieldtype": "Link",
             "options": "QM Process"
         },
-		{
+        {
             "fieldname": "qm_document",
             "label": __("QM Document"),
             "fieldtype": "Link",
@@ -27,7 +27,7 @@ frappe.query_reports["Training Confirmations"] = {
             "label": __("Limit to valid Documents"),
             "fieldtype": "Check"
         }
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }

@@ -3,8 +3,8 @@
 /* eslint-disable */
 
 frappe.query_reports["Quotation Tracker"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "sales_manager",
             "label": __("Sales Manager"),
             "fieldtype": "Link",
@@ -28,7 +28,7 @@ frappe.query_reports["Quotation Tracker"] = {
             "fieldtype": "Int",
             "default": 30
         }
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }

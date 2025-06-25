@@ -3,21 +3,21 @@
 /* eslint-disable */
 
 frappe.query_reports["Commission Calculator"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "country",
             "label": __("Country"),
             "fieldtype": "Link",
             "options": "Country",
             "reqd": 1
         },
-		{
+        {
             "fieldname": "factor",
             "label": __("Commission Factor"),
             "fieldtype": "Float",
             "reqd": 1
         },
-		{
+        {
             "fieldname": "from_date",
             "label": __("From date"),
             "fieldtype": "Date",
@@ -41,7 +41,7 @@ frappe.query_reports["Commission Calculator"] = {
             "fieldtype": "Select",
             "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
         }
-	],
+    ],
     "onload": (report) => {
         report.page.add_inner_button( __("Export Sales Invoices"), function() {
             pdf_export(report.get_values());

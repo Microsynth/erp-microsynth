@@ -223,9 +223,9 @@ frappe.query_reports["Label Manager"] = {
                                 'freeze': true,
                                 'freeze_message': __('Setting ' + frappe.query_report.data.length + ' Labels to unused ...'),
                                 'callback': function(r) {
-									if (r.message.success) {
+                                    if (r.message.success) {
                                         frappe.show_alert('Set Labels to unused');
-                                    	frappe.click_button('Refresh');
+                                        frappe.click_button('Refresh');
                                     } else {
                                         frappe.throw('Unable to set Labels to unused:<br>' + r.message.message + '<br><br>No Labels were set to unused.');
                                     }

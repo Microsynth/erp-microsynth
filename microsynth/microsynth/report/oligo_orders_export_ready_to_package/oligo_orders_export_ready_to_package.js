@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 frappe.query_reports["Oligo Orders Export Ready To Package"] = {
-	"filters": [
+    "filters": [
 
-	]
+    ]
 };

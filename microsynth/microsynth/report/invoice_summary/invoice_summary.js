@@ -3,8 +3,8 @@
 /* eslint-disable */
 
 frappe.query_reports["Invoice Summary"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "customer",
             "label": __("Customer ID"),
             "fieldtype": "Link",
@@ -15,7 +15,7 @@ frappe.query_reports["Invoice Summary"] = {
             "label": __("Customer's Purchase Order Number"),
             "fieldtype": "Data",
         },
-		{
+        {
             "fieldname": "from_date",
             "label": __("From date"),
             "fieldtype": "Date",
@@ -27,17 +27,17 @@ frappe.query_reports["Invoice Summary"] = {
             "fieldtype": "Date",
             "reqd": 1
         },
-		{
+        {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company"
         },
-		{
+        {
             "fieldname": "currency",
             "label": __("Currency"),
             "fieldtype": "Link",
             "options": "Currency"
         }
-	]
+    ]
 };

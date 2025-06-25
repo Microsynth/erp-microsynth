@@ -3,19 +3,19 @@
 /* eslint-disable */
 
 frappe.query_reports["Find Notes"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "contact",
             "label": __("Contact"),
             "fieldtype": "Link",
             "options": "Contact"
         },
-		{
+        {
             "fieldname": "first_name",
             "label": __("First Name"),
             "fieldtype": "Data"
         },
-		{
+        {
             "fieldname": "last_name",
             "label": __("Last Name"),
             "fieldtype": "Data"
@@ -25,12 +25,12 @@ frappe.query_reports["Find Notes"] = {
             "label": __("Customer Name"),
             "fieldtype": "Data"
         },
-		{
+        {
             "fieldname": "sales_manager",
             "label": __("Sales Manager"),
             "fieldtype": "Data"
         },
-		{
+        {
             "fieldname": "territory",
             "label": __("Territory"),
             "fieldtype": "Link",
@@ -81,7 +81,7 @@ frappe.query_reports["Find Notes"] = {
             "label": __("Number of previous Notes"),
             "fieldtype": "Int"
         }
-	],
+    ],
     "onload": (report) => {
         report.page.add_inner_button( __("Create PDF"), function() {
             create_pdf(report.get_values());

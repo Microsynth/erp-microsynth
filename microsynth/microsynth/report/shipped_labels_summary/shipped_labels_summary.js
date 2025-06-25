@@ -3,15 +3,15 @@
 /* eslint-disable */
 
 frappe.query_reports["Shipped Labels Summary"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
             "options": "Company",
             "reqd": 1
         },
-		{
+        {
             "fieldname": "from_date",
             "label": __("From date"),
             "fieldtype": "Date",
@@ -23,5 +23,5 @@ frappe.query_reports["Shipped Labels Summary"] = {
             "fieldtype": "Date",
             "reqd": 1
         }
-	]
+    ]
 };

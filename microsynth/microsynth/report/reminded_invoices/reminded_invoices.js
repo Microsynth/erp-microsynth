@@ -3,9 +3,9 @@
 /* eslint-disable */
 
 frappe.query_reports["Reminded Invoices"] = {
-	"filters": [
-		// currently no demand for filters
-	],
+    "filters": [
+        // currently no demand for filters
+    ],
     "onload": (report) => {
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;

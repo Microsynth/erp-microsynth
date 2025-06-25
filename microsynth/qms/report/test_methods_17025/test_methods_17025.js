@@ -3,9 +3,9 @@
 /* eslint-disable */
 
 frappe.query_reports["Test Methods 17025"] = {
-	"filters": [
+    "filters": [
 
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }

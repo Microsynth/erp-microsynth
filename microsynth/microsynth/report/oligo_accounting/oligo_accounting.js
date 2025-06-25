@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 frappe.query_reports["Oligo Accounting"] = {
-	"filters": [
+    "filters": [
         {
             "fieldname": "territory",
             "label": __("Territory"),
@@ -18,5 +18,5 @@ frappe.query_reports["Oligo Accounting"] = {
             "reqd": 1,
             "default": frappe.defaults.get_user_default("fiscal_year") || frappe.defaults.get_global_default("fiscal_year")
         }
-	]
+    ]
 };

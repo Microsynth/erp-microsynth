@@ -3,19 +3,19 @@
 /* eslint-disable */
 
 frappe.query_reports["Open Sales Orders"] = {
-	"filters": [
-		{
+    "filters": [
+        {
             "fieldname": "from_date",
             "label": __("From date"),
             "fieldtype": "Date",
             "reqd": 1,
-			"default": "2023-01-01"  // ((new Date().getMonth()) == 0) ? (((new Date().getFullYear()) - 1) + "-01-01") : ((new Date().getFullYear()) + "-01-01")
+            "default": "2023-01-01"  // ((new Date().getMonth()) == 0) ? (((new Date().getFullYear()) - 1) + "-01-01") : ((new Date().getFullYear()) + "-01-01")
         },
         {
             "fieldname": "to_date",
             "label": __("To date"),
             "fieldtype": "Date",
-			"default": frappe.datetime.add_days(frappe.datetime.get_today(), -21)
+            "default": frappe.datetime.add_days(frappe.datetime.get_today(), -21)
         },
         {
             "fieldname": "company",
@@ -47,7 +47,7 @@ frappe.query_reports["Open Sales Orders"] = {
             "hidden": 1,
             "default": 1
         }
-	],
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }

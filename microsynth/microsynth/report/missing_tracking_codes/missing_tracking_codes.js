@@ -10,7 +10,7 @@ frappe.query_reports["Missing Tracking Codes"] = {
             "fieldtype": "Link",
             "options": "Item"
         },
-		{
+        {
             "fieldname":"from_date",
             "label": __("From Date"),
             "fieldtype": "Date",

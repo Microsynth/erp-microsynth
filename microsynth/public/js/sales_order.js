@@ -105,15 +105,15 @@ frappe.ui.form.on('Sales Order', {
         
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
-			frm.add_custom_button(__("Force Cancel"), function() {
-				force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
-			});
-		}
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
 
         if ((!frm.doc.__islocal) && frm.doc.docstatus < 2) {
             frm.add_custom_button(__("Link Quotation"), function() {
-				link_quote(cur_frm.doc.name);
-			});
+                link_quote(cur_frm.doc.name);
+            });
         }
     },
     before_save(frm) {

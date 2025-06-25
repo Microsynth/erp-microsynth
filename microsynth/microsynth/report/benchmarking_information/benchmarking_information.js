@@ -3,36 +3,36 @@
 /* eslint-disable */
 
 frappe.query_reports["Benchmarking Information"] = {
-	"filters": [
-		{
-			"fieldname": "item_group",
-			"fieldtype": "Link",
-			"label": "Item Group",
-			"options": "Item Group"
-		},
-		{
+    "filters": [
+        {
+            "fieldname": "item_group",
+            "fieldtype": "Link",
+            "label": "Item Group",
+            "options": "Item Group"
+        },
+        {
             "fieldname": "territory",
             "label": __("Territory"),
             "fieldtype": "Link",
             "options": "Territory"
         },
-		{
-			"fieldname": "product",
-			"fieldtype": "Data",
-			"label": "Product"
-		},
-		{
-			"fieldname": "item",
-			"fieldtype": "Link",
-			"label": "Item",
-			"options": "Item"
-		},
-		{
-			"fieldname": "competitor",
-			"fieldtype": "Data",
-			"label": "Competitor"
-		}
-	],
+        {
+            "fieldname": "product",
+            "fieldtype": "Data",
+            "label": "Product"
+        },
+        {
+            "fieldname": "item",
+            "fieldtype": "Link",
+            "label": "Item",
+            "options": "Item"
+        },
+        {
+            "fieldname": "competitor",
+            "fieldtype": "Data",
+            "label": "Competitor"
+        }
+    ],
     "onload": (report) => {
         hide_chart_buttons();
     }
