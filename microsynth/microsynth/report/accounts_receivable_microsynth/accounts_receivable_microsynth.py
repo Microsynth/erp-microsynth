@@ -8,14 +8,14 @@ from erpnext.accounts.report.accounts_receivable.accounts_receivable import Rece
 
 def execute(filters=None):
     columns, data = [], []
-    
+
     # raw data
     args = {
         "party_type": "Customer",
         "naming_by": ["Selling Settings", "cust_master_name"],
     }
     columns, data, unused, chart = ReceivablePayableReport(filters).run(args)
-    
+
     if len(data) == 0:
         return columns, data
 
@@ -36,7 +36,7 @@ def execute(filters=None):
         # skip currency column
         if c['fieldname'] == "currency":
             continue
-            
+
         # insert external debtor number
         if c['fieldname'] == "party":
             new_columns.append({
@@ -56,15 +56,15 @@ def execute(filters=None):
             })
 
         new_columns.append(c)
-    
-    target_order = ['posting_date', 'ext_customer', 'party', 'contact_person', 'voucher_no', 'invoiced', 'paid', 
+
+    target_order = ['posting_date', 'ext_customer', 'party', 'contact_person', 'voucher_no', 'invoiced', 'paid',
         'credit_note', 'outstanding', 'po_no', 'territory', 'customer_group', 'remarks', 'age']
     sorted_columns = []
     for t in target_order:
         for c in new_columns:
             if c['fieldname'] == t:
                 sorted_columns.append(c)
-                
+
     sorted_columns.append({
         'fieldtype': 'Currency',
         'fieldname': 'doc_outstanding',
@@ -72,7 +72,7 @@ def execute(filters=None):
         'options': "doc_currency",
         'width': 120
     })
-    
+
     # extend data
     for d in data:
         d['ext_customer'] = frappe.get_cached_value("Customer", d['party'], 'ext_debitor_number')
@@ -93,24 +93,24 @@ def execute(filters=None):
     }
 
     doc_currency = frappe.get_value("Account", filters.get("account"), 'account_currency') if filters.get("account") else None
-    
+
     for d in data:
         if d['ext_customer'] and d['ext_customer'] not in external_debtors:
             external_debtors.append(d['ext_customer'])
-        
+
         if not(d['ext_customer']) and d['party'] not in individual_customers:
             individual_customers.append(d['party'])
-        
+
         # in case of specific account, collect document outstanding amount
         if filters.get("account") and d.get("voucher_no"):
             d['doc_outstanding'] = get_foreign_currency_outstanding(
-                docname=d.get("voucher_no"), 
-                account=filters.get("account"), 
-                date=filters.get("report_date"), 
+                docname=d.get("voucher_no"),
+                account=filters.get("account"),
+                date=filters.get("report_date"),
                 party=d["party"]
             )
             d['doc_currency'] = doc_currency
-            
+
     # group by external debtor number
     for c in sorted(external_debtors or []):
         customer_totals = {
@@ -172,14 +172,14 @@ def execute(filters=None):
                 customer_totals['outstanding'] += d['outstanding']
                 customer_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
                 customer_totals['doc_currency'] = d.get('doc_currency')
-                
+
                 overall_totals['invoiced'] += d['invoiced']
                 overall_totals['paid'] += d['paid']
                 overall_totals['credit_note'] += d['credit_note']
                 overall_totals['outstanding'] += d['outstanding']
                 overall_totals['doc_outstanding'] += d.get('doc_outstanding') or 0
                 overall_totals['doc_currency'] = d.get('doc_currency')
-                
+
         output.append({
             'party': "<b>{0}</b>".format(c),
             'invoiced': customer_totals['invoiced'],
@@ -207,19 +207,19 @@ def execute(filters=None):
 
 def get_foreign_currency_outstanding(docname, account, date, party):
     #sql_query = """
-    #    SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding` 
-    #    FROM `tabGL Entry` 
-    #    WHERE 
-    #        (`voucher_no` = "{docname}" OR `against_voucher` = "{docname}") 
-    #        AND `account` = "{account}" 
+    #    SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding`
+    #    FROM `tabGL Entry`
+    #    WHERE
+    #        (`voucher_no` = "{docname}" OR `against_voucher` = "{docname}")
+    #        AND `account` = "{account}"
     #        AND `party` = "{party}"
     #        AND `posting_date` <= "{date}";
     #    """.format(docname=docname, account=account, date=date, party=party)
-    
+
     sql_query = """
-        SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding` 
-        FROM `tabGL Entry` 
-        WHERE 
+        SELECT IFNULL((SUM(`debit_in_account_currency`) - SUM(`credit_in_account_currency`)), 0) AS `outstanding`
+        FROM `tabGL Entry`
+        WHERE
             (`voucher_no` IN (
                 SELECT `voucher_no`
                 FROM `tabGL Entry`
@@ -234,11 +234,11 @@ def get_foreign_currency_outstanding(docname, account, date, party):
                 UNION SELECT `against_voucher`
                 FROM `tabGL Entry`
                 WHERE `credit` > 0 AND `voucher_no` = "{docname}" AND `account` = "{account}"
-            )) 
-            AND `account` = "{account}" 
+            ))
+            AND `account` = "{account}"
             AND `party` = "{party}"
             AND `posting_date` <= "{date}";
         """.format(docname=docname, account=account, date=date, party=party)
-    
+
     return frappe.db.sql(sql_query, as_dict=True)[0]['outstanding']
-    
+

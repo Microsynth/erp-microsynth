@@ -72,7 +72,7 @@ def export_customers(filename, from_date):
     # write header
     f.write(CUSTOMER_HEADER)
     # get applicable records changed since from_date
-    sql_query = """SELECT 
+    sql_query = """SELECT
            `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
@@ -92,7 +92,7 @@ def export_customers(filename, from_date):
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
-           `tabCustomer`.`invoice_email` AS `invoice_email`, 
+           `tabCustomer`.`invoice_email` AS `invoice_email`,
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
            0 AS `is_electronic_invoice`,
@@ -117,10 +117,10 @@ def export_customers(filename, from_date):
            `tabContact`.`phone` AS `phone`,
            `tabCompany`.`abbr` AS `default_company`
         FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
                                               AND `tDLA`.`link_doctype` = "Customer"
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
@@ -131,9 +131,9 @@ def export_customers(filename, from_date):
            OR `tabContact`.`modified` >= "{from_date}"
     """.format(from_date=from_date)
     data = frappe.db.sql(sql_query, as_dict=True)
-    for d in data:       
+    for d in data:
         # Skip entries that are not a positive number
-        if (not d['person_id'].isnumeric() 
+        if (not d['person_id'].isnumeric()
             or "-" in d['person_id']
             or not d['customer_id']
             or "-" in d['customer_id']
@@ -205,7 +205,7 @@ def export_billing_address(filename, customer_name):
     # write header
     f.write(BILLING_ADDRESS_HEADER)
     # get applicable records changed since from_date
-    sql_query = """SELECT 
+    sql_query = """SELECT
            `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
@@ -225,7 +225,7 @@ def export_billing_address(filename, customer_name):
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
-           `tabCustomer`.`invoice_email` AS `invoice_email`, 
+           `tabCustomer`.`invoice_email` AS `invoice_email`,
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
            0 AS `electronic_invoice`,
@@ -250,10 +250,10 @@ def export_billing_address(filename, customer_name):
            `tabUser`.`username` AS `sales_manager`,
            `tabContact`.`phone` AS `phone`
         FROM `tabAddress`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Address" 
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabAddress`.`name`
+                                              AND `tDLA`.`parenttype`  = "Address"
                                               AND `tDLA`.`link_doctype` = "Customer"
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         LEFT JOIN `tabContact` ON `tabContact`.`address` = `tabAddress`.`name`
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
@@ -261,7 +261,7 @@ def export_billing_address(filename, customer_name):
         WHERE `tabCustomer`.`name` = "{customer_name}"
         AND `tabAddress`.`address_type` = "Billing"
     """.format(customer_name=customer_name)
-    data = frappe.db.sql(sql_query, as_dict=True)       
+    data = frappe.db.sql(sql_query, as_dict=True)
     for d in data:
         # Do not change the order. Changes will corrupt import into Gecko.
         # Only append new lines.
@@ -317,10 +317,10 @@ def export_billing_address(filename, customer_name):
 
 @frappe.whitelist()
 def export_customer_to_gecko(customer_name):
-    billing_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Billing/billing_address_export_for_gecko.tab"    
+    billing_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Billing/billing_address_export_for_gecko.tab"
     if os.path.exists(billing_address_file):
         frappe.throw("<b>Export file already exists:</b><br>" + billing_address_file)
-    else:    
+    else:
         export_billing_address(billing_address_file, customer_name)
     frappe.msgprint("Exported for Gecko")
     return
@@ -339,7 +339,7 @@ def export_shipping_address(filename, person_id):
     # write header
     f.write(SHIPPING_ADDRESS_HEADER)
     # get applicable records
-    sql_query = """SELECT 
+    sql_query = """SELECT
            `tabContact`.`name` AS `person_id`,
            `tabCustomer`.`name` AS `customer_id`,
            `tabCustomer`.`customer_name` AS `customer_name`,
@@ -359,7 +359,7 @@ def export_shipping_address(filename, person_id):
            `tabCustomer`.`siret` AS `siret`,
            `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`,
            `tabCustomer`.`default_currency` AS `currency`,
-           `tabCustomer`.`invoice_email` AS `invoice_email`, 
+           `tabCustomer`.`invoice_email` AS `invoice_email`,
            `tabCustomer`.`disabled` AS `is_deleted`,
            `tabPrice List`.`general_discount` AS `default_discount`,
            0 AS `is_electronic_invoice`,
@@ -383,10 +383,10 @@ def export_shipping_address(filename, person_id):
            `tabUser`.`username` AS `sales_manager`,
            `tabContact`.`phone` AS `phone`
         FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
                                               AND `tDLA`.`link_doctype` = "Customer"
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
         LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
         LEFT JOIN `tabUser` ON `tabCustomer`.`account_manager` = `tabUser`.`name`
@@ -394,7 +394,7 @@ def export_shipping_address(filename, person_id):
         WHERE `tabContact`.`name` = {contact_name}
     """.format(contact_name=person_id)
     data = frappe.db.sql(sql_query, as_dict=True)
-    for d in data:       
+    for d in data:
         # Do not change the order. Changes will corrupt import into Gecko.
         # Only append new lines.
         row = SHIPPING_ADDRESS_FIELDS.format(
@@ -454,7 +454,7 @@ def export_contact_to_gecko(contact_name):
     shipping_address_file = "/mnt/erp_share/Gecko/Export_Customer_Data/Shipping/shipping_address_export_for_gecko.tab"
     if os.path.exists(shipping_address_file):
         frappe.throw("<b>Export file already exists:</b><br>" + shipping_address_file)
-    else:    
+    else:
         export_shipping_address(shipping_address_file, contact_name)
         frappe.msgprint("Exported for Gecko")
     return
@@ -500,25 +500,25 @@ def update_customer(customer_data):
                 if 'country' in a and a.get('is_primary_address', False):
                     country = robust_get_country(a['country'])
                     if country:
-                        break        
-        
-        
+                        break
+
+
         # check if the customer exists
         if not frappe.db.exists("Customer", customer_data['customer_id']):
             # create customer (force mode to achieve target name)
             print("Creating customer {0}...".format(str(int(customer_data['customer_id']))))
-            
+
             default_company = frappe.get_value("Country", country, "default_company")
-            frappe.db.sql("""INSERT INTO `tabCustomer` 
-                            (`name`, `customer_name`, `default_company`, `default_currency`, `default_price_list`, `payment_terms`) 
+            frappe.db.sql("""INSERT INTO `tabCustomer`
+                            (`name`, `customer_name`, `default_company`, `default_currency`, `default_price_list`, `payment_terms`)
                             VALUES ("{0}", "{1}", "{2}", "{3}", "{4}", "{5}");""".format(
-                            str(int(customer_data['customer_id'])), 
+                            str(int(customer_data['customer_id'])),
                             str(customer_data['customer_name']),
                             default_company,
                             frappe.get_value("Country", country, "default_currency"),
                             frappe.get_value("Country", country, "default_pricelist"),
                             frappe.get_value("Company", default_company, "payment_terms")))
-        
+
         if 'is_deleted' in customer_data:
             if customer_data['is_deleted'] == "Ja" or str(customer_data['is_deleted']) == "1":
                 is_deleted = 1
@@ -540,12 +540,12 @@ def update_customer(customer_data):
             if frappe.db.exists("Contact", customer_data['person_id']):     # 2022-09-14. only link valid contacts
                 customer.invoice_to = str(customer_data['person_id'])
             customer.disabled = is_deleted                              # in case is_deleted (can be 1 or 0) is on the INV record
-            
+
         if not customer.customer_group:
             customer.customer_group = frappe.get_value("Selling Settings", "Selling Settings", "customer_group")
         if not customer.territory:
             customer.territory = frappe.get_value("Selling Settings", "Selling Settings", "territory")
-        
+
         if 'vat_nr' in customer_data:
             customer.tax_id = customer_data['vat_nr']
         if 'tax_id' in customer_data:
@@ -566,7 +566,7 @@ def update_customer(customer_data):
         else:
             customer.invoicing_method = "Email"
         if 'electronic_invoice' in customer_data:
-            if cint(customer_data['electronic_invoice']) == 1: 
+            if cint(customer_data['electronic_invoice']) == 1:
                 customer.invoicing_method = "Email"
             else:
                 customer.invoicing_method = "Post"
@@ -578,7 +578,7 @@ def update_customer(customer_data):
         if address_type != "DEL":                                           # 2022-10-03 Do not update 'invoice_email' with Gecko mail of shipping address.
             if 'invoice_email' in customer_data:
                 customer.invoice_email = customer_data['invoice_email']
-        
+
         if 'default_company' in customer_data:
             companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
             if len(companies) > 0:
@@ -592,11 +592,11 @@ def update_customer(customer_data):
             # fetch default company from country list
             if country:
                 customer.default_company = frappe.get_value("Country", country, "default_company")
-            
+
         # extend customer bindings here
         customer.flags.ignore_links = True				# ignore links (e.g. invoice to contact that is imported later)
-        customer.save(ignore_permissions=True)       
-        
+        customer.save(ignore_permissions=True)
+
         # update address
         address_name = update_address(customer_data, is_deleted=is_deleted)     # base address
         if 'addresses' in customer_data:
@@ -604,7 +604,7 @@ def update_customer(customer_data):
             _contact_address = None
             for adr in customer_data['addresses']:
                 _address_name = update_address(adr, is_deleted=is_deleted, customer_id=customer_data['customer_id'])
-            
+
                 if _address_name == customer_data['person_id']:     #Link address with same ID than the contact ID
                     _contact_address = _address_name
 
@@ -613,14 +613,14 @@ def update_customer(customer_data):
                     address_name = _contact_address
                 else:
                     address_name = _address_name
-                
+
         # update contact
-        
+
         # check if contact exists (force insert onto target id)
         if not frappe.db.exists("Contact", str(int(customer_data['person_id']))):
             print("Creating contact {0}...".format(str(int(customer_data['person_id']))))
-            frappe.db.sql("""INSERT INTO `tabContact` 
-                            (`name`, `first_name`, `status`) 
+            frappe.db.sql("""INSERT INTO `tabContact`
+                            (`name`, `first_name`, `status`)
                             VALUES ("{0}", "{1}", "Open");""".format(
                             str(int(customer_data['person_id'])), customer_data['first_name']))
         # update contact
@@ -645,7 +645,7 @@ def update_customer(customer_data):
         contact.phone_nos = []
         if 'phone_number' in customer_data and customer_data['phone_number']:
             if 'phone_country' in customer_data:
-                number = "{0} {1}".format(customer_data['phone_country'] or "", 
+                number = "{0} {1}".format(customer_data['phone_country'] or "",
                     customer_data['phone_number'])
             else:
                 number = "{0}".format(customer_data['phone_number'])
@@ -697,7 +697,7 @@ def update_customer(customer_data):
             try:
                 contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.subscribe_date = datetime.strptime(customer_data['newsletter_registration_date'], "%d.%m.%Y")
                 except:
@@ -706,7 +706,7 @@ def update_customer(customer_data):
             try:
                 contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.unsubscribe_date = datetime.strptime(customer_data['newsletter_unregistration_date'], "%d.%m.%Y")
                 except:
@@ -715,7 +715,7 @@ def update_customer(customer_data):
             contact.address = customer_data['contact_address']
         # extend contact bindings here
         contact.save(ignore_permissions=True)
-        
+
         frappe.db.commit()
 
         # some more administration
@@ -727,7 +727,7 @@ def update_contact(contact_data):
     """
     Update or create a contact record. If no first_name is provided, set it to "-".
 
-    Note: 
+    Note:
     Does not initializes the status "Open", in contrast to the update_customer function.
     This, to differentiate between contacts originating from punchout orders and conventional registrations
     """
@@ -742,8 +742,8 @@ def update_contact(contact_data):
     # check if contact exists (force insert onto target id)
     if not frappe.db.exists("Contact", contact_data['person_id']):
         print("Creating contact {0}...".format(contact_data['person_id'] ))
-        frappe.db.sql("""INSERT INTO `tabContact` 
-                        (`name`, `first_name`) 
+        frappe.db.sql("""INSERT INTO `tabContact`
+                        (`name`, `first_name`)
                         VALUES ("{0}", "{1}");""".format(
                         contact_data['person_id'], contact_data['first_name']))
 
@@ -758,7 +758,7 @@ def update_contact(contact_data):
     contact.last_name = contact_data['last_name'] if 'last_name' in contact_data and contact_data['last_name'] else None
     contact.full_name = "{first_name}{spacer}{last_name}".format(first_name=contact.first_name, spacer = " " if contact.last_name else "", last_name=contact.last_name or "")
     if 'institute' in contact_data:
-        contact.institute = contact_data['institute'] 
+        contact.institute = contact_data['institute']
     if 'department' in contact_data:
         contact.department = contact_data['department']
     contact.email_ids = []
@@ -775,7 +775,7 @@ def update_contact(contact_data):
     contact.phone_nos = []
     if 'phone_number' in contact_data and contact_data['phone_number']:
         if 'phone_country' in contact_data:
-            number = "{0} {1}".format(contact_data['phone_country'] or "", 
+            number = "{0} {1}".format(contact_data['phone_country'] or "",
                 contact_data['phone_number'])
         else:
             number = "{0}".format(contact_data['phone_number'])
@@ -793,7 +793,7 @@ def update_contact(contact_data):
     if 'institute_key' in contact_data:
         contact.institute_key = contact_data['institute_key']
     if 'group_leader' in contact_data:
-        contact.group_leader = contact_data['group_leader']    
+        contact.group_leader = contact_data['group_leader']
     if 'address' in contact_data:
         contact.address = contact_data['address']
     if 'salutation' in contact_data and contact_data['salutation']:
@@ -835,7 +835,7 @@ def update_contact(contact_data):
             try:
                 contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.subscribe_date = datetime.strptime(contact_data['newsletter_registration_date'], "%d.%m.%Y")
                 except:
@@ -847,7 +847,7 @@ def update_contact(contact_data):
             try:
                 contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.unsubscribe_date = datetime.strptime(contact_data['newsletter_unregistration_date'], "%d.%m.%Y")
                 except:
@@ -877,10 +877,10 @@ def update_address(address_data, is_deleted=False, customer_id=None):
     # check if address exists (force insert onto target id)
     if not frappe.db.exists("Address", address_data['person_id']):
         print("Creating address {0}...".format(address_data['person_id']))
-        frappe.db.sql("""INSERT INTO `tabAddress` 
-                        (`name`, `address_line1`) 
+        frappe.db.sql("""INSERT INTO `tabAddress`
+                        (`name`, `address_line1`)
                         VALUES ("{0}", "{1}");""".format(
-                        address_data['person_id'], 
+                        address_data['person_id'],
                         address_data['address_line1'] if 'address_line1' in address_data else "-"))
     print("Updating address {0}...".format(address_data['person_id']))
 
@@ -917,14 +917,14 @@ def update_address(address_data, is_deleted=False, customer_id=None):
     if address_type == "INV" or address_type == "Billing":
         address.is_primary_address = 1
         address.is_shipping_address = 0
-        # address.email_id = address_data['email']        # invoice address: pull email also into address record. 
+        # address.email_id = address_data['email']        # invoice address: pull email also into address record.
                                                            # Do not write to invoice_mail to address record anymore. 2022-10-03 Rolf Suter
         address.address_type = "Billing"
     else:
         address.is_primary_address = 0
         address.is_shipping_address = 1
         address.address_type = "Shipping"
-    
+
     # Overwrite is_primary_address and is_shipping_address if provided with the input data
     if 'is_primary_address' in address_data:
         address.is_primary_address = address_data['is_primary_address']
@@ -999,20 +999,20 @@ def update_prices(price_data):
     """
     # check if this item is available
     if frappe.db.exists("Item", price_data['item_code']) and cint(frappe.get_value("Item", price_data['item_code'], "disabled")) == 0:
-        update_pricelist(item_code=price_data['item_code'], 
+        update_pricelist(item_code=price_data['item_code'],
             price_list=PRICE_LIST_NAMES['CHF'],
-            price_list_rate=price_data['price_chf'], 
-            min_qty=price_data['minimum_quantity'], 
+            price_list_rate=price_data['price_chf'],
+            min_qty=price_data['minimum_quantity'],
             currency="CHF")
-        update_pricelist(item_code=price_data['item_code'], 
+        update_pricelist(item_code=price_data['item_code'],
             price_list=PRICE_LIST_NAMES['EUR'],
-            price_list_rate=price_data['price_eur'], 
-            min_qty=price_data['minimum_quantity'], 
+            price_list_rate=price_data['price_eur'],
+            min_qty=price_data['minimum_quantity'],
             currency="EUR")
-        update_pricelist(item_code=price_data['item_code'], 
+        update_pricelist(item_code=price_data['item_code'],
             price_list=PRICE_LIST_NAMES['USD'],
-            price_list_rate=price_data['price_usd'], 
-            min_qty=price_data['minimum_quantity'], 
+            price_list_rate=price_data['price_usd'],
+            min_qty=price_data['minimum_quantity'],
             currency="USD")
     else:
         print("Item {0} not found.".format(price_data['item_code']))
@@ -1021,7 +1021,7 @@ def update_prices(price_data):
 
 def update_pricelist(item_code, price_list, price_list_rate, min_qty, currency):
     # check if this item price already exists
-    matching_item_prices = frappe.get_all("Item Price", 
+    matching_item_prices = frappe.get_all("Item Price",
         filters={'item_code': item_code, 'price_list': price_list, 'min_qty': min_qty},
         fields=['name'])
     if matching_item_prices and len(matching_item_prices) > 0:
@@ -1081,7 +1081,7 @@ def update_pricing_rule(price_data):
     # check if customer exists
     if frappe.db.exists("Customer", price_data['customer']):
         # check if this pricing rule already exists
-        matching_pricing_rule = frappe.get_all("Pricing Rule", 
+        matching_pricing_rule = frappe.get_all("Pricing Rule",
             filters={'item_code': price_data['item_code'], 'customer': price_data['customer']},
             fields=['name'])
         if matching_pricing_rule and len(matching_pricing_rule) > 0:
@@ -1124,7 +1124,7 @@ def import_customer_price_lists(filename):
     # load csv file
     with open(filename) as csvfile:
         # create reader
-        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"', 
+        reader = pd.read_csv(csvfile, delimiter='\t', quotechar='"',
             encoding='utf-8', dtype={'ArticleCode': object})
         print("Reading file...")
         count = 0
@@ -1137,10 +1137,10 @@ def import_customer_price_lists(filename):
             print("...{0}%...".format(int(100 * count / file_length)))
             print("{0}".format(row))
             create_update_customer_price_list(
-                pricelist_code = row['PriceList'], 
-                currency = row['BasisPriceList'], 
-                general_discount = float(row['GeneralDiscount']), 
-                item_code = row['ArticleCode'], 
+                pricelist_code = row['PriceList'],
+                currency = row['BasisPriceList'],
+                general_discount = float(row['GeneralDiscount']),
+                item_code = row['ArticleCode'],
                 discount = float(row['Discount']),
                 qty = row['Quantity']
             )
@@ -1152,7 +1152,7 @@ def get_long_price_list_name(price_list_code):
     return "Pricelist {0}".format(price_list_code)
 
 
-def create_update_customer_price_list(pricelist_code, currency, 
+def create_update_customer_price_list(pricelist_code, currency,
         general_discount, item_code, discount, qty=1):
     pl_long_name = get_long_price_list_name(pricelist_code)
     # check if it exists
@@ -1185,7 +1185,7 @@ def create_update_customer_price_list(pricelist_code, currency,
     )
     for ref_price in reference_item_prices:
         # find item prices
-        item_prices = frappe.get_all("Item Price", 
+        item_prices = frappe.get_all("Item Price",
             filters={
                 'price_list': pl_long_name,
                 'item_code': item_code,
@@ -1289,7 +1289,7 @@ def move_staggered_item_price(filename):
 
 
 def set_webshop_address_readonly():
-    """ 
+    """
     Sets the "webshop_address_readonly" from the contacts
     This is used that users cannot change a jointly used customer/address
 
@@ -1352,7 +1352,7 @@ def disable_customers_without_contacts():
                 AND `tabContact`.`status` != "Disabled"
                 AND `tabAddress`.`address_type` != "Billing"
         """.format(customer_id=c['name']), as_dict=True)
-        
+
         if len(linked_contacts) == 0 and c['name'].isnumeric():  # disable only customers with numeric names (created by the webshop)
             quotations = frappe.get_all("Quotation", filters=[['docstatus', '<', '2'], ['party_name', '=', c['name']]], fields=['name'])
             sales_orders = frappe.get_all("Sales Order", filters=[['docstatus', '<', '2'], ['customer', '=', c['name']]], fields=['name'])
@@ -1392,15 +1392,15 @@ def disable_customers_without_contacts():
 
 
 def set_default_company():
-    customers = frappe.get_all("Customer", filters={'default_company': ''}, fields=['name'])    
+    customers = frappe.get_all("Customer", filters={'default_company': ''}, fields=['name'])
     print(len(customers))
-    
+
     count = 0
     i = 0
     for c in customers:
         count += 1
         i += 1
-        
+
         address = get_primary_customer_address(c["name"])
 
         if address:
@@ -1454,7 +1454,7 @@ SERVICE_ITEM = {
     0: '3040',
     1: '3000',
     2: '3110',
-    3: '3100',   
+    3: '3100',
     7: '3200',
     8: '3240',
     9: '3236',
@@ -1463,7 +1463,7 @@ SERVICE_ITEM = {
     12: '3120',
 }
 
-# # refactor to a dict 
+# # refactor to a dict
 # def get_label_status_from_status_id(status_id):
 #     if status_id == 0:
 #         return 'unknown'
@@ -1504,16 +1504,16 @@ def set_default_payment_terms():
     for company in companies:
         key = company['name']
         company_terms[key] = company['payment_terms']
-  
+
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
-    
+
     def get_name(customer):
         return customer.get('name')
-    
+
     i = 0
     count = 0
     for c in sorted(customers, key=get_name):
-        
+
         customer = frappe.get_doc("Customer", c["name"])
 
         if not customer.default_company :
@@ -1526,10 +1526,10 @@ def set_default_payment_terms():
             customer.save()
         else:
             print("customer '{0} 'has alread the terms: '{1}' {2}%".format(customer.name, customer.payment_terms, int(100 * count / len(customers))))
-        
+
         i += 1
         count += 1
-        
+
         if i >= 10:
             frappe.db.commit()
             i = 0
@@ -1547,10 +1547,10 @@ def set_default_language_for_customers():
     from microsynth.microsynth.utils import set_default_language
 
     customers = frappe.get_all("Customer", filters={'disabled': 0}, fields=['name'])
-    
+
     def get_name(customer):
         return customer.get('name')
-    
+
     i = 0
     length = len(customers)
     for c in sorted(customers, key=get_name):
@@ -1600,9 +1600,9 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 service_type = int(elements[4])
                 contact_element = elements[9].strip()
                 registered_to_element = elements[10].strip()
-                            
+
                 item = SERVICE_ITEM[service_type]
-                
+
                 # if the 'UseState' is 2, set the 'registered' flag
                 registered = status_element == 2
 
@@ -1634,7 +1634,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 # else:
                 #     print("Could not find Registered-to-Contact '{0}'.".format(contact_element))
                 #     registered_to = None
-                
+
                 label_name = find_label(number, item)
 
                 # t1 = datetime.now() - start
@@ -1670,7 +1670,7 @@ def import_sequencing_labels(filename, skip_rows = 0):
                 # print(t2)
 
                 print("{0}: {1}".format(count, number))
-            
+
             count += 1
             i += 1
 
@@ -1801,9 +1801,9 @@ def set_distributor_carlo_erba(product_type):
     Adds to all enabled Customers of the distributor 'Carlo Erba'
     the distributor settings for the given Product Type
 
-    run 
+    run
     bench execute "microsynth.microsynth.migration.set_distributor_carlo_erba" --kwargs "{'product_type': 'FLA'}"
-    """    
+    """
     from microsynth.microsynth.utils import set_distributor
 
     # if product_type not in ['Oligos', 'Labels', 'Sequencing', 'NGS', 'FLA', 'Project', 'Material', 'Service']:
@@ -1835,7 +1835,7 @@ def set_distributor_amplikon():
     length = len(customers)
     for c in customers:
         customer = frappe.get_doc("Customer", c)
-        
+
         print("{2}% - Update customer '{0}' '{1}'".format(customer.name, customer.customer_name, int(100 * i / length)))
 
         customer.default_price_list = "hu_Amplikon_standard"
@@ -1949,7 +1949,7 @@ def activate_easyrun_italy():
                                              AND `tDLA`.`link_doctype` = "Customer"
         WHERE `tabAddress`.`country` = "Italy"
         AND `tDLA`.`link_name` IS NOT NULL;"""
-    
+
     customers = frappe.db.sql(query, as_dict=True)
 
     for i, customer in enumerate(customers):
@@ -1960,7 +1960,7 @@ def activate_easyrun_italy():
                                                 AND `tDLA`.`parenttype` = "Address"
                                                 AND `tDLA`.`link_doctype` = "Customer"
             WHERE `tDLA`.`link_name` = "{customer.name}";"""
-        
+
         countries = frappe.db.sql(query, as_dict=True)
         only_italy = True
         for country in countries:
@@ -1999,14 +1999,14 @@ def activate_fullplasmidseq_dach():
                                              AND `tDLA`.`parenttype` = "Address"
                                              AND `tDLA`.`link_doctype` = "Customer"
         WHERE `tabAddress`.`country` in (
-            "Switzerland", 
-            "Germany", 
+            "Switzerland",
+            "Germany",
             "Austria" )
         AND `tDLA`.`link_name` IS NOT NULL
     """
 
     customers = frappe.db.sql(query, as_dict=True)
-    
+
     i = 0
     length = len(customers)
 
@@ -2025,7 +2025,7 @@ def activate_fullplasmidseq_all_customers():
     customers = frappe.db.get_all("Customer",
         filters = {'disabled': 0 },
         fields = ['name'])
-    
+
     i = 0
     length = len(customers)
 
@@ -2043,7 +2043,7 @@ def activate_invoicebydefaultcompany_france(blacklist_customers):
     customers = frappe.db.get_all("Customer",
         filters = [['disabled', '=', 0], ['territory', 'IN', ['Paris', 'France (Southeast)', 'France (Northwest)']]],
         fields = ['name'])
-    
+
     for customer in customers:
         if customer['name'] in blacklist_customers:
             continue
@@ -2054,9 +2054,9 @@ def set_debtors():
     """
     Set the debitor account
 
-    run 
+    run
     bench execute microsynth.microsynth.migration.set_debtors
-    """    
+    """
     from microsynth.microsynth.utils import set_debtor_accounts
 
     customers = frappe.db.get_all("Customer",
@@ -2068,7 +2068,7 @@ def set_debtors():
 
     for c in customers:
         print("{1}% - process customer '{0}'".format(c, int(100 * i / length)))
-        
+
         try:
             set_debtor_accounts(c.name)
         except Exception as err:
@@ -2082,11 +2082,11 @@ def set_territory_for_customers():
     """
     Set the territory
 
-    run 
+    run
     bench execute microsynth.microsynth.migration.set_territory_for_customers
-    """    
+    """
     from microsynth.microsynth.utils import set_territory
-    
+
     customers = frappe.db.get_all("Customer",
         filters = {'disabled': 0 },
         fields = ['name'])
@@ -2096,7 +2096,7 @@ def set_territory_for_customers():
 
     for c in customers:
         print("{1}% - process customer '{0}'".format(c.name, int(100 * i / length)))
-        
+
         try:
             set_territory(c.name)
             frappe.db.commit()
@@ -2171,7 +2171,7 @@ def update_territories_and_sales_managers(current_territories, affected_countrie
 
     run
     bench execute microsynth.microsynth.migration.update_territories_and_sales_managers --kwargs "{'current_territories': ['Lyon', 'France (without Paris and Lyon)'], 'affected_countries': ['France', 'Réunion', 'French Guiana'], 'verbose': False, 'dry_run': True}"
-    """    
+    """
     from microsynth.microsynth.utils import determine_territory, get_first_shipping_address
 
     for current_territory in current_territories:
@@ -2230,7 +2230,7 @@ def remove_item_account_settings():
     """
     Set the debitor account
 
-    run 
+    run
     bench execute microsynth.microsynth.migration.remove_item_account_settings
     """
 
@@ -2245,7 +2245,7 @@ def remove_item_account_settings():
 
         if item.item_code == "6100":
             continue
-        
+
         print("{progress}% remove account settings of item '{item}'".format(item = item.item_code, progress = int(100 * i / length)))
 
         for entry in item.item_defaults:
@@ -2280,9 +2280,9 @@ def check_sales_order_samples(sales_order):
     bench execute microsynth.microsynth.migration.check_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-22010736'}"
     """
     sales_order = frappe.get_doc("Sales Order", sales_order)
-    
+
     query = """
-        SELECT 
+        SELECT
             `tabSample`.`name`,
             `tabSample`.`sequencing_label`
         FROM `tabSample Link`
@@ -2295,7 +2295,7 @@ def check_sales_order_samples(sales_order):
     samples = frappe.db.sql(query, as_dict=True)
 
     missing_labels = False
-    
+
     for s in samples:
         if s.sequencing_label is None:
             missing_labels = True
@@ -2303,7 +2303,7 @@ def check_sales_order_samples(sales_order):
     # print("missing labels: {0}".format(missing_labels))
     might_be_invoiced = True
 
-    if missing_labels: 
+    if missing_labels:
         for item in sales_order.items:
             if item.item_code not in [ '0901', '0904', '3235', '3237', '0968', '0969', '0975']:
                 # print(item.item_code)
@@ -2317,10 +2317,10 @@ def check_sales_order_samples(sales_order):
 
 def find_invoices_of_unprocessed_samples():
     """
-    The seqblatt.check_sales_order_completion function created delivery notes of 
-    sales orders where the samples had not no sequencing label linked. 
+    The seqblatt.check_sales_order_completion function created delivery notes of
+    sales orders where the samples had not no sequencing label linked.
     These deliverye notes were invoiced
-    
+
     run
     bench execute microsynth.microsynth.migration.find_invoices_of_unprocessed_samples
     """
@@ -2336,10 +2336,10 @@ def find_invoices_of_unprocessed_samples():
     for order in sales_orders:
         # print("{progress}% check sales order '{so}'".format(so = order.name, progress = int(100 * i / length)))
         check_sales_order_samples(order.name)
-        
+
         # if i > 5:
         #     return
-        
+
         i += 1
 
     return
@@ -2356,7 +2356,7 @@ def tag_documents_by_web_id(file, tag):
     web_orders = []
 
     with open(file) as file:
-        # header = file.readline()    
+        # header = file.readline()
         for line in file:
             elements = line.split("\t")
 
@@ -2454,7 +2454,7 @@ def import_reminder_emails(file):
         for line in file:
             if line.strip() != "":
                 elements = line.split("\t")
-         
+
                 task = {}
                 task['contact'] = elements[0].strip()
                 task['customer'] = elements[1].strip()
@@ -2466,7 +2466,7 @@ def import_reminder_emails(file):
     for task in tasks:
         print("{progress} process {contact}, {customer}, {email}".format(
             contact = task['contact'],
-            customer = task['customer'], 
+            customer = task['customer'],
             email = task['email'],
             progress = int(100 * i / length)))
 
@@ -2494,7 +2494,7 @@ def import_lead_notes(notes_file, contact_note_type):
     run
     bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/JPe_testing/leads_sales_notes.tab', 'contact_note_type': 'Other'}"
     bench execute microsynth.microsynth.migration.import_lead_notes --kwargs "{'notes_file': '/mnt/erp_share/Gecko/JPe_testing/leads_marketing_notes.tab', 'contact_note_type': 'Marketing'}"
-    """    
+    """
     counter = 0
     with open(notes_file) as tsv:
         print(f"Importing contact notes from {notes_file} with {contact_note_type=} ...")
@@ -2534,7 +2534,7 @@ def set_newsletter_dates(contact, registration_date, unregistration_date):
             try:
                 contact.subscribe_date = datetime.strptime(registration_date, "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.subscribe_date = datetime.strptime(registration_date, "%d.%m.%Y")
                 except:
@@ -2546,7 +2546,7 @@ def set_newsletter_dates(contact, registration_date, unregistration_date):
             try:
                 contact.unsubscribe_date = datetime.strptime(unregistration_date, "%d.%m.%Y %H:%M:%S")
             except:
-                # fallback date only 
+                # fallback date only
                 try:
                     contact.unsubscribe_date = datetime.strptime(unregistration_date, "%d.%m.%Y")
                 except:
@@ -2562,7 +2562,7 @@ def assign_or_create_customer(contact, address, customer_id, customer_name, coun
     if customer_id and frappe.db.exists("Customer", customer_id):
         print(f"Customer '{customer_id}' already exists. Going to assign '{contact.name}' to it.")
         counters[1] += 1
-        existing_customer_name = frappe.get_value("Customer", customer_id, "customer_name")     
+        existing_customer_name = frappe.get_value("Customer", customer_id, "customer_name")
         if existing_customer_name != customer_name:
             print(f"{customer_name=} in FM export does not match existing Customer.customer_name={existing_customer_name}. "
                   f"Going to set Address.overwrite_company to '{customer_name}'.")
@@ -2715,7 +2715,7 @@ def create_lead_contacts_addresses(fm_export_file):
                 contact.receive_newsletter = 'registered'
             elif line[29].upper() == "NEIN":
                 contact.receive_newsletter = 'unregistered'
-            
+
             set_newsletter_dates(contact, line[30], line[31])
 
             customer_id = line[2]
@@ -2728,7 +2728,7 @@ def create_lead_contacts_addresses(fm_export_file):
             address.save()
             contact.save()
             frappe.db.commit()
-            
+
             if len(customer_name.strip()) > 0:
                 #set_default_language(customer_id)  # will throw a error if there is no billing address
                 configure_territory(customer_id)
@@ -2758,7 +2758,7 @@ def process_open_sequening_orders(customer):
     query = """
         SELECT `name`
         FROM `tabSales Order`
-        WHERE 
+        WHERE
           `customer` = '{customer}'
           AND `docstatus` = 1
           AND `status` NOT IN ("Closed", "Completed")
@@ -2781,7 +2781,7 @@ def update_territory(dt, dn, territory):
         SET `territory` = "{territory}"
         WHERE `name` = "{dn}"
     """.format(dt=dt, dn=dn, territory=territory)
-    frappe.db.sql(query)    
+    frappe.db.sql(query)
     return
 
 
@@ -2792,9 +2792,9 @@ def update_territories():
     """
 
     sales_invoice_query = """
-    SELECT `tabSales Invoice`.`name`, `tabCustomer`.`territory` 
-    FROM `tabSales Invoice` 
-    LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
+    SELECT `tabSales Invoice`.`name`, `tabCustomer`.`territory`
+    FROM `tabSales Invoice`
+    LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
     WHERE `tabSales Invoice`.`territory` <> `tabCustomer`.`territory`;"""
 
     sales_invoices = frappe.db.sql(sales_invoice_query, as_dict=True)
@@ -2814,7 +2814,7 @@ def revise_delivery_note(delivery_note):
     bench execute microsynth.microsynth.migration.revise_delivery_note --kwargs "{'delivery_note': 'DN-BAL-23142611'}"
     """
     from microsynth.microsynth.taxes import find_dated_tax_template
-    
+
     original = frappe.get_doc("Delivery Note", delivery_note)
     original.cancel()
 
@@ -2834,7 +2834,7 @@ def revise_delivery_note(delivery_note):
 
     tax_template = find_dated_tax_template(new.company, new.customer, new.shipping_address_name, category, new.posting_date)
     new.taxes_and_charges = tax_template
-    
+
     tax_template = frappe.get_doc("Sales Taxes and Charges Template", new.taxes_and_charges)
     new.taxes = []
     for tax in tax_template.taxes:
@@ -2844,12 +2844,12 @@ def revise_delivery_note(delivery_note):
             'description': tax.description,
             'cost_center': tax.cost_center,
             'rate': tax.rate
-        }    
+        }
         new.append("taxes", t)
 
     new.insert()
     new.submit()
-    
+
     return
 
 
@@ -2872,10 +2872,10 @@ def revise_delivery_notes_with_missing_taxes():
     """
     query = """
     SELECT `name`, `web_order_id`, `status`, `net_total`
-    FROM `tabDelivery Note` 
+    FROM `tabDelivery Note`
     WHERE `docstatus` < 2
-    AND `grand_total` = `net_total` 
-    AND `taxes_and_charges` LIKE "%7.7%" 
+    AND `grand_total` = `net_total`
+    AND `taxes_and_charges` LIKE "%7.7%"
     AND `net_total` > 0
     AND `status` <> 'Completed';
     """
@@ -2919,19 +2919,19 @@ def close_draft_delivery_note_and_sales_order(delivery_note):
     bench execute microsynth.microsynth.migration.close_draft_delivery_note_and_sales_order --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
-    
+
     # get affected sales orders
     sales_orders = []
     for item in delivery_note.items:
         if item.against_sales_order not in sales_orders:
             sales_orders.append(item.against_sales_order)
-    
+
     # re-open sales order if it is closed
     for so in sales_orders:
         so = frappe.get_doc("Sales Order", so)
         if so.status == "Closed":
             so.update_status("Draft")
-    
+
     # submit and close delivery note
     delivery_note.submit()
     delivery_note.update_status("Closed")
@@ -2948,7 +2948,7 @@ def close_invoiced_draft_delivery_notes():
     bench execute microsynth.microsynth.migration.close_invoiced_draft_delivery_notes
     """
     import traceback
-    
+
     query = """
         SELECT `name`, `docstatus`, `status`
         FROM `tabDelivery Note`
@@ -2957,7 +2957,7 @@ def close_invoiced_draft_delivery_notes():
     """
 
     delivery_notes = frappe.db.sql(query, as_dict=True)
-    
+
     i = 0
     length = len(delivery_notes)
     for dn in delivery_notes:
@@ -2965,7 +2965,7 @@ def close_invoiced_draft_delivery_notes():
             print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
             close_draft_delivery_note_and_sales_order(dn['name'])
             frappe.db.commit()
-        
+
         except Exception as err:
             msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
             print(msg)
@@ -2979,7 +2979,7 @@ def close_sales_order_of_delivery_note(delivery_note):
     bench execute microsynth.microsynth.migration.close_sales_order_of_delivery_note --kwargs "{'delivery_note':''}"
     """
     delivery_note = frappe.get_doc("Delivery Note", delivery_note)
-    
+
     # close delivery note if necessary
     if delivery_note.status != "Closed":
         delivery_note.update_status("Closed")
@@ -3003,7 +3003,7 @@ def close_tagged_delivery_notes(status, tag):
     bench execute microsynth.microsynth.migration.close_tagged_delivery_notes --kwargs "{'status': 'To Bill', 'tag':'invoiced'}"
     """
     import traceback
-    
+
     query = f"""
         SELECT `name`, `docstatus`, `status`, `_user_tags`
         FROM `tabDelivery Note`
@@ -3012,10 +3012,10 @@ def close_tagged_delivery_notes(status, tag):
     """
 
     delivery_notes = frappe.db.sql(query, as_dict=True)
-    
+
     i = 0
     length = len(delivery_notes)
-    
+
     for dn in delivery_notes:
         try:
             print(f"{int(100 * i / length)}% - process '{dn['name']}': {dn['status']}; Tags: '{dn['_user_tags']}'")
@@ -3043,7 +3043,7 @@ def close_orders_of_closed_delivery_notes():
     """
 
     delivery_notes = frappe.db.sql(query, as_dict=True)
-    
+
     i = 0
     length = len(delivery_notes)
     for dn in delivery_notes:
@@ -3051,7 +3051,7 @@ def close_orders_of_closed_delivery_notes():
             print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
             close_sales_order_of_delivery_note(dn['name'])
             frappe.db.commit()
-        
+
         except Exception as err:
             msg = "Failed to close order of delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
             print(msg)
@@ -3069,34 +3069,34 @@ def assess_income_account_matrix(from_date, to_date, auto_correct=0):
     bench execute microsynth.microsynth.migration.assess_income_account_matrix --kwargs "{'from_date': '2023-02-01', 'to_date': '2023-02-28'}"
     """
     invoices = frappe.db.sql("""
-        SELECT `name` 
+        SELECT `name`
         FROM `tabSales Invoice`
         WHERE `docstatus` = 1
           AND `posting_date` BETWEEN "{from_date}" AND "{to_date}";
         """.format(from_date=from_date, to_date=to_date), as_dict=True)
-    
+
     deviation_count = 0
     skipped_count = 0
     for invoice in invoices:
         doc = frappe.get_doc("Sales Invoice", invoice.get('name'))
         if doc.base_grand_total > 0:        # skip returns and 0-sums
-            
+
             correct_accounts = get_income_accounts(doc.shipping_address_name, doc.currency, doc.items)
-        
+
             for i in range(0, len(doc.items)):
                 if doc.items[i].income_account != correct_accounts[i]:
                     print("{doc} ({status}): item {i}: {o} -> {c}".format(
                         doc=doc.name, i = i, o=doc.items[i].income_account, c=correct_accounts[i], status=doc.status))
                     deviation_count += 1
-                    
+
                     if auto_correct:
                         correct_income_account(doc.name)
-                        
+
                     break
-        
+
         else:
             skipped_count += 1
-            
+
     print("Checked {0} invoices, {1} deviations and {2} skipped".format(len(invoices), deviation_count, skipped_count))
 
 
@@ -3104,13 +3104,13 @@ def correct_income_account(sales_invoice):
     """
     This function will cancel an invoice, amend it, correct the income accounts an map the payment if applicable
 
-    Important Note: 
+    Important Note:
         This function does not consider links to invoices caused by deduction of customer credits.
-    
+
     run
     bench execute microsynth.microsynth.migration.correct_income_account --kwargs "{'sales_invoice': 'SI-BAL-23024016'}"
     """
-    
+
     # get old invoice
     old_doc = frappe.get_doc("Sales Invoice", sales_invoice)
     if old_doc.docstatus > 1:
@@ -3121,14 +3121,14 @@ def correct_income_account(sales_invoice):
         payments = frappe.db.sql("""
             SELECT `voucher_type`, `voucher_no`, `credit_in_account_currency` AS `credit`
             FROM `tabGL Entry`
-            WHERE 
+            WHERE
                 `account` = "{debit_to}"
                 AND `against_voucher` = "{sales_invoice}"
                 AND `credit` > 0;
             """.format(debit_to=old_doc.debit_to, sales_invoice=sales_invoice), as_dict=True)
     else:
         payments = []
-    
+
     # check if there is a return on this invoice
     credit_notes = False
     for p in payments:
@@ -3137,7 +3137,7 @@ def correct_income_account(sales_invoice):
             credit_notes = True
             credit_note = frappe.get_doc("Sales Invoice", p.get('voucher_no'))
             credit_note.cancel()
-    
+
     if credit_notes:
         # reload, because cancellation of credit note will change timestamp of invoice
         frappe.db.commit()
@@ -3207,7 +3207,7 @@ def correct_invoicing_email():
     Run from bench
     bench execute microsynth.microsynth.migration.correct_invoicing_email
     """
-    sql_query = """SELECT 
+    sql_query = """SELECT
             `tabCustomer`.`name` AS customer_name,
             `invoice_email`,
             `tabContact`.`email_id`,
@@ -3271,7 +3271,7 @@ def set_missing_invoice_to():
     for result in query_results:
         customer = frappe.get_doc("Customer", result['name'])
         # Get the main (primary) contact of Customer
-        main_contact = get_primary_customer_contact(result['name'])        
+        main_contact = get_primary_customer_contact(result['name'])
         # duplicate main Contact to create the billing contact.
         billing_contact = main_contact.as_dict()
         billing_contact['person_id'] = main_contact.name + "-B"
@@ -3291,8 +3291,8 @@ def set_missing_invoice_to():
 def correct_invoice_to_contacts():
     """
     Find Customers that have an Invoice To contact named '%-B' which has a shipping address linked and has a single billing address.
-    Link the single billing address to the invoice_to contact. 
-    This function corrects contacts created with the set_missing_invoice_to 
+    Link the single billing address to the invoice_to contact.
+    This function corrects contacts created with the set_missing_invoice_to
     and the correct_invoicing_email functions.
 
     run
@@ -3496,7 +3496,7 @@ def export_abacus_file_with_account_matrix(abacus_export_file, output_file, vali
             for i in t.get("against_singles"):
                 if i['account'] == "2010":
                     income_account = get_alternative_account(get_account_by_number(i['account'], si.company), si.currency)
-                else: 
+                else:
                     income_account = get_alternative_income_account(
                         get_account_by_number(i['account'], si.company),
                         country
@@ -3561,7 +3561,7 @@ def export_sanger_customers(filepath):
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` NOT IN ("Closed", "Cancelled");
             """
-    
+
     contacts = frappe.db.sql(sql_query, as_dict=True)
 
     with open(filepath, mode='w') as file:
@@ -3580,7 +3580,7 @@ def correct_inverted_credit_journal_entries():
     bench execute microsynth.microsynth.migration.correct_inverted_credit_journal_entries
     """
     from microsynth.microsynth.credits import book_credit
-    
+
     affected_jvs = frappe.get_all("Journal Entry", filters=[['user_remark', 'LIKE', 'Credit from CN-%'], ['docstatus', '=', 1]], fields=['name', 'user_remark'])
 
     for jv in affected_jvs:
@@ -3591,16 +3591,16 @@ def correct_inverted_credit_journal_entries():
             doc.cancel()
         except Exception as e:
             print("Could not cancel {0} ({1})\n{2}".format(jv['name'], jv['user_remark'], e))
-            
+
         # re-create journal entry
         sales_invoice = jv['user_remark'].split(" ")[-1]
         if not frappe.db.exists("Sales Invoice", sales_invoice):
             print("Sales invoice not found for {0} ({1})".format(jv['name'], jv['user_remark']))
             continue
-        
+
         if frappe.get_value("Sales Invoice", sales_invoice, "docstatus") == 1:
             book_credit(sales_invoice)
-        
+
     frappe.db.commit()
 
 
@@ -3648,7 +3648,7 @@ def check_remaining_labels(filepath):
                     with_date += len(unused_labels)
                 else:
                     no_date += len(unused_labels)
-                
+
                 for label_code in unused_labels:
                     # get all Sequencing Labels with Label Barcode == label_code
                     labels = frappe.get_all("Sequencing Label", filters=[['label_id', '=', label_code]], fields=['name'])
@@ -3659,7 +3659,7 @@ def check_remaining_labels(filepath):
                     elif len(labels) > 1:
                         found += 1
                         multiple += 1
-                
+
                 if counter % 100 == 0:
                     print(f"Already processed {round((counter/row_count) * 100, 2)} % ({counter}/{row_count}) of lines of {full_path}: {found=}, {not_found=}, {with_date=}, {no_date=}, {multiple=}")
         print(f"{comp}: {counter=}, {with_date=}, {no_date=}, {found=}, {not_found=}, {multiple=}")
@@ -3800,7 +3800,7 @@ def lock_all_contacts():
     """
     Create Contact Locks for all Contacts
 
-    run 
+    run
     bench execute microsynth.microsynth.migration.lock_all_contacts
     """
     from microsynth.microsynth.marketing import lock_contact
@@ -4014,7 +4014,7 @@ def import_user_process_assignments(filepath):
             if not email in assignments:
                 assignments[email] = []
             assignments[email].append((line[2], line[3], line[4], line[5]))
-    
+
     for email, processes in assignments.items():
         if not frappe.db.exists('User', email):
             print(f"User '{email}' does not exist in the ERP. Please create and configure this User manually.")
@@ -4026,7 +4026,7 @@ def import_user_process_assignments(filepath):
             })
             new_user_settings.insert(ignore_permissions=True)
             frappe.db.commit()
-        
+
         user_settings = frappe.get_doc('User Settings', email)
         user_settings.qm_process_assignments = []  # reset qm_process_assignments
         for proc in processes:
@@ -4042,7 +4042,7 @@ def import_user_process_assignments(filepath):
             user_settings.append('qm_process_assignments', process)
         user_settings.save()
     frappe.db.commit()
-    
+
 
 def patch_invoice_sent_on_dates():
     """
@@ -4056,7 +4056,7 @@ def patch_invoice_sent_on_dates():
     print("Executing cleanup query...")
     frappe.db.sql("""
         UPDATE `tabSales Invoice`
-        SET `invoice_sent_on` = SUBSTRING(`invoice_sent_on`, 1, 19) 
+        SET `invoice_sent_on` = SUBSTRING(`invoice_sent_on`, 1, 19)
         WHERE LENGTH(`invoice_sent_on`) > 19;""")
     print("done ;-)")
     return
@@ -4072,7 +4072,7 @@ def patch_label_printed_on_dates():
     print("Executing cleanup query...")
     frappe.db.sql("""
         UPDATE `tabSales Order`
-        SET `label_printed_on` = SUBSTRING(`label_printed_on`, 1, 19) 
+        SET `label_printed_on` = SUBSTRING(`label_printed_on`, 1, 19)
         WHERE LENGTH(`label_printed_on`) > 19;""")
     print("Done :-)")
 
@@ -4160,7 +4160,7 @@ def evaluate_same_day_oligos(export_file, start_date='2023-10-01', end_date='202
     if not is_valid:
         print("Please provide both start and end date in the format YYYY-MM-DD.")
         return
-    
+
     sql_query = f"""SELECT
             `tabSales Order`.`name`,
             `tabSales Order`.`customer_name`,
@@ -4293,7 +4293,7 @@ def fix_contacts_without_address():
     """
     Search for Contacts without an Address.
     Check if there is an Address with the same ID as the Contact and if both belong to the same Customer.
-    
+
     bench execute microsynth.microsynth.migration.fix_contacts_without_address
     """
     sql_query = f"""
@@ -4306,8 +4306,8 @@ def fix_contacts_without_address():
             `tabContact`.`customer_status`,
             `tabContact`.`contact_classification`
         FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                            AND `tDLA`.`parenttype` = "Contact" 
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                            AND `tDLA`.`parenttype` = "Contact"
                                             AND `tDLA`.`link_doctype` = "Customer"
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         WHERE `tabContact`.`address` IS NULL
@@ -4596,7 +4596,7 @@ def find_users_without_user_settings():
 #                 contact_doc.phone = number.phone
 #                 break
 #         if continued:
-#             continue        
+#             continue
 #         contact_doc.append("phone_nos", {
 #                 'phone': original_number,
 #                 'is_primary_phone': 0
@@ -4609,7 +4609,7 @@ def find_users_without_user_settings():
 def check_clean_docstatus_deviations():
     """
     This function will find and resolve deviations in child docstati (when the document has e.g. status 2, but the child node don't)
-    
+
     bench execute microsynth.microsynth.migration.check_clean_docstatus_deviations
     """
     # find all submittable doctypes
@@ -4630,7 +4630,7 @@ def check_clean_docstatus_deviations():
                         `tab{child_dt}`.`name` AS `childname`,
                         `tab{child_dt}`.`docstatus` AS `child_docstatus`
                     FROM `tab{dt}`
-                    LEFT JOIN `tab{child_dt}` ON `tab{child_dt}`.`parent` = `tab{dt}`.`name` 
+                    LEFT JOIN `tab{child_dt}` ON `tab{child_dt}`.`parent` = `tab{dt}`.`name`
                                                  AND `tab{child_dt}`.`parenttype` = "{dt}"
                     WHERE `tab{dt}`.`docstatus` != `tab{child_dt}`.`docstatus`
                     ;
@@ -4641,8 +4641,8 @@ def check_clean_docstatus_deviations():
                         SET `docstatus` = {parent_docstatus}
                         WHERE `name` = "{child_name}";
                         """.format(
-                            child_dt=d['child_doctype'], 
-                            child_name=d['childname'], 
+                            child_dt=d['child_doctype'],
+                            child_name=d['childname'],
                             parent_docstatus=d['docstatus']
                         ), as_dict=True
                     )
@@ -4699,7 +4699,7 @@ def lock_seq_label_duplicates(label_barcodes):
                                     print(f"### Got the following exception when trying to save Sequencing Label {seq_label.name}: {err}. Unable to save Sequencing Label. Going to continue.")
                             else:
                                 print(f"Customer '{customer_doc.name}' of Sequencing Label {seq_label_doc.name} is not disabled. Please check the error message above. Going to continue.")
-                                continue 
+                                continue
                         else:
                             print(f"Sequencing Label {seq_label_doc.name} has no Customer. Please check the error message above. Going to continue.")
                             continue
@@ -4786,7 +4786,7 @@ def lock_both_seq_label_duplicates(label_barcodes):
                                 print(f"### Got the following exception when trying to save Sequencing Label {seq_label.name}: {err}. Unable to save Sequencing Label. Going to continue.")
                         else:
                             print(f"##### Customer '{customer_doc.name}' of Sequencing Label {seq_label_doc.name} is not disabled. Please check the error message above. Going to continue.")
-                            continue 
+                            continue
                     else:
                         print(f"#### Sequencing Label {seq_label_doc.name} has no Customer. Please check the error message above. Going to continue.")
                         continue
@@ -4818,7 +4818,7 @@ def change_default_company(old_company, new_company, countries_to_change, dry_ru
                                                 AND `tDLA`.`parenttype` = "Address"
                                                 AND `tDLA`.`link_doctype` = "Customer"
             WHERE `tDLA`.`link_name` = "{c['name']}";"""
-        
+
         countries = frappe.db.sql(query, as_dict=True)
         country_match = ""
         for country in countries:
@@ -4924,8 +4924,8 @@ def delete_lost_reasons_from_not_lost_quotations():
         """
     quotations = frappe.db.sql(query, as_dict=True)
     for quote in quotations:
-        # use DB operation due to cancelled QTNs        
-        frappe.db.sql(f"""                      
+        # use DB operation due to cancelled QTNs
+        frappe.db.sql(f"""
             DELETE FROM `tabLost Reason Detail`
             WHERE `tabLost Reason Detail`.`parent` = '{quote['name']}';
             """)
@@ -5001,7 +5001,7 @@ def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_
         else:
             counters['not_in_webshop'] += 1
             not_in_webshop.append(erp_label)
-    
+
     print(f"The {len(erp_unused_labels)} unused Sequencing Labels in the ERP have the following statuses in the Webshop:")
     for status, counter in counters.items():
         print(f"{status}: {counter} ({(counter/len(erp_unused_labels))*100:.2f} %)")
@@ -5011,7 +5011,7 @@ def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_
         with open(not_in_webshop_output, mode='w') as file:
             writer = csv.DictWriter(file, fieldnames=not_in_webshop[0].keys())
             # Write the header (column names)
-            writer.writeheader()        
+            writer.writeheader()
             # Write each dictionary as a row
             writer.writerows(not_in_webshop)
 
@@ -5020,7 +5020,7 @@ def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_
         with open(used_in_webshop_output, mode='w') as file:
             writer = csv.DictWriter(file, fieldnames=used_in_webshop[0].keys())
             # Write the header (column names)
-            writer.writeheader()        
+            writer.writeheader()
             # Write each dictionary as a row
             writer.writerows(used_in_webshop)
     print("Finished migration.lookup_unused_sequencing_labels")
@@ -5069,7 +5069,7 @@ def lookup_used_sequencing_labels(input_filepath, output_filepath):
         with open(output_filepath, mode='w') as file:
             writer = csv.DictWriter(file, fieldnames=used_in_seqblatt[0].keys())
             # Write the header (column names)
-            writer.writeheader()        
+            writer.writeheader()
             # Write each dictionary as a row
             writer.writerows(used_in_seqblatt)
 
@@ -5121,7 +5121,7 @@ def set_unused_sequencing_labels_to_received(input_filepath, verbose=False, dry_
     erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted'] ]],
                                        fields=['name', 'label_id', 'status'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP. Parsing Webshop export ...")
-    
+
     webshop_table = {}
     with open(input_filepath, 'r') as file:
         csv_reader = csv.reader(file, delimiter='\t')
@@ -5168,7 +5168,7 @@ def change_payable_account_on_supplier(company, old_account, new_account, exclud
     """
     suppliers = frappe.get_all("Supplier", filters={'disabled': 0}, fields=['name', 'supplier_name'])
     print(f"Going to process {len(suppliers)} enabled Suppliers.")
-    
+
     for supplier in suppliers:
         if exclude_microsynth and 'Microsynth' in supplier['supplier_name']:
             continue

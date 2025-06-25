@@ -112,7 +112,7 @@ class QMDocument(Document):
             WHERE `tabQM Document Link`.`qm_document` = "{doc}"
                 AND `tabQM Document`.`status` = 'Valid';
             """.format(doc=self.name), as_dict=True)
-        
+
         relating_docs = []
         for doc in self.linked_documents:
             if frappe.get_value("QM Document", doc.qm_document, "status") == "Valid":
@@ -146,26 +146,26 @@ class QMDocument(Document):
                         continue
 
         trained = frappe.db.sql("""
-            SELECT 
+            SELECT
                 `tabQM Training Record`.`trainee` AS `trainee`,
                 `tabUser`.`full_name` AS `full_name`
             FROM `tabQM Training Record`
             LEFT JOIN `tabUser` ON `tabUser`.`name` = `tabQM Training Record`.`trainee`
-            WHERE 
+            WHERE
                 `tabQM Training Record`.`document_type` = "QM Document"
                 AND `tabQM Training Record`.`document_name` = "{doc}"
                 AND `tabQM Training Record`.`signature` IS NOT NULL;
             """.format(doc=self.name), as_dict=True)
-            
-        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html", 
+
+        html = frappe.render_template("microsynth/qms/doctype/qm_document/doc_overview.html",
             {
-                'files': files, 
-                'doc': self, 
+                'files': files,
+                'doc': self,
                 'docs_linking_to_this': docs_linking_to_this,
                 'relating_docs': relating_docs,
                 'trained': trained
             })
-            
+
         return html
 
 
@@ -237,11 +237,11 @@ def update_status(qm_document, status):
     qm_doc = frappe.get_doc("QM Document", qm_document)
     if qm_doc.status == status:
         return
-    
+
     # validate signatures
     if status == "Created" and not qm_doc.signature:
         frappe.throw(f"Cannot create QM Document {qm_doc.name} because the creation signature is missing.")
-    
+
     if status == "Released" and not qm_doc.release_signature:
         frappe.throw(f"Cannot release QM Document {qm_doc.name} because the release signature is missing.")
 
@@ -262,9 +262,9 @@ def update_status(qm_document, status):
             qm_doc.status = status
             qm_doc.save()
             frappe.db.commit()
-    else: 
+    else:
         frappe.throw(f"Update QM Document Status: Status transition is not allowed {qm_doc.status} --> {status}")
-    
+
     if status == "Reviewed" or (status == "Created" and qm_doc.document_type not in document_types_with_review):
         # notify Q about a new releasable document.
         notify_q_releasable(qm_doc)
@@ -443,7 +443,7 @@ def invalidate_qm_docs():
             AND `status` = 'Valid'
             AND `docstatus` = 1
         ;""", as_dict=True)
-    
+
     for valid_qm_doc in valid_qm_docs:
         qm_doc = frappe.get_doc("QM Document", valid_qm_doc['name'])
         invalidate_document(qm_doc)
@@ -640,17 +640,17 @@ def create_file_attachment(qm_document, file_path):
         folder = create_folder("QM Document", "Home")
 
         save_and_attach(
-            content = file.read(), 
-            to_doctype = "QM Document", 
-            to_name = qm_document,  
+            content = file.read(),
+            to_doctype = "QM Document",
+            to_name = qm_document,
             folder = folder,
-            file_name = file_path.name, 
+            file_name = file_path.name,
             hashname = None,
             is_private = True )
     return
 
 
-def rewrite_posix_path(windows_path): 
+def rewrite_posix_path(windows_path):
     from pathlib import PureWindowsPath, PurePosixPath, Path
 
     path = PureWindowsPath(windows_path)       # see: https://stackoverflow.com/questions/60291545/converting-windows-path-to-linux
@@ -863,7 +863,7 @@ def fix_chapters(file_path):
             except Exception as err:
                 print(f"{qm_doc_name}: Unable to convert chapter '{line[2]}' or '{line[3]}' to an integer. Going to continue. {err=}")
                 continue
-            
+
             if frappe.db.exists("QM Document", qm_doc_name):
                 doc_version = frappe.db.get_value("QM Document", qm_doc_name, "version")
                 if version != doc_version:

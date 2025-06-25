@@ -26,7 +26,7 @@ def get_columns(filters):
 
 def get_data(filters=None):
     payments = frappe.db.sql("""
-        SELECT 
+        SELECT
             `tabGL Entry`.`posting_date` AS `date`,
             `tabGL Entry`.`debit_in_account_currency` AS `debit`,
             `tabGL Entry`.`credit_in_account_currency` AS `credit`,
@@ -36,7 +36,7 @@ def get_data(filters=None):
             `tabCustomer`.`name` AS `customer`,
             `tabCustomer`.`customer_name` AS `customer_name`,
             `tabCustomer`.`ext_debitor_number` AS `customer_ext_ref`
-        FROM `tabGL Entry` 
+        FROM `tabGL Entry`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabGL Entry`.`party`
         WHERE
             `tabGL Entry`.`company` = "{company}"
@@ -45,10 +45,10 @@ def get_data(filters=None):
             AND `tabGL Entry`.`credit` > 0
         ORDER BY `tabGL Entry`.`posting_date` ASC;
     """.format(
-        company=filters.get("company"), 
+        company=filters.get("company"),
         account=filters.get("account"),
         from_date=filters.get("from_date"),
         to_date=filters.get("to_date")
         ), as_dict=True)
-    
+
     return payments

@@ -53,8 +53,8 @@ def get_notes(sql_conditions, indent):
                 `tabContact Note`.`notes`
             FROM `tabContact Note`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabContact Note`.`contact_person`
-            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
                                               AND `tDLA`.`link_doctype` = "Customer"
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabContact`.`address`
@@ -109,20 +109,20 @@ def get_data(filters):
 
     if not filters.get('no_previous_notes') or filters.get('no_previous_notes') < 1:
         return raw_notes
-    
+
     enriched = []
     for note in raw_notes:
         enriched.append(note)
         sql_conditions = f" AND `tabContact Note`.`name` != '{note['name']}'"
         sql_conditions += f" AND `tabContact Note`.`contact_person` = '{note['contact_person']}'"
         sql_conditions += f" AND `tabContact Note`.`date` <= '{note['date']}'"
-        previous_notes = get_notes(sql_conditions, 1)        
+        previous_notes = get_notes(sql_conditions, 1)
 
         for i, previous_note in enumerate(previous_notes):
             if i >= filters.get('no_previous_notes'):
                 break
             enriched.append(previous_note)
-    
+
     return enriched
 
 
@@ -135,7 +135,7 @@ def execute(filters=None):
 def create_pdf(filters):
     """
     Get Contact Notes matching the given filters, create and append their print formats and return the URL to the merged PDF.
- 
+
     bench execute microsynth.microsynth.report.find_notes.find_notes.create_pdf --kwargs "{'filters': {'sales_manager': 'atila.durmus@microsynth.seqlab.de', 'from_date':'2024-06-01', 'to_date':'2024-06-30'}}"
     """
     import io

@@ -22,12 +22,12 @@ def get_user_names_by_process(qm_process, company=None):
         company_condition = f"`tabQM User Process Assignment`.`company` = '{company}'"
     else:
         company_condition = "TRUE"
-    
+
     qm_process_doc = frappe.get_doc("QM Process", qm_process)
     qm_process_condition = f" AND `tabQM User Process Assignment`.`process_number` = '{qm_process_doc.process_number}' AND `tabQM User Process Assignment`.`subprocess_number` = '{qm_process_doc.subprocess_number}'"
     if qm_process_doc.chapter:
         qm_process_condition += f" AND (`tabQM User Process Assignment`.`chapter` = '{qm_process_doc.chapter}' OR `tabQM User Process Assignment`.`all_chapters` = 1)"
-    
+
     query = f"""
         SELECT DISTINCT
             `tabUser Settings`.`name`,

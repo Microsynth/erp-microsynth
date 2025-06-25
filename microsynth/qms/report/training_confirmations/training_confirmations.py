@@ -34,7 +34,7 @@ def get_data(filters):
             filter_conditions += f"AND `tabQM Training Record`.`document_name` = '{filters.get('qm_document')}'"
         if filters.get('limit_to_valid'):
             filter_conditions += f"AND `tabQM Document`.`status` = 'Valid'"
-    
+
         query = """
             SELECT `tabQM Training Record`.`name`,
                 `tabQM Training Record`.`trainee`,
@@ -52,7 +52,7 @@ def get_data(filters):
                 `tabQM Training Record`.`due_date`,
                 `tabQM Training Record`.`signed_on`
             FROM `tabQM Training Record`
-            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tabQM Training Record`.`document_name` 
+            LEFT JOIN `tabQM Document` ON `tabQM Document`.`name` = `tabQM Training Record`.`document_name`
                 AND `tabQM Training Record`.`document_type` = "QM Document"
             WHERE TRUE
                 {filter_conditions}

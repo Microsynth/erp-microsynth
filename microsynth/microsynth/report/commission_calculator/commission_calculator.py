@@ -72,7 +72,7 @@ def get_data(filters):
                 WHERE `tabSales Invoice`.`name` = `gross_cash_flow`.`reference_name`) AS `customer_address`,
                 (SELECT `tabSales Invoice`.`company`
                 FROM `tabSales Invoice`
-                WHERE `tabSales Invoice`.`name` = `gross_cash_flow`.`reference_name`) AS `company`                
+                WHERE `tabSales Invoice`.`name` = `gross_cash_flow`.`reference_name`) AS `company`
             FROM
             (
                 SELECT
@@ -81,7 +81,7 @@ def get_data(filters):
                     `tabPayment Entry`.`paid_from_account_currency` AS `currency`
                 FROM `tabPayment Entry Reference`
                 LEFT JOIN `tabPayment Entry` ON `tabPayment Entry`.`name` = `tabPayment Entry Reference`.`parent`
-                WHERE 
+                WHERE
                     `tabPayment Entry`.`docstatus` = 1
                     AND `tabPayment Entry`.`posting_date` BETWEEN "{filters.get('from_date')}" AND "{filters.get('to_date')}"
                     AND `tabPayment Entry Reference`.`reference_doctype` = "Sales Invoice" /* map to allocated invoices */
@@ -91,7 +91,7 @@ def get_data(filters):
                     `tabJournal Entry Account`.`account_currency` AS `currency`
                 FROM `tabJournal Entry Account`
                 LEFT JOIN `tabJournal Entry` ON `tabJournal Entry`.`name` = `tabJournal Entry Account`.`parent`
-                WHERE 
+                WHERE
                     `tabJournal Entry`.`docstatus` = 1
                     AND `tabJournal Entry`.`posting_date` BETWEEN "{filters.get('from_date')}" AND "{filters.get('to_date')}"
                     AND `tabJournal Entry Account`.`reference_type` = "Sales Invoice" /* map to allocated invoices */
@@ -117,7 +117,7 @@ def async_pdf_export(filters):
     """
     if type(filters) == str:
         filters = json.loads(filters)
-        
+
     frappe.enqueue(method=pdf_export_cc, queue='long', timeout=600, is_async=True, filters=filters)
 
 
@@ -129,7 +129,7 @@ def pdf_export_cc(filters):
 
     if not os.path.exists(path_prefix):
         os.mkdir(path_prefix)
-    
+
     path = path_prefix + "/" + datetime.now().strftime("%Y-%m-%d_%H-%M_") + filters.get('country') + "_from_" + filters.get('from_date') + "_to_" + filters.get('to_date')
 
     if not os.path.exists(path):

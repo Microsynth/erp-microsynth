@@ -46,7 +46,7 @@ def get_data(filters=None):
         filters = dict(filters)
 
     open_label_orders = frappe.db.sql("""
-        SELECT 
+        SELECT
             `tabSales Order`.`name` AS `sales_order`,
             `tabSales Order`.`web_order_id` AS `web_order_id`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
@@ -68,7 +68,7 @@ def get_data(filters=None):
             (`tabSales Order Item`.`parent` = `tabSales Order`.`name`)
         LEFT JOIN `tabLabel Range` ON
             (`tabLabel Range`.`item_code` = `tabSales Order Item`.`item_code`)
-        WHERE 
+        WHERE
             `tabSales Order`.`product_type` = "Labels"
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` != 'Closed'
@@ -103,7 +103,7 @@ def get_data(filters=None):
         else:
             so['additional_item_codes'] = []
             so['additional_items'] = ""  # avoid misalignment in export
-    
+
     return open_label_orders
 
 
@@ -230,7 +230,7 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
 def are_labels_available(item_code, from_barcode, to_barcode):
     conflicts = frappe.db.sql("""
         SELECT `name`
-        FROM `tabSequencing Label` 
+        FROM `tabSequencing Label`
         WHERE `item` = "{item_code}"
           AND `label_id` BETWEEN "{from_barcode}" AND "{to_barcode}"
           AND LENGTH(`label_id`) = "{length}";

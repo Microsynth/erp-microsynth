@@ -135,7 +135,7 @@ def get_billing_address(customer):
             frappe.log_error(f"Contact '{invoice_to_contact}' has no Address.", "utils.get_billing_address")
         return find_billing_address(customer.name)
     addresses = frappe.db.sql(f"""
-            SELECT 
+            SELECT
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
                 `tabAddress`.`overwrite_company`,
@@ -154,7 +154,7 @@ def get_billing_address(customer):
             ;""", as_dict=True)
     if len(addresses) == 1:
         return addresses[0]
-    else: 
+    else:
         return find_billing_address(customer.name)
 
 
@@ -166,7 +166,7 @@ def find_billing_address(customer_id):
     bench execute "microsynth.microsynth.utils.find_billing_address" --kwargs "{'customer_id':8003}"
     """
     addresses = frappe.db.sql(
-        """ SELECT 
+        """ SELECT
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
                 `tabAddress`.`overwrite_company`,
@@ -204,14 +204,14 @@ def get_webshop_url():
 
 @frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
-    
+
     if frappe.db.exists("Address", address_name):
         address = frappe.get_doc("Address", address_name)
         address.links = []
         if type(links) == str:
-           links = json.loads(links) 
+           links = json.loads(links)
         for link in links:
-            address.append("links", { 
+            address.append("links", {
                 "link_doctype": link["link_doctype"],
                 "link_name": link["link_name"]
             } )
@@ -223,7 +223,7 @@ def create_oligo(oligo):
     oligo_doc = None
     # check if this oligo is already in the database
     if oligo['web_id']:
-        oligo_matches = frappe.get_all("Oligo", 
+        oligo_matches = frappe.get_all("Oligo",
             filters={'web_id': oligo['web_id']}, fields=['name'])
         if len(oligo_matches) > 0:
             # update and return this item
@@ -272,7 +272,7 @@ def create_sample(sample):
     sample_doc = None
     # check if this oligo is already in the database
     if sample['sample_web_id']:
-        sample_matches = frappe.get_all("Sample", 
+        sample_matches = frappe.get_all("Sample",
             filters={'web_id': sample['sample_web_id']}, fields=['name'])
         if len(sample_matches) > 0:
             # update and return this item
@@ -289,7 +289,7 @@ def create_sample(sample):
         else:
             # TODO: activate error logging, when labels are in the ERP
             # frappe.log_error("Sequencing Label for sample with web id '{web_id}' not found: barcode number '{barcode}', item '{item}'".format(
-            #     web_id = sample['sample_web_id'], 
+            #     web_id = sample['sample_web_id'],
             #     barcode = sample.get("sequencing_label"),
             #     item =sample.get("label_item_code") ), "utils: create_sample")
             label = None
@@ -327,7 +327,7 @@ def find_label(label_barcode, item):
     Find a Sequencing Label by its barcode and item.
     """
 
-    sql_query = """SELECT `tabSequencing Label`.`name` 
+    sql_query = """SELECT `tabSequencing Label`.`name`
         FROM `tabSequencing Label`
         WHERE `tabSequencing Label`.`label_id` = "{label_id}"
         AND `tabSequencing Label`.`item` = "{item}"
@@ -374,7 +374,7 @@ def to_bool(input):
 
 def get_name(contact):
     """
-    Assembles the first name and last name of a contact 
+    Assembles the first name and last name of a contact
     to a single name string.
     """
     name_elements = []
@@ -384,13 +384,13 @@ def get_name(contact):
         name_elements.append(contact.last_name)
 
     name_line = " ".join(name_elements)
-    
+
     return name_line
 
 
 def get_name_line(contact):
     """
-    Assembles the first name, last name and designation of a contact 
+    Assembles the first name, last name and designation of a contact
     to a single name line string.
     """
     name_elements = []
@@ -402,7 +402,7 @@ def get_name_line(contact):
         name_elements.append(contact.last_name)
 
     name_line = " ".join(name_elements)
-    
+
     return name_line
 
 
@@ -422,11 +422,11 @@ def get_email_ids(contact):
 def get_print_address(contact, address, customer=None, customer_name=None):
     if customer and not customer_name:
         customer_name = frappe.get_value("Customer", customer, 'customer_name')
-    
-    return frappe.render_template("microsynth/templates/includes/address.html", 
+
+    return frappe.render_template("microsynth/templates/includes/address.html",
         {
-            'contact': contact, 
-            'address': address, 
+            'contact': contact,
+            'address': address,
             'customer_name':  customer_name
         })
 
@@ -444,7 +444,7 @@ def get_posting_datetime(document):
 def set_order_label_printed(sales_orders):
     if type(sales_orders) == str:
         sales_orders = json.loads(sales_orders)
-    
+
     for o in sales_orders:
         if frappe.db.exists("Sales Order", o):
             sales_order = frappe.get_doc("Sales Order", o)
@@ -470,7 +470,7 @@ def get_country_express_shipping_item(country_name):
         frappe.log_error("No preferred express item found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
         return None
     if len(express_items) > 0:
-        
+
         if len(express_items) > 1:
             frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
         return express_items[0]
@@ -498,10 +498,10 @@ def get_customer_express_shipping_item(customer_name):
 
 def get_express_shipping_item(customer_name, country_name):
     """
-    Return the preferred express shipping item for the given customer ID and country name. 
-    
+    Return the preferred express shipping item for the given customer ID and country name.
+
     The shipping items of the customer override those of the country.
-    
+
     If the customer does not have a preferred express item, the preferred express item of the
     country is returned.
 
@@ -606,7 +606,7 @@ def get_supplier_for_product_type(company, product_type):
     """
     Returns a ['supplier': '..', 'supplier_name': '..', 'manufacturing_company': '..'] dict or None if there is no applicable intercompany supplier
     """
-    suppliers = frappe.get_all("Intercompany Settings Supplier", 
+    suppliers = frappe.get_all("Intercompany Settings Supplier",
         filters={
             'company': company,
             'product_type': product_type
@@ -671,7 +671,7 @@ def validate_sales_order_status(sales_order):
     Checks if the customer is enabled, the sales order is submitted, has an allowed
     status and has the tax template set.
 
-    run 
+    run
     bench execute microsynth.microsynth.utils.validate_sales_order_status --kwargs "{'sales_order': ''}"
     """
     customer = get_customer_from_sales_order(sales_order)
@@ -694,7 +694,7 @@ def validate_sales_order_status(sales_order):
         else:
             frappe.log_error(f'Sales Order {so.name} with Web Order ID {so.web_order_id} is in status {so.status}. Cannot create a Delivery Note.\n\n{user=}', 'utils.validate_sales_order_status')
         return False
-    
+
     if so.docstatus != 1:
         frappe.log_error(f"Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Cannot create a delivery note.", "utils.validate_sales_order_status")
         return False
@@ -711,7 +711,7 @@ def validate_sales_order(sales_order):
     Checks if the customer is enabled, the sales order is submitted, has an allowed
     status, has the tax template set and there are no delivery notes in status draft, submitted.
 
-    run 
+    run
     bench execute microsynth.microsynth.utils.validate_sales_order --kwargs "{'sales_order': ''}"
     """
 
@@ -759,13 +759,13 @@ def clean_up_delivery_notes(sales_order_id):
 
     for dn_id in reversed(delivery_notes):
         dn = frappe.get_doc("Delivery Note", dn_id.delivery_note)
-        
+
         if dn.docstatus == 1:
             if has_dn:
                 frappe.log_error("Sales Order '{0}' has delivery notes in submitted and draft mode".format(sales_order_id), "utils.clean_up_delivery_notes")
             # delivery note is submitted. keep it.
             has_dn = True
-        
+
         elif dn.docstatus == 0 and not has_dn:
             # keep the delivery note with the highest ID (iterate in reversed order)
             has_dn = True
@@ -774,10 +774,10 @@ def clean_up_delivery_notes(sales_order_id):
             # delete the delivery note if there is already one to keep
             print("Sales Order '{0}': Delete Delivery Note '{1}'".format(sales_order_id, dn.name))
             dn.delete()
-        
+
         else:
             frappe.log_error("Delivery Note '{0}' is not in draft status. Cannot delete it. Status: {1}".format(dn.name, dn.docstatus), "utils.clean_up_delivery_notes")
-    
+
     frappe.db.commit()
     return
 
@@ -790,7 +790,7 @@ def clean_up_all_delivery_notes():
     run
     bench execute "microsynth.microsynth.utils.clean_up_all_delivery_notes"
     """
-    
+
     query = """
         SELECT `against_sales_order` AS `name`
         FROM
@@ -802,7 +802,7 @@ def clean_up_all_delivery_notes():
            GROUP BY `against_sales_order`) AS `raw`
         WHERE `raw`.`count` > 1
     """
-    
+
     print("query sales orders with multiple delivery notes...")
     sales_orders = frappe.db.sql(query, as_dict=True)
 
@@ -815,19 +815,19 @@ def clean_up_all_delivery_notes():
         print("process '{0}' - {1}% of total ({2})".format(so.name, int(count/total * 100), total))
         clean_up_delivery_notes(so.name)
         count += 1
-    
-    return 
+
+    return
 
 
 def remove_delivery_notes_from_customs_declaration(customs_declaration, delivery_notes):
     """
     Removes Delivery Notes from a Customs Declaration but only if the Delivery Note is in draft.
-    
+
     run
     bench execute "microsynth.microsynth.utils.remove_delivery_notes_from_customs_declaration" --kwargs "{'customs_declaration': 'CD-23002', 'delivery_notes':['DN-BAL-23048017']}"
     """
     customs_declaration = frappe.get_doc("Customs Declaration", customs_declaration)
-    
+
     for dn in delivery_notes:
         if frappe.get_value("Delivery Note", dn, "docstatus") == 0:
             for eu_dn in customs_declaration.eu_dns:
@@ -844,7 +844,7 @@ def remove_delivery_notes_from_customs_declaration(customs_declaration, delivery
                     frappe.db.delete("Customs Declaration Delivery Note", {
                         "name": at_dn.name
                     })
-        else:  
+        else:
             print("Cannot remove Delivery Note '{0}'. Delivery Note is not in draft status.".format(dn))
     frappe.db.commit()
     return
@@ -855,7 +855,7 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
     Print out the data for a data import csv-file to update shipping item rate
 
     Important Note:
-    The template includes columns for Webshop Service. This data is currently not 
+    The template includes columns for Webshop Service. This data is currently not
     written to the import data and thus might delete existing Webshop Services!
 
     Run
@@ -863,7 +863,7 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
     $ bench execute "microsynth.microsynth.utils.update_shipping_item" --kwargs "{'item':'1117', 'preferred_express':1}"
     $ bench execute "microsynth.microsynth.utils.update_shipping_item" --kwargs "{'item':'1117', 'threshold':1000.0}"
     """
-    
+
     header = """\"Data Import Template"
 "Table:","Country"
 ""
@@ -891,7 +891,7 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
 
     for country in countries:
         country_doc = frappe.get_doc("Country", country)
-        
+
         shipping_item_names = []
         for n in country_doc.shipping_items:
             shipping_item_names.append(n.item)
@@ -918,7 +918,7 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
                     new_threshold = shipping_item.threshold
                     new_item_name = shipping_item.item_name
                     new_preferred_express = shipping_item.preferred_express
-            
+
                 print("""\"\",\"{country_id}\","{country_name}","","","","",\"\"\"{shipping_item_id}\"\"\","{item_code}",{qty},{rate},{threshold},\"{item_name}\",{preferred_express}""".format(
                     country_id = country_id,
                     country_name = country_name,
@@ -929,22 +929,22 @@ def update_shipping_item(item, rate = None, qty = None, threshold = None, prefer
                     threshold = new_threshold,
                     item_name = new_item_name,
                     preferred_express = new_preferred_express))
-                
+
                 i += 1
 
 
 def set_distributor(customer, distributor, product_type):
     """
     Set the specified distributor for the a product type to the customer. If there is already a distributor set, replace it with the new one.
-    
+
     run
     bench execute "microsynth.microsynth.utils.set_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
-    """       
+    """
     # validate input
     if not frappe.db.exists("Customer", distributor):
         frappe.log_error("The provided distributor '{0}' does not exist. Processing customer '{1}'.".format(distributor,customer),"utils.add_distributor")
         return
-    
+
     customer = frappe.get_doc("Customer", customer)
 
     updated = False
@@ -970,10 +970,10 @@ def set_distributor(customer, distributor, product_type):
 def has_webshop_service(customer, service):
     """
     Check if a csutomer has the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq')
-    
+
     bench execute microsynth.microsynth.utils.has_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
     """
-    webshop_services = frappe.get_all("Webshop Service Link", 
+    webshop_services = frappe.get_all("Webshop Service Link",
         filters={'parent': customer, 'parenttype': "Customer", 'webshop_service': service},
         fields=['name', 'parent']
     )
@@ -983,7 +983,7 @@ def has_webshop_service(customer, service):
 def add_webshop_service(customer, service):
     """
     Add the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq') to the customer.
-    
+
     bench execute microsynth.microsynth.utils.add_webshop_service --kwargs "{'customer':'832188', 'service':'FullPlasmidSeq'}"
     """
     customer = frappe.get_doc("Customer", customer)
@@ -992,7 +992,7 @@ def add_webshop_service(customer, service):
     for s in customer.webshop_service:
         if s.webshop_service == service:
             has_service = True
-    
+
     if not has_service:
         print("Customer '{0}': Add webshop service '{1}'".format(customer.name, service))
         entry = {
@@ -1041,13 +1041,13 @@ def get_child_territories(territory):
     entries = frappe.db.sql("""select name, lft, rgt, {parent} as parent
             from `tab{tree}` order by lft"""
         .format(tree="Territory", parent="parent_territory"), as_dict=1)
-    
+
     range = {}
     for d in entries:
         if d.name == territory:
             range['lft'] = d['lft']
             range['rgt'] = d['rgt']
-    
+
     if 'lft' not in range or 'rgt' not in range:
         frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "utils.get_all_child_territories")
         return []
@@ -1067,9 +1067,9 @@ def get_debtor_account_currency(company, currency):
     run
     bench execute microsynth.microsynth.utils.get_debtor_account --kwargs "{'company': 'Microsynth AG', 'currency': 'EUR' }"
     """
-    
+
     print("get_debtor_accout for '{0}' and '{1}'".format(company, currency))
-    
+
     query = """
         SELECT `name`
         FROM `tabAccount`
@@ -1080,7 +1080,7 @@ def get_debtor_account_currency(company, currency):
     """.format(company =company, currency = currency)
 
     accounts = frappe.db.sql(query, as_dict=True)
-    
+
     if len(accounts) == 1:
         return accounts[0]
     else:
@@ -1095,7 +1095,7 @@ def get_account_by_number(company, account_number):
         # print("{0}: {1}".format(accounts[0].name, accounts[0].currency))
         return accounts[0].name
     else:
-        frappe.throw("None or multiple debtor accounts found for company '{0}', account_number '{1}'".format(company, account_number), "utils.get_debtor_account")        
+        frappe.throw("None or multiple debtor accounts found for company '{0}', account_number '{1}'".format(company, account_number), "utils.get_debtor_account")
         return None
 
 
@@ -1108,7 +1108,7 @@ def get_debtor_account(company, currency, country):
     """
 
     company_country = frappe.get_value("Company", company, "country")
-    
+
     if company == "Microsynth AG":
         if currency == "CHF":
             account = 1100
@@ -1157,7 +1157,7 @@ def set_debtor_accounts(customer):
     """
 
     companies = frappe.get_all("Company", fields = ['name', 'default_currency'])
-    
+
     default_currencies = {}
     for company in companies:
         default_currencies[company.name] = company.default_currency
@@ -1181,9 +1181,9 @@ def set_debtor_accounts(customer):
     for company in companies:
         account_number =  get_debtor_account(company.name, customer.default_currency, address.country)
         account = get_account_by_number(company.name, account_number)
-        
+
         entry_exists = False
-    
+
         for a in customer.accounts:
             if a.company == company.name:
                 # update
@@ -1278,7 +1278,7 @@ def set_webshop_services(customer_id):
 @frappe.whitelist()
 def configure_customer(customer):
     """
-    Configures a customer. This function is run upon webshop user registration (webshop.register_user) 
+    Configures a customer. This function is run upon webshop user registration (webshop.register_user)
     and when saving the customer or an address (customer.js, address.js).
     """
     set_default_language(customer)
@@ -1303,7 +1303,7 @@ def configure_new_customer(customer):
 
 def get_alternative_account(account, currency):
     """
-    run 
+    run
     bench execute microsynth.microsynth.utils.get_alternative_account --kwargs "{'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'currency': 'EUR'}"
     """
     query = """
@@ -1353,8 +1353,8 @@ def get_alternative_income_account(account, country):
 
 def get_alternative_intercompany_income_account(account, customer):
     """
-    Return the first alternative intercompany income account for a given account and customer. 
-    
+    Return the first alternative intercompany income account for a given account and customer.
+
     run
     bench execute microsynth.microsynth.utils.get_alternative_intercompany_income_account --kwargs "{'account': '3200 - 3.1 DNA-Oligosynthese Schweiz - BAL', 'customer': '37595596'}"
     """
@@ -1393,7 +1393,7 @@ def get_customers_for_country(country):
     """.format(country=country)
 
     customers = frappe.db.sql(query, as_dict=True)
-    
+
     return [ c['name'] for c in customers ]
 
 
@@ -1404,8 +1404,8 @@ def set_default_company(customer_id):
     run
     bench execute microsynth.microsynth.utils.set_default_company --kwargs "{'customer': '8003'}"
     """
-    query = """ 
-            SELECT 
+    query = """
+            SELECT
                 `tabAddress`.`name`,
                 `tabAddress`.`address_type`,
                 `tabAddress`.`country`,
@@ -1599,26 +1599,26 @@ def determine_territory(address_id):
                 return frappe.get_doc("Territory", "Paris")
             else:
                 return frappe.get_doc("Territory", "France (Northwest)")
-        
+
         elif address.country == "Réunion" or address.country == "French Guiana":
             return frappe.get_doc("Territory", "France (Northwest)")
-        
+
         elif address.country == "Liechtenstein":
             return frappe.get_doc("Territory", "Switzerland (German-speaking)")
-        
+
         elif address.country == "Poland":
             return frappe.get_doc("Territory", "Rest of Europe (PL)")
-        
+
         elif address.country in ("Åland Islands", "Andorra", "Belgium", "Denmark", "Faroe Islands", "Finland", "Gibraltar", "Greenland", "Guernsey",
                                  "Holy See (Vatican City State)", "Iceland", "Ireland", "Isle of Man", "Italy", "Jersey", "Luxembourg", "Monaco",
                                  "Netherlands", "Norway", "Portugal", "San Marino", "Spain", "Sweden", "United Kingdom"):
             return frappe.get_doc("Territory", "Rest of Europe (West)")
-        
+
         elif address.country in ("Albania", "Armenia", "Belarus", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
                                  "Estonia", "Georgia", "Greece", "Hungary", "Kosovo", "Latvia", "Lithuania", "Macedonia", "Malta", "Moldova, Republic of",
                                  "Montenegro", "Romania", "Serbia", "Slovakia", "Slovenia", "Turkey", "Ukraine"):
             return frappe.get_doc("Territory", "Rest of Europe (East)")
-        
+
         elif address.country in ("Anguilla", "Antigua and Barbuda", "Argentina", "Aruba", "Bahamas", "Barbados", "Belize", "Brazil", "Canada",
                                  "Cayman Islands", "Chile", "Colombia", "Costa Rica", "Cuba", "Dominica", "Dominican Republic", "Ecuador", "El Salvador",
                                  "Grenada", "Guadeloupe", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Martinique", "Mexico", "Montserrat",
@@ -1627,7 +1627,7 @@ def determine_territory(address_id):
             return frappe.get_doc("Territory", "Rest of World (Americas)")
         else:
             return frappe.get_doc("Territory", "Rest of World (Asia, Africa, Australia)")
-    
+
     except Exception as err:
         msg = f"Could not determine territory from address '{address_id}': {err}"
         print(msg)
@@ -1645,7 +1645,7 @@ def get_first_shipping_address(customer_id):
     """
     # TODO Webshop update to send the attribute is_shipping_address. Uncomment line 'AND `tabAddress`.`is_shipping_address` <> 0'
     query = f"""
-            SELECT 
+            SELECT
                 `tabAddress`.`name`,
                 `tabAddress`.`country`,
                 `tabAddress`.`is_shipping_address`,
@@ -1706,7 +1706,7 @@ def configure_territory(customer_id):
             send_email_from_template(email_template, rendered_content, rendered_subject=rendered_subject, recipients=recipient)
             return
         territory = determine_territory(shipping_address)
-        if territory: 
+        if territory:
             customer.territory = territory.name
             customer.save()
         else:
@@ -1843,7 +1843,7 @@ def update_sales_manager_for_country(country):
 @frappe.whitelist()
 def exact_copy_sales_invoice(sales_invoice):
     """
-    Clone a sales invoice including the no-copy fields (sales_invoice.json: field "no_copy": 1). Set the new document to 
+    Clone a sales invoice including the no-copy fields (sales_invoice.json: field "no_copy": 1). Set the new document to
     Draft status. Change the owner to the current user ('created this').
     Set the creation time to now.
 
@@ -1922,7 +1922,7 @@ def tag_linked_documents(web_order_id, tag):
             sales_invoices.append(x.name)
 
     # tag sales orders and find linked documents
-    for so in sales_orders:        
+    for so in sales_orders:
         add_tag(tag = tag, dt = "Sales Order", dn = so )
 
         # get linked Delivery Notes
@@ -2070,7 +2070,7 @@ def comment_invoice(sales_invoice, comment):
     return
 
 
-@frappe.whitelist()    
+@frappe.whitelist()
 def fetch_price_list_rates_from_prevdoc(prevdoc_doctype, prev_items):
     if type(prev_items) == str:
         prev_items = json.loads(prev_items)
@@ -2268,7 +2268,7 @@ def find_same_ext_dnr_diff_taxid():
     for c in customers:
         if c['ext_debitor_number']:
             ext_debitor_numbers.add(c['ext_debitor_number'])
-    
+
     print(f"There are {len(ext_debitor_numbers)} different External Debitor Numbers of enabled Customers "
           f"with Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.")
 
@@ -2301,7 +2301,7 @@ def find_same_ext_dnr_diff_taxid():
         for cust in entry:
             if cust['tax_id']:
                 print(f"Tax ID '{cust['tax_id']}' for Customer '{cust['name']}' ('{cust['customer_name']}')")
-    
+
     print(f"\nThere are {chaos_counter}/{len(ext_debitor_numbers)} External Debitor Numbers "
           f"({(chaos_counter / len(ext_debitor_numbers)) * 100:.2f} %) "
           f"where the Customers have different Tax IDs.")
@@ -2520,11 +2520,11 @@ def item_after_insert(item, event):
 def force_cancel(dt, dn):
     """
     This function allows to move a document from draft directly to cancelled
-    
+
     Parameters:
         dt      Doctype Name, e.g. "Quotation"
         dn      Record Name, e.g. "QTN-01234"
-        
+
     It will only work from docstatus 0/Draft, because valid documents might need actions on cancel (GL Entry, ...)
     """
     try:
@@ -2535,7 +2535,7 @@ def force_cancel(dt, dn):
             set_record_cancelled(dt, dn, status_update=status_update, key="name")
         else:
             set_record_cancelled(dt, dn, status_update="", key="name")
-        
+
         # recurse into child tables
         for f in meta.fields:
             if f.fieldtype == "Table":
@@ -2562,7 +2562,7 @@ def force_cancel(dt, dn):
 def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
     frappe.db.sql("""
         UPDATE `tab{dt}`
-        SET 
+        SET
             `docstatus` = 2
             {status}
         WHERE
@@ -2570,10 +2570,10 @@ def set_record_cancelled(dt, dn, status_update="", key="name", parent_dt=None):
             AND `docstatus` = 0
             {parent};
     """.format(
-        dt=dt, 
-        dn=dn, 
-        status=status_update, 
-        key=key, 
+        dt=dt,
+        dn=dn,
+        status=status_update,
+        key=key,
         parent=""" AND `parenttype` = "{0}" """.format(parent_dt) if parent_dt else "")
     )
     return
@@ -2590,7 +2590,7 @@ def user_has_role(user, role):
           AND `role` = "{role}"
           AND `parenttype` = "User";
         """, as_dict=True)
-    
+
     return len(role_matches) > 0
 
 
@@ -2628,7 +2628,7 @@ def get_potential_contact_duplicates(contact_id):
         WHERE `tabContact`.`status` != 'Disabled'
             AND (`tabContact`.`email_id` = '{contact.email_id}'
                 OR (`tabContact`.`first_name` = '{contact.first_name}'
-                    AND `tabContact`.`last_name` = '{contact.last_name}'             
+                    AND `tabContact`.`last_name` = '{contact.last_name}'
                 )
             )
             AND `tabAddress`.`address_type` = '{address.address_type}'
@@ -2804,11 +2804,11 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     if not from_date:
         from_date = f"{yesterday.year}-{yesterday.month}-01"
     if not to_date:
-        to_date = f"{yesterday.year}-{yesterday.month}-{yesterday.day}" # yesterday.date()    
+        to_date = f"{yesterday.year}-{yesterday.month}-{yesterday.day}" # yesterday.date()
     print(f"{from_date=}; {to_date=}")
 
     item_query = f"""
-        SELECT 
+        SELECT
             `tabSales Invoice`.`name`,
             `tabSales Invoice Item`.`base_amount` AS `total`,
             `tabSales Invoice`.`currency` AS `currency`,
@@ -2825,7 +2825,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         FROM `tabSales Invoice Item`
         LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
-        WHERE 
+        WHERE
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice Item`.`docstatus` = 1
             AND `tabSales Invoice Item`.`item_code` IN ('0640', '0650', '0660', '0670', '0671', '0652', '0653', '0655', '0665')
@@ -2844,7 +2844,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         sirna_totals[si_rna_item['currency']] += si_rna_item['total']
 
     query = f"""
-            SELECT 
+            SELECT
                 `tabSales Invoice`.`name`,
                 `tabSales Invoice`.`base_total` AS `total`,
                 `tabSales Invoice`.`currency` AS `currency`,
@@ -2859,7 +2859,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` IN ('0352', '0353', '0354', '0355', '0372', '0373', '0374', '0379', '0380', '0381', '0382', '0383', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0570', '0571', '0572', '0573', '0574', '0575', '0576', '0600', '0601', '0602', '0605', '0606', '0607', '0608', '0672', '0673', '0674', '0677', '0678', '0679', '0820', '0821', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0845', '0860', '0861', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890' )
                 AND `tabSales Invoice`.`posting_date` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
@@ -2967,7 +2967,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         summary += f"<br>siRNA: {total_string} {c}"
         total_string = f"{aso_totals[c]:,.2f}".replace(",", "'")
         summary += f"<br>ASO: {total_string} {c}<br>"
-    
+
     print(summary)
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"\n{datetime.now()}: Finished calculate_therapeutic_oligo_sales after {elapsed_time} hh:mm:ss.")

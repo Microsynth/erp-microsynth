@@ -32,7 +32,7 @@ def get_data(filters, short=False):
         conditions += """ AND `tabAccounting Note`.`account` = "{a}" """.format(a=filters.account)
     if filters.status:
         conditions += """ AND `tabAccounting Note`.`status` = "{s}" """.format(s=filters.status)
-        
+
     sql_query = """
         SELECT
             `tabAccounting Note`.`date`,
@@ -47,15 +47,15 @@ def get_data(filters, short=False):
             GROUP_CONCAT(`tabAccounting Note Reference`.`reference_name`) AS `related`
         FROM `tabAccounting Note`
         LEFT JOIN `tabAccounting Note Reference` ON `tabAccounting Note Reference`.`parent` = `tabAccounting Note`.`name`
-        WHERE 
+        WHERE
             `tabAccounting Note`.`date` BETWEEN "{from_date}" AND "{to_date}"
             {conditions}
         GROUP BY `tabAccounting Note`.`name`
         ORDER BY `tabAccounting Note`.`date` ASC;
     """.format(from_date=filters.from_date, to_date=filters.to_date, conditions=conditions)
-    
+
     data = frappe.db.sql(sql_query, as_dict=True)
-                
+
     return data
 
 

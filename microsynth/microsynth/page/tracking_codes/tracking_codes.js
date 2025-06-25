@@ -53,7 +53,7 @@ frappe.tracking_codes = {
                         'callback': function(r) {
                             if (r.message.success) {
                                 create_tracking_code(web_order_id, tracking_code);
-                                setTimeout(function() { 
+                                setTimeout(function() {
                                     clear_fields();
                                     web_order_id = null;
                                     tracking_code = null;
@@ -65,7 +65,7 @@ frappe.tracking_codes = {
                                         indicator: 'red',
                                         message: 'No Tracking Code created:<br><br>' + r.message.message
                                     });
-                                    setTimeout(function() { 
+                                    setTimeout(function() {
                                         clear_fields();
                                         web_order_id = null;
                                         tracking_code = null;
@@ -76,7 +76,7 @@ frappe.tracking_codes = {
                                         function () {
                                             // yes
                                             create_tracking_code(web_order_id, tracking_code);
-                                            setTimeout(function() { 
+                                            setTimeout(function() {
                                                 clear_fields();
                                                 web_order_id = null;
                                                 tracking_code = null;
@@ -85,7 +85,7 @@ frappe.tracking_codes = {
                                         },
                                         function () {
                                             // no
-                                            setTimeout(function() { 
+                                            setTimeout(function() {
                                                 clear_fields();
                                                 web_order_id = null;
                                                 tracking_code = null;
@@ -111,7 +111,7 @@ function create_tracking_code(web_order_id, tracking_code) {
         'args': {
             'web_order_id': web_order_id,
             'tracking_code': tracking_code
-        }, 
+        },
         'callback': function(r) {
             console.log(r.message);
         }

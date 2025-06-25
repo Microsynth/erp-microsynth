@@ -37,7 +37,7 @@ frappe.invoice_entry = {
         var data = "";
         $(frappe.render_template('invoice_entry', data)).appendTo(me.body);
     },
-    run: function(page) { 
+    run: function(page) {
         frappe.invoice_entry.get_purchase_invoice_drafts();
     },
     get_purchase_invoice_drafts: function() {
@@ -62,7 +62,7 @@ frappe.invoice_entry = {
         }
         // insert content
         document.getElementById("pi_drafts_view").innerHTML = html;
-        
+
         for (let i = 0; i < purchase_invoice_drafts.length; i++) {
             frappe.invoice_entry.create_fields(purchase_invoice_drafts[i]);
             frappe.invoice_entry.attach_save_handler(purchase_invoice_drafts[i].name);
@@ -71,7 +71,7 @@ frappe.invoice_entry = {
             frappe.invoice_entry.attach_close_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_delete_handler(purchase_invoice_drafts[i].name);
         }
-        
+
         // clean help boxes to save some space below each input box
         let help_boxes = document.getElementsByClassName("help-box");
         for (let i = 0; i < help_boxes.length; i++) {
@@ -121,11 +121,11 @@ frappe.invoice_entry = {
         });
     },
     update_display_fields: function(purchase_invoice_values) {
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'supplier', purchase_invoice_values.supplier);
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'supplier_name', purchase_invoice_values.supplier_name);
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'due_date', frappe.datetime.obj_to_user(purchase_invoice_values.due_date));
         // check if due date is in the past
         if (purchase_invoice_values.due_date <= frappe.datetime.get_today()) {
@@ -133,36 +133,36 @@ frappe.invoice_entry = {
         } else {
             document.getElementById("due_date_" + purchase_invoice_values.name).parentNode.parentNode.classList.remove("highlight-row");
         }
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'bill_date', frappe.datetime.obj_to_user(purchase_invoice_values.bill_date));
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'posting_date', frappe.datetime.obj_to_user(purchase_invoice_values.posting_date));
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'bill_no', purchase_invoice_values.bill_no);
         if (purchase_invoice_values.allow_edit_net_amount === 1) {
-            frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+            frappe.invoice_entry.set_field(purchase_invoice_values.name,
                 'net_total', format_currency(purchase_invoice_values.net_total));
         } else {
-            frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+            frappe.invoice_entry.set_div(purchase_invoice_values.name,
                 'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_toal));
         }
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'taxes', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.total_taxes_and_charges));
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'grand_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.grand_total));
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'tax_template', purchase_invoice_values.taxes_and_charges);
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'expense_account', purchase_invoice_values.expense_account + " / " + purchase_invoice_values.cost_center);
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'iban', purchase_invoice_values.iban);
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'esr_participation_number', purchase_invoice_values.esr_participation_number);
-        frappe.invoice_entry.set_div(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'payment_method', purchase_invoice_values.default_payment_method);
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'approver', purchase_invoice_values.approver);
-        frappe.invoice_entry.set_field(purchase_invoice_values.name, 
+        frappe.invoice_entry.set_field(purchase_invoice_values.name,
             'remarks', purchase_invoice_values.remarks);
     },
     set_field: function(purchase_invoice, field_name, value) {
@@ -227,7 +227,7 @@ frappe.invoice_entry = {
                     }
                 } else {
                     frappe.show_alert(response.message.message);
-                }                
+                }
             }
         });
     },
@@ -261,7 +261,7 @@ frappe.invoice_entry = {
         let quick_entry = document.getElementById("quick_entry_" + purchase_invoice_name);
         let full_form = document.getElementById("full_form_" + purchase_invoice_name);
         let form_frame = document.getElementById("form_frame_" + purchase_invoice_name);
-        
+
         if (close) {
             // close edit iframe
             quick_entry.style.display = "Block";
@@ -269,7 +269,7 @@ frappe.invoice_entry = {
             // clean form
             form_frame.innerHTML = "";
         } else {
-            
+
             quick_entry.style.display = "None";
             full_form.style.display = "Block";
             // load full form
@@ -305,7 +305,7 @@ frappe.invoice_entry = {
         });
     },
     remove_clearfix_nodes: function() {
-        let clearfixes = document.getElementsByClassName("clearfix"); 
+        let clearfixes = document.getElementsByClassName("clearfix");
         for  (let i = clearfixes.length - 1; i >= 0 ; i--) {
             clearfixes[i].remove();
         }

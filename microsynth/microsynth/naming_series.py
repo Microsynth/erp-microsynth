@@ -78,7 +78,7 @@ NAMING_SERIES_MAP = {
 }
 
 """
-Returns the naming series according to doctype and optionally company 
+Returns the naming series according to doctype and optionally company
 """
 @frappe.whitelist()
 def get_naming_series(doctype, company=None):

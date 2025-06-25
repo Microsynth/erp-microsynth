@@ -26,7 +26,7 @@ def oligo_status_changed(content=None):
         return {'success': False, 'message': "Please provide content", 'reference': None}
     if not 'oligos' in content:
         return {'success': False, 'message': "Please provide oligos", 'reference': None}
-    
+
     # go through oligos and update status
     affected_sales_orders = set()
     updated_oligos = []
@@ -39,17 +39,17 @@ def oligo_status_changed(content=None):
 
         # find oligo
         oligos = frappe.db.sql("""
-            SELECT 
+            SELECT
               `tabOligo`.`name`,
               `tabOligo Link`.`parent` AS `sales_order`
             FROM `tabOligo`
             LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-            WHERE 
+            WHERE
               `tabOligo`.`web_id` = "{web_id}"
               AND `tabOligo Link`.`parenttype` = "Sales Order"
             ORDER BY `tabOligo Link`.`creation` DESC;
         """.format(web_id=oligo['web_id']), as_dict=True)
-        
+
         if len(oligos) > 0:
             if len(oligos) > 1:
                 first_oligo_name = oligos[0]['name']
@@ -79,7 +79,7 @@ def oligo_status_changed(content=None):
     if len(error_oligos) > 0:
         frappe.log_error(f"Oligo status update: The following oligos are not found: {error_oligos}", "Production: oligo status update error")
     return {
-        'success': len(error_oligos) == 0, 
+        'success': len(error_oligos) == 0,
         'message': 'Processed {0} oligos from {1} orders (Errors: {2}))'.format(
             len(updated_oligos), len(affected_sales_orders), ", ".join(map(str, error_oligos))
         )
@@ -95,7 +95,7 @@ def get_customer_from_sales_order(sales_order):
 def check_sales_order_completion(sales_orders):
     """
     Check if all oligos of the provided orders are completed and generate a delivery note.
-    
+
     Run
     bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23000051']}"
     """
@@ -105,10 +105,10 @@ def check_sales_order_completion(sales_orders):
 
         if not validate_sales_order(sales_order):
             continue
-        
+
         # get open items
         so_open_items = frappe.db.sql("""
-            SELECT 
+            SELECT
                 `tabOligo Link`.`parent`
             FROM `tabOligo Link`
             LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
@@ -178,15 +178,15 @@ def check_sales_order_completion(sales_orders):
             # create PDF for delivery note
             try:
                 pdf = frappe.get_print(
-                    doctype="Delivery Note", 
+                    doctype="Delivery Note",
                     name=dn.name,
                     print_format=settings.dn_print_format,
                     as_pdf=True
                 )
                 output = open("{0}/{1}.pdf".format(
-                    settings.pdf_path, 
+                    settings.pdf_path,
                     dn.web_order_id), 'wb')
-                # convert byte array and write to binray file            
+                # convert byte array and write to binray file
                 output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
                 output.close()
             except Exception as err:
@@ -203,10 +203,10 @@ def get_orders_for_packaging(destination="CH"):
     Destination: CH, EU, ROW (see Country:Export Code)
     """
     deliveries = frappe.db.sql("""
-        SELECT 
+        SELECT
             `tabDelivery Note`.`web_order_id` AS `web_order_id`,
-            `tabDelivery Note`.`name` AS `delivery_note`, 
-            `tabAddress`.`country` AS `country`, 
+            `tabDelivery Note`.`name` AS `delivery_note`,
+            `tabAddress`.`country` AS `country`,
             `tabCountry`.`export_code` AS `export_code`
         FROM `tabDelivery Note`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
@@ -215,7 +215,7 @@ def get_orders_for_packaging(destination="CH"):
           AND `tabCountry`.`export_code` LIKE "{export_code}"
           AND `tabDelivery Note`.`product_type` = "Oligos";
     """.format(export_code=destination), as_dict=True)
-        
+
     return {'success': True, 'message': 'OK', 'orders': deliveries}
 
 
@@ -239,7 +239,7 @@ def get_next_order_for_packaging(destination="CH"):
     Destination: CH, EU, ROW (see Country:Export Code)
     """
     deliveries = get_orders_for_packaging(destination)['orders']
-    
+
     if len(deliveries) > 0:
         return {'success': True, 'message': 'OK', 'orders': [deliveries[0]] }
     else:
@@ -250,7 +250,7 @@ def get_next_order_for_packaging(destination="CH"):
 def oligo_delivery_packaged(delivery_note):
     """
     Mark a delivery as packaged
-    
+
     bench execute "microsynth.microsynth.production.oligo_delivery_packaged" --kwargs "{'delivery_note': 'DN-BAL-25016266-1'}"
     """
     if frappe.db.exists("Delivery Note", delivery_note):
@@ -310,17 +310,17 @@ def oligo_order_packaged(web_order_id):
     bench execute "microsynth.microsynth.production.oligo_order_packaged" --kwargs "{'web_order_id': '4280235'}"
     """
     delivery_notes = frappe.db.sql("""
-            SELECT 
+            SELECT
                 `tabDelivery Note`.`name`
             FROM `tabDelivery Note`
             WHERE
                 `tabDelivery Note`.`web_order_id` = "{web_order_id}"
             AND `tabDelivery Note`.`docstatus` = 0;
         """.format(web_order_id=web_order_id), as_dict=True)
-    
+
     if len(delivery_notes) == 0:
         return {'success': False, 'message': "Could not find Delivery Note Draft with web_order_id: {0}".format(web_order_id)}
-    elif len(delivery_notes) > 1: 
+    elif len(delivery_notes) > 1:
         return {'success': False, 'message': "Multiple Delivery Note Drafts found for web_order_id: {0}".format(web_order_id)}
     else:
         packaged = oligo_delivery_packaged(delivery_notes[0].name)
@@ -351,7 +351,7 @@ def process_internal_order(sales_order):
     from microsynth.microsynth.utils import get_tags
     print("process {0}".format(sales_order))
     sales_order = frappe.get_doc("Sales Order", sales_order)
-    
+
     tags = get_tags("Sales Order", sales_order.name)
 
     for tag in tags:
@@ -389,7 +389,7 @@ def process_internal_oligos(file):
                 oligo['web_id'] = elements[1].strip()
                 oligo['production_id'] = elements[2].split('.')[0]  # only consider root oligo ID
                 oligo['status'] = elements[3].strip()
-                internal_oligos.append(oligo) 
+                internal_oligos.append(oligo)
 
     affected_sales_orders = []
     i =0
@@ -398,12 +398,12 @@ def process_internal_oligos(file):
 
         # find oligo
         oligos = frappe.db.sql("""
-            SELECT 
+            SELECT
               `tabOligo`.`name`,
               `tabOligo Link`.`parent` AS `sales_order`
             FROM `tabOligo`
             LEFT JOIN `tabOligo Link` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-            WHERE 
+            WHERE
               `tabOligo`.`web_id` = "{web_id}"
               AND `tabOligo Link`.`parenttype` = "Sales Order"
             ORDER BY `tabOligo Link`.`creation` DESC;
@@ -419,7 +419,7 @@ def process_internal_oligos(file):
                 oligo_doc.save(ignore_permissions=True)
 
             process_internal_order(oligos[0]['sales_order'])
-        else: 
+        else:
             continue
 
 
@@ -427,7 +427,7 @@ def alternative_validate_sales_order_status(sales_order):
     """
     Checks if the customer is enabled, the sales order is submitted and does not have an invoiced tag
 
-    run 
+    run
     bench execute microsynth.microsynth.utils.validate_sales_order_status --kwargs "{'sales_order': ''}"
     """
     customer = get_customer_from_sales_order(sales_order)
@@ -437,7 +437,7 @@ def alternative_validate_sales_order_status(sales_order):
     if so._user_tags and 'invoiced' in so._user_tags:
         print(f"Sales Order {so.name} has an invoiced tag, going to skip.")
         return False
-    
+
     if so.docstatus != 1:
         print(f"Sales Order {so.name} is not submitted. Cannot create a Delivery Note.")
         return False
@@ -476,10 +476,10 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
         if not alternative_validate_sales_order_status(sales_order):
             continue
-        
+
         # get open items
         so_open_items = frappe.db.sql("""
-            SELECT 
+            SELECT
                 `tabOligo Link`.`parent`
             FROM `tabOligo Link`
             LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
@@ -531,11 +531,11 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                     # Do not consider the items in this step.
                     if oligo_doc.status != "Canceled" and len(oligos_on_dns) == 0:
                         oligos_to_deliver.append(oligo)
-                    
+
                     # Collect items that will be subtracted from the Delivery Note item quantities.
-                    # Do not consider for subtraction the delivered oligos from above (oligos_on_dns)                     
+                    # Do not consider for subtraction the delivered oligos from above (oligos_on_dns)
                     # since the Delivery Note contains only items that were not yet delivered.
-                    # Thus the condition "len(oligos_on_dns) == 0" is not used.                                        
+                    # Thus the condition "len(oligos_on_dns) == 0" is not used.
                     if oligo_doc.status == "Canceled":
                         # append items
                         for item in oligo_doc.items:
@@ -543,7 +543,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                                 cancelled_oligo_item_qtys[item.item_code] = cancelled_oligo_item_qtys[item.item_code] + item.qty
                             else:
                                 cancelled_oligo_item_qtys[item.item_code] = item.qty
-                
+
                 if len(oligos_to_deliver) == 0:
                     msg = f"It seems that all Oligos from {sales_order} are either canceled or already delivered, but not all Items (Sales Order has Status Overdue). Please create a Delivery Note with the missing Items manually or close the Sales Order."
                     print(msg)
@@ -551,7 +551,7 @@ def create_delivery_note_for_lost_oligos(sales_orders):
                     continue
 
                 dn.oligos = oligos_to_deliver
-                                
+
                 # subtract cancelled items from oligo items
                 for item in dn.items:
                     if item.item_code in cancelled_oligo_item_qtys:
@@ -641,9 +641,9 @@ def create_delivery_note_for_lost_oligos(sales_orders):
 
 def find_lost_oligos_create_dns():
     """
-    Finds Sales Orders with potentially "lost" Oligos and calls the function 
+    Finds Sales Orders with potentially "lost" Oligos and calls the function
     create_delivery_note_for_lost_oligos to create Delivery Notes for them.
-    
+
     bench execute microsynth.microsynth.production.find_lost_oligos_create_dns
     """
     orders = frappe.db.sql(f"""

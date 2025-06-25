@@ -6,13 +6,13 @@ from datetime import datetime
 def get_sales_volume(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
-    
+
     data = [] # 1st entry = first month, second = second month etc...13th entry = year
     query_date = today()
     first_day_past_year = get_first_day(query_date, d_years = -1)
     yearly_volume = 0
     last_month_date = None
-    
+
     for month in range(12):
         start = add_months(first_day_past_year, month)
         end = get_last_day(start)
@@ -24,16 +24,16 @@ def get_sales_volume(contact):
                         AND `docstatus` = 1
                         AND `transaction_date` BETWEEN '{start}' AND '{end}'
                     """.format(contact=contact, start=start, end=end)
-        
+
         monthly_volume = frappe.db.sql(sql_query, as_dict=True)[0].total or 0
-        
+
         data.append({
             'date': "{0} - {1}".format(start.strftime("%d.%m.%Y"), end.strftime("%d.%m.%Y")),
             'volume': monthly_volume
         })
-        
+
         yearly_volume += monthly_volume
-    
+
     if first_day_past_year is None or last_month_date is None:
         frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_volume")
         return data
@@ -88,13 +88,13 @@ def get_yearly_order_sum(contact_id):
 def get_sales_qty(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
-    
+
     data = [] # 1st entry = first month, second = second month etc...13th entry = year
     query_date = today()
     first_day_past_year = get_first_day(query_date, d_years = -1)
     yearly_volume = 0
     last_month_date = None
-    
+
     for month in range(12):
         start = add_months(first_day_past_year, month)
         end = get_last_day(start)
@@ -106,14 +106,14 @@ def get_sales_qty(contact):
                         AND `docstatus` = 1
                         AND `transaction_date` BETWEEN '{start}' AND '{end}'
                     """.format(contact=contact, start=start, end=end)
-        
+
         monthly_volume = frappe.db.sql(sql_query, as_dict=True)[0].total or 0
-        
+
         data.append({
             'date': "{0} - {1}".format(start.strftime("%d.%m.%Y"), end.strftime("%d.%m.%Y")),
             'quantity': monthly_volume
         })
-        
+
         yearly_volume += monthly_volume
     if first_day_past_year is None or last_month_date is None:
         frappe.log_error(f"first_day_past_year or last_month_date is None for {contact=}", "portfolio.get_sales_qty")
@@ -129,7 +129,7 @@ def get_sales_qty(contact):
 def get_product_type(contact):
     if not contact:
         frappe.throw("Bitte einen Kontakt angeben")
-    
+
     data = []
     query_date = today()
     first_day = get_first_day(query_date, d_years = -1)
@@ -144,7 +144,7 @@ def get_product_type(contact):
                     AND `transaction_date` BETWEEN '{start}' AND '{end}'
                     GROUP BY `tabSales Order`.`product_type`
                 """.format(contact=contact, start=first_day, end=last_day)
-                    
+
     volumes = frappe.db.sql(sql_query, as_dict=True)
     total_volume = 0
     total_qty = 0
@@ -163,7 +163,7 @@ def get_product_type(contact):
     for d in data:
         d['percent_volume'] = round((d['volume'] * percent_volume), 2)
         d['percent_qty'] = round((d['qty'] * percent_qty), 2)
-        
+
     # ~ print(data)
     return data
 
@@ -189,19 +189,19 @@ def get_product_type(contact):
                     # ~ AND `docstatus` = 1
                     # ~ AND `transaction_date` BETWEEN '{from_date}' AND '{to_date}'
                 # ~ """.format(customer_name=customer_name, from_date=from_date, to_date=to_date)
-	
+
 	# ~ amount = frappe.db.sql(sql_query, as_dict=True)[0].total or 0
-	
+
 	# ~ return amount
-	
+
 # ~ def get_date_year():
 	# ~ customer = "CHUV"
 	# ~ to_date = getdate()
 	# ~ from_date = frappe.utils.add_years(to_date, -1)
-	
+
 	# ~ return customer, from_date, to_date
 
 # ~ def get_report():
 	# ~ result = get_sales_volume(get_date_year)
-	
+
 	# ~ print(result)

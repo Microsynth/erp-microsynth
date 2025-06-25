@@ -22,10 +22,10 @@ def get_customer(person_id):
     endpoint = "{host}/slimsrest/rest/Customer?cstm_cf_personId={person_id}".format(host=config.endpoint, person_id=person_id)
     # get customer data
     res = requests.get(
-        endpoint, 
-        verify=cint(config.verify_ssl), 
+        endpoint,
+        verify=cint(config.verify_ssl),
         auth=HTTPBasicAuth(
-            config.username, 
+            config.username,
             get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
         )
     )
@@ -41,7 +41,7 @@ def get_customer(person_id):
     else:
         frappe.log_error( _("SLIMS error {0} - {1} on get customer {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
         return None
-        
+
 def create_update_slims_customer(person_id):
     # get configuration
     config = frappe.get_doc("SLIMS Settings", "SLIMS Settings")
@@ -56,12 +56,12 @@ def create_update_slims_customer(person_id):
         if r.link_doctype == "Customer":
             customer = frappe.get_doc("Customer", r.link_name)
             break
-    
+
     if contact.address and frappe.db.exists("Address", person_id):
 
         address = frappe.get_doc("Address", contact.address or person_id)
-              
-        if len(contact.email_ids)>1:        
+
+        if len(contact.email_ids)>1:
             snd_mail = contact.email_ids[1].email_id
         else:
             snd_mail = ""
@@ -96,11 +96,11 @@ def create_update_slims_customer(person_id):
                 # update
                 endpoint = "{host}/slimsrest/rest/Customer/{primary_key}".format(host=config.endpoint, primary_key=primary_key)
                 res = requests.post(
-                    endpoint, 
+                    endpoint,
                     data=json.dumps(customer_data),
-                    verify=cint(config.verify_ssl), 
+                    verify=cint(config.verify_ssl),
                     auth=HTTPBasicAuth(
-                        config.username, 
+                        config.username,
                         get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
                     ),
                     headers=headers
@@ -110,17 +110,17 @@ def create_update_slims_customer(person_id):
                 # create
                 endpoint = "{host}/slimsrest/rest/Customer".format(host=config.endpoint)
                 res = requests.put(
-                    endpoint, 
+                    endpoint,
                     data=json.dumps(customer_data),
-                    verify=cint(config.verify_ssl), 
+                    verify=cint(config.verify_ssl),
                     auth=HTTPBasicAuth(
-                        config.username, 
+                        config.username,
                         get_decrypted_password("SLIMS Settings", "SLIMS Settings", "password")
                     ),
                     headers=headers
                 )
                 print("creating")
-                
+
             # parse feedback
             if res.status_code != 200:
                 frappe.log_error( _("SLIMS error {0} - {1} on create/update customer with person_id {2}").format(res.status_code, res.text, person_id), _("SLIMS") )
@@ -128,7 +128,7 @@ def create_update_slims_customer(person_id):
             print("is billing contact")
     else:
         print("contact without valid address")
-    return 
+    return
 
 def sync(debug=False):
     # get configuration
@@ -155,30 +155,30 @@ def sync(debug=False):
         if debug:
             print("SLIMS scheduler disabled. Go to SLIMS Settings > Enabled and set to 1")
     return
-        
+
 def get_modified_records(change_datetime):
     if isinstance(change_datetime, str):
         # parse string into datetime object first
         change_datetime = datetime.strptime(change_datetime, "%Y-%m-%d %H:%M:%S")
     # now it's safe to format as string
     change_datetime = change_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        
+
     changed_records = frappe.db.sql("""
-            SELECT 
+            SELECT
             `tabContact`.`name` AS `contact`
         FROM `tabContact`
-        LEFT JOIN `tabAddress` ON 
+        LEFT JOIN `tabAddress` ON
             (`tabAddress`.`name` = IFNULL(`tabContact`.`address`, `tabContact`.`name`))
-        LEFT JOIN `tabDynamic Link` ON 
+        LEFT JOIN `tabDynamic Link` ON
             (`tabDynamic Link`.`parent` = `tabContact`.`name`
             AND `tabDynamic Link`.`parenttype` = "Contact"
             AND `tabDynamic Link`.`link_doctype` = "Customer")
         LEFT JOIN `tabCustomer` ON
             (`tabCustomer`.`name` = `tabDynamic Link`.`link_name`)
-        WHERE 
+        WHERE
             `tabContact`.`modified` >= "{dt}"
             OR `tabAddress`.`modified` >= "{dt}"
-            OR `tabCustomer`.`modified` >= "{dt}"; 
+            OR `tabCustomer`.`modified` >= "{dt}";
     """.format(dt=change_datetime), as_dict=True)
     contacts = []
     for r in changed_records:

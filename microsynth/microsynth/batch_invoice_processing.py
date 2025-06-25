@@ -77,7 +77,7 @@ def parse_file(file_name, company, company_settings, debug=True):
                     if debug:
                         print("ERROR: {0}".format(err))
                     invoice = {}
-            
+
             # so far no invoice detected: fall back to pdf reading
             if not invoice:
                 if debug:
@@ -86,7 +86,7 @@ def parse_file(file_name, company, company_settings, debug=True):
                 invoice.update({
                     'supplier': find_supplier_from_pdf(file_name, company, debug)
                 })
-        
+
         # currency: if so far not defined, get company default currency
         if not invoice:
             invoice = {}
@@ -111,12 +111,12 @@ def parse_file(file_name, company, company_settings, debug=True):
                     allowed_due_date = add_days(posting_date, credit_days)
                     if invoice['due_date'] and datetime.strptime(invoice['due_date'], '%Y-%m-%d').date() > allowed_due_date:
                         invoice['due_date'] = allowed_due_date.strftime("%Y-%m-%d")
-        
+
         if debug:
             print("INFO: supplier {0}".format(invoice.get('supplier')))
             if not invoice.get('supplier'):
                 print("INFO: no supplier found, will fallback to default supplier in invoice creation.".format(invoice.get('supplier')))
-            
+
         # create invoice record
         record = create_invoice(file_name, invoice, company_settings)
         if debug:
@@ -167,11 +167,11 @@ def create_invoice(file_name, invoice, settings):
 
     pinv_doc.bill_date = invoice.get('posting_date')
     pinv_doc.due_date = invoice.get('due_date')
-        
+
     if invoice.get('esr_reference'):
         pinv_doc.esr_reference_number = invoice.get('esr_reference')
         pinv_doc.payment_type = "ESR"
-        
+
     # find taxes and charges
     # prio 1: supplier default tax
     supplier_default_taxes = frappe.db.sql("""
@@ -191,7 +191,7 @@ def create_invoice(file_name, invoice, settings):
             SELECT `tabPurchase Taxes and Charges Template`.`name`
             FROM `tabPurchase Taxes and Charges`
             LEFT JOIN `tabPurchase Taxes and Charges Template` ON `tabPurchase Taxes and Charges Template`.`name` = `tabPurchase Taxes and Charges`.`parent`
-            WHERE 
+            WHERE
                 `tabPurchase Taxes and Charges Template`.`company` = "{company}"
                 AND `tabPurchase Taxes and Charges`.`rate` = {tax_rate}
             ;""".format(company=settings.company, tax_rate=flt(invoice.get('tax_rate'))), as_dict=True)
@@ -207,7 +207,7 @@ def create_invoice(file_name, invoice, settings):
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", pinv_doc.taxes_and_charges)
         for t in taxes_template.taxes:
             pinv_doc.append("taxes", t)
-            
+
     if invoice.get("items"):            # invoice with items (source ZUGFeRD or QR)
         for item in invoice.get("items"):
             if not item.get('item_code'):
@@ -217,7 +217,7 @@ def create_invoice(file_name, invoice, settings):
                     supplier_item_matches = frappe.db.sql("""
                         SELECT `parent`
                         FROM `tabItem Supplier`
-                        WHERE 
+                        WHERE
                             `supplier` = "{supplier}"
                             AND `supplier_part_no` = "{supplier_item}"
                         ;""".format(supplier=pinv_doc.supplier, supplier_item=item.get('seller_item_code')), as_dict=True)
@@ -245,7 +245,7 @@ def create_invoice(file_name, invoice, settings):
                         """
                 else:
                     item['item_code'] = item.get('seller_item_code')
-            
+
             pinv_doc.append("items", {
                 'item_code': item.get('item_code'),
                 'item_name': (item.get('item_name') or item.get('item_code'))[:140],
@@ -263,7 +263,7 @@ def create_invoice(file_name, invoice, settings):
                     'qty': 1,
                     'rate': 0
                 })
-        
+
         if not pinv_doc.get("items") or len(pinv_doc.items) == 0:
             # use this company's default item (see batch processing settings)
             pinv_doc.append("items", {
@@ -271,7 +271,7 @@ def create_invoice(file_name, invoice, settings):
                 'qty': 1,
                 'rate': 0
             })
-    
+
     # apply cost center
     cost_center = frappe.get_value("Company", settings.company, "cost_center")
     for i in pinv_doc.items:
@@ -279,11 +279,11 @@ def create_invoice(file_name, invoice, settings):
         i.uom = frappe.get_value("Item", i.item_code, "stock_uom")
         if not i.conversion_factor:
             i.conversion_factor = 1
-    
+
     pinv_doc.flags.ignore_mandatory = True
     pinv_doc.insert()
     frappe.db.commit()
-    
+
     # attach file
     f = open(file_name, "rb")
     content = f.read()
@@ -297,9 +297,9 @@ def create_invoice(file_name, invoice, settings):
     )
     # remove file
     os.remove(file_name)
-    
+
     return {
-        'name': pinv_doc.name, 
+        'name': pinv_doc.name,
         'url': get_url_to_form("Purchase Invoice", pinv_doc.name),
         'link': get_link_to_form("Purchase Invoice", pinv_doc.name)
     }

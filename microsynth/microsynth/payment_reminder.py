@@ -58,7 +58,7 @@ def get_email_subject(prm):
             subject = _("Microsynth Mahnung") + " " + subject_addition
         else:
             frappe.log_error(f"Payment Reminder {prm.name} has highest level 0.", "payment_reminder.get_email_subject")
-            subject = _("Microsynth Zahlungserinnerung") + subject_addition 
+            subject = _("Microsynth Zahlungserinnerung") + subject_addition
     else:
         subject = _("Microsynth Payment Reminder") + " " + subject_addition
     return subject
@@ -189,7 +189,7 @@ def transmit_payment_reminder(self, event):
     """
     if type(self) == str:
         self = frappe.get_doc("Payment Reminder", self)
-    
+
     create_pdf_attachment(self.name)
 
     if self.highest_level > 3 or frappe.get_value("Customer", self.customer, "invoicing_method") == "Post":

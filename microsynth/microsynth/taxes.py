@@ -10,7 +10,7 @@ def find_tax_template(company, customer, shipping_address, category):
     run
     bench execute microsynth.microsynth.taxes.find_tax_template --kwargs "{'company':'Microsynth France SAS', 'customer':'37662251', 'shipping_address':'230803', 'category':'Material'}"
     """
-    
+
     # if the customer is "Individual" (B2C), always apply default tax template (with VAT)
     if frappe.get_value("Customer", customer, "customer_type") == "Individual":
         default = frappe.get_all("Sales Taxes and Charges Template",
@@ -34,7 +34,7 @@ def find_tax_template(company, customer, shipping_address, category):
               AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
               AND `category` = "{category}"
             ORDER BY `idx` ASC;""".format(
-            company=company, country=country, category=category, eu_pattern=eu_pattern), 
+            company=company, country=country, category=category, eu_pattern=eu_pattern),
             as_dict=True)
         if len(find_tax_record) > 0:
             return find_tax_record[0]['sales_taxes_template']
@@ -64,7 +64,7 @@ def find_purchase_tax_template(sales_tax_template, company):
 
 def get_alternative_tax_template(tax_template, date):
     """
-    run 
+    run
     bench execute microsynth.microsynth.taxes.get_alternative_tax_template --kwargs "{'tax_template':'BAL CH MwSt 7.7% (302) - BAL'}"
     """
     if type(date) == datetime:
@@ -85,7 +85,7 @@ def get_alternative_tax_template(tax_template, date):
 
 def set_alternative_tax_template(self, event):
     """
-    Replace the tax template according to Tax Matrix.alternative_tax_templates. 
+    Replace the tax template according to Tax Matrix.alternative_tax_templates.
     Does not change the tax template of credit notes to prevent differences.
 
     triggered by document events and called through hooks
@@ -93,17 +93,17 @@ def set_alternative_tax_template(self, event):
 
     if not self.taxes_and_charges:
         # Do not try to change taxes_and_charges if it is not set at all.
-        # Webshop.get_item_prices creates a temporaty sales order without tax template. 
+        # Webshop.get_item_prices creates a temporaty sales order without tax template.
         return
 
     if self.doctype == "Quotation":
         template_name = get_alternative_tax_template(
-            tax_template = self.taxes_and_charges, 
+            tax_template = self.taxes_and_charges,
             date = self.transaction_date )
 
     elif self.doctype == "Sales Order":
         template_name = get_alternative_tax_template(
-            tax_template = self.taxes_and_charges, 
+            tax_template = self.taxes_and_charges,
             date = self.delivery_date)
 
     elif self.doctype == "Delivery Note":
@@ -124,7 +124,7 @@ def set_alternative_tax_template(self, event):
     tax_template = frappe.get_doc("Sales Taxes and Charges Template", template_name)
     self.taxes_and_charges = tax_template.name
     self.taxes = []
-    
+
     for tax in tax_template.taxes:
         new_tax = { 'charge_type': tax.charge_type,
                     'account_head': tax.account_head,
@@ -134,7 +134,7 @@ def set_alternative_tax_template(self, event):
         self.append("taxes", new_tax)
 
     self.calculate_taxes_and_totals()
-    
+
     return
 
 
@@ -173,10 +173,10 @@ def quotation_before_save(doc, event):
 def update_taxes(doc, event=None):
     """
     This function will update the tax template and child table of a Quotation, Sales Order to assure they correspond to the stored templates
-    
+
     It is triggered from the document hook.
     """
-    
+
     # parametrisation from the document
     if doc.doctype == "Sales Order":
         customer = doc.customer
@@ -192,7 +192,7 @@ def update_taxes(doc, event=None):
     else:
         frappe.throw(f"For this doctype {doc.doctype} this is not yet implemented")
         return  # to satisfy linter
-    
+
     if doc.get('product_type') in ["Oligos", "Material"]:
         category = "Material"
     else:
@@ -200,7 +200,7 @@ def update_taxes(doc, event=None):
 
     if doc.get('oligos') and len(doc.get('oligos')) > 0:
         category = "Material"
-            
+
     taxes = find_dated_tax_template(
         company=doc.company,
         customer=customer,
@@ -208,11 +208,11 @@ def update_taxes(doc, event=None):
         category=category,
         date=date
     )
-    
+
     doc.taxes_and_charges = taxes
 
     tax_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
-    
+
     doc.taxes = []
     for t in tax_template.taxes:
         doc.append("taxes", {
@@ -222,5 +222,5 @@ def update_taxes(doc, event=None):
             'cost_center': t.cost_center,
             'rate': t.rate,
         })
-        
+
     return

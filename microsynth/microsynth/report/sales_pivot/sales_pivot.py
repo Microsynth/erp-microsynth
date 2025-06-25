@@ -23,11 +23,11 @@ def get_columns(filters):
 
 def get_data(filters):
     currency = frappe.get_cached_value("Company", filters.company, "default_currency")
-    
+
     revenue_year_1_total = 0
     revenue_year_2_total = 0
     output = []
-    
+
     for month in range(1, 13):
         revenue_year_1 = get_revenue(filters, filters.fiscal_year_1, month)
         revenue_year_2 = get_revenue(filters, filters.fiscal_year_2, month)
@@ -38,9 +38,9 @@ def get_data(filters):
             'total': revenue_year_1 + revenue_year_2,
             'currency': currency
         })
-        
+
     return output
-        
+
 def get_revenue(filters, year, month):
     conditions = ""
     if filters.territory:
@@ -54,14 +54,14 @@ def get_revenue(filters, year, month):
         SELECT IFNULL(SUM(`base_net_total`), 0) AS `revenue`
         FROM `tabSales Invoice`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
-        WHERE 
+        WHERE
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`company` = "{company}"
             AND `tabSales Invoice`.`posting_date` LIKE "{year}-{month:02d}-%"
             {conditions}
         ;
     """.format(company=filters.company, year=year, month=month, conditions=conditions)
-    
+
     revenue = frappe.db.sql(sql_query, as_dict=True)[0]['revenue']
-    
+
     return revenue

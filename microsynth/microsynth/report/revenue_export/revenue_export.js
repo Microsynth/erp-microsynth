@@ -59,7 +59,7 @@ function download_csv() {
         'callback': function(response) {
             console.log("I'm back");
             var csv = response.message;
-            
+
             download("revenue_export.csv", csv);
             //console.log(csv);
         }

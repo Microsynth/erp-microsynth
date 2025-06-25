@@ -21,10 +21,10 @@ def get_data(filters):
             `item_code`,
             COUNT(`name`) AS `count`
         FROM (
-            SELECT 
-                `name`, 
+            SELECT
+                `name`,
                 `item_code`,
-                IFNULL (`company`, 
+                IFNULL (`company`,
                     (SELECT `default_company` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`)) AS `company`,
                 `sales_order`,
                 `dn_posting_date`
@@ -40,8 +40,8 @@ def get_data(filters):
                     FROM `tabSales Order`
                     WHERE `tabSales Order`.`name` = `tabSequencing Label`.`sales_order`) AS `company`,
 
-                    (SELECT `link_name` 
-                    FROM `tabDynamic Link` 
+                    (SELECT `link_name`
+                    FROM `tabDynamic Link`
                     WHERE `tabDynamic Link`.`link_doctype` = "Customer"
                     AND `tabDynamic Link`.`parenttype`= "Contact"
                     AND `tabDynamic Link`.`parent` = `tabSequencing Label`.`contact`) AS `customer`,

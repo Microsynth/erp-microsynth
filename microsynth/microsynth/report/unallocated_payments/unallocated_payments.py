@@ -42,7 +42,7 @@ def get_data(filters=None):
         conditions += " AND `tabPayment Entry`.`company` = %(company)s "
 
     data = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabPayment Entry`.`name`,
             `tabPayment Entry`.`posting_date`,
             `tabPayment Entry`.`company`,
@@ -58,11 +58,11 @@ def get_data(filters=None):
             `tabPayment Entry`.`reference_no`,
             `tabPayment Entry`.`reference_date`,
             `tabPayment Entry`.`remarks`
-        FROM 
+        FROM
             `tabPayment Entry`
-        WHERE 
+        WHERE
             `tabPayment Entry`.`docstatus` = 1
-            AND `tabPayment Entry`.`unallocated_amount` != 0 
+            AND `tabPayment Entry`.`unallocated_amount` != 0
             {conditions}
     """, filters, as_dict=True)
 

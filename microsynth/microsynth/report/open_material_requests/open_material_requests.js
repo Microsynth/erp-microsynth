@@ -44,5 +44,5 @@ function create_purchase_order(filters) {
                 }
             }
         });
-    }    
+    }
 }

@@ -45,7 +45,7 @@ def get_data(filters, short=False):
         customer_matching_query = """ AND `tabSales Invoice`.`customer` IN ("{s}") """.format(s='", "'.join(customer_ids))
 
     receivable_accounts = []
-    for a in frappe.get_all("Account", 
+    for a in frappe.get_all("Account",
             filters={
                 'company': filters.company,
                 'account_type': "Receivable",
@@ -74,19 +74,19 @@ def get_data(filters, short=False):
             SUM(`credit`.`credit_in_account_currency`) - SUM(`credit`.`debit_in_account_currency`)  AS `paid_amount`,
             SUM(`return`.`credit_in_account_currency`) - SUM(`return`.`debit_in_account_currency`)  AS `credit_note`
         FROM `tabSales Invoice`
-        LEFT JOIN `tabGL Entry` AS `debit` ON 
-            (`debit`.`voucher_no` = `tabSales Invoice`.`name` 
+        LEFT JOIN `tabGL Entry` AS `debit` ON
+            (`debit`.`voucher_no` = `tabSales Invoice`.`name`
              AND `debit`.`account` {rec_filter})
-        LEFT JOIN `tabGL Entry` AS `credit` ON 
-            (`credit`.`against_voucher` = `tabSales Invoice`.`name` 
+        LEFT JOIN `tabGL Entry` AS `credit` ON
+            (`credit`.`against_voucher` = `tabSales Invoice`.`name`
              AND `credit`.`voucher_type` != "Sales Invoice"
              AND `credit`.`account` {rec_filter})
-        LEFT JOIN `tabGL Entry` AS `return` ON 
-            (`return`.`against_voucher` = `tabSales Invoice`.`name` 
+        LEFT JOIN `tabGL Entry` AS `return` ON
+            (`return`.`against_voucher` = `tabSales Invoice`.`name`
              AND `return`.`voucher_no` != `tabSales Invoice`.`name`
              AND `return`.`voucher_type` = "Sales Invoice"
              AND `return`.`account` {rec_filter})
-        WHERE 
+        WHERE
             `tabSales Invoice`.`posting_date` BETWEEN "{from_date}" AND "{to_date}"
             AND `tabSales Invoice`.`company` = "{company}"
             AND `debit`.`name` IS NOT NULL
@@ -94,9 +94,9 @@ def get_data(filters, short=False):
         GROUP BY `tabSales Invoice`.`name`
         ORDER BY `tabSales Invoice`.`posting_date` ASC;
     """.format(
-        from_date=filters.from_date, 
-        to_date=filters.to_date, 
-        company=filters.company, 
+        from_date=filters.from_date,
+        to_date=filters.to_date,
+        company=filters.company,
         matching_query=customer_matching_query,
         rec_filter=receivable_accounts_filter
         )
@@ -121,26 +121,26 @@ def get_data(filters, short=False):
                         `credit`.`voucher_type`,
                         `credit`.`voucher_no`,
                         `credit`.`posting_date` AS `posting_date`,
-                        SUM(`credit`.`credit_in_account_currency`) 
+                        SUM(`credit`.`credit_in_account_currency`)
                          - SUM(`credit`.`debit_in_account_currency`)  AS `paid_amount`,
                         `credit`.`account_currency` AS `currency`
                     FROM `tabGL Entry` AS `credit`
-                    WHERE 
-                        `credit`.`against_voucher` = "{sinv}" 
+                    WHERE
+                        `credit`.`against_voucher` = "{sinv}"
                         AND `credit`.`voucher_type` != "Sales Invoice"
                         AND `credit`.`account` {rec_filter}
                     GROUP BY `credit`.`voucher_no`
-                
+
                     UNION SELECT
                         `return`.`voucher_type`,
                         `return`.`voucher_no`,
                         `return`.`posting_date` AS `posting_date`,
-                        SUM(`return`.`credit_in_account_currency`) 
+                        SUM(`return`.`credit_in_account_currency`)
                          - SUM(`return`.`debit_in_account_currency`)  AS `credit_note`,
                         `return`.`account_currency` AS `currency`
-                    FROM `tabGL Entry` AS `return` 
+                    FROM `tabGL Entry` AS `return`
                     WHERE
-                        `return`.`against_voucher` = "{sinv}" 
+                        `return`.`against_voucher` = "{sinv}"
                         AND `return`.`voucher_no` != "{sinv}"
                         AND `return`.`voucher_type` = "Sales Invoice"
                         AND `return`.`account` {rec_filter}

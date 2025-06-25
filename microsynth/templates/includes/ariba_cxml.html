@@ -108,7 +108,7 @@
                 <InvoiceDetailItem invoiceLineNumber="{{ pos['number'] }}" quantity = "{{ pos['quantity'] }}">
                     <UnitOfMeasure>EA</UnitOfMeasure>
                     <UnitPrice>
-                        <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['rate']) }}</Money> 
+                        <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['rate']) }}</Money>
                     </UnitPrice>
                     <InvoiceDetailItemReference lineNumber="{{ pos['number'] }}">
                         <ItemID>
@@ -117,14 +117,14 @@
                         <Description xml:lang="de-CH">{{ pos['description'] }}</Description>
                     </InvoiceDetailItemReference>
                     <SubtotalAmount>
-                        <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money> 
+                        <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money>
                     </SubtotalAmount>
                     <Tax>
                         <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Money>
                         <Description xml:lang="de-CH"/>
                         <TaxDetail category="vat" percentageRate="{{ pos['tax_rate'] }}" taxPointDate="{{ tax['taxPointDate'] }}" exemptDetail="exempt">
                             <TaxableAmount>
-                                <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money> 
+                                <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['amount']) }}</Money>
                             </TaxableAmount>
                             <TaxAmount>
                                 <Money currency="{{ basics['currency'] }}">{{ "{:.2f}".format(pos['tax_amount']) }}</Money>

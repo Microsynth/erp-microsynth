@@ -19,8 +19,8 @@ def check_approval_password(user, password):
     approval_password = get_decrypted_password("Signature", user, "approval_password", False)
     if not approval_password:
         return False
-        
-    # check password 
+
+    # check password
     return password == approval_password
 
 
@@ -29,14 +29,14 @@ def sign(dt, dn, user, password, target_field=None, submit=True):
     if user != frappe.session.user:
         frappe.throw( _("Invalid approval user!"), _("Authentication failed") )
         return False
-    
+
     # verify that approval password is set
     approval_password = get_decrypted_password("Signature", user, "approval_password", False)
     if not approval_password:
         frappe.throw( _("Approval password is not set! Please go to Signature and set the approval password."), _("Authentication failed") )
         return False
 
-    # check password 
+    # check password
     if password == approval_password:
         # password correct
 
@@ -73,4 +73,4 @@ def get_signature(user):
     s = "{d}/{u}".format(d=datetime.now(), u=user)
     signature = "{s} ({h})".format(s=s, h=abs(hash(s)))
     return signature
-    
+

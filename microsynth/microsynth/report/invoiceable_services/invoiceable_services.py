@@ -41,9 +41,9 @@ def get_data(filters=None):
         conditions += "AND `tabCustomer`.`collective_billing` = 1 "
 
     invoiceable_services = frappe.db.sql("""
-        SELECT * 
+        SELECT *
         FROM (
-            SELECT 
+            SELECT
                 `tabDelivery Note`.`posting_date` AS `date`,
                 `tabDelivery Note`.`name` AS `delivery_note`,
                 `tabDelivery Note`.`customer` AS `customer`,
@@ -59,20 +59,20 @@ def get_data(filters=None):
                 `tabCustomer`.`tax_id` AS `tax_id`,
                 `tabDelivery Note`.`shipment_type` AS `shipment_type`,
                 `tabDelivery Note`.`product_type` AS `product_type`,
-                (SELECT COUNT(`tabSales Invoice Item`.`name`) 
+                (SELECT COUNT(`tabSales Invoice Item`.`name`)
                  FROM `tabSales Invoice Item`
-                 WHERE 
+                 WHERE
                     `tabSales Invoice Item`.`docstatus` = 1
                     AND `tabSales Invoice Item`.`delivery_note` = `tabDelivery Note`.`name`
                 ) AS `has_sales_invoice`,
-                (SELECT 
+                (SELECT
                     IF(`tabSales Order`.`per_billed` = 100, 1,          /* ignore billed sales orders */
                        IFNULL(MAX(`tabSales Order`.`hold_invoice`), 0)) /* or if hold_invoice is set */
                  FROM `tabSales Order`
                  LEFT JOIN `tabDelivery Note Item` ON
                     (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
                  WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-                ) AS `hold_invoice` 
+                ) AS `hold_invoice`
             FROM `tabDelivery Note`
             LEFT JOIN `tabCustomer` ON
                 (`tabDelivery Note`.`customer` = `tabCustomer`.`name`)
@@ -80,19 +80,19 @@ def get_data(filters=None):
                 (`tabDelivery Note`.`shipping_address_name` = `tabAddress`.`name`)
             LEFT JOIN `tabCountry` ON
                 (`tabCountry`.`name` = `tabAddress`.`country`)
-            WHERE 
+            WHERE
                 `tabDelivery Note`.`docstatus` = 1
                 AND `tabDelivery Note`.`company` = "{company}"
                 AND `tabDelivery Note`.`creation` > '2022-12-31'
                 AND `tabDelivery Note`.`status` != "Closed"
-                AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%" 
+                AND `tabCustomer`.`invoicing_method` NOT LIKE "%Prepayment%"
                 {conditions}
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0
         ORDER BY `raw`.`region`, `raw`.`customer` ASC;
     """.format(company=company, conditions=conditions), as_dict=True)
-    
+
     if filters.get("show_remaining_credits"):
         from microsynth.microsynth.credits import get_total_credit
         # store remaining credits in a dictionary because there might be Delivery Notes

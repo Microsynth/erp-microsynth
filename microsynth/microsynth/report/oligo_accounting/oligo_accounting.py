@@ -23,7 +23,7 @@ MONTHS = {
 }
 
 
-def get_columns(filters):    
+def get_columns(filters):
     columns = [
         {"label": _("Scale"), "fieldname": "scale", "fieldtype": "Data", "width": 130}
     ]

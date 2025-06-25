@@ -81,18 +81,18 @@ def identify_unclear_company_assignments(filters):
             `item_code`,
             COUNT(`name`) AS `count`
         FROM (
-            SELECT 
-                `name`, 
+            SELECT
+                `name`,
                 `item_code`,
                 (SELECT `default_company`
-                FROM `tabCustomer` 
+                FROM `tabCustomer`
                 WHERE `tabCustomer`.`name` = `base`.`customer`) AS `company`
             FROM (
                 SELECT
                     `tabSequencing Label`.`name`,
                     `tabSequencing Label`.`item` AS `item_code`,
-                    (SELECT `link_name` 
-                    FROM `tabDynamic Link` 
+                    (SELECT `link_name`
+                    FROM `tabDynamic Link`
                     WHERE `tabDynamic Link`.`link_doctype` = "Customer"
                     AND `tabDynamic Link`.`parenttype`= "Contact"
                     AND `tabDynamic Link`.`parent` = `tabSequencing Label`.`contact`) AS `customer`
@@ -128,10 +128,10 @@ def get_data(filters):
             `rate`,
             `territory`
         FROM (
-            SELECT 
-                `name`, 
+            SELECT
+                `name`,
                 `item_code`,
-                IFNULL (`company`, 
+                IFNULL (`company`,
                     (SELECT `default_company` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`)) AS `company`,
                 `rate`,
                 (SELECT `territory` FROM `tabCustomer` WHERE `tabCustomer`.`name` = `base`.`customer`) AS `territory`,
@@ -150,12 +150,12 @@ def get_data(filters):
 
                     (SELECT `tabSales Order Item`.`base_net_rate`
                     FROM `tabSales Order Item`
-                    WHERE `tabSales Order Item`.`parent` = `tabSequencing Label`.`sales_order` 
+                    WHERE `tabSales Order Item`.`parent` = `tabSequencing Label`.`sales_order`
                     AND `tabSales Order Item`.`item_code` = `tabSequencing Label`.`item`
                     LIMIT 1) AS `rate`,
 
-                    (SELECT `link_name` 
-                    FROM `tabDynamic Link` 
+                    (SELECT `link_name`
+                    FROM `tabDynamic Link`
                     WHERE `tabDynamic Link`.`link_doctype` = "Customer"
                     AND `tabDynamic Link`.`parenttype`= "Contact"
                     AND `tabDynamic Link`.`parent` = `tabSequencing Label`.`contact`) AS `customer`
@@ -189,7 +189,7 @@ def get_data(filters):
                 company_item_dest = (det['company'], det['item_code'], None)
                 rate = get_rate(company_item_dest, average_selling_prices)
                 if rate is None:
-                    continue                    
+                    continue
                 summary[company_item_dest] = {'qty': det['count'], 'sum': det['count'] * rate}
 
             if sum != d.count:

@@ -58,7 +58,7 @@ def get_data(filters):
         return []
     elif filters.get('from_barcode') or filters.get('to_barcode'):
         return []
-    
+
     sql_query = f"""
         SELECT `tabSales Order`.`name`,
             `tabSales Order`.`transaction_date` AS `date`,

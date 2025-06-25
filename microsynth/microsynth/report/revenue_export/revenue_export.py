@@ -19,9 +19,9 @@ def get_month_number(month):
         "May": 5,
         "June": 6,
         "July": 7,
-        "August": 8, 
+        "August": 8,
         "September": 9,
-        "October": 10, 
+        "October": 10,
         "November": 11,
         "December": 12
     }
@@ -72,7 +72,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
         company_condition = ""
-        
+
     if filters and filters.get("territory"):
         territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
     else:
@@ -82,7 +82,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     group_condition = "'{0}'".format("', '".join(item_groups))
 
     query = """
-            SELECT 
+            SELECT
                 `tabSales Invoice Item`.`parent` AS `sales_invoice`,
                 `tabSales Invoice Item`.`parent` AS `document`,
                 `tabSales Invoice Item`.`idx` AS `idx`,
@@ -94,9 +94,9 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                     IF (`tabSales Invoice`.`is_return` = 1,
                         (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` + `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`,
                         (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` - `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`
-                    ), 
+                    ),
                     0
-                ) AS `base_net_amount`, 
+                ) AS `base_net_amount`,
                 `tabSales Invoice Item`.`item_code` AS `item_code`,
                 `tabSales Invoice Item`.`item_name` AS `item_name`,
                 `tabSales Invoice Item`.`item_group` AS `item_group`,
@@ -121,7 +121,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabSales Invoice`.`contact_person`
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`shipping_address_name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
@@ -133,7 +133,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
-    
+
     return items
 
 
@@ -144,7 +144,7 @@ def get_revenue_details(filters, debug=False):
         # TODO get_item_groups does not include shipping
         item_groups = get_item_groups()
 
-    if filters and filters.get("month"): 
+    if filters and filters.get("month"):
         m = get_month_number(filters.get("month"))
         exchange_rate = get_exchange_rate(filters.get("fiscal_year"), m)
         records = get_item_revenue(filters, m, item_groups, debug)
@@ -178,18 +178,18 @@ def download_data(filters, save_to=None):
     """
     if type(filters) == str:
         filters = json.loads(filters)
-        
+
     columns, data = execute(filters)
-    
+
     csv = frappe.render_template(
-        "microsynth/microsynth/report/revenue_export/revenue_export_csv.html", 
+        "microsynth/microsynth/report/revenue_export/revenue_export_csv.html",
         {'columns': columns, 'data': data}
     )
-    
+
     # save to a file on the server
     if save_to:
         f = open(save_to, "w")
         f.write(csv)
         f.close()
-        
+
     return csv

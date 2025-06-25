@@ -33,7 +33,7 @@ frappe.ui.form.on('QM Document', {
 
         // check if document requires review
         var requires_review = document_types_with_review.includes(frm.doc.document_type);
-        
+
         // set information bar for missing file
         cur_frm.dashboard.clear_comment();
         if (!frm.doc.__islocal
@@ -109,15 +109,15 @@ frappe.ui.form.on('QM Document', {
                         if (response.message) {
                             cur_frm.reload_doc();
                             frappe.show_alert( __("Status changed to Valid.") );
-                        }                        
+                        }
                     }
                 });
-            } 
+            }
         }
-        
+
         // allow review when document is on created with an attachment
         if ((["Created"].includes(frm.doc.status))
-            && (!frm.doc.reviewed_on) 
+            && (!frm.doc.reviewed_on)
             && (!frm.doc.reviewed_by)
             && ((cur_frm.attachments)
             && (cur_frm.attachments.get_attachments())
@@ -153,7 +153,7 @@ frappe.ui.form.on('QM Document', {
         if (!frm.doc.__islocal) {
             cur_frm.page.clear_primary_action();
             cur_frm.page.clear_secondary_action();
-            
+
             // prevent document type changes after the document number has been assigned
             cur_frm.set_df_property('document_type', 'read_only', true);
             //cur_frm.set_df_property('qm_process', 'read_only', true);
@@ -181,7 +181,7 @@ frappe.ui.form.on('QM Document', {
                 }
             );
         }
-        
+
         // allow the creator or QAU to change creator (transfer document)
         if ((!frm.doc.__islocal)
             && (["Draft"].includes(frm.doc.status))
@@ -201,14 +201,14 @@ frappe.ui.form.on('QM Document', {
             && (["Created", "Reviewed"].includes(frm.doc.status))
             && (!frm.doc.released_on)
             && (!frm.doc.released_by)
-            && ((cur_frm.attachments) 
+            && ((cur_frm.attachments)
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
             && (frappe.user.has_role('QAU'))
             && (!requires_review                                // needs no review (short process)
                 || ((frm.doc.docstatus === 1)                   // or is reviewed
                     && (["Reviewed"].includes(frm.doc.status))  // long process needs to be reviewed
-                    && (frm.doc.reviewed_on) 
+                    && (frm.doc.reviewed_on)
                     && (frm.doc.reviewed_by)
                     && (frappe.session.user != frm.doc.reviewed_by)))) {  // releaser needs to be different from reviewer
             if (requires_review || frappe.session.user != frm.doc.created_by) {  // releaser needs to be different from creator if no review is required
@@ -219,7 +219,7 @@ frappe.ui.form.on('QM Document', {
                         release();
                     }
                 );
-            }            
+            }
             // add reject button
             cur_frm.page.set_secondary_action(
                 __("Reject"),
@@ -230,7 +230,7 @@ frappe.ui.form.on('QM Document', {
         }
 
         // Training request
-        if (((cur_frm.attachments) 
+        if (((cur_frm.attachments)
             && (cur_frm.attachments.get_attachments())
             && (cur_frm.attachments.get_attachments().length > 0))
             && ["Released", "Valid" ].includes(frm.doc.status)
@@ -265,7 +265,7 @@ frappe.ui.form.on('QM Document', {
                     cur_frm.set_df_property('overview', 'options', r.message);
                 }
             });
-            
+
             // assure company field is visible (after insert of a frehs document it would be still hidden)
             cur_frm.set_df_property('company', 'hidden', false);
         }
@@ -305,11 +305,11 @@ frappe.ui.form.on('QM Document', {
                 ]
             };
         };
-        
+
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
-        
+
     },
     document_type: function(frm) {
         if (["PROT"].includes(frm.doc.document_type)){
@@ -377,7 +377,7 @@ function clear_review(frm) {
         cur_frm.set_value("reviewed_by", null);
         cur_frm.set_value("status", "In Review");  // TODO: Is this really the correct status? A new review does not have to be requested yet.
         cur_frm.save_or_update();
-        frappe.msgprint( __("Warning: the review has been cleared because the document was changed. Please add an attachment and request a new review."), __("Validation") ); 
+        frappe.msgprint( __("Warning: the review has been cleared because the document was changed. Please add an attachment and request a new review."), __("Validation") );
     }
 }
 
@@ -476,7 +476,7 @@ function create_new_version(frm) {
 
 function sign_creation() {
     frappe.prompt([
-            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
         ],
         function(values){
             // set the created_on date to the current date
@@ -517,7 +517,7 @@ function sign_creation() {
 
 function release() {
     frappe.prompt([
-            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
         ],
         function(values){
             // check password and if correct, submit
@@ -599,14 +599,14 @@ function request_training_prompt(trainees) {
         }
     }
     frappe.prompt([
-        {'fieldname': 'trainees', 
+        {'fieldname': 'trainees',
          'fieldtype': 'Table',
          'label': 'Trainees',
          'reqd': 1,
-         'fields': [ 
-            {'fieldname': 'user_name', 
-             'fieldtype': 'Link', 
-             'label': 'Trainee', 
+         'fields': [
+            {'fieldname': 'user_name',
+             'fieldtype': 'Link',
+             'label': 'Trainee',
              'options': 'Signature',
              'in_list_view': 1,
              'reqd': 1,
@@ -704,10 +704,10 @@ function setup_attachment_watcher(frm) {
             const targetNodes = document.getElementsByClassName("form-attachments");
             if (targetNodes.length > 0) {
                 const targetNode = targetNodes[0];
-                
+
                 // Options for the observer (which mutations to observe)
                 const config = { attributes: true, childList: true, subtree: true };
-                
+
                 // Callback function to execute when mutations are observed
                 const callback = (mutationList, observer) => {
                     for (const mutation of mutationList) {
@@ -728,7 +728,7 @@ function setup_attachment_watcher(frm) {
 
                 // Start observing the target node for configured mutations
                 observer.observe(targetNode, config);
-                
+
                 locals.attachment_node = targetNode;
             } else {
                 console.log("no node found!!!!");
@@ -747,7 +747,7 @@ function setup_attachment_watcher(frm) {
 function change_creator() {
     frappe.prompt(
         [
-            {'fieldname': 'new_creator', 
+            {'fieldname': 'new_creator',
              'fieldtype': 'Link',
              'label': __('New Creator'),
              'reqd': 1,

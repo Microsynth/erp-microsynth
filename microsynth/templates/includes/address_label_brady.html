@@ -5,7 +5,7 @@ M l IMG;00_MIC_Logo_black
 {% if shipping_service == "Austria" %}M l IMG;02_AT_Priority_black{% endif %}
 {# config the printer #}
 m m
-J 
+J
 H 100
 S 0,-2.5,145,150,105
 O R
@@ -43,9 +43,9 @@ T 45,4,0,3,pt 10;{{web_id}} - {{oligo_count}} {{ plate_aliquot_hint }}
 {# additional line break #}
 {%- if po_no is not none and po_no != "" -%}
     {# IMP, IMBA: Code 39 else Code 128 #}
-    {%- if cstm_id in ["57022", "57023"] -%} 
+    {%- if cstm_id in ["57022", "57023"] -%}
 B 10,120,90,CODE39,10,0.3,3;{{po_no}}
-    {%- else -%} 
+    {%- else -%}
 B 10,120,90,CODE128,5,0.3;{{po_no}}
 T 9,120,90,3,pt 10;{{po_no}}
     {%- endif -%}

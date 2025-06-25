@@ -224,7 +224,7 @@ doc_events = {
 scheduler_events = {
     "hourly": [
         # Do NOT use the scheduler events. Use a cronjob instead to keep all tasks at the same place.
-        
+
         # "microsynth.microsynth.slims.sync",
         # "microsynth.microsynth.batch_invoice_processing.process_files"
         # "microsynth.microsynth.seqblatt.check_sales_order_completion"

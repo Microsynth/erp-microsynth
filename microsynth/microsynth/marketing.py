@@ -58,8 +58,8 @@ def get_contacts(customer_id):
     sql_query = f"""
         SELECT `tabContact`.`name` AS `name`
         FROM `tabContact`
-        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+        LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
                                               AND `tDLA`.`link_doctype` = "Customer"
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
         WHERE `tabCustomer`.`name` = "{customer_id}"
@@ -270,7 +270,7 @@ def update_contact_classification(sales_orders, contact_name):
     else:
         # Do not change contact.status since webshop is using it
         contact_classification = 'Lead'
-        
+
     #frappe.db.set_value("Contact", contact_name, "contact_classification", contact_classification, update_modified = False)
     if contact.contact_classification != contact_classification:
         contact.contact_classification = contact_classification
@@ -294,7 +294,7 @@ def initialize_contact_classification():
     for idx, contact in enumerate(contacts):
         sales_orders = get_sales_orders(contact_person=contact['name'])
         update_contact_classification(sales_orders, contact['name'])
-        
+
         if idx % 100 == 0 and idx > 0:
             frappe.db.commit()
             perc = round(100 * idx / len(contacts), 2)
@@ -375,19 +375,19 @@ def notify_new_webshop_registrations(sales_managers, previous_days=7):
                 `tabContact`.`creation`,
                 `tabCustomer`.`name` AS `customer_id`,
                 `tabCustomer`.`customer_name`
-            FROM 
+            FROM
                 `tabContact`
-            JOIN 
+            JOIN
                 `tabDynamic Link` ON `tabDynamic Link`.`parent` = `tabContact`.`name`
-            JOIN 
+            JOIN
                 `tabCustomer` ON `tabCustomer`.`name` = `tabDynamic Link`.`link_name`
-            WHERE 
+            WHERE
                 `tabDynamic Link`.`link_doctype` = 'Customer'
                 AND `tabCustomer`.`account_manager` = %(sales_manager)s
                 AND `tabContact`.`has_webshop_account` = 1
                 AND `tabContact`.`creation` >= DATE_SUB(NOW(), INTERVAL %(previous_days)s DAY)
                 AND `tabContact`.`status` != "Disabled"
-            ORDER BY 
+            ORDER BY
                 `tabContact`.`creation` DESC;
             """
         new_contacts = frappe.db.sql(sql_query, {"sales_manager": sales_manager, "previous_days": previous_days}, as_dict=True)

@@ -54,7 +54,7 @@ def get_data(filters=None):
     bench execute microsynth.microsynth.report.same_day_oligos.same_day_oligos.get_data --kwargs "{'filters': {'from_date': '2024-01-01', 'to_date': '2024-02-29'}}"
     """
     conditions = ""
-    
+
     if filters.get('customer'):
         conditions += f"AND `tabSales Order`.`customer` = '{filters.get('customer')}'"
     if filters.get('customer_name'):
@@ -63,7 +63,7 @@ def get_data(filters=None):
     sql_query = f"""
         SELECT *
         FROM (
-            SELECT 
+            SELECT
                 `tabSales Order`.`name`,
                 `tabSales Order`.`status`,
                 `tabSales Order`.`web_order_id`,
@@ -73,13 +73,13 @@ def get_data(filters=None):
                 `tabSales Order`.`transaction_date`,
                 `tabSales Order`.`label_printed_on`,
 
-                (SELECT COUNT(`incl`.`name`) 
+                (SELECT COUNT(`incl`.`name`)
                 FROM `tabSales Order Item` AS `incl`
                 WHERE `incl`.`parent` = `tabSales Order`.`name`
                 AND `incl`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
                 ) AS `included`,
 
-                (SELECT COUNT(`excl`.`name`) 
+                (SELECT COUNT(`excl`.`name`)
                 FROM `tabSales Order Item` AS `excl`
                 WHERE `excl`.`parent` = `tabSales Order`.`name`
                 AND `excl`.`item_code` NOT IN ('0010', '0050', '0100', '1100', '1101', '1102')
@@ -93,7 +93,7 @@ def get_data(filters=None):
                 AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
                 {conditions}
         ) AS `order`
-        WHERE `order`.`included` > 0 
+        WHERE `order`.`included` > 0
             AND `order`.`notincluded` = 0
         ORDER BY `order`.`transaction_date`
         """

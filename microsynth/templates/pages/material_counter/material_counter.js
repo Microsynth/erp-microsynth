@@ -24,14 +24,14 @@ function run() {
             document.getElementById('warehouse').value = warehouse;
         }
     }
-    
+
     frappe.call({
         'method': 'microsynth.templates.pages.material_counter.material_counter.get_processes',
         'callback': function(r) {
             let select = document.getElementById('processes');
             if (r.message) {
                 for (i = 0; i < r.message.length; i++) {
-                    select.innerHTML += "<option value=\"" + r.message[i] 
+                    select.innerHTML += "<option value=\"" + r.message[i]
                         + "\">" + r.message[i] + "</option>";
                 }
             }
@@ -130,7 +130,7 @@ function get_users_for_process(process) {
             select.innerHTML = "";
             if (r.message) {
                 for (i = 0; i < r.message.length; i++) {
-                    select.innerHTML += "<option value=\"" + r.message[i] 
+                    select.innerHTML += "<option value=\"" + r.message[i]
                         + "\">" + r.message[i] + "</option>";
                 }
             }

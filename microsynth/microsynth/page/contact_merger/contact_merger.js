@@ -21,7 +21,7 @@ frappe.contact_merger = {
         me.body = $('<div></div>').appendTo(me.page.main);
         var data = "";
         $(frappe.render_template('contact_merger', data)).appendTo(me.body);
-        
+
         // attach event handlers
         this.page.main.find("#contact_1").on('change', function() {
             frappe.contact_merger.display_contact_details();
@@ -70,7 +70,7 @@ frappe.contact_merger = {
                     } catch {
                         frappe.msgprint( "An error occurred while loading the contacts." );
                     }
-                } 
+                }
             }
         });
     },
@@ -80,7 +80,7 @@ frappe.contact_merger = {
             frappe.contact_merger.toggle(btn.target.id);
         });
         // check and enable merge button
-        if ((document.getElementById("contact_1").value) 
+        if ((document.getElementById("contact_1").value)
             && (document.getElementById("contact_2").value)
             && (document.getElementById("contact_1").value !== document.getElementById("contact_2").value)) {
                 document.getElementById("merge").disabled = false;
@@ -115,7 +115,7 @@ frappe.contact_merger = {
                         document.getElementById("contact_2").value = "";
                         frappe.contact_merger.display_contact_details();
                     }
-                } 
+                }
             }
         });
     },
@@ -138,7 +138,7 @@ frappe.contact_merger = {
                 frappe.contact_merger.merge(values);
             }, () => {
                 frappe.show_alert('No merge done');
-            });        
+            });
         } else {
             frappe.contact_merger.merge(values);
         }

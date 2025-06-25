@@ -21,7 +21,7 @@ def print_raw(ip, port, content):
 
 def print_test_label_brady():
     """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
-    
+
     content = ''';###load Microsynth logo###
 M l IMG;01_MIC_Logo_Swiss_black
 
@@ -44,7 +44,7 @@ A 1
 
 def print_test_label_novexx():
     """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
-    
+
     content = '''#!A1
 #IMS105/148
 #N13
@@ -73,10 +73,10 @@ def choose_brady_printer(company):
     Returns the Brady printer specified for the user with the 'User Printer' DocType
     or alternatively the one defined in 'Sequencing Settings'.
 
-    Printers have to be set in Sequencing Settings based on company name. The IP and port 
-    of the printer are specified on the 'Brady Printer' DocType. 
+    Printers have to be set in Sequencing Settings based on company name. The IP and port
+    of the printer are specified on the 'Brady Printer' DocType.
     """
-    
+
     # check if there is a user-specific printer
     user = frappe.get_user()
     if frappe.db.exists("User Printer", user.name):
@@ -86,10 +86,10 @@ def choose_brady_printer(company):
         return printer
 
     # Austria labels will be handled in by Microsynth AG
-    if company == "Microsynth Austria GmbH": 
+    if company == "Microsynth Austria GmbH":
         company = "Microsynth AG"
-    
-    if not company: 
+
+    if not company:
         frappe.throw("Company missing for deciding on printer IP")
 
     settings = frappe.get_doc("Sequencing Settings", "Sequencing Settings")
@@ -110,9 +110,9 @@ def get_label_data(sales_order):
 
     if not sales_order.shipping_address_name:
         frappe.throw("Sales Order '{0}': Address missing".format(sales_order.name))
-    elif not sales_order.customer: 
+    elif not sales_order.customer:
         frappe.throw("Sales Order '{0}': Customer missing".format(sales_order.name))
-    elif not sales_order.contact_person: 
+    elif not sales_order.contact_person:
         frappe.throw("Sales Order '{0}': Contact missing".format(sales_order.name))
 
     if sales_order.shipping_contact:
@@ -136,7 +136,7 @@ def get_label_data(sales_order):
             break
 
     data = {
-        'lines': create_receiver_address_lines(customer_name = sales_order.order_customer_display or sales_order.customer_name, contact = contact_id, address = address_id), 
+        'lines': create_receiver_address_lines(customer_name = sales_order.order_customer_display or sales_order.customer_name, contact = contact_id, address = address_id),
         'sender_header': get_sender_address_line(sales_order, destination_country),
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
@@ -156,9 +156,9 @@ def print_shipping_label(sales_order_id):
 
     bench execute "microsynth.microsynth.labels.print_shipping_label" --kwargs "{'sales_order_id': 'SO-BAL-24016620'}"
     """
-    sales_order = frappe.get_doc("Sales Order", sales_order_id)    
+    sales_order = frappe.get_doc("Sales Order", sales_order_id)
     label_data = get_label_data(sales_order)
-    content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)   
+    content = frappe.render_template(BRADY_PRINTER_TEMPLATE, label_data)
 
     printer = choose_brady_printer(sales_order.company)
 
@@ -192,7 +192,7 @@ def print_contact_shipping_label(address_id, contact_id, customer_id):
     else:
         sender_header = letter_head.sender_address_line
     label_data = {
-        'lines': create_receiver_address_lines(customer_name=customer_name, contact=contact_id, address=address_id), 
+        'lines': create_receiver_address_lines(customer_name=customer_name, contact=contact_id, address=address_id),
         'sender_header': sender_header,
         'destination_country': country,
         'cstm_id': customer_id
@@ -331,12 +331,12 @@ def print_purchasing_labels(label_table):
 
 
 def print_test_purchasing_label_novexx():
-    """    
+    """
     bench execute microsynth.microsynth.labels.print_test_purchasing_label_novexx
-    """    
+    """
     content = '''
 #!A1
-#IMS30/22   
+#IMS30/22
 #N13
 #ER
 

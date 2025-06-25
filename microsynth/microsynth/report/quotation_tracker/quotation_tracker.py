@@ -20,7 +20,7 @@ def get_columns():
         {"label": _("Last Followed Up"), "fieldname": "last_follow_up_date", "fieldtype": "Date", "width": 115},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 100},
         {"label": _("Contact Person"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 105},
-        {"label": _("Contact Person Name"), "fieldname": "contact_display", "fieldtype": "Data", "width": 160 },        
+        {"label": _("Contact Person Name"), "fieldname": "contact_display", "fieldtype": "Data", "width": 160 },
         {"label": _("Sales Manager"), "fieldname": "sales_manager", "fieldtype": "Data", "width": 245 }
     ]
 
@@ -47,7 +47,7 @@ def get_data(filters=None):
             `tabQuotation`.`party_name` AS `customer`,
             `tabQuotation`.`contact_person`,
             `tabQuotation`.`contact_display`,
-            `tabQuotation`.`quotation_type`,                  
+            `tabQuotation`.`quotation_type`,
             `tabQuotation`.`net_total`,
             `tabQuotation`.`currency`,
             `tabQuotation`.`sales_manager`,
@@ -58,14 +58,14 @@ def get_data(filters=None):
                 ORDER BY `tabContact Note`.`date` DESC
                     LIMIT 1
             ) AS `last_follow_up`,
-            
+
             (SELECT DISTINCT `tabContact Note`.`date`
                 FROM `tabContact Note`
                 WHERE `tabContact Note`.`prevdoc_docname` = `tabQuotation`.`name`
                 ORDER BY `tabContact Note`.`date` DESC
                     LIMIT 1
             ) AS `last_follow_up_date`
-            
+
         FROM `tabQuotation`
         LEFT JOIN `tabContact Note` ON `tabContact Note`.`prevdoc_docname` = `tabQuotation`.`name`
         WHERE `tabQuotation`.`docstatus` = 1
@@ -87,7 +87,7 @@ def get_data(filters=None):
                 quotations_to_follow_up.append(quote)
         else:
             quotations_to_follow_up.append(quote)
-    
+
     return quotations_to_follow_up
 
 

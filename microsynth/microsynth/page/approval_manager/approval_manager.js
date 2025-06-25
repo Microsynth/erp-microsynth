@@ -30,7 +30,7 @@ frappe.approval_manager = {
             location.reload();
         });
     },
-    run: function() { 
+    run: function() {
         // prepare user
         document.getElementById("user").value = frappe.session.user;
         frappe.approval_manager.get_approvals();
@@ -133,7 +133,7 @@ frappe.approval_manager = {
         );
     },
     remove_clearfix_nodes: function() {
-        let clearfixes = document.getElementsByClassName("clearfix"); 
+        let clearfixes = document.getElementsByClassName("clearfix");
         for  (let i = clearfixes.length - 1; i >= 0 ; i--) {
             clearfixes[i].remove();
         }

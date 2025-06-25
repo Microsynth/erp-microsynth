@@ -43,23 +43,23 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
         print(msg)
         frappe.log_error(msg, "pricing.change_reference_rate")
         return negative_discount_warnings
-    
+
     if frappe.get_value('Item', item_code, 'disabled'):
         msg = f"Item {item_code} is disabled. Unable to change Item Prices with {min_qty=} for reference price list '{reference_price_list_name}'. Going to return."
         print(msg)
         frappe.log_error(msg, "pricing.change_reference_rate")
         return negative_discount_warnings
-     
+
     changes = "pricelist;old_rate;new_rate"
     counter = 0
-    
+
     sql_query = """
         SELECT `name`
         FROM `tabPrice List`
         WHERE `reference_price_list` = '{reference_price_list_name}'
         AND `enabled` = 1
         ;""".format(reference_price_list_name=reference_price_list_name)
-    
+
     price_lists = frappe.db.sql(sql_query, as_dict=True)
 
     for price_list in price_lists:
@@ -187,13 +187,13 @@ def change_rates_from_csv(csv_file, user):
             negative_discount_warnings += warnings
             line_counter += 1
             print(f"Finished line {line_counter}/{no_lines}: {line}")
-    
+
     if len(negative_discount_warnings) > 0:
         with open(csv_file + '_warnings.csv', 'w') as warnings_file:
             # header for a CSV file collecting warnings about negative discounts
             warnings_file.write("customer_price_list;reference_price_list;item_code;min_qty;customer_rate;reference_rate;discount\n")
             warnings_file.write(negative_discount_warnings)
-    
+
     elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
     print(f"Finished after {elapsed_time} hh:mm:ss.")
 
@@ -218,7 +218,7 @@ def change_rates_from_csv_files(user, file_paths):
 def async_change_reference_rate(reference_price_list_name, item_code, min_qty, reference_rate, new_reference_rate, user):
     """
     Wrapper to call function change_reference_rate with a timeout > 120 seconds (here 360 seconds = 6 minutes).
-    """        
+    """
     frappe.enqueue(method=change_reference_rate, queue='long', timeout=360, is_async=True, job_name='change_reference_rate',
                    reference_price_list_name=reference_price_list_name,
                    item_code=item_code,
@@ -286,10 +286,10 @@ def find_item_price_duplicates(outfile):
     bench execute microsynth.microsynth.pricing.find_item_price_duplicates --kwargs "{'outfile': '/mnt/erp_share/JPe/all_active_item_price_duplicates_2024-12-09.csv'}"
     """
     sql_query = """
-        SELECT 
+        SELECT
             CONCAT(`item_code`, ":", `price_list`, ":", `min_qty`) AS `key`,
-            `item_code`, 
-            `price_list`, 
+            `item_code`,
+            `price_list`,
             `min_qty`,
             `modified`,
             `creation`,
@@ -338,7 +338,7 @@ def find_item_price_duplicates(outfile):
 
     for price_list, items in grouped_by_price_lists.items():
         managers = frappe.db.sql(f"""
-            SELECT 
+            SELECT
                 GROUP_CONCAT(`account_manager`) AS `sales_managers`
             FROM `tabCustomer`
             WHERE `tabCustomer`.`default_price_list` = '{price_list}'
@@ -421,9 +421,9 @@ def delete_item_price_duplicates(price_list, dry_run=True):
     bench execute microsynth.microsynth.pricing.delete_item_price_duplicates --kwargs "{'price_list': 'Fr_Par_ENS', 'dry_run': True}"
     """
     sql_query = f"""
-        SELECT 
+        SELECT
             CONCAT(`item_code`, ":", `min_qty`) AS `key`,
-            `item_code`, 
+            `item_code`,
             `min_qty`,
             (SELECT `disabled` FROM `tabItem` WHERE `tabItem`.`name` = `tabItem Price`.`item_code`) AS `item_disabled`,
             GROUP_CONCAT(`name`) AS `item_price_names`
@@ -460,7 +460,7 @@ def delete_item_price_duplicates_by_file(csv_file, dry_run=True):
 
     Expected header of csv_file:
     0:Sales Manager; 1:Price List; 2:Item Code; 3:Item Name; 4:Minimum Quantity; 5:Item Price ID; 6:Delete?; 7:Rate; 8:Currency; 9:Valid from date; 10:Creation date; 11:Creator; 12:Last Modified date; 13:Last Modified by
-    
+
     bench execute microsynth.microsynth.pricing.delete_item_price_duplicates_by_file --kwargs "{'csv_file': '/mnt/erp_share/JPe/2024-07-24_all_active_item_price_duplicates_to_delete.csv', 'dry_run': True}"
     """
     import csv
@@ -484,7 +484,7 @@ def delete_item_price_duplicates_by_file(csv_file, dry_run=True):
                     SELECT
                         `name`,
                         `price_list`,
-                        `item_code`, 
+                        `item_code`,
                         `min_qty`,
                         `price_list_rate`,
                         `currency`
@@ -615,7 +615,7 @@ def delete_redundant_staggered_prices(pricelists, item_code_length=5, dry_run=Tr
     for pl in pricelists:
         clean_price_list(pl, None)
         sql_query = f"""
-            SELECT 
+            SELECT
                 CONCAT(`item_code`, ":", `price_list`, ":", `price_list_rate`) AS `key`,
                 `item_code`,
                 `price_list`,
@@ -947,7 +947,7 @@ def compare_ref_to_project():
     bench execute microsynth.microsynth.pricing.compare_ref_to_project
     """
     my_fields = ['name', 'price_list', 'item_code', 'item_name', 'min_qty']
-    for currency in ['CHF', 'EUR', 'USD']:        
+    for currency in ['CHF', 'EUR', 'USD']:
         reference_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Sales Prices {currency}"}, fields=my_fields)
         project_prices = frappe.db.get_all("Item Price", filters={'price_list': f"Projects {currency}"}, fields=my_fields)
         for ref_price in reference_prices:
@@ -1051,7 +1051,7 @@ def find_price_lists_differing_from_reference(items):
                     `tabCustomer`.`name` AS `customer_id`,
                     `tabCustomer`.`customer_name` AS `customer_name`,
                     `tabCustomer`.`account_manager` AS `account_manager`
-                FROM `tabItem Price`        
+                FROM `tabItem Price`
                 LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
                 LEFT JOIN `tabCustomer` ON `tabCustomer`.`default_price_list` = `tabItem Price`.`price_list`
                 WHERE `tabItem Price`.`reference_price_list` = "{reference_price_list}"
@@ -1109,7 +1109,7 @@ def change_customer_prices(items):
                     `tabItem Price`.`price_list_rate` AS `rate`,
                     `tabItem Price`.`currency`,
                     `tabItem Price`.`price_list`
-                FROM `tabItem Price`        
+                FROM `tabItem Price`
                 LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
                 LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
                 WHERE `tabItem Price`.`reference_price_list` = "{reference_price_list}"

@@ -21,4 +21,3 @@ frappe.query_reports["Open Delivery Notes"] = {
         hide_chart_buttons();
     }
 };
-

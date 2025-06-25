@@ -50,7 +50,7 @@ frappe.query_reports["Customer Credits"] = {
 function create_pdf(company, customer) {
     if (customer) {
         var w = window.open(
-            frappe.urllib.get_full_url("/api/method/microsynth.microsynth.report.customer_credits.customer_credits.download_pdf"  
+            frappe.urllib.get_full_url("/api/method/microsynth.microsynth.report.customer_credits.customer_credits.download_pdf"
                     + "?company=" + encodeURIComponent(company)
                     + "&customer=" + encodeURIComponent(customer))
         );
@@ -59,5 +59,5 @@ function create_pdf(company, customer) {
         }
     } else {
         frappe.msgprint(__("Please enter a Customer in the report filter, overview printing is not supported by this button.")); return;
-    }    
+    }
 }

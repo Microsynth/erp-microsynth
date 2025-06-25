@@ -22,7 +22,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
     # find purchase invoice drafts
     purchase_invoice_filter = f""" AND `tabPurchase Invoice`.`name` = "{purchase_invoice}" """ if purchase_invoice else ""
     pinvs = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabPurchase Invoice`.`name`,
             `tabPurchase Invoice`.`company`,
             `tabPurchase Invoice`.`supplier`,
@@ -55,11 +55,11 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
         WHERE
             `tabPurchase Invoice`.`docstatus` = 0
-            { purchase_invoice_filter } 
+            { purchase_invoice_filter }
             AND `tabPurchase Invoice`.`name` NOT IN (
                 SELECT `tabToDo`.`reference_name`
                 FROM `tabToDo`
-                WHERE 
+                WHERE
                     `tabToDo`.`reference_type` = "Purchase Invoice"
                     AND `tabToDo`.`status` = "Open"
             )
@@ -73,7 +73,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
         pinv['attachments'] = frappe.db.sql("""
             SELECT *
             FROM `tabFile`
-            WHERE 
+            WHERE
                 `attached_to_doctype` = "Purchase Invoice"
                 AND `attached_to_name` = "{pinv}"
             ;""".format(pinv=pinv['name']), as_dict=True)
@@ -106,8 +106,8 @@ def add_comment(pinv, subject, comment, user):
 
 def force_set_due_date(purchase_invoice_id, due_date):
     # necessary to circumvent the validation and enable free setting of due_date
-    frappe.db.sql(f"""UPDATE `tabPurchase Invoice` 
-                     SET `due_date` = '{due_date}' 
+    frappe.db.sql(f"""UPDATE `tabPurchase Invoice`
+                     SET `due_date` = '{due_date}'
                      WHERE `name` = '{purchase_invoice_id}'""")
 
 
@@ -118,7 +118,7 @@ def save_document(doc):
 
     # date field: parse back from human-friendly format
     date_format = FORMAT_MAPPER[frappe.get_cached_value("System Settings", "System Settings", "date_format")]
-    
+
     d = frappe.get_doc("Purchase Invoice", doc.get('name'))
     if not doc.get('posting_date'):
         doc['posting_date'] = datetime.today().strftime(date_format)
@@ -149,7 +149,7 @@ def save_document(doc):
                     'description': tax.description,
                     'cost_center': tax.cost_center,
                     'rate': tax.rate
-                }    
+                }
                 d.append("taxes", t)
         if len(d.items) == 1:
             if fetches['default_item_code'] and fetches['default_item_name']:
@@ -220,7 +220,7 @@ def save_document(doc):
 
 
 @frappe.whitelist()
-def delete_document(purchase_invoice_name):    
+def delete_document(purchase_invoice_name):
     doc = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
     try:
         doc.delete()

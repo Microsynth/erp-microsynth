@@ -34,11 +34,11 @@ def get_data(filters, short=False):
     sql_query = """
         SELECT
             *,
-            (SELECT 
-                SUM(`tabGL Entry`.`credit_in_account_currency`) 
+            (SELECT
+                SUM(`tabGL Entry`.`credit_in_account_currency`)
                  - SUM(`tabGL Entry`.`debit_in_account_currency`)
              FROM `tabGL Entry`
-             WHERE 
+             WHERE
                 `tabGL Entry`.`voucher_type` = "Journal Entry"
                 AND `tabGL Entry`.`voucher_no` = `avis_pairs`.`journal_entry`
                 AND `tabGL Entry`.`account` = `avis_pairs`.`account`
@@ -53,7 +53,7 @@ def get_data(filters, short=False):
                 `tabJournal Entry`.`name` AS `journal_entry`
             FROM `tabPayment Entry`
             LEFT JOIN `tabJournal Entry` ON `tabJournal Entry`.`user_remark` = `tabPayment Entry`.`name`
-            WHERE 
+            WHERE
                 `tabPayment Entry`.`posting_date` BETWEEN "{from_date}" AND "{to_date}"
                 AND `tabJournal Entry`.`company` = "{company}"
                 AND `tabJournal Entry`.`docstatus` = 1

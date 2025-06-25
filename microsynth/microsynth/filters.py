@@ -14,7 +14,7 @@ def find_purchasing_items(doctype, txt, seachfield, start, page_len, filters):
         OR `tabItem`.`item_name` LIKE %(txt)s
         OR `tabItem Supplier`.`supplier_part_no` LIKE %(txt)s)
         AND `tabItem`.`item_group` = %(item_group)s
-        AND `tabItem Supplier`.`supplier` like %(supplier)s; 
+        AND `tabItem Supplier`.`supplier` like %(supplier)s;
         """
 
     items = frappe.db.sql(query, parameters, as_dict=False)

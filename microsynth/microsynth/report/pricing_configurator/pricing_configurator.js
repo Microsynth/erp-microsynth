@@ -38,7 +38,7 @@ frappe.query_reports["Pricing Configurator"] = {
         }
         report.page.add_inner_button(__('Clean price list'), function () {
             clean_price_list();
-        });        
+        });
         report.page.add_inner_button(__('Populate from reference'), function () {
            populate_from_reference();
         });
@@ -56,7 +56,7 @@ frappe.query_reports["Pricing Configurator"] = {
         });
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;
-            
+
             // add event listener for double clicks to move up
             cur_page.container.addEventListener("dblclick", function(event) {
                 var row = event.delegatedTarget.getAttribute("data-row-index");
@@ -171,7 +171,7 @@ function change_general_discount(){
                         });
                     }, () => {
                         frappe.show_alert('No new general discount applied');
-                    });        
+                    });
             },
             __('Change General Discount'),
             __('OK')
@@ -216,7 +216,7 @@ function populate_from_reference() {
 
 function populate_with_factor() {
     frappe.prompt([
-        {'fieldname': 'factor', 'fieldtype': 'Float', 'label': __('Factor'), 'default': 1.0, 'reqd': 1}  
+        {'fieldname': 'factor', 'fieldtype': 'Float', 'label': __('Factor'), 'default': 1.0, 'reqd': 1}
     ],
     function(values){
         frappe.confirm('Are you sure you want to proceed?<br><b>All prices</b> will be <b>overwritten</b> with a rate derived from the reference list multiplied with the given factor ' + values.factor + '.',
@@ -238,7 +238,7 @@ function populate_with_factor() {
                 });
             }, () => {
                 frappe.show_alert('No prices changed');
-            });        
+            });
     },
     __('Populate with factor'),
     __('OK')

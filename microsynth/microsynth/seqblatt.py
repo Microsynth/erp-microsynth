@@ -11,7 +11,7 @@ import frappe
 from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
-from frappe.utils import cint, get_url_to_form 
+from frappe.utils import cint, get_url_to_form
 import json
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
@@ -20,8 +20,8 @@ from microsynth.microsynth.utils import validate_sales_order, has_items_delivere
 
 def set_status(status, labels):
     """
-    This is the generic core function that will be called by the 
-    rest endpoints for the SeqBlatt API. 
+    This is the generic core function that will be called by the
+    rest endpoints for the SeqBlatt API.
     labels must be a list of dictionaries. E.g.
     [
         {
@@ -56,7 +56,7 @@ def set_status(status, labels):
                 if matching_labels[0]['customer']:
                     customers.add(matching_labels[0]['customer'])
                 labels_to_process.append(matching_labels[0]['name'])
-        
+
         # Enable Customer if necessary
         for customer in customers:
             customer_doc = frappe.get_doc("Customer", customer)
@@ -64,11 +64,11 @@ def set_status(status, labels):
                 customer_doc.disabled = 0
                 customer_doc.save(ignore_permissions=True)
                 disabled_customers.append(customer)
-        
+
         # Set status of Sequencing Labels
         for label in labels_to_process:
             label_doc = frappe.get_doc("Sequencing Label", label)
-            # ToDo: Check if status transition is allowed               
+            # ToDo: Check if status transition is allowed
             label_doc.status = status
             label_doc.save(ignore_permissions=True)
 
@@ -88,7 +88,7 @@ def set_status(status, labels):
 @frappe.whitelist(allow_guest=True)
 def set_unused(content):
     """
-    Set label status to 'unused'. Labels must be a list of dictionaries 
+    Set label status to 'unused'. Labels must be a list of dictionaries
     (see `set_status` function).
     """
     if type(content) == str:
@@ -99,7 +99,7 @@ def set_unused(content):
 @frappe.whitelist(allow_guest=True)
 def lock_labels(content):
     """
-    Set label status to 'locked'. Labels must be a list of dictionaries 
+    Set label status to 'locked'. Labels must be a list of dictionaries
     (see `set_status` function).
     """
     if type(content) == str:
@@ -110,7 +110,7 @@ def lock_labels(content):
 @frappe.whitelist(allow_guest=True)
 def received_labels(content):
     """
-    Set label status to 'received'. Labels must be a list of dictionaries 
+    Set label status to 'received'. Labels must be a list of dictionaries
     (see `set_status` function).
     """
     if type(content) == str:
@@ -121,7 +121,7 @@ def received_labels(content):
 @frappe.whitelist(allow_guest=True)
 def processed_labels(content):
     """
-    Set label status to 'processed'. Labels must be a list of dictionaries 
+    Set label status to 'processed'. Labels must be a list of dictionaries
     (see `set_status` function).
     """
     if type(content) == str:
@@ -132,7 +132,7 @@ def processed_labels(content):
 #@frappe.whitelist(allow_guest=True)
 #def unlock_labels(content):
 #    """
-#    Set label status to 'locked'. Labels must be a list of dictionaries 
+#    Set label status to 'locked'. Labels must be a list of dictionaries
 #    (see `set_status` function).
 #    """
 #    if type(content) == str:
@@ -143,7 +143,7 @@ def processed_labels(content):
 def check_sales_order_completion():
     """
     find sales orders that have no delivery note and are not closed
-    run 
+    run
     bench execute microsynth.microsynth.seqblatt.check_sales_order_completion
     """
     #start_ts = datetime.now()
@@ -183,7 +183,7 @@ def check_sales_order_completion():
         try:
             # check status of labels assigned to each sample and consider Samples without a label
             pending_samples = frappe.db.sql("""
-                SELECT 
+                SELECT
                     `tabSample`.`name`
                 FROM `tabSample Link`
                 LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
@@ -206,7 +206,7 @@ def check_sales_order_completion():
                 if customer.disabled:
                     frappe.log_error("Customer '{0}' of order '{1}' is disabled. Cannot create a delivery note.".format(customer.name, sales_order), "Production: sales order complete")
                     return
-                
+
                 ## create delivery note (leave on draft: submitted in a batch process later on)
                 dn_content = make_delivery_note(sales_order['name'])
                 dn = frappe.get_doc(dn_content)
@@ -324,17 +324,17 @@ def submit_seq_primer_dns():
     Check all Delivery Note Drafts of Product Type Oligos and with Item Code 0975 and submit them if eligible.
 
     bench execute microsynth.microsynth.seqblatt.submit_seq_primer_dns
-    """    
+    """
     delivery_notes = frappe.db.sql("""
         SELECT `tabDelivery Note`.`name`
         FROM `tabDelivery Note`
-        JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name` 
+        JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
                 AND `tabDelivery Note Item`.`item_code` IN ('0975'))
         WHERE
             `tabDelivery Note`.`product_type` = 'Oligos'
             AND `tabDelivery Note`.`docstatus` = 0;
         """, as_dict=True)
-    
+
     for dn in delivery_notes:
         print(f"Processing '{dn['name']}' ...")
         check_submit_delivery_note(dn['name'])
@@ -391,7 +391,7 @@ def close_partly_delivered_paid_orders(dry_run=True):
         ;""", as_dict=True)
 
     print(f"Going to process {len(sales_orders)} Sales Orders.")
-    
+
     for i, so in enumerate(sales_orders):
         so_doc = frappe.get_doc("Sales Order", so['name'])
         if not so_doc.web_order_id:

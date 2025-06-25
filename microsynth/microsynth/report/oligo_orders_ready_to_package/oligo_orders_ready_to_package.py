@@ -18,7 +18,7 @@ def get_columns():
         {"label": _("Deliver Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
         {"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 70},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
-        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},        
+        {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
@@ -32,8 +32,8 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
     data = frappe.db.sql("""
-        SELECT 
-            `tabDelivery Note Item`.`parent` AS `delivery_note`, 
+        SELECT
+            `tabDelivery Note Item`.`parent` AS `delivery_note`,
             `tabDelivery Note Item`.`against_sales_order` AS `sales_order`,
             `tabSales Order`.`web_order_id` AS `web_order_id`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
@@ -50,7 +50,7 @@ def get_data(filters=None):
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-        WHERE 
+        WHERE
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabDelivery Note Item`.`docstatus` = 0
             AND `tabCountry`.`name` = 'Switzerland'
@@ -66,14 +66,14 @@ def get_data(filters=None):
     return data
 
 @frappe.whitelist()
-def print_labels():    
-    
+def print_labels():
+
     data = get_data(filters=None)
     orders = []
 
     for x in data:
         orders.append(x.sales_order)
-    
+
     print_oligo_order_labels(orders)
 
     return

@@ -60,7 +60,7 @@ def create_pi_from_si(sales_invoice):
         'project': si.project,
         'cost_center': pi_cost_center,
         'currency': si.currency,
-        'additional_discount_percentage': si.additional_discount_percentage,        
+        'additional_discount_percentage': si.additional_discount_percentage,
         'taxes_and_charges': pi_tax_template,
         'disable_rounded_total': 1
     })
@@ -285,7 +285,7 @@ def fetch_billing_address(supplier_id):
     bench execute "microsynth.microsynth.purchasing.fetch_billing_address" --kwargs "{'supplier_id': 'S-00001'}"
     """
     addresses = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabAddress`.`name`,
             `tabAddress`.`address_type`,
             `tabAddress`.`overwrite_company`,
@@ -306,7 +306,7 @@ def fetch_billing_address(supplier_id):
 
     if len(addresses) == 1:
         return addresses[0]
-    else: 
+    else:
         return None # frappe.throw(f"Found {len(addresses)} billing addresses for Supplier '{supplier_id}'", "fetch_billing_address")
 
 
@@ -371,7 +371,7 @@ def set_default_payable_accounts(supplier, event):
             frappe.log_error(msg, "set_default_payable_accounts")
             frappe.throw(msg)
             continue
-        entry_exists = False    
+        entry_exists = False
         for a in supplier.accounts:
             if a.company == company['name']:
                 # update
@@ -388,7 +388,7 @@ def set_default_payable_accounts(supplier, event):
             }
             supplier.append("accounts", entry)
             #print(f"appended {entry=}")
-    # Do not save since function is called in before_save server hook    
+    # Do not save since function is called in before_save server hook
 
 
 def set_and_save_default_payable_accounts(supplier):
@@ -498,7 +498,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
-            
+
             shelf_life_in_days = None
             if shelf_life_in_years:
                 try:
@@ -506,7 +506,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                     shelf_life_in_days = int(shelf_life_in_years * 365)
                 except Exception as err:
                     print(f"ERROR: Unable to convert {shelf_life_in_years=} into days. Going to continue with the next supplier item.")
-            
+
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
             else:
@@ -639,7 +639,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 post_box = f"Postfach {post_box}"
             if currency == '£':
                 currency = 'GBP'
-            
+
             # check some values
             if salutation and salutation not in ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'):
                 #print(f"WARNING: Salutation '{salutation}' is not in the list of allowed salutations ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'), going to ignore salutation of {ext_creditor_number}.")
@@ -753,7 +753,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
             elif city or pincode or address_line1 or post_box:
                 print(f"WARNING: Ort, PLZ, Strasse or Postfach given, but missing required information (Land and Ort and Strasse or Postfach) to create an address for Supplier with Index {ext_creditor_number}.")
-            
+
             if first_name or last_name or phone or email:
                 if not (first_name or last_name or company):
                     print(f"WARNING: Got no first name, no second name and no company for Supplier with Index {ext_creditor_number}. Unable to import a Contact, going to continue.")
@@ -780,7 +780,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                         'is_primary': 1
                     })
                 new_contact.save()
-            
+
             create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 3, contact_person_3, email_3, notes_3, ext_creditor_number)
@@ -1038,7 +1038,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
             )
             # Extract the item codes from result
             item_code_list = [row["parent"] for row in item_codes]
-            if len(item_code_list) == 0:                
+            if len(item_code_list) == 0:
                 if create_new_items:
                     if not dry_run:
                         item = frappe.get_doc({
@@ -1116,7 +1116,7 @@ def payment_proposal_after_insert(payment_proposal, event):
             if len(advances) > 0:
                 for a in advances:
                     jv_query = """
-                        SELECT 
+                        SELECT
                             `tabJournal Entry Account`.`reference_name`,
                             `tabPurchase Invoice`.`bill_no`
                         FROM `tabJournal Entry Account`

@@ -52,5 +52,5 @@ def get_data(filters=None):
         ORDER BY
             `tabSales Order`.`transaction_date` DESC;
     """, as_dict=True)
-    
+
     return open_oligo_orders

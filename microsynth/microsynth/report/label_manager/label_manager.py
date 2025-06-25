@@ -31,7 +31,7 @@ def get_data(filters):
     if not filters:
         return []
     conditions = ""
-    
+
     if filters.get('contact'):
         conditions += f" AND `tabSequencing Label`.`contact` = '{filters.get('contact')}'"
     if filters.get('registered_to'):
@@ -76,7 +76,7 @@ def get_data(filters):
     elif filters.get('from_barcode') or filters.get('to_barcode'):
     #    frappe.msgprint( _("From and to barcode are both required, this filter is being ignored.") )
         return []
-    
+
     sql_query = f"""
         SELECT
             `tabSequencing Label`.`name`,
@@ -146,7 +146,7 @@ def create_label_log(from_status, to_status, reason, description, content_str, f
 @frappe.whitelist()
 def lock_labels(content_str, filters, reason, description):
     """
-    Set label status to 'locked'. Labels must be a list of dictionaries 
+    Set label status to 'locked'. Labels must be a list of dictionaries
     (see `set_status` function).
     If locking was successfull, create a Label Log.
     """
@@ -165,7 +165,7 @@ def lock_labels(content_str, filters, reason, description):
 @frappe.whitelist()
 def set_labels_unused(content_str, filters, reason, description):
     """
-    Set label status to 'unused'. Labels must be a list of dictionaries 
+    Set label status to 'unused'. Labels must be a list of dictionaries
     (see `set_status` function).
     If setting to unused was successfull, create a Label Log.
     """

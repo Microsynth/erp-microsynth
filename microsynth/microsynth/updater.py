@@ -19,7 +19,7 @@ def disable_notifications():
     Set Notification.enabled = 0 for all notifications except old one with a bug.
     """
     print("Disabling notifications...")
-    notifications = frappe.get_all("Notification", 
+    notifications = frappe.get_all("Notification",
         fields=['name', 'enabled']
     )
     for notification in notifications:
@@ -34,7 +34,7 @@ def disable_notifications():
 
 def disable_email_accounts():
     print("Disabling email accounts...")
-    email_accounts = frappe.get_all("Email Account", 
+    email_accounts = frappe.get_all("Email Account",
         fields=['name', 'enable_incoming', 'enable_outgoing']
     )
     for account in email_accounts:
@@ -50,14 +50,14 @@ def disable_hot_config_in_dev():
     run
     bench execute "microsynth.microsynth.updater.disable_hot_config_in_dev"
 
-    or 
+    or
     bench migrate
     """
 
     # check if this is a test or develop instance
     if "erp.microsynth.local" not in (frappe.conf.host_name or ""):
         print("This is a test/develop system: disabling productive values")
-        
+
         disable_email_accounts()
 
         disable_notifications()

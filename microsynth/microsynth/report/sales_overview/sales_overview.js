@@ -45,7 +45,7 @@ frappe.query_reports["Sales Overview"] = {
                 if (event.delegatedTarget) {
                     var row = event.delegatedTarget.getAttribute("data-row-index");
                     var column = event.delegatedTarget.getAttribute("data-col-index");
-                    
+
                     var filters = {
                         'company': frappe.query_report.get_filter_value('company'),
                         'territory': frappe.query_report.get_filter_value('territory'),
@@ -53,16 +53,16 @@ frappe.query_reports["Sales Overview"] = {
                         'reporting_type': frappe.query_report.get_filter_value('reporting_type'),
                         'customer_credit_revenue': 'Credit allocation'
                     }
-                    
+
                     // ignore columns that are not in the month-grid part
                     if ((1 < column) && (column < 14)) {
                         filters['month'] = column - 1;
                         filters['item_groups'] = frappe.query_report.data[row]['group']
-                        
+
                         //console.log(filters);
                         frappe.set_route("query-report", "Sales Overview Details", filters);
                     }
-                    
+
                 }
             });
         }

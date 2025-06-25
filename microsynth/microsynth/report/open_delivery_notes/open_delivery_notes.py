@@ -23,7 +23,7 @@ def get_columns():
         {"label": _("Invoice Count"), "fieldname": "sales_invoice_count", "fieldtype": "Int", "width": 95},
     ]
 
-    
+
 def get_data(filters):
     filters = filters or {}
 

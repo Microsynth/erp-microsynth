@@ -46,7 +46,7 @@ def get_data(filters=None):
         inner_conditions += " AND `tabSales Order`.`docstatus` < 2"
     else:
         inner_conditions += " AND `tabSales Order`.`docstatus` = 1"
-    
+
     if filters.get('to_date'):
         inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND '{filters.get('to_date')}'"
     else:
@@ -75,7 +75,7 @@ def get_data(filters=None):
                 `tabSales Order`.`owner`,
                 '-' AS `pending_samples`,
                 '-' AS `open_oligos`,
-                (SELECT COUNT(`tabSales Invoice Item`.`name`) 
+                (SELECT COUNT(`tabSales Invoice Item`.`name`)
                     FROM `tabSales Invoice Item`
                     WHERE `tabSales Invoice Item`.`docstatus` = 1
                         AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
@@ -114,7 +114,7 @@ def get_data(filters=None):
             so['dns'] = 0
         if 'product_type' in so and so['product_type'] == 'Sequencing':
             pending_samples = frappe.db.sql(f"""
-                SELECT 
+                SELECT
                     `tabSample`.`name`
                 FROM `tabSample Link`
                 LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
@@ -127,7 +127,7 @@ def get_data(filters=None):
             so['pending_samples'] = len(pending_samples)
         if 'product_type' in so and so['product_type'] == 'Oligos':
             open_oligos = frappe.db.sql(f"""
-                SELECT 
+                SELECT
                     `tabOligo`.`name`
                 FROM `tabOligo Link`
                 LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`

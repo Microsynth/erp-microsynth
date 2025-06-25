@@ -28,7 +28,7 @@ def find_sales_orders(web_order_id):
 def get_sales_order_samples(sales_order):
     """
     bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-24028200'}"
-    """    
+    """
     samples_to_return = []
     sales_order_doc = frappe.get_doc("Sales Order", sales_order)
 
@@ -40,7 +40,7 @@ def get_sales_order_samples(sales_order):
             "sequencing_label_id": sample_doc.sequencing_label,
             "web_id": sample_doc.web_id
         })
-   
+
     return samples_to_return
 
 
@@ -149,7 +149,7 @@ def create_analysis_report(content=None):
         return {'success': False,
                 'message': "Please provide existing Sample IDs, a Sales Order ID or Web Order ID.",
                 'reference': None}
-    
+
     if len(samples) > 0:
         # compare samples from Sales Order with samples_details from request
         if not ('sample_details' in content and content['sample_details']):
@@ -177,7 +177,7 @@ def create_analysis_report(content=None):
                 return {'success': False,
                         'message': f"The given sample {sample_detail} does not occur on the given or fetched Sales Order.",
                         'reference': None}
-    
+
     if len(matching_samples) != len(content['sample_details']):
         # should not occur?
         return {'success': False,
@@ -204,7 +204,7 @@ def create_analysis_report(content=None):
             address = content['address']
         else:
             address = ''
-        
+
         if 'contact_person' in content and content['contact_person'] and (not 'customer' in content or not content['customer']):
             # get Address from Contact
             customer = get_customer(content['contact_person'])
@@ -397,9 +397,9 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
             frappe.throw(msg)
 
         content_pdf = frappe.get_print(
-            "Analysis Report", 
-            analysis_report, 
-            print_format="Analysis Report", 
+            "Analysis Report",
+            analysis_report,
+            print_format="Analysis Report",
             as_pdf=True)
         path = f"{export_path}/{contact_id}/{web_order_id}"
         if not os.path.exists(path):
@@ -541,7 +541,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
             continue
         try:
             samples = frappe.db.sql(f"""
-                SELECT 
+                SELECT
                     `tabSample`.`name`,
                     `tabSequencing Label`.`status`
                 FROM `tabSample Link`

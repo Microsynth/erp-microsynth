@@ -26,7 +26,7 @@ def get_columns(filters):
 def get_data(filters):
     # Allow only 'Credit allocation' that calculates from the invoices.
     filters["customer_credit_revenue"] = "Credit allocation"
-    
+
     if filters.get("item_groups") == "3.67 NGS":
         query_groups = get_ngs_groups()
     elif filters.get("item_groups") == "Genetic Analysis":
@@ -35,4 +35,4 @@ def get_data(filters):
         query_groups = [ filters.get("item_groups") ]
     data = get_revenue_details(filters, month=filters.get('month'), item_groups=query_groups, debug=False)
     return data
-    
+

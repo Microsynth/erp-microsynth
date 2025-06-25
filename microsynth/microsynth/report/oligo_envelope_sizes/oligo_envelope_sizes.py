@@ -63,7 +63,7 @@ def get_data(filters):
             {outer_conditions}
         ;"""
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     standard_letters_b5 = 0
     large_letters = 0
     midi_letters_with_surcharge = 0

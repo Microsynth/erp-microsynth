@@ -40,7 +40,7 @@ def get_data(filters, short=False):
         conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
     if filters and filters.get('currency'):
         conditions += f"AND `tabSales Invoice`.`currency` = '{filters.get('currency')}'"
-    
+
     if filters.get('customer'):
         # customer based evaluation: ledger
         sql_query = """
@@ -77,9 +77,9 @@ def get_data(filters, short=False):
                     `tabSales Invoice`.`return_against`
                 ) AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Item` 
+            FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
@@ -99,15 +99,15 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Customer Credit` 
+            FROM `tabSales Invoice Customer Credit`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 {conditions}
         ) AS `raw`
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
-        """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"), 
+        """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
             conditions=conditions)
 
@@ -139,7 +139,7 @@ def get_data(filters, short=False):
                 if d['type'] == "Credit" and d['outstanding'] > 0:
                     output.append(d)
             data = output
-                    
+
         if len(data) > 0:  # prevent crash if there are no entries
             # add data required in the print format
             print_format = {}
@@ -161,7 +161,7 @@ def get_data(filters, short=False):
     else:
         # overview, group by customer
         sql_query = """
-        SELECT 
+        SELECT
             `raw`.`customer` AS `customer`,
             `raw`.`customer_name` AS `customer_name`,
             SUM(`raw`.`net_amount`) AS `outstanding`,
@@ -179,9 +179,9 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Item`.`name` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Item` 
+            FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 {conditions}
@@ -197,15 +197,15 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Customer Credit` 
+            FROM `tabSales Invoice Customer Credit`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 {conditions}
         ) AS `raw`
         GROUP BY `raw`.`customer`
         ORDER BY `raw`.`customer` ASC;
-        """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"), 
+        """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             conditions=conditions)
 
         data = frappe.db.sql(sql_query, as_dict=True)
@@ -220,17 +220,17 @@ def get_data(filters, short=False):
 def download_pdf(company, customer):
     filters={'customer': customer, 'company': company}
     content = frappe.render_template(
-        "microsynth/microsynth/report/customer_credits/customer_credits_server.html", 
+        "microsynth/microsynth/report/customer_credits/customer_credits_server.html",
         {
             'data': get_data(filters),
             'filters': filters
         }
     )
-    
+
     pdf = get_pdf(content)
-    
+
     frappe.local.response.filename = "Customer_Credits_{0}.pdf".format(customer)
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
-    
+
     return

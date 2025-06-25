@@ -21,7 +21,7 @@ def get_data(filters):
             conditions += f"AND `tabQM User Process Assignment`.`company` = '{filters.get('company')}'"
 
         query = f"""
-            SELECT DISTINCT 
+            SELECT DISTINCT
                 `tabUser Settings`.`name`,
                 `tabUser Settings`.`name` as `user_name`,
                 `tabQM User Process Assignment`.`company`

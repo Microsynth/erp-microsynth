@@ -31,8 +31,8 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
     data = frappe.db.sql("""
-        SELECT 
-            `tabDelivery Note Item`.`parent` AS `delivery_note`, 
+        SELECT
+            `tabDelivery Note Item`.`parent` AS `delivery_note`,
             `tabDelivery Note Item`.`against_sales_order` AS `sales_order`,
             `tabSales Order`.`web_order_id` AS `web_order_id`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
@@ -49,7 +49,7 @@ def get_data(filters=None):
         LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Order`.`shipping_address_name`
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
-        WHERE 
+        WHERE
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabDelivery Note Item`.`docstatus` = 0
             AND `tabCountry`.`name` <> 'Switzerland'

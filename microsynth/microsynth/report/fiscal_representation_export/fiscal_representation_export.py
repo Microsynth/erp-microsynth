@@ -49,9 +49,9 @@ def get_data(filters, short=False):
             `tabSales Invoice`.`grand_total` AS `gross_amount`,
             `tabSales Invoice`.`taxes_and_charges` AS `tax_code`
         FROM `tabSales Invoice`
-        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`customer_address` 
-        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer` 
-        WHERE 
+        LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`customer_address`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
+        WHERE
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`company` = "{company}"
             AND `tabSales Invoice`.`posting_date` >= "{from_date}"
@@ -64,24 +64,24 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}" )
         ORDER BY `tabCustomer`.`tax_id` ASC, `tabSales Invoice`.`name` ASC
         """.format(
-            company = filters.get("company"), 
-            from_date = filters.get("from_date"), 
+            company = filters.get("company"),
+            from_date = filters.get("from_date"),
             to_date = filters.get("to_date"),
             credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     return data
-   
+
 def pdf_export(filters):
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
-    
+
     for d in data:
         if d.get("document_type") == "Sales Invoice":
-            create_pdf(path=settings.pdf_export_path, 
-                dt=d.get("document_type"), 
-                dn=d.get("document"), 
+            create_pdf(path=settings.pdf_export_path,
+                dt=d.get("document_type"),
+                dn=d.get("document"),
                 print_format=settings.pdf_print_format
             )
 
@@ -91,10 +91,10 @@ def pdf_export(filters):
 def async_package_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
-        
+
     frappe.enqueue(method=package_export, queue='long', timeout=120, is_async=True, filters=filters)
     return
-           
+
 """
 Export the complete sales invoice package with pdf, xml and document overview
 """
@@ -152,20 +152,20 @@ def package_export(filters):
         if not os.path.exists(subdirectory):
             os.mkdir(subdirectory)
 
-        pdf_file = create_pdf(path=subdirectory, 
-            dt="Sales Invoice", 
-            dn=d.get("sales_invoice"), 
+        pdf_file = create_pdf(path=subdirectory,
+            dt="Sales Invoice",
+            dn=d.get("sales_invoice"),
             print_format=settings.pdf_print_format
         )
-    
+
     # bind all pdfs
     # merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
     # merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
-    
+
     # create summary pdf
     create_summary_pdf(path, "AUS", data_at, filters.get('from_date'), filters.get('to_date'))
     create_summary_pdf(path, "EU", data_ig, filters.get('from_date'), filters.get('to_date'))
-        
+
     # create summary csv
     create_summary_csv(path, "AUS", sum_at, filters.get('from_date'), filters.get('to_date'))
     create_summary_csv(path, "EU", sum_ig, filters.get('from_date'), filters.get('to_date'))
@@ -174,9 +174,9 @@ def package_export(filters):
 
 def create_pdf(path, dt, dn, print_format):
     content_pdf = frappe.get_print(
-        dt, 
-        dn, 
-        print_format=print_format, 
+        dt,
+        dn,
+        print_format=print_format,
         as_pdf=True)
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
@@ -203,12 +203,12 @@ def create_summary_pdf(path, code, data, from_date, to_date):
 
 def merge_pdfs(path, code, files, from_date, to_date):
     merger = PdfFileMerger()
-    
+
     for pdf in files:
         merger.append("{0}/{1}".format(path, pdf))
         # clean up single invoice pdf
         os.remove("{0}/{1}".format(path, pdf))
-        
+
     file_name = "UID_{code}_{from_date}_{to_date}.pdf".format(code=code, from_date=from_date, to_date=to_date)
     content_file_name = "{0}/{1}".format(path, file_name)
     merger.write(content_file_name)

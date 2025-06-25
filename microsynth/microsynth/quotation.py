@@ -14,7 +14,7 @@ def make_quotation(contact_name):
     bench execute microsynth.microsynth.quotation.make_quotation --kwargs "{'contact_name': '1234'}"
     """
     doc = get_mapped_doc(
-        "Contact", 
+        "Contact",
         contact_name,
         {"Contact": { "doctype": "Quotation"}})
 

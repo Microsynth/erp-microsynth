@@ -48,7 +48,7 @@ def get_data(filters=None):
             `tabQuotation`.`valid_till`,
             `tabQuotation`.`party_name` AS `customer`,
             `tabQuotation`.`contact_person`,
-            `tabQuotation`.`quotation_type`,                  
+            `tabQuotation`.`quotation_type`,
             `tabQuotation`.`net_total`,
             `tabQuotation`.`currency`,
             `tabQuotation`.`sales_manager`
@@ -66,7 +66,7 @@ def get_data(filters=None):
         for open_quotation in open_quotations:
             comment_field_results = frappe.get_all("Sales Order", filters=[['comment', 'LIKE', f"%{open_quotation['name']}%"]], fields=['name'])
             open_quotation['unlinked_sales_order'] = ', '.join(uso['name'] for uso in comment_field_results)
-    
+
     return open_quotations
 
 

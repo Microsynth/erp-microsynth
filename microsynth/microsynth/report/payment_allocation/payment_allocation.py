@@ -10,7 +10,7 @@ def execute(filters=None):
     data = get_data(filters)
     return columns, data
 
-def get_columns(filters):   
+def get_columns(filters):
     columns = [
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Document"), "fieldname": "dn", "fieldtype": "Dynamic Link", "options": "dt", "width": 120},
@@ -48,12 +48,12 @@ def get_data(filters):
             FROM `tabPayment Entry` AS `pe`
             LEFT JOIN `tabPayment Entry Reference` AS `per` ON `per`.`parent` = `pe`.`name`
             LEFT JOIN `tabCustomer` AS `c1` ON `c1`.`name` = `pe`.`party`
-            WHERE 
+            WHERE
                 `pe`.`posting_date` BETWEEN "{from_date}" AND "{to_date}"
                 AND `pe`.`docstatus` = 1
                 AND `pe`.`company` = "{company}"
                 AND `pe`.`payment_type` = "Receive"
-            
+
             UNION SELECT
                 `jv`.`posting_date` AS `date`,
                 "Journal Entry" AS `dt`,
@@ -71,7 +71,7 @@ def get_data(filters):
             FROM `tabJournal Entry` AS `jv`
             LEFT JOIN `tabJournal Entry Account` AS `jva` ON `jva`.`parent` = `jv`.`name`
             LEFT JOIN `tabCustomer` AS `c2` ON `c2`.`name` = `jva`.`party`
-            WHERE 
+            WHERE
                 `jv`.`posting_date` BETWEEN "{from_date}" AND "{to_date}"
                 AND `jv`.`docstatus` = 1
                 AND `jv`.`company` = "{company}"
@@ -80,12 +80,12 @@ def get_data(filters):
                     FROM `tabAccount`
                     WHERE `account_type` = "Receivable" AND `company` = "{company}")
         ) AS `data`
-        
+
         ORDER BY `data`.`date` ASC, `data`.`dn` ASC, `data`.`idx` ASC
         ;
-    
+
     """.format(from_date=filters.get('from_date'), to_date=filters.get('to_date'), company=filters.get('company'))
-    
+
     data = frappe.db.sql(sql_query, as_dict=True)
-    
+
     return data

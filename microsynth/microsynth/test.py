@@ -18,7 +18,7 @@ def get_item_prices(price_list):
             `tabItem Price`.`item_name`,
             `tabItem Price`.`min_qty`,
             `tabItem Price`.`price_list_rate` as rate
-        FROM `tabItem Price`        
+        FROM `tabItem Price`
         JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
         WHERE `price_list` = "{price_list}"
     """.format(price_list=price_list)
@@ -29,12 +29,12 @@ def get_data():
     i = 0
     customer_prices = get_item_prices("Pricelist 36966105")
     reference_prices = get_item_prices("Sales Prices EUR")
-    
+
     mapped_cust_prices = {}
-    for p in customer_prices:        
-        mapped_cust_prices[p.item_code, p.min_qty] = p        
+    for p in customer_prices:
+        mapped_cust_prices[p.item_code, p.min_qty] = p
         # i += 1
-        # if i > 2: 
+        # if i > 2:
         #     break
 
     i = 0
@@ -43,8 +43,8 @@ def get_data():
         mapped_ref_prices[p.item_code, p.min_qty] = p
         # i +=1
         # if i > 10: break
-            
-    
+
+
     print("-------------------")
 
     data = []
@@ -58,18 +58,18 @@ def get_data():
             customer_rate = None # "no rate :-("
             discount = None
             record = None
-            
+
         # print(key, cust_rate)
         # print(key, mapped_prices[key].rate, (if key in mapped_ref_prices: mapped_ref_prices[key].rate))
 
-        
 
-        entry = { 
+
+        entry = {
             "item_code": mapped_ref_prices[key].item_code,
             "item_name": mapped_ref_prices[key].item_name,
             "item_group": mapped_ref_prices[key].item_group,
             "qty": mapped_ref_prices[key].min_qty,
-            "uom": mapped_ref_prices[key].uom,            
+            "uom": mapped_ref_prices[key].uom,
             "reference_rate": mapped_ref_prices[key].rate,
             "price_list_rate": customer_rate,
             "discount": discount,
@@ -89,6 +89,6 @@ def get_data():
 
     print("-------------------")
     print(mapped_cust_prices[("3200",1)])
-    
+
     # return sorted_data
     return 42

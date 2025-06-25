@@ -40,7 +40,7 @@ COLOURS = [
     "orange",
     "orange",
     "orange",
-    "red", 
+    "red",
     "grey"
 ]
 AGGREGATED_COLOURS = [
@@ -55,7 +55,7 @@ def get_ngs_groups():
 
 def get_genetic_analysis_groups():
     return GENETIC_ANALSIS_GROUPS
-    
+
 def execute(filters=None, debug=False):
     columns = get_columns(filters)
     data = get_data(filters, debug)
@@ -68,7 +68,7 @@ def get_columns(filters):
     else:
         month_data_type = "Float"
         data_type_options = ""
-    
+
     columns = [
         {"label": _(""), "fieldname": "description", "fieldtype": "Data", "width": 120}
     ]
@@ -76,7 +76,7 @@ def get_columns(filters):
         columns.append(
             {"label": MONTHS[m], "fieldname": "month{0}".format(m), "fieldtype": month_data_type, "options": data_type_options, "width": 100, "precision": "0" }
         )
-        
+
     columns.append(
         {"label": "Year-to-Date", "fieldname": "ytd", "fieldtype": month_data_type, "options": data_type_options, "width": 100, "precision": "0" }
     )
@@ -109,7 +109,7 @@ def get_data(filters, debug=False):
         elapsed_month = 12          # the reporting year is complete
     else:
         elapsed_month = date.today().month - 1
-    
+
     output = []
     group_count = 0
     total = {
@@ -163,26 +163,26 @@ def get_data(filters, debug=False):
         _revenue['ytd'] = ytd
         _revenue['fc'] = (12 * base / elapsed_month) if elapsed_month > 0 else 0
         _revenue['currency'] = filters.get("reporting_type")
-        
+
         # add each territory
         # output.append(_revenue)
-        
+
         group_sums['ytd'] += _revenue['ytd']
         group_sums['fc'] = _revenue['fc']
-            
+
         # add group sum
         output.append(group_sums)
-        
+
         total['ytd'] += group_sums['ytd']
         total['fc'] += group_sums['fc']
         for m in range (1, 13):
             key = 'month{0}'.format(m)
             total[key] += group_sums[key]
-        
+
         group_count += 1
-    
+
     output.append(total)
-    
+
     return output
 
 def get_exchange_rate(year, month):
@@ -199,25 +199,25 @@ def get_exchange_rate(year, month):
     else:
         exchange_rate = 1
     return exchange_rate
-    
+
 
 def get_revenue(filters, month, item_groups, debug=False):
     """
     Fetch a list of documents (Items or Sales Invoices) and calculate the sum.
     """
     details = get_revenue_details(filters, month, item_groups, debug=False)
-    
+
     # create sums per chf and eur to show as total in the report
     revenue = {'eur': 0, 'chf': 0}
     for i in details:
         revenue['chf'] += i['chf']
         revenue['eur'] += i['eur']
-        
+
     if debug:
         print("{year}-{month}: {item_group}, {territory}: CHF {chf}, EUR {eur}".format(
-            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=filters.get("territory"), 
+            year=filters.get("fiscal_year"), month=month, item_group=item_groups, territory=filters.get("territory"),
             chf=revenue['chf'], eur=revenue['eur']))
-            
+
     return revenue
 
 
@@ -266,7 +266,7 @@ def get_revenue_details(filters, month, item_groups, debug=False):
     """
     details = get_item_revenues(filters, month, item_groups, debug)
     # details = get_invoice_revenues(filters, month, item_groups, debug)
-    
+
     exchange_rate = get_exchange_rate(filters.get("fiscal_year"), month)
 
     details = calculate_chf_eur(exchange_rate, details)
@@ -284,7 +284,7 @@ def get_item_revenues(filters, month, item_groups, debug=False):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
         company_condition = ""
-        
+
     if filters.get("territory"):
         territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
     else:
@@ -293,22 +293,22 @@ def get_item_revenues(filters, month, item_groups, debug=False):
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
     query = """
-            SELECT 
+            SELECT
                 `tabSales Invoice Item`.`parent` AS `document`,
                 IF (`tabSales Invoice`.`total` <> 0,
                     IF (`tabSales Invoice`.`is_return` = 1,
                         (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` + `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`,
                         (`tabSales Invoice Item`.`amount` * (`tabSales Invoice`.`total`  - (`tabSales Invoice`.`discount_amount` - `tabSales Invoice`.`total_customer_credit`)) / `tabSales Invoice`.`total`) * `tabSales Invoice`.`conversion_rate`
-                    ), 
+                    ),
                     0
-                ) AS `base_net_amount`, 
+                ) AS `base_net_amount`,
                 `tabSales Invoice Item`.`item_group` AS `remarks`,
                 `tabSales Invoice`.`currency`,
                 `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
@@ -320,7 +320,7 @@ def get_item_revenues(filters, month, item_groups, debug=False):
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
             territory_condition=territory_condition, group_condition=group_condition)
     items = frappe.db.sql(query, as_dict=True)
-    
+
     return items
 
 def get_invoice_revenues(filters, month, item_groups, debug=False):
@@ -331,7 +331,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
     else:
         company_condition = ""
-        
+
     if filters.get("territory"):
         territory_condition = "AND `tabSales Invoice`.`territory` IN ('{0}')".format("', '".join(get_child_territories(filters.get("territory"))))
     else:
@@ -340,16 +340,16 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
 
-    # Define the Item Group of an invoice by the item with the highest amount. 
-    # Use the absolute value of the base_amount due to credit notes/returns and 
-    # customer credits. 
-    # Ignore 'Shipping' items. 
-    # Important Note: 
+    # Define the Item Group of an invoice by the item with the highest amount.
+    # Use the absolute value of the base_amount due to credit notes/returns and
+    # customer credits.
+    # Ignore 'Shipping' items.
+    # Important Note:
     # This excludes invoices with only 'Shipping' items. Though, these are usually
     # intercompany invoices.
 
     query = """
-            SELECT DISTINCT 
+            SELECT DISTINCT
                 `tabSales Invoice`.`name` AS `document`,
                 IF (`tabSales Invoice`.`is_return` = 1,
                   `tabSales Invoice`.`base_total` - (`tabSales Invoice`.`base_discount_amount` + `tabSales Invoice`.`total_customer_credit` * `tabSales Invoice`.`conversion_rate`),
@@ -360,7 +360,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`conversion_rate` AS `conversion_rate`,
                 `tabSales Invoice`.`company`
             FROM `tabSales Invoice`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
@@ -368,10 +368,10 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                 {territory_condition}
                 AND (
                     SELECT `tabSales Invoice Item`.`item_group`
-                    FROM `tabSales Invoice Item` 
+                    FROM `tabSales Invoice Item`
                     WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-                    ORDER BY 
-                        IF (`tabSales Invoice Item`.`item_group` = 'Shipping', 
+                    ORDER BY
+                        IF (`tabSales Invoice Item`.`item_group` = 'Shipping',
                             -1,
                             ABS(`tabSales Invoice Item`.`base_amount`)) DESC
                     LIMIT 1
@@ -423,7 +423,7 @@ def aggregate_groups(group_name, target_groups, groups):
     for group in groups:
         if group in target_groups:
             if group_name not in new_groups:
-                new_groups.append(group_name) 
+                new_groups.append(group_name)
             else:
                 continue
         else:
@@ -447,6 +447,6 @@ def test():
         'fiscal_year': date.today().year,
         'reporting_type': "CHF",
         'customer_credit_revenue': "Credit allocation"
-    }    
+    }
     item_groups = ["Shipping"]
     return get_revenue(filters, month = 3, item_groups=item_groups, debug=True)

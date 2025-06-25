@@ -32,7 +32,7 @@ def get_columns():
 @frappe.whitelist()
 def get_data(filters=None):
     open_oligo_orders = frappe.db.sql("""
-        SELECT 
+        SELECT
             `tabSales Order`.`name` AS `sales_order`,
             `tabSales Order`.`web_order_id` AS `web_order_id`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
@@ -51,7 +51,7 @@ def get_data(filters=None):
         LEFT JOIN `tabCountry` ON `tabCountry`.`name` = `tabAddress`.`country`
         LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
-        WHERE 
+        WHERE
             `tabSales Order`.`product_type` = "Oligos"
             AND `tabSales Order`.`company` = "Microsynth AG"
             AND `tabSales Order`.`docstatus` = 1
@@ -60,34 +60,34 @@ def get_data(filters=None):
             AND `tabSales Order`.`label_printed_on` IS NULL
             AND `tabSales Order`.`hold_order` <> 1
             AND `tabSales Order Item`.`item_group` = 'Shipping'
-        ORDER BY 
+        ORDER BY
             `tabSales Order Item`.`description`,
             `tabCountry`.`name`,
             `tabSales Order`.`transaction_date` ASC;
     """, as_dict=True)
-    
+
     return open_oligo_orders
 
 
 @frappe.whitelist()
-def print_labels():    
+def print_labels():
     data = get_data(filters=None)
     orders = []
 
     for x in data:
         orders.append(x.sales_order)
-    
+
     print_oligo_order_labels(orders)
     return
 
 
 @frappe.whitelist()
-def create_batch_file():    
+def create_batch_file():
     data = get_data(filters=None)
     orders = []
 
     for x in data:
         orders.append(x.sales_order)
-    
+
     create_ups_batch_file(orders)
     return

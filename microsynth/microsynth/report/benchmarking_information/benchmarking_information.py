@@ -50,8 +50,8 @@ def get_data(filters):
                 `tabBenchmark`.`notes`
             FROM `tabBenchmark`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabBenchmark`.`contact_person`
-            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                              AND `tDLA`.`parenttype`  = "Contact" 
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                              AND `tDLA`.`parenttype`  = "Contact"
                                               AND `tDLA`.`link_doctype` = "Customer"
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
             WHERE TRUE

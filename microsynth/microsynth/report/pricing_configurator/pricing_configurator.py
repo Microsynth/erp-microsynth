@@ -49,7 +49,7 @@ def get_item_prices(price_list):
             `tabItem Price`.`item_name`,
             `tabItem Price`.`min_qty`,
             `tabItem Price`.`price_list_rate` as rate
-        FROM `tabItem Price`        
+        FROM `tabItem Price`
         JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
         WHERE `price_list` = "{price_list}"
             AND `tabItem`.`disabled` = 0
@@ -71,20 +71,20 @@ def get_data(filters):
         pass
     else:
         filters = dict(filters)
-    
+
     if 'reference_price_list' in filters and filters['reference_price_list']:
         reference_price_list = filters['reference_price_list']
     else:
         reference_price_list = get_reference_price_list(filters['price_list'])
     # currency = frappe.get_value("Price List", filters['price_list'], "currency")
-    
+
     raw_customer_prices = get_item_prices(filters['price_list'])
     raw_reference_prices = get_item_prices(reference_price_list)
-    
+
     customer_prices = {}
     for p in raw_customer_prices:
         customer_prices[p.item_code, p.min_qty] = p     # the last item price from the list (sorted oldest to newest) ist taken
-   
+
     reference_prices = {}
     for p in raw_reference_prices:
         reference_prices[p.item_code, p.min_qty] = p    # the last item price from the list (sorted oldest to newest) ist taken
@@ -93,41 +93,41 @@ def get_data(filters):
     # key is a tuple of item_code and min_qty.
     # reference is the item price from the reference.
     for key, reference in sorted(reference_prices.items()):
-        
-        reference_rate = reference.rate        
-        
+
+        reference_rate = reference.rate
+
         if key in customer_prices:
             customer_rate = customer_prices[key].rate
             discount = (reference_rate - customer_rate) / reference_rate * 100 if reference_rate else None
             record = customer_prices[key].record
         else:
-            customer_rate = None 
+            customer_rate = None
             discount = None
             record = None
-            
-        entry = { 
+
+        entry = {
             "item_code": reference.item_code,
             "item_name": reference.item_name,
             "item_group": reference.item_group,
             "qty": reference.min_qty,
-            "uom": reference.uom,            
+            "uom": reference.uom,
             "reference_rate": reference_rate,
             "price_list_rate": customer_rate,
             "discount": discount,
             "record": record }
-            
+
         data.append(entry)
 
     def filter_by_item_group(entry):
         if 'item_group' in filters:
-            return filters['item_group'] == entry['item_group']                
+            return filters['item_group'] == entry['item_group']
         else:
             return True
-        
+
     filtered_data = [ x for x in data if filter_by_item_group(x) ]
-    
+
     if 'discounts' in filters:
-        general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")        
+        general_discount = frappe.get_value("Price List", filters['price_list'], "general_discount")
         return [ x for x in filtered_data if x['discount'] is not None and round(x['discount'],2) != general_discount and x['discount'] != 0 ]
     else:
         return filtered_data
@@ -283,12 +283,12 @@ def set_rate(item_code, price_list, qty, rate):
     """
     This function will set the rate for an item
     """
-    existing_item_prices = frappe.get_all("Item Price", 
+    existing_item_prices = frappe.get_all("Item Price",
         filters={
             'item_code': item_code,
             'min_qty': qty,
             'price_list': price_list
-        }, 
+        },
         fields=['name']
     )
     if len(existing_item_prices) > 0:
@@ -323,7 +323,7 @@ def clean_price_list(price_list, user):
     Corrects rates if there is a lower rate for a smaller quantity.
     """
     print("process '{0}'".format(price_list))
-    
+
     item_prices = get_item_prices(price_list)
 
     prices = {}
@@ -341,18 +341,18 @@ def clean_price_list(price_list, user):
 
     for key, item_price in sorted_prices:
 
-        if item_price.item_code == memory.item_code: 
-        
+        if item_price.item_code == memory.item_code:
+
             if item_price.rate > rate_memory and item_price.min_qty > memory.min_qty:
                 set_rate(item_price.item_code, price_list, item_price.min_qty, rate_memory)
                 changes += f"\n{item_price.item_code};{item_price.min_qty};{item_price.rate};{rate_memory}"
                 print("Set rate for item {code}, quantity {qty}: {rate} --> {mem_rate}".format(code=item_price.item_code, qty=str(item_price.min_qty).rjust(6), rate=item_price.rate, mem_rate=rate_memory))
-            else:                
+            else:
                 rate_memory = item_price.rate
-        
+
         else:
-            rate_memory = item_price.rate            
-        
+            rate_memory = item_price.rate
+
         memory = item_price
 
     if (len(changes) > orig_len):
@@ -380,7 +380,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
     except ValueError:
         frappe.throw(f"Cannot convert '{new_general_discount}' to a float. No changes are made. Going to return.")
         return  # should not be necessary after throw but just for safety
-    
+
     if not frappe.get_value("Price List", price_list_name, "enabled"):
         frappe.throw(f"Unable to change Item Prices since Price List '{price_list_name}' is disabled. No changes are made. Going to return.")
         return
@@ -394,7 +394,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
     if old_general_discount is None:
         frappe.throw(f"Price List '{price_list_name}' has no general discount. No changes are made. Going to return.")
         return
-    
+
     price_list = frappe.get_doc("Price List", price_list_name)
     if not price_list:
         frappe.throw(f"No Price List '{price_list_name}' found. No changes are made. Going to return.")
@@ -404,7 +404,7 @@ def change_general_discount(price_list_name, new_general_discount, user):
     if not customer_item_prices:
         frappe.throw(f"Price List '{price_list_name}' has no Item Prices. No changes are made. Going to return.")
         return
-    
+
     # dry run
     for item_price in customer_item_prices:
         group = frappe.get_value("Item", item_price.item_code, "item_group")
@@ -468,8 +468,8 @@ def change_general_discount(price_list_name, new_general_discount, user):
         if customer_rate > 0.0001:  # avoid dividing by zero
             discount_tolerance = min(
                     max(
-                        1/customer_rate, 
-                        1/reference_rate, 
+                        1/customer_rate,
+                        1/reference_rate,
                         min_discount_tolerance),
                     max_discount_tolerance)
         else:  # customer_rate <= 0.0001 is possible and happens

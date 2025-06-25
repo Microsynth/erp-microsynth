@@ -149,7 +149,7 @@ frappe.query_reports["Label Manager"] = {
                                         frappe.click_button('Refresh');
                                     } else {
                                         frappe.throw('Unable to lock Labels:<br>' + r.message.message + '<br><br>No Labels were locked.');
-                                    }                                    
+                                    }
                                 }
                             });
                         },
@@ -229,7 +229,7 @@ frappe.query_reports["Label Manager"] = {
                                     } else {
                                         frappe.throw('Unable to set Labels to unused:<br>' + r.message.message + '<br><br>No Labels were set to unused.');
                                     }
-                                    
+
                                 }
                             });
                         },

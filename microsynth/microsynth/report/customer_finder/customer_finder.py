@@ -36,7 +36,7 @@ def get_columns(filters):
 
 
 def get_data(filters):
-    
+
     if type(filters) == str:
         filters = json.loads(filters)
     elif type(filters) == dict:
@@ -68,7 +68,7 @@ def get_data(filters):
     if 'customer' in filters:
         criteria += """ AND `tabCustomer`.`customer_name` LIKE '%{0}%' """.format(filters['customer'])
         hasFilters = True
-    
+
     if 'customer_id' in filters:
         criteria += """ AND `tabCustomer`.`name` = '{0}' """.format(filters['customer_id'])
         hasFilters = True
@@ -116,11 +116,11 @@ def get_data(filters):
     if 'contact_status' in filters and filters['contact_status']:
         criteria += """ AND `tabContact`.`status` = '{0}' """.format(filters['contact_status'])
         hasFilters = True
-    
+
     if 'contact_classification' in filters and filters['contact_classification']:
         criteria += """ AND `tabContact`.`contact_classification` = '{0}' """.format(filters['contact_classification'])
         hasFilters = True
-    
+
     if 'customer_status' in filters and filters['customer_status']:
         criteria += """ AND `tabContact`.`customer_status` = '{0}' """.format(filters['customer_status'])
         hasFilters = True
@@ -149,12 +149,12 @@ def get_data(filters):
             `tabContact`.`creation` AS `contact_created`
 
             FROM `tabContact`
-            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name` 
-                                                AND `tDLA`.`parenttype`  = "Contact" 
+            LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
+                                                AND `tDLA`.`parenttype`  = "Contact"
                                                 AND `tDLA`.`link_doctype` = "Customer"
-            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name` 
+            LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tDLA`.`link_name`
             LEFT JOIN `tabAddress` ON `tabContact`.`address` = `tabAddress`.`name`
-            
+
             WHERE TRUE
                 {criteria}
         """.format(criteria=criteria)

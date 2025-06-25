@@ -13,7 +13,7 @@ from microsynth.microsynth.purchasing import book_as_deposit, has_available_adva
 def get_approvals(user):
     # find assigned purchase invoices
     pinvs = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabPurchase Invoice`.`name`,
             `tabPurchase Invoice`.`company`,
             `tabPurchase Invoice`.`supplier`,
@@ -50,7 +50,7 @@ def get_approvals(user):
         pinv['attachments'] = frappe.db.sql("""
             SELECT *
             FROM `tabFile`
-            WHERE 
+            WHERE
                 `attached_to_doctype` = "Purchase Invoice"
                 AND `attached_to_name` = "{pinv}"
             ;""".format(pinv=pinv['name']), as_dict=True)

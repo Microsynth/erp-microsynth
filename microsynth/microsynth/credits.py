@@ -47,7 +47,7 @@ def get_total_credit(customer, company, credit_type):
 
     total = 0
     for credit in credits:
-        if not 'outstanding' in credit: 
+        if not 'outstanding' in credit:
             continue
         total = total + credit['outstanding']
     return total
@@ -70,7 +70,7 @@ def get_total_credit(customer, company, credit_type):
 #     for credit in credits:
 #         if credit['credit_type'] == "Project":
 #             continue
-#         if not 'outstanding' in credit: 
+#         if not 'outstanding' in credit:
 #             continue
 #         total = total + credit['outstanding']
 #     return total
@@ -82,7 +82,7 @@ def allocate_credits(sales_invoice_doc):
     """
     if frappe.get_value("Customer", sales_invoice_doc.customer, "customer_credits") == 'blocked':
         return sales_invoice_doc
-    
+
     if sales_invoice_doc.product_type and sales_invoice_doc.product_type == "Project":
         credit_type = "Project"
     else:
@@ -168,8 +168,8 @@ def book_credit(sales_invoice, event=None):
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     if not sales_invoice or not sales_invoice.total_customer_credit or sales_invoice.total_customer_credit <= 0:  # if this invoice has no applied customer credit, skip
         return None
-        
-    credit_item = frappe.get_doc("Item", 
+
+    credit_item = frappe.get_doc("Item",
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
     if sales_invoice.shipping_address_name:
@@ -200,7 +200,7 @@ def book_credit(sales_invoice, event=None):
             # Take from the credit account e.g. '2020 - Anzahlungen von Kunden EUR - BAL'
             {
                 'account': credit_account if not cint(sales_invoice.is_return) else income_account,  # invert for credit note,
-                'debit_in_account_currency': sales_invoice.total_customer_credit if not cint(sales_invoice.is_return) else base_credit_total, 
+                'debit_in_account_currency': sales_invoice.total_customer_credit if not cint(sales_invoice.is_return) else base_credit_total,
                 'exchange_rate': sales_invoice.conversion_rate if not cint(sales_invoice.is_return) else 1,
                 'cost_center': cost_center
             },
@@ -224,16 +224,16 @@ def book_credit(sales_invoice, event=None):
 
 def cancel_credit_journal_entry(sales_invoice, event=None):
     """
-    Cancel the journal entry used for booking credits from the credit account with the book_credit function    
+    Cancel the journal entry used for booking credits from the credit account with the book_credit function
 
     bench execute microsynth.microsynth.credits.cancel_credit_journal_entry --kwargs "{'sales_invoice': 'SI-BAL-23006789'}"
     """
     if type(sales_invoice) == str:
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
-    
+
     if flt(sales_invoice.total_customer_credit) <= 0:            # if this invoice has no applied customer credit, skip
         return None
-        
+
     journal_entries = frappe.get_all("Journal Entry",
         filters={'user_remark': "Credit from {0}".format(sales_invoice.name)},
         fields=['name'])
@@ -243,7 +243,7 @@ def cancel_credit_journal_entry(sales_invoice, event=None):
         frappe.log_error(msg, "credits.cancel_credit_journal_entry")
         print(msg)
         return None
-    
+
     journal_entry = frappe.get_doc("Journal Entry", journal_entries[0].name)
     journal_entry.cancel()
 
@@ -259,21 +259,21 @@ def get_linked_customer_credit_bookings(sales_invoice):
     """
     if type(sales_invoice) == SalesInvoice:
         sales_invoice = sales_invoice.name
-    
+
     journal_entries = frappe.get_all("Journal Entry",
         filters={
             'user_remark': "Credit from {0}".format(sales_invoice),
             'docstatus': 1
         },
         fields=['name'])
-    
+
     if len(journal_entries) > 0:
         links = []
         for jv in journal_entries:
             links.append(get_link_to_form("Journal Entry", jv['name']))
-        
+
         html = frappe.render_template('microsynth/templates/includes/credit_booking_links.html', {'links': ", ".join(links)})
-        
+
         return {'journal_entries': journal_entries, 'links': links, 'html': html}
     else:
         return None
@@ -321,7 +321,7 @@ def create_full_return(sales_invoice):
     from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
     from microsynth.microsynth.naming_series import get_naming_series
 
-    credit_note = frappe.get_doc(make_sales_return(sales_invoice)) 
+    credit_note = frappe.get_doc(make_sales_return(sales_invoice))
     credit_note.naming_series = get_naming_series("Credit Note", credit_note.company)
     credit_note.remaining_customer_credit = None
     credit_note.insert()
@@ -364,9 +364,9 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Item`.`name` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Item` 
+            FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` = "6100"
                 AND `tabSales Invoice`.`company` = '{company}'
@@ -385,9 +385,9 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
                 `tabSales Invoice`.`currency` AS `currency`
-            FROM `tabSales Invoice Customer Credit` 
+            FROM `tabSales Invoice Customer Credit`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
-            WHERE 
+            WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice`.`company` = '{company}'
                 AND `tabSales Invoice`.`posting_date` = "{date}"

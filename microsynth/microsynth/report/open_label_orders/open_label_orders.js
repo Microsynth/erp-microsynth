@@ -33,7 +33,7 @@ function queue_builder(filters) {
                     'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.get_data",
                     'args': {
                         'filters': {
-                            'company': filters.company 
+                            'company': filters.company
                         }
                     },
                     'callback': function(r) {
@@ -125,37 +125,37 @@ function first_barcode_dialog() {
         frappe.prompt(
             [
                 {
-                    'fieldname': 'from_barcode', 
-                    'fieldtype': 'Data', 
+                    'fieldname': 'from_barcode',
+                    'fieldtype': 'Data',
                     'label': 'From barcode'
                 },
                 {
-                    'fieldname': 'sales_order', 
-                    'fieldtype': 'Link', 
-                    'label': 'Sales Order', 
-                    'read_only': 1, 
-                    'options': 'Sales Order', 
+                    'fieldname': 'sales_order',
+                    'fieldtype': 'Link',
+                    'label': 'Sales Order',
+                    'read_only': 1,
+                    'options': 'Sales Order',
                     'default': locals.label_queue[0].sales_order
                 },
                 {
-                    'fieldname': 'item', 
-                    'fieldtype': 'Data', 
-                    'label': __('Item'), 
-                    'read_only': 1, 
+                    'fieldname': 'item',
+                    'fieldtype': 'Data',
+                    'label': __('Item'),
+                    'read_only': 1,
                     'default': locals.label_queue[0].qty + "x " + locals.label_queue[0].item_code + ": " + locals.label_queue[0].item_name
                 },
                 {
-                    'fieldname': 'prefix', 
-                    'fieldtype': 'Data', 
+                    'fieldname': 'prefix',
+                    'fieldtype': 'Data',
                     'label': 'Prefix',
-                    'read_only': 1, 
+                    'read_only': 1,
                     'default': locals.label_queue[0].prefix
                 },
                 {
-                    'fieldname': 'range', 
-                    'fieldtype': 'Data', 
-                    'label': 'Range', 
-                    'read_only': 1, 
+                    'fieldname': 'range',
+                    'fieldtype': 'Data',
+                    'label': 'Range',
+                    'read_only': 1,
                     'default': locals.label_queue[0].range
                 }
             ],
@@ -167,10 +167,10 @@ function first_barcode_dialog() {
                 // delete spaces and letters
                 var from_barcode = values.from_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, '');
                 var to_barcode = Number(from_barcode) + Number(locals.label_queue[0].qty) - 1;
-                
+
                 validated = is_in_range(locals.label_queue[0].range, Number(from_barcode))
                             && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
-                
+
                 if (validated) {
                     locals.label_queue[0].status = 1;
                 }
@@ -178,7 +178,7 @@ function first_barcode_dialog() {
                     frappe.msgprint("invalid barcode range or invalid prefix");
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
-                
+
                 //process_queue(); // check availability, the proceed
                 are_labels_available(locals.label_queue[0].item_code, Number(from_barcode), to_barcode);
             },
@@ -194,8 +194,8 @@ function second_barcode_dialog() {
         frappe.prompt(
             [
                 {
-                    'fieldname': 'to_barcode', 
-                    'fieldtype': 'Data', 
+                    'fieldname': 'to_barcode',
+                    'fieldtype': 'Data',
                     'label': 'To barcode'
                 },
                 {
@@ -205,39 +205,39 @@ function second_barcode_dialog() {
                     'default': (['3100', '3120', '3200', '3236', '3240', '3251'].includes(locals.label_queue[0].item_code) || locals.label_queue[0].additional_item_codes.includes('20050')) ? 1 : 0
                 },
                 {
-                    'fieldname': 'sales_order', 
-                    'fieldtype': 'Link', 
-                    'label': 'Sales Order', 
-                    'read_only': 1, 
-                    'options': 'Sales Order', 
+                    'fieldname': 'sales_order',
+                    'fieldtype': 'Link',
+                    'label': 'Sales Order',
+                    'read_only': 1,
+                    'options': 'Sales Order',
                     'default': locals.label_queue[0].sales_order
                 },
                 {
-                    'fieldname': 'item', 
-                    'fieldtype': 'Data', 
-                    'label': __('Item'), 
-                    'read_only': 1, 
+                    'fieldname': 'item',
+                    'fieldtype': 'Data',
+                    'label': __('Item'),
+                    'read_only': 1,
                     'default': locals.label_queue[0].qty + "x " + locals.label_queue[0].item_code + ": " + locals.label_queue[0].item_name
                 },
                 {
-                    'fieldname': 'prefix', 
-                    'fieldtype': 'Data', 
+                    'fieldname': 'prefix',
+                    'fieldtype': 'Data',
                     'label': 'Prefix',
-                    'read_only': 1, 
+                    'read_only': 1,
                     'default': locals.label_queue[0].prefix
                 },
                 {
-                    'fieldname': 'range', 
-                    'fieldtype': 'Data', 
-                    'label': 'Range', 
-                    'read_only': 1, 
+                    'fieldname': 'range',
+                    'fieldtype': 'Data',
+                    'label': 'Range',
+                    'read_only': 1,
                     'default': locals.label_queue[0].range
                 },
                 {
-                    'fieldname': 'from_barcode', 
-                    'fieldtype': 'Data', 
-                    'label': 'From barcode', 
-                    'read_only': 1, 
+                    'fieldname': 'from_barcode',
+                    'fieldtype': 'Data',
+                    'label': 'From barcode',
+                    'read_only': 1,
                     'default': (locals.label_queue[0].prefix ? locals.label_queue[0].prefix : '') + locals.label_queue[0].from_barcode
                 }
             ],
@@ -248,12 +248,12 @@ function second_barcode_dialog() {
                 var prefix = values.to_barcode.replace(/\s+/g, '').replace(/[0-9]/g, '');
                 // delete spaces and letters to get to_barcode as number
                 var to_barcode = Number(values.to_barcode.replace(/\s+/g, '').replace(/[^0-9]/g, ''));
-                
-                validated = 
+
+                validated =
                     is_in_range(locals.label_queue[0].range, to_barcode)
                     && to_barcode == Number(locals.label_queue[0].from_barcode) + Number(locals.label_queue[0].qty) - 1
                     && (!locals.label_queue[0].prefix || prefix == locals.label_queue[0].prefix);
-                
+
                 if (validated) {
                     frappe.show_alert("Barcodes OK");
                     locals.label_queue[0].status = 2;
@@ -262,7 +262,7 @@ function second_barcode_dialog() {
                     frappe.msgprint("invalid barcode range or invalid prefix");
                 }
                 locals.label_queue[0].to_barcode = to_barcode;
-                
+
                 if (values.print_shipping_label) {
                     // print shipping label
                     frappe.call({
@@ -272,7 +272,7 @@ function second_barcode_dialog() {
                         }
                     });
                 }
-                
+
                 process_queue();
             },
             __("Pick last label"),
@@ -330,13 +330,13 @@ function prio_pick(report_data) {
                 // show order selection dialog
                 frappe.prompt([
                         {
-                            'fieldname': 'sales_order', 
-                            'fieldtype': 'Select', 
-                            'label': 'Sales Order', 
+                            'fieldname': 'sales_order',
+                            'fieldtype': 'Select',
+                            'label': 'Sales Order',
                             'reqd': 1,
                             'options': orders.join("\n"),
                             'default': orders[0]
-                        }  
+                        }
                     ],
                     function(values){
                         // reset and prepare queue

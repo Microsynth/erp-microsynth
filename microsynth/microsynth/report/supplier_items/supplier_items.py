@@ -90,7 +90,7 @@ def create_purchasing_item(data):
 
     if frappe.db.exists("Item", {"item_name": item_name}):
         frappe.throw(_("An item with Item Name {0} already exists").format(item_name))
-    
+
     if material_code:
         existing = frappe.db.exists("Item", {"material_code": material_code})
         if existing:

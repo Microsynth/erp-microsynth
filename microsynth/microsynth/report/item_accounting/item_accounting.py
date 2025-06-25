@@ -62,7 +62,7 @@ def get_data(filters=None):
             {filter_conditions}
         ORDER BY `tabItem`.`name` ASC;
     """, as_dict=True)
-    
+
     return data
 
 
