@@ -52,12 +52,12 @@ def get_item_details(item_code):
 
 
 @frappe.whitelist(allow_guest=True)
-def create_stock_entry(items, warehouse):
+def create_stock_entry(items, warehouse, user):
     if isinstance(items, str):
         items = json.loads(items)
 
-    if not warehouse or not items:
-        frappe.throw("Warehouse and items are required.")
+    if not warehouse or not items or not user:
+        frappe.throw("Warehouse, items and user are required.")
 
     company_code = warehouse[-3:]
     company = frappe.get_value("Company", {"abbr": company_code}, "name") or company_code
@@ -66,6 +66,7 @@ def create_stock_entry(items, warehouse):
     stock_entry.stock_entry_type = "Material Issue"
     stock_entry.company = company
     stock_entry.set_warehouse = warehouse
+    stock_entry.owner = user
 
     for item in items:
         item_row = {

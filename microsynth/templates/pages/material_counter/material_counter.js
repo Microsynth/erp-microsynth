@@ -83,8 +83,13 @@ function run() {
     // Check Out button
     $('#checkout_button').on('click', function () {
         let warehouse = $('#warehouse').val();
+        let user = $('#users').val();
         if (!warehouse) {
             frappe.msgprint("Warehouse is required.");
+            return;
+        }
+        if (!user) {
+            frappe.msgprint("User is required.");
             return;
         }
 
@@ -111,7 +116,8 @@ function run() {
             'method': 'microsynth.templates.pages.material_counter.material_counter.create_stock_entry',
             'args': {
                 'items': items,
-                'warehouse': warehouse
+                'warehouse': warehouse,
+                'user': user
             },
             callback: function (r) {
                 if (r.message) {
