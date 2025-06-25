@@ -6,8 +6,12 @@
 {# Line 1: Receipt date / initials #}
 #T1.2#J19.5#YN101//28///Receipt: {{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }} {{ row.username }}#G
 
-{# Line 2: shelf life date #}
+{# Line 2: shelf life #}
+{%- if row.shelf_life_date %}
 #T1.2#J16.5#YN101//34///Shelf life: {{ frappe.utils.formatdate(row.shelf_life_date, 'dd.MM.yyyy') }}#G
+{% else %}
+#T1.2#J16.5#YN101//34///Shelf life: on product#G
+{%- endif %}
 
 {# Line 3: material_code, data matrix + internal_code #}
 #T1.2#J13#YN101//42///{{ row.material_code }}#G

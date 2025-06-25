@@ -187,8 +187,11 @@ async function print_labels(frm) {
         }
 
         // Calculate shelf life date
-        const shelf_life_days = item.shelf_life_in_days || 0;
-        const shelf_life_date = frappe.datetime.add_days(frappe.datetime.get_today(), shelf_life_days);
+        const shelf_life_days = item.shelf_life_in_days;
+        let shelf_life_date = null;
+        if (shelf_life_days) {
+            shelf_life_date = frappe.datetime.add_days(frappe.datetime.get_today(), shelf_life_days);
+        }
 
         let internal_code = '';
         if (item.name.length >= 5 && item.name.charAt(item.name.length - 5) === '0') {
