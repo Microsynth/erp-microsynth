@@ -137,7 +137,7 @@ def create_update_contact_doc(contact_data):
 
     # Link to Customer
     contact.links = []
-    customer_id = contact_data.get('customer_id')
+    customer_id = contact_data.get('customer_id') or contact_data.get('customer')
     if customer_id:
         contact.append("links", {
             'link_doctype': "Customer",
