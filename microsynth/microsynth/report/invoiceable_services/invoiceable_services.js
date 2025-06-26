@@ -37,6 +37,8 @@ frappe.query_reports["Invoiceable Services"] = {
         }
     ],
     "onload": (report) => {
+        hide_chart_buttons();
+
         report.page.add_inner_button(__('Create Post Invoices'), function () {
             frappe.call({
                 'method': "microsynth.microsynth.invoicing.create_invoices",
@@ -77,17 +79,23 @@ frappe.query_reports["Invoiceable Services"] = {
             });
         });
         report.page.add_inner_button(__('Create Collective Invoices'), function () {
-           frappe.call({
-                'method': "microsynth.microsynth.invoicing.create_invoices",
-                'args': {
-                    'mode': "Collective",
-                    'company': get_company(),
-                    'customer': get_customer()
-                },
-                'callback': function(response) {
-                    frappe.show_alert( __("Started") );
-                }
-            });
+            let customer = get_customer();
+            // If no customer filter is set, confirm with the user
+            if (!customer) {
+                frappe.confirm(
+                    __("Are you sure you want to create Collective Invoices for <strong>all</strong> Customers (no Customer filter set)?"),
+                    function () {
+                        // If user confirms, proceed
+                        create_collective_invoices(customer);
+                    },
+                    function () {
+                        // User cancelled; do nothing
+                    }
+                );
+            } else {
+                // Customer is selected, proceed directly
+                create_collective_invoices(customer);
+            }
         });
     }
 };
@@ -112,4 +120,18 @@ function get_company() {
         }
     }
     return company;
+}
+
+function create_collective_invoices(customer) {
+    frappe.call({
+        'method': "microsynth.microsynth.invoicing.create_invoices",
+        'args': {
+            'mode': "Collective",
+            'company': get_company(),
+            'customer': get_customer()
+        },
+        'callback': function(response) {
+            frappe.show_alert( __("Started Collective Invoicing") );
+        }
+    });
 }
