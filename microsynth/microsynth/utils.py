@@ -2617,7 +2617,7 @@ def get_potential_contact_duplicates(contact_id):
     bench execute microsynth.microsynth.utils.get_potential_contact_duplicates --kwargs "{'contact_id': '215856'}"
     """
     contact = frappe.get_doc("Contact", contact_id)
-    address = frappe.get_doc("Address", contact.address)
+    address_type = frappe.get_value("Address", contact.address, "address_type")
     contacts = frappe.db.sql(f"""
         SELECT `tabContact`.`name`,
             `tabContact`.`first_name`,
@@ -2631,7 +2631,7 @@ def get_potential_contact_duplicates(contact_id):
                     AND `tabContact`.`last_name` = '{contact.last_name}'
                 )
             )
-            AND `tabAddress`.`address_type` = '{address.address_type}'
+            AND `tabAddress`.`address_type` = '{address_type}'
             AND `tabContact`.`name` != '{contact.name}'
         """, as_dict=True)
     return contacts
@@ -2695,15 +2695,19 @@ def set_module_according_to_role(user, role_module_mapping):
         return
     if type(role_module_mapping) == str:
         role_module_mapping = json.loads(role_module_mapping)
+    has_any_given_role = False
     modules = set()
     for role in role_module_mapping.keys():
         if user_has_role(user, role):
+            has_any_given_role = True
             for module in role_module_mapping[role]:
                 modules.add(module)
+    if not has_any_given_role:
+        print(f"User {user} has none of the given roles. Not going to change modules.")
+        return
     home_settings = {'modules_by_category': {'Administration': [], 'Modules': list(modules), 'Places': [], 'Domains': []}}
     s = frappe.parse_json(home_settings)
-    #frappe.cache().hset('home_settings', user, s)  # update cached value (s as dict)
-    #TODO: TypeError: unhashable type: '_dict'
+    frappe.cache().hset('home_settings', user, s)  # update cached value (s as dict)
     old_home_settings = frappe.db.get_value('User', user, 'home_settings')
     frappe.db.set_value('User', user, 'home_settings', json.dumps(home_settings))  # also update database value
     print(f"Changed the home_settings of user {user} from {old_home_settings} to {home_settings}.")
@@ -2713,7 +2717,7 @@ def set_modules_for_all_users(role_module_mapping):
     """
     role_module_mapping has to be a dictionary or its string representation mapping roles (strings) to a list of modules (list of strings) each.
 
-    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {'QM User': ['QMS'], 'QAU': ['Microsynth', 'QMS']}}"
+    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {'QM User': ['QMS'], 'QM Reader': ['QMS'],'QAU': ['Microsynth', 'QMS'], 'Sales User': ['Microsynth', 'QMS']}}"
     """
     enabled_users = frappe.get_all("User", filters={'enabled': 1}, fields=['name'])
     for user in enabled_users:
