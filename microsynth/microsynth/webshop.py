@@ -73,6 +73,41 @@ def parse_date(date_str):
     return None
 
 
+def update_child_table(parent, table_fieldname, new_data, match_keys):
+    """
+    Update a child table on a DocType instance.
+
+    :param parent: The parent document (e.g. Contact)
+    :param table_fieldname: Name of the child table field (e.g. 'email_ids')
+    :param new_data: List of new dicts to set
+    :param match_keys: Keys to match existing rows (e.g. ['email_id', 'is_primary'])
+    """
+    existing_rows = getattr(parent, table_fieldname)
+    keep = []
+
+    # Map existing by match keys
+    def row_key(row): return tuple(row.get(k) for k in match_keys)
+    existing_map = {row_key(row): row for row in existing_rows}
+
+    new_keys = set()
+    for entry in new_data:
+        key = tuple(entry.get(k) for k in match_keys)
+        new_keys.add(key)
+        if key in existing_map:
+            # Optional: update fields if changed
+            row = existing_map[key]
+            for field in entry:
+                if row.get(field) != entry[field]:
+                    row.set(field, entry[field])
+            keep.append(row)
+        else:
+            new_row = parent.append(table_fieldname, entry)
+            keep.append(new_row)
+
+    # Remove rows not in new_keys
+    setattr(parent, table_fieldname, [row for row in keep])
+
+
 def create_update_contact_doc(contact_data):
     """
     Update or create a contact record. If no first_name is provided, set it to "-".
@@ -121,28 +156,28 @@ def create_update_contact_doc(contact_data):
     contact.unsubscribed = 0 if contact_data.get('receive_updates_per_email') == "Mailing" else 1
 
     # Email
-    contact.email_ids = []
-    for key, is_primary in [('email', 1), ('email_cc', 0)]:
-        email = contact_data.get(key)
-        if email:
-            contact.append("email_ids", {'email_id': email, 'is_primary': is_primary})
+    emails = []
+    if contact_data.get("email"):
+        emails.append({"email_id": contact_data.get("email"), "is_primary": 1})
+    if contact_data.get("email_cc"):
+        emails.append({"email_id": contact_data.get("email_cc"), "is_primary": 0})
+    update_child_table(contact, "email_ids", emails, match_keys=["email_id", "is_primary"])
 
     # Phone
-    contact.phone_nos = []
-    phone_number = contact_data.get('phone_number')
-    if phone_number:
-        country = contact_data.get('phone_country', "")
-        number = f"{country} {phone_number}".strip()
-        contact.append("phone_nos", {'phone': number, 'is_primary_phone': 1})
+    phones = []
+    if contact_data.get("phone_number"):
+        full_number = f"{contact_data.get('phone_country', '')} {contact_data.get('phone_number')}".strip()
+        phones.append({"phone": full_number, "is_primary_phone": 1})
+    update_child_table(contact, "phone_nos", phones, match_keys=["phone", "is_primary_phone"])
 
     # Link to Customer
-    contact.links = []
-    customer_id = contact_data.get('customer_id') or contact_data.get('customer')
-    if customer_id:
-        contact.append("links", {
-            'link_doctype': "Customer",
-            'link_name': customer_id
+    links = []
+    if contact_data.get("customer_id") or contact_data.get("customer"):
+        links.append({
+            "link_doctype": "Customer",
+            "link_name": contact_data.get("customer_id") or contact_data.get("customer")
         })
+    update_child_table(contact, "links", links, match_keys=["link_doctype", "link_name"])
 
     # Set/Override address if contact_address exists
     contact_address = contact_data.get('contact_address')
