@@ -3,7 +3,12 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.utils import nowdate, add_months
+from frappe.utils.password import get_decrypted_password
 import json
+from datetime import datetime
+from urllib import request
+from urllib.error import URLError
 
 
 TRACKING_URLS = {
@@ -320,3 +325,118 @@ def add_shipping_items_to_countries(country_to_code, code_to_rate, threshold, pr
         added = add_shipping_item_to_country(country, item_code, rate, threshold, preferred_express)
         if added:
             print(f"Successfully added Shipping Item {item_code} with rate {rate}, threshold {threshold} and {preferred_express=} to Country {country}.")
+
+
+def get_ups_settings():
+    settings = frappe.get_single("Shipment Tracking Settings")
+    ups_password = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "ups_password")
+    ups_access_key = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "ups_access_key")
+    return settings.ups_rest_url, settings.ups_username, ups_password, ups_access_key
+
+
+def fetch_pending_tracking_codes():
+    """
+    bench execute microsynth.microsynth.shipping.get_pending_tracking_codes
+    """
+    three_months_ago = add_months(nowdate(), -3)
+
+    query = """
+        SELECT `name`, `tracking_code`
+        FROM `tabTracking Code`
+        WHERE `tracking_code` LIKE %s
+          AND `shipping_date` IS NOT NULL
+          AND `delivery_date` IS NULL
+          AND `creation` > %s
+        ORDER BY `creation` DESC
+    """
+    pending_tracking_codes = frappe.db.sql(query, ("1ZH%", three_months_ago), as_dict=True)
+    return pending_tracking_codes
+
+
+def call_ups_tracking_api(tracking_code, url, username, password, access_key):
+    """
+    https://developer.ups.com/tag/Tracking?loc=en_US&tag=Tracking
+    """
+    # payload is the request body sent to the API (standard naming for POST data)
+    payload = {
+        "UPSSecurity": {
+            "UsernameToken": {
+                "Username": username,
+                "Password": password
+            },
+            "ServiceAccessToken": {
+                "AccessLicenseNumber": access_key
+            }
+        },
+        "TrackRequest": {
+            "Request": {
+                "RequestOption": "1"
+            },
+            "InquiryNumber": tracking_code
+        }
+    }
+    data = json.dumps(payload).encode('utf-8')
+    headers = {'Content-Type': 'application/json'}
+
+    req = request.Request(url, data=data, headers=headers)
+    try:
+        with request.urlopen(req, timeout=15) as response:
+            result = json.loads(response.read().decode())
+            print(result)
+            return result
+    except URLError as e:
+        raise Exception(f"HTTP error: {e}")
+
+
+def parse_delivery_datetime(response_json):
+    try:
+        shipment = response_json["TrackResponse"]["Shipment"]
+        packages = shipment["Package"]
+        if not isinstance(packages, list):
+            packages = [packages]
+
+        for package in packages:
+            activities = package.get("Activity", [])
+            if not isinstance(activities, list):
+                activities = [activities]
+
+            for activity in activities:
+                status = activity["Status"]["Description"].lower()
+                if "delivered" in status:
+                    date_str = activity.get("Date")  # e.g., '20250626'
+                    time_str = activity.get("Time", "000000")  # e.g., '144152'
+                    if date_str:
+                        # Combine date + time and convert to datetime
+                        delivery_datetime = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
+                        return delivery_datetime
+    except Exception as e:
+        print(f"Failed to parse delivery datetime: {e}")
+        return None
+
+
+def update_ups_delivery_dates(request_limit=None):
+    """
+    Should be run once per night by a daily cronjob:
+    30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates
+
+    bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 3}"
+    """
+    url, username, password, access_key = get_ups_settings()
+    tracking_docs = fetch_pending_tracking_codes()
+
+    for i, doc in enumerate(tracking_docs):
+        if request_limit and i >= request_limit:
+            return
+        try:
+            resp_json = call_ups_tracking_api(doc["tracking_code"], url, username, password, access_key)
+            delivery_datetime = parse_delivery_datetime(resp_json)
+            if delivery_datetime:
+                tracking_doc = frappe.get_doc("Tracking Code", doc["name"])
+                tracking_doc.delivery_date = delivery_datetime
+                tracking_doc.save(ignore_permissions=True)
+                frappe.db.commit()  # necessary?
+                print(f"Updated: {doc['tracking_code']} -> Delivered on {delivery_datetime}")
+            else:
+                print(f"Not delivered yet: {doc['tracking_code']}")
+        except Exception as e:
+            print(f"Error processing {doc['tracking_code']}: {e}")
