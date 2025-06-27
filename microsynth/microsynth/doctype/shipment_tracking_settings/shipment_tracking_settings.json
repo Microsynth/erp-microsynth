@@ -1,0 +1,64 @@
+{
+ "creation": "2025-06-27 17:15:28.195886",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sec_ups_tracking",
+  "ups_rest_url",
+  "ups_username",
+  "column_break_4",
+  "ups_password",
+  "ups_access_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "sec_ups_tracking",
+   "fieldtype": "Section Break",
+   "label": "UPS Tracking API"
+  },
+  {
+   "fieldname": "ups_rest_url",
+   "fieldtype": "Data",
+   "label": "URL"
+  },
+  {
+   "fieldname": "ups_username",
+   "fieldtype": "Data",
+   "label": "Username"
+  },
+  {
+   "fieldname": "ups_password",
+   "fieldtype": "Password",
+   "label": "Password"
+  },
+  {
+   "fieldname": "ups_access_key",
+   "fieldtype": "Password",
+   "label": "Access Key"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2025-06-27 17:16:28.906734",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Shipment Tracking Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
