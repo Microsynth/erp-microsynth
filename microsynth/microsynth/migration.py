@@ -1881,6 +1881,35 @@ def set_distributor_ktrade_for_slovakia():
             print(f"customer {c} has customer credits - do not set the distributor")
 
 
+def set_distributor_elincou_for_cyprus():
+    """
+    run
+    bench execute microsynth.microsynth.migration.set_distributor_elincou_for_cyprus
+    """
+    from microsynth.microsynth.utils import get_customers_for_country, set_distributor_elincou
+    from microsynth.microsynth.credits import has_credits
+
+    elincou_customer_id = "837936"
+    price_list = frappe.get_value("Customer", elincou_customer_id, "default_price_list")
+    print(f"{price_list=}")
+    customers = get_customers_for_country("Cyprus")
+
+    for i, c in enumerate(customers):
+        print(f"{int(100 * i / len(customers))} % - process Customer '{c}'")
+
+        if c == elincou_customer_id:
+            print(f"Skip Elincou Customer {elincou_customer_id}")
+            continue
+        elif not has_credits(c):
+            set_distributor_elincou(c)
+            customer = frappe.get_doc("Customer", c)
+            customer.default_price_list = price_list
+            customer.save()
+            frappe.db.commit()
+        else:
+            print(f"Customer {c} has or had Customer credits - do not set the distributor")
+
+
 def activate_easyrun(territories):
     """
     Add the Webshop Service "EasyRun" for all enabled Customers with one of the given territories.

@@ -942,7 +942,7 @@ def set_distributor(customer, distributor, product_type):
     """
     # validate input
     if not frappe.db.exists("Customer", distributor):
-        frappe.log_error("The provided distributor '{0}' does not exist. Processing customer '{1}'.".format(distributor,customer),"utils.add_distributor")
+        frappe.log_error("The provided distributor '{0}' does not exist. Processing Customer '{1}'.".format(distributor,customer),"utils.add_distributor")
         return
 
     customer = frappe.get_doc("Customer", customer)
@@ -950,7 +950,7 @@ def set_distributor(customer, distributor, product_type):
     updated = False
     for d in customer.distributors:
         if d.product_type == product_type:
-            print("Customer '{0}': Update distributor for '{1}': '{2}' -> '{3}'".format(customer.name,product_type, d.distributor,  distributor))
+            print("Customer '{0}': Update distributor for '{1}': '{2}' -> '{3}'".format(customer.name, product_type, d.distributor, distributor))
             d.distributor = distributor
             updated = True
 
@@ -963,8 +963,6 @@ def set_distributor(customer, distributor, product_type):
         customer.append("distributors",entry)
 
     customer.save()
-
-    return
 
 
 def has_webshop_service(customer, service):
@@ -1382,7 +1380,6 @@ def get_customers_for_country(country):
     run
     bench execute microsynth.microsynth.utils.get_customers_for_country --kwargs "{'country': 'Hungary'}"
     """
-
     query = """
         SELECT DISTINCT `tabDynamic Link`.`link_name` as 'name'
         FROM `tabAddress`
@@ -1767,7 +1764,7 @@ def set_distributor_ktrade(customer_id):
 
 def set_distributor_elincou(customer_id):
     """
-    bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
+    bench execute microsynth.microsynth.utils.set_distributor_elincou --kwargs "{'customer_id': '838469'}"
     """
     distributor = '837936'
     set_distributor(customer_id, distributor, 'Oligos')
@@ -1779,20 +1776,14 @@ def set_distributor_elincou(customer_id):
 
 def set_default_distributor(customer_id):
     """
-    Set the distributors if the Customer has none and its first shipping address is in Italy or Hungary.
+    Set the distributors if the Customer has none and its first shipping address is in a Country with a distributor agreement.
 
-    run
     bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35277857'}"
     bench execute microsynth.microsynth.utils.set_default_distributor --kwargs "{'customer_id': '35280995'}"
     """
-    # customer = frappe.get_doc("Customer", customer_id)
-    # distributors =  frappe.get_value("Customer", customer_id, "distributors")
-    # if len(customer.distributors) > 0:
-    #     return
-
     shipping_address = get_first_shipping_address(customer_id)
     if shipping_address is None:
-        frappe.log_error(f"Can't set distributor for customer {customer_id} due to the lack of a shipping address.", "utils.set_default_distributor")
+        frappe.log_error(f"Can't set distributor for Customer {customer_id} due to the lack of a shipping address.", "utils.set_default_distributor")
         return
 
     country = frappe.get_value("Address", shipping_address, "Country")
