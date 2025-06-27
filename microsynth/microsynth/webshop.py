@@ -75,37 +75,71 @@ def parse_date(date_str):
 
 def update_child_table(parent, table_fieldname, new_data, match_keys):
     """
-    Update a child table on a DocType instance.
+    Update a child table with minimal changes.
+    The order of the rows in new_data might not be preserved.
 
     :param parent: The parent document (e.g. Contact)
     :param table_fieldname: Name of the child table field (e.g. 'email_ids')
     :param new_data: List of new dicts to set
     :param match_keys: Keys to match existing rows (e.g. ['email_id', 'is_primary'])
     """
-    existing_rows = getattr(parent, table_fieldname)
-    keep = []
+    from copy import deepcopy
 
-    # Map existing by match keys
-    def row_key(row): return tuple(row.get(k) for k in match_keys)
-    existing_map = {row_key(row): row for row in existing_rows}
+    def is_exact_match(row, entry):
+        # Check if row matches entry exactly on all match_keys
+        return all(row.get(k) == entry.get(k) for k in match_keys)
 
-    new_keys = set()
+    def diff_count(row, entry):
+        # Count how many fields differ between row and entry (only keys in entry)
+        return sum(1 for k in entry if row.get(k) != entry[k])
+
+    existing_rows = list(getattr(parent, table_fieldname))
+    # Shallow copy existing rows to track unmatched rows separately,
+    # so we can remove matched rows as we process them without
+    # altering the original list of child rows.
+    existing_rows_unmatched = existing_rows[:]
+
+    new_entries_unmatched = []  # New entries without exact match yet
+
+    # Step 1: Match rows exactly by match_keys
     for entry in new_data:
-        key = tuple(entry.get(k) for k in match_keys)
-        new_keys.add(key)
-        if key in existing_map:
-            # Optional: update fields if changed
-            row = existing_map[key]
-            for field in entry:
-                if row.get(field) != entry[field]:
-                    row.set(field, entry[field])
-            keep.append(row)
+        match = None
+        for row in existing_rows_unmatched:
+            if is_exact_match(row, entry):
+                match = row
+                break
+        if match:
+            # Update only differing fields to minimize version noise
+            for field, value in entry.items():
+                if match.get(field) != value:
+                    match.set(field, value)
+            existing_rows_unmatched.remove(match)
         else:
-            new_row = parent.append(table_fieldname, entry)
-            keep.append(new_row)
+            new_entries_unmatched.append(entry)
 
-    # Remove rows not in new_keys
-    setattr(parent, table_fieldname, [row for row in keep])
+    # Step 2: For unmatched new entries, find the closest existing row by minimal difference
+    for entry in new_entries_unmatched:
+        best_match = None
+        best_score = float('inf')
+        for row in existing_rows_unmatched:
+            score = diff_count(row, entry)
+            if score < best_score:
+                best_score = score
+                best_match = row
+
+        if best_match:
+            # Update the closest existing row in place
+            for field, value in entry.items():
+                if best_match.get(field) != value:
+                    best_match.set(field, value)
+            existing_rows_unmatched.remove(best_match)
+        else:
+            # No suitable existing row; append a new one
+            parent.append(table_fieldname, deepcopy(entry))
+
+    # Step 3: Remove any leftover existing rows that were not matched
+    for row in existing_rows_unmatched:
+        parent.get(table_fieldname).remove(row)
 
 
 def create_update_contact_doc(contact_data):
