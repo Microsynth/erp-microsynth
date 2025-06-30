@@ -557,7 +557,7 @@ def update_customer(customer_data):
         if 'currency' in customer_data:
             customer.default_currency = customer_data['currency']
         if 'invoicing_method' in customer_data and customer_data['invoicing_method']:
-            if customer_data['invoicing_method'] in ["Post", "Paynet", "Email", "ARIBA", "Carlo ERBA", "GEP", "Corus", "X-Rechnung", "Scientist"]:
+            if customer_data['invoicing_method'] in ["Post", "Paynet", "Email", "ARIBA", "Carlo ERBA", "GEP", "Chorus", "X-Rechnung", "Scientist"]:
                 customer.invoicing_method = customer_data['invoicing_method']
             elif customer_data['invoicing_method'] == "PDF":
                 customer.invoicing_method = "Email"
