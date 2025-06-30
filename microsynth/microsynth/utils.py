@@ -2708,8 +2708,20 @@ def set_modules_for_all_users(role_module_mapping):
     """
     role_module_mapping has to be a dictionary or its string representation mapping roles (strings) to a list of modules (list of strings) each.
 
-    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {'QM User': ['QMS'], 'QM Reader': ['QMS'],'QAU': ['Microsynth', 'QMS'], 'Sales User': ['Microsynth', 'QMS']}}"
+    bench execute microsynth.microsynth.utils.set_modules_for_all_users --kwargs "{'role_module_mapping': {'QM User': ['QMS'], 'QM Reader': ['QMS'], 'QAU': ['Microsynth', 'QMS'], 'Microsynth User': ['Microsynth', 'QMS'], 'NGS Lab User': ['Microsynth', 'QMS'], 'Accounts User': ['Microsynth', 'QMS', 'Accounting']}}"
     """
+    if isinstance(role_module_mapping, str):
+        try:
+            role_module_mapping = json.loads(role_module_mapping)
+        except json.JSONDecodeError:
+            frappe.throw("Invalid role_module_mapping format. Must be a valid JSON string.")
+    elif not isinstance(role_module_mapping, dict):
+        frappe.throw("Invalid role_module_mapping format. Must be a dictionary.")
+
+    for role, modules in role_module_mapping.items():
+        if not isinstance(role, str) or not isinstance(modules, list):
+            frappe.throw(f"Invalid role-module mapping for role '{role}'. Modules must be a list of strings.")
+
     enabled_users = frappe.get_all("User", filters={'enabled': 1}, fields=['name'])
     for user in enabled_users:
         set_module_according_to_role(user['name'], role_module_mapping)
