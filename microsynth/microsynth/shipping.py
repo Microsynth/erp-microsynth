@@ -382,7 +382,7 @@ def call_ups_tracking_api(tracking_code, url, username, password, access_key):
     try:
         with request.urlopen(req, timeout=15) as response:
             result = json.loads(response.read().decode())
-            print(result)
+            #print(result)
             return result
     except URLError as e:
         raise Exception(f"HTTP error: {e}")
@@ -410,16 +410,18 @@ def parse_delivery_datetime(response_json):
                         delivery_datetime = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
                         return delivery_datetime
     except Exception as e:
-        print(f"Failed to parse delivery datetime: {e}")
+        msg = f"Error parsing delivery datetime from response: {response_json}\nException: {e}"
+        frappe.log_error(message=msg, title="shipping.parse_delivery_datetime")
+        print(msg)
         return None
 
 
 def update_ups_delivery_dates(request_limit=None):
     """
     Should be run once per night by a daily cronjob:
-    30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates
+    30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
 
-    bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 3}"
+    sudo bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
     """
     url, username, password, access_key = get_ups_settings()
     tracking_docs = fetch_pending_tracking_codes()
@@ -439,4 +441,6 @@ def update_ups_delivery_dates(request_limit=None):
             else:
                 print(f"Not delivered yet: {doc['tracking_code']}")
         except Exception as e:
-            print(f"Error processing {doc['tracking_code']}: {e}")
+            msg = f"Error processing {doc['tracking_code']}: {e}"
+            frappe.log_error(message=msg, title="shipping.update_ups_delivery_dates")
+            print(msg)
