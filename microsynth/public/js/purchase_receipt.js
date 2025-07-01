@@ -18,6 +18,10 @@ frappe.ui.form.on('Purchase Receipt', {
                 print_labels(frm);
             });
         }
+
+        if (frm.doc.items || frm.doc.items.length > 0) {
+            display_material_request_owners(frm);
+        }
     },
     company(frm) {
         if (frm.doc.__islocal) {
@@ -282,4 +286,71 @@ async function print_labels(frm) {
             modals[modals.length - 1].style.width = "1200px";
         }
     }, 300);
+}
+
+
+function display_material_request_owners(frm) {
+    // Clear existing comments first
+    frm.dashboard.clear_comment();
+
+    // Collect info grouped by material_request.owner
+    let owner_map = {};
+
+    // Fetch linked Material Requests and their owners
+    let material_requests = [];
+    frm.doc.items.forEach(item => {
+        if (item.material_request) {
+            material_requests.push(item.material_request);
+        }
+    });
+    // Remove duplicates
+    material_requests = [...new Set(material_requests)];
+
+    if (material_requests.length === 0) return;
+
+    // Fetch Material Requests owners
+    frappe.call({
+        'method': 'frappe.client.get_list',
+        'args': {
+            'doctype': 'Material Request',
+            'filters': { 'name': ['in', material_requests] },
+            'fields': ['name', 'owner'],
+        },
+        'callback': function(r) {
+            if (r.message) {
+                let mr_owner_map = {};
+                r.message.forEach(mr => {
+                    mr_owner_map[mr.name] = mr.owner;
+                });
+                // Group items by owner
+                frm.doc.items.forEach(item => {
+                    let owner = mr_owner_map[item.material_request];
+                    if (!owner) {
+                        owner = 'Unknown';
+                    }
+                    if (!owner_map[owner]) {
+                        owner_map[owner] = [];
+                    }
+                    owner_map[owner].push({
+                        item_name: item.item_name,
+                        description: item.description || '',
+                        qty: item.qty
+                    });
+                });
+                // Build comment text
+                let comment_html = '<div><b>Material Request Owners and Items:</b><br>';
+                for (let owner in owner_map) {
+                    comment_html += `<br><b>${owner}</b>:<ul>`;
+                    owner_map[owner].forEach(i => {
+                        comment_html += `<li>${i.item_name} (${i.description}) - Qty: ${i.qty}</li>`;
+                    });
+                    comment_html += '</ul>';
+                }
+                comment_html += '</div>';
+
+                // Add dashboard comment/banner
+                frm.dashboard.add_comment(comment_html);
+            }
+        }
+    });
 }
