@@ -70,7 +70,7 @@
    "options": "QM Classification Hierarchy Link"
   }
  ],
- "modified": "2025-04-11 17:10:36.562163",
+ "modified": "2025-07-01 15:22:58.134399",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Process",
@@ -101,6 +101,10 @@
    "print": 1,
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "QM Reader"
   }
  ],
  "sort_field": "modified",
