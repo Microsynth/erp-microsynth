@@ -212,8 +212,8 @@ def update_address_links_from_contact(address_name, links):
            links = json.loads(links)
         for link in links:
             address.append("links", {
-                "link_doctype": link["link_doctype"],
-                "link_name": link["link_name"]
+                "link_doctype": link.get('link_doctype'),
+                "link_name": link.get('link_name')
             } )
         address.save()
     return

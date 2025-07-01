@@ -20,7 +20,7 @@ frappe.ui.form.on('Contact', {
         let first_name = frm.doc.first_name || "";
         let last_name = frm.doc.last_name || "";
         let spacer = "";
-        if (frm.doc.last_name) {spacer = " ";}    
+        if (frm.doc.last_name) {spacer = " ";}
 
         // set full name
         cur_frm.set_value("full_name", (first_name + spacer + last_name));
@@ -94,7 +94,7 @@ frappe.ui.form.on('Contact', {
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
         frappe.ui.keys.off("ctrl+e");                                   // and disable keyboard shortcut
-        
+
         // remove 'Invite as User' button from ERPNext
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
@@ -299,7 +299,7 @@ function change_customer(frm) {
             },
             callback: function (r) {
                 if (!r.exc) {
-                    frappe.msgprint(__('Customer link updated.'));
+                    //frappe.msgprint(__('Customer link updated.'));
                     frm.reload_doc();
                 }
             }

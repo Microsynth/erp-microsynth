@@ -10,7 +10,7 @@ import json
 import re
 import base64
 from frappe.desk.form.linked_with import get_linked_docs
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer, to_bool
+from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer, to_bool, update_address_links_from_contact
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -3315,8 +3315,8 @@ def change_contact_customer(contact_id, new_customer_id):
     link.link_name = new_customer_id
     link.link_title = customer_doc.customer_name
     contact_doc.save(ignore_permissions=True)
+    update_address_links_from_contact(contact_doc.address, contact_doc.links)
     frappe.db.commit()
-
     return {"status": "success"}
 
 
