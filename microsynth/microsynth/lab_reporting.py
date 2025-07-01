@@ -17,20 +17,12 @@ from microsynth.microsynth.utils import get_customer
 from microsynth.microsynth.utils import validate_sales_order_status
 
 
-def find_sales_orders(web_order_id):
-    """
-    bench execute microsynth.microsynth.lab_reporting.find_sales_orders --kwargs "{'web_order_id': '9037231'}"
-    """
-    sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1]], fields=['name'])
-    return sales_orders
-
-
-def get_sales_order_samples(sales_order):
+def get_sales_order_samples(sales_order_id):
     """
     bench execute microsynth.microsynth.lab_reporting.get_sales_order_samples --kwargs "{'sales_order': 'SO-BAL-24028200'}"
     """
     samples_to_return = []
-    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order_id)
 
     for sample in sales_order_doc.samples:
         sample_doc = frappe.get_doc("Sample", sample.sample)
@@ -60,7 +52,7 @@ def fetch_sales_order_samples(web_order_id):
                 'web_order_id': None,
                 'samples': None}
 
-    sales_orders = find_sales_orders(web_order_id)
+    sales_orders = frappe.get_all("Sales Order", filters=[['web_order_id', '=', web_order_id], ['docstatus', '=', 1], ['is_intercompany', '!=', 1]], fields=['name'])
 
     if not sales_orders or len(sales_orders) == 0:
         return {'success': False,
