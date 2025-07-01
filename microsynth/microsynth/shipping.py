@@ -419,6 +419,7 @@ def parse_delivery_datetime(response_json):
 def update_ups_delivery_dates(request_limit=None):
     """
     Should be run once per night by a daily cronjob:
+    # Status request for UPS tracking codes without a delivery date
     30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
 
     sudo bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"

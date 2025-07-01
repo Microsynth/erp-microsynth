@@ -9,12 +9,14 @@ from frappe import _
 def get_columns(filters):
     return [
         {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Product Idea", "width": 80 },
+        {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 125 },
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 180 },
-        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 250 },
-        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 60 },
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200 },
+        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 300 },
+        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50 },
         {"label": _("Rating"), "fieldname": "rating", "fieldtype": "Int", "width": 60 },
-        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 300 }
+        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 350 },
+        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110},
     ]
 
 
@@ -39,12 +41,22 @@ def get_data(filters):
     query = """
             SELECT
                 `tabProduct Idea`.`name`,
+                `tabProduct Idea`.`modified`,
                 `tabProduct Idea`.`item_group`,
                 `tabCustomer`.`territory`,
                 `tabProduct Idea`.`product`,
                 `tabProduct Idea`.`item`,
                 `tabProduct Idea`.`rating`,
-                `tabProduct Idea`.`notes`
+                `tabProduct Idea`.`notes`,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1 FROM `tabFile`
+                        WHERE `tabFile`.`attached_to_doctype` = 'Product Idea'
+                        AND `tabFile`.`attached_to_name` = `tabProduct Idea`.`name`
+                    )
+                    THEN 'Yes'
+                    ELSE 'No'
+                END AS has_attachment
             FROM `tabProduct Idea`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabProduct Idea`.`contact_person`
             LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`

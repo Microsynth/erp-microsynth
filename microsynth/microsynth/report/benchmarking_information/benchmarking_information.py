@@ -9,13 +9,15 @@ from frappe import _
 def get_columns(filters):
     return [
         {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Benchmark", "width": 85 },
+        {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 125 },
         {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 180 },
-        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 200 },
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200 },
+        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 300 },
         {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 100, 'options': 'currency'},
-        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 65 },
-        {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 150 },
-        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 250 },
+        {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50 },
+        {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 180 },
+        {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 300 },
+        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110 }
     ]
 
 
@@ -40,6 +42,7 @@ def get_data(filters):
     query = """
             SELECT
                 `tabBenchmark`.`name`,
+                `tabBenchmark`.`modified`,
                 `tabBenchmark`.`item_group`,
                 `tabCustomer`.`territory`,
                 `tabBenchmark`.`product`,
@@ -47,7 +50,16 @@ def get_data(filters):
                 `tabBenchmark`.`currency`,
                 `tabBenchmark`.`item`,
                 `tabBenchmark`.`competitor`,
-                `tabBenchmark`.`notes`
+                `tabBenchmark`.`notes`,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1 FROM `tabFile`
+                        WHERE `tabFile`.`attached_to_doctype` = 'Benchmark'
+                        AND `tabFile`.`attached_to_name` = `tabBenchmark`.`name`
+                    )
+                    THEN 'Yes'
+                    ELSE 'No'
+                END AS has_attachment
             FROM `tabBenchmark`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabBenchmark`.`contact_person`
             LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
