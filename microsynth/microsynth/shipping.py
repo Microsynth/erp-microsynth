@@ -425,23 +425,23 @@ def update_ups_delivery_dates(request_limit=None):
     sudo bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
     """
     url, username, password, access_key = get_ups_settings()
-    tracking_docs = fetch_pending_tracking_codes()
+    pending_tracking_codes = fetch_pending_tracking_codes()
 
-    for i, doc in enumerate(tracking_docs):
+    for i, tracking_code in enumerate(pending_tracking_codes):
         if request_limit and i >= request_limit:
             return
         try:
-            resp_json = call_ups_tracking_api(doc["tracking_code"], url, username, password, access_key)
+            resp_json = call_ups_tracking_api(tracking_code["tracking_code"], url, username, password, access_key)
             delivery_datetime = parse_delivery_datetime(resp_json)
             if delivery_datetime:
-                tracking_doc = frappe.get_doc("Tracking Code", doc["name"])
+                tracking_doc = frappe.get_doc("Tracking Code", tracking_code["name"])
                 tracking_doc.delivery_date = delivery_datetime
                 tracking_doc.save(ignore_permissions=True)
                 frappe.db.commit()  # necessary?
-                print(f"Updated: {doc['tracking_code']} -> Delivered on {delivery_datetime}")
+                print(f"Updated: {tracking_code['tracking_code']} -> Delivered on {delivery_datetime}")
             else:
-                print(f"Not delivered yet: {doc['tracking_code']}")
+                print(f"Not delivered yet: {tracking_code['tracking_code']}")
         except Exception as e:
-            msg = f"Error processing {doc['tracking_code']}: {e}"
+            msg = f"Error processing {tracking_code['tracking_code']}: {e}"
             frappe.log_error(message=msg, title="shipping.update_ups_delivery_dates")
             print(msg)
