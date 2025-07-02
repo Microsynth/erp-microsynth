@@ -12,13 +12,14 @@ def get_columns():
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 100},
         {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90},
-        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
+        {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 215},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
-        {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 200},
+        {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 185},
         {"label": _("Is Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 85},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
+        {"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 90},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 105},
-        {"label": _("First Sales Invoice"), "fieldname": "first_sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
+        {"label": _("First Sales Invoice"), "fieldname": "first_sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("First Credit Note"), "fieldname": "first_credit_note", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
         {"label": _("Invoice Count"), "fieldname": "sales_invoice_count", "fieldtype": "Int", "width": 95},
     ]
@@ -55,6 +56,13 @@ def get_data(filters):
             `tabDelivery Note`.`is_punchout`,
             `tabDelivery Note`.`web_order_id`,
             `tabDelivery Note`.`product_type`,
+            (
+                SELECT MAX(`tabSales Order`.`hold_invoice`)
+                FROM `tabDelivery Note Item`
+                JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+                WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                AND `tabSales Order`.`docstatus` < 2
+            ) AS `hold_invoice`,
             (
                 SELECT `tabSales Invoice Item`.`parent`
                 FROM `tabSales Invoice Item`
@@ -98,4 +106,3 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
-
