@@ -2677,6 +2677,7 @@ def create_webshop_address(webshop_account, webshop_address):
         #     create_customer(webshop_address)
 
         # Create an Address if it does not yet exist for the Customer
+        webshop_address['address']['customer_id'] = webshop_address['customer'].get('name')
         address_exists_response = address_exists(webshop_address['address'])
 
         if address_exists_response.get('success'):
