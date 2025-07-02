@@ -570,7 +570,7 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                 print(f"Created Delivery Note {dn.name} for Sales Order {sales_order['name']}.")
 
         except Exception as err:
-            msg = f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}"
+            msg = f"Cannot create a Delivery Note for Sales Order '{sales_order['name']}': \n{err}\n\n{traceback.format_exc()}"
             frappe.log_error(msg, "lab_reporting.check_mycoplasma_sales_order_completion")
             if verbose:
                 print(msg)
