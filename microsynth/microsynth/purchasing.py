@@ -7,6 +7,7 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
+from frappe.utils import get_url_to_form
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
@@ -1206,5 +1207,57 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         LIMIT 10
     """
     items = frappe.db.sql(query, values, as_dict=True)
-
     return items
+
+
+def send_material_request_owner_emails(doc, event=None):
+    """
+    Send emails to each Material Request owner listing items received on this Purchase Receipt.
+    """
+    owner_map = {}
+
+    # Collect unique material requests from items
+    material_requests = list({item.material_request for item in doc.items if item.material_request})
+    if not material_requests:
+        return
+
+    # Get Material Request and Owner mapping
+    mr_owners = frappe.get_all('Material Request',
+        filters={'name': ['in', material_requests]},
+        fields=['name', 'owner'])
+
+    mr_owner_map = {mr.name: mr.owner for mr in mr_owners}
+
+    # Group items by owner
+    for item in doc.items:
+        mr = item.material_request
+        if not mr:
+            continue
+        owner = mr_owner_map.get(mr)
+        if not owner:
+            continue
+        if owner not in owner_map:
+            owner_map[owner] = []
+        owner_map[owner].append(item)
+
+    # Send email to each owner
+    for owner, items in owner_map.items():
+        # Get owner's email (optional enhancement)
+        user = frappe.get_doc("User", owner)
+        email = user.email or owner
+        # TODO: Create Email Template later
+        subject = f"Items Received for Your Material Request(s) - Purchase Receipt {doc.name}"
+        message = f"<p>Dear {user.full_name or owner},</p>"
+        message += f"<p>The following items from your Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"
+        for i in items:
+            message += f"<li><b>{i.item_name}</b> ({i.description or ''}) - Qty: {i.qty}</li>"
+        message += "</ul><p>Best regards,<br>Your ERP System</p>"
+
+        # Send email
+        make(
+            recipients = [email],
+            sender = frappe.session.user,
+            subject = subject,
+            content = message,
+            send_email = True
+        )

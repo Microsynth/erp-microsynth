@@ -194,6 +194,9 @@ doc_events = {
     },
     "Item": {
         "after_insert": "microsynth.microsynth.utils.item_after_insert"
+    },
+    "Purchase Receipt": {
+        "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"
     }
     #"Abacus Export File": {
     #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
