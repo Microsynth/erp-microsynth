@@ -1241,13 +1241,15 @@ def send_material_request_owner_emails(doc, event=None):
         owner_map[owner].append(item)
 
     # Send email to each owner
-    for owner, items in owner_map.items():
-        # Get owner's email (optional enhancement)
-        user = frappe.get_doc("User", owner)
-        email = user.email or owner
+    for mr_owner, items in owner_map.items():
+        if doc.owner == mr_owner:
+            # Skip sending email to the owner of the Purchase Receipt
+            continue
+        user = frappe.get_doc("User", mr_owner)
+        email = user.email or mr_owner
         # TODO: Create Email Template later
         subject = f"Items Received for Your Material Request(s) - Purchase Receipt {doc.name}"
-        message = f"<p>Dear {user.full_name or owner},</p>"
+        message = f"<p>Dear {user.full_name or mr_owner},</p>"
         message += f"<p>The following items from your Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"
         for i in items:
             message += f"<li><b>{i.item_name}</b> ({i.description or ''}) - Qty: {i.qty}</li>"
