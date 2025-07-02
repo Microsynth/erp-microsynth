@@ -104,3 +104,40 @@ def link_quotation_to_order(sales_order, quotation):
                 break
         item.save()
     return so_doc.name
+
+
+def validate_item_sales_status(doc, event=None):
+    """
+    Validate that no Items in the Quotation are In Preparation or Discontinued.
+    This function checks each item in the Quotation and raises an error if any item is found with
+    a sales status of "In Preparation" or "Discontinued". The error message lists all such items.
+    """
+    invalid_items = []
+
+    for item in doc.items:
+        sales_status = frappe.get_value("Item", item.item_code, "sales_status")
+        if sales_status in ["In Preparation", "Discontinued"]:
+            invalid_items.append((item.item_code, item.item_name, sales_status))
+
+    if invalid_items:
+        # Build HTML table
+        html = """
+        <p>The following Items cannot be added to this Quotation:</p>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Sales Status</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for item_code, item_name, status in invalid_items:
+            html += f"<tr><td>{item_code}: {item_name}</td><td>{status}</td></tr>"
+
+        html += """
+            </tbody>
+        </table>
+        <p><b>Please remove or replace these items.</b></p>
+        """
+        frappe.throw(html, title="Invalid Items")

@@ -164,7 +164,8 @@ doc_events = {
         "on_submit": "microsynth.microsynth.payment_reminder.transmit_payment_reminder"
     },
     "Quotation": {
-        "before_save": "microsynth.microsynth.taxes.quotation_before_save"
+        "before_save": "microsynth.microsynth.taxes.quotation_before_save",
+        "validate": "microsynth.microsynth.quotation.validate_item_sales_status"
     },
     "Sales Order": {
         "before_save": "microsynth.microsynth.taxes.sales_order_before_save",
