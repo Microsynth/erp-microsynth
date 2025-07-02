@@ -397,16 +397,15 @@ def register_user(user_data, client="webshop"):
                      `default_currency`,
                      `default_price_list`,
                      `payment_terms`)
-                    VALUES ("{0}", "{1}", "{2}", "{3}", "{4}", "{5}");
-                    """.format(
-                        user_data['customer']['name'],
-                        user_data['customer']['customer_name'],
-                        default_company,
-                        frappe.get_value("Country", country, "default_currency"),
-                        frappe.get_value("Country", country, "default_pricelist"),
-                        frappe.get_value("Company", default_company, "payment_terms"))
-
-    frappe.db.sql(customer_query)
+                    VALUES (%s, %s, %s, %s, %s, %s);"""
+    frappe.db.sql(customer_query, (
+        user_data['customer']['name'],
+        user_data['customer']['customer_name'],
+        default_company,
+        frappe.get_value("Country", country, "default_currency"),
+        frappe.get_value("Country", country, "default_pricelist"),
+        frappe.get_value("Company", default_company, "payment_terms")
+    ))
 
     customer = frappe.get_doc("Customer", user_data['customer']['name'])
 
@@ -636,11 +635,11 @@ def get_user_details(person_id, client="webshop"):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE `tabDynamic Link`.`parenttype` = "Address"
               AND `tabDynamic Link`.`link_doctype` = "Customer"
-              AND `tabDynamic Link`.`link_name` = "{customer_id}"
+              AND `tabDynamic Link`.`link_name` = %s
               AND (`tabAddress`.`is_primary_address` = 1
-                   OR `tabAddress`.`name` = "{person_id}"
-                   OR `tabAddress`.`name` = "{contact_address_id}")
-            ;""".format(customer_id=customer_id, person_id=person_id, contact_address_id=contact.address), as_dict=True)
+                   OR `tabAddress`.`name` = %s
+                   OR `tabAddress`.`name` = %s)
+            ;""", (customer_id, person_id, contact.address), as_dict=True)
 
     # return structure
     return {
@@ -685,9 +684,9 @@ def get_customer_details(customer_id, client="webshop"):
             LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabDynamic Link`.`parent`
             WHERE `tabDynamic Link`.`parenttype` = "Address"
               AND `tabDynamic Link`.`link_doctype` = "Customer"
-              AND `tabDynamic Link`.`link_name` = "{customer_id}"
+              AND `tabDynamic Link`.`link_name` = %s
               AND `tabAddress`.`is_primary_address` = 1
-            ;""".format(customer_id=customer_id), as_dict=True)
+            ;""", (customer_id,), as_dict=True)
 
     # return structure
     return {
@@ -722,29 +721,36 @@ def contact_exists(contact, client="webshop"):
             `tabDynamic Link`.`parent` = `tabContact`.`name`
             AND `tabDynamic Link`.`parenttype` = "Contact"
             AND `tabDynamic Link`.`link_doctype` = "Customer"
-        WHERE `tabContact`.`first_name` = "{0}" """.format(first_name)
+        WHERE `tabContact`.`first_name` = %s"""
+    params = [first_name]
 
     # Note: These statements need the "is not None" term. Simplification to only "contact['...']" will corrupt the API.
     if 'last_name' in contact and contact['last_name'] is not None:
-        sql_query += """ AND `tabContact`.`last_name` = "{}" """.format(contact['last_name'])
+        sql_query += """ AND `tabContact`.`last_name` = %s """
+        params.append(contact['last_name'])
 
     if 'customer_id' in contact and contact['customer_id'] is not None:
-        sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(contact['customer_id'])
+        sql_query += """ AND `tabDynamic Link`.`link_name` = %s """
+        params.append(contact['customer_id'])
 
     # TODO check name of email field for interface
     if 'email_id' in contact and contact['email_id'] is not None:
-        sql_query += """ AND `tabContact`.`email_id` = "{}" """.format(contact['email_id'])
+        sql_query += """ AND `tabContact`.`email_id` = %s """
+        params.append(contact['email_id'])
 
     if 'department' in contact and contact['department'] is not None:
-        sql_query += """ AND `tabContact`.`department` = "{}" """.format(contact['department'])
+        sql_query += """ AND `tabContact`.`department` = %s """
+        params.append(contact['department'])
 
     if 'institute' in contact and contact['institute'] is not None:
-        sql_query += """ AND `tabContact`.`institute` = "{}" """.format(contact['institute'])
+        sql_query += """ AND `tabContact`.`institute` = %s """
+        params.append(contact['institute'])
 
     if 'room' in contact and contact['room'] is not None:
-        sql_query += """ AND `tabContact`.`room` = "{}" """.format(contact['room'])
+        sql_query += """ AND `tabContact`.`room` = %s """
+        params.append(contact['room'])
 
-    contacts = frappe.db.sql(sql_query, as_dict=True)
+    contacts = frappe.db.sql(sql_query, params, as_dict=True)
 
     if len(contacts) > 0:
         return {'success': True, 'message': "OK", 'contacts': contacts}
@@ -768,34 +774,39 @@ def address_exists(address):
             `tabDynamic Link`.`parent` = `tabAddress`.`name`
             AND `tabDynamic Link`.`parenttype` = "Address"
             AND `tabDynamic Link`.`link_doctype` = "Customer"
-        WHERE `address_line1` LIKE "{0}"
-            AND `tabAddress`.`disabled` = 0""".format(
-            address['address_line1'] if 'address_line1' in address else "%")
+        WHERE `address_line1` LIKE %s
+            AND `tabAddress`.`disabled` = 0"""
+    params = [address['address_line1'] if 'address_line1' in address else "%"]
     # Note: These statements need the "is not None" term. Simplification to only "contact['...']" will corrupt the API.
     if 'address_line2' in address:
         if address['address_line2'] is not None:
-            sql_query += """ AND `address_line2` = "{0}" """.format(address['address_line2'])
+            sql_query += """ AND `address_line2` = %s """
+            params.append(address['address_line2'])
         else:
-            sql_query += """ AND `address_line2` is null """
+            sql_query += """ AND `address_line2` IS NULL """
     if 'customer_id' in address and address['customer_id'] is not None:
-        sql_query += """ AND `tabDynamic Link`.`link_name` = "{0}" """.format(address['customer_id'])
+        sql_query += """ AND `tabDynamic Link`.`link_name` = %s """
+        params.append(address['customer_id'])
     if 'overwrite_company' in address:
         if address['overwrite_company'] is not None:
-            sql_query += """ AND `overwrite_company` = "{0}" """.format(address['overwrite_company'])
+            sql_query += """ AND `overwrite_company` = %s """
+            params.append(address['overwrite_company'])
         else:
-            sql_query += """ AND `overwrite_company` is null """
+            sql_query += """ AND `overwrite_company` IS NULL """
     if 'pincode' in address:
-        sql_query += """ AND `pincode` = "{0}" """.format(address['pincode'])
+        sql_query += """ AND `pincode` = %s """
+        params.append(address['pincode'])
     if 'city' in address:
-        sql_query += """ AND `city` = "{0}" """.format(address['city'])
+        sql_query += """ AND `city` = %s """
+        params.append(address['city'])
     if 'country' in address:
-        sql_query += """ AND `country` = "{0}" """.format(address['country'])
+        sql_query += """ AND `country` = %s """
+        params.append(address['country'])
     if 'address_type' in address and address['address_type'] is not None:
-        sql_query += """ AND `address_type` = "{0}" """.format(address['address_type'])
-
+        sql_query += """ AND `address_type` = %s """
+        params.append(address['address_type'])
     sql_query += """ ORDER BY `tabAddress`.`creation` """
-
-    addresses = frappe.db.sql(sql_query, as_dict=True)
+    addresses = frappe.db.sql(sql_query, params, as_dict=True)
 
     if len(addresses) > 0:
         return {'success': True, 'message': "OK", 'addresses': addresses}
@@ -966,14 +977,13 @@ def get_contact_quotations(contact, client="webshop"):
                 `tabQuotation Item`.`rate`
             FROM `tabQuotation`
             LEFT JOIN `tabQuotation Item` ON `tabQuotation Item`.`parent` = `tabQuotation`.`name`
-            WHERE (`tabQuotation`.`contact_person` = '{0}'
-            OR (`tabQuotation`.`party_name` = '{1}' and `tabQuotation`.`customer_web_access` = 1 ) )
+            WHERE (`tabQuotation`.`contact_person` = %s
+            OR (`tabQuotation`.`party_name` = %s and `tabQuotation`.`customer_web_access` = 1 ) )
             AND `tabQuotation`.`docstatus` = 1
             AND `tabQuotation`.`status` <> 'Lost'
             AND (`tabQuotation`.`valid_till` >= CURDATE() OR `tabQuotation`.`valid_till` IS NULL)
-            ORDER BY `tabQuotation`.`name` DESC, `tabQuotation Item`.`idx` ASC;""".format(contact, customer_name)
-
-        qtns = frappe.db.sql(query, as_dict=True)
+            ORDER BY `tabQuotation`.`name` DESC, `tabQuotation Item`.`idx` ASC;"""
+        qtns = frappe.db.sql(query, (contact, customer_name), as_dict=True)
 
         return {'success': True, 'message': "OK", 'quotations': qtns}
     else:
@@ -1509,10 +1519,10 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
-            WHERE `tabShipping Item`.`parent` = "{0}"
+            WHERE `tabShipping Item`.`parent` = %s
                 AND `tabShipping Item`.`parenttype` = "Customer"
                 AND `tabItem`.`disabled` = 0
-            ORDER BY `tabShipping Item`.`idx` ASC;""".format(str(customer_id)), as_dict=True)
+            ORDER BY `tabShipping Item`.`idx` ASC;""", (str(customer_id),), as_dict=True)
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
@@ -1537,10 +1547,10 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
                 `tabShipping Item`.`preferred_express`
         FROM `tabShipping Item`
         LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
-        WHERE `tabShipping Item`.`parent` = "{0}"
+        WHERE `tabShipping Item`.`parent` = %s
             AND `tabShipping Item`.`parenttype` = "Country"
             AND `tabItem`.`disabled` = 0
-        ORDER BY `tabShipping Item`.`idx` ASC;""".format(country), as_dict=True)
+        ORDER BY `tabShipping Item`.`idx` ASC;""", (country,), as_dict=True)
 
     return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
@@ -1557,7 +1567,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     customer_id = get_customer(contact)
     # find by customer id
     if customer_id:
-        shipping_items = frappe.db.sql(f"""
+        shipping_items = frappe.db.sql("""
             SELECT `tabShipping Item`.`item`,
                 `tabItem`.`item_name`,
                 `tabShipping Item`.`qty`,
@@ -1566,10 +1576,10 @@ def get_contact_shipping_items(contact, client="webshop"):
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
-            WHERE `tabShipping Item`.`parent` = "{customer_id}"
+            WHERE `tabShipping Item`.`parent` = %s
                 AND `tabShipping Item`.`parenttype` = "Customer"
                 AND `tabItem`.`disabled` = 0
-            ORDER BY `tabShipping Item`.`idx` ASC;""", as_dict=True)
+            ORDER BY `tabShipping Item`.`idx` ASC;""", (customer_id,), as_dict=True)
         if len(shipping_items) > 0:
             return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
@@ -1593,7 +1603,7 @@ def get_contact_shipping_items(contact, client="webshop"):
         country = frappe.defaults.get_global_default('country')
     country = robust_get_country(country)
     shipping_items = frappe.db.sql(
-        f"""SELECT `tabShipping Item`.`item`,
+        """SELECT `tabShipping Item`.`item`,
                 `tabItem`.`item_name`,
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
@@ -1601,10 +1611,10 @@ def get_contact_shipping_items(contact, client="webshop"):
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
-            WHERE `tabShipping Item`.`parent` = "{country}"
+            WHERE `tabShipping Item`.`parent` = %s
                 AND `tabShipping Item`.`parenttype` = "Country"
                 AND `tabItem`.`disabled` = 0
-            ORDER BY `tabShipping Item`.`idx` ASC;""", as_dict=True)
+            ORDER BY `tabShipping Item`.`idx` ASC;""", (country,), as_dict=True)
     if len(shipping_items) > 0:
         return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
     else:
@@ -1805,7 +1815,7 @@ def get_unused_labels(contacts, items):
         if not frappe.db.exists("Item", item):
             return {'success': False, 'message': f"The given Item '{item}' does not exist in the ERP.", 'labels': None}
     try:
-        sql_query = f"""
+        sql_query = """
             SELECT `item`,
                 `label_id` AS `barcode`,
                 `status`,
@@ -1814,10 +1824,10 @@ def get_unused_labels(contacts, items):
                 `registered_to`
             FROM `tabSequencing Label`
             WHERE `status` = 'unused'
-                AND `item` IN ({get_sql_list(items)})
-                AND `registered_to` IN ({get_sql_list(contacts)})
-            ;"""
-        labels = frappe.db.sql(sql_query, as_dict=True)
+                AND `item` IN ({})
+                AND `registered_to` IN ({})
+            ;""".format(','.join(['%s'] * len(items)), ','.join(['%s'] * len(contacts)))
+        labels = frappe.db.sql(sql_query, items + contacts, as_dict=True)
         return {'success': True, 'message': 'OK', 'labels': labels}
     except Exception as err:
         msg = f"Error fetching unused labels for contacts {contacts} and items {items}: {err}. Check ERP Error Log for details."
@@ -1997,16 +2007,16 @@ def get_registered_label_ranges(contacts):
         if not frappe.db.exists("Contact", contact):
             return {'success': False, 'message': f"The given Contact '{contact}' does not exist in the ERP.", 'ranges': None}
     try:
-        sql_query = f"""
+        sql_query = """
             SELECT `item`,
                 `label_id` AS `barcode`,
                 `registered_to`
             FROM `tabSequencing Label`
             WHERE `status` = 'unused'
-                AND `registered_to` IN ({get_sql_list(contacts)})
+                AND `registered_to` IN ({})
             ORDER BY `label_id` ASC
-            ;"""
-        sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+            ;""".format(','.join(['%s'] * len(contacts)))
+        sequencing_labels = frappe.db.sql(sql_query, contacts, as_dict=True)
         if len(sequencing_labels) == 0:
             return {'success': True, 'message': 'OK', 'ranges': []}
         ranges = partition_into_ranges(sequencing_labels)
@@ -2087,7 +2097,7 @@ def check_and_get_sequencing_labels(registered_to, item, barcode_start_range, ba
     if item:
         if not frappe.db.exists("Item", item):
             return {'success': False, 'message': f"The given Item '{item}' does not exist in the ERP.", 'ranges': None}
-        item_condition = f"AND `item` = {item}"
+        item_condition = f"AND `item` = %s"
     else:
         item_condition = ""
     # check given label range
@@ -2102,10 +2112,10 @@ def check_and_get_sequencing_labels(registered_to, item, barcode_start_range, ba
             `contact`,
             `registered_to`
         FROM `tabSequencing Label`
-        WHERE `label_id` IN ({get_sql_list(barcodes)})
+        WHERE `label_id` IN ({','.join(['%s'] * len(barcodes))})
             {item_condition}
         ;"""
-    return frappe.db.sql(sql_query, as_dict=True)
+    return frappe.db.sql(sql_query, barcodes + ([item] if item else []), as_dict=True)
 
 
 @frappe.whitelist()
@@ -2182,7 +2192,7 @@ def check_and_get_label(label):
 
     bench execute microsynth.microsynth.webshop.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}}"
     """
-    sql_query = f"""
+    sql_query = """
         SELECT `name`,
             `item`,
             `label_id` AS `barcode`,
@@ -2192,10 +2202,10 @@ def check_and_get_label(label):
             `registered_to`,
             `sales_order`
         FROM `tabSequencing Label`
-        WHERE `label_id` = '{label['barcode']}'
-            AND `item` = '{label['item']}'
+        WHERE `label_id` = %s
+            AND `item` = %s
         ;"""
-    sequencing_labels = frappe.db.sql(sql_query, as_dict=True)
+    sequencing_labels = frappe.db.sql(sql_query, (label['barcode'], label['item']), as_dict=True)
     if len(sequencing_labels) == 0:
         return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
     elif len(sequencing_labels) > 1:
@@ -2276,7 +2286,7 @@ def set_label_unused(labels):
         # Check that the Sequencing Labels are NOT used on Sales Order.samples of Sales Orders with DocStatus <= 1
         # The Sequencing Label.sales_order is the order from ordering the labels. Do not consider this entry
         for label in labels_to_set_unused:
-            sql_query = f"""
+            sql_query = """
                 SELECT
                     `tabSample`.`name` AS `sample`,
                     `tabSample`.`sequencing_label` AS `barcode`,
@@ -2285,12 +2295,12 @@ def set_label_unused(labels):
                 LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
                 LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSample Link`.`parent`
                 WHERE
-                    `tabSample`.`sequencing_label` = '{label['barcode']}'
-                    AND `tabSample Link`.`parent` != '{label['sales_order']}'
+                    `tabSample`.`sequencing_label` = %s
+                    AND `tabSample Link`.`parent` != %s
                     AND `tabSample Link`.`parenttype` = "Sales Order"
                     AND `tabSales Order`.`docstatus` <= 1
                 ;"""
-            samples = frappe.db.sql(sql_query, as_dict=True)
+            samples = frappe.db.sql(sql_query, (label['barcode'], label['sales_order']), as_dict=True)
             if len(samples) > 0:
                 return {
                     'success': False,
@@ -2771,44 +2781,27 @@ def is_contact_used(contact_id):
     #     # 'Label Log': {'fieldname': ['contact', 'registered_to']}
     # }
     # linked_docs = get_linked_docs('Contact', contact_id, linked_doctypes)
-    sql_query = """
-        SELECT 'Quotation' AS doctype,
-            `tabQuotation`.`name`
-        FROM `tabQuotation`
-        WHERE `tabQuotation`.`contact_person` = %(contact_id)s
-        OR `tabQuotation`.`shipping_contact` = %(contact_id)s
+    doctypes = {
+        "Quotation": ["contact_person", "shipping_contact"],
+        "Customer": ["customer_primary_contact", "invoice_to", "reminder_to"],
+        "Sales Order": ["contact_person", "shipping_contact", "invoice_to"],
+        "Sales Invoice": ["contact_person", "invoice_to", "shipping_contact"]
+    }
+    unions = []
+    params = []
 
-        UNION
+    for doctype, fields in doctypes.items():
+        conditions = " OR ".join([f"`tab{doctype}`.`{field}` = %s" for field in fields])
+        unions.append(f"""
+            SELECT '{doctype}' AS doctype, `tab{doctype}`.`name`
+            FROM `tab{doctype}`
+            WHERE {conditions}
+        """)
+        params.extend([contact_id] * len(fields))
 
-        SELECT 'Customer' AS doctype,
-            `tabCustomer`.`name`
-        FROM `tabCustomer`
-        WHERE `tabCustomer`.`customer_primary_contact` = %(contact_id)s
-        OR `tabCustomer`.`invoice_to` = %(contact_id)s
-        OR `tabCustomer`.`reminder_to` = %(contact_id)s
+    sql_query = "\nUNION\n".join(unions)
 
-        UNION
-
-        SELECT 'Sales Order' AS doctype,
-            `tabSales Order`.`name`
-        FROM `tabSales Order`
-        WHERE `tabSales Order`.`contact_person` = %(contact_id)s
-        OR `tabSales Order`.`shipping_contact` = %(contact_id)s
-        OR `tabSales Order`.`invoice_to` = %(contact_id)s
-
-        UNION
-
-        SELECT 'Sales Invoice' AS doctype,
-            `tabSales Invoice`.`name`
-        FROM `tabSales Invoice`
-        WHERE `tabSales Invoice`.`contact_person` = %(contact_id)s
-        OR `tabSales Invoice`.`invoice_to` = %(contact_id)s
-        OR `tabSales Invoice`.`shipping_contact` = %(contact_id)s;
-        """
-    # Use %(contact_id)s with parameter binding to safely escape input and prevent SQL injection.
-    # Avoid f-strings for SQL to prevent security risks and ensure query correctness.
-    linked_docs = frappe.db.sql(sql_query, {'contact_id': contact_id}, as_dict=True)
-    #print(linked_docs)
+    linked_docs = frappe.db.sql(sql_query, params, as_dict=True)
     return len(linked_docs) > 0
 
 
@@ -2834,33 +2827,26 @@ def is_address_used(address_id):
     #     # 'Customs Declaration': {'child_doctype': 'Customs Declaration Delivery Note', 'fieldname': ['shipping_address']}
     # }
     # linked_docs = get_linked_docs('Address', address_id, linked_doctypes)
-    sql_query = """
-        SELECT 'Quotation' AS doctype,
-            `tabQuotation`.`name`
-        FROM `tabQuotation`
-        WHERE `tabQuotation`.`customer_address` = %(address_id)s
-            OR `tabQuotation`.`shipping_address_name` = %(address_id)s
+    doctypes = {
+        "Quotation": ["customer_address", "shipping_address_name"],
+        "Sales Order": ["customer_address", "shipping_address_name", "company_address"],
+        "Sales Invoice": ["customer_address", "shipping_address_name", "company_address"]
+    }
+    unions = []
+    params = []
 
-        UNION
+    for doctype, fields in doctypes.items():
+        conditions = " OR ".join([f"`tab{doctype}`.`{field}` = %s" for field in fields])
+        unions.append(f"""
+            SELECT '{doctype}' AS doctype, `tab{doctype}`.`name`
+            FROM `tab{doctype}`
+            WHERE {conditions}
+        """)
+        params.extend([address_id] * len(fields))
 
-        SELECT 'Sales Order' AS doctype,
-            `tabSales Order`.`name`
-        FROM `tabSales Order`
-        WHERE `tabSales Order`.`customer_address` = %(address_id)s
-            OR `tabSales Order`.`shipping_address_name` = %(address_id)s
-            OR `tabSales Order`.`company_address` = %(address_id)s
+    sql_query = "\nUNION\n".join(unions)
 
-        UNION
-
-        SELECT 'Sales Invoice' AS doctype,
-            `tabSales Invoice`.`name`
-        FROM `tabSales Invoice`
-        WHERE `tabSales Invoice`.`customer_address` = %(address_id)s
-            OR `tabSales Invoice`.`shipping_address_name` = %(address_id)s
-            OR `tabSales Invoice`.`company_address` = %(address_id)s;
-        """
-    linked_docs = frappe.db.sql(sql_query, {'address_id': address_id}, as_dict=True)
-    #print(linked_docs)
+    linked_docs = frappe.db.sql(sql_query, params, as_dict=True)
     return len(linked_docs) > 0
 
 
@@ -3048,7 +3034,7 @@ def delete_if_unused(contact_id):
     if not is_address_used(address_id) and not is_contact_used(contact_id):
         # TODO: Delete link of Contact in Webshop Address (otherwise Contact cannot be deleted)
         # remove Contact Lock
-        frappe.db.sql(f"""DELETE FROM `tabContact Lock` WHERE `tabContact Lock`.`contact` = '{contact_id}'; """)
+        frappe.db.sql("""DELETE FROM `tabContact Lock` WHERE `contact` = %s; """, (contact_id,))
         frappe.db.commit()
         contact_doc = frappe.get_doc('Contact', contact_id)
         contact_doc.delete()
