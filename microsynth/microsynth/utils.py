@@ -2787,6 +2787,45 @@ def check_sales_order(sales_order, event):
         frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
 
 
+def validate_sales_order(sales_order_doc, event=None):
+    """
+    Validate the Sales Order (server-side validation trigger).
+    Validate that no Item on the Sales Order has Sales Status "In Preparation" or "Discontinued".
+    """
+    invalid_items = []
+
+    for item in sales_order_doc.items:
+        sales_status = frappe.get_value("Item", item.item_code, "sales_status")
+        if sales_status in ["In Preparation", "Discontinued"]:
+            invalid_items.append((item.item_code, item.item_name, sales_status))
+
+    if invalid_items:
+        # Build HTML table
+        html = """
+        <p>The following Items are not allowed to be on this Sales Order:</p>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Sales Status</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for item_code, item_name, status in invalid_items:
+            html += f"<tr><td>{item_code}: {item_name}</td><td>{status}</td></tr>"
+
+        html += """
+            </tbody>
+        </table>
+        <p><b>Please remove or replace these Items.</b></p>
+        """
+        if frappe.session.user == "webshop@microsynth.ch":
+            frappe.log_error(f"The Webshop tried to save Sales Order {sales_order_doc.name} with invalid items: {invalid_items}", "Invalid Items on Webshop Sales Order")
+            return
+        frappe.throw(html, title="Invalid Items")
+
+
 def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     """
     Run by a monthly cronjob on the first of each month at 0:40:
