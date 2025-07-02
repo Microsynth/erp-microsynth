@@ -1271,7 +1271,7 @@ def place_order(content, client="webshop"):
     if 'oligos' in content and len(content['oligos']) > 0:
         category = "Material"
     taxes = find_dated_tax_template(company, content['customer'], content['delivery_address'], category, delivery_date)
-    if taxes:
+    if taxes and taxes != so_doc.taxes_and_charges:
         so_doc.taxes_and_charges = taxes
         taxes_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
         for t in taxes_template.taxes:
