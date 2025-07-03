@@ -24,7 +24,27 @@
                             </tr>
                             <tr>
                                 <td>{{ _("Supplier Name") }}</td>
-                                <td><div id="supplier_name_{{ name }}">{{ supplier_name }}</div></td>
+                                <td>
+                                    <div id="supplier_name_{{ name }}">{{ supplier_name }}</div>
+                                    <table class="table">
+                                        <header>
+                                            <tr>
+                                                <th>{{ _("Purchase Order") }}</th>
+                                                <th>{{ _("Date") }}</th>
+                                                <th>{{ _("Amount") }}</th>
+                                            </tr>
+                                        </header>
+                                        <tbody>
+                                            {% for po in purchase_orders %}
+                                                <tr>
+                                                    <td><span>{{ po.name }}</span></td>
+                                                    <td>{{ frappe.utils.formatdate(po.transaction_date, "dd.MM.yyyy") }}</td>
+                                                    <td>{{ currency }} {{ "{:,.2f}".format(po.grand_total).replace(",", "&apos;") }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
                             </tr>
                             <tr>
                                 <td>{{ _("Supplier Invoice No") }}</td>
@@ -118,4 +138,3 @@
         </tr>
     <tbody>
 </table>
-
