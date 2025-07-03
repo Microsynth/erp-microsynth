@@ -68,6 +68,9 @@ def create_stock_entry(items, warehouse, user):
     stock_entry.set_warehouse = warehouse
     stock_entry.owner = user
 
+    # TODO: Consolidate items
+    # TODO: Throw an error if Item.has_batch_no but no batch_no is provided
+
     for item in items:
         item_row = {
             "item_code": item.get("item_code"),

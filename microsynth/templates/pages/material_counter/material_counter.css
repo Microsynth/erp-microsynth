@@ -128,3 +128,9 @@
   .input-group-addon:last-child {
     border-left: 0;
   }
+  .web-footer {
+    display: none;
+  }
+  .btn-login-area {
+    display: none;
+  }

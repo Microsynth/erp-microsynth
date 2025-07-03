@@ -45,9 +45,11 @@ function run() {
             $(this).val(""); // Clear input
 
             let item_code, batch_no = "";
-    
+            let qty_editable = "";
+
             if (value.includes(":")) {
                 [item_code, batch_no] = value.split(":");
+                qty_editable = "readonly"; // If batch number is present, set qty to readonly
             } else {
                 item_code = value;
             }
@@ -63,7 +65,7 @@ function run() {
                                 <td>${item.name}</td>
                                 <td>${item.item_name}</td>
                                 <td>${item.material_code || ""}</td>
-                                <td><input type="number" value="1" min="1" class="form-control qty-input"></td>
+                                <td><input type="number" value="1" min="1" class="form-control qty-input" onchange="focus_on_scanner_input()" ${qty_editable}></td>
                                 <td>${batch_no}</td>
                             </tr>`;
                         $('#item_table tbody').append(row);
@@ -78,6 +80,7 @@ function run() {
     // Handle remove row
     $('#item_table').on('click', '.remove-row', function () {
         $(this).closest('tr').remove();
+        focus_on_scanner_input();
     });
 
     // Check Out button
@@ -133,6 +136,11 @@ function run() {
             }
         });
     });
+    focus_on_scanner_input();
+}
+
+function focus_on_scanner_input() {
+    $('#scanner_input').focus();
 }
 
 function get_users_for_process(process) {
