@@ -36,7 +36,8 @@ def get_data(filters):
     if filters.get("to_date"):
         conditions += " AND `tabPurchase Invoice`.`posting_date` <= %(to_date)s"
 
-    # TODO: Exclude Financial Accounting Items
+    conditions += " AND `tabItem`.`item_group` != 'Financial Accounting'"
+
     return frappe.db.sql("""
         SELECT
             `tabPurchase Invoice`.`posting_date`,
@@ -52,9 +53,11 @@ def get_data(filters):
             `tabPurchase Invoice`.`currency`
         FROM
             `tabPurchase Invoice`,
-            `tabPurchase Invoice Item`
+            `tabPurchase Invoice Item`,
+            `tabItem`
         WHERE
             `tabPurchase Invoice`.`name` = `tabPurchase Invoice Item`.`parent`
+            AND `tabPurchase Invoice Item`.`item_code` = `tabItem`.`name`
             AND `tabPurchase Invoice`.`docstatus` = 1
             {conditions}
         ORDER BY
