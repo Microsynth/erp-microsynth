@@ -38,6 +38,10 @@ def get_data(filters):
             filter_conditions += f"AND `tabBenchmark`.`item` = '{filters.get('item')}'"
         if filters.get('competitor'):
             filter_conditions += f"AND `tabBenchmark`.`competitor` LIKE '%{filters.get('competitor')}%'"
+        if filters.get('from_date'):
+            filter_conditions += f"AND `tabBenchmark`.`modified` >= '{filters.get('from_date')}'"
+        if filters.get('to_date'):
+            filter_conditions += f"AND `tabBenchmark`.`modified` <= '{filters.get('to_date')}'"
 
     query = """
             SELECT

@@ -5,6 +5,17 @@
 frappe.query_reports["Benchmarking Information"] = {
     "filters": [
         {
+            "fieldname":"from_date",
+            "label": __("From Date"),
+            "fieldtype": "Date"
+        },
+        {
+            "fieldname":"to_date",
+            "label": __("To Date"),
+            "fieldtype": "Date",
+            "default": frappe.datetime.get_today()
+        },
+        {
             "fieldname": "item_group",
             "fieldtype": "Link",
             "label": "Item Group",

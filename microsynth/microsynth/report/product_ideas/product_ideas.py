@@ -27,6 +27,10 @@ def get_data(filters):
     filter_conditions = ''
 
     if filters:
+        if filters.get('from_date'):
+            filter_conditions += f"AND `tabProduct Idea`.`modified` >= '{filters.get('from_date')}'"
+        if filters.get('to_date'):
+            filter_conditions += f"AND `tabProduct Idea`.`modified` <= '{filters.get('to_date')}'"
         if filters.get('item_group'):
             filter_conditions += f"AND `tabProduct Idea`.`item_group` = '{filters.get('item_group')}'"
         if filters.get('territory'):
