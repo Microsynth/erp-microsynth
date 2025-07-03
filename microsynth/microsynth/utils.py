@@ -2787,7 +2787,7 @@ def check_sales_order(sales_order, event):
         frappe.throw("The following fields are mandatory to submit:<ul><li>Billing Address Name</li><li>Shipping Address Name</li><li>Invoice To</li><li>Contact Person</li></ul>Please check the section <b>Address and Contact</b>.")
 
 
-def validate_sales_order(sales_order_doc, event=None):
+def validate_sales_order_items(sales_order_doc, event=None):
     """
     Validate the Sales Order (server-side validation trigger).
     Validate that no Item on the Sales Order has Sales Status "In Preparation" or "Discontinued".
