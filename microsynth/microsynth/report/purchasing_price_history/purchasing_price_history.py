@@ -23,6 +23,9 @@ def get_columns():
 
 
 def get_data(filters):
+    if not filters:
+        #frappe.msgprint(_("Please set filters to fetch data."))
+        return []
     conditions = ""
     if filters.get("item_code"):
         conditions += " AND `tabPurchase Invoice Item`.`item_code` = %(item_code)s"
@@ -33,6 +36,7 @@ def get_data(filters):
     if filters.get("to_date"):
         conditions += " AND `tabPurchase Invoice`.`posting_date` <= %(to_date)s"
 
+    # TODO: Exclude Financial Accounting Items
     return frappe.db.sql("""
         SELECT
             `tabPurchase Invoice`.`posting_date`,

@@ -10,6 +10,7 @@ frappe.query_reports["Purchasing Price History"] = {
             label: __("Item"),
             fieldtype: "Link",
             options: "Item",
+            bold: 1,
             get_query: function () {
                 return {
                     filters: {
@@ -22,7 +23,8 @@ frappe.query_reports["Purchasing Price History"] = {
             fieldname: "supplier",
             label: __("Supplier"),
             fieldtype: "Link",
-            options: "Supplier"
+            options: "Supplier",
+            bold: 1
         },
         {
             fieldname: "from_date",
