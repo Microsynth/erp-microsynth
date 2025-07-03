@@ -15,7 +15,7 @@ class CustomsDeclaration(Document):
             doc = frappe.get_doc('Delivery Note', dn.delivery_note)
             doc.customs_declaration = self.name
             doc.save()
-               
+
         for dn in self.eu_dns:
             doc = frappe.get_doc('Delivery Note', dn.delivery_note)
             doc.customs_declaration = self.name
@@ -34,7 +34,7 @@ class CustomsDeclaration(Document):
             doc = frappe.get_doc('Delivery Note', dn.delivery_note)
             doc.customs_declaration = None
             doc.save()
-        
+
         frappe.db.commit()
         return
 
@@ -56,7 +56,12 @@ def create_customs_declaration():
     frappe.db.commit()
     return get_url_to_form("Customs Declaration", cd.name)
 
+
 def get_delivery_notes_to_declare():
+    """
+    bench execute microsynth.microsynth.doctype.customs_declaration.customs_declaration.get_delivery_notes_to_declare
+    """
+    # TODO: Change total to net_total and base_total to base_net_total?
     sql_query = """SELECT
             DISTINCT `tabDelivery Note`.`name` as `delivery_note`,
             IF(`tabDelivery Note`.`order_customer` is not null, `tabDelivery Note`.`order_customer`, `tabDelivery Note`.`customer`) as `customer`,
@@ -69,11 +74,62 @@ def get_delivery_notes_to_declare():
             `tabDelivery Note`.`total` as `net_total`,
             `tabDelivery Note`.`total_taxes_and_charges` as `taxes`,
             `tabDelivery Note`.`grand_total`,
-            `tabDelivery Note`.`base_total`
-            FROM `tabDelivery Note` 
+            `tabDelivery Note`.`base_total`,
+            IF(`tabDelivery Note`.`currency` != 'EUR',
+                ROUND(
+                    `tabDelivery Note`.`base_total` / (
+                        SELECT `exchange_rate`
+                        FROM `tabCurrency Exchange`
+                        WHERE `from_currency` = 'EUR'
+                        AND `to_currency` = (
+                            SELECT `default_currency`
+                            FROM `tabCompany`
+                            WHERE `name` = `tabDelivery Note`.`company`
+                        )
+                        ORDER BY `creation` DESC
+                        LIMIT 1
+                    ), 2
+                ),
+                `tabDelivery Note`.`total`
+            ) as `eur_net_total`,
+            IF(`tabDelivery Note`.`currency` != 'EUR',
+                ROUND(
+                    `tabDelivery Note`.`base_total_taxes_and_charges` / (
+                        SELECT `exchange_rate`
+                        FROM `tabCurrency Exchange`
+                        WHERE `from_currency` = 'EUR'
+                        AND `to_currency` = (
+                            SELECT `default_currency`
+                            FROM `tabCompany`
+                            WHERE `name` = `tabDelivery Note`.`company`
+                        )
+                        ORDER BY `creation` DESC
+                        LIMIT 1
+                    ), 2
+                ),
+                `tabDelivery Note`.`total_taxes_and_charges`
+            ) as `eur_taxes`,
+            IF(`tabDelivery Note`.`currency` != 'EUR',
+                ROUND(
+                    `tabDelivery Note`.`base_grand_total` / (
+                        SELECT `exchange_rate`
+                        FROM `tabCurrency Exchange`
+                        WHERE `from_currency` = 'EUR'
+                        AND `to_currency` = (
+                            SELECT `default_currency`
+                            FROM `tabCompany`
+                            WHERE `name` = `tabDelivery Note`.`company`
+                        )
+                        ORDER BY `creation` DESC
+                        LIMIT 1
+                    ), 2
+                ),
+                `tabDelivery Note`.`grand_total`
+            ) as `eur_grand_total`
+            FROM `tabDelivery Note`
             JOIN `tabCustomer` ON  `tabCustomer`.`name` = `tabDelivery Note`.`customer`
             JOIN `tabAddress` ON `tabAddress`.`name` = `tabDelivery Note`.`shipping_address_name`
-            JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name` 
+            JOIN `tabDelivery Note Item` ON (`tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
                 AND `tabDelivery Note Item`.`item_group` = "Shipping"
                 AND `tabDelivery Note Item`.`item_code` NOT IN ("1130", "1133"))
             WHERE `tabDelivery Note`.`export_category` IN ('AT', 'EU')

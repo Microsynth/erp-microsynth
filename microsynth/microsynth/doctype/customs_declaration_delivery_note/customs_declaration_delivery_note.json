@@ -11,10 +11,15 @@
   "tax_id",
   "country",
   "currency",
+  "currency_eur",
+  "column_break_7",
   "net_total",
   "taxes",
   "grand_total",
-  "base_total"
+  "base_total",
+  "eur_net_total",
+  "eur_taxes",
+  "eur_grand_total"
  ],
  "fields": [
   {
@@ -95,10 +100,40 @@
    "label": "Base Total",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "eur_net_total",
+   "fieldtype": "Currency",
+   "label": "Net Total [EUR]",
+   "options": "currency_eur"
+  },
+  {
+   "fieldname": "eur_taxes",
+   "fieldtype": "Currency",
+   "label": "Taxes [EUR]",
+   "options": "currency_eur"
+  },
+  {
+   "fieldname": "eur_grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total [EUR]",
+   "options": "currency_eur"
+  },
+  {
+   "default": "EUR",
+   "fieldname": "currency_eur",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "EUR Currency",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2023-01-12 10:04:53.749810",
+ "modified": "2025-07-03 16:25:38.620862",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Customs Declaration Delivery Note",
