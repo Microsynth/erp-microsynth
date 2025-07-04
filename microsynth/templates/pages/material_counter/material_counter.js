@@ -40,7 +40,7 @@ function run() {
 
     // Scan data matrix code
     $('#scanner_input').on('keypress', function (e) {
-        if (e.which === 13) {
+        if (e.which === 13) {  // Enter key pressed
             let value = $(this).val().trim();
             $(this).val(""); // Clear input
 
@@ -59,16 +59,45 @@ function run() {
                 callback: function (r) {
                     if (r.message) {
                         let item = r.message;
-                        let row = `
-                            <tr>
-                                <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
-                                <td>${item.name}</td>
-                                <td>${item.item_name}</td>
-                                <td>${item.material_code || ""}</td>
-                                <td><input type="number" value="1" min="1" class="form-control qty-input" onchange="focus_on_scanner_input()" ${qty_editable}></td>
-                                <td>${batch_no}</td>
-                            </tr>`;
-                        $('#item_table tbody').append(row);
+                        let found = false;
+
+                        $('#item_table tbody tr').each(function () {
+                            let cells = $(this).find('td');
+                            let existing_item_code = $(cells[1]).text().trim();
+                            let existing_batch_no = $(cells[5]).text().trim();
+
+                            let same_item = existing_item_code === item.name;
+                            let same_batch = (existing_batch_no === batch_no) ||
+                                            (!existing_batch_no && !batch_no);
+
+                            if (same_item && same_batch) {
+                                let qty_input = $(cells[4]).find('input');
+                                let current_qty = parseFloat(qty_input.val()) || 0;
+                                qty_input.val(current_qty + 1);
+
+                                // Highlight updated quantity
+                                qty_input.css('background-color', '#d4edda'); // light green
+                                setTimeout(function () {
+                                    qty_input.css('background-color', '');
+                                }, 400);
+
+                                found = true;
+                                return false; // Break loop
+                            }
+                        });
+
+                        if (!found) {
+                            let row = `
+                                <tr>
+                                    <td><button class="btn btn-danger btn-sm remove-row">×</button></td>
+                                    <td>${item.name}</td>
+                                    <td>${item.item_name}</td>
+                                    <td>${item.material_code || ""}</td>
+                                    <td><input type="number" value="1" min="1" class="form-control qty-input" onchange="focus_on_scanner_input()" ${qty_editable}></td>
+                                    <td>${batch_no}</td>
+                                </tr>`;
+                            $('#item_table tbody').append(row);
+                        }
                     } else {
                         frappe.msgprint(`Item ${item_code} not found.`);
                     }
