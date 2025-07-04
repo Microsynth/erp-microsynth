@@ -355,7 +355,19 @@ def fetch_pending_tracking_codes():
 
 def call_ups_tracking_api(tracking_code, url, username, password, access_key):
     """
+    Calls the UPS Tracking API to get the delivery date for a given tracking code.
+
+    :param tracking_code: The UPS tracking code to query.
+    :param url: The UPS API URL for tracking.
+    :param username: The UPS API username.
+    :param password: The UPS API password.
+    :param access_key: The UPS API access key.
+    :return: The JSON response from the UPS API containing tracking information.
+    :raises Exception: If there is an HTTP error or if the response cannot be parsed.
+
     https://developer.ups.com/tag/Tracking?loc=en_US&tag=Tracking
+
+    bench execute microsynth.microsynth.shipping.call_ups_tracking_api --kwargs "{'tracking_code': '1Z12345E029123456', 'url': 'https://onlinetools.ups.com/rest/Track', 'username': 'xxx', 'password': 'xxx', 'access_key': 'xxx'}"
     """
     # payload is the request body sent to the API (standard naming for POST data)
     payload = {
@@ -375,14 +387,19 @@ def call_ups_tracking_api(tracking_code, url, username, password, access_key):
             "InquiryNumber": tracking_code
         }
     }
-    data = json.dumps(payload).encode('utf-8')
-    headers = {'Content-Type': 'application/json'}
 
+    # Convert payload dict to JSON-formatted string and encode it to bytes.
+    data = json.dumps(payload).encode('utf-8')
+    # Set the headers for the request indicating JSON content type.
+    headers = {'Content-Type': 'application/json'}
+    # Create a HTTP request object using the urllib.
+    # Since data is provided, it will be a POST request.
     req = request.Request(url, data=data, headers=headers)
     try:
+        # Send the request and wait up to 15 seconds for a response.
         with request.urlopen(req, timeout=15) as response:
+            # Read the response and decode it from bytes to string to dict.
             result = json.loads(response.read().decode())
-            #print(result)
             return result
     except URLError as e:
         raise Exception(f"HTTP error: {e}")
