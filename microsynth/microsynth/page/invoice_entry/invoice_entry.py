@@ -242,3 +242,120 @@ def delete_document(purchase_invoice_name):
         return f"Deleted {purchase_invoice_name}. Reloading page ..."
     except Exception as err:
         return err
+
+
+@frappe.whitelist()
+def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_no=None):
+    try:
+        purchase_order = frappe.get_doc("Purchase Order", purchase_order_name)
+        purchase_invoice = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
+
+        # Update fields in Purchase Invoice based on Purchase Order only if values differ
+        if purchase_invoice.supplier != purchase_order.supplier:
+            purchase_invoice.supplier = purchase_order.supplier
+        if purchase_invoice.supplier_name != purchase_order.supplier_name:
+            purchase_invoice.supplier_name = purchase_order.supplier_name
+        if purchase_invoice.taxes_and_charges != purchase_order.taxes_and_charges:
+            purchase_invoice.taxes_and_charges = purchase_order.taxes_and_charges
+        if purchase_invoice.payment_terms_template != purchase_order.payment_terms_template:
+            purchase_invoice.payment_terms_template = purchase_order.payment_terms_template
+        if purchase_invoice.net_total != purchase_order.net_total:
+            purchase_invoice.net_total = purchase_order.net_total
+        if purchase_invoice.total != purchase_order.total:
+            purchase_invoice.total = purchase_order.total
+        if purchase_invoice.bill_no != bill_no:
+            purchase_invoice.bill_no = bill_no
+        if purchase_invoice.bill_date != purchase_invoice.posting_date:
+            purchase_invoice.bill_date = purchase_invoice.posting_date
+
+        # Update taxes only if they differ
+        current_taxes = [
+            {
+                "category": tax.category,
+                "add_deduct_tax": tax.add_deduct_tax,
+                "charge_type": tax.charge_type,
+                "account_head": tax.account_head,
+                "description": tax.description,
+                "cost_center": tax.cost_center,
+                "rate": tax.rate
+            }
+            for tax in purchase_invoice.taxes
+        ]
+        new_taxes = [
+            {
+                "category": tax.category,
+                "add_deduct_tax": tax.add_deduct_tax,
+                "charge_type": tax.charge_type,
+                "account_head": tax.account_head,
+                "description": tax.description,
+                "cost_center": tax.cost_center,
+                "rate": tax.rate
+            }
+            for tax in purchase_order.taxes
+        ]
+        if current_taxes != new_taxes:
+            purchase_invoice.taxes = []
+            for tax in purchase_order.taxes:
+                purchase_invoice.append("taxes", {
+                    "category": tax.category,
+                    "add_deduct_tax": tax.add_deduct_tax,
+                    "charge_type": tax.charge_type,
+                    "account_head": tax.account_head,
+                    "description": tax.description,
+                    "cost_center": tax.cost_center,
+                    "rate": tax.rate
+                })
+
+        # Update items only if they differ
+        current_items = [
+            {
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "qty": item.qty,
+                "rate": item.rate,
+                "expense_account": item.expense_account,
+                "cost_center": item.cost_center
+            }
+            for item in purchase_invoice.items
+        ]
+        new_items = [
+            {
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "qty": item.qty,
+                "rate": item.rate,
+                "expense_account": item.expense_account,
+                "cost_center": item.cost_center
+            }
+            for item in purchase_order.items
+        ]
+        if current_items != new_items:
+            purchase_invoice.items = []
+            for item in purchase_order.items:
+                purchase_invoice.append("items", {
+                    "item_code": item.item_code,
+                    "item_name": item.item_name,
+                    "qty": item.qty,
+                    "rate": item.rate,
+                    "expense_account": item.expense_account,
+                    "cost_center": item.cost_center
+                })
+
+        # Determine allow_edit_net_amount based on item count and total quantity
+        allow_edit_net_amount = 1 if len(purchase_order.items) == 1 and sum(item.qty for item in purchase_order.items) == 1 else 0
+        purchase_invoice.allow_edit_net_amount = allow_edit_net_amount
+
+        purchase_invoice.save()
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "message": "Purchase Invoice updated successfully.",
+            "allow_edit_net_amount": allow_edit_net_amount
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e),
+            "allow_edit_net_amount": 0
+        }

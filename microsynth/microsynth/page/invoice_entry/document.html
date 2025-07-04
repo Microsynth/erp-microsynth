@@ -26,24 +26,31 @@
                                 <td>{{ _("Supplier Name") }}</td>
                                 <td>
                                     <div id="supplier_name_{{ name }}">{{ supplier_name }}</div>
-                                    <table class="table">
-                                        <header>
-                                            <tr>
-                                                <th>{{ _("Purchase Order") }}</th>
-                                                <th>{{ _("Date") }}</th>
-                                                <th>{{ _("Amount") }}</th>
-                                            </tr>
-                                        </header>
-                                        <tbody>
-                                            {% for po in purchase_orders %}
-                                                <tr>
-                                                    <td><span>{{ po.name }}</span></td>
-                                                    <td>{{ frappe.utils.formatdate(po.transaction_date, "dd.MM.yyyy") }}</td>
-                                                    <td>{{ currency }} {{ "{:,.2f}".format(po.grand_total).replace(",", "&apos;") }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                    {% if purchase_orders %}
+                                        <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#po_table_{{ name }}" aria-expanded="false" aria-controls="po_table_{{ name }}">
+                                            {{ _("Show/Hide Purchase Orders") }}
+                                        </button>
+                                        <div class="collapse" id="po_table_{{ name }}">
+                                            <table class="table">
+                                                <header>
+                                                    <tr>
+                                                        <th>{{ _("Purchase Order") }}</th>
+                                                        <th>{{ _("Date") }}</th>
+                                                        <th>{{ _("Amount") }}</th>
+                                                    </tr>
+                                                </header>
+                                                <tbody>
+                                                    {% for po in purchase_orders %}
+                                                        <tr>
+                                                            <td><button class="btn btn-sm btn-secondary po-button" id="po_button_{{ po.name }}" data-po-name="{{ po.name }}" data-pi-name="{{ name }}">{{ po.name }}</button></td>
+                                                            <td>{{ frappe.utils.formatdate(po.transaction_date, "dd.MM.yyyy") }}</td>
+                                                            <td>{{ currency }} {{ "{:,.2f}".format(po.grand_total).replace(",", "&apos;") }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr>
