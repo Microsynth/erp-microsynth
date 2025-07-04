@@ -9,35 +9,26 @@ ignore=migrations,test_sites,node_modules,public
 extension-pkg-whitelist=frappe
 
 [MESSAGES CONTROL]
-# Disable checks that do not fit with frappe's architecture
-disable=
-    missing-docstring,
-    invalid-name,
-    too-few-public-methods,
-    too-many-arguments,
-    too-many-locals,
-    too-many-instance-attributes,
-    no-member,  # frappe creates attributes dynamically
-    import-error,  # due to custom module paths
-    redefined-outer-name,  # common in test cases
-    unused-argument,  # often used for interface compatibility
-    protected-access,  # access to _ fields in frappe is common
+enable=
+    undefined-variable,
+    unused-import,
+    unused-variable,
+    unbalanced-tuple-unpacking,
+    dangerous-default-value,
+    no-value-for-parameter,
+    attribute-defined-outside-init,
+    duplicate-key,
+    not-callable,
+    exec-used,
+    eval-used,
+    redefined-builtin,
+    # broad-except,
+
+disable=all
 
 [TYPECHECK]
 ignored-modules=frappe
 ignored-classes=FrappeClient,LocalProxy
-
-[FORMAT]
-# Maximum number of characters on a single line
-max-line-length=200
-
-[DESIGN]
-# Adjust thresholds to fit ERPNext’s common design patterns
-max-args=10
-max-locals=25
-max-attributes=15
-max-branches=15
-max-statements=50
 
 [REPORTS]
 # Disable score report
