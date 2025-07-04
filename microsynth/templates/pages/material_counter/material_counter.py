@@ -68,7 +68,10 @@ def create_stock_entry(items, warehouse, user):
     stock_entry.set_warehouse = warehouse
     stock_entry.owner = user
 
-    # TODO: Throw an error if Item.has_batch_no but no batch_no is provided
+    for item in items:
+        has_batch_no = frappe.get_value("Item", item.get("item_code"), "has_batch_no")
+        if has_batch_no and not item.get("batch_no"):
+            frappe.throw(f"Batch number is required for item {item.get('item_code')} as it has batch management enabled.")
 
     for item in items:
         item_row = {
