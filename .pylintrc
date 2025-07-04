@@ -1,0 +1,49 @@
+[MASTER]
+# List of plugins to load, including frappe-specific globals if applicable
+load-plugins=pylint.extensions.docparams
+
+# Paths to ignore during linting
+ignore=migrations,test_sites,node_modules,public
+
+# ERPNext/Custom app has many dynamically loaded attributes
+extension-pkg-whitelist=frappe
+
+[MESSAGES CONTROL]
+# Disable checks that do not fit with frappe's architecture
+disable=
+    missing-docstring,
+    invalid-name,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-locals,
+    too-many-instance-attributes,
+    no-member,  # frappe creates attributes dynamically
+    import-error,  # due to custom module paths
+    redefined-outer-name,  # common in test cases
+    unused-argument,  # often used for interface compatibility
+    protected-access,  # access to _ fields in frappe is common
+
+[TYPECHECK]
+ignored-modules=frappe
+ignored-classes=FrappeClient,LocalProxy
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=200
+
+[DESIGN]
+# Adjust thresholds to fit ERPNext’s common design patterns
+max-args=10
+max-locals=25
+max-attributes=15
+max-branches=15
+max-statements=50
+
+[REPORTS]
+# Disable score report
+reports=no
+output-format=colorized
+
+[LOGGING]
+# Allow direct string formatting in logging (ERPNext uses it)
+logging-format-style=old
