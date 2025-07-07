@@ -42,9 +42,9 @@ def execute(filters=None):
     return columns, data
 
 
-def get_sql_list(list):
-    if list:
-        return (','.join('"{0}"'.format(e) for e in list))
+def get_sql_list(raw_list):
+    if raw_list:
+        return (','.join('"{0}"'.format(e) for e in raw_list))
     else:
         return '""'
 

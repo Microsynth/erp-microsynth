@@ -655,7 +655,7 @@ def create_pdf_attachment(sales_invoice):
     """
 
     doctype = "Sales Invoice"
-    format = "Sales Invoice"
+    printformat = "Sales Invoice"
     name = sales_invoice
     doc = None
     no_letterhead = False
@@ -669,7 +669,7 @@ def create_pdf_attachment(sales_invoice):
     doctype_folder = create_folder(doctype, "Home")
     title_folder = create_folder(title, doctype_folder)
 
-    filecontent = frappe.get_print(doctype, name, format, doc=doc, as_pdf = True, no_letterhead=no_letterhead)
+    filecontent = frappe.get_print(doctype, name, printformat, doc=doc, as_pdf = True, no_letterhead=no_letterhead)
 
     save_and_attach(
         content = filecontent,
@@ -884,11 +884,10 @@ def get_shipping_item(items):
 
 
 def create_country_name_to_code_dict():
-
     country_codes = {}
     country_query = frappe.get_all("Country", fields=['name', 'code'])
-    for dict in country_query:
-        country_codes[dict['name']] = dict['code']
+    for code_dict in country_query:
+        country_codes[code_dict['name']] = code_dict['code']
     return country_codes
 
 
@@ -1710,9 +1709,9 @@ def transmit_carlo_erba_invoices(sales_invoices):
         lines.append(header)
 
         # Addresses
-        def get_address_data(type, customer_name, contact, address):
+        def get_address_data(address_type, customer_name, contact, address):
             data = [
-                type,                                                                       # record_type(8)
+                address_type,                                                               # record_type(8)
                 si.web_order_id or order_name,                                              # sales_order_number(8)
                 si.name,                                                                    # invoice_number(8)
                 contact.name,                                                               # customer_number(8)

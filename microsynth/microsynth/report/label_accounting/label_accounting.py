@@ -176,12 +176,12 @@ def get_data(filters):
         if d['company'] is None and d['rate'] is None:
             print(f"Need to identify unclear company assignments: {d=}")
             details = identify_unclear_company_assignments(filters)
-            sum = 0
+            label_sum = 0
 
             for det in details:
                 if det['count'] is None:
                     continue
-                sum += det['count']
+                label_sum += det['count']
                 if det['company'] is None:
                     # no company assignment possible -> ignore according to DSc
                     print(f"No company assignment possible: {det=}")
@@ -192,7 +192,7 @@ def get_data(filters):
                     continue
                 summary[company_item_dest] = {'qty': det['count'], 'sum': det['count'] * rate}
 
-            if sum != d.count:
+            if label_sum != d.count:
                 msg = f"Mismatch in the number of Labels without rate and company (no Sales Order): {d['count']=} but {sum=}", 'label_accounting.get_data'
                 frappe.log_error(msg)
                 print(msg)

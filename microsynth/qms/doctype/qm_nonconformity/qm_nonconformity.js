@@ -60,7 +60,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 var visible = true;
                 load_wizard(visible);
             }
-            
+
         } else {
             // use the classification_wizard HTML field to display an advanced dashboard
             frappe.call({
@@ -76,7 +76,7 @@ frappe.ui.form.on('QM Nonconformity', {
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('date', 'read_only', false);
             cur_frm.set_df_property('company', 'read_only', false);
-            
+
         } else {
             cur_frm.set_df_property('date', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
@@ -88,7 +88,7 @@ frappe.ui.form.on('QM Nonconformity', {
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('hierarchy_1', 'read_only', false);
             cur_frm.set_df_property('hierarchy_2', 'read_only', false);
-            cur_frm.set_df_property('description', 'read_only', false);            
+            cur_frm.set_df_property('description', 'read_only', false);
         } else {
             cur_frm.set_df_property('title', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
@@ -131,7 +131,7 @@ frappe.ui.form.on('QM Nonconformity', {
 
         // Access protection for fields Occurrence Probability and Impact
         if ((['Draft', 'Created', 'Investigation'].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by)
-            || ['Draft', 'Created', 'Investigation', 'Planning'].includes(frm.doc.status) && frappe.user.has_role('QAU')) {            
+            || ['Draft', 'Created', 'Investigation', 'Planning'].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('occurrence_probability', 'read_only', false);
             cur_frm.set_df_property('impact', 'read_only', false);
         } else {
@@ -313,7 +313,7 @@ frappe.ui.form.on('QM Nonconformity', {
                     }
                 );
             } else if (frm.doc.nc_type == "OOS") {
-                frm.dashboard.add_comment( __("An OOS needs to be closed by QAU."), 'yellow', true);         
+                frm.dashboard.add_comment( __("An OOS needs to be closed by QAU."), 'yellow', true);
             // Check, that the required investigation is documented
             // if critical, risk analysis is required
             } else if ((frm.doc.criticality_classification != 'critical' || (frm.doc.occurrence_probability && frm.doc.impact && frm.doc.risk_classification))
@@ -458,7 +458,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                 'args': {
                     'doc': frm.doc.name,
-                    'type': 'NC Effectiveness Check'
+                    'action_type': 'NC Effectiveness Check'
                 },
                 'callback': function(response) {
                     // Check, that all actions are finished
@@ -527,7 +527,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                         frm.dashboard.clear_comment();
                                         frm.dashboard.add_comment( __("Waiting for QAU to be closed."), 'yellow', true);
                                     }
-                                }                                
+                                }
                             }
                         });
                     }
@@ -543,7 +543,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 ]
             };
         };
-        
+
         // filters for hierarchy fields
         frm.fields_dict.hierarchy_1.get_query = function(frm) {
             return {
@@ -626,7 +626,7 @@ function load_wizard(visible) {
 function change_creator() {
     frappe.prompt(
         [
-            {'fieldname': 'new_creator', 
+            {'fieldname': 'new_creator',
              'fieldtype': 'Link',
              'label': __('New Creator'),
              'reqd': 1,
@@ -717,7 +717,7 @@ function set_status(status) {
 
 function sign_and_close(frm) {
     frappe.prompt([
-            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
         ],
         function(values){
             // check password and if correct, sign
@@ -793,7 +793,7 @@ function request_qm_action(type) {
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
                 'due_date': values.due_date,
-                'type': type,
+                'type': action_type,
                 'description': values.description || ''
             },
             "callback": function(response) {
@@ -845,5 +845,3 @@ function create_change(frm) {
     __('Create')
     )
 }
-
-

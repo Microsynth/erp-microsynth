@@ -258,7 +258,7 @@ def create_pdf_attachment(analysis_report):
 
     bench execute microsynth.microsynth.lab_reporting.create_pdf_attachment --kwargs "{'analysis_report': 'AR-2400001'}"
     """
-    doctype = format = "Analysis Report"
+    doctype = printformat = "Analysis Report"
     analysis_report_doc = frappe.get_doc("Analysis Report", analysis_report)
     if len(analysis_report_doc.sample_details) == 1:
         sample = analysis_report_doc.sample_details[0].sample
@@ -276,7 +276,7 @@ def create_pdf_attachment(analysis_report):
     title_folder = create_folder(sample_name, doctype_folder)
     print(f"{title_folder=}")
     # TODO: How to set the file name to sample_name?
-    filecontent = frappe.get_print(doctype, analysis_report, format, doc=None, as_pdf=True, no_letterhead=False)
+    filecontent = frappe.get_print(doctype, analysis_report, printformat, doc=None, as_pdf=True, no_letterhead=False)
 
     save_and_attach(
         content = filecontent,

@@ -1789,9 +1789,9 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
 ### Label API
 
 
-def get_sql_list(list):
-    if list:
-        return (','.join('"{0}"'.format(e) for e in list))
+def get_sql_list(raw_list):
+    if raw_list:
+        return (','.join('"{0}"'.format(e) for e in raw_list))
     else:
         return '""'
 
@@ -1917,8 +1917,8 @@ def get_label_ranges():
         label_ranges = frappe.get_all("Label Range", fields=['item_code', 'prefix', '`range`'])
         for label_range in label_ranges:
             ranges = label_range['range'].split(',')
-            for range in ranges:
-                parts = range.split('-')
+            for r in ranges:
+                parts = r.split('-')
                 start = int(parts[0].strip())
                 end = int(parts[1].strip())
                 ranges_to_return.append({
@@ -1966,7 +1966,7 @@ def partition_into_ranges(sequencing_labels):
     if len(sequencing_labels) < 1:
         return ranges
     current_range_barcode = sequencing_labels[0]['barcode']
-    range = {
+    barcode_range = {
         'registered_to': sequencing_labels[0]['registered_to'],
         'item': sequencing_labels[0]['item'],
         'barcode_start_range': current_range_barcode,
@@ -1975,23 +1975,23 @@ def partition_into_ranges(sequencing_labels):
     for i, label in enumerate(sequencing_labels):
         if i == 0:
             continue  # do not consider the first label a second time
-        if label['registered_to'] != range['registered_to'] or label['item'] != range['item'] or not is_next_barcode(current_range_barcode, label['barcode']):
-            # finish current range
-            range['barcode_end_range'] = current_range_barcode
-            ranges.append(range)
-            # start a new range
-            range = {
+        if label['registered_to'] != barcode_range['registered_to'] or label['item'] != barcode_range['item'] or not is_next_barcode(current_range_barcode, label['barcode']):
+            # finish current barcode_range
+            barcode_range['barcode_end_range'] = current_range_barcode
+            ranges.append(barcode_range)
+            # start a new barcode_range
+            barcode_range = {
                 'registered_to': label['registered_to'],
                 'item': label['item'],
                 'barcode_start_range': label['barcode'],
                 'barcode_end_range': label['barcode']
             }
         current_range_barcode = label['barcode']
-    # finish last range
-    range['barcode_end_range'] = current_range_barcode
-    if not range in ranges:
-        # add last range
-        ranges.append(range)
+    # finish last barcode_range
+    barcode_range['barcode_end_range'] = current_range_barcode
+    if not barcode_range in ranges:
+        # add last barcode_range
+        ranges.append(barcode_range)
     return ranges
 
 
@@ -2040,8 +2040,8 @@ def check_label_range(item, prefix, first_int, second_int):
     start_is_in_range = False
     end_is_in_range = False
     ranges = label_range.range.split(',')
-    for range in ranges:
-        parts = range.split('-')
+    for r in ranges:
+        parts = r.split('-')
         start = int(parts[0].strip())
         end = int(parts[1].strip())
         if start <= first_int <= end:

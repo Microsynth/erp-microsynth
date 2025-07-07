@@ -380,7 +380,7 @@ frappe.ui.form.on('QM Change', {
                                                             set_status('Trial');
                                                         } else {
                                                             set_status('Planning');
-                                                        }                                
+                                                        }
                                                     }
                                                 );
                                             }
@@ -455,7 +455,7 @@ frappe.ui.form.on('QM Change', {
                 'method': 'microsynth.qms.doctype.qm_change.qm_change.has_action',
                 'args': {
                     'doc': frm.doc.name,
-                    'type': 'Change Control Action'
+                    'action_type': 'Change Control Action'
                 },
                 'callback': function(response) {
                     if (response.message) {
@@ -514,7 +514,7 @@ frappe.ui.form.on('QM Change', {
                 'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                 'args': {
                     'doc': frm.doc.name,
-                    'type': 'Change Control Action'
+                    'action_type': 'Change Control Action'
                 },
                 'callback': function(response) {
                     // Check, that all actions are finished
@@ -567,7 +567,7 @@ frappe.ui.form.on('QM Change', {
                         'method': 'microsynth.qms.doctype.qm_change.qm_change.has_non_completed_action',
                         'args': {
                             'doc': frm.doc.name,
-                            'type': 'CC Effectiveness Check'
+                            'action_type': 'CC Effectiveness Check'
                         },
                         'callback': function(response) {
                             // Check, that all actions are finished
@@ -650,7 +650,7 @@ function fill_impact_table(frm) {
 function change_creator() {
     frappe.prompt(
         [
-            {'fieldname': 'new_creator', 
+            {'fieldname': 'new_creator',
              'fieldtype': 'Link',
              'label': __('New Creator'),
              'reqd': 1,
@@ -833,7 +833,7 @@ function request_qm_action(type) {
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
                 'due_date': values.due_date,
-                'type': type,
+                'type': action_type,
                 'description': values.description || ''
             },
             "callback": function(response) {

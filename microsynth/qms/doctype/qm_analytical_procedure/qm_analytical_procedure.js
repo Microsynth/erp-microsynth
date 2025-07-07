@@ -49,7 +49,7 @@ function create_qm_study() {
             'method': 'microsynth.qms.doctype.qm_study.qm_study.create_qm_study',
             'args': {
                 'title': values.title,
-                'type': values.type,
+                'study_type': values.type,
                 'dt': cur_frm.doc.doctype,
                 'dn': cur_frm.doc.name,
                 'comments': values.comments || ''

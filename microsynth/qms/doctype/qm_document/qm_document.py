@@ -496,13 +496,13 @@ def get_valid_appendices(qm_document):
     return docs_linking_to_this
 
 
-def is_date_valid(date_str, format):
+def is_date_valid(date_str, format_str):
     """
     Checks if the given date matches the given format string.
     """
     try:
         if date_str:
-            date_object = datetime.strptime(date_str, format).date()
+            date_object = datetime.strptime(date_str, format_str).date()
             return date(2000, 1, 1) <= date_object <= date(2099, 12, 31)
     except Exception as err:
         return False
@@ -536,9 +536,9 @@ def validate_values(doc_id, chapter, title, version, status, company, created_on
     if company and company not in allowed_companies:
         print(f"{doc_id};{title};Company = '{company}', but only {allowed_companies} are supported. Going to continue.")
         return None, None
-    format = "%d.%m.%Y"
+    format_str = "%d.%m.%Y"
     for date in [created_on, reviewed_on, released_on, last_revision_on, valid_from]:
-        if not is_date_valid(date, format):
+        if not is_date_valid(date, format_str):
             print(f"{doc_id};{title};The date '{date}' has an incorrect format unequal dd.mm.yyyy or is not in the 21st century. Going to continue.")
             return None, None
     for user in [created_by, reviewed_by, released_by, last_revision_by]:

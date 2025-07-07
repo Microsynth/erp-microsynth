@@ -14,12 +14,12 @@ class QMChange(Document):
     def on_submit(self):
         self.status = "Created"
         self.save()
-    
+
     def set_in_approval(self, in_approval):
         self.in_approval = in_approval
         self.save()
 
-    def get_classification_wizard(self, visible):            
+    def get_classification_wizard(self, visible):
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
             {
                 'doc': self,
@@ -29,35 +29,35 @@ class QMChange(Document):
 
     def get_advanced_dashboard(self):
         assessments = frappe.db.sql(f"""
-            SELECT 
+            SELECT
                 `tabQM Impact Assessment`.`name`,
                 `tabQM Impact Assessment`.`title`,
                 `tabQM Impact Assessment`.`status`
             FROM `tabQM Impact Assessment`
-            WHERE 
+            WHERE
                 `tabQM Impact Assessment`.`document_type` = "QM Change"
                 AND `tabQM Impact Assessment`.`document_name` = "{self.name}"
             ;""", as_dict=True)
 
         actions = frappe.db.sql(f"""
-            SELECT 
+            SELECT
                 `tabQM Action`.`name`,
                 `tabQM Action`.`title`,
                 `tabQM Action`.`status`
             FROM `tabQM Action`
-            WHERE 
+            WHERE
                 `tabQM Action`.`document_type` = "QM Change"
                 AND `tabQM Action`.`document_name` = "{self.name}"
                 AND `tabQM Action`.`type` = "Change Control Action"
             ;""", as_dict=True)
 
         effectiveness_checks = frappe.db.sql(f"""
-            SELECT 
+            SELECT
                 `tabQM Action`.`name`,
                 `tabQM Action`.`title`,
                 `tabQM Action`.`status`
             FROM `tabQM Action`
-            WHERE 
+            WHERE
                 `tabQM Action`.`document_type` = "QM Change"
                 AND `tabQM Action`.`document_name` = "{self.name}"
                 AND `tabQM Action`.`type` = "CC Effectiveness Check"
@@ -71,7 +71,7 @@ class QMChange(Document):
                 'effectiveness_checks': effectiveness_checks
             })
         return html
-    
+
     def fill_impact_table(self):
         impacts = frappe.db.get_all("QM Change Impact", fields=['name'])
         if len(self.impact) < 1:
@@ -82,13 +82,13 @@ class QMChange(Document):
                     })
             self.save()
             frappe.db.commit()
-    
+
     def are_all_impacts_answered(self):
         for potential_impact in self.impact:
             if not potential_impact.impact_answer:
                 return False
         return True
-    
+
     def has_impact(self):
         for potential_impact in self.impact:
             if potential_impact.impact_answer == 'yes':
@@ -159,7 +159,7 @@ def update_status(nc, status):
         change.status = status
         change.save()
         frappe.db.commit()
-    else: 
+    else:
         frappe.throw(f"Update QM Change: Status transition is not allowed {change.status} --> {status}")
 
 
@@ -183,7 +183,7 @@ def cancel(change):
 @frappe.whitelist()
 def has_assessments(qm_change):
     assessments = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Impact Assessment`.`name`,
             `tabQM Impact Assessment`.`title`,
             `tabQM Impact Assessment`.`status`
@@ -199,7 +199,7 @@ def has_assessments(qm_change):
 @frappe.whitelist()
 def has_non_completed_assessments(qm_change):
     assessments = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Impact Assessment`.`name`,
             `tabQM Impact Assessment`.`title`,
             `tabQM Impact Assessment`.`status`
@@ -213,10 +213,10 @@ def has_non_completed_assessments(qm_change):
 
 
 @frappe.whitelist()
-def has_action(doc, type):
+def has_action(doc, action_type):
     """
     Returns whether there is a QM Action with status unequals 'Cancelled' and
-    the given type linked against the given QM Change.
+    the given action_type linked against the given QM Change.
     """
     actions = frappe.db.sql(f"""
         SELECT `name`
@@ -224,15 +224,15 @@ def has_action(doc, type):
         WHERE `status` NOT IN ('Cancelled')
           AND `docstatus` < 2
           AND `document_name` = '{doc}'
-          AND `type` IN ('{type}')
+          AND `type` IN ('{action_type}')
         ;""", as_dict=True)
     return len(actions) > 0
 
 
 @frappe.whitelist()
-def has_non_completed_action(doc, type):
+def has_non_completed_action(doc, action_type):
     """
-    Returns whether there is a QM Action with the given type,
+    Returns whether there is a QM Action with the given action_type,
     with status unequals 'Completed' or 'Cancelled'
     and linked against the given QM Change.
     """
@@ -242,7 +242,7 @@ def has_non_completed_action(doc, type):
         WHERE `status` NOT IN ('Completed', 'Cancelled')
           AND `docstatus` < 2
           AND `document_name` = '{doc}'
-          AND `type` IN ('{type}')
+          AND `type` IN ('{action_type}')
         ;""", as_dict=True)
     return len(non_completed_actions) > 0
 
@@ -255,7 +255,7 @@ def get_cc_attachments(qm_change):
 
 def get_cc_actions(qm_change):
     actions = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
@@ -266,7 +266,7 @@ def get_cc_actions(qm_change):
             `tabQM Action`.`status`,
             `tabQM Action`.`completion_date`
         FROM `tabQM Action`
-        WHERE 
+        WHERE
             `tabQM Action`.`document_type` = "QM Change"
             AND `tabQM Action`.`document_name` = "{qm_change}"
             AND `tabQM Action`.`type` = "Change Control Action"
@@ -277,7 +277,7 @@ def get_cc_actions(qm_change):
 
 def get_cc_effectiveness_checks(qm_change):
     effectiveness_checks = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
@@ -288,7 +288,7 @@ def get_cc_effectiveness_checks(qm_change):
             `tabQM Action`.`status`,
             `tabQM Action`.`completion_date`
         FROM `tabQM Action`
-        WHERE 
+        WHERE
             `tabQM Action`.`document_type` = "QM Change"
             AND `tabQM Action`.`document_name` = "{qm_change}"
             AND `tabQM Action`.`type` = "CC Effectiveness Check"
@@ -302,7 +302,7 @@ def get_cc_impact_assessments(qm_change):
     bench execute microsynth.qms.doctype.qm_change.qm_change.get_cc_impact_assessments --kwargs "{'qm_change': 'QMC-250003'}"
     """
     impact_assessments = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Impact Assessment`.`name`,
             `tabQM Impact Assessment`.`title`,
             `tabQM Impact Assessment`.`status`,
@@ -313,7 +313,7 @@ def get_cc_impact_assessments(qm_change):
             `tabQM Impact Assessment`.`created_by`,
             `tabQM Impact Assessment`.`completion_date`
         FROM `tabQM Impact Assessment`
-        WHERE 
+        WHERE
             `tabQM Impact Assessment`.`document_type` = "QM Change"
             AND `tabQM Impact Assessment`.`document_name` = "{qm_change}"
             AND `tabQM Impact Assessment`.`status` != "Cancelled"
@@ -325,7 +325,7 @@ def get_cc_impact_assessments(qm_change):
 
 def get_qm_decisions(qm_change):
     decisions = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Decision`.`name`,
             `tabQM Decision`.`approver`,
             `tabQM Decision`.`decision`,

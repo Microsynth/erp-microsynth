@@ -13,11 +13,11 @@ class QMStudy(Document):
 
 
 @frappe.whitelist()
-def create_qm_study(title, type, dt, dn, comments):
+def create_qm_study(title, study_type, dt, dn, comments):
     study = frappe.get_doc({
                 'doctype': 'QM Study',
                 'title': title,
-                'type': type,
+                'type': study_type,
                 'document_type': dt,
                 'document_name': dn,
                 'comments': comments,

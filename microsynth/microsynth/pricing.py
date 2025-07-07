@@ -258,7 +258,7 @@ def find_credits_without_jv():
     invoices = frappe.get_all('Sales Invoice', filters=[['total_customer_credit', '!=', 0], ['docstatus', '=', 1]], fields=['name'])
     counter = 0
     names = []
-    sum = {'EUR': 0, 'USD': 0, 'CHF': 0}
+    sums = {'EUR': 0, 'USD': 0, 'CHF': 0}
     for invoice in invoices:
         #journal_entries_cancelled = frappe.get_all('Journal Entry', filters=[['user_remark', '=', f"Credit from {invoice['name']}"], ['docstatus', '=', 2]], fields=['name'])
         journal_entries_submitted = frappe.get_all('Journal Entry', filters=[['user_remark', '=', f"Credit from {invoice['name']}"], ['docstatus', '=', 1]], fields=['name'])
@@ -268,13 +268,13 @@ def find_credits_without_jv():
             invoice_obj = frappe.get_doc('Sales Invoice', invoice['name'])
             print(f'{invoice_obj.name}{"  " if len(invoice_obj.name) < 17 else ""}\t{invoice_obj.posting_date}\t{invoice_obj.total}\t{invoice_obj.currency}\t\t{invoice_obj.docstatus}')
             counter += 1
-            sum[invoice_obj.currency] += abs(invoice_obj.total)
+            sums[invoice_obj.currency] += abs(invoice_obj.total)
             names.append(invoice_obj.name)
         else:
             # TODO: Check whether the Journal Entries sum up to the correct amount?
             continue
 
-    print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry. {sum=}')
+    print(f'Found {counter} submitted Sales Invoices with total_customer_credit != 0 and no submitted Journal Entry. {sums=}')
 
 
 def find_item_price_duplicates(outfile):
@@ -405,8 +405,8 @@ def find_item_price_duplicates(outfile):
     price_list_duplicates = []
     for price_list, duplicates in grouped_by_price_lists.items():
         price_list_duplicates.append((price_list, len(duplicates)))
-    for tuple in sorted(price_list_duplicates, key=lambda x: x[1], reverse=True):
-        print(f"Price List '{tuple[0]}' has {tuple[1]} Item Prices with the same Item Code and the same Qty more than once.")
+    for my_tuple in sorted(price_list_duplicates, key=lambda x: x[1], reverse=True):
+        print(f"Price List '{my_tuple[0]}' has {my_tuple[1]} Item Prices with the same Item Code and the same Qty more than once.")
 
     print(f"\nThere are {len(active_duplicates)} active duplicates (Item enabled and Price List enabled) on {len(grouped_by_price_lists)} different Price Lists.")
 

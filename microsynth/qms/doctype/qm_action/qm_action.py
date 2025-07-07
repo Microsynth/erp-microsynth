@@ -17,18 +17,18 @@ class QMAction(Document):
 
 
 @frappe.whitelist()
-def create_action(title, responsible_person, dt, dn, qm_process, due_date, type, description, notify=False):
+def create_action(title, responsible_person, dt, dn, qm_process, due_date, action_type, description, notify=False):
     action = frappe.get_doc(
         {
             'doctype': 'QM Action',
             'title': title,
-            'responsible_person': responsible_person, 
+            'responsible_person': responsible_person,
             'document_type': dt,
             'document_name': dn,
             'qm_process': qm_process,
             'initiation_date': today(),
             'due_date': due_date,
-            'type': type,
+            'type': action_type,
             'description': description,
             'status': 'Created'
         })
@@ -83,7 +83,7 @@ def update_status(action, status):
         action.status = status
         action.save()
         frappe.db.commit()
-    else: 
+    else:
         frappe.throw(f"Update QM Action: Status transition is not allowed {action.status} --> {status}")
 
 

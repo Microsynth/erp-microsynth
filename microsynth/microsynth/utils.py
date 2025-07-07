@@ -355,18 +355,18 @@ def login(usr, pwd):
     return frappe.local.session
 
 
-def replace_none(input):
+def replace_none(inpt):
     """
     Return an empty string if the input is None, else return the input.
     """
-    return input if (input != None) else ""
+    return inpt if (inpt != None) else ""
 
 
-def to_bool(input):
+def to_bool(inpt):
     """
     Return the boolean True if the input evaluates to true else return the boolean False.
     """
-    if input:
+    if inpt:
         return True
     else:
         return False
@@ -1035,24 +1035,23 @@ def get_child_territories(territory):
     Returns all child territories for the given territory recursively. Includes the given parent directory and all nodes as well.
     bench execute microsynth.microsynth.utils.get_child_territories --kwargs "{'territory': 'Switzerland'}"
     """
-
     entries = frappe.db.sql("""select name, lft, rgt, {parent} as parent
             from `tab{tree}` order by lft"""
         .format(tree="Territory", parent="parent_territory"), as_dict=1)
 
-    range = {}
+    territory_range = {}
     for d in entries:
         if d.name == territory:
-            range['lft'] = d['lft']
-            range['rgt'] = d['rgt']
+            territory_range['lft'] = d['lft']
+            territory_range['rgt'] = d['rgt']
 
-    if 'lft' not in range or 'rgt' not in range:
+    if 'lft' not in territory_range or 'rgt' not in territory_range:
         frappe.log_error("The provided territory does not exist:\n{0}".format(territory), "utils.get_all_child_territories")
         return []
 
     territories = []
     for d in entries:
-        if range['lft'] <= d['lft'] and d['rgt'] <= range['rgt']:
+        if territory_range['lft'] <= d['lft'] and d['rgt'] <= territory_range['rgt']:
             territories.append(d.name)
 
     return territories
@@ -3147,8 +3146,8 @@ def add_workdays(date, workdays):
     return current_date
 
 
-def get_sql_list(list):
-    if list:
-        return (','.join('"{0}"'.format(e) for e in list))
+def get_sql_list(raw_list):
+    if raw_list:
+        return (','.join('"{0}"'.format(e) for e in raw_list))
     else:
         return '""'

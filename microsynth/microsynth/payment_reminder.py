@@ -114,13 +114,13 @@ def create_pdf_attachment(prm):
     """
     Creates the PDF file for a given Payment Reminder name and attaches the file to the record in the ERP.
     """
-    doctype = format = "Payment Reminder"
+    doctype = printformat = "Payment Reminder"
     name = prm
     frappe.local.lang = frappe.db.get_value("Payment Reminder", prm, "language")
     title = frappe.db.get_value(doctype, name, "title")
     doctype_folder = create_folder(doctype, "Home")
     title_folder = create_folder(title, doctype_folder)
-    filecontent = frappe.get_print(doctype, name, format, doc=None, as_pdf=True, no_letterhead=False)
+    filecontent = frappe.get_print(doctype, name, printformat, doc=None, as_pdf=True, no_letterhead=False)
 
     save_and_attach(
         content = filecontent,

@@ -27,8 +27,8 @@ def has_credits(customer, credit_type=None):
     companies = frappe.get_all("Company", fields=['name'])
     # loop through the companies and call get_available_credits
     for company in companies:
-        credits = get_available_credits(customer, company['name'], credit_type)
-        if len(credits) > 0:
+        available_credits = get_available_credits(customer, company['name'], credit_type)
+        if len(available_credits) > 0:
             return True
     return False
 
@@ -40,13 +40,13 @@ def get_total_credit(customer, company, credit_type):
     Run
     bench execute microsynth.microsynth.credits.get_total_credit --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG', 'credit_type': 'Project' }"
     """
-    credits = get_available_credits(customer, company, credit_type)
+    available_credits = get_available_credits(customer, company, credit_type)
 
-    if len(credits) == 0:
+    if len(available_credits) == 0:
         return None
 
     total = 0
-    for credit in credits:
+    for credit in available_credits:
         if not 'outstanding' in credit:
             continue
         total = total + credit['outstanding']
@@ -428,9 +428,9 @@ def get_total_credit_difference(company, currency, account, to_date):
     if isinstance(to_date, str):
         to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
     credit_filters=frappe._dict({'company': company, 'to_date': to_date, 'currency': currency})
-    credits = get_customer_credits(credit_filters)
+    customer_credits = get_customer_credits(credit_filters)
     total_outstanding = 0
-    for credit in credits:
+    for credit in customer_credits:
         total_outstanding += credit['outstanding']
     gl_closing = get_closing(company, account, to_date)
     diff = gl_closing + total_outstanding
