@@ -1,40 +1,74 @@
 [MASTER]
-# List of plugins to load, including frappe-specific globals if applicable
+
+# Load additional pylint plugin to check that function docstrings properly
+# document all parameters.
 load-plugins=pylint.extensions.docparams
 
-# Paths to ignore during linting
+# Ignore these paths during linting:
+# - migrations: auto-generated DB migration files
+# - test_sites: test/demo ERPNext sites
+# - node_modules: frontend dependencies (not Python code)
+# - public: static assets (e.g., JS, CSS)
+# - .pytype: output from Pytype (type checker)
 ignore=migrations,test_sites,node_modules,public,.pytype
 
-# ERPNext/Custom app has many dynamically loaded attributes
+# Whitelist the `frappe` package as an extension module.
+# This helps avoid false positives due to dynamic attribute access.
 extension-pkg-whitelist=frappe
 
-[MESSAGES CONTROL]
-enable=
-    undefined-variable,
-    unused-import,
-    unused-variable,
-    unbalanced-tuple-unpacking,
-    dangerous-default-value,
-    no-value-for-parameter,
-    attribute-defined-outside-init,
-    duplicate-key,
-    not-callable,
-    exec-used,
-    eval-used,
-    redefined-builtin,
-    # broad-except,
+init-hook='import sys; sys.path.append("~/frappe-bench/apps/")'
 
+
+[MESSAGES CONTROL]
+
+# Enable only a specific set of pylint checks (messages).
+# All others will be disabled by the "disable=all" setting below.
+enable=
+    undefined-variable,             # Use of variables that haven't been defined
+    unused-import,                  # Imported but unused modules
+    unused-variable,                # Variables declared but not used
+    unbalanced-tuple-unpacking,     # Unpacking issues, like mismatched element counts
+    dangerous-default-value,        # Mutable default args like `x=[]`
+    no-value-for-parameter,         # Function call missing a required argument
+    attribute-defined-outside-init, # Instance variables defined outside __init__
+    duplicate-key,                  # Duplicate dictionary keys
+    not-callable,                   # Attempting to call something not callable
+    exec-used,                      # Use of `exec()` (discouraged)
+    eval-used,                      # Use of `eval()` (discouraged and insecure)
+    redefined-builtin,              # Overwriting built-in names (e.g., `list`, `dict`)
+    return-in-init,                 # Returning a value from `__init__` method (should be `None`)
+    unreachable,                    # Code that will never be executed (e.g., after a return statement)
+    cell-var-from-loop,             # Using a variable from an outer scope in a nested function
+    raise-missing-from,             # `raise` without specifying the exception context (missing traceback, harder to debug)
+    # bad-indentation,              # Incorrect indentation (e.g., mixing tabs and spaces)
+    # broad-except,                 # Catching all exceptions (too broad)
+
+# Disable all messages not explicitly enabled above.
 disable=all
 
+
 [TYPECHECK]
+
+# Ignore errors related to these modules during type checking.
+# `frappe` uses dynamic attribute loading.
 ignored-modules=frappe
+
+# These classes use dynamic attribute access (__getattr__) or proxies,
+# so type errors on them can be ignored.
 ignored-classes=FrappeClient,LocalProxy
 
+
 [REPORTS]
-# Disable score report
+
+# Do not display a detailed report.
 reports=no
+
+# Colorize output to improve terminal readability.
 output-format=colorized
 
+
 [LOGGING]
-# Allow direct string formatting in logging (ERPNext uses it)
+
+# Allow old-style logging format (e.g., "Value: %s", val)
+# This is used consistently in ERPNext for performance and legacy reasons.
 logging-format-style=old
