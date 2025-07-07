@@ -24,23 +24,16 @@ def get_item_prices(price_list):
 
 
 def get_data():
-    i = 0
     customer_prices = get_item_prices("Pricelist 36966105")
     reference_prices = get_item_prices("Sales Prices EUR")
 
     mapped_cust_prices = {}
     for p in customer_prices:
         mapped_cust_prices[p.item_code, p.min_qty] = p
-        # i += 1
-        # if i > 2:
-        #     break
 
-    i = 0
     mapped_ref_prices = {}
     for p in reference_prices:
         mapped_ref_prices[p.item_code, p.min_qty] = p
-        # i +=1
-        # if i > 10: break
 
     print("-------------------")
 

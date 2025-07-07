@@ -438,38 +438,38 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             total_counter += 1
             # parse values
             supplier_index = line[0].strip()  # remove leading and trailing whitespaces
-            auftraggeber = line[1].strip()
-            lk = line[2].strip()
+            #auftraggeber = line[1].strip()
+            #lk = line[2].strip()
             internal_code = line[3].strip()  # if given, Item should have "Maintain Stock"
             supplier_item_id = line[4].strip()
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
-            unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
+            #unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
-            supplier_quote = line[8].strip()
-            list_price = line[9].strip()
-            purchase_price = line[10].strip()
-            customer_discount = line[11].strip()
-            content_quantity = line[12].strip()
-            item_group = line[13].strip()
-            group = line[14].strip()
+            #supplier_quote = line[8].strip()
+            #list_price = line[9].strip()
+            #purchase_price = line[10].strip()
+            #customer_discount = line[11].strip()
+            #content_quantity = line[12].strip()
+            #item_group = line[13].strip()
+            #group = line[14].strip()
             account = line[15].strip()
-            storage_location = line[16].strip()  # warehouse
-            annual_consumption_budget = line[17].strip()
-            order_quantity_6mt = line[18].strip()
-            threshold = line[19].strip()
+            #storage_location = line[16].strip()  # warehouse
+            #annual_consumption_budget = line[17].strip()
+            #order_quantity_6mt = line[18].strip()
+            #threshold = line[19].strip()
             shelf_life_in_years  = line[20].strip()  # Haltbarkeit
-            process_critical = line[21].strip()
-            quality_control = line[22].strip()
-            quality_list = line[23].strip()
-            subgroup = line[24].strip()
-            time_limit = line[25].strip()
-            quantity_supplier = line[26].strip()
+            #process_critical = line[21].strip()
+            #quality_control = line[22].strip()
+            #quality_list = line[23].strip()
+            #subgroup = line[24].strip()
+            #time_limit = line[25].strip()
+            #quantity_supplier = line[26].strip()
             material_code = line[27]  # Kurzname
             item_id = line[28].strip()  # Datensatznummer
             try:
                 ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0)])
             except ValueError as err:
-                print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]}. Going to continue with the next supplier item.")
+                print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
                 continue
             if ordered_2021_2025 == 0 and not line[33].strip():
                 # do not import Items that were not ordered from 2021 to 2024
@@ -508,7 +508,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                     shelf_life_in_years = float(shelf_life_in_years)
                     shelf_life_in_days = int(shelf_life_in_years * 365)
                 except Exception as err:
-                    print(f"ERROR: Unable to convert {shelf_life_in_years=} into days. Going to continue with the next supplier item.")
+                    print(f"ERROR: Unable to convert {shelf_life_in_years=} into days ({err}). Going to continue with the next supplier item.")
 
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
@@ -594,15 +594,15 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             web_username = line[15].strip()
             web_pwd = line[16].strip()
             supplier_tax_id = line[17].strip()
-            skonto = line[18].strip()  # will be imported manually
+            #skonto = line[18].strip()  # will be imported manually
             payment_days = str(line[19].strip())
             currency = line[20].strip()
-            reliability = line[21].strip()  # import later
+            #reliability = line[21].strip()  # import later
             phone_note = line[22].strip()
             notes = line[23].strip()
             bic = line[24].strip()
             iban = line[25].strip()
-            bank_name = line[26].strip()  # do not import
+            #bank_name = line[26].strip()  # do not import
             contact_person_1 = line[27].strip()
             email_1 = line[28].strip()
             notes_1 = line[29].strip()
@@ -960,7 +960,7 @@ def get_batch_items(purchase_receipt):
     purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
     batch_items = []
 
-    for i, item in enumerate(purchase_receipt_doc.items):
+    for item in purchase_receipt_doc.items:
         item_doc = frappe.get_doc("Item", item.item_code)
         if item_doc.has_batch_no:
             batch_items.append({
@@ -1151,8 +1151,8 @@ def has_available_advances(purchase_invoice_id):
 
         return len(advances) > 0
 
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "purchasing.has_available_advances")
+    except Exception as err:
+        frappe.log_error(f"{err}\n\n{frappe.get_traceback()}", "purchasing.has_available_advances")
         return False
 
 

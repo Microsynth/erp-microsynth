@@ -30,7 +30,7 @@ def find_op_deviation_date(start_date, account, company):
     print(f"Date\tOP\tGL")
     while start_date.date() <= datetime.datetime.today().date():
         filters.report_date = start_date.strftime("%Y-%m-%d")
-        columns, op_data = execute(filters)
+        _, op_data = execute(filters)
         gl_balance = get_foreign_currency_balance(account, filters.report_date)
 
         op_foreign_currency = op_data[-1]['doc_outstanding']

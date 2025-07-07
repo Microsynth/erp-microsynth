@@ -88,7 +88,7 @@ def get_data(filters=None):
             so_doc = frappe.get_doc("Sales Order", so['sales_order'])
             additional_item_str = ""
             so['additional_item_codes'] = []
-            for i, item in enumerate(so_doc.items):
+            for item in so_doc.items:
                 if not frappe.db.exists("Label Range", item.item_code):
                     additional_item_str += f"{item.qty}x {item.item_code}: {item.item_name}<br>"  # TODO: is there a use-case for non-integer qtys?
                     so['additional_item_codes'].append(item.item_code)
@@ -180,7 +180,7 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
     register_labels = frappe.get_value("Sales Order", sales_order, "register_labels")
     for i in range(int(from_barcode), (int(to_barcode) + 1)):
         # create label
-        new_label = frappe.get_doc({
+        frappe.get_doc({
             'doctype': 'Sequencing Label',
             'item': item,
             'label_id': f"{prefix}{i:0{number_length}d}" if prefix else f"{i:0{number_length}d}",

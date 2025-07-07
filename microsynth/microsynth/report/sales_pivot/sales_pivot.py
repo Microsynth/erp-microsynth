@@ -23,9 +23,6 @@ def get_columns(filters):
 
 def get_data(filters):
     currency = frappe.get_cached_value("Company", filters.company, "default_currency")
-
-    revenue_year_1_total = 0
-    revenue_year_2_total = 0
     output = []
 
     for month in range(1, 13):

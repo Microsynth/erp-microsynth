@@ -504,7 +504,7 @@ def is_date_valid(date_str, format_str):
         if date_str:
             date_object = datetime.strptime(date_str, format_str).date()
             return date(2000, 1, 1) <= date_object <= date(2099, 12, 31)
-    except Exception as err:
+    except Exception:
         return False
     else:
         return True

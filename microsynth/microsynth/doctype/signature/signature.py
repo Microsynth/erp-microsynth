@@ -15,29 +15,29 @@ class Signature(Document):
         # compare new PWs
         if new_pw != retype_new_pw:
             return {'error': _("The new passwords differ. Please try again.")}
-        
+
         # surpass old password check for system managers and QMS
         if not user_has_role(frappe.session.user, "System Manager") and not user_has_role(frappe.session.user, "QAU"):
             # verify old password
             db_old_pw = get_decrypted_password("Signature", self.name, "approval_password", False)
             if db_old_pw and db_old_pw != old_pw:
                 return {'error': _("The old passwords is not correct. Please try again.")}
-        
+
         # check that approval password does not match login password
         password_match_with_login_pw = True
         try:
             check_password(self.user, new_pw)
-        except Exception as err:
+        except Exception:
             # password failed - this is good, the passwords are different
             password_match_with_login_pw = False
         if password_match_with_login_pw:
             return {'error': _("Your approval password must be different from the login password")}
-        
+
         # check strength
         strength = test_password_strength(new_password=new_pw, old_password=old_pw)
         if not strength['feedback']['password_policy_validation_passed']:
             return {'error': _("The new password does not match the security policy. Please try again.") + " " + (strength['feedback']['warning'] or "")}
-        
+
         # set new password
         self.approval_password = new_pw
         self.save(ignore_permissions=True)
@@ -65,7 +65,7 @@ def user_has_role(user, role):
           AND `role` = "{role}"
           AND `parenttype` = "User";
         """.format(user=user, role=role), as_dict=True)
-    
+
     if len(role_matches) > 0:
         return True
     else:
@@ -79,4 +79,3 @@ def is_password_approval_password(user, password):
         return True
     else:
         return False
-    

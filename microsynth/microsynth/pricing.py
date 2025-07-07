@@ -1140,19 +1140,3 @@ def change_customer_prices(items):
                 print(f"Changed rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
 
     print(f"\nSuccessfully changed {counter} Item Price rates.")
-
-
-def project_to_reference():
-    """
-    """
-    # create new reference price
-    new_item_price = frappe.get_doc({
-        'doctype': "Item Price",
-        'item_code': '',
-        'min_qty': '',
-        'price_list': '',
-        'buying': 0,
-        'selling': 1,
-        'currency': '',
-        'price_list_rate': ''
-    })

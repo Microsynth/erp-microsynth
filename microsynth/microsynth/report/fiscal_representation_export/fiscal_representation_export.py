@@ -111,8 +111,8 @@ def package_export(filters):
     if not os.path.exists(path):
         os.mkdir(path)
 
-    pdf_at = []             # collect pdf file names AT
-    pdf_ig = []             # collect pdf file names IG
+    # pdf_at = []             # collect pdf file names AT
+    # pdf_ig = []             # collect pdf file names IG
     sum_at = {}             # summary data AT
     sum_ig = {}             # summary data IG
     data_at = []
@@ -152,7 +152,7 @@ def package_export(filters):
         if not os.path.exists(subdirectory):
             os.mkdir(subdirectory)
 
-        pdf_file = create_pdf(path=subdirectory,
+        create_pdf(path=subdirectory,
             dt="Sales Invoice",
             dn=d.get("sales_invoice"),
             print_format=settings.pdf_print_format

@@ -23,7 +23,7 @@ class AbacusExportFileAddition(Document):
         account_list_str = get_sql_list(self.get_account_list())
         # get all documents
         document_query = """
-            SELECT 
+            SELECT
                 `tabGL Entry`.`voucher_type` AS `dt`,
                 `tabGL Entry`.`voucher_no` AS `dn`
             FROM `tabGL Entry`
@@ -37,9 +37,9 @@ class AbacusExportFileAddition(Document):
                 AND `tabGL Entry`.`voucher_type` IN ("Payment Entry", "Journal Entry")
                 AND IFNULL(`tabPayment Entry`.`exported_to_abacus`, `tabJournal Entry`.`exported_to_abacus`) = 0
             ;""".format(
-                start_date=self.from_date, end_date=self.to_date, 
+                start_date=self.from_date, end_date=self.to_date,
                 company=self.company, accounts=account_list_str)
-        
+
         docs = frappe.db.sql(document_query, as_dict=True)
 
         # clear all children
@@ -47,7 +47,7 @@ class AbacusExportFileAddition(Document):
 
         # add to child table
         for doc in docs:
-            row = self.append('references', {'dt': doc['dt'], 'dn': doc['dn']})
+            self.append('references', {'dt': doc['dt'], 'dn': doc['dn']})
         self.save()
 
         # mark as exported
@@ -78,7 +78,7 @@ class AbacusExportFileAddition(Document):
             # create content
             transaction = {
                 'account': get_account_number(pe_record.paid_to),  # bank
-                'amount': pe_record.paid_amount, 
+                'amount': pe_record.paid_amount,
                 'against_singles': [{
                     'account': get_account_number(pe_record.paid_from),    # debtor
                     'amount': pe_record.total_allocated_amount,
@@ -86,16 +86,16 @@ class AbacusExportFileAddition(Document):
                     'key_currency': base_currency,
                     'key_amount': pe_record.base_total_allocated_amount
                 }],
-                'debit_credit': debit_credit, 
-                'date': pe_record.posting_date, 
-                'currency': pe_record.paid_from_account_currency, 
+                'debit_credit': debit_credit,
+                'date': pe_record.posting_date,
+                'currency': pe_record.paid_from_account_currency,
                 'key_currency': base_currency,
                 'key_amount': pe_record.base_paid_amount,
                 'exchange_rate': pe_record.source_exchange_rate,
-                'tax_account': None, 
-                'tax_amount': None, 
-                'tax_rate': None, 
-                'tax_code': None, 
+                'tax_account': None,
+                'tax_amount': None,
+                'tax_rate': None,
+                'tax_code': None,
                 'text1': html.escape(pe_record.name)
             }
             # append deductions
@@ -121,9 +121,9 @@ class AbacusExportFileAddition(Document):
                 transaction['against_singles'][-1]['key_amount'] += sums['base']
             if sums['other'] != 0:           # correct difference on last entry
                 transaction['against_singles'][-1]['amount'] += sums['other']
-                
+
             # insert transaction
-            transactions.append(transaction)  
+            transactions.append(transaction)
 
         # add journal entry transactions
         jvs = self.get_docs("Journal Entry")
@@ -148,16 +148,16 @@ class AbacusExportFileAddition(Document):
                 key_amount = jv_record.accounts[0].credit
             # create content
             transaction = {
-                'account': get_account_number(jv_record.accounts[0].account), 
-                'amount': amount, 
+                'account': get_account_number(jv_record.accounts[0].account),
+                'amount': amount,
                 'against_singles': [],
-                'debit_credit': debit_credit, 
-                'date': jv_record.posting_date, 
-                'currency': jv_record.accounts[0].account_currency, 
-                'tax_account': None, 
-                'tax_amount': None, 
-                'tax_rate': None, 
-                'tax_code': None, 
+                'debit_credit': debit_credit,
+                'date': jv_record.posting_date,
+                'currency': jv_record.accounts[0].account_currency,
+                'tax_account': None,
+                'tax_amount': None,
+                'tax_rate': None,
+                'tax_code': None,
                 'text1': html.escape(jv_record.name),
                 'key_currency': key_currency,
                 'key_amount': key_amount
@@ -185,9 +185,9 @@ class AbacusExportFileAddition(Document):
 
                 transaction['against_singles'].append(transaction_single)
             # insert transaction
-            transactions.append(transaction)  
+            transactions.append(transaction)
 
-        return transactions      
+        return transactions
 
     # prepare transfer file
     def render_transfer_file(self, restrict_currencies=None):
@@ -254,5 +254,5 @@ def create_from_existing(dn, from_date, to_date):
             'account': old_account.account
         })
     new_doc.save()
-    
+
     return new_doc.name

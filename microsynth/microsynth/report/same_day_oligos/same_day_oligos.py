@@ -34,7 +34,6 @@ def get_holidays():
         holidays_balgach.append(datetime(y, 11, 1).strftime('%d.%m.%Y'))  # unclear why it is missing
     for parsed_holiday in parsed_holidays:
         holidays_balgach.append(parsed_holiday['date'])
-    #print(holidays_balgach)
     return holidays_balgach
 
 
@@ -99,12 +98,10 @@ def get_data(filters=None):
         """
     query_results = frappe.db.sql(sql_query, as_dict=True)
     same_day_orders = []
-    #print(f"There are {len(query_results)} SQL query results.")
     holidays = get_holidays()
     should_be_same_day = is_same_day = 0
 
-    for i, result in enumerate(query_results):
-        #print(f"{int(100 * i / len(query_results))} % Checking Sales Order {result['name']} ...")
+    for result in query_results:
         sales_order = frappe.get_doc("Sales Order", result['name'])
         # the same day criteria only applies to Sales Orders with less than 20 Oligos
         if len(sales_order.oligos) >= 20:
@@ -159,7 +156,6 @@ def get_data(filters=None):
             'customer_name': f"{is_same_day}/{should_be_same_day} fulfilled ({((is_same_day/should_be_same_day)*100):.2f} %)"
         }
         same_day_orders.append(summary_line)
-    #print(f"{len(same_day_orders)=}")
     return same_day_orders
 
 

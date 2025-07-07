@@ -10,7 +10,7 @@ import frappe
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe.utils import get_url_to_form
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
 

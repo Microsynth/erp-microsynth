@@ -49,7 +49,7 @@ def import_customers(filename):
         # replace NaN with None
         reader = reader.replace({np.nan: None})
         # go through rows
-        for index, row in reader.iterrows():
+        for _, row in reader.iterrows():
             count += 1
             print("...{0}%...".format(int(100 * count / file_length)))
             #print("{0}".format(row))
@@ -1129,7 +1129,7 @@ def import_customer_price_lists(filename):
         # replace NaN with None
         reader = reader.replace({np.nan: None})
         # go through rows
-        for index, row in reader.iterrows():
+        for _, row in reader.iterrows():
             count += 1
             print("...{0}%...".format(int(100 * count / file_length)))
             print("{0}".format(row))
@@ -1237,7 +1237,7 @@ def map_customer_price_list(filename):
         # replace NaN with None
         reader = reader.replace({np.nan: None})
         # go through rows
-        for index, row in reader.iterrows():
+        for _, row in reader.iterrows():
             count += 1
             # get and update customer
             if frappe.db.exists("Customer", str(row['Customer'])):
@@ -1268,7 +1268,7 @@ def move_staggered_item_price(filename):
         # replace NaN with None
         reader = reader.replace({np.nan: None})
         # go through rows
-        for index, row in reader.iterrows():
+        for _, row in reader.iterrows():
             count += 1
             print("...{0}%...".format(int(100 * count / file_length)))
             staggered_item_code = row['ArticleCode']
@@ -1335,7 +1335,7 @@ def disable_customers_without_contacts():
     disabled = failed = skipped = 0
     customers_to_report = []
 
-    for count, c in enumerate(customers):
+    for c in customers:
         # find number of linked contacts
         linked_contacts = frappe.db.sql("""
             SELECT `tabContact`.`name` AS `name`
@@ -1368,7 +1368,7 @@ def disable_customers_without_contacts():
             customer.disabled = True
             try:
                 customer.save()
-            except Exception as err:
+            except Exception:
                 #print(f"{int(100 * count / len(customers))}%... Failed updating {c['name']} ({err})")
                 failed += 1
             else:
@@ -1582,15 +1582,12 @@ def import_sequencing_labels(filename, skip_rows = 0):
     Run
     $ bench execute "microsynth.microsynth.migration.import_sequencing_labels" --kwargs "{'filename':'/mnt/erp_share/Sequencing/Label_Import/webshop_barcodes_unused.txt', 'skip_rows':0}"
     """
-
     with open(filename) as file:
-        header = file.readline()
+        file.readline()
         count = 1
         i = 0
         for line in file:
             if count > skip_rows:
-                start = datetime.now()
-
                 elements = line.split("\t")
                 number = int(elements[1])
                 status_element = int(elements[2])
@@ -1777,7 +1774,7 @@ def import_credit_accounts(filename):
     """
 
     with open(filename) as file:
-        header = file.readline()
+        file.readline()
         i = 0
         for line in file:
             elements = line.split("\t")
@@ -1978,7 +1975,7 @@ def activate_easyrun_italy():
 
     customers = frappe.db.sql(query, as_dict=True)
 
-    for i, customer in enumerate(customers):
+    for customer in customers:
         query = f"""
             SELECT DISTINCT `tabAddress`.`country`
             FROM `tabAddress`
@@ -3420,7 +3417,7 @@ def correct_invoice_addresses():
     """
     query_results = frappe.db.sql(sql_query, as_dict=True)
 
-    for i, result in enumerate(query_results):
+    for result in query_results:
         invoice_to_id = frappe.get_value("Customer", result['customer'], 'invoice_to')
         invoice_to_contact = frappe.get_doc("Contact", invoice_to_id)
         # Duplicate Invoice_to contact
@@ -3701,7 +3698,7 @@ def check_remaining_labels(filepath):
 def try_label_save(label, counters):
     try:
         label.save()
-    except Exception as error:
+    except Exception:
         counters['customer_disabled'] += 1
         #print(f"Got the following exception when trying to save {label.name=} ({label.label_id=}) with '{label.customer=}', '{label.sales_order=}', '{label.contact=}':\n{error}")
 
@@ -3920,7 +3917,7 @@ def check_weborderids_of_deleted_sos():
 
     for do in deleted_orders:
         content = json.loads(do['data'])
-        web_order_id = content['web_order_id']
+        # web_order_id = content['web_order_id']
         product_type = content['product_type']
         if content['owner'] != do['owner']:
             print(f"'{do['deleted_name']}' with {product_type=} created by {content['owner']=} deleted by {do['owner']=}, deleted on {do['creation']}")
@@ -4145,7 +4142,7 @@ def check_tax_ids():
             if not check_uid(customer['tax_id']):
                 print(f"{i};{customer['name']};{customer['customer_name']};{country};{customer['tax_id']}")
         except Exception as err:
-            print(f"unable to check {i};{customer['name']};{customer['customer_name']};{customer['tax_id']}")
+            print(f"unable to check {i};{customer['name']};{customer['customer_name']};{customer['tax_id']};{err}")
 
 
 def is_workday_before_10am(date):
@@ -4456,7 +4453,6 @@ def find_unused_enabled_items():
 
     bench execute microsynth.microsynth.migration.find_unused_enabled_items
     """
-    from datetime import date
     enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'item_group', 'creation'])
     counter = 0
     price_counter = 0

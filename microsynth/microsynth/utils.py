@@ -1226,7 +1226,7 @@ def set_default_language(customer):
                 l = "fr"
             else:
                 l = "de"
-        except Exception as err:
+        except Exception:
             frappe.log_error("Billing address '{0}' of customer '{1}' has the invalid pincode '{2}'.".format(a.name, customer.name, a.pincode), "utils.set_default_language")
             l = "de"
     elif a.country in ("Germany", "Austria"):
@@ -1999,7 +1999,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     })
 
     # extend invoices
-    base_total_debit = flt(amount) * current_exchange_rate
+    #base_total_debit = flt(amount) * current_exchange_rate
     base_total_credit = 0
     for invoice in invoices:
         if not invoice.get('sales_invoice'):
@@ -2125,7 +2125,7 @@ def is_valid_tax_id(tax_id):
         try:  # a second time
             valid = check_uid(tax_id)
         except Exception as err:
-            print(f"Unable to validate Tax ID '{tax_id}'.")
+            print(f"Unable to validate Tax ID '{tax_id}':\n{err}")
             return False
     return valid
 
@@ -2262,8 +2262,7 @@ def find_same_ext_dnr_diff_taxid():
     print(f"There are {len(ext_debitor_numbers)} different External Debitor Numbers of enabled Customers "
           f"with Default Company Microsynth Seqlab GmbH or Microsynth Austria GmbH.")
 
-    for i, ext_debitor_number in enumerate(ext_debitor_numbers):
-        #print(i)
+    for ext_debitor_number in ext_debitor_numbers:
         same_ext_debitor_number = frappe.db.get_all("Customer",
                                                     filters=[['ext_debitor_number', '=', ext_debitor_number],
                                                             ['disabled', '=', '0']],

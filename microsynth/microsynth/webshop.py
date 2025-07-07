@@ -412,7 +412,7 @@ def register_user(user_data, client="webshop"):
     # Create addresses
     for address in user_data['addresses']:
         address['customer_id'] = customer.name
-        address_id = create_update_address_doc(address)
+        create_update_address_doc(address)
 
     # Create contact
     user_data['contact']['customer_id'] = customer.name
@@ -1453,7 +1453,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
         return dropship_order.name
 
     except Exception as err:
-        frappe.log_error(f"{customer}\n{supplier_company}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
+        frappe.log_error(f"{err}\n\n{customer}\n{supplier_company}\n{sales_order}\n\n{traceback.format_exc()}", "webshop.place_dropship_order")
 
         return None
 
@@ -2868,7 +2868,7 @@ def increase_version(name):
         try:
             version = int(parts[-1])
         except Exception as err:
-            msg = f"Unable to increase version of ID '{name}'. The part after the last dash is not convertible to an integer."
+            msg = f"Unable to increase version of ID '{name}'. The part after the last dash is not convertible to an integer ({err})."
             frappe.log_error(msg, 'webshop.increase_version')
             frappe.throw(msg)
         else:
@@ -2967,7 +2967,7 @@ def update_webshop_address(webshop_account, webshop_address):
             updated_existing_contact['email'] = webshop_address['contact'].get('email')
             updated_existing_contact['email_cc'] = webshop_address['contact'].get('email_cc')
 
-            existing_contact_id = create_update_contact_doc(updated_existing_contact)
+            create_update_contact_doc(updated_existing_contact)
 
             # create new contact/address if used to maintain data integrity on existing Sales Orders, Delivery Notes, Sales Invoices, etc.
             from copy import deepcopy

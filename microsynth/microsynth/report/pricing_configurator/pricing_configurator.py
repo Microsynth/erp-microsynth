@@ -333,13 +333,13 @@ def clean_price_list(price_list, user):
     sorted_prices = sorted(prices.items())
 
     # initialize memory from first element
-    (code_memory, quantity_memory), memory = sorted_prices[0]
+    (_, _), memory = sorted_prices[0]
     rate_memory = memory.rate
 
     changes = "item_code;min_qty;old_rate;new_rate"
     orig_len = len(changes)
 
-    for key, item_price in sorted_prices:
+    for _, item_price in sorted_prices:
 
         if item_price.item_code == memory.item_code:
 

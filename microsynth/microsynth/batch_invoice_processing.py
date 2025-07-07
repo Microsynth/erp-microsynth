@@ -54,7 +54,6 @@ def parse_file(file_name, company, company_settings, debug=True):
                 print("ERROR: {0}".format(err))
             xml_content = None
         invoice = {}
-        supplier = None
         if xml_content:
             if debug:
                 print("INFO: electronic invoice detected")

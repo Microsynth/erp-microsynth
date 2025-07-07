@@ -3,7 +3,6 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe import _
 from erpnext.accounts.report.accounts_receivable.accounts_receivable import ReceivablePayableReport
 
 def execute(filters=None):
@@ -14,7 +13,7 @@ def execute(filters=None):
         "party_type": "Customer",
         "naming_by": ["Selling Settings", "cust_master_name"],
     }
-    columns, data, unused, chart = ReceivablePayableReport(filters).run(args)
+    columns, data, _, _ = ReceivablePayableReport(filters).run(args)
 
     if len(data) == 0:
         return columns, data
@@ -241,4 +240,3 @@ def get_foreign_currency_outstanding(docname, account, date, party):
         """.format(docname=docname, account=account, date=date, party=party)
 
     return frappe.db.sql(sql_query, as_dict=True)[0]['outstanding']
-

@@ -207,7 +207,7 @@ def save_document(doc):
         force_set_due_date(d.name, due_date)
 
         deviations = []
-        for k,v in target_values.items():
+        for k in target_values.keys():
             # convert to string before comparing to circumvent permission issue
             if str(d.get(k) or "") != str(target_values[k]) and k != 'due_date':
                 deviations.append(k)

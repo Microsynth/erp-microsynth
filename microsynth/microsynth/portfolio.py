@@ -135,7 +135,6 @@ def get_product_type(contact):
     first_day = get_first_day(query_date, d_years = -1)
     last_day_help = add_months(query_date, -1)
     last_day = get_last_day(last_day_help)
-    yearly_volume = 0
     sql_query = """
                     SELECT SUM(`base_net_total`) AS `total`,`product_type`, COUNT(`name`) AS `qty`, `currency`
                     FROM `tabSales Order`

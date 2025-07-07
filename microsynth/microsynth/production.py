@@ -9,7 +9,7 @@ from datetime import datetime
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, close_or_unclose_sales_orders
 import frappe
 from microsynth.microsynth.labels import print_raw
-from microsynth.microsynth.utils import get_export_category, validate_sales_order_status, validate_sales_order, has_items_delivered_by_supplier
+from microsynth.microsynth.utils import get_export_category, validate_sales_order, has_items_delivered_by_supplier
 from microsynth.microsynth.naming_series import get_naming_series
 
 
@@ -381,7 +381,7 @@ def process_internal_oligos(file):
     internal_oligos = []
 
     with open(file) as file:
-        header = file.readline()    # skip header line
+        file.readline()    # skip header line
         for line in file:
             if line.strip() != "":
                 elements = line.split("\t")
@@ -391,8 +391,6 @@ def process_internal_oligos(file):
                 oligo['status'] = elements[3].strip()
                 internal_oligos.append(oligo)
 
-    affected_sales_orders = []
-    i =0
     for oligo in internal_oligos:
         print("oligo {} ({})".format(oligo['production_id'], oligo['web_id']))
 

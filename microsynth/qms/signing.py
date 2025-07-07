@@ -44,7 +44,7 @@ def sign(dt, dn, user, password, target_field=None, submit=True):
         password_match_with_login_pw = True
         try:
             check_password(user, approval_password)
-        except Exception as err:
+        except Exception:
             # password failed - this is good, the passwords are different
             password_match_with_login_pw = False
         if password_match_with_login_pw:
@@ -73,4 +73,3 @@ def get_signature(user):
     s = "{d}/{u}".format(d=datetime.now(), u=user)
     signature = "{s} ({h})".format(s=s, h=abs(hash(s)))
     return signature
-
