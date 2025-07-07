@@ -1,13 +1,13 @@
 {
  "autoname": "naming_series:",
- "creation": "2025-07-04 15:52:18.520775",
+ "creation": "2025-07-07 11:23:38.965953",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "device_name",
   "column_break_2",
-  "process",
+  "qm_process",
   "section_break_4",
   "category",
   "serial_no",
@@ -31,7 +31,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "process",
+   "fieldname": "qm_process",
    "fieldtype": "Link",
    "label": "Process",
    "options": "QM Process"
@@ -66,14 +66,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "has_service_contract",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Service Contract",
-   "options": "\nYes\nNo",
-   "reqd": 1
-  },
-  {
    "fieldname": "manufacturer",
    "fieldtype": "Data",
    "label": "Manufacturer"
@@ -89,10 +81,17 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Naming Series",
-   "options": "QMD-.#####"
+   "options": "QMDE-.#####"
+  },
+  {
+   "fieldname": "has_service_contract",
+   "fieldtype": "Select",
+   "label": "Service Contract",
+   "options": "\nYes\nNo",
+   "reqd": 1
   }
  ],
- "modified": "2025-07-04 15:52:18.520775",
+ "modified": "2025-07-07 11:39:54.819338",
  "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Device",
@@ -108,6 +107,14 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
    "write": 1
   }
  ],
