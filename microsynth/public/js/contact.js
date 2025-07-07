@@ -81,6 +81,7 @@ frappe.ui.form.on('Contact', {
         // set Contact source
         if (frm.doc.__islocal) {
             cur_frm.set_value("source", "Manual");
+            cur_frm.set_value("has_webshop_account", 0);
         }
 
         // lock Links table of webshop account contacts
