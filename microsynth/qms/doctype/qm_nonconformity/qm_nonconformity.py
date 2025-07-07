@@ -39,7 +39,7 @@ class QMNonconformity(Document):
                 'effectiveness_checks': get_effectiveness_checks(self.name)
             })
         return html
-    
+
 
     def set_in_approval(self, in_approval):
         self.in_approval = in_approval
@@ -54,23 +54,23 @@ class QMNonconformity(Document):
     def validate_hierarchy(self):
         if self.hierarchy_1:
             allowed_hierarchy_1s = get_allowed_classification_for_process(
-                doctype="QM Nonconformity", 
-                txt=self.hierarchy_1, 
-                searchfield="name", 
-                start=0, 
-                page_len=20, 
+                doctype="QM Nonconformity",
+                txt=self.hierarchy_1,
+                searchfield="name",
+                start=0,
+                page_len=20,
                 filters={'process': self.qm_process}
             )
             if len(allowed_hierarchy_1s) == 0:
                 frappe.throw( _("Invalid value in 'Hierarchy 1'. Please select from the available values."), _("Validation") )
-        
+
         if self.hierarchy_2:
             allowed_hierarchy_2s = get_allowed_classification_for_hierarchy(
-                doctype="QM Nonconformity", 
-                txt=self.hierarchy_2, 
-                searchfield="name", 
-                start=0, 
-                page_len=20, 
+                doctype="QM Nonconformity",
+                txt=self.hierarchy_2,
+                searchfield="name",
+                start=0,
+                page_len=20,
                 filters={'hierarchy': self.hierarchy_1}
             )
             if len(allowed_hierarchy_2s) == 0:
@@ -102,7 +102,7 @@ def confirm_classification(doc, user):
         update_status(nc.name, "Investigation")
     else:
         frappe.throw(f"Only the creator {nc.created_by} or a user with the QAU role is allowed to classify a QM Nonconformity.")
-    
+
 
 def check_classification(nc):
     """
@@ -164,7 +164,7 @@ def update_status(nc, status):
         nc.status = status
         nc.save()
         frappe.db.commit()
-    else: 
+    else:
         frappe.throw(f"Update QM Nonconformity: Status transition is not allowed {nc.status} --> {status}")
 
 
@@ -226,7 +226,7 @@ def cancel(nc):
 @frappe.whitelist()
 def get_corrections(qm_nc):
     corrections = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
@@ -237,7 +237,7 @@ def get_corrections(qm_nc):
             `tabQM Action`.`status`,
             `tabQM Action`.`completion_date`
         FROM `tabQM Action`
-        WHERE 
+        WHERE
             `tabQM Action`.`document_type` = "QM Nonconformity"
             AND `tabQM Action`.`document_name` = "{qm_nc}"
             AND `tabQM Action`.`type` = "Correction"
@@ -248,7 +248,7 @@ def get_corrections(qm_nc):
 @frappe.whitelist()
 def get_corrective_actions(qm_nc):
     corrective_actions = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
@@ -259,7 +259,7 @@ def get_corrective_actions(qm_nc):
             `tabQM Action`.`status`,
             `tabQM Action`.`completion_date`
         FROM `tabQM Action`
-        WHERE 
+        WHERE
             `tabQM Action`.`document_type` = "QM Nonconformity"
             AND `tabQM Action`.`document_name` = "{qm_nc}"
             AND `tabQM Action`.`type` = "Corrective Action"
@@ -275,7 +275,7 @@ def get_effectiveness_checks(qm_nc):
     change in function get_advanced_dashboard, hooks.py and QM Nonconformity print format (already inserted in ERP-Test)
     """
     effectiveness_checks = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Action`.`name`,
             `tabQM Action`.`title`,
             `tabQM Action`.`description`,
@@ -286,7 +286,7 @@ def get_effectiveness_checks(qm_nc):
             `tabQM Action`.`status`,
             `tabQM Action`.`completion_date`
         FROM `tabQM Action`
-        WHERE 
+        WHERE
             `tabQM Action`.`document_type` = "QM Nonconformity"
             AND `tabQM Action`.`document_name` = "{qm_nc}"
             AND `tabQM Action`.`type` = "NC Effectiveness Check"
@@ -297,7 +297,7 @@ def get_effectiveness_checks(qm_nc):
 @frappe.whitelist()
 def get_qm_changes(qm_nc):
     changes = frappe.db.sql(f"""
-        SELECT 
+        SELECT
             `tabQM Change`.`name`,
             `tabQM Change`.`title`,
             `tabQM Change`.`description`,
@@ -306,7 +306,7 @@ def get_qm_changes(qm_nc):
             `tabQM Change`.`description`,
             `tabQM Change`.`status`
         FROM `tabQM Change`
-        WHERE 
+        WHERE
             `tabQM Change`.`document_type` = "QM Nonconformity"
             AND `tabQM Change`.`document_name` = "{qm_nc}"
         ;""", as_dict=True)
@@ -332,7 +332,7 @@ def has_actions(doc):
           AND `docstatus` < 2
           AND `document_name` = '{doc}';
         """, as_dict=True)
-    
+
     corrections = frappe.db.sql(f"""
         SELECT `name`
         FROM `tabQM Action`
@@ -340,11 +340,11 @@ def has_actions(doc):
           AND `docstatus` < 2
           AND `document_name` = '{doc}';
         """, as_dict=True)
-    
+
     actions = {
         'has_correction': len(corrections) > 0,
         'has_corrective_action': len(corrective_actions) > 0
-    }    
+    }
     return actions
 
 
@@ -362,7 +362,7 @@ def has_non_completed_action(doc):
           AND `document_name` = '{doc}'
           AND `type` IN ('Correction', 'Corrective Action')
         ;""", as_dict=True)
-    
+
     return len(non_completed_actions) > 0
 
 
@@ -377,7 +377,7 @@ def has_change(doc):
         WHERE `docstatus` < 2
           AND `document_name` = '{doc}';
         """, as_dict=True)
-    
+
     return len(changes) > 0
 
 

@@ -38,7 +38,7 @@ def get_data():
     print("-------------------")
 
     data = []
-    for key in mapped_ref_prices:
+    for key, _ in mapped_ref_prices.items():
         if key in mapped_cust_prices:
             customer_rate = mapped_cust_prices[key].rate
             reference_rate = mapped_ref_prices[key].rate

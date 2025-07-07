@@ -19,10 +19,10 @@ class TrackingCode(Document):
 
 @frappe.whitelist()
 def create_tracking_code(web_order_id, tracking_code):
-    sales_orders = frappe.get_all("Sales Order", 
+    sales_orders = frappe.get_all("Sales Order",
         filters = { 'web_order_id': web_order_id, 'docstatus': 1 },
         fields = ['name', 'contact_email', 'contact_display'] )
-    
+
     if len(sales_orders) == 2:
         # check for intercompany case
         intercompany_sales_orders = frappe.get_all("Sales Order", filters = {'web_order_id': web_order_id, 'docstatus': 1, 'is_intercompany': 1}, fields = ['name', 'contact_email', 'contact_display'])
@@ -32,7 +32,7 @@ def create_tracking_code(web_order_id, tracking_code):
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}\n\n{len(intercompany_sales_orders)} of them are intercompany."
             frappe.log_error(msg, "tracking_code.check_tracking_code")
             frappe.throw(msg)
-    
+
     if len(sales_orders) > 0:
         if len(sales_orders) > 1:
             msg = f"Found {len(sales_orders)} submitted Sales Orders with Web Order ID '{web_order_id}': {sales_orders=}"
@@ -47,7 +47,7 @@ def create_tracking_code(web_order_id, tracking_code):
             frappe.throw("Sales Order '{0}' has the shipping item '{1}' without tracking code".format(sales_order.name, shipping_item))
 
         tracking_url = "{url}{code}".format(
-            url = TRACKING_URLS[shipping_item], 
+            url = TRACKING_URLS[shipping_item],
             code = tracking_code)
 
         tracking = frappe.get_doc({
@@ -96,7 +96,7 @@ def check_tracking_code(web_order_id, tracking_code):
     sales_orders = frappe.get_all("Sales Order",
         filters={'web_order_id': web_order_id, 'docstatus': 1},
         fields=['name', 'contact_email', 'contact_display'])
-    
+
     if len(sales_orders) == 2:
         # check for intercompany case
         intercompany_sales_orders = frappe.get_all("Sales Order", filters = {'web_order_id': web_order_id, 'docstatus': 1, 'is_intercompany': 1}, fields = ['name', 'contact_email', 'contact_display'])
@@ -155,7 +155,7 @@ def prepare_tracking_log(file_id):
     })
     tracking_log.insert()
     file_doc = frappe.get_doc("File", file_id)
-    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:]) 
+    base_path = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:])
     file_path = f"{base_path}{file_doc.file_url}"
     return file_path
 

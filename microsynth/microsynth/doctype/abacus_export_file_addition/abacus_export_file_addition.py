@@ -245,8 +245,7 @@ def create_from_existing(dn, from_date, to_date):
     new_doc = frappe.get_doc({
         'doctype': 'Abacus Export File Addition',
         'from_date': from_date,
-        'to_date': to_date,
-        'from_date': from_date,
+        'to_date': to_date
     }).insert()
 
     for old_account in old_doc.accounts:

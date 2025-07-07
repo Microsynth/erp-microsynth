@@ -402,7 +402,7 @@ def call_ups_tracking_api(tracking_code, url, username, password, access_key):
             result = json.loads(response.read().decode())
             return result
     except URLError as e:
-        raise Exception(f"HTTP error: {e}")
+        raise Exception(f"HTTP error: {e}") from e
 
 
 def parse_delivery_datetime(response_json):

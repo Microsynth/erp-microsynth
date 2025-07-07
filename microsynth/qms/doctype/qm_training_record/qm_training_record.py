@@ -23,7 +23,7 @@ def create_training_record(trainee, dt, dn, due_date):
     record = frappe.get_doc(
         {
             'doctype': 'QM Training Record',
-            'trainee': trainee, 
+            'trainee': trainee,
             'document_type': dt,
             'document_name': dn,
             'due_date': due_date
@@ -60,12 +60,12 @@ def set_signed_on(doc):
     # clear assignment
     clear("QM Training Record", doc)
     record.save(ignore_permissions = True)
-    frappe.db.commit()    
+    frappe.db.commit()
 
 
 def get_training_records(qm_document):
     """
-    Return a list of all submitted QM Training Records for the given QM Document 
+    Return a list of all submitted QM Training Records for the given QM Document
     """
     return frappe.get_all("QM Training Record",
             filters = [['document_name', '=', qm_document], ['docstatus', '=', 1]],

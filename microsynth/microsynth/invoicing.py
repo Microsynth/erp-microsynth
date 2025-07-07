@@ -1732,21 +1732,21 @@ def transmit_carlo_erba_invoices(sales_invoices):
 
         # Sold-to-party
         client = get_address_data(
-            type = "Cliente",
+            address_type = "Cliente",
             customer_name = order_customer,
             contact = order_contact,
             address = order_address)
 
         # Ship-to-party
         shipping = get_address_data(
-            type = "Acquiren",
+            address_type = "Acquiren",
             customer_name = shipping_customer,
             contact = shipping_contact,
             address = shipping_address)
 
         # bill-to-party
         billing = get_address_data(
-            type = "Billing",
+            address_type = "Billing",
             customer_name = billing_customer,
             contact = billing_contact,
             address = billing_address)

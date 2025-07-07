@@ -309,7 +309,7 @@ def get_data():
                         "name": "approval-manager",
                         "label": _("Approval Manager"),
                         "description": _("Approval Manager")
-                    },                    
+                    },
                     {
                         "type": "doctype",
                         "name": "Payment Proposal",

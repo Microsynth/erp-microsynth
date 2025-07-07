@@ -38,7 +38,7 @@ class QMReview(Document):
         frappe.db.commit()
         # clear any assignments
         clear("QM Review", self.name)
-        return 
+        return
 
 
 @frappe.whitelist()
@@ -57,7 +57,7 @@ def create_review(reviewer, dt, dn, due_date):
     review = frappe.get_doc(
         {
             'doctype': 'QM Review',
-            'reviewer': reviewer, 
+            'reviewer': reviewer,
             'document_type': dt,
             'document_name': dn,
             'due_date': due_date
@@ -71,14 +71,14 @@ def create_review(reviewer, dt, dn, due_date):
 
     # create assignment to user
     assign(review.name, reviewer)
-    
+
     # submit qm document
     if dt == "QM Document":
         qm_doc = frappe.get_doc("QM Document", dn)
         if qm_doc.docstatus == 0:
             qm_doc.submit()
             frappe.db.commit()
-            
+
     return review.name
 
 
@@ -99,7 +99,7 @@ def sign_review(doc, user, password):
     # get document
     if type(doc) == str:
         doc = frappe.get_doc("QM Review", doc)
-        
+
     # verify user is the creator of the QM document
     review_doc = frappe.get_doc(doc.get("document_type"), doc.get("document_name"))
     if (review_doc.created_by or review_doc.owner) == user:
@@ -115,7 +115,7 @@ def sign_review(doc, user, password):
 
 def get_qm_reviews(qm_document):
     """
-    Return a list of all submitted QM Reviews for the given QM Document 
+    Return a list of all submitted QM Reviews for the given QM Document
     """
     return frappe.get_all("QM Review",
             filters = [['document_name', '=', qm_document], ['docstatus', '=', 1]],

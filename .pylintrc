@@ -16,8 +16,6 @@ ignore=migrations,test_sites,node_modules,public,.pytype
 # This helps avoid false positives due to dynamic attribute access.
 extension-pkg-whitelist=frappe
 
-init-hook='import sys; sys.path.append("~/frappe-bench/apps/")'
-
 
 [MESSAGES CONTROL]
 
@@ -30,7 +28,6 @@ enable=
     unbalanced-tuple-unpacking,     # Unpacking issues, like mismatched element counts
     dangerous-default-value,        # Mutable default args like `x=[]`
     no-value-for-parameter,         # Function call missing a required argument
-    attribute-defined-outside-init, # Instance variables defined outside __init__
     duplicate-key,                  # Duplicate dictionary keys
     not-callable,                   # Attempting to call something not callable
     exec-used,                      # Use of `exec()` (discouraged)
@@ -40,8 +37,12 @@ enable=
     unreachable,                    # Code that will never be executed (e.g., after a return statement)
     cell-var-from-loop,             # Using a variable from an outer scope in a nested function
     raise-missing-from,             # `raise` without specifying the exception context (missing traceback, harder to debug)
+    trailing-whitespace,            # Lines ending with whitespace
+    consider-using-dict-items,      # Suggest using `dict.items()` instead of `dict.iteritems()` (Python 2)
+    consider-using-in,              # Suggest using `in` for membership tests instead of `has_key()` (Python 2)
     # bad-indentation,              # Incorrect indentation (e.g., mixing tabs and spaces)
     # broad-except,                 # Catching all exceptions (too broad)
+    #attribute-defined-outside-init,# Instance variables defined outside __init__
 
 # Disable all messages not explicitly enabled above.
 disable=all
