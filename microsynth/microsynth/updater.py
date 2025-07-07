@@ -3,7 +3,6 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe import _
 
 
 def cleanup_languages():

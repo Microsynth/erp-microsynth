@@ -2,10 +2,8 @@
 # Copyright (c) 2022-2024, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
-from email.policy import default
 import os
 import frappe
-from frappe import _
 import pandas as pd
 import numpy as np
 import json
@@ -16,7 +14,6 @@ from microsynth.microsynth.utils import find_label, get_sql_list, configure_terr
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
-import re
 import sys
 import csv
 csv.field_size_limit(sys.maxsize)

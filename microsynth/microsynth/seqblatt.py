@@ -5,13 +5,10 @@
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 #
 
-import requests
 import traceback
 import frappe
-from frappe.core.doctype.communication.email import make
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
-from frappe import _
-from frappe.utils import cint, get_url_to_form
+from frappe.utils import get_url_to_form
 import json
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series

@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe import _
+#from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from microsynth.qms.signing import sign
 from frappe.model.document import Document
@@ -62,7 +62,7 @@ def sign_decision(doc, user, password):
 
 def get_qm_decisions(doc_name):
     """
-    Return a list of all submitted QM Decisions for the given Document Name 
+    Return a list of all submitted QM Decisions for the given Document Name
     """
     return frappe.get_all("QM Decision",
             filters = [['document_name', '=', doc_name], ['docstatus', '=', 1]],

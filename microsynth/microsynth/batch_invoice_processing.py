@@ -10,7 +10,7 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd import get_xml, get_content_from_
 from erpnextswiss.erpnextswiss.zugferd.qr_reader import find_qr_content_from_pdf, get_content_from_qr
 from erpnextswiss.erpnextswiss.zugferd.pdf_reader import find_supplier_from_pdf
 from microsynth.microsynth.utils import send_email_from_template
-from datetime import date, datetime
+from datetime import datetime
 
 
 @frappe.whitelist()

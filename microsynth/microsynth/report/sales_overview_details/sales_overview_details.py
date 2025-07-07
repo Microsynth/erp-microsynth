@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+#import frappe
 from frappe import _
 from microsynth.microsynth.report.sales_overview.sales_overview import get_revenue_details, get_ngs_groups, get_genetic_analysis_groups
 
@@ -35,4 +35,3 @@ def get_data(filters):
         query_groups = [ filters.get("item_groups") ]
     data = get_revenue_details(filters, month=filters.get('month'), item_groups=query_groups, debug=False)
     return data
-

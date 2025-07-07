@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint, get_url_to_form
+from frappe.utils import get_url_to_form
 from frappe.utils.pdf import get_pdf
 from datetime import date
 

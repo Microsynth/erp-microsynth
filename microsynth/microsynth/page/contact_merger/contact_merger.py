@@ -6,7 +6,6 @@
 #
 
 import json
-from datetime import datetime
 import frappe
 from frappe.model.rename_doc import rename_doc
 from microsynth.microsynth.marketing import update_marketing_classification

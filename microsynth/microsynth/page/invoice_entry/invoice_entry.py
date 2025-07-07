@@ -2,9 +2,9 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe import _
+#from frappe import _
 import json
-from datetime import datetime, date
+from datetime import datetime
 from frappe.utils import flt, add_days
 from microsynth.microsynth.purchasing import supplier_change_fetches
 

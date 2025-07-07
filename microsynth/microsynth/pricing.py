@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe import _
 from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate, get_rate_or_none
 from datetime import datetime, timedelta
 import csv

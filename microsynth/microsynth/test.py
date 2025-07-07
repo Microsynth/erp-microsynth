@@ -3,8 +3,6 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe import _
-import json
 
 
 def get_item_prices(price_list):
