@@ -50,6 +50,20 @@ def create_pi_from_si(sales_invoice):
     if not pi_tax_template:
         frappe.log_error(f"Cannot create purchase invoice, because no purchase tax template was found for {sales_invoice}. Going to return.", "purchasing.create_pi_from_si")
         return None
+
+    expense_account = frappe.get_all("Intercompany Settings Supplier",
+                                        filters={
+                                            'supplier': pi_supplier,
+                                            'product_type': si.product_type,
+                                            'company': pi_company},
+                                        fields=['expense_account'])
+
+    if len(expense_account) == 0 or not expense_account[0]['expense_account']:
+        frappe.log_error(f"No expense account was found for supplier {pi_supplier} and product type {si.product_type} for company {pi_company}. Using company default settings. Go and configure Intercompany Settings.", "purchasing.create_pi_from_si")
+        expense_account = frappe.get_value("Company", pi_company, "default_expense_account")
+    else:
+        expense_account = expense_account[0]['expense_account']
+
     # create new purchase invoice
     new_pi = frappe.get_doc({
         'doctype': 'Purchase Invoice',
@@ -73,7 +87,8 @@ def create_pi_from_si(sales_invoice):
             'qty': i.qty,
             'description': i.description,
             'rate': i.rate,
-            'cost_center': pi_cost_center
+            'cost_center': pi_cost_center,
+            'expense_account': expense_account
         })
     # apply taxes
     if pi_tax_template:

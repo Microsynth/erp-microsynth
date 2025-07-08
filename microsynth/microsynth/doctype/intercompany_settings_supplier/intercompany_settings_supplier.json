@@ -8,7 +8,9 @@
   "product_type",
   "supplier",
   "supplier_name",
-  "manufacturing_company"
+  "manufacturing_company",
+  "col_1",
+  "expense_account"
  ],
  "fields": [
   {
@@ -29,7 +31,7 @@
    "reqd": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fetch_from": "supplier.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Data",
@@ -54,11 +56,22 @@
    "label": "Manufacturing Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "col_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Expense Account",
+   "options": "Account"
   }
  ],
  "istable": 1,
- "modified": "2025-03-13 11:50:57.381423",
- "modified_by": "Administrator",
+ "modified": "2025-07-08 11:06:16.558018",
+ "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings Supplier",
  "owner": "Administrator",
