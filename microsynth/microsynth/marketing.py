@@ -79,6 +79,7 @@ def update_newly_created_contacts(already_updated_contacts, previous_days):
         FROM `tabContact`
         WHERE `tabContact`.`creation` BETWEEN "{date.today() - timedelta(days=previous_days)}" AND "{date.today()}"
             AND `tabContact`.`status` != "Disabled"
+            AND (`tabContact`.`has_webshop_account` = 1 OR `tabContact`.`source` = "Manual")
         """
     new_contacts = frappe.db.sql(sql_query, as_dict=True)
 
