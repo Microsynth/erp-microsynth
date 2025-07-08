@@ -149,7 +149,7 @@ frappe.invoice_entry = {
                 'net_total', format_currency(purchase_invoice_values.net_total));
         } else {
             frappe.invoice_entry.set_div(purchase_invoice_values.name,
-                'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_toal));
+                'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_total));
         }
         frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'taxes', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.total_taxes_and_charges));
@@ -175,7 +175,6 @@ frappe.invoice_entry = {
         if (field) {
             field.value = value;
         } else {
-            // TODO: Why is "Field 'net_total' for Purchase Invoice ... not found." warned when switching between two Purchase Orders where exactly one PO has multiple Items?
             console.warn(`Field '${field_name}' for Purchase Invoice '${purchase_invoice}' not found.`);
         }
     },
@@ -225,21 +224,8 @@ frappe.invoice_entry = {
                     },
                     callback: function(response) {
                         if (response.message.success) {
-                            // Update allow_edit_net_amount in the client-side data
-                            let purchase_invoice_values = {
-                                name: purchase_invoice_name,
-                                allow_edit_net_amount: response.message.allow_edit_net_amount
-                            };
-
                             // Fetch updated Purchase Invoice details and refresh the UI
                             frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
-
-                            // Optionally update the UI directly if needed
-                            if (purchase_invoice_values.allow_edit_net_amount === 1) {
-                                frappe.invoice_entry.set_field(purchase_invoice_name, 'net_total', format_currency(response.message.net_total));
-                            } else {
-                                frappe.invoice_entry.set_div(purchase_invoice_name, 'net_total', response.message.currency + " " + format_currency(response.message.net_total));
-                            }
                         } else {
                             frappe.show_alert(response.message.message);
                         }

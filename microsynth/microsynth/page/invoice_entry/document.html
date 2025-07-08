@@ -27,7 +27,7 @@
                                 <td>
                                     <div id="supplier_name_{{ name }}">{{ supplier_name }}</div>
                                     {% if purchase_orders %}
-                                        <button class="btn btn-sm btn-info" type="button" data-toggle="collapse" data-target="#po_table_{{ name }}" aria-expanded="false" aria-controls="po_table_{{ name }}">
+                                        <button class="btn btn-sm btn-info pull-right" type="button" data-toggle="collapse" data-target="#po_table_{{ name }}" aria-expanded="false" aria-controls="po_table_{{ name }}">
                                             {{ _("Show/Hide Purchase Orders") }}
                                         </button>
                                         <div class="collapse" id="po_table_{{ name }}">
@@ -36,7 +36,7 @@
                                                     <tr>
                                                         <th>{{ _("Purchase Order") }}</th>
                                                         <th>{{ _("Date") }}</th>
-                                                        <th>{{ _("Amount") }}</th>
+                                                        <th>{{ _("Grand Total") }}</th>
                                                     </tr>
                                                 </header>
                                                 <tbody>

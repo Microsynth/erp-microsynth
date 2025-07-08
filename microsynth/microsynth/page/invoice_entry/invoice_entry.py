@@ -42,6 +42,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
             `tabPurchase Invoice`.`reject_message`,
             `tabPurchase Invoice Item`.`expense_account`,
             `tabPurchase Invoice Item`.`cost_center`,
+            MAX(`tabPurchase Invoice Item`.`purchase_order`) AS `purchase_order`,
             `tabSupplier`.`iban`,
             `tabSupplier`.`esr_participation_number`,
             `tabPurchase Invoice`.`payment_type` AS `default_payment_method`,
@@ -93,7 +94,7 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
             ;""", {'supplier': pinv.get('supplier')}, as_dict=True)
 
         # define edit net flag from items and total qty
-        if pinv['item_count'] == 1 and pinv['total_qty'] == 1:
+        if pinv['item_count'] == 1 and pinv['total_qty'] == 1 and not pinv['purchase_order']:
             pinv['allow_edit_net_amount'] = 1
         else:
             pinv['allow_edit_net_amount'] = 0
@@ -306,56 +307,27 @@ def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_n
                     "rate": tax.rate
                 })
 
-        # Update items only if they differ
-        current_items = [
-            {
+        purchase_invoice.items = []
+        for item in purchase_order.items:
+            purchase_invoice.append("items", {
                 "item_code": item.item_code,
                 "item_name": item.item_name,
                 "qty": item.qty,
                 "rate": item.rate,
                 "expense_account": item.expense_account,
-                "cost_center": item.cost_center
-            }
-            for item in purchase_invoice.items
-        ]
-        new_items = [
-            {
-                "item_code": item.item_code,
-                "item_name": item.item_name,
-                "qty": item.qty,
-                "rate": item.rate,
-                "expense_account": item.expense_account,
-                "cost_center": item.cost_center
-            }
-            for item in purchase_order.items
-        ]
-        if current_items != new_items:
-            purchase_invoice.items = []
-            for item in purchase_order.items:
-                purchase_invoice.append("items", {
-                    "item_code": item.item_code,
-                    "item_name": item.item_name,
-                    "qty": item.qty,
-                    "rate": item.rate,
-                    "expense_account": item.expense_account,
-                    "cost_center": item.cost_center
-                })
-
-        # Determine allow_edit_net_amount based on item count and total quantity
-        allow_edit_net_amount = 1 if len(purchase_order.items) == 1 and sum(item.qty for item in purchase_order.items) == 1 else 0
-        purchase_invoice.allow_edit_net_amount = allow_edit_net_amount
+                "cost_center": item.cost_center,
+                "purchase_order": purchase_order_name
+            })
 
         purchase_invoice.save()
         frappe.db.commit()
 
         return {
             "success": True,
-            "message": "Purchase Invoice updated successfully.",
-            "allow_edit_net_amount": allow_edit_net_amount
+            "message": "Purchase Invoice updated successfully."
         }
     except Exception as e:
         return {
             "success": False,
-            "message": str(e),
-            "allow_edit_net_amount": 0
+            "message": str(e)
         }
