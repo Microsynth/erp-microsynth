@@ -5381,3 +5381,96 @@ def add_shipping_item_to_customers(customers, shipping_item_code, rate, threshol
             print(f"Sucessfully added Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency} to Customer {customer_id}.")
         else:
             print(f"Customer {customer_id} already has Shipping Item {shipping_item_code} with rate {rate} {customer_doc.default_currency}. Going to skip.")
+
+
+def get_exchange_rate_for_date(ordered_exchange_rates, target_date):
+    """
+    Given a list of exchange rates sorted by date descending and a target date,
+    return the latest exchange rate on or before the target date.
+    """
+    for rate in ordered_exchange_rates:
+        if rate['date'] <= target_date:
+            return rate['exchange_rate']
+    return None  # No applicable rate found
+
+
+def calculate_eur_values(ordered_exchange_rates, delivery_note_id, cd_date):
+    """
+    Calculate the EUR values for a Delivery Note based on the exchange rates
+    provided in ordered_exchange_rates and the date of the Customs Declaration (cd_date).
+    Returns a dictionary with the EUR net total, taxes, and grand total.
+    If no exchange rate is found for the given date, returns None and prints an error message.
+    """
+    dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)
+    conversion_rate = get_exchange_rate_for_date(ordered_exchange_rates, cd_date)
+    if not conversion_rate:
+        print(f"ERROR: No conversion rate from EUR to CHF found for Delivery Note {delivery_note_id} with currency {dn_doc.currency} and Customs Declaration date {cd_date}.")
+        return None
+    eur_net_total = round(dn_doc.base_net_total / conversion_rate, 2)
+    eur_taxes = round(dn_doc.base_total_taxes_and_charges / conversion_rate, 2)
+    eur_grand_total = round(dn_doc.base_grand_total / conversion_rate, 2)
+    return {
+        "eur_net_total": eur_net_total,
+        "eur_taxes": eur_taxes,
+        "eur_grand_total": eur_grand_total
+    }
+
+
+def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
+    """
+    bench execute microsynth.microsynth.migration.populate_eur_fields_on_customs_declarations --kwargs "{'to_date': '2025-07-06'}"
+    """
+    ordered_exchange_rates = frappe.get_all("Currency Exchange",
+                                     filters={'from_currency': 'EUR', 'to_currency': 'CHF'},
+                                     fields=['date', 'exchange_rate'],
+                                     order_by='date desc')
+    customs_declarations = frappe.get_all("Customs Declaration", filters=[['docstatus', '=', 1], ['creation', '<', to_date]], fields=['name'])
+    enabled_customers = set()
+    print(f"Going to process {len(customs_declarations)} Customs Declarations ...")
+    for i, cd in enumerate(customs_declarations):
+        cd_doc = frappe.get_doc("Customs Declaration", cd['name'])
+        for at_dn in cd_doc.austria_dns:
+            if at_dn.eur_net_total or at_dn.eur_taxes or at_dn.eur_grand_total:
+                continue
+            # Check if the customer is disabled and enable it if necessary
+            if frappe.get_value("Customer", at_dn.customer, "disabled"):
+                frappe.db.set_value("Customer", at_dn.customer, "disabled", 0)
+                enabled_customers.add(at_dn.customer)
+            if at_dn.currency == 'EUR':
+                at_dn.eur_net_total = at_dn.net_total
+                at_dn.eur_taxes = at_dn.taxes
+                at_dn.eur_grand_total = at_dn.grand_total
+            else:
+                # this should not happen
+                print(f"WARNING: Found Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} with currency {at_dn.currency}.")
+                eur_values = calculate_eur_values(ordered_exchange_rates, at_dn.delivery_note, cd_doc.date)
+                if eur_values:
+                    at_dn.eur_net_total = eur_values['eur_net_total']
+                    at_dn.eur_taxes = eur_values['eur_taxes']
+                    at_dn.eur_grand_total = eur_values['eur_grand_total']
+                else:
+                    print(f"ERROR: Unable to calculate EUR values for Austria DN {at_dn.delivery_note} in Customs Declaration {cd_doc.name}.")
+        for eu_dn in cd_doc.eu_dns:
+            if eu_dn.eur_net_total or eu_dn.eur_taxes or eu_dn.eur_grand_total:
+                continue
+            # Check if the customer is disabled and enable it if necessary
+            if frappe.get_value("Customer", eu_dn.customer, "disabled"):
+                frappe.db.set_value("Customer", eu_dn.customer, "disabled", 0)
+                enabled_customers.add(eu_dn.customer)
+            if eu_dn.currency == 'EUR':
+                eu_dn.eur_net_total = eu_dn.net_total
+                eu_dn.eur_taxes = eu_dn.taxes
+                eu_dn.eur_grand_total = eu_dn.grand_total
+            else:
+                eur_values = calculate_eur_values(ordered_exchange_rates, eu_dn.delivery_note, cd_doc.date)
+                if eur_values:
+                    eu_dn.eur_net_total = eur_values['eur_net_total']
+                    eu_dn.eur_taxes = eur_values['eur_taxes']
+                    eu_dn.eur_grand_total = eur_values['eur_grand_total']
+                else:
+                    print(f"ERROR: Unable to calculate EUR values for EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name}.")
+        print(f"Successfully processed Customs Declaration {cd_doc.name} ({i+1}/{len(customs_declarations)}).")
+        cd_doc.save()
+    # If any customers were enabled, set them to disabled again
+    for c in enabled_customers:
+        frappe.db.set_value("Customer", c, "disabled", 1)
