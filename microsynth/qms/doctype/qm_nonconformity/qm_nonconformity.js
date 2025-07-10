@@ -775,7 +775,7 @@ function calculate_risk_classification(occ_prob, impact, after_actions) {
     }
 }
 
-function request_qm_action(type) {
+function request_qm_action(action_type) {
     frappe.prompt([
         {'fieldname': 'title', 'fieldtype': 'Data', 'label': __('Title'), 'reqd': 1},
         {'fieldname': 'qm_process', 'fieldtype': 'Link', 'options': 'QM Process', 'default': cur_frm.doc.qm_process, 'label': __('Process'), 'reqd': 1},
@@ -793,12 +793,12 @@ function request_qm_action(type) {
                 'dn': cur_frm.doc.name,
                 'qm_process': values.qm_process,
                 'due_date': values.due_date,
-                'type': action_type,
+                'action_type': action_type,
                 'description': values.description || ''
             },
             "callback": function(response) {
                 cur_frm.reload_doc();
-                frappe.show_alert( __(type + " created") +
+                frappe.show_alert( __(action_type + " created") +
                             ": <a href='/desk#Form/QM Action/" +
                             response.message + "'>" + response.message +
                             "</a>"
@@ -806,7 +806,7 @@ function request_qm_action(type) {
             }
         });
     },
-    __(type),
+    __(action_type),
     __('Request ')
     )
 }
