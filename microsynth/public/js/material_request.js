@@ -13,9 +13,9 @@ frappe.ui.form.on('Material Request', {
         }
 
         setTimeout(function () {
-            cur_frm.fields_dict.items.grid.get_field('item_code').get_query = 
+            cur_frm.fields_dict.items.grid.get_field('item_code').get_query =
                 function(frm, dt, dn) {
-                    return { 
+                    return {
                         query: "microsynth.microsynth.filters.find_purchasing_items",
                         filters: {
                             "item_group": 'Purchasing',
@@ -24,13 +24,13 @@ frappe.ui.form.on('Material Request', {
                     };
                 };
         }, 1000);
-        
+
         hide_in_words();
     },
     company(frm) {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function
-        }            
+        }
     },
     add_item(frm) {
         // Call the dialog
@@ -94,7 +94,7 @@ function select_item(frm) {
                 row.item_name = item.item_name;
                 row.description = item.description;
                 row.uom = item.stock_uom;
-                //row.qty = 1;
+                row.qty = 1;
                 row.conversion_factor = 1;
                 //row.schedule_date = frappe.datetime.nowdate();
                 frm.refresh_field('items');
