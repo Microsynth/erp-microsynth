@@ -14,7 +14,7 @@ def execute(filters=None):
         "party_type": "Customer",
         "naming_by": ["Selling Settings", "cust_master_name"],
     }
-    columns, data, _, _ = ReceivablePayableReport(filters).run(args)
+    columns, data, unused, chart = ReceivablePayableReport(filters).run(args)
 
     if len(data) == 0:
         return columns, data
