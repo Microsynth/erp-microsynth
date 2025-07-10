@@ -20,16 +20,25 @@
                                 </td>
                             <tr>
                                 <td>{{ _("Supplier ID") }}</td>
-                                <td><div class="supplier" id="supplier_{{ name }}"></div></td>
+                                <td>
+                                    <div style="display: flex; justify-content: space-between; ">
+                                        <div class="supplier" id="supplier_{{ name }}"></div>
+                                        <button class="btn btn-sm btn-info pull-right" id="btn_supplier_{{ name }}">{{ _("Select by PO") }}</button>
+                                    </div>
+                                </td>
                             </tr>
                             <tr>
                                 <td>{{ _("Supplier Name") }}</td>
                                 <td>
-                                    <div id="supplier_name_{{ name }}">{{ supplier_name }}</div>
+                                    <div id="supplier_name_{{ name }}">{{ supplier_name }}
+                                        {% if purchase_orders %}
+                                            <button class="btn btn-sm btn-info pull-right" type="button" data-toggle="collapse" data-target="#po_table_{{ name }}" aria-expanded="false" aria-controls="po_table_{{ name }}">
+                                                {{ _("POs") }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
                                     {% if purchase_orders %}
-                                        <button class="btn btn-sm btn-info pull-right" type="button" data-toggle="collapse" data-target="#po_table_{{ name }}" aria-expanded="false" aria-controls="po_table_{{ name }}">
-                                            {{ _("Show/Hide Purchase Orders") }}
-                                        </button>
+
                                         <div class="collapse" id="po_table_{{ name }}">
                                             <table class="table">
                                                 <header>
