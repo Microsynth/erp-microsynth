@@ -63,7 +63,7 @@ def get_data(filters):
             )
             {conditions}
         ORDER BY
-            `tabMaterial Request`.`transaction_date` ASC
+            `tabMaterial Request`.`schedule_date` ASC
     """, filters, as_dict=True)
 
 
