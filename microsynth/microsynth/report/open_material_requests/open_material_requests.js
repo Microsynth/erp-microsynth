@@ -21,9 +21,15 @@ frappe.query_reports["Open Material Requests"] = {
     "onload": (report) => {
         hide_chart_buttons();
 
-        report.page.add_inner_button( __("Create Purchase Order"), function() {
-            create_purchase_order(report.get_values());
+        report.page.add_inner_button( __("New Request"), function() {
+            // TODO: Open search dialog currently shown on Material Request (Button "Add Item")
         }).addClass("btn-primary");
+
+        if (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User')) {
+            report.page.add_inner_button( __("Create Purchase Order"), function() {
+                create_purchase_order(report.get_values());
+            }).addClass("btn-primary");
+        }
     }
 };
 
