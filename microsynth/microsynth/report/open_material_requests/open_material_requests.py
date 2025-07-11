@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+import json
 import frappe
 from frappe import _
 
@@ -90,3 +91,31 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     return columns, data
+
+
+@frappe.whitelist()
+def create_item_request(data):
+    # data is JSON string, parse it
+    data = json.loads(data)
+
+    required_fields = ['item_name', 'qty', 'company']
+    for field in required_fields:
+        if not data.get(field):
+            frappe.throw(f"Required parameter missing: {field}")
+
+    ir = frappe.new_doc("Item Request")
+    ir.item_name = data.get('item_name')
+    ir.qty = data.get('qty') or 1
+    ir.supplier_part_no = data.get('supplier_part_no')
+    ir.supplier = data.get('supplier')
+    ir.supplier_name = data.get('supplier_name')
+    ir.uom = data.get('uom') or "Pcs"
+    ir.rate = data.get('rate')
+    ir.currency = data.get('currency')
+    ir.company = data.get('company')
+    ir.schedule_date = data.get('schedule_date')
+    ir.comment = data.get('comment')
+    ir.status = "Pending"
+    ir.insert()
+    ir.submit()
+    return ir.name
