@@ -20,6 +20,7 @@
   "section_break_13",
   "comment",
   "reject_message",
+  "material_request",
   "amended_from",
   "naming_series"
  ],
@@ -134,10 +135,18 @@
    "in_list_view": 1,
    "label": "Quantity",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "material_request",
+   "fieldtype": "Link",
+   "label": "Material Request",
+   "options": "Material Request",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2025-07-11 11:43:57.505640",
+ "modified": "2025-07-11 15:34:51.008766",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",

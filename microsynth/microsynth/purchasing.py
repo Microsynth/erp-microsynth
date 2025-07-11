@@ -1282,10 +1282,9 @@ def send_material_request_owner_emails(doc, event=None):
 
 
 @frappe.whitelist()
-def create_material_request(item_code, qty, schedule_date, company):
+def create_material_request(item_code, qty, schedule_date, company, item_name=None):
     if not (item_code and qty and schedule_date and company):
         frappe.throw("Required parameters missing")
-
     mr = frappe.new_doc("Material Request")
     mr.material_request_type = "Purchase"
     mr.transaction_date = today()
@@ -1299,3 +1298,20 @@ def create_material_request(item_code, qty, schedule_date, company):
     mr.insert()
     mr.submit()
     return mr.name
+
+
+@frappe.whitelist()
+def create_mr_from_item_request(item_request_id, item):
+    """
+    Create a Material Request from an Item Request.
+    Link the created Material Request on the Item Request.
+    Set the status of the Item Request to 'Done'.
+    """
+    item = frappe._dict(json.loads(item))
+    mr_id = create_material_request(item.item_code, item.qty, item.schedule_date, item.company, item_name=item.item_name)
+    # Link back to Item Request
+    ir = frappe.get_doc('Item Request', item_request_id)
+    ir.material_request = mr_id
+    ir.status = 'Done'
+    ir.save()
+    return mr_id
