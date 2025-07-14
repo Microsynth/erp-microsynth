@@ -290,9 +290,6 @@ async function print_labels(frm) {
 
 
 function display_material_request_owners(frm) {
-    // Clear existing comments first
-    frm.dashboard.clear_comment();
-
     // Collect info grouped by material_request.owner
     let owner_map = {};
 
@@ -333,7 +330,7 @@ function display_material_request_owners(frm) {
                     }
                     owner_map[owner].push({
                         item_name: item.item_name,
-                        description: item.description || '',
+                        item_code: item.item_code,
                         qty: item.qty
                     });
                 });
@@ -342,7 +339,7 @@ function display_material_request_owners(frm) {
                 for (let owner in owner_map) {
                     comment_html += `<br><b>${owner}</b>:<ul>`;
                     owner_map[owner].forEach(i => {
-                        comment_html += `<li>${i.item_name} (${i.description}) - Qty: ${i.qty}</li>`;
+                        comment_html += `<li>${i.item_code} (${i.item_name}) - Qty: ${i.qty}</li>`;
                     });
                     comment_html += '</ul>';
                 }
