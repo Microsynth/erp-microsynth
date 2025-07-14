@@ -42,18 +42,18 @@ function enter_batches(frm) {
     document.head.appendChild(styleSheet);
 
     frappe.call({
-        method: "microsynth.microsynth.purchasing.get_batch_items",
-        args: { 'purchase_receipt': frm.doc.name },
-        callback: function(r) {
+        'method': "microsynth.microsynth.purchasing.get_batch_items",
+        'args': { 'purchase_receipt': frm.doc.name },
+        'callback': function(r) {
             if (!r.message || !r.message.length) {
                 frappe.msgprint("No Item requires a Batch.");
                 return;
             }
 
             const d = new frappe.ui.Dialog({
-                title: __('Enter Batch Information'),
-                size: 'extra-large',
-                fields: [
+                'title': __('Enter Batch Information'),
+                'size': 'extra-large',
+                'fields': [
                     {
                         fieldname: 'batch_table',
                         fieldtype: 'Table',
@@ -105,7 +105,7 @@ function enter_batches(frm) {
                         ]
                     }
                 ],
-                primary_action_label: __('Submit'),
+                'primary_action_label': __('Submit'),
                 primary_action(values) {
                     const data = values.batch_table;
 
@@ -138,8 +138,8 @@ function enter_batches(frm) {
                     try { document.head.removeChild(styleSheet); } catch {}
 
                     frappe.call({
-                        method: "microsynth.microsynth.purchasing.create_batches_and_assign",
-                        args: {
+                        'method': "microsynth.microsynth.purchasing.create_batches_and_assign",
+                        'args': {
                             'purchase_receipt': frm.doc.name,
                             'batch_data': data
                         },

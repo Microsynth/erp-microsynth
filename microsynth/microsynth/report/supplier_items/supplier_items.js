@@ -40,8 +40,8 @@ frappe.query_reports["Supplier Items"] = {
 
 function create_new_supplier_item() {
     let dialog = new frappe.ui.Dialog({
-        title: 'New Purchasing Item',
-        fields: [
+        'title': 'New Purchasing Item',
+        'fields': [
             {
                 label: 'Internal Code',
                 fieldname: 'internal_code',
@@ -166,7 +166,7 @@ function create_new_supplier_item() {
                 description: 'Factor to convert to stock UOM'
             }
         ],
-        primary_action_label: 'Create',
+        'primary_action_label': 'Create',
         primary_action(values) {
             frappe.call({
                 'method': 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',

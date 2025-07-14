@@ -40,9 +40,7 @@ frappe.ui.form.on('Item Request', {
 });
 
 
-// TODO: Reduce code duplication with open_material_requests.js and supplier_items.js
-
-
+// TODO: Reduce code duplication with function open_search_dialog in open_material_requests.js
 function open_search_dialog(frm) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),
@@ -110,7 +108,7 @@ function open_search_dialog(frm) {
             `);
             $('#new-purchasing-item').on('click', () => {
                 dialog.hide();
-                create_new_supplier_item_and_continue(frm);
+                create_new_supplier_item(frm);
             });
             return;
             }
@@ -223,7 +221,8 @@ function open_material_request_dialog(selected, frm) {
 }
 
 
-function create_new_supplier_item_and_continue(frm) {
+// TODO: Reduce code duplication with function create_new_supplier_item in supplier_items.js
+function create_new_supplier_item(frm) {
     let dialog = new frappe.ui.Dialog({
         'title': 'New Purchasing Item',
         'fields': [
@@ -359,9 +358,9 @@ function create_new_supplier_item_and_continue(frm) {
         'primary_action_label': 'Create',
         primary_action(values) {
             frappe.call({
-                method: 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',
-                args: { data: values },
-                callback: function (r) {
+                'method': 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',
+                'args': { data: values },
+                'callback': function (r) {
                     if (!r.exc && r.message) {
                         const item_code = r.message;
                         frappe.msgprint({
@@ -381,12 +380,12 @@ function create_new_supplier_item_and_continue(frm) {
                             callback: function (res) {
                                 const item = res.message;
                                 const selected = {
-                                    name: item.name,
-                                    item_name: item.item_name,
-                                    supplier: values.supplier,
-                                    supplier_name: values.default_supplier,
-                                    supplier_part_no: values.supplier_part_no,
-                                    material_code: values.material_code
+                                    'name': item.name,
+                                    'item_name': item.item_name,
+                                    'supplier': values.supplier,
+                                    'supplier_name': values.default_supplier,
+                                    'supplier_part_no': values.supplier_part_no,
+                                    'material_code': values.material_code
                                 };
                                 open_material_request_dialog(selected, frm);
                             }
