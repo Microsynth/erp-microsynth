@@ -23,6 +23,32 @@ frappe.ui.form.on('Purchase Receipt', {
             display_material_request_owners(frm);
         }
     },
+    before_submit: function(frm) {
+        const item_codes = frm.doc.items.map(row => row.item_code);
+        console.log("Checking unbatched items for:", item_codes);
+
+        return frappe.call({
+            'method': "microsynth.microsynth.purchasing.check_unbatched_items",
+            'args': {
+                'item_codes': item_codes
+            },
+            'freeze': true
+        }).then(r => {
+            const items_needing_confirmation = r.message || [];
+
+            if (items_needing_confirmation.length > 0) {
+                return new Promise((resolve, reject) => {
+                    frappe.confirm(
+                        __("The following items have never been batched and are not batched now either:<br>{0}Do you want to continue without batching these items permanently?<br>It will <b>not</b> be possible to batch them later.",
+                            [`<ul>${items_needing_confirmation.map(i => `<li>${i}</li>`).join('')}</ul>`]
+                        ),
+                        () => resolve(),  // Continue
+                        () => reject(__('Submission cancelled by user'))  // Cancel
+                    );
+                });
+            }
+        });
+    },
     company(frm) {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function

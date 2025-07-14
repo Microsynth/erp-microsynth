@@ -1279,3 +1279,46 @@ def send_material_request_owner_emails(doc, event=None):
             content = message,
             send_email = True
         )
+
+
+@frappe.whitelist()
+def check_unbatched_items(item_codes):
+    """
+    Returns a list of item codes where:
+    - has_batch_no = 0
+    - AND they were never submitted on a Purchase Receipt
+    """
+    if isinstance(item_codes, str):
+        try:
+            item_codes = json.loads(item_codes)
+        except json.JSONDecodeError:
+            frappe.throw("Invalid item_codes format. Must be JSON list.")
+
+    items_to_confirm = []
+
+    for item_code in item_codes:
+        if not item_code:
+            continue  # skip empty item codes
+
+        # Use get_value instead of get_doc to avoid DoesNotExistError
+        has_batch_no = frappe.db.get_value("Item", item_code, "has_batch_no")
+
+        if has_batch_no is None:
+            # Item does not exist — optionally skip or log
+            frappe.log_error(f"Item not found: {item_code}", "Batch Validation")
+            continue  # or raise exception if strict
+
+        if has_batch_no:
+            continue  # batching already enabled, skip
+
+        # Check if it was ever submitted
+        submitted = frappe.db.exists({
+            "doctype": "Purchase Receipt Item",
+            "item_code": item_code,
+            "docstatus": 1
+        })
+
+        if not submitted:
+            items_to_confirm.append(item_code)
+
+    return items_to_confirm
