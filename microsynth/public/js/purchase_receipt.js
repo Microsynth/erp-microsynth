@@ -76,7 +76,8 @@ function enter_batches(frm) {
                                 label: __('Item'),
                                 options: 'Item',
                                 read_only: 1,
-                                in_list_view: 1
+                                in_list_view: 1,
+                                columns: 3
                             },
                             {
                                 fieldname: 'item_name',
@@ -84,23 +85,34 @@ function enter_batches(frm) {
                                 hidden: 1
                             },
                             {
+                                fieldname: 'qty',
+                                fieldtype: 'Float',
+                                label: __('Quantity'),
+                                read_only: 1,
+                                in_list_view: 1,
+                                columns: 1
+                            },
+                            {
                                 fieldname: 'existing_batch',
                                 fieldtype: 'Link',
                                 label: __('Existing Batch'),
                                 options: 'Batch',
-                                in_list_view: 1
+                                in_list_view: 1,
+                                columns: 2
                             },
                             {
                                 fieldname: 'new_batch_id',
                                 fieldtype: 'Data',
                                 label: __('New Batch ID'),
-                                in_list_view: 1
+                                in_list_view: 1,
+                                columns: 2
                             },
                             {
                                 fieldname: 'new_batch_expiry',
                                 fieldtype: 'Date',
                                 label: __('Expiry Date'),
-                                in_list_view: 1
+                                in_list_view: 1,
+                                columns: 2
                             }
                         ]
                     }

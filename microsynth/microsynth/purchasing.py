@@ -982,6 +982,7 @@ def get_batch_items(purchase_receipt):
                 "idx": item.idx,
                 "item_code": item.item_code,
                 "item_name": item.item_name,
+                "qty": item.qty,
                 "existing_batch": item.batch_no,
                 "new_batch_id": "",
                 "new_batch_expiry": ""
