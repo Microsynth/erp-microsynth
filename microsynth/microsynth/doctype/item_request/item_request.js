@@ -40,24 +40,23 @@ frappe.ui.form.on('Item Request', {
 });
 
 
-// TODO: Reduce code duplication with microsynth.microsynth.report.open_material_requests.open_material_requests.js and microsynth.microsynth.report.supplier_items.supplier_items.js
-// TODO: Fix different indentation style
+// TODO: Reduce code duplication with open_material_requests.js and supplier_items.js
 
 
 function open_search_dialog(frm) {
     let dialog = new frappe.ui.Dialog({
-        title: __('Select Purchasing Item'),
-        fields: [
-        { fieldtype: 'Data', label: __('Item Name part'), fieldname: 'item_name_part' },
-        { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code' },
-        { fieldtype: 'Button', label: __('Clear Filters'), fieldname: 'clear_filters' },
-        { fieldtype: 'Column Break' },
-        { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name' },
-        { fieldtype: 'Data', label: __('Supplier Part Number'), fieldname: 'supplier_part_no' },
-        { fieldtype: 'Section Break' },
-        { fieldtype: 'HTML', fieldname: 'results' }
-        ],
-        primary_action_label: __('Select'),
+        'title': __('Select Purchasing Item'),
+        'fields': [
+            { fieldtype: 'Data', label: __('Item Name part'), fieldname: 'item_name_part' },
+            { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code' },
+            { fieldtype: 'Button', label: __('Clear Filters'), fieldname: 'clear_filters' },
+            { fieldtype: 'Column Break' },
+            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name' },
+            { fieldtype: 'Data', label: __('Supplier Part Number'), fieldname: 'supplier_part_no' },
+            { fieldtype: 'Section Break' },
+            { fieldtype: 'HTML', fieldname: 'results' }
+            ],
+        'primary_action_label': __('Select'),
         primary_action: function(values) {
         const selected = dialog.selected_item;
         if (!selected) {
@@ -93,12 +92,12 @@ function open_search_dialog(frm) {
         return;
         }
         frappe.call({
-        method: 'microsynth.microsynth.purchasing.get_purchasing_items',
-        args: {
-            item_name_part: f.item_name_part.get_value(),
-            material_code: f.material_code.get_value(),
-            supplier_name: f.supplier_name.get_value(),
-            supplier_part_no: f.supplier_part_no.get_value()
+        'method': 'microsynth.microsynth.purchasing.get_purchasing_items',
+        'args': {
+            'item_name_part': f.item_name_part.get_value(),
+            'material_code': f.material_code.get_value(),
+            'supplier_name': f.supplier_name.get_value(),
+            'supplier_part_no': f.supplier_part_no.get_value()
         },
         callback: function(r) {
             const items = r.message || [];
@@ -159,59 +158,61 @@ function open_material_request_dialog(selected, frm) {
     const today = frappe.datetime.nowdate();
 
     let d = new frappe.ui.Dialog({
-      title: __('Material Request'),
-      fields: [
-        { fieldtype:'Data', label: __('Item Name'), fieldname: 'item_name', read_only:1, default: selected.item_name },
-        { fieldtype:'Section Break' },
-        { fieldtype:'Data', label: __('Item Code'), fieldname: 'item_code', read_only:1, default: selected.name },
-        { fieldtype:'Data', label: __('Supplier'), fieldname: 'supplier', read_only:1, default: selected.supplier },
-        { fieldtype:'Int', label: __('Quantity'), fieldname: 'qty', reqd:1, default:frm.doc.qty, min:1 },
-        { fieldtype:'Date', label: __('Required By'), fieldname: 'schedule_date', default: frm.doc.schedule_date, reqd:1 },
-        { fieldtype:'Column Break' },
-        { fieldtype:'Data', label: __('Supplier Part No'), fieldname: 'supplier_part_no', read_only:1, default: selected.supplier_part_no },
-        { fieldtype:'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only:1, default: selected.supplier_name },
-        { fieldtype:'Data', label: __('Material Code'), fieldname: 'material_code', read_only:1, default: selected.material_code },
-        { fieldtype:'Link', label: __('Company'), fieldname: 'company', reqd:1, options:'Company', default: frm.doc.company }
-      ],
-      primary_action_label: __('Create & Submit'),
-      primary_action(values) {
-        if (values.schedule_date < today) {
-          frappe.msgprint(__('Required By date must be today or later'));
-          return;
+        'title': __('Material Request'),
+        'fields': [
+            { fieldtype: 'Data', label: __('Item Name'), fieldname: 'item_name', read_only: 1, default: selected.item_name },
+            { fieldtype: 'Section Break' },
+            { fieldtype: 'Data', label: __('Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
+            { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
+            { fieldtype: 'Int', label: __('Quantity'), fieldname: 'qty', reqd: 1, default: frm.doc.qty, min: 1 },
+            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', default: frm.doc.schedule_date, reqd: 1 },
+            { fieldtype: 'Column Break' },
+            { fieldtype: 'Data', label: __('Supplier Part No'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
+            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
+            { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
+            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: 1, options: 'Company', default: frm.doc.company }
+        ],
+        'primary_action_label': __('Create & Submit'),
+        primary_action(values) {
+            if (values.schedule_date < today) {
+                frappe.msgprint(__('Required By date must be today or later'));
+                return;
+            }
+            d.hide();
+            frappe.call({
+                'method': 'microsynth.microsynth.purchasing.create_mr_from_item_request',
+                'args': {
+                    'item_request_id': frm.doc.name,
+                    'item': {
+                        'item_code': selected.name,
+                        'qty': values.qty,
+                        'schedule_date': values.schedule_date,
+                        'company': values.company,
+                        'supplier': selected.supplier,
+                        'supplier_name': selected.supplier_name,
+                        'supplier_part_no': selected.supplier_part_no,
+                        'material_code': selected.material_code,
+                        'item_name': selected.item_name
+                    }
+                },
+                callback(r) {
+                    if (!r.exc && r.message) {
+                        frappe.msgprint({
+                            'title': __('Success'),
+                            'indicator': 'green',
+                            'message': __('Material Request {0} created', [
+                                `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
+                            ])
+                        });
+                        cur_frm.refresh();
+                    }
+                }
+            });
         }
-        d.hide();
-        frappe.call({
-          'method': 'microsynth.microsynth.purchasing.create_mr_from_item_request',
-          'args': {
-            'item_request_id': frm.doc.name,
-            'item': {
-              'item_code': selected.name,
-              'qty': values.qty,
-              'schedule_date': values.schedule_date,
-              'company': values.company,
-              'supplier': selected.supplier,
-              'supplier_name': selected.supplier_name,
-              'supplier_part_no': selected.supplier_part_no,
-              'material_code': selected.material_code,
-              'item_name': selected.item_name
-            }
-          },
-          callback(r) {
-            if (!r.exc && r.message) {
-              frappe.msgprint({
-                'title': __('Success'),
-                'indicator': 'green',
-                'message': __('Material Request {0} created', [
-                  `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
-                ])
-              });
-              cur_frm.refresh();
-            }
-          }
-        });
-      }
     });
+
     d.show();
+
     // Force wider dialog
     setTimeout(() => {
         let modals = document.getElementsByClassName('modal-dialog');
@@ -223,11 +224,9 @@ function open_material_request_dialog(selected, frm) {
 
 
 function create_new_supplier_item_and_continue(frm) {
-    let created_item = null;
-
     let dialog = new frappe.ui.Dialog({
-      title: 'New Purchasing Item',
-      fields: [
+        'title': 'New Purchasing Item',
+        'fields': [
             {
                 label: 'Internal Code',
                 fieldname: 'internal_code',
@@ -357,69 +356,69 @@ function create_new_supplier_item_and_continue(frm) {
                 description: 'Factor to convert to stock UOM'
             }
         ],
-      primary_action_label: 'Create',
-      primary_action(values) {
-        frappe.call({
-          method: 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',
-          args: { data: values },
-          callback: function(r) {
-            if (!r.exc && r.message) {
-              const item_code = r.message;
-              frappe.msgprint({
-                title: __('Item Created'),
-                message: __('Item created: {0}', [`<a href="/app/item/${item_code}" target="_blank">${item_code}</a>`]),
-                indicator: 'green'
-              });
-              dialog.hide();
+        'primary_action_label': 'Create',
+        primary_action(values) {
+            frappe.call({
+                method: 'microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item',
+                args: { data: values },
+                callback: function (r) {
+                    if (!r.exc && r.message) {
+                        const item_code = r.message;
+                        frappe.msgprint({
+                            'title': __('Item Created'),
+                            'message': __('Item created: {0}', [`<a href="/app/item/${item_code}" target="_blank">${item_code}</a>`]),
+                            'indicator': 'green'
+                        });
+                        dialog.hide();
 
-              // Fetch full item details and open MR dialog
-              frappe.call({
-                method: 'frappe.client.get',
-                args: {
-                  doctype: 'Item',
-                  name: item_code
-                },
-                callback: function(res) {
-                  const item = res.message;
-                  const selected = {
-                    name: item.name,
-                    item_name: item.item_name,
-                    supplier: values.supplier,
-                    supplier_name: values.default_supplier,
-                    supplier_part_no: values.supplier_part_no,
-                    material_code: values.material_code
-                  };
-                  open_material_request_dialog(selected, frm);
+                        // Fetch full item details and open MR dialog
+                        frappe.call({
+                            'method': 'frappe.client.get',
+                            'args': {
+                                'doctype': 'Item',
+                                'name': item_code
+                            },
+                            callback: function (res) {
+                                const item = res.message;
+                                const selected = {
+                                    name: item.name,
+                                    item_name: item.item_name,
+                                    supplier: values.supplier,
+                                    supplier_name: values.default_supplier,
+                                    supplier_part_no: values.supplier_part_no,
+                                    material_code: values.material_code
+                                };
+                                open_material_request_dialog(selected, frm);
+                            }
+                        });
+                    }
                 }
-              });
-            }
-          }
-        });
-      }
+            });
+        }
     });
 
-    // Internal code logic reused
+    // Get next item code
     dialog.fields_dict.internal_code.$input.on('change', function () {
-      const code = dialog.get_value('internal_code');
-      if (code && code.match(/^\d{4}$/)) {
-        dialog.set_value('item_code', 'P00' + code);
-      } else {
-        frappe.call({
-          method: 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
-          callback: function (r) {
-            dialog.set_value('item_code', r.message);
-          }
-        });
-      }
+        const code = dialog.get_value('internal_code');
+        if (code && code.match(/^\d{4}$/)) {
+            dialog.set_value('item_code', 'P00' + code);
+        } else {
+            frappe.call({
+                'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
+                'callback': function (r) {
+                    dialog.set_value('item_code', r.message);
+                }
+            });
+        }
     });
 
     dialog.show();
 
     // Trigger auto-fill on open
     frappe.call({
-      method: 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
-      callback: function (r) {
-        dialog.set_value('item_code', r.message);
-      }
+        'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
+        'callback': function (r) {
+            dialog.set_value('item_code', r.message);
+        }
     });
 }
