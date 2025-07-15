@@ -112,8 +112,8 @@ function open_search_dialog(report) {
                 update_list();
                 return;
             }
-            // Show confirmation dialog with qty, schedule_date, company
             dialog.hide();
+            // Show confirmation dialog with qty, schedule_date, company
             open_confirmation_dialog(selected, report);
         }
     });
@@ -165,7 +165,8 @@ function open_search_dialog(report) {
                             <br><button class="btn btn-primary" id="request-item-btn">${__('Request Item')}</button>
                         </div>
                     `);
-                    $('#request-item-btn').on('click', () => {
+
+                    f.results.$wrapper.find('#request-item-btn').on('click', () => {
                         dialog.hide();
                         open_item_request_dialog(report);
                     });

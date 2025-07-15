@@ -109,9 +109,8 @@ function open_search_dialog(frm) {
                 <br><button class="btn btn-primary" id="new-purchasing-item">${__('New Purchasing Item')}</button>
                 </div>
             `);
-            $('#new-purchasing-item').on('click', () => {
+            f.results.$wrapper.find('#new-purchasing-item').on('click', () => {
                 dialog.hide();
-                $('#new-purchasing-item').remove();
                 create_new_supplier_item(frm);
             });
             return;
@@ -206,7 +205,7 @@ function open_material_request_dialog(selected, frm) {
                                 `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
                             ])
                         });
-                        cur_frm.refresh();
+                        cur_frm.reload_doc();
                     }
                 }
             });
