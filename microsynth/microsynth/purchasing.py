@@ -1313,6 +1313,7 @@ def create_mr_from_item_request(item_request_id, item):
     # Link back to Item Request
     ir = frappe.get_doc('Item Request', item_request_id)
     ir.material_request = mr_id
+    ir.material_request_item = item.item_code
     ir.status = 'Done'
     ir.save()
     return mr_id

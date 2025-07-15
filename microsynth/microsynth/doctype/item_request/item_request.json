@@ -20,8 +20,11 @@
   "section_break_13",
   "comment",
   "reject_message",
+  "section_break_16",
   "material_request",
   "amended_from",
+  "column_break_19",
+  "material_request_item",
   "naming_series"
  ],
  "fields": [
@@ -143,10 +146,26 @@
    "label": "Material Request",
    "options": "Material Request",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "material_request_item",
+   "fieldtype": "Link",
+   "label": "Material Request Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_16",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-07-11 15:34:51.008766",
+ "modified": "2025-07-15 17:34:02.725625",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
