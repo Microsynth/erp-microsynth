@@ -106,7 +106,10 @@ function open_search_dialog(report) {
         primary_action: function(values) {
             const selected = dialog.selected_item;
             if (!selected) {
-                frappe.msgprint(__('Please select an item'));
+                if (document.activeElement.getAttribute('data-fieldtype') !== 'Data') {
+                    frappe.msgprint(__('Please select an Item'));
+                }
+                update_list();
                 return;
             }
             // Show confirmation dialog with qty, schedule_date, company

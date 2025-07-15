@@ -6,6 +6,10 @@ frappe.ui.form.on('Item Request', {
         // Show Reject button only for Purchase Manager and Purchase User
         if (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User')) {
             if (frm.doc.docstatus === 1 && frm.doc.status === "Pending") {
+                frm.add_custom_button(__('Search Item'), function() {
+                    open_search_dialog(frm);
+                }).addClass('btn-primary');
+
                 frm.add_custom_button(__('Reject'), function () {
                     frappe.prompt([
                         {
@@ -30,10 +34,6 @@ frappe.ui.form.on('Item Request', {
                         });
                     }, __('Reject Item Request'), __('Reject'));
                 }).addClass('btn-danger');
-
-                frm.add_custom_button(__('Search Item'), function() {
-                    open_search_dialog(frm);
-                }).addClass('btn-primary');
             }
         }
     }
@@ -45,7 +45,7 @@ function open_search_dialog(frm) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),
         'fields': [
-            { fieldtype: 'Data', label: __('Item Name part'), fieldname: 'item_name_part' },
+            { fieldtype: 'Data', label: __('Item Name'), fieldname: 'item_name_part' },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code' },
             { fieldtype: 'Button', label: __('Clear Filters'), fieldname: 'clear_filters' },
             { fieldtype: 'Column Break' },
@@ -58,7 +58,10 @@ function open_search_dialog(frm) {
         primary_action: function(values) {
         const selected = dialog.selected_item;
         if (!selected) {
-            frappe.msgprint(__('Please select an item'));
+            if (document.activeElement.getAttribute('data-fieldtype') !== 'Data') {
+                frappe.msgprint(__('Please select an Item'));
+            }
+            update_list();
             return;
         }
         dialog.hide();
@@ -108,6 +111,7 @@ function open_search_dialog(frm) {
             `);
             $('#new-purchasing-item').on('click', () => {
                 dialog.hide();
+                $('#new-purchasing-item').remove();
                 create_new_supplier_item(frm);
             });
             return;

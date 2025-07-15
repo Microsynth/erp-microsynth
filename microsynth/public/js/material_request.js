@@ -45,7 +45,7 @@ function select_item(frm) {
         'fields': [
             {
                 'fieldtype': 'Data',
-                'label': __('Item Name part'),
+                'label': __('Item Name'),
                 'fieldname': 'item_name_part'
             },
             {
@@ -83,7 +83,10 @@ function select_item(frm) {
         'primary_action'(values) {
             const selected = dialog.selected_item;
             if (!selected) {
-                frappe.msgprint(__('Please select an item'));
+                if (document.activeElement.getAttribute('data-fieldtype') !== 'Data') {
+                    frappe.msgprint(__('Please select an Item'));
+                }
+                update_list();
                 return;
             }
 
