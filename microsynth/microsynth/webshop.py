@@ -2887,26 +2887,26 @@ def webshop_print_addresses_differ(webshop_address_1, webshop_address_2):
     """
     if get_customer(webshop_address_1.get('contact').get('name')) != get_customer(webshop_address_2.get('contact').get('name')):
         frappe.throw(f"Contacts {webshop_address_1.get('contact').get('name')} and {webshop_address_2.get('contact').get('name')} do not belong to the same Customer.")
+    if webshop_address_1 and not webshop_address_2:
+        return True
+    if not webshop_address_1 and webshop_address_2:
+        return True
     contact_fields_to_check = [
         'first_name', 'last_name', 'salutation', 'designation', 'institute', 'department', 'room'
     ]
-    contacts_differ = False
     for field in contact_fields_to_check:
         if webshop_address_1.get('contact').get(field) != webshop_address_2.get('contact').get(field):
-            contacts_differ = True
-            break
+            return True
 
     address_fields_to_check = [
         'overwrite_company', 'address_line1', 'address_line2',
         'pincode', 'city', 'country',
     ]
-    addresses_differ = False
     for field in address_fields_to_check:
         if webshop_address_1.get('address').get(field) != webshop_address_2.get('address').get(field):
-            addresses_differ = True
-            break
+            return True
 
-    return contacts_differ or addresses_differ
+    return False
 
 
 @frappe.whitelist()
@@ -2938,7 +2938,9 @@ def update_webshop_address(webshop_account, webshop_address):
             frappe.throw(f"Contact with ID '{contact_id}' not found in the ERP. Cannot update webshop address.")
 
         if existing_address is None:
-            frappe.throw(f"Address with ID '{address_id}' not found in the ERP. Cannot update webshop address.")
+            #frappe.throw(f"Address with ID '{address_id}' not found in the ERP. Cannot update webshop address.")
+            if not webshop_address['address']:
+                frappe.throw(f"Contact '{contact_id}' has no Address and no address data was provided. Cannot update webshop address.")
 
         existing_print_address = {
             'contact': get_contact_dto(existing_contact),
@@ -2946,7 +2948,7 @@ def update_webshop_address(webshop_account, webshop_address):
         }
         if not webshop_print_addresses_differ(webshop_address, existing_print_address) or (not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id))):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
             # The new webshop_address does not differ from the existing webshop_address when printed or
-            # the existing contact and address are not yes used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
+            # the existing contact and address are not yet used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
 
             # Update the contact/address without creating a new one.
             if address_id:
