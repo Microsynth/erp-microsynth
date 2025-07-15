@@ -373,9 +373,9 @@ function display_material_request_owners(frm) {
                         owner_map[owner] = [];
                     }
                     owner_map[owner].push({
-                        item_name: item.item_name,
-                        item_code: item.item_code,
-                        qty: item.qty
+                        'item_name': item.item_name,
+                        'description': item.description || '',
+                        'qty': item.qty
                     });
                 });
                 // Build comment text
@@ -390,7 +390,7 @@ function display_material_request_owners(frm) {
                 comment_html += '</div>';
 
                 // Add dashboard comment/banner
-                frm.dashboard.add_comment(comment_html);
+                frm.dashboard.add_comment(comment_html, 'blue', true);
             }
         }
     });
