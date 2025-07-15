@@ -39,6 +39,18 @@ frappe.query_reports["Open Material Requests"] = {
             return data.item_name || value || "";
         }
         return default_formatter(value, row, column, data);
+    },
+    'after_datatable_render': function(report) {
+        // After the report is rendered, apply background color to rows based on request_type
+        var elements= document.querySelectorAll('[data-row-index][data-indent="0"]');
+        elements.forEach(function(row, index) {
+            console.log("Row " + index + ": ", row);
+            var rowColor = (frappe.query_report.data[index].request_type === "Item Request") ? '#eeeeee' : '';
+            var cells = row.querySelectorAll('div');
+            cells.forEach(function(cell) {
+                cell.style.backgroundColor = rowColor;
+            });
+        });
     }
 };
 
@@ -81,7 +93,7 @@ function open_search_dialog(report) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),
         'fields': [
-            {fieldtype:'Data', label: __('Item Name part'), fieldname:'item_name_part'},
+            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
             {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code'},
             {fieldtype:'Button', label: __('Clear Filters'), fieldname:'clear_filters'},
             {fieldtype:'Column Break'},
