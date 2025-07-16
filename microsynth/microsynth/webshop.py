@@ -2946,8 +2946,11 @@ def update_webshop_address(webshop_account, webshop_address):
                     update_existing_contact_address = True
                 else:
                     update_existing_contact_address = False
-            elif not webshop_address['address']:
-                frappe.throw(f"Contact '{contact_id}' has no Address and no address data was provided. Cannot update webshop address.")
+            else:
+                # it's not a punchout webshop account
+                if not webshop_address['address']:
+                    frappe.throw(f"Contact '{contact_id}' has no Address and no address data was provided. Cannot update webshop address.")
+                update_existing_contact_address = False
         else:
             existing_print_address = {
                 'contact': get_contact_dto(existing_contact),
