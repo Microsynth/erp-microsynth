@@ -251,7 +251,8 @@ async function print_labels(frm) {
             'item_name': item.item_name,
             'shelf_life_date': shelf_life_date,
             'material_code': item.material_code,
-            'internal_code': internal_code
+            'internal_code': internal_code,
+            'batch_no': pr_item.batch_no || ''
         });
     }
 
@@ -273,32 +274,47 @@ async function print_labels(frm) {
                         'label': __('Number of Labels'),
                         'in_list_view': 1,
                         'in_place_edit': 1,
-                        'reqd': 1
+                        'reqd': 1,
+                        'columns': 2
                     },
                     {
                         'fieldname': 'item_name',
                         'fieldtype': 'Data',
                         'label': __('Item Name'),
                         'read_only': 1,
-                        'in_list_view': 1
+                        'in_list_view': 1,
+                        'columns': 3
                     },
                     {
                         'fieldname': 'shelf_life_date',
                         'fieldtype': 'Date',
                         'label': __('Shelf Life Date'),
-                        'in_list_view': 1
+                        'in_list_view': 1,
+                        'columns': 1
                     },
                     {
                         'fieldname': 'material_code',
                         'fieldtype': 'Data',
                         'label': __('Material Code'),
-                        'in_list_view': 1
+                        //'read_only': 1,
+                        'in_list_view': 1,
+                        'columns': 1
                     },
                     {
                         'fieldname': 'internal_code',
                         'fieldtype': 'Data',
                         'label': __('Internal Code'),
-                        'in_list_view': 1
+                        //'read_only': 1,
+                        'in_list_view': 1,
+                        'columns': 1
+                    },
+                    {
+                        'fieldname': 'batch_no',
+                        'fieldtype': 'Data',
+                        'label': __('Batch No'),
+                        'read_only': 1,
+                        'in_list_view': 1,
+                        'columns': 1
                     }
                 ]
             }
