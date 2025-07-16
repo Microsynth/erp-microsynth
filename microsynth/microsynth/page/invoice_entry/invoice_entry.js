@@ -70,6 +70,13 @@ frappe.invoice_entry = {
             frappe.invoice_entry.attach_edit_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_close_handler(purchase_invoice_drafts[i].name);
             frappe.invoice_entry.attach_delete_handler(purchase_invoice_drafts[i].name);
+            // Attach handler for button to select a PO independent of the supplier
+            frappe.invoice_entry.attach_select_po_button_handler(purchase_invoice_drafts[i].name);
+
+            // Attach PO selection handler for each Purchase Order of this supplier
+            for (let po of purchase_invoice_drafts[i].purchase_orders) {
+                frappe.invoice_entry.attach_po_selection_handler(purchase_invoice_drafts[i].name, po.name);
+            }
         }
 
         // clean help boxes to save some space below each input box
@@ -144,7 +151,7 @@ frappe.invoice_entry = {
                 'net_total', format_currency(purchase_invoice_values.net_total));
         } else {
             frappe.invoice_entry.set_div(purchase_invoice_values.name,
-                'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_toal));
+                'net_total', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.net_total));
         }
         frappe.invoice_entry.set_div(purchase_invoice_values.name,
             'taxes', purchase_invoice_values.currency + " " + format_currency(purchase_invoice_values.total_taxes_and_charges));
@@ -167,11 +174,23 @@ frappe.invoice_entry = {
     },
     set_field: function(purchase_invoice, field_name, value) {
         let field = document.querySelector("input[data-fieldname='" + field_name + "_" + purchase_invoice + "']");
-        field.value = value;
+        if (field) {
+            field.value = value;
+        } else {
+            console.warn(`Field '${field_name}' for Purchase Invoice '${purchase_invoice}' not found.`);
+        }
     },
     set_div: function(purchase_invoice, field_name, value) {
         let div = document.getElementById(field_name + "_" + purchase_invoice);
-        try { div.innerHTML = value; } catch { console.log("set_div error on " + field_name + "_" + purchase_invoice) }
+        if (div) {
+            try {
+                div.innerHTML = value;
+            } catch (error) {
+                console.error(`Error setting value for div '${field_name}' on Purchase Invoice '${purchase_invoice}':`, error);
+            }
+        } else {
+            console.warn(`Div '${field_name}' for Purchase Invoice '${purchase_invoice}' not found.`);
+        }
     },
     attach_save_handler: function(purchase_invoice_name) {
         let btn_save = document.getElementById("btn_save_" + purchase_invoice_name);
@@ -192,6 +211,82 @@ frappe.invoice_entry = {
     attach_delete_handler: function(purchase_invoice_name) {
         let btn_delete = document.getElementById("btn_delete_" + purchase_invoice_name);
         btn_delete.onclick = frappe.invoice_entry.delete_document.bind(this, purchase_invoice_name);
+    },
+    attach_po_selection_handler: function(purchase_invoice_name, purchase_order_name) {
+        let po_button = document.querySelector(`button[data-po-name="${purchase_order_name}"][data-pi-name="${purchase_invoice_name}"]`);
+        if (po_button) {
+            po_button.addEventListener('click', function() {
+                let bill_no = document.querySelector(`input[data-fieldname='bill_no_${purchase_invoice_name}']`).value || null;
+                frappe.call({
+                    method: 'microsynth.microsynth.page.invoice_entry.invoice_entry.update_pi_according_to_po',
+                    args: {
+                        purchase_order_name: purchase_order_name,
+                        purchase_invoice_name: purchase_invoice_name,
+                        bill_no: bill_no // Pass bill_no to the backend
+                    },
+                    callback: function(response) {
+                        if (response.message.success) {
+                            // Fetch updated Purchase Invoice details and refresh the UI
+                            frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
+                        } else {
+                            frappe.show_alert(response.message.message);
+                        }
+                    }
+                });
+            });
+        } else {
+            console.error(`Button for PO ${purchase_order_name} and PI ${purchase_invoice_name} not found.`);
+        }
+    },
+    attach_select_po_button_handler: function(purchase_invoice_name) {
+        let btn = document.getElementById("btn_select_po_" + purchase_invoice_name);
+        if (!btn) return;
+        // Get company from the Purchase Invoice row
+        let company = document.querySelector(`#row_${purchase_invoice_name} .text-muted`).innerText;
+
+        btn.addEventListener("click", function () {
+            frappe.prompt([
+                {
+                    fieldtype: 'Link',
+                    label: 'Purchase Order',
+                    fieldname: 'purchase_order',
+                    options: 'Purchase Order',
+                    reqd: 1,
+                    get_query: function () {
+                        return {
+                            'filters': {
+                                'docstatus': 1,
+                                'status': ['not in', ['Completed', 'Closed']],
+                                'company': company
+                            }
+                        };
+                    }
+                }
+            ],
+            function (values) {
+                let purchase_order_name = values.purchase_order;
+                let bill_no = document.querySelector(`input[data-fieldname='bill_no_${purchase_invoice_name}']`).value || null;
+
+                frappe.call({
+                    'method': 'microsynth.microsynth.page.invoice_entry.invoice_entry.update_pi_according_to_po',
+                    'args': {
+                        'purchase_order_name': purchase_order_name,
+                        'purchase_invoice_name': purchase_invoice_name,
+                        'bill_no': bill_no
+                    },
+                    callback: function (response) {
+                        if (response.message.success) {
+                            frappe.invoice_entry.fetch_purchase_invoice(purchase_invoice_name);
+                        } else {
+                            frappe.show_alert(response.message.message);
+                        }
+                    }
+                });
+            },
+            __('Select Purchase Order'),
+            __('Confirm')
+            );
+        });
     },
     save_document: function(purchase_invoice_name, edit_mode=false) {
         let net_total_inputs = document.querySelectorAll("input[data-fieldname='net_total_" + purchase_invoice_name + "']");
@@ -277,12 +372,10 @@ frappe.invoice_entry = {
         }
     },
     close_document: function(purchase_invoice_name) {
-        // TODO: Save document
         let iframe = document.getElementById("iframe_" + purchase_invoice_name);
         if (iframe) {
             iframe.contentWindow.postMessage("close_document", {});
         }
-        //location.reload();
     },
     delete_document: function(purchase_invoice_name) {
         // let the user confirm the deletion
