@@ -90,8 +90,9 @@ def get_purchase_invoice_drafts(purchase_invoice=None):
                 AND `tabPurchase Order`.`status` NOT IN ('Closed', 'Completed')
                 AND `tabPurchase Order`.`docstatus` = 1
                 AND `tabPurchase Order`.`supplier` = %(supplier)s
+                AND `tabPurchase Order`.`company` = %(company)s
             ORDER BY `tabPurchase Order`.`transaction_date` DESC
-            ;""", {'supplier': pinv.get('supplier')}, as_dict=True)
+            ;""", {'supplier': pinv.get('supplier'), 'company': pinv.get('company')}, as_dict=True)
 
         # define edit net flag from items and total qty
         if pinv['item_count'] == 1 and pinv['total_qty'] == 1 and not pinv['purchase_order']:
