@@ -2937,16 +2937,38 @@ def update_webshop_address(webshop_account, webshop_address):
         if existing_contact is None:
             frappe.throw(f"Contact with ID '{contact_id}' not found in the ERP. Cannot update webshop address.")
 
-        if existing_address is None:
-            #frappe.throw(f"Address with ID '{address_id}' not found in the ERP. Cannot update webshop address.")
-            if not webshop_address['address']:
-                frappe.throw(f"Contact '{contact_id}' has no Address and no address data was provided. Cannot update webshop address.")
+        # Find out if we can update the existing Contact and Address or create a new one.
+        update_existing_contact_address = False
 
-        existing_print_address = {
-            'contact': get_contact_dto(existing_contact),
-            'address': get_address_dto(existing_address)
-        }
-        if not webshop_print_addresses_differ(webshop_address, existing_print_address) or (not is_contact_used(contact_id) and (address_id is None or not is_address_used(address_id))):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
+        if existing_address is None:
+            if existing_contact.has_webshop_account and existing_contact.punchout_identifier:
+                if not is_contact_used(contact_id):
+                    update_existing_contact_address = True
+                else:
+                    update_existing_contact_address = False
+            elif not webshop_address['address']:
+                frappe.throw(f"Contact '{contact_id}' has no Address and no address data was provided. Cannot update webshop address.")
+        else:
+            existing_print_address = {
+                'contact': get_contact_dto(existing_contact),
+                'address': get_address_dto(existing_address)
+            }
+            if not webshop_print_addresses_differ(webshop_address, existing_print_address):
+                # The new webshop_address resembles the existing webshop_address when printed.
+                # So we can update the existing Contact and Address without creating a new one.
+                update_existing_contact_address = True
+
+            else:
+                # The new webshop_address differs from the existing webshop_address when printed.
+                if is_contact_used(contact_id) or (address_id is not None and is_address_used(address_id)):  # this will take very long  # TODO if we consolidate the addresses, the second condition might cause an issue
+                    # The existing Contact or Address is used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
+                    # So we need to create a new Contact and Address to maintain data integrity.
+                    update_existing_contact_address = False
+                else:
+                    update_existing_contact_address = True
+
+        # Update the webshop address.
+        if update_existing_contact_address:
             # The new webshop_address does not differ from the existing webshop_address when printed or
             # the existing contact and address are not yet used on other documents (Quotations, Sales Orders, Delivery Notes, Sales Invoices).
 
