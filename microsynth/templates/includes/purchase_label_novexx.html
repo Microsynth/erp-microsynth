@@ -17,7 +17,11 @@
 #T1.2#J13#YN101//42///{{ row.material_code }}#G
 {%- if row.internal_code %}
 #T1.2#J9.4#YN101//42///{{ row.internal_code }}
+{% if row.batch_no %}
 #T15.4#J10#IDM/0R16S36/4///{{ row.internal_code }}:{{ row.batch_no}}
+{% else %}
+#T15.4#J10#IDM/0R16S36/4///{{ row.internal_code }}
+{%- endif %}
 {%- endif %}
 
 {# Line 4: Opening date / initials: #}
