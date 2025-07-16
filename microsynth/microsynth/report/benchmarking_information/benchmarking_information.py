@@ -10,14 +10,16 @@ def get_columns(filters):
     return [
         {"label": _("Name"), "fieldname": "name", "fieldtype": "Link", "options": "Benchmark", "width": 85 },
         {"label": _("Last Modified"), "fieldname": "modified", "fieldtype": "Date", "width": 125 },
-        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150 },
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200 },
-        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 300 },
-        {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 100, 'options': 'currency'},
+        {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 140 },
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 185 },
+        {"label": _("Product"), "fieldname": "product", "fieldtype": "Data", "width": 240 },
+        {"label": _("Rate"), "fieldname": "rate", "fieldtype": "Currency", "width": 95, 'options': 'currency'},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 40 },
         {"label": _("Item"), "fieldname": "item", "fieldtype": "Link", "options": "Item", "width": 50 },
         {"label": _("Competitor"), "fieldname": "competitor", "fieldtype": "Data", "width": 180 },
         {"label": _("Notes"), "fieldname": "notes", "fieldtype": "Data", "width": 300 },
-        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110 }
+        {"label": _("Has Attachment"), "fieldname": "has_attachment", "fieldtype": "Data", "width": 110 },
+        {"label": _("Created By"), "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 100 }
     ]
 
 
@@ -63,7 +65,8 @@ def get_data(filters):
                     )
                     THEN 'Yes'
                     ELSE 'No'
-                END AS has_attachment
+                END AS has_attachment,
+                `tabBenchmark`.`owner`
             FROM `tabBenchmark`
             LEFT JOIN `tabContact` ON `tabContact`.`name` = `tabBenchmark`.`contact_person`
             LEFT JOIN `tabDynamic Link` AS `tDLA` ON `tDLA`.`parent` = `tabContact`.`name`
