@@ -390,7 +390,7 @@ function display_material_request_owners(frm) {
                     }
                     owner_map[owner].push({
                         'item_name': item.item_name,
-                        'description': item.description || '',
+                        'item_code': item.item_code,
                         'qty': item.qty
                     });
                 });
