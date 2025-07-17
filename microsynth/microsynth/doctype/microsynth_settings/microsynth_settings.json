@@ -23,6 +23,8 @@
   "commission_calculator_export_path",
   "sec_credits",
   "credit_item",
+  "purchasing_section",
+  "inbound_freight_item",
   "abacus_export_section",
   "abacus_export_path",
   "sec_datev",
@@ -171,11 +173,22 @@
    "fieldname": "abacus_export_path",
    "fieldtype": "Data",
    "label": "Abacus Export Path"
+  },
+  {
+   "fieldname": "purchasing_section",
+   "fieldtype": "Section Break",
+   "label": "Purchasing"
+  },
+  {
+   "fieldname": "inbound_freight_item",
+   "fieldtype": "Link",
+   "label": "Inbound Freight Item",
+   "options": "Item"
   }
  ],
  "issingle": 1,
- "modified": "2025-04-17 09:20:16.125828",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-07-17 14:00:54.953020",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
  "owner": "Administrator",
