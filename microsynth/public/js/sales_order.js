@@ -61,6 +61,10 @@ frappe.ui.form.on('Sales Order', {
             frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
         }
 
+        if (frm.doc.is_punchout == 1 && frm.doc.docstatus == 1 && !frappe.user.has_role("System Manager")) {
+            cur_frm.set_df_property('po_no', 'read_only', 1);
+        }
+
         if (frm.doc.customer && frm.doc.product_type && frm.doc.docstatus == 0) {
             // Call a python function that checks if the Customer has a Distributor for the Product Type
             frappe.call({
@@ -100,9 +104,9 @@ frappe.ui.form.on('Sales Order', {
                 });
             }
         }
-        
+
         hide_in_words();
-        
+
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
             frm.add_custom_button(__("Force Cancel"), function() {
@@ -124,14 +128,14 @@ frappe.ui.form.on('Sales Order', {
         };
         if (frm.doc.oligos != null && frm.doc.oligos.length > 0 ) {
             category = "Material";
-        };  */  
+        };  */
         // update taxes was moved to the server-side trigger (see hooks.py)
         //update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
     company(frm) {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function
-        }            
+        }
     }
 });
 
