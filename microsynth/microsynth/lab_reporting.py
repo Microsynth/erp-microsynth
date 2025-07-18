@@ -263,7 +263,6 @@ def create_pdf_attachment(analysis_report):
     if len(analysis_report_doc.sample_details) == 1:
         sample = analysis_report_doc.sample_details[0].sample
         sample_name = frappe.get_value("Sample", sample, "sample_name")
-        print(f"{sample_name=}")
     elif len(analysis_report_doc.sample_details) > 1:
         msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
         frappe.log_error(msg, "lab_reporting.create_pdf_attachment")
@@ -274,17 +273,16 @@ def create_pdf_attachment(analysis_report):
         frappe.throw(msg)
     doctype_folder = create_folder(doctype, "Home")
     title_folder = create_folder(sample_name, doctype_folder)
-    print(f"{title_folder=}")
     # TODO: How to set the file name to sample_name?
     filecontent = frappe.get_print(doctype, analysis_report, printformat, doc=None, as_pdf=True, no_letterhead=False)
-
     save_and_attach(
         content = filecontent,
         to_doctype = doctype,
         to_name = analysis_report,
         folder = title_folder,
         hashname = None,
-        is_private = True)
+        is_private = True
+    )
 
 
 def send_reports(recipient, cc_mails, analysis_reports):
@@ -378,7 +376,6 @@ def webshop_upload(contact_id, web_order_id, analysis_reports):
         if len(analysis_report_doc.sample_details) == 1:
             sample = analysis_report_doc.sample_details[0].sample
             sample_name = frappe.get_value("Sample", sample, "sample_name")
-            print(f"{sample_name=}")
         elif len(analysis_report_doc.sample_details) > 1:
             msg = f"Analysis Report '{analysis_report}' has {len(analysis_report_doc.sample_details)} sample details, but the file naming is only defined for reports with a single sample."
             frappe.log_error(msg, "lab_reporting.webshop_upload")
