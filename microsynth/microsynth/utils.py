@@ -2207,7 +2207,7 @@ def check_new_customers_taxid(delta_days=7):
 def new_french_customers(delta_hours=24):
     """
     Notify the administration daily about new Customers with a french billing address.
-    Should be run daily by a Cronjob.
+    Run daily by a Cronjob at 15:55.
 
     bench execute microsynth.microsynth.utils.new_french_customers --kwargs "{'delta_hours': 24}"
     """
@@ -2231,6 +2231,40 @@ def new_french_customers(delta_hours=24):
             customer_details += f"<a href={get_url_to_form('Customer', new_customer['customer_id'])}>{new_customer['customer_id']} ({new_customer['customer_name']})</a><br>"
         email_template = frappe.get_doc("Email Template", "New French Customers")
         rendered_content = frappe.render_template(email_template.response, {'customer_details': customer_details })
+        send_email_from_template(email_template, rendered_content)
+
+
+def new_sanofi_contacts(delta_hours=24):
+    """
+    Notify the administration daily about new Contacts of Customers with "Sanofi" in their name.
+    Should be run daily by a Cronjob:
+    # Notify the administration about new Sanofi Contacts
+    50 15 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.utils.new_sanofi_contacts --kwargs "{'delta_hours': 24}"
+
+    bench execute microsynth.microsynth.utils.new_sanofi_contacts --kwargs "{'delta_hours': 24}"
+    """
+    sql_query = f"""
+        SELECT DISTINCT `tabContact`.`name` AS `contact_id`,
+            `tabContact`.`first_name`,
+            `tabContact`.`last_name`,
+            `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`customer_name`
+        FROM `tabContact`
+        LEFT JOIN `tabDynamic Link` ON `tabDynamic Link`.`parent` = `tabContact`.`name`
+        LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabDynamic Link`.`link_name`
+        WHERE `tabDynamic Link`.`parenttype` = "Contact"
+            AND `tabDynamic Link`.`link_doctype` = "Customer"
+            AND `tabCustomer`.`customer_name` LIKE "%Sanofi%"
+            AND `tabContact`.`creation` BETWEEN "{datetime.now() - timedelta(hours=delta_hours)}" AND "{datetime.now()}"
+            AND `tabContact`.`status` != 'Disabled'
+        ;"""
+    new_contacts = frappe.db.sql(sql_query, as_dict=True)
+    if len(new_contacts) > 0:
+        contact_details = ""
+        for new_contact in new_contacts:
+            contact_details += f"<a href={get_url_to_form('Contact', new_contact['contact_id'])}>{new_contact['contact_id']} ({new_contact['first_name']} {new_contact['last_name']})</a> of Customer <a href={get_url_to_form('Customer', new_contact['customer_id'])}>{new_contact['customer_id']} ({new_contact['customer_name']})</a><br>"
+        email_template = frappe.get_doc("Email Template", "New Sanofi Contacts")
+        rendered_content = frappe.render_template(email_template.response, {'contact_details': contact_details })
         send_email_from_template(email_template, rendered_content)
 
 
