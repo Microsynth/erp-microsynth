@@ -248,6 +248,7 @@ async function print_labels(frm) {
 
         rows.push({
             'labels_to_print': Math.round(labels_to_print),
+            'item_code': item.item_code,
             'item_name': item.item_name,
             'shelf_life_date': shelf_life_date,
             'material_code': item.material_code,
@@ -276,6 +277,14 @@ async function print_labels(frm) {
                         'in_place_edit': 1,
                         'reqd': 1,
                         'columns': 2
+                    },
+                    {
+                        'fieldname': 'item_code',
+                        'fieldtype': 'Link',
+                        'label': 'Item',
+                        'in_list_view': 0,
+                        'reqd': 1,
+                        'read_only': 1
                     },
                     {
                         'fieldname': 'item_name',
