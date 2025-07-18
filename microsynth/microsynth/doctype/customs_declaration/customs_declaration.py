@@ -7,10 +7,13 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import get_url_to_form
 from frappe.utils.pdf import get_pdf
+from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from datetime import date
+
 
 class CustomsDeclaration(Document):
     def on_submit(self):
+        # Link Delivery Notes to Customs Declaration
         for dn in self.austria_dns:
             doc = frappe.get_doc('Delivery Note', dn.delivery_note)
             doc.customs_declaration = self.name
@@ -22,7 +25,22 @@ class CustomsDeclaration(Document):
             doc.save()
 
         frappe.db.commit()
-        return
+
+        # Create PDF and attach it to the Customs Declaration
+        doctype = printformat = "Customs Declaration"
+        doctype_folder = create_folder(doctype, "Home")
+        title_folder = create_folder(self.name, doctype_folder)
+        filecontent = frappe.get_print(doctype, self.name, printformat, doc=None, as_pdf=True, no_letterhead=False)
+
+        save_and_attach(
+            content = filecontent,
+            to_doctype = doctype,
+            to_name = self.name,
+            folder = title_folder,
+            hashname = None,
+            is_private = True
+        )
+
 
     def before_cancel(self):
         for dn in self.austria_dns:
