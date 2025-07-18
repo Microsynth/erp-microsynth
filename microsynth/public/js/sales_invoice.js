@@ -29,7 +29,7 @@ frappe.ui.form.on('Sales Invoice', {
 
         frappe.ui.keys.add_shortcut({
             'shortcut': 'ctrl+e',
-            'action': function() { 
+            'action': function() {
                 open_mail_dialog(frm)
             },
             'description': __('Custom Email shortcut')
@@ -74,7 +74,7 @@ frappe.ui.form.on('Sales Invoice', {
         };
         if (frm.doc.__islocal) {
             get_exchange_rate(frm);
-            
+
             cur_frm.set_value("invoice_sent_on", null );        // fresh document cannot be sent out (in case duplicate, ... reset)
         }
         if ((frm.doc.docstatus === 1) && (!frm.doc.is_return) && (!frm.doc.invoice_sent_on)) {
@@ -104,7 +104,7 @@ frappe.ui.form.on('Sales Invoice', {
 
             frm.add_custom_button(__('Delievery Notes'), function () {
                 frappe.set_route('List', 'Delivery Note', { 'web_order_id': frm.doc.web_order_id });
-            }, __("View"));            
+            }, __("View"));
         }
 
         hide_in_words();
@@ -124,7 +124,7 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.__islocal && frm.doc.amended_from == null && frm.doc.total_customer_credit != 0) {
             clear_credits(frm);
         }
-        
+
         // Allow to create only full credit notes with custom function if a customer credit has been applied.
         if ((frm.doc.docstatus === 1) && (frm.doc.is_return === 0) && (frm.doc.total_customer_credit > 0)) {
             setTimeout(function() {
@@ -152,7 +152,7 @@ frappe.ui.form.on('Sales Invoice', {
         if (frm.doc.docstatus === 0) {
             cache_company_key(frm);
         }
-        
+
         // in case of customer credit bookings, display links in the customer credit section
         if ((frm.doc.docstatus === 1) && (frm.doc.total_customer_credit > 0)) {
             display_customer_credit_bookings(frm);
@@ -195,6 +195,30 @@ frappe.ui.form.on('Sales Invoice', {
         validate_credit_item_not_using_credits(frm);
 
         validate_company_references(frm);
+
+        frm.doc.items.forEach(function(row) {
+            frappe.call({
+                'method': 'frappe.client.get_value',
+                'args': {
+                    'doctype': 'Item',
+                    'filters': { 'item_code': row.item_code },
+                    'fieldname': ['sales_status']
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (r.message) {
+                        let status = r.message.sales_status;
+                        if (status === "In Preparation" || status === "Discontinued") {
+                            frappe.msgprint({
+                                'title': __('Check to replace Item'),
+                                'message': __('Warning: Item <b>{0}</b> has sales status <b>{1}</b>.', [row.item_code, status]),
+                                'indicator': 'orange'
+                            });
+                        }
+                    }
+                }
+            });
+        });
     }
 });
 
@@ -248,12 +272,12 @@ function full_return(frm) {
                 'sales_invoice': frm.doc.name
             },
             'freeze': true,
-            'freeze_message': __("Creating full credit note..."), 
+            'freeze_message': __("Creating full credit note..."),
             'callback': function(r)
             {
                 cur_frm.reload_doc();
                 frappe.show_alert( __("A Return has been created. Please create a new Invoice.") );
-            } 
+            }
         })
     }, () => {
         frappe.show_alert('Did not create a Return / Credit Note');
@@ -283,7 +307,7 @@ function allocate_credits(frm) {
 function set_income_accounts(frm) {
     frappe.call({
         'method': "microsynth.microsynth.invoicing.get_income_accounts",
-        'args': { 
+        'args': {
             'customer': frm.doc.customer,
             'address': frm.doc.shipping_address_name || frm.doc.customer_address,
             'currency': frm.doc.currency,
@@ -304,13 +328,13 @@ function set_income_accounts(frm) {
 function close_against_expense(frm) {
     frappe.prompt([
             {
-                'fieldname': 'account', 
-                'fieldtype': 'Link', 
-                'label': __('Account'), 
+                'fieldname': 'account',
+                'fieldtype': 'Link',
+                'label': __('Account'),
                 'options': 'Account',
                 'reqd': 1,
-                'get_query': function() { 
-                    return { 
+                'get_query': function() {
+                    return {
                         filters: {
                             'account_type': 'Expense Account',
                             'company': frm.doc.company
@@ -318,12 +342,12 @@ function close_against_expense(frm) {
                     }
                 },
                 'description': __("Create a Journal Entry and close this receivable position against an expense account")
-            }  
+            }
         ],
         function(values){
             frappe.call({
                 'method': "microsynth.microsynth.credits.close_invoice_against_expense",
-                'args': { 
+                'args': {
                     'sales_invoice': frm.doc.name,
                     'account': values.account
                 },
@@ -371,11 +395,11 @@ function transmit_invoice(frm) {
 
 // call zugferd to create and download xml
 function download_zugferd_xml(frm) {
-    var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"  
+    var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"
         + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name);
     var w = window.open( frappe.urllib.get_full_url(url) );
     if (!w) {
-        frappe.msgprint(__("Please enable pop-ups")); 
+        frappe.msgprint(__("Please enable pop-ups"));
         return;
     }
 }
@@ -423,7 +447,7 @@ function open_mail_dialog(frm){
             },
             'callback': function(response) {
                 if (response.message){
-                    
+
                     new frappe.erpnextswiss.MailComposer({
                         'doc': cur_frm.doc,
                         'frm': cur_frm,

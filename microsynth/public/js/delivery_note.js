@@ -14,7 +14,7 @@ frappe.ui.form.on('Delivery Note', {
                 frappe.set_route("List", "Delivery Note", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
             });
         }
-        
+
         hide_in_words();
 
         var time_out = 500;
@@ -36,7 +36,7 @@ frappe.ui.form.on('Delivery Note', {
         if (!frm.doc.product_type && cur_frm.doc.docstatus == 0 && !frm.doc.__islocal) {
             frappe.msgprint( __("Please set a Product Type"), __("Validation") );
         }
-        
+
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
             frm.add_custom_button(__("Force Cancel"), function() {
@@ -64,6 +64,29 @@ frappe.ui.form.on('Delivery Note', {
             frappe.msgprint( __("Please be patient, prices are being checked..."), __("Validation") );
             frappe.validated=false;
         }
+        frm.doc.items.forEach(function(row) {
+            frappe.call({
+                'method': 'frappe.client.get_value',
+                'args': {
+                    'doctype': 'Item',
+                    'filters': { 'item_code': row.item_code },
+                    'fieldname': ['sales_status']
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (r.message) {
+                        let status = r.message.sales_status;
+                        if (status === "In Preparation" || status === "Discontinued") {
+                            frappe.msgprint({
+                                'title': __('Check to replace Item'),
+                                'message': __('Warning: Item <b>{0}</b> has sales status <b>{1}</b>.', [row.item_code, status]),
+                                'indicator': 'orange'
+                            });
+                        }
+                    }
+                }
+            });
+        });
     }
 });
 
@@ -78,7 +101,7 @@ frappe.ui.form.on('Delivery Note Item', {
 function set_export_category(frm) {
     frappe.call({
         'method': "microsynth.microsynth.utils.get_export_category",
-        'args': { 
+        'args': {
             'address_name': frm.doc.shipping_address_name
         },
         'async': false,
@@ -98,7 +121,7 @@ function check_prevdoc_rates(frm) {
     if (frm.doc.items) {
         for (var i = 0; i < frm.doc.items.length; i++) {
             so_details.push(frm.doc.items[i].so_detail);
-        }    
+        }
         frappe.call({
             'method': 'microsynth.microsynth.utils.fetch_price_list_rates_from_prevdoc',
             'args': {
