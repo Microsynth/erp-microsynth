@@ -46,6 +46,7 @@ def get_item_prices(price_list):
             `tabItem Price`.`item_code`,
             `tabItem`.`item_group`,
             `tabItem`.`stock_uom` AS `uom`,
+            `tabItem`.`sales_status`,
             `tabItem Price`.`item_name`,
             `tabItem Price`.`min_qty`,
             `tabItem Price`.`price_list_rate` as rate
@@ -111,6 +112,7 @@ def get_data(filters):
             "item_group": reference.item_group,
             "qty": reference.min_qty,
             "uom": reference.uom,
+            "sales_status": reference.sales_status,
             "reference_rate": reference_rate,
             "price_list_rate": customer_rate,
             "discount": discount,
@@ -198,6 +200,9 @@ def populate_from_reference(price_list, user, item_group=None):
     changes = "item_code;min_qty;old_rate;new_rate"
     # set new prices
     for d in data:
+        if d.get('sales_status') in ["In Preparation", "Discontinued"]:
+            changes += f"\nItem {d['item_code']} on reference Price List '{reference_price_list}' has sales status '{d['sales_status']}'. Going to continue."
+            continue  # do not populate prices for items with sales status "In Preparation" or "Discontinued"
         if d['reference_rate'] and d['price_list_rate'] is None:  # Do NOT populate a reference rate of 0 to the customers price list.
             # create new price
             new_rate = get_rate_or_none(d['item_code'], reference_price_list, d['qty'])
@@ -205,7 +210,7 @@ def populate_from_reference(price_list, user, item_group=None):
                 changes += f"\nThere is no Item Price on reference Price List '{reference_price_list}' for Item {d['item_code']} with minimum quantity <= {d['qty']}. Going to continue."
                 continue
             # rate based on general discount for item groups 3.1 & 3.2
-            group = frappe.get_value("Item", d['item_code'], "item_group")
+            group = d.get('item_group')  # frappe.get_value("Item", d['item_code'], "item_group")
             if "3.1 " in group or "3.2" in group:
                 new_rate = ((100 - general_discount) / 100) * new_rate
             new_item_price = frappe.get_doc({
