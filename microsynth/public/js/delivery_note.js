@@ -38,7 +38,7 @@ frappe.ui.form.on('Delivery Note', {
         }
 
         // allow force cancel
-        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (!frm.doc.customs_declaration)) {
             frm.add_custom_button(__("Force Cancel"), function() {
                 force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
             });
