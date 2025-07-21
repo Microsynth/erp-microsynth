@@ -472,7 +472,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             #storage_location = line[16].strip()  # warehouse
             #annual_consumption_budget = line[17].strip()
             #order_quantity_6mt = line[18].strip()
-            #threshold = line[19].strip()
+            safety_stock = line[19].strip()  # "Schwellenwert"
             shelf_life_in_years  = line[20].strip()  # Haltbarkeit
             #process_critical = line[21].strip()
             #quality_control = line[22].strip()
@@ -524,7 +524,13 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                     shelf_life_in_years = float(shelf_life_in_years)
                     shelf_life_in_days = int(shelf_life_in_years * 365)
                 except Exception as err:
-                    print(f"ERROR: Unable to convert {shelf_life_in_years=} into days ({err}). Going to continue with the next supplier item.")
+                    print(f"ERROR: Unable to convert {shelf_life_in_years=} into days ({err}).")
+
+            if safety_stock:
+                try:
+                    safety_stock = float(safety_stock)
+                except Exception as err:
+                    print(f"ERROR: Unable to convert {safety_stock=} to a float.")
 
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
@@ -540,6 +546,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'is_stock_item': 1,  # if internal_code else 0,
                 'description': item_name,
                 'shelf_life_in_days': shelf_life_in_days,
+                'safety_stock': safety_stock or 0.0,
                 'is_purchase_item': 1,
                 'is_sales_item': 0,
                 'material_code': material_code or None
