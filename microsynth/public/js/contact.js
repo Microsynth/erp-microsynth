@@ -135,7 +135,7 @@ frappe.ui.form.on('Contact', {
         if (is_customer && link_name) {
 
             // Webshop button
-            if (!frm.doc.__islocal && frm.doc.has_webshop_account) {
+            if (!frm.doc.__islocal && frm.doc.has_webshop_account && frm.doc.status === "Passive") {
                 frm.add_custom_button(__("Webshop"), function () {
                     frappe.call({
                         "method": "microsynth.microsynth.utils.get_webshop_url",
