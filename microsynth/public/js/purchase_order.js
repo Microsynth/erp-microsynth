@@ -37,30 +37,7 @@ frappe.ui.form.on('Purchase Order', {
         }
     },
     before_save: function(frm) {
-        var freight_item_code = locals.inbound_freight_item;
-
-        if (!freight_item_code) return;
-
-        var already_exists = frm.doc.items.some(function(item) {
-            return item.item_code === freight_item_code;
-        });
-
-        if (!already_exists) {
-            frm.add_child('items', {
-                'item_code': freight_item_code,
-                'qty': 1,
-                'rate': 0,
-                'base_rate': 0,
-                'amount': 0,
-                'base_amount': 0,
-                'conversion_factor': 1,
-                'schedule_date': frm.doc.schedule_date || frappe.datetime.get_today(),
-                'uom': 'Pcs',
-                'item_name': 'Inbound Freight',
-                'description': 'Inbound Freight Cost'
-            });
-            frm.refresh_field('items');
-        }
+        add_freight_item(frm);
     },
     company(frm) {
         if (frm.doc.__islocal) {
@@ -68,3 +45,31 @@ frappe.ui.form.on('Purchase Order', {
         }
     }
 });
+
+
+function add_freight_item(frm) {
+    var freight_item_code = locals.inbound_freight_item;
+
+    if (!freight_item_code) return;
+
+    var already_exists = frm.doc.items.some(function(item) {
+        return item.item_code === freight_item_code;
+    });
+
+    if (!already_exists) {
+        frm.add_child('items', {
+            'item_code': freight_item_code,
+            'qty': 1,
+            'rate': 0,
+            'base_rate': 0,
+            'amount': 0,
+            'base_amount': 0,
+            'conversion_factor': 1,
+            'schedule_date': frm.doc.schedule_date || frappe.datetime.get_today(),
+            'uom': 'Pcs',
+            'item_name': 'Inbound Freight',
+            'description': 'Inbound Freight Cost'
+        });
+        frm.refresh_field('items');
+    }
+}
