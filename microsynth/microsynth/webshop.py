@@ -3368,3 +3368,51 @@ def create_webshop_addresses():
             print(f"Customer '{contact.get('customer_id')}' of Contact '{contact_id}' has no Invoice To Contact.")
             continue
         initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
+
+
+@frappe.whitelist()
+def get_price_list_doc(contact):
+    """
+    bench execute microsynth.microsynth.webshop.change_contact_customer --kwargs "{'contact': '243755'}"
+    """
+    from frappe.utils.pdf import get_pdf
+    from microsynth.microsynth.utils import get_customer
+    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import get_item_prices as get_item_prices_from_price_list
+
+    customer_id = get_customer(contact)
+    customer_doc = frappe.get_doc('Customer', customer_id)
+    language = customer_doc.language
+    price_list = customer_doc.default_price_list
+    item_prices = get_item_prices_from_price_list(price_list)
+    item_price_dict = {}
+
+    for item_price in item_prices:
+        item_price_dict[(item_price.get('item_code'), item_price.get('min_qty'))] = item_price.get('rate')
+
+    css = frappe.get_value('Print Format', 'Price List Print Template', 'css')
+    raw_html = frappe.get_value('Print Format', 'Price List Print Template', 'html')
+    # create html
+    css_html = f"<style>{css}</style>{raw_html}"
+    rendered_html = frappe.render_template(
+        css_html,
+        {
+            'doc': frappe.get_doc('Price List Print Template', 'Price List Print Template'),
+            'contact_id': contact,
+            'customer_doc': customer_doc,
+            'language': 'en' or language,
+            'item_prices': item_price_dict
+        }
+    )
+    # need to load the styles and tags
+    content = frappe.render_template(
+        'microsynth/templates/pages/print.html',
+        {'html': rendered_html}
+    )
+    options = {
+        'disable-smart-shrinking': ''
+    }
+    pdf = get_pdf(content, options)
+    frappe.local.response.filename = f"Price_List_Person_ID_{contact}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
+    #return pdf

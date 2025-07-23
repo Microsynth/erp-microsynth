@@ -12,7 +12,7 @@
  ],
  "fields": [
   {
-   "columns": 3,
+   "columns": 4,
    "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
@@ -51,8 +51,8 @@
   }
  ],
  "istable": 1,
- "modified": "2025-07-23 09:32:57.622537",
- "modified_by": "Administrator",
+ "modified": "2025-07-23 17:17:29.324612",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Sequencing Row",
  "owner": "Administrator",
