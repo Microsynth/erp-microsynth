@@ -1,0 +1,46 @@
+{
+ "creation": "2025-07-23 12:03:54.141669",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "item_code",
+  "type"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "columns": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Unit Price",
+   "options": "Item"
+  },
+  {
+   "default": "Row",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Heading\nRow"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-07-23 13:01:54.141669",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "PL Print Template Two column Row",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
