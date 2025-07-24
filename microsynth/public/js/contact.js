@@ -147,6 +147,16 @@ frappe.ui.form.on('Contact', {
                         }
                     });
                 });
+                frm.add_custom_button(__("Price List PDF"), function () {
+                    const encodedContact = encodeURIComponent(frm.doc.name);
+                    const url = frappe.urllib.get_full_url(
+                        "/api/method/microsynth.microsynth.webshop.get_price_list_doc?contact=" + encodedContact
+                    );
+                    const w = window.open(url);
+                    if (!w) {
+                        frappe.msgprint(__("Please enable pop-ups"));
+                    }
+                }, __("Create"));
             }
 
             // Preview Address button
