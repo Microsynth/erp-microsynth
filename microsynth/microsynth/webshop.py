@@ -3370,16 +3370,18 @@ def create_webshop_addresses():
         initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
 
 
-@frappe.whitelist()
-def get_price_list_doc(contact):
+def get_price_list_pdf(contact_id):
     """
-    bench execute microsynth.microsynth.webshop.change_contact_customer --kwargs "{'contact': '243755'}"
+    Generate a PDF representation of the price list for the given Contact ID.
+    Returns the raw PDF content as bytes.
     """
     from frappe.utils.pdf import get_pdf
     from microsynth.microsynth.utils import get_customer
     from microsynth.microsynth.report.pricing_configurator.pricing_configurator import get_item_prices as get_item_prices_from_price_list
 
-    customer_id = get_customer(contact)
+    customer_id = get_customer(contact_id)
+    if not customer_id:
+        frappe.throw(f"Contact {contact_id} does not belong to any Customer. Unable to get Price List PDF.")
     customer_doc = frappe.get_doc('Customer', customer_id)
     language = customer_doc.language
     price_list = customer_doc.default_price_list
@@ -3397,7 +3399,7 @@ def get_price_list_doc(contact):
         css_html,
         {
             'doc': frappe.get_doc('Price List Print Template', 'Price List Print Template'),
-            'contact_id': contact,
+            'contact_id': contact_id,
             'customer_doc': customer_doc,
             'language': 'en' or language,
             'item_prices': item_price_dict
@@ -3412,7 +3414,44 @@ def get_price_list_doc(contact):
         'disable-smart-shrinking': ''
     }
     pdf = get_pdf(content, options)
-    frappe.local.response.filename = f"Price_List_Person_ID_{contact}.pdf"
+    return pdf
+
+
+@frappe.whitelist()
+def prepare_price_list_pdf_download(contact):
+    """
+    Generates the price list PDF for a given Contact and sends it as a file download.
+
+    Side Effects:
+        Sets `frappe.local.response` to return a downloadable PDF file.
+    """
+    pdf = get_price_list_pdf(contact)
+    # Use contact name in filename, replace spaces to avoid invalid characters
+    frappe.local.response.filename = f"Price_List_PersID_{contact.replace(' ', '_')}.pdf"
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
-    #return pdf
+
+
+@frappe.whitelist()
+def get_price_list_doc(contact):
+    """
+    Return a base64-encoded PDF and a file name of the Price List for the Customer of the given contact.
+    """
+    try:
+        pdf = get_price_list_pdf(contact)
+        encoded_pdf = base64.b64encode(pdf)
+        file_name = f"Price_List_{contact.replace(' ', '_')}.pdf"
+        return {
+            "success": True,
+            "base64_pdf": encoded_pdf,
+            "file_name": file_name,
+            "message": "OK"
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "webshop.get_price_list_doc")
+        return {
+            "success": False,
+            "base64_pdf": None,
+            "file_name": None,
+            "message": f"Failed to generate PDF: {str(e)}"
+        }

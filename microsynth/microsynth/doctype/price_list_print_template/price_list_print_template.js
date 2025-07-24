@@ -20,7 +20,7 @@ frappe.ui.form.on('Price List Print Template', {
                 primary_action(values) {
                     const encodedContact = encodeURIComponent(values.contact);
                     const url = frappe.urllib.get_full_url(
-                        "/api/method/microsynth.microsynth.webshop.get_price_list_doc?contact=" + encodedContact
+                        "/api/method/microsynth.microsynth.webshop.prepare_price_list_pdf_download?contact=" + encodedContact
                     );
                     const w = window.open(url);
                     if (!w) {
