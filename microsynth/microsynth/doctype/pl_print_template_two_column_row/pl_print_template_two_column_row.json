@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "title",
+  "item_name",
   "item_code",
   "type"
  ],
@@ -14,7 +15,7 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title"
+   "label": "Title (overwrites Item Name)"
   },
   {
    "default": "Row",
@@ -30,10 +31,19 @@
    "in_list_view": 1,
    "label": "Unit Price",
    "options": "Item"
+  },
+  {
+   "columns": 3,
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2025-07-23 17:03:39.123088",
+ "modified": "2025-07-24 13:48:17.562885",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Two Column Row",

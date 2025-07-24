@@ -47,11 +47,11 @@
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title"
+   "label": "Title (overwrites Item Name)"
   }
  ],
  "istable": 1,
- "modified": "2025-07-23 17:17:29.324612",
+ "modified": "2025-07-24 13:51:57.311938",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Sequencing Row",
