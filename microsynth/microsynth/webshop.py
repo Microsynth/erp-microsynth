@@ -3391,6 +3391,12 @@ def get_price_list_pdf(contact_id):
     for item_price in item_prices:
         item_price_dict[(item_price.get('item_code'), item_price.get('min_qty'))] = item_price.get('rate')
 
+    data = get_contact_shipping_items(contact_id)
+    shipping_items = data.get('shipping_items')
+
+    for item in shipping_items:
+        item_price_dict[(item.get('item'), item.get('qty'))] = item.get('rate')
+
     css = frappe.get_value('Print Format', 'Price List Print Template', 'css')
     raw_html = frappe.get_value('Print Format', 'Price List Print Template', 'html')
     # create html
@@ -3402,7 +3408,8 @@ def get_price_list_pdf(contact_id):
             'contact_id': contact_id,
             'customer_doc': customer_doc,
             'language': 'en' or language,
-            'item_prices': item_price_dict
+            'item_prices': item_price_dict,
+            'shipping_items': shipping_items
         }
     )
     # need to load the styles and tags
