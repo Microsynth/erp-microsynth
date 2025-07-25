@@ -40,6 +40,7 @@ doctype_js = {
     "Item Group":         "public/js/item_group.js",
     "Item Price":         "public/js/item_price.js",
     "Item":               "public/js/item.js",
+    "Job Applicant":      "public/js/job_applicant.js",
     "Journal Entry":      "public/js/journal_entry.js",
     "Material Request":   "public/js/material_request.js",
     "Payment Entry":      "public/js/payment_entry.js",
