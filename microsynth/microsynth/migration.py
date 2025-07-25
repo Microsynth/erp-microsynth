@@ -5529,3 +5529,40 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
         # If any shipping addresses were enabled, set them to disabled again
         for a in enabled_shipping_addresses:
             frappe.db.set_value("Address", a, "disabled", 1)
+
+
+def compare_primary_emails(input_filepath):
+    """
+    Parse an export of all non-deleted AspNetUsers from the Webshop and compare the primary ERP emails to them to find mismatches.
+
+    bench execute microsynth.microsynth.migration.compare_primary_emails --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-07-25_Export_non-deleted_AspNetUsers_Webshop.txt'}"
+    """
+    erp_contacts = frappe.db.get_all("Contact", filters=[['has_webshop_account', '=', '1'], ['status', '!=', 'Disabled']], fields=['name', 'email_id'])
+    erp_contact_dict = {}
+    for c in erp_contacts:
+        erp_contact_dict[c.get('name')] = c.get('email_id')
+    print(f"INFO: {datetime.now()}: Parsing Webshop Accounts from {input_filepath} ...")
+    with open(input_filepath, "r") as input_file:
+        csv_reader = csv.reader(input_file, delimiter='\t')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 35:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            webshop_email = line[10]
+            person_id = line[29]
+            if not webshop_email:
+                print(f"WARNING: Missing Email for Id {line[0]}; skipping")
+                continue
+            if not person_id:
+                print(f"WARNING: Missing IdPerson for Id {line[0]}; skipping")
+                continue
+            if not person_id in erp_contact_dict:
+                print(f"WARNING: Non-deleted Person ID {person_id} from Webshop does not match to any enabled ERP Contact with has_webshop_account; skipping")
+                continue
+            erp_email = erp_contact_dict[person_id]
+            if (not erp_email) or (len(erp_email) < 3):
+                print(f"WARNING: ERP Contact {c.get('name')} has no email_id, but email {webshop_email} on the Webshop.")
+                continue
+            if webshop_email != erp_email:
+                print(f"PersID {person_id}: ERP email_id {erp_email} != Webshop email {webshop_email}")
