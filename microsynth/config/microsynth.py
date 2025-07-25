@@ -594,6 +594,30 @@ def get_data():
             "items": [
                    {
                        "type": "doctype",
+                       "name": "Job Opening",
+                       "label": _("Job Opening"),
+                       "description": _("Job Opening")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Job Applicant",
+                       "label": _("Job Applicant"),
+                       "description": _("Job Applicant")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Job Offer",
+                       "label": _("Job Offer"),
+                       "description": _("Job Offer")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Employee",
+                       "label": _("Employee"),
+                       "description": _("Employee")
+                   },
+                   {
+                       "type": "doctype",
                        "name": "Salary Certificate",
                        "label": _("Salary Certificate"),
                        "description": _("Salary Certificate")
