@@ -1,0 +1,37 @@
+{
+ "creation": "2025-07-25 16:24:15.367177",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "assessor",
+  "requirements_fit"
+ ],
+ "fields": [
+  {
+   "fieldname": "assessor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assessor",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "requirements_fit",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Requirements",
+   "options": "\n1: Met\n2: Partially met\n3: Not met",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-07-25 16:24:15.367177",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Job Applicant Assessment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
