@@ -103,6 +103,7 @@ def link_quotation_to_order(sales_order, quotation):
                 item.parent = so_doc.name
                 break
         item.save()
+    so_doc.save()  # necessary to update item amount, order total etc.
     return so_doc.name
 
 
