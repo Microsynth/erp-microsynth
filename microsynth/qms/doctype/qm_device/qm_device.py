@@ -12,6 +12,39 @@ class QMDevice(Document):
     pass
 
 
+def convert_price_fields(price_chf, price_eur, price_usd):
+    """
+    Takes three price strings (CHF, EUR, USD), validates and converts one into (price, currency).
+
+    Returns:
+        tuple (currency: str, price: float) if valid
+        (None, None) if invalid with printed warning
+    """
+    prices = {}
+
+    for currency, value in [('CHF', price_chf), ('EUR', price_eur), ('USD', price_usd)]:
+        try:
+            float_value = float(value)
+        except (TypeError, ValueError):
+            if value:  # print only if value is non-empty
+                print(f"Invalid number for {currency}: {value}")
+            float_value = 0.0
+        if float_value > 0:
+            prices[currency] = float_value
+
+    if len(prices) == 0:
+        #print("No valid price > 0 provided.")
+        return None, None
+
+    if len(prices) > 1:
+        print(f"WARNING: Multiple prices > 0 found: {prices}")
+        return None, None
+
+    # prices dict has exactly one item at this point (since checked before)
+    # iterating over it and picking the first is safe and efficient
+    return next(iter(prices.items()))
+
+
 def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_length=18):
     """
     bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-07-25_Geraeteliste.csv'}"
@@ -29,6 +62,13 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
         '3.7 NGS': '3.6 NGS',
         '5.1 Instrumente': '5.1 Instruments',
     }
+    category_mapping = {
+        'A': 'A: Complex analytical system',
+        'B': 'B: Standard measuring device',
+        'C': 'C: Auxiliary non-measuring equipment'
+    }
+    imported_counter = 0
+
     with open(input_filepath) as file:
         print(f"INFO: Parsing devices from '{input_filepath}' ...")
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
@@ -44,7 +84,7 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
             serial_number = line[3].strip()
             critical_parameters = line[4].strip()
             location = line[5].strip()
-            maintenance_instructions = line[6].strip()
+            service_instructions = line[6].strip()
             manufacturer = line[7].strip()
             supplier_name = line[8].strip()
             function_control = line[9].strip()
@@ -75,3 +115,56 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
             if not device_classification:
                 print(f"ERROR: No 'ABC_Kundeneinteilung' in the following line: {line}")
                 continue
+            if device_classification not in category_mapping:
+                print(f"ERROR: Unknown 'ABC_Kundeneinteilung' '{device_classification}' in the following line: {line}")
+                continue
+            if is_archived:
+                continue
+
+            if price_eur or price_chf or price_usd:
+                pass
+
+            supplier = None
+            if supplier_name:
+                suppliers = frappe.get_all("Supplier", filters={'supplier_name': supplier_name}, fields=['name'])
+                if len(suppliers) > 0:
+                    supplier = suppliers[0].get('name')
+
+            name = f"QMDE-{int(device_id):0{5}d}"
+            if frappe.db.exists("QM Device", name):
+                print(f"ERROR: QM Device {name} already exists, going to skip the following line: {line}")
+                continue
+
+            qm_device = frappe.get_doc({
+                'doctype': "QM Device",
+                'name': name,
+                'device_name': device_name,
+                'category': category_mapping[device_classification],
+                'status': 'Unqualified',  # TODO: mandatory, but how to determine?
+                'location': '',  # TODO: mapping required
+                'qm_process': group_mapping[process],
+                'serial_no': serial_number,
+                'service_instructions': service_instructions,
+                'manufacturer': manufacturer,
+                'supplier': supplier
+            })
+            qm_device.insert()
+
+            currency, price = convert_price_fields(price_chf, price_eur, price_usd)
+
+            if acquisition_date or price:
+                price_str = f" for {price} {currency}." if price else "."
+                acq_str = f" on {acquisition_date}" if acquisition_date else ""
+                new_comment = frappe.get_doc({
+                    'doctype': 'Comment',
+                    'comment_type': "Comment",
+                    'subject': qm_device.name,
+                    'content': f"This device was purchased{acq_str}{price_str}",
+                    'reference_doctype': "QM Device",
+                    'status': "Linked",
+                    'reference_name': qm_device.name
+                })
+                new_comment.insert(ignore_permissions=True)
+            imported_counter += 1
+
+    print(f"Successfully imported {imported_counter} QM Devices.")
