@@ -5562,7 +5562,7 @@ def compare_primary_emails(input_filepath):
                 continue
             erp_email = erp_contact_dict[person_id]
             if (not erp_email) or (len(erp_email) < 3):
-                print(f"WARNING: ERP Contact {c.get('name')} has no email_id, but email {webshop_email} on the Webshop.")
+                print(f"WARNING: ERP Contact {person_id} has no email_id, but email {webshop_email} on the Webshop.")
                 continue
             if webshop_email != erp_email:
                 print(f"PersID {person_id}: ERP email_id {erp_email} != Webshop email {webshop_email}")
