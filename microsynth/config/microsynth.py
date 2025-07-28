@@ -605,6 +605,13 @@ def get_data():
                        "description": _("Job Applicant")
                    },
                    {
+                       "type": "report",
+                       "name": "Job Applicant Overview",
+                       "label": _("Job Applicant Overview"),
+                       "doctype": "Job Applicant",
+                       "is_query_report": True
+                   },
+                   {
                        "type": "doctype",
                        "name": "Job Offer",
                        "label": _("Job Offer"),
@@ -615,12 +622,6 @@ def get_data():
                        "name": "Employee",
                        "label": _("Employee"),
                        "description": _("Employee")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Salary Certificate",
-                       "label": _("Salary Certificate"),
-                       "description": _("Salary Certificate")
                    },
                    {
                         "type": "report",
