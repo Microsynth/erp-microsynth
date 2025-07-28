@@ -23,3 +23,15 @@ ${address.country || ''}
         }
     }
 })
+
+
+frappe.ui.form.on('Job Applicant Assessment', {
+    // This triggers when a new row is added to the child table
+    assessments_add: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if(!row.assessor) {
+            row.assessor = frappe.session.user;
+            frm.refresh_field('assessments');
+        }
+    }
+});
