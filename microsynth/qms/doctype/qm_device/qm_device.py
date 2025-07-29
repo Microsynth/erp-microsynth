@@ -137,7 +137,6 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
 
             qm_device = frappe.get_doc({
                 'doctype': "QM Device",
-                'name': name,
                 'device_name': device_name,
                 'category': category_mapping[device_classification],
                 'status': 'Unqualified',  # TODO: mandatory, but how to determine?
@@ -148,6 +147,9 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                 'manufacturer': manufacturer,
                 'supplier': supplier
             })
+            qm_device.name = name
+            # disable automatic name generation
+            qm_device.flags.name_set = True
             qm_device.insert()
 
             currency, price = convert_price_fields(price_chf, price_eur, price_usd)
