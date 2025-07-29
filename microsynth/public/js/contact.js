@@ -60,6 +60,14 @@ frappe.ui.form.on('Contact', {
             });
             frappe.validated=false;
         }
+        if (frm.doc.designation && frm.doc.has_webshop_account && !['Dr.', 'Prof.', 'Prof. Dr.'].includes(frm.doc.designation)) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please set the field <b>Title</b> to a valid value (Dr. / Prof. / Prof. Dr.) or leave it empty.")
+            });
+            frappe.validated=false;
+        }
     },
     onload(frm) {
         // Hide dashboard if Contact is versioned
