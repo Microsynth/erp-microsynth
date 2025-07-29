@@ -200,6 +200,12 @@ doc_events = {
     },
     "Purchase Receipt": {
         "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"
+    },
+    "Job Opening": {
+        "autoname": "microsynth.microsynth.hr.hr_autoname"
+    },
+    "Job Applicant": {
+        "autoname": "microsynth.microsynth.hr.hr_autoname"
     }
     #"Abacus Export File": {
     #    "on_submit": "microsynth.microsynth.doctype.abacus_export_file_addition.abacus_export_file_addition.save_abacus_export_file"
