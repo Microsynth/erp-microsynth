@@ -1,4 +1,18 @@
 frappe.ui.form.on('Job Applicant', {
+    job_title: function(frm){
+        frappe.call({
+            'method': 'frappe.client.get',
+            'args': {
+                'doctype': 'Job Opening',
+                'name': frm.doc.job_title
+            },
+            'callback': function(response) {
+                if (response.message) {
+                    cur_frm.set_value("company", response.message.company);
+                }
+            }
+        });
+    },
     before_save(frm) {
         let first_name = frm.doc.first_name || "";
         let last_name = frm.doc.last_name || "";
