@@ -5426,8 +5426,6 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                                      fields=['date', 'exchange_rate'],
                                      order_by='date desc')
     customs_declarations = frappe.get_all("Customs Declaration", filters=[['docstatus', '=', 1], ['creation', '<', to_date]], fields=['name'])
-    enabled_customers = set()
-    enabled_shipping_addresses = set()
     print(f"INFO: Going to process {len(customs_declarations)} Customs Declarations ...")
     try:
         for i, cd in enumerate(customs_declarations):
@@ -5435,24 +5433,16 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
             has_cancelled_dn = False
             changes = []
             for at_dn in cd_doc.austria_dns:
-                if at_dn.eur_net_total or at_dn.eur_taxes or at_dn.eur_grand_total:
-                    print(f"INFO: Skipping Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} because EUR fields are already set.")
-                    continue
                 dn_docstatus = frappe.get_value("Delivery Note", at_dn.delivery_note, "docstatus")
-                if dn_docstatus != 1:
-                    print(f"WARNING: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is not submitted.")
+                if dn_docstatus == 0:
+                    print(f"WARNING: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is in status Draft.")
                 if dn_docstatus == 2:
-                    print(f"ERROR: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled. Unable to edit and save this Customs Declaration.")
+                    print(f"WARNING: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled.")
                     has_cancelled_dn = True
-                    break
-                # Check if the customer is disabled and enable it if necessary
-                if frappe.get_value("Customer", at_dn.customer, "disabled"):
-                    frappe.db.set_value("Customer", at_dn.customer, "disabled", 0)
-                    enabled_customers.add(at_dn.customer)
-                # Check if the shipping address is disabled and enable it if necessary
-                if frappe.get_value("Address", at_dn.shipping_address, "disabled"):
-                    frappe.db.set_value("Address", at_dn.shipping_address, "disabled", 0)
-                    enabled_shipping_addresses.add(at_dn.shipping_address)
+                # Skip if already processed
+                if at_dn.eur_net_total or at_dn.eur_taxes or at_dn.eur_grand_total:
+                    #print(f"INFO: Skipping Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} because EUR fields are already set.")
+                    continue
                 if at_dn.currency == 'EUR':
                     at_dn.eur_net_total = at_dn.net_total
                     at_dn.eur_taxes = at_dn.taxes
@@ -5467,26 +5457,16 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                         at_dn.eur_grand_total = eur_values['eur_grand_total']
                     else:
                         print(f"ERROR: Unable to calculate EUR values for Austria DN {at_dn.delivery_note} in Customs Declaration {cd_doc.name}.")
-            if has_cancelled_dn:
-                continue
             for eu_dn in cd_doc.eu_dns:
+                dn_docstatus = frappe.get_value("Delivery Note", eu_dn.delivery_note, "docstatus")
+                if dn_docstatus == 0:
+                    print(f"WARNING: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is in status Draft.")
+                if dn_docstatus == 2:
+                    print(f"WARNING: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled.")
+                    has_cancelled_dn = True
+                # Skip if already processed
                 if eu_dn.eur_net_total or eu_dn.eur_taxes or eu_dn.eur_grand_total:
                     continue
-                dn_docstatus = frappe.get_value("Delivery Note", eu_dn.delivery_note, "docstatus")
-                if dn_docstatus != 1:
-                    print(f"WARNING: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is not submitted.")
-                if dn_docstatus == 2:
-                    print(f"ERROR: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled. Unable to edit and save this Customs Declaration.")
-                    has_cancelled_dn = True
-                    break
-                # Check if the customer is disabled and enable it if necessary
-                if frappe.get_value("Customer", eu_dn.customer, "disabled"):
-                    frappe.db.set_value("Customer", eu_dn.customer, "disabled", 0)
-                    enabled_customers.add(eu_dn.customer)
-                # Check if the shipping address is disabled and enable it if necessary
-                if frappe.get_value("Address", eu_dn.shipping_address, "disabled"):
-                    frappe.db.set_value("Address", eu_dn.shipping_address, "disabled", 0)
-                    enabled_shipping_addresses.add(eu_dn.shipping_address)
                 if eu_dn.currency == 'EUR':
                     eu_dn.eur_net_total = eu_dn.net_total
                     eu_dn.eur_taxes = eu_dn.taxes
@@ -5500,8 +5480,6 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                         eu_dn.eur_grand_total = eur_values['eur_grand_total']
                     else:
                         print(f"ERROR: Unable to calculate EUR values for EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name}.")
-            if has_cancelled_dn:
-                continue
             if changes:
                 # Add a comment to the Customs Declaration if any values were calculated
                 new_comment = frappe.get_doc({
@@ -5514,21 +5492,12 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                     'reference_name': cd_doc.name,
                 })
                 new_comment.insert(ignore_permissions=True)
+            cd_doc.flags.ignore_links = True  # allow to save even if cancelled or disabled documents are linked
             cd_doc.save()
             print(f"INFO: Successfully processed Customs Declaration {cd_doc.name} ({i+1}/{len(customs_declarations)}).")
     except Exception as e:
         print(f"ERROR: An error occurred while processing Customs Declarations: {str(e)}")
-        raise  # re-raise the exception to make sure it is logged properly (finally block will still execute)
-    finally:
-        # This block always executes, regardless of whether an exception occurred
-        print(f"INFO: Enabling {len(enabled_customers)} Customers that were disabled before: {enabled_customers}")
-        # If any customers were enabled, set them to disabled again
-        for c in enabled_customers:
-            frappe.db.set_value("Customer", c, "disabled", 1)
-        print(f"INFO: Enabling {len(enabled_shipping_addresses)} Shipping Addresses that were disabled before: {enabled_shipping_addresses}")
-        # If any shipping addresses were enabled, set them to disabled again
-        for a in enabled_shipping_addresses:
-            frappe.db.set_value("Address", a, "disabled", 1)
+        raise  # re-raise the exception to make sure it is logged properly
 
 
 def compare_primary_emails(input_filepath):
