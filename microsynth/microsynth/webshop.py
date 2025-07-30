@@ -1121,6 +1121,7 @@ def place_order(content, client="webshop"):
             company = customer.default_company          # selling company
             is_drop_shipment = True
 
+    invoice_to = content['invoice_contact'] if 'invoice_contact' in content else None
     # Distributor workflow
     if 'product_type' in content:
         for distributor in customer.distributors:
@@ -1134,6 +1135,7 @@ def place_order(content, client="webshop"):
                 customer = frappe.get_doc("Customer", distributor.distributor)
 
                 billing_address = get_billing_address(customer.name).name
+                invoice_to = customer.invoice_to
 
     # check that the webshop does not send prices / take prices from distributor price list
     #   consider product type
@@ -1150,7 +1152,7 @@ def place_order(content, client="webshop"):
         'naming_series': naming_series,
         'customer': customer.name,
         'tax_id': customer.tax_id,
-        'invoice_to': content['invoice_contact'] if 'invoice_contact' in content else None,
+        'invoice_to': invoice_to,
         'customer_address': billing_address,
         'shipping_contact': content['shipping_contact'] if 'shipping_contact' in content else None,
         'shipping_address_name': content['delivery_address'],
