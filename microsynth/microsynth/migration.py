@@ -5500,11 +5500,11 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
         raise  # re-raise the exception to make sure it is logged properly
 
 
-def compare_primary_emails(input_filepath):
+def compare_primary_emails(input_filepath, verbose=False):
     """
     Parse an export of all non-deleted AspNetUsers from the Webshop and compare the primary ERP emails to them to find mismatches.
 
-    bench execute microsynth.microsynth.migration.compare_primary_emails --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-07-25_Export_non-deleted_AspNetUsers_Webshop.txt'}"
+    bench execute microsynth.microsynth.migration.compare_primary_emails --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-07-31_Export_non-deleted_AspNetUsers_Webshop.txt'}"
     """
     erp_contacts = frappe.db.get_all("Contact", filters=[['has_webshop_account', '=', '1'], ['status', '!=', 'Disabled']], fields=['name', 'email_id'])
     erp_contact_dict = {}
@@ -5514,6 +5514,7 @@ def compare_primary_emails(input_filepath):
     with open(input_filepath, "r") as input_file:
         csv_reader = csv.reader(input_file, delimiter='\t')
         next(csv_reader)  # skip header
+        print("persID;erp_email;webshop_email")
         for line in csv_reader:
             if len(line) != 35:
                 print(f"{len(line)=}; {line=}; skipping")
@@ -5521,17 +5522,34 @@ def compare_primary_emails(input_filepath):
             webshop_email = line[10]
             person_id = line[29]
             if not webshop_email:
-                print(f"WARNING: Missing Email for Id {line[0]}; skipping")
+                if verbose:
+                    print(f"WARNING: Missing Email for Id {line[0]}; skipping")
                 continue
             if not person_id:
-                print(f"WARNING: Missing IdPerson for Id {line[0]}; skipping")
+                if verbose:
+                    print(f"WARNING: Missing IdPerson for Id {line[0]}; skipping")
                 continue
             if not person_id in erp_contact_dict:
-                print(f"WARNING: Non-deleted Person ID {person_id} from Webshop does not match to any enabled ERP Contact with has_webshop_account; skipping")
+                if verbose:
+                    print(f"WARNING: Non-deleted Person ID {person_id} from Webshop does not match to any enabled ERP Contact with has_webshop_account; skipping")
                 continue
             erp_email = erp_contact_dict[person_id]
             if (not erp_email) or (len(erp_email) < 3):
-                print(f"WARNING: ERP Contact {person_id} has no email_id, but email {webshop_email} on the Webshop.")
+                print(f"{person_id};None;{webshop_email}")
                 continue
             if webshop_email != erp_email:
-                print(f"PersID {person_id}: ERP email_id {erp_email} != Webshop email {webshop_email}")
+                # Check if there is a new version of the ERP Contact with the webshop email.
+                if not frappe.db.exists("Webshop Address", person_id):
+                    print(f"ERROR: No Webshop Address found for Contact {person_id} with has_webshop_account.")
+                    continue
+                webshop_address = frappe.get_doc("Webshop Address", person_id)
+                for address in webshop_address.addresses:
+                    if address.is_default_shipping:
+                        # Get email of default shipping Contact of Webshop Address
+                        erp_email = frappe.get_value("Contact", address.contact, "email_id")
+                        if not erp_email:
+                            print(f"{address.contact};None;{webshop_email}")
+                            #print(f"WARNING: No email_id found for the default shipping contact {address.contact} of Webshop Address {webshop_address}.")
+                        break
+                if webshop_email != erp_email:
+                    print(f"{person_id};{erp_email};{webshop_email}")
