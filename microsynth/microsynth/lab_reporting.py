@@ -13,8 +13,7 @@ from frappe.desk.form.load import get_attachments
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_customer
-from microsynth.microsynth.utils import validate_sales_order_status
+from microsynth.microsynth.utils import get_customer, has_items_delivered_by_supplier, validate_sales_order_status
 
 
 def get_sales_order_samples(sales_order_id):
@@ -552,7 +551,9 @@ def check_mycoplasma_sales_order_completion(verbose=False):
                     break
             if pending_samples:
                 continue
-
+            if has_items_delivered_by_supplier(sales_order['name']):
+                # do not create a DN if any item has the flag delivered_by_supplier set
+                continue
             # all processed: create Delivery Note (leave on draft: submitted in a batch process later on)
             dn_content = make_delivery_note(sales_order['name'])
             dn = frappe.get_doc(dn_content)
