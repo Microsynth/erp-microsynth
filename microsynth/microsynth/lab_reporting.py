@@ -13,7 +13,7 @@ from frappe.desk.form.load import get_attachments
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_customer, has_items_delivered_by_supplier, validate_sales_order_status
+from microsynth.microsynth.utils import get_customer, has_items_delivered_by_supplier, validate_sales_order_status, send_email_from_template
 
 
 def get_sales_order_samples(sales_order_id):
@@ -634,19 +634,12 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
                     'len_samples': len(samples),
                     'sample_details': sample_details
                 }
-                rendered_message = frappe.render_template(email_template.response, values_to_render)
+                rendered_content = frappe.render_template(email_template.response, values_to_render)
+                rendered_subject = frappe.render_template(email_template.subject, {'barcode_label': barcode_label})
                 if verbose:
-                    non_html_message = rendered_message.replace("<br>","\n")
+                    non_html_message = rendered_content.replace("<br>","\n")
                     print(non_html_message)
-                make(
-                    recipients = email_template.recipients,
-                    sender = email_template.sender,
-                    sender_full_name = email_template.sender_full_name,
-                    cc = email_template.cc_recipients,
-                    subject = email_template.subject,
-                    content = rendered_message,
-                    send_email = True
-                    )
+                send_email_from_template(email_template, rendered_content, rendered_subject)
                 return
 
         delivery_note.submit()
