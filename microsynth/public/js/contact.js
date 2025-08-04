@@ -134,6 +134,13 @@ frappe.ui.form.on('Contact', {
             cur_frm.set_df_property('unsubscribe_date', 'read_only', true);
         }
 
+        // lock email_ids if has_webshop_account == 1
+        if (frm.doc.has_webshop_account && frm.doc.email_ids && frm.doc.email_ids.length > 0 && !frappe.user.has_role("System Manager")) {
+            cur_frm.get_field("email_ids").grid.fields_map['email_id'].read_only = 1;
+            cur_frm.get_field("email_ids").grid.fields_map['is_primary'].read_only = 1;
+            frm.dashboard.add_comment('This Contact has a Webshop Account: Changes should be made there.', 'orange', true);
+        }
+
         // show a banner if source = Punchout
         if (frm.doc.source && frm.doc.source == "Punchout") {
             frm.dashboard.add_comment( __("Punchout Contact! Please do <b>not</b> edit."), 'red', true);
