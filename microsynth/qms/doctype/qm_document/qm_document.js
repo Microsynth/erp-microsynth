@@ -142,10 +142,27 @@ frappe.ui.form.on('QM Document', {
             }).addClass("btn-danger");
         }
 
-        // allow to create new versions from valid documents
-        if (frm.doc.docstatus > 0) {
-            frm.add_custom_button(__("Create new version"), function() {
-                create_new_version(frm);
+        // allow to create new versions from valid and invalid documents
+        if (frm.doc.docstatus > 0 && (["Valid", "Invalid"].includes(frm.doc.status))) {
+            // Check if there is already a new version in progress
+            // Extract base name (everything except the last dash and after)
+            let base_name = frm.doc.name.split("-").slice(0, -1).join("-");
+            frappe.call({
+                method: "microsynth.qms.doctype.qm_document.qm_document.get_higher_versions",
+                args: {
+                    base_name: base_name,
+                    current_version: frm.doc.version
+                },
+                callback: function(r) {
+                    // r.message is an array of newer docs
+                    if (r.message && r.message.length === 0) {
+                        // No newer versions found, show button
+                        frm.add_custom_button(__("Create new version"), function() {
+                            create_new_version(frm);
+                        });
+                    }
+                    // If newer versions exist, do nothing (button hidden)
+                }
             });
         }
 

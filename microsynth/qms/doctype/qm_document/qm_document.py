@@ -171,6 +171,10 @@ class QMDocument(Document):
 
 @frappe.whitelist()
 def create_new_version(doc, user):
+    base_name = doc.split("-")[0]
+    newer_versions = get_higher_versions(base_name, frappe.get_value("QM Document", doc, "version"))
+    if len(newer_versions) > 0:
+        frappe.throw(f"Cannot create a new version of {doc} because there are already newer versions: {', '.join(newer_versions)}")
     new_doc = frappe.get_doc(frappe.get_doc("QM Document", doc).as_dict())
     new_doc.docstatus = 0                               # new doc is draft
     new_doc.version = cint(new_doc.version) + 1         # go to next version
@@ -903,6 +907,21 @@ def get_valid_sops(qm_process_assignments):
             AND (FALSE {conditions});
         """, as_dict=True)
     return valid_docs
+
+
+@frappe.whitelist()
+def get_higher_versions(base_name, current_version):
+    """
+    Find QM Documents with the same base_name prefix and a higher version than the current_version.
+    """
+    newer_docs = frappe.get_all("QM Document",
+        filters={
+            "name": ["like", f"{base_name}-%"],
+            "version": [">", int(current_version)]
+        },
+        fields=["name", "version"]
+    )
+    return newer_docs
 
 
 def find_duplicate_valid_documents():
