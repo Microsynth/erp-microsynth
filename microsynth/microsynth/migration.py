@@ -5430,7 +5430,6 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
     try:
         for i, cd in enumerate(customs_declarations):
             cd_doc = frappe.get_doc("Customs Declaration", cd['name'])
-            has_cancelled_dn = False
             changes = []
             for at_dn in cd_doc.austria_dns:
                 dn_docstatus = frappe.get_value("Delivery Note", at_dn.delivery_note, "docstatus")
@@ -5438,7 +5437,6 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                     print(f"WARNING: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is in status Draft.")
                 if dn_docstatus == 2:
                     print(f"WARNING: Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled.")
-                    has_cancelled_dn = True
                 # Skip if already processed
                 if at_dn.eur_net_total or at_dn.eur_taxes or at_dn.eur_grand_total:
                     #print(f"INFO: Skipping Austria Delivery Note {at_dn.delivery_note} in Customs Declaration {cd_doc.name} because EUR fields are already set.")
@@ -5463,7 +5461,6 @@ def populate_eur_fields_on_customs_declarations(to_date='2025-07-06'):
                     print(f"WARNING: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is in status Draft.")
                 if dn_docstatus == 2:
                     print(f"WARNING: EU Delivery Note {eu_dn.delivery_note} in Customs Declaration {cd_doc.name} is (force) cancelled.")
-                    has_cancelled_dn = True
                 # Skip if already processed
                 if eu_dn.eur_net_total or eu_dn.eur_taxes or eu_dn.eur_grand_total:
                     continue
