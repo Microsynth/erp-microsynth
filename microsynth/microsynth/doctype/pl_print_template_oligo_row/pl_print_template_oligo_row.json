@@ -1,0 +1,82 @@
+{
+ "creation": "2025-07-22 16:04:08.112574",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "genomics",
+  "004",
+  "02",
+  "1",
+  "15",
+  "type"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "columns": 1,
+   "fieldname": "genomics",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Genomics",
+   "options": "Item"
+  },
+  {
+   "columns": 1,
+   "fieldname": "004",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "0.04",
+   "options": "Item"
+  },
+  {
+   "columns": 1,
+   "fieldname": "02",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "0.2",
+   "options": "Item"
+  },
+  {
+   "columns": 1,
+   "fieldname": "1",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "1",
+   "options": "Item"
+  },
+  {
+   "columns": 1,
+   "fieldname": "15",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "15",
+   "options": "Item"
+  },
+  {
+   "default": "Row",
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Heading\nRow"
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-07-23 09:07:27.933419",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "Microsynth",
+ "name": "PL Print Template Oligo Row",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

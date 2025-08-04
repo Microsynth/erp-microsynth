@@ -1,0 +1,111 @@
+{
+ "creation": "2025-07-22 16:05:46.119360",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "dna_oligos",
+  "rna_oligos",
+  "sanger",
+  "ont",
+  "illumina",
+  "cla",
+  "mycoplasma",
+  "fla",
+  "pcr"
+ ],
+ "fields": [
+  {
+   "fieldname": "dna_oligos",
+   "fieldtype": "Table",
+   "label": "DNA Oligonucleotides",
+   "options": "PL Print Template Oligo Row"
+  },
+  {
+   "fieldname": "rna_oligos",
+   "fieldtype": "Table",
+   "label": "RNA Oligonucleotides",
+   "options": "PL Print Template Oligo Row"
+  },
+  {
+   "fieldname": "sanger",
+   "fieldtype": "Table",
+   "label": "Sanger Sequencing",
+   "options": "PL Print Template Sequencing Row"
+  },
+  {
+   "fieldname": "ont",
+   "fieldtype": "Table",
+   "label": "ONT Sequencing",
+   "options": "PL Print Template Sequencing Row"
+  },
+  {
+   "fieldname": "illumina",
+   "fieldtype": "Table",
+   "label": "Illumina Sequencing",
+   "options": "PL Print Template Sequencing Row"
+  },
+  {
+   "fieldname": "cla",
+   "fieldtype": "Table",
+   "label": "Cell Line Authentication",
+   "options": "PL Print Template Two Column Row"
+  },
+  {
+   "fieldname": "mycoplasma",
+   "fieldtype": "Table",
+   "label": "Mycoplasma Testing",
+   "options": "PL Print Template Sequencing Row"
+  },
+  {
+   "fieldname": "fla",
+   "fieldtype": "Table",
+   "label": "Fragment Length Analysis",
+   "options": "PL Print Template Two Column Row"
+  },
+  {
+   "fieldname": "pcr",
+   "fieldtype": "Table",
+   "label": "PCR",
+   "options": "PL Print Template Two Column Row"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2025-07-24 16:45:49.319223",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Price List Print Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Sales Manager Extended",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Microsynth User"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "Webshop"
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

@@ -3370,3 +3370,97 @@ def create_webshop_addresses():
             print(f"Customer '{contact.get('customer_id')}' of Contact '{contact_id}' has no Invoice To Contact.")
             continue
         initialize_webshop_address_doc(contact_id, contact_id, contact.get('invoice_to'))
+
+
+def get_price_list_pdf(contact_id):
+    """
+    Generate a PDF representation of the price list for the given Contact ID.
+    Returns the raw PDF content as bytes.
+    """
+    from frappe.utils.pdf import get_pdf
+    from microsynth.microsynth.utils import get_customer
+    from microsynth.microsynth.report.pricing_configurator.pricing_configurator import get_item_prices as get_item_prices_from_price_list
+
+    customer_id = get_customer(contact_id)
+    if not customer_id:
+        frappe.throw(f"Contact {contact_id} does not belong to any Customer. Unable to get Price List PDF.")
+    customer_doc = frappe.get_doc('Customer', customer_id)
+    language = customer_doc.language
+    price_list = customer_doc.default_price_list
+    item_prices = get_item_prices_from_price_list(price_list)
+    item_price_dict = {}
+
+    for item_price in item_prices:
+        item_price_dict[(item_price.get('item_code'), item_price.get('min_qty'))] = item_price.get('rate')
+
+    data = get_contact_shipping_items(contact_id)
+    shipping_items = data.get('shipping_items')
+
+    for item in shipping_items:
+        item_price_dict[(item.get('item'), item.get('qty'))] = item.get('rate')
+
+    css = frappe.get_value('Print Format', 'Price List Print Template', 'css')
+    raw_html = frappe.get_value('Print Format', 'Price List Print Template', 'html')
+    # create html
+    css_html = f"<style>{css}</style>{raw_html}"
+    rendered_html = frappe.render_template(
+        css_html,
+        {
+            'doc': frappe.get_doc('Price List Print Template', 'Price List Print Template'),
+            'contact_id': contact_id,
+            'customer_doc': customer_doc,
+            'language': 'en' or language,
+            'item_prices': item_price_dict,
+            'shipping_items': shipping_items
+        }
+    )
+    # need to load the styles and tags
+    content = frappe.render_template(
+        'microsynth/templates/pages/print.html',
+        {'html': rendered_html}
+    )
+    options = {
+        'disable-smart-shrinking': ''
+    }
+    pdf = get_pdf(content, options)
+    return pdf
+
+
+@frappe.whitelist()
+def prepare_price_list_pdf_download(contact):
+    """
+    Generates the price list PDF for a given Contact and sends it as a file download.
+
+    Side Effects:
+        Sets `frappe.local.response` to return a downloadable PDF file.
+    """
+    pdf = get_price_list_pdf(contact)
+    # Use contact name in filename, replace spaces to avoid invalid characters
+    frappe.local.response.filename = f"Price_List_PersID_{contact.replace(' ', '_')}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
+
+
+@frappe.whitelist()
+def get_price_list_doc(contact):
+    """
+    Return a base64-encoded PDF and a file name of the Price List for the Customer of the given contact.
+    """
+    try:
+        pdf = get_price_list_pdf(contact)
+        encoded_pdf = base64.b64encode(pdf)
+        file_name = f"Price_List_{contact.replace(' ', '_')}.pdf"
+        return {
+            "success": True,
+            "base64_pdf": encoded_pdf,
+            "file_name": file_name,
+            "message": "OK"
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "webshop.get_price_list_doc")
+        return {
+            "success": False,
+            "base64_pdf": None,
+            "file_name": None,
+            "message": f"Failed to generate PDF: {str(e)}"
+        }
