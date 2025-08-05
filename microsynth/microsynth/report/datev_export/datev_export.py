@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2023-2025, Microsynth, libracore and contributors and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -238,7 +238,9 @@ def download_pdf(path, dt, dn):
     )
     if attachments and len(attachments) > 0:
         source_file = os.path.join(frappe.utils.get_bench_path(), "sites", frappe.utils.get_site_path()[2:], attachments[0]['file_url'][1:])
-        os.system("cp {0} {1}".format(source_file, content_file_name))
+        if "\"" in source_file:
+            frappe.log_error(f"This file name is less than suboptimal: {dt} {dn}: {source_file}", "datev_export.download_pdf file issue")
+        os.system("""cp "{0}" "{1}" """.format(source_file, content_file_name))
 
     return file_name
 
