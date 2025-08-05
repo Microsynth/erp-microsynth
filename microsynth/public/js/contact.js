@@ -162,16 +162,6 @@ frappe.ui.form.on('Contact', {
                         }
                     });
                 });
-                frm.add_custom_button(__("Price List PDF"), function () {
-                    const encodedContact = encodeURIComponent(frm.doc.name);
-                    const url = frappe.urllib.get_full_url(
-                        "/api/method/microsynth.microsynth.webshop.prepare_price_list_pdf_download?contact=" + encodedContact
-                    );
-                    const w = window.open(url);
-                    if (!w) {
-                        frappe.msgprint(__("Please enable pop-ups"));
-                    }
-                }, __("Create"));
             }
 
             // Preview Address button
@@ -189,6 +179,22 @@ frappe.ui.form.on('Contact', {
                 frm.add_custom_button(__("Change Customer"), function () {
                     change_customer(frm);
                 });
+            }
+
+            // Show buttons if a customer is linked
+            if (is_customer && link_name) {
+                if (!frm.doc.__islocal && frm.doc.has_webshop_account && frm.doc.status === "Passive") {
+                    frm.add_custom_button(__("Price List PDF"), function () {
+                        const encodedContact = encodeURIComponent(frm.doc.name);
+                        const url = frappe.urllib.get_full_url(
+                            "/api/method/microsynth.microsynth.webshop.prepare_price_list_pdf_download?contact=" + encodedContact
+                        );
+                        const w = window.open(url);
+                        if (!w) {
+                            frappe.msgprint(__("Please enable pop-ups"));
+                        }
+                    }, __("Create"));
+                }
             }
 
             // Show lead classification comment
