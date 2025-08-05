@@ -58,7 +58,7 @@ def find_purchase_tax_template(sales_tax_template, company):
     if len(purchase_tax_records) > 0:
         return purchase_tax_records[0]['purchase_tax_template']
     else:
-        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template} targetting {company=}", "taxes.find_purchase_tax_template")
+        frappe.log_error(f"Could not find purchase tax template entry in the Tax Matrix for Sales Tax Template '{sales_tax_template}' targetting {company=}", "taxes.find_purchase_tax_template")
         return None
 
 
