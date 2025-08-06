@@ -90,6 +90,7 @@
   {
    "fieldname": "service_instructions",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Service Instructions"
   },
   {
@@ -116,7 +117,7 @@
    "options": "QM Document Link"
   }
  ],
- "modified": "2025-07-25 13:24:55.838373",
+ "modified": "2025-08-06 12:24:48.058809",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Device",
