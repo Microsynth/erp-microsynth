@@ -72,6 +72,13 @@ frappe.ui.form.on('QM Nonconformity', {
             });
         }
 
+        // allow QAU to re-open a Closed NC
+        if (frm.doc.status == 'Closed' && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__("Re-open"), function() {
+                set_status('Completed');
+            });
+        }
+
         // Only QAU (in status Draft or Created) and creator (in status Draft) can change these fields: Date of Occurrence, Company
         if ((["Draft"].includes(frm.doc.status) && frappe.session.user === frm.doc.created_by) || ["Draft", "Created"].includes(frm.doc.status) && frappe.user.has_role('QAU')) {
             cur_frm.set_df_property('date', 'read_only', false);

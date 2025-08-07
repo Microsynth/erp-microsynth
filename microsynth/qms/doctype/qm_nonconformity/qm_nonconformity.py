@@ -157,7 +157,8 @@ def update_status(nc, status):
         (nc.status == 'Implementation' and status == 'Completed') or
         (nc.status == 'Created' and status == 'Closed') or
         (nc.status == 'Completed' and status == 'Closed') or
-        (nc.status == 'Investigation' and status == 'Closed')
+        (nc.status == 'Investigation' and status == 'Closed') or
+        (nc.status == 'Closed' and status == 'Completed')
        ):
         if nc.status == 'Plan Approval' and status == 'Implementation':
             notify_actions(nc.name)
