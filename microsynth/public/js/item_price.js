@@ -5,7 +5,7 @@
 frappe.ui.form.on('Item Price', {
     refresh(frm) {
         if (frm.doc.price_list.includes('Sales Prices')) {
-            if (frappe.user.has_role("Sales Manager Extended")) {
+            if (frappe.user.has_role("Sales Manager Extended") || frappe.user.has_role("Product Manager")) {
                 frm.add_custom_button(__("Change reference price"), function() {
                     change_reference_rate();
                 });
@@ -54,7 +54,7 @@ function change_reference_rate(){
                 });
             }, () => {
                 frappe.show_alert('No new reference Price List rate applied');
-            });        
+            });
     },
     __('Change reference price'),
     __('OK')
