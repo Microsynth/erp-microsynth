@@ -620,8 +620,10 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             if len(samples) > 1:
                 sample_details = ""
                 for s in samples:
+                    sales_orders = frappe.get_all("Sample Link", filters=[["sample", "=", s['name']], ["parenttype", "=", "Sales Order"]], fields=['parent'])
+                    sales_order_links = ", ".join([f"<a href={get_url_to_form('Sales Order', so['parent'])}>{so['parent']}</a>" for so in sales_orders])
                     url = get_url_to_form("Sample", s['name'])
-                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
+                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']} on Sales Order(s) {sales_order_links}<br>"
                 msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}\n\nGoing to send an automatic email."
                 frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
                 if verbose:

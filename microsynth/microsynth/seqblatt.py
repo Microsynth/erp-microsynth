@@ -228,7 +228,7 @@ def check_submit_delivery_note(delivery_note):
     Check if the delivery note is eligible for autocompletion and submit it.
 
     run
-    bench execute microsynth.microsynth.seqblatt.check_submit_delivery_note --kwargs "{'delivery_note':'DN-BAL-23111770'}"
+    bench execute microsynth.microsynth.seqblatt.check_submit_delivery_note --kwargs "{'delivery_note': 'DN-BAL-23111770'}"
     """
     try:
         delivery_note = frappe.get_doc("Delivery Note", delivery_note)
@@ -282,8 +282,10 @@ def check_submit_delivery_note(delivery_note):
                 dn_url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
                 sample_details = ""
                 for s in samples:
+                    sales_orders = frappe.get_all("Sample Link", filters=[["sample", "=", s['name']], ["parenttype", "=", "Sales Order"]], fields=['parent'])
+                    sales_order_links = ", ".join([f"<a href={get_url_to_form('Sales Order', so['parent'])}>{so['parent']}</a>" for so in sales_orders])
                     url = get_url_to_form("Sample", s['name'])
-                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']}<br>"
+                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']} on Sales Order(s) {sales_order_links}<br>"
 
                 rendered_subject = frappe.render_template(email_template.subject, {'barcode_label': barcode_label})
                 rendered_content = frappe.render_template(email_template.response, {'dn_url_string': dn_url_string, 'barcode_label': barcode_label, 'len_samples': len(samples), 'sample_details': sample_details})
