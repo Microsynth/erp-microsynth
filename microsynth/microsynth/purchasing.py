@@ -1367,3 +1367,14 @@ def check_unbatched_items(item_codes):
             items_to_confirm.append(item_code)
 
     return items_to_confirm
+
+
+@frappe.whitelist()
+def get_inbound_freight_item():
+    """
+    Returns the Item Code for the Inbound Freight Item.
+    """
+    item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "inbound_freight_item")
+    if not item_code:
+        frappe.throw("No Inbound Freight Item found. Please set it in the Microsynth Settings.")
+    return item_code

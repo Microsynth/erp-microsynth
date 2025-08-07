@@ -24,13 +24,10 @@ frappe.ui.form.on('Purchase Order', {
     onload(frm) {
         if (!locals.inbound_freight_item) {
             frappe.call({
-                'method': 'frappe.client.get',
-                'args': {
-                    doctype: 'Microsynth Settings'
-                },
-                callback: function(r) {
-                    if (r.message && r.message.inbound_freight_item) {
-                        locals.inbound_freight_item = r.message.inbound_freight_item;
+                'method': 'microsynth.microsynth.purchasing.get_inbound_freight_item',
+                'callback': function(r) {
+                    if (r.message) {
+                        locals.inbound_freight_item = r.message;
                     }
                 }
             });
