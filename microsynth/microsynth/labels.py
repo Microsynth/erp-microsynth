@@ -292,12 +292,12 @@ def create_ups_batch_file(sales_orders):
             notify_and_log_error(f"Pincode missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not sales_order.contact_phone:
-            notify_and_log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
-            continue
+            notify_and_log_error(f"contact_phone missing on Sales Order {sales_order.name}, taking 0041717228333 instead", "create_ups_batch_file")
+            phone = '0041717228333'  # default phone number
         phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
         if not phone:
-            notify_and_log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}'", "create_ups_batch_file")
-            continue
+            notify_and_log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}', taking 0041717228333 instead", "create_ups_batch_file")
+            phone = '0041717228333'  # default phone number
         if not phone.isdigit():
             frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
         weight = '"0,1"'
