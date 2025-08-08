@@ -718,7 +718,7 @@ def get_purchasing_item_details(internal_code):
     """
     Get details of a Purchasing Item by its internal code.
 
-    bench execute "microsynth.microsynth.production.get_purchasing_item_details" --kwargs "{'internal_code': '7278'}"
+    bench execute microsynth.microsynth.production.get_purchasing_item_details" --kwargs "{'internal_code': '7278'}
     """
     if not internal_code:
         return {'success': False, 'message': "Internal code is mandatory.", 'item_details': []}
@@ -727,13 +727,13 @@ def get_purchasing_item_details(internal_code):
 
     item_details = frappe.db.sql("""
         SELECT
-            `tabItem`.`name` AS `item_code`,
-            `tabItem`.`item_name` AS `item_name`,
-            `tabItem`.`item_code` AS `item_code`,
-            `tabItem`.`description` AS `description`,
+            `tabItem`.`name`,
+            `tabItem`.`item_name`,
+            `tabItem`.`item_code`,
+            `tabItem`.`description`,
             %s AS `internal_code`,
-            `tabItem`.`material_code` AS `material_code`,
-            `tabItem`.`shelf_life_in_days` AS `shelf_life_in_days`
+            `tabItem`.`material_code`,
+            `tabItem`.`shelf_life_in_days`
         FROM `tabItem`
         WHERE `tabItem`.`disabled` = 0
             AND `tabItem`.`is_purchase_item` = 1
@@ -752,4 +752,35 @@ def get_purchasing_item_details(internal_code):
         'success': True,
         'message': 'OK',
         'item_details': item_details
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def get_purchasing_items_with_internal_code():
+    """
+    Get a list of all enabled Purchasing Items with an internal code (item_code starting with P00).
+
+    bench execute microsynth.microsynth.production.get_purchasing_items_with_internal_code
+    """
+    items = frappe.db.sql("""
+        SELECT
+            `tabItem`.`name`,
+            `tabItem`.`item_name`,
+            `tabItem`.`item_code`,
+            RIGHT(`tabItem`.`item_code`, 4) AS `internal_code`,
+            `tabItem`.`description`,
+            `tabItem`.`material_code`,
+            `tabItem`.`shelf_life_in_days`
+        FROM `tabItem`
+        WHERE `tabItem`.`disabled` = 0
+            AND `tabItem`.`is_purchase_item` = 1
+            AND `tabItem`.`item_group` = "Purchasing"
+            AND `tabItem`.`item_code` LIKE "P00%"
+        ORDER BY `tabItem`.`internal_code` ASC;
+    """, as_dict=True)
+
+    return {
+        'success': True,
+        'message': 'OK',
+        'items': items
     }
