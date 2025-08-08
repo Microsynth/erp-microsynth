@@ -73,9 +73,19 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // allow QAU to re-open a Closed NC
-        if (frm.doc.status == 'Closed' && frappe.user.has_role('QAU')) {
-            frm.add_custom_button(__("Re-open"), function() {
-                set_status('Completed');
+        if (frm.doc.status === 'Closed' && frappe.user.has_role('QAU')) {
+            frm.add_custom_button(__('Open'), function() {
+                frappe.confirm(
+                    'Are you sure you want to re-open this Nonconformity?',
+                    // If "Yes"
+                    function () {
+                        set_status('Completed');
+                    },
+                    // If "No"
+                    function () {
+                        // do nothing
+                    }
+                );
             });
         }
 
