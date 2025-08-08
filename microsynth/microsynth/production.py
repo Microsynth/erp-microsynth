@@ -711,3 +711,45 @@ def find_lost_oligos_create_dns():
     print(f"Going to process {len(orders_to_process)} Sales Orders. {total_diff_existing=}, {total_diff_missing=}, {reduced_no_counter=}, {no_counter=}, {multiple_counter=}\n{orders_to_process=}\n{so_without_dn=}")
 
     create_delivery_note_for_lost_oligos(orders_to_process)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_purchasing_item_details(internal_code):
+    """
+    Get details of a Purchasing Item by its internal code.
+
+    bench execute "microsynth.microsynth.production.get_purchasing_item_details" --kwargs "{'internal_code': '7278'}"
+    """
+    if not internal_code:
+        return {'success': False, 'message': "Internal code is mandatory.", 'item_details': []}
+
+    item_code = f"P00{internal_code}"
+
+    item_details = frappe.db.sql("""
+        SELECT
+            `tabItem`.`name` AS `item_code`,
+            `tabItem`.`item_name` AS `item_name`,
+            `tabItem`.`item_code` AS `item_code`,
+            `tabItem`.`description` AS `description`,
+            %s AS `internal_code`,
+            `tabItem`.`material_code` AS `material_code`,
+            `tabItem`.`shelf_life_in_days` AS `shelf_life_in_days`
+        FROM `tabItem`
+        WHERE `tabItem`.`disabled` = 0
+            AND `tabItem`.`is_purchase_item` = 1
+            AND `tabItem`.`item_group` = "Purchasing"
+            AND `tabItem`.`item_code` = %s
+    """, (internal_code, item_code), as_dict=True)
+
+    if not item_details:
+        return {
+            'success': False,
+            'message': f"No enabled Purchasing Item with internal code '{internal_code}' found.",
+            'item_details': []
+        }
+
+    return {
+        'success': True,
+        'message': 'OK',
+        'item_details': item_details
+    }
