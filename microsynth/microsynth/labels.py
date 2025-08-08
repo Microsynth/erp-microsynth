@@ -6,6 +6,7 @@ import frappe
 import socket
 from datetime import datetime
 from microsynth.microsynth.shipping import get_shipping_service, get_shipping_item, create_receiver_address_lines, get_sender_address_line
+from microsynth.microsynth.utils import send_email_from_template
 
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
 BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html"
@@ -241,6 +242,16 @@ def print_oligo_order_labels(sales_orders):
     return
 
 
+def notify_and_log_error(msg, title="create_ups_batch_file"):
+    """
+    Helper function to log and notify the administration about errors in the UPS batch file creation.
+    """
+    frappe.log_error(msg, title)
+    email_template = frappe.get_doc("Email Template", "UPS batch file creation error")
+    rendered_content = frappe.render_template(email_template.response, {'message': msg})
+    send_email_from_template(email_template, rendered_content)
+
+
 @frappe.whitelist()
 def create_ups_batch_file(sales_orders):
     """
@@ -259,33 +270,33 @@ def create_ups_batch_file(sales_orders):
         address = frappe.get_doc("Address", sales_order.shipping_address_name)
         # Check if all values exist
         if not address.country:
-            frappe.log_error(f"country missing on Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"Country missing on Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         country_code = frappe.get_value("Country", address.country, "code")
         if not country_code:
-            frappe.log_error(f"country code missing on Country '{address.country}' of Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"Country code missing on Country '{address.country}' of Shipping Address '{sales_order.shipping_address_name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not sales_order.contact_display:
-            frappe.log_error(f"contact_display missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"contact_display missing on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not sales_order.customer_name:
-            frappe.log_error(f"customer_name missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"customer_name missing on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not address.address_line1:
-            frappe.log_error(f"address_line1 missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"address_line1 missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not address.city:
-            frappe.log_error(f"city missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"City missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not address.pincode:
-            frappe.log_error(f"pincode missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"Pincode missing for Address '{address.name}' on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         if not sales_order.contact_phone:
-            frappe.log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
+            notify_and_log_error(f"contact_phone missing on Sales Order {sales_order.name}", "create_ups_batch_file")
             continue
         phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
         if not phone:
-            frappe.log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters", "create_ups_batch_file")
+            notify_and_log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}'", "create_ups_batch_file")
             continue
         if not phone.isdigit():
             frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
