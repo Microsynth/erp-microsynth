@@ -57,10 +57,10 @@
   "risk_classification_after_actions",
   "closure_section",
   "closed_on",
-  "closure_comments",
   "column_break_50",
   "closed_by",
   "column_break_52",
+  "closure_comments",
   "signature",
   "naming_series"
  ],
@@ -425,6 +425,7 @@
    "allow_on_submit": 1,
    "fieldname": "signature",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Signature",
    "read_only": 1
   },
@@ -459,7 +460,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-04-11 17:07:38.443393",
+ "modified": "2025-08-08 08:12:18.694303",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

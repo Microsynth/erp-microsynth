@@ -282,7 +282,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.page.set_primary_action(
                     __("Close"),
                     function() {
-                        sign_and_close(frm);
+                        close(frm);
                     }
                 );
             } else if (['Track & Trend'].includes(frm.doc.nc_type)) {
@@ -316,7 +316,7 @@ frappe.ui.form.on('QM Nonconformity', {
                 cur_frm.page.set_primary_action(
                     __("Close"),
                     function() {
-                        sign_and_close(frm);
+                        close(frm);
                     }
                 );
             } else if (frm.doc.nc_type == "OOS") {
@@ -503,7 +503,7 @@ frappe.ui.form.on('QM Nonconformity', {
                                         cur_frm.page.set_primary_action(
                                             __("Close"),
                                             function() {
-                                                sign_and_close(frm);
+                                                close(frm);
                                             }
                                         );
                                     } else {
@@ -722,42 +722,26 @@ function set_status(status) {
     });
 }
 
-function sign_and_close(frm) {
-    frappe.prompt([
-            {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
-        ],
-        function(values){
-            // check password and if correct, sign
+function close(frm) {
+    frappe.confirm(
+        'Are you sure you want to close this Nonconformity?',
+        // If user clicks "Yes"
+        function () {
             frappe.call({
-                'method': 'microsynth.qms.signing.sign',
+                'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
                 'args': {
-                    'dt': "QM Nonconformity",
-                    'dn': cur_frm.doc.name,
-                    'user': frappe.session.user,
-                    'password': values.password,
-                    'submit': false
+                    'doc': frm.doc.name,
+                    'user': frappe.session.user
                 },
-                'async': false,
-                "callback": function(response) {
-                    if (response.message) {
-                        // signed, set signing date & close NC
-                        frappe.call({
-                            'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
-                            'args': {
-                                'doc': cur_frm.doc.name,
-                                'user': frappe.session.user
-                            },
-                            'async': false,
-                            'callback': function(response) {
-                                cur_frm.reload_doc();
-                            }
-                        });
-                    }
+                'callback': function(response) {
+                    cur_frm.reload_doc();
                 }
             });
         },
-        __('Please enter your approval password'),
-        __('Sign & Close')
+        // If user clicks "No"
+        function () {
+            // Do nothing
+        }
     );
 }
 
