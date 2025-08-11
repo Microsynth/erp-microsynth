@@ -5550,3 +5550,53 @@ def compare_primary_emails(input_filepath, verbose=False):
                         break
                 if webshop_email != erp_email:
                     print(f"{person_id};{erp_email};{webshop_email}")
+
+
+def unify_contact_salutation(output_path):
+    """
+    Unify the salutation of all Contacts in the ERP to "Herr" or "Frau" based on their first name.
+    Write the changes to the given output file.
+
+    bench execute microsynth.microsynth.migration.unify_contact_salutation --kwargs "{'output_path': '/mnt/erp_share/JPe/2025-08-11_unified_contact_salutations_DEV-ERP.csv'}"
+    """
+    language_dict = {
+        "Herr": "de",
+        "M.": "fr",
+        "Frau": "de",
+        "Mme": "fr"
+    }
+    contacts = frappe.get_all("Contact",
+                              filters=[['status', '!=', 'Disabled'],
+                                       ['salutation', 'IN', ["Herr", "M.", "Frau", "Mme"]]],
+                              fields=['name', 'salutation'])
+    print(f"Going to process {len(contacts)} Contacts ...")
+    changes = []
+    for i, contact in enumerate(contacts):
+        if i % 200 == 0:
+            print(f"Processing Contact {i+1}/{len(contacts)}: {contact.name}")
+        if contact.salutation in ["Herr", "M."]:
+            new_salutation = "Mr."
+        elif contact.salutation in ["Frau", "Mme"]:
+            new_salutation = "Ms."
+        else:
+            continue
+        changes.append({
+            'contact': contact.name,
+            'old_salutation': contact.salutation,
+            'new_salutation': new_salutation,
+            'language': language_dict.get(contact.salutation, '-')
+        })
+        try:
+            # use frappe.db.set_value instead of contact_doc.save() to avoid loading the whole document (uncritical operation that does not require validation)
+            frappe.db.set_value("Contact", contact.name, "salutation", new_salutation)
+        except Exception as e:
+            print(f"Failed to update Contact {contact.name}: {e}")
+
+    if changes:
+        with open(output_path, mode='w') as file:
+            writer = csv.DictWriter(file, fieldnames=changes[0].keys())
+            writer.writeheader()
+            writer.writerows(changes)
+        print(f"Wrote {len(changes)} changes to {output_path}.")
+    else:
+        print("No changes made.")
