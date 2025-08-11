@@ -175,7 +175,7 @@ frappe.ui.form.on('Contact', {
             });
 
             // Button to change the Customer
-            if (!frm.doc.__islocal && frm.doc.status !== "Disabled") {
+            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.source !== "Punchout") {
                 frm.add_custom_button(__("Change Customer"), function () {
                     change_customer(frm);
                 });
