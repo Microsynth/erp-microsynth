@@ -204,8 +204,12 @@ def get_webshop_url():
 
 @frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
-
     if frappe.db.exists("Address", address_name):
+        # check if the Address is used at more than one Contact
+        if frappe.db.count("Contact", filters={'address': address_name, 'status': 'Passive'}) > 1:
+            msg = f"Address '{address_name}' is used at more than one Contact, cannot update links. Unable to change Customer."
+            frappe.log_error(msg, "update_address_links_from_contact")
+            frappe.throw(msg)
         address = frappe.get_doc("Address", address_name)
         address.links = []
         if type(links) == str:
