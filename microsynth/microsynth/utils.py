@@ -2046,6 +2046,65 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
     return jv.name
 
 
+@frappe.whitelist()
+def book_foreign_expense(company, intermediate_account, expense_account, 
+    currency_deviation_account, foreign_amount, base_amount, reference, date=None):
+    """
+    This function is used to book a deduction/expense on a foreign currency account, using a journal entry
+    """
+    foreign_amount = flt(foreign_amount)
+    base_amount = flt(base_amount)
+
+    # get cost center
+    cost_center = frappe.get_cached_value("Company", company, "cost_center")
+
+    # create base document
+    jv = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'posting_date': date if date else datetime.now(),
+        'company': company,
+        'multi_currency': 1,
+        'user_remark': reference,
+        'accounts': [
+            {
+                'account': expense_account,
+                'account_currency': frappe.get_cached_value("Account", expense_account, "account_currency"),
+                'debit_in_account_currency': foreign_amount,
+                'debit': base_amount,
+                'exchange_rate': base_amount/foreign_amount,
+                'cost_center': cost_center
+            },
+            {
+                'account': intermediate_account,
+                'account_currency': frappe.get_cached_value("Account", intermediate_account, "account_currency"),
+                'credit_in_account_currency': foreign_amount,
+                'credit': base_amount,
+                'exchange_rate': base_amount/foreign_amount,
+                'cost_center': cost_center
+            }
+        ]
+    })
+
+    # other currencies: currency deviation
+    jv.set_total_debit_credit()
+    currency_deviation = rounded(jv.total_debit - jv.total_credit, 2)
+    if currency_deviation != 0:
+        jv.append('accounts', {
+            'account': currency_deviation_account,
+            'credit': currency_deviation,
+            'credit_in_account_currency': currency_deviation,
+            'account_currency': frappe.get_cached_value("Account", currency_deviation_account, "account_currency"),
+            'cost_center': cost_center
+        })
+
+        jv.set_total_debit_credit()
+    # insert and submit
+    jv.flags.ignore_validate = True
+    jv.insert()
+    jv.submit()
+
+    return jv.name
+
 def comment_invoice(sales_invoice, comment):
     """
     run

@@ -38,6 +38,9 @@ frappe.ui.form.on('Payment Entry', {
             frm.add_custom_button(__("Intracompany BAL-WIE"), function() {
                 intracompany(frm);
             }, __("Ausbuchen"));
+            frm.add_custom_button(__("Aufwand Fremdwährung"), function() {
+                expense_foreign(frm);
+            }, __("Ausbuchen"));
             
             frm.add_custom_button(__("Voll zuweisen"), function() {
                 match_outstanding_amounts();
@@ -540,4 +543,85 @@ function delete_row_in_childtbl(table, idx) {
     });
 
     frappe.run_serially(tasks);
+}
+
+function expense_foreign(frm) {
+    frappe.prompt(
+        [
+            {
+                'fieldname': 'foreign_amount', 
+                'fieldtype': 'Currency',
+                'label': __("Betrag Fremdwährung") + " " + frm.doc.paid_from_account_currency,
+                'read_only': 1,
+                'default': frm.doc.paid_amount,
+                'options': frm.doc.paid_from_account_currency
+            },
+            {
+                'fieldname': 'base_amount',
+                'fieldtype': 'Currency',
+                'label': __("Betrag Firmenwährung") + " " + frm.doc.paid_to_account_currency,
+                'read_only': 1,
+                'default': frm.doc.base_paid_amount,
+                'options': frm.doc.paid_to_account_currency
+            },
+            {
+                'fieldname': 'intermediate_account',
+                'fieldtype': 'Link',
+                'options': "Account",
+                'label': __("Zwischenkonto"),
+                'read_only': 1,
+                'default': locals.account_matrix[frm.doc.company].unclear[frm.doc.paid_from_account_currency]
+            },
+            {
+                'fieldname': 'expense_account',
+                'fieldtype': 'Link',
+                'options': "Account",
+                'label': __("Aufwandskonto"),
+                'reqd': 1,
+                'get_query': function() {
+                    return {
+                        'filters': {
+                            'company': frm.doc.company,
+                            'account_currency': frm.doc.paid_from_account_currency
+                        }
+                    }
+                }
+            }  
+        ],
+        function(values){
+            frappe.call({
+                'method': "microsynth.microsynth.utils.book_foreign_expense",
+                'args': {
+                    'company': frm.doc.company,
+                    'intermediate_account': values.intermediate_account,
+                    'currency_deviation_account': locals.account_matrix[frm.doc.company].currency,
+                    'expense_account': values.expense_account,
+                    'foreign_amount': values.foreign_amount,
+                    'base_amount': values.base_amount,
+                    'reference': frm.doc.name,
+                    'date': frm.doc.posting_date
+               },
+               callback: function(response) {
+                    let jv = response.message;
+                    cur_frm.set_value("remarks", cur_frm.doc.remarks + "\nForeign expense booked in " + jv);
+                    // switch mode to transfer
+                    locals.paid_from = cur_frm.doc.paid_from;
+                    cur_frm.set_value("payment_type", "Internal Transfer");
+                    setTimeout(function() {
+                        cur_frm.set_value("party_type", null);
+                        cur_frm.set_value("party_name", null);
+                        cur_frm.set_value("paid_from", locals.paid_from);
+                        cur_frm.set_value("paid_to", values.intermediate_account);
+                        // save, submit and close this tab
+                        cur_frm.save().then(() => {
+                            quick_expense(cur_frm);
+                            cur_frm.reload_doc();
+                        });
+                    }, 500);
+               }
+            });
+        },
+        __("Aufwand Fremdwährung"),
+        __("Buchen")
+    );
 }
