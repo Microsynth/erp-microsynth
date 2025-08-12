@@ -25,9 +25,14 @@ def make_quotation(contact_name):
             f"but might be wrong. Please check Contact {contact_name} and Quotation {doc.name}."
         frappe.log_error(msg, 'microsynth.quotation.make_quotation')
 
-    doc.party_name = contact.links[0].link_name
     doc.contact_person = contact_name
-    customer = frappe.get_doc("Customer", doc.party_name)
+    doc.contact_display = contact.full_name
+    doc.contact_email = contact.email_id
+    doc.contact_mobile = ""
+
+    customer = frappe.get_doc("Customer", contact.links[0].link_name)
+    doc.party_name = customer.name
+
     doc.company = customer.default_company
     doc.territory = customer.territory
     doc.currency = customer.default_currency
