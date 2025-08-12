@@ -1510,7 +1510,24 @@ Your administration team<br><br>{footer}"
                 if si_doc.total > dn_doc.total:
                     frappe.log_error(f"Total (before discount) of Sales Invoice {si_doc.name} ({si_doc.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
                     continue
-                si_doc.insert(ignore_permissions=True)
+
+                if sales_invoice.total > 0:
+                    sales_invoice = allocate_credits(sales_invoice)  # check and allocate open customer credits
+
+                if not sales_invoice.tax_id:
+                    sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+
+                si_doc.insert(ignore_permissions=True)    # TODO: why do we ignore the permissions here?
+                set_income_accounts(sales_invoice)
+
+                customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+                if customer_invoicing_method == "Chorus":
+                    goodwill_days = 20
+                else:
+                    goodwill_days = 5
+                # for payment reminders: set goodwill period
+                sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+
                 si_doc.submit()
 
                 # transmit SI-LYO
