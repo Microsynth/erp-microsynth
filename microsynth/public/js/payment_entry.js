@@ -615,7 +615,7 @@ function expense_foreign(frm) {
                         // save, submit and close this tab
                         cur_frm.save().then(() => {
                             quick_expense(cur_frm);
-                            cur_frm.reload_doc();
+                            cur_frm.reload_doc();                       // technically not needed, because tab is closed, but for testing
                         });
                     }, 500);
                }
