@@ -1363,6 +1363,11 @@ def place_order(content, client="webshop"):
 
 
 def place_dropship_order(sales_order, intercompany_customer_name, supplier_company):
+    """
+    Create a dropship order for the given sales order.
+
+    bench execute "microsynth.microsynth.webshop.place_dropship_order" --kwargs "{'sales_order': 'SO-LYO-25001085', 'intercompany_customer_name': '37595596', 'supplier_company': 'Microsynth AG'}"
+    """
     original_order = frappe.get_doc("Sales Order", sales_order)
 
     customer = frappe.get_doc("Customer", intercompany_customer_name)
