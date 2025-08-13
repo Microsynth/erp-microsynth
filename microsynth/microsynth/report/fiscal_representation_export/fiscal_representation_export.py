@@ -27,6 +27,7 @@ def get_columns(filters):
         {"label": _("Net amount"), "fieldname": "net_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
         {"label": _("Tax amount"), "fieldname": "tax_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
         {"label": _("Gross amount"), "fieldname": "gross_amount", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": _("EUR net amount"), "fieldname": "eur_net_total", "fieldtype": "Currency", "options": "eur_currency", "width": 100},
         {"label": _("Tax Code"), "fieldname": "tax_code", "fieldtype": "Data", "width": 80}
     ]
     return columns
@@ -47,10 +48,18 @@ def get_data(filters, short=False):
             `tabSales Invoice`.`net_total` AS `net_amount`,
             `tabSales Invoice`.`total_taxes_and_charges` AS `tax_amount`,
             `tabSales Invoice`.`grand_total` AS `gross_amount`,
+            IF (`tabSales Invoice`.`currency` = 'EUR',
+                `tabSales Invoice`.`net_total`,
+                ROUND(`tabSales Invoice`.`base_net_total` / `tabCurrency Exchange`.`exchange_rate`, 2)
+            ) AS `eur_net_total`,
+            'EUR' AS `eur_currency`,
             `tabSales Invoice`.`taxes_and_charges` AS `tax_code`
         FROM `tabSales Invoice`
         LEFT JOIN `tabAddress` ON `tabAddress`.`name` = `tabSales Invoice`.`customer_address`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
+        LEFT JOIN `tabCurrency Exchange` ON `tabCurrency Exchange`.`from_currency` = "EUR"
+            AND `tabCurrency Exchange`.`to_currency` = "CHF"
+            AND SUBSTRING(`tabCurrency Exchange`.`date`, 1, 7) = SUBSTRING(`tabSales Invoice`.`posting_date`, 1, 7)
         WHERE
             `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`company` = "{company}"
