@@ -147,3 +147,16 @@ def validate_item_sales_status(doc, event=None):
         <p><b>Please remove or replace these items.</b></p>
         """
         frappe.throw(html, title="Invalid Items")
+
+
+@frappe.whitelist()
+def get_sales_orders_linked_to_quotation(quotation_name):
+    return frappe.db.sql("""
+        SELECT `tabSales Order`.`name`,
+            `tabSales Order`.`status`
+        FROM `tabSales Order`
+        JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+        WHERE `tabSales Order Item`.`prevdoc_docname` = %s
+        GROUP BY `tabSales Order`.`name`
+        ORDER BY `tabSales Order`.`transaction_date` DESC
+    """, quotation_name, as_dict=True)

@@ -62,6 +62,54 @@ frappe.ui.form.on('Quotation', {
             }).addClass("btn-primary");
         }
 
+        // replace button "Create > Sales Order" with a custom button
+        // that checks if there are already Sales Orders linked to this Quotation
+        if (frm.doc.docstatus == 1) {
+            setTimeout(function() {
+                // remove Create > Sales Order
+                $("a[data-label='" + encodeURI(__("Sales Order")) + "']").parent().remove();
+
+                // Add own button to create Sales Order from Quotation
+                frm.add_custom_button(__('Sales Order'), function() {
+                    frappe.call({
+                        'method': "microsynth.microsynth.quotation.get_sales_orders_linked_to_quotation",
+                        'args': {
+                            'quotation_name': frm.doc.name
+                        },
+                        callback: function(r) {
+                            if (r.message && r.message.length > 0) {
+                                let existing_orders = r.message;
+                                let message_html = "<p>" + __("The following Sales Orders are already linked to this Quotation:") + "</p><ul>";
+                                existing_orders.forEach(function(so) {
+                                    message_html += `<li><a href="/desk#Form/Sales Order/${so.name}" target="_blank">${so.name}</a> - ${so.status}</li>`;
+                                });
+                                message_html += "</ul><p>" + __("Are you sure you want to create a new Sales Order?") + "</p>";
+                                frappe.confirm(
+                                    message_html,
+                                    function() {
+                                        // User confirmed to create another Sales Order
+                                        frappe.model.open_mapped_doc({
+                                            'method': "erpnext.selling.doctype.quotation.quotation.make_sales_order",
+                                            'frm': cur_frm
+                                        });
+                                    },
+                                    function() {
+                                        // User canceled
+                                    }
+                                );
+                            } else {
+                                // No Sales Orders found — create a new one
+                                frappe.model.open_mapped_doc({
+                                    'method': "erpnext.selling.doctype.quotation.quotation.make_sales_order",
+                                    'frm': cur_frm
+                                });
+                            }
+                        }
+                    });
+                }, __("Create"));
+            }, 1000);
+        }
+
         if (frm.doc.docstatus > 0) {
             frappe.call({
                 'method': 'microsynth.microsynth.doctype.contact_note.contact_note.get_follow_ups',
@@ -94,7 +142,7 @@ frappe.ui.form.on('Quotation', {
                         "address_type": "Billing"
                     }
                 }
-            } 
+            }
         }, 500);
 
         setTimeout(function(){
@@ -103,7 +151,7 @@ frappe.ui.form.on('Quotation', {
                 assert_customer_fields(frm);
             }
         }, 500);
-        
+
         hide_in_words();
 
         // fetch Sales Manager from Customer if not yet set
@@ -122,7 +170,7 @@ frappe.ui.form.on('Quotation', {
                 }
             });
         }
-        
+
         // allow force cancel
         if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0)) {
             frm.add_custom_button(__("Force Cancel"), function() {
@@ -138,14 +186,14 @@ frappe.ui.form.on('Quotation', {
             });
         }
     },
-    
+
     before_save(frm) {
         // assert customer master fields on initial save
         if (frm.doc.__islocal) {
             assert_customer_fields(frm);
         }
     },
-    
+
     on_submit(frm) {
         // this is a hack to prevent not allowed to change discount amount after submit because the form has an unrounded value on an item
         cur_frm.reload_doc();
@@ -178,7 +226,7 @@ frappe.ui.form.on('Quotation', {
 });
 
 /* this function will pull
- * territory, currency and selling_price_list 
+ * territory, currency and selling_price_list
  * from the customer master data */
 function assert_customer_fields(frm) {
     if ((frm.doc.quotation_to === "Customer") && (frm.doc.party_name)) {
