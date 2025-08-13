@@ -91,7 +91,7 @@ function process_queue() {
         } else {
             // create delivery note / pdf
                 frappe.call({
-                    'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.pick_labels",
+                    'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.pick_labels_without_timeout",
                     'args': {
                         'sales_order': locals.label_queue[0].sales_order,
                         'from_barcode': Number(locals.label_queue[0].from_barcode),
