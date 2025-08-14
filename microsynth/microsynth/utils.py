@@ -208,7 +208,7 @@ def update_address_links_from_contact(address_name, links):
         # check if the Address is used at more than one Contact
         if frappe.db.count("Contact", filters={'address': address_name, 'status': 'Passive'}) > 1:
             msg = f"Address '{address_name}' is used at more than one Contact, cannot update links. Unable to change Customer."
-            frappe.log_error(msg, "update_address_links_from_contact")
+            #frappe.log_error(msg, "update_address_links_from_contact")
             frappe.throw(msg)
         address = frappe.get_doc("Address", address_name)
         address.links = []
@@ -2047,7 +2047,7 @@ def book_avis(company, intermediate_account, currency_deviation_account, invoice
 
 
 @frappe.whitelist()
-def book_foreign_expense(company, intermediate_account, expense_account, 
+def book_foreign_expense(company, intermediate_account, expense_account,
     currency_deviation_account, foreign_amount, base_amount, reference, date=None):
     """
     This function is used to book a deduction/expense on a foreign currency account, using a journal entry
