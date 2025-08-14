@@ -9,7 +9,7 @@ from frappe import _
 
 def get_columns():
     return [
-        {"label": _("Request"), "fieldname": "request_id", "fieldtype": "Dynamic Link", "options": "request_type", "width": 100},
+        {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 100},
         {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95},
         {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 240},
@@ -29,7 +29,7 @@ def get_data(filters):
 
     return frappe.db.sql(f"""
         SELECT
-            `tabMaterial Request`.`name` AS `request_id`,
+            `tabMaterial Request`.`name` AS `material_request`,
             'Material Request' AS `request_type`,
             `tabMaterial Request`.`transaction_date`,
             `tabMaterial Request Item`.`schedule_date`,
@@ -59,13 +59,13 @@ def get_data(filters):
                 SELECT 1
                 FROM `tabPurchase Order Item`
                 WHERE `tabPurchase Order Item`.`material_request` = `tabMaterial Request Item`.`parent`
-                AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    OR `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
             )
             {conditions}
         UNION
 
         SELECT
-            `tabItem Request`.`name` AS `request_id`,
+            `tabItem Request`.`name` AS `material_request`,
             'Item Request' AS `request_type`,
             DATE(`tabItem Request`.`creation`) AS transaction_date,
             `tabItem Request`.`schedule_date`,
