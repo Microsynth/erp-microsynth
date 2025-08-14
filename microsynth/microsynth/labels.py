@@ -295,7 +295,7 @@ def create_ups_batch_file(sales_orders):
             notify_and_log_error(f"contact_phone missing on Sales Order {sales_order.name}, taking 0041717228333 instead", "create_ups_batch_file")
             phone = '0041717228333'  # default phone number
         phone = re.sub('[ \+.,\-\/]', '', sales_order.contact_phone.replace('+', '00').replace('(0)', ''))[:15]
-        if not phone:
+        if sales_order.contact_phone and not phone:
             notify_and_log_error(f"contact_phone on Sales Order {sales_order.name} contains only unallowed characters: '{sales_order.contact_phone}', taking 0041717228333 instead", "create_ups_batch_file")
             phone = '0041717228333'  # default phone number
         if not phone.isdigit():
