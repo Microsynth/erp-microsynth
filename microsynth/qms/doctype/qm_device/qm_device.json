@@ -7,15 +7,16 @@
  "field_order": [
   "device_name",
   "status",
-  "column_break_2",
-  "category",
   "location",
-  "section_break_4",
+  "category",
+  "column_break_2",
   "qm_process",
+  "site",
+  "section_break_4",
   "serial_no",
   "service_instructions",
-  "column_break_8",
   "manufacturer",
+  "column_break_8",
   "supplier",
   "purchase_invoice",
   "section_break_14",
@@ -38,7 +39,8 @@
    "fieldname": "qm_process",
    "fieldtype": "Link",
    "label": "Process",
-   "options": "QM Process"
+   "options": "QM Process",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_4",
@@ -60,10 +62,9 @@
   {
    "fieldname": "location",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Location",
-   "options": "Location",
-   "reqd": 1
+   "options": "Location"
   },
   {
    "fieldname": "column_break_8",
@@ -115,9 +116,16 @@
    "fieldtype": "Table",
    "label": "SOPs",
    "options": "QM Document Link"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Select",
+   "label": "Site",
+   "options": "\nBalgach\nG\u00f6ttingen\nLyon\nWien",
+   "reqd": 1
   }
  ],
- "modified": "2025-08-06 12:24:48.058809",
+ "modified": "2025-08-14 15:48:54.189065",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Device",
