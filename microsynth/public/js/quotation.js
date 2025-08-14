@@ -80,9 +80,31 @@ frappe.ui.form.on('Quotation', {
                             if (r.message && r.message.length > 0) {
                                 let existing_orders = r.message;
                                 let message_html = "<p>" + __("The following Sales Orders are already linked to this Quotation:") + "</p><ul>";
-                                existing_orders.forEach(function(so) {
-                                    message_html += `<li><a href="/desk#Form/Sales Order/${so.name}" target="_blank">${so.name}</a> - ${so.status}</li>`;
+                                message_html += `
+                                    <table style="border-collapse: collapse;">
+                                    <thead>
+                                        <tr>
+                                        <th style="border:1px solid #ccc; padding:6px;">Sales Order</th>
+                                        <th style="border:1px solid #ccc; padding:6px;">Status</th>
+                                        <th style="border:1px solid #ccc; padding:6px;">Web Order ID</th>
+                                        <th style="border:1px solid #ccc; padding:6px;">PO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    `;
+                                existing_orders.forEach(so => {
+                                    message_html += `
+                                        <tr>
+                                        <td style="border:1px solid #ccc; padding:6px;">
+                                            <a href="/desk#Form/Sales Order/${so.name}" target="_blank">${so.name}</a>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:6px;">${so.status || ''}</td>
+                                        <td style="border:1px solid #ccc; padding:6px;">${so.web_order_id || ''}</td>
+                                        <td style="border:1px solid #ccc; padding:6px;">${so.po_no || ''}</td>
+                                        </tr>
+                                    `;
                                 });
+                                message_html += `</tbody></table>`;
                                 message_html += "</ul><p>" + __("Are you sure you want to create a new Sales Order?") + "</p>";
                                 frappe.confirm(
                                     message_html,

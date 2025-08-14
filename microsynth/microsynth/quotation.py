@@ -153,6 +153,8 @@ def validate_item_sales_status(doc, event=None):
 def get_sales_orders_linked_to_quotation(quotation_name):
     return frappe.db.sql("""
         SELECT `tabSales Order`.`name`,
+            `tabSales Order`.`web_order_id`,
+            `tabSales Order`.`po_no`,
             `tabSales Order`.`status`
         FROM `tabSales Order`
         JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
