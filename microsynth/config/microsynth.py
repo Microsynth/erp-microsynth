@@ -275,8 +275,8 @@ def get_data():
                     },
                     {
                         "type": "report",
-                        "name": "Open Material Requests",
-                        "label": _("Open Material Requests"),
+                        "name": "Material Request Overview",
+                        "label": _("Material Request Overview"),
                         "doctype": "Material Request",
                         "is_query_report": True
                     },

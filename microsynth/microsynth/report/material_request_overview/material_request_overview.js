@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 
-frappe.query_reports["Open Material Requests"] = {
+frappe.query_reports["Material Request Overview"] = {
     "filters": [
         {
             fieldname: "supplier",
