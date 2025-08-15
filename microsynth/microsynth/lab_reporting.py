@@ -625,7 +625,7 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
                     url = get_url_to_form("Sample", s['name'])
                     sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']} on Sales Order(s) {sales_order_links}<br>"
                 msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}\n\nGoing to send an automatic email."
-                frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
+                #frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
                 if verbose:
                     print(msg)
                 email_template = frappe.get_doc("Email Template", "Mycoplasma barcode label used multiple times")
