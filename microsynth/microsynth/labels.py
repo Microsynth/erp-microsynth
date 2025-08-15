@@ -5,7 +5,12 @@
 import frappe
 import socket
 from datetime import datetime
-from microsynth.microsynth.shipping import get_shipping_service, get_shipping_item, create_receiver_address_lines, get_sender_address_line
+from microsynth.microsynth.shipping import (
+    get_shipping_service,
+    get_shipping_item,
+    create_receiver_address_lines,
+    get_sender_address_line
+)
 from microsynth.microsynth.utils import send_email_from_template
 
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"

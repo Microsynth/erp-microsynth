@@ -18,7 +18,19 @@ from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_physical_path, get_billing_address, get_alternative_account, get_alternative_income_account, get_alternative_intercompany_income_account, get_name, get_posting_datetime, replace_none, send_email_from_template, get_sql_list, get_customer_from_company
+from microsynth.microsynth.utils import (
+    get_physical_path,
+    get_billing_address,
+    get_alternative_account,
+    get_alternative_income_account,
+    get_alternative_intercompany_income_account,
+    get_name,
+    get_posting_datetime,
+    replace_none,
+    send_email_from_template,
+    get_sql_list,
+    get_customer_from_company
+)
 from microsynth.microsynth.credits import allocate_credits, get_total_credit
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime

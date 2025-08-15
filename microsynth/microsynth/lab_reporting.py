@@ -13,7 +13,12 @@ from frappe.desk.form.load import get_attachments
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import get_customer, has_items_delivered_by_supplier, validate_sales_order_status, send_email_from_template
+from microsynth.microsynth.utils import (
+    get_customer,
+    has_items_delivered_by_supplier,
+    validate_sales_order_status,
+    send_email_from_template
+)
 
 
 def get_sales_order_samples(sales_order_id):

@@ -10,7 +10,18 @@ import json
 from frappe.utils import cint, flt, get_url_to_form
 from datetime import datetime, timedelta
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import find_label, get_sql_list, configure_territory, configure_sales_manager, tag_linked_documents, replace_none, configure_customer, get_alternative_account, get_alternative_income_account, add_webshop_service, get_customer
+from microsynth.microsynth.utils import (find_label,
+                                         get_sql_list,
+                                         configure_territory,
+                                         configure_sales_manager,
+                                         tag_linked_documents,
+                                         replace_none,
+                                         configure_customer,
+                                         get_alternative_account,
+                                         get_alternative_income_account,
+                                         add_webshop_service,
+                                         get_customer
+)
 from microsynth.microsynth.invoicing import get_income_accounts
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
