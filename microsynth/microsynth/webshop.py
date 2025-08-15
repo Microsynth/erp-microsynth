@@ -10,7 +10,21 @@ import json
 import re
 import base64
 from frappe.desk.form.linked_with import get_linked_docs
-from microsynth.microsynth.utils import get_customer, create_oligo, create_sample, get_express_shipping_item, get_billing_address, configure_new_customer, has_webshop_service, get_customer_from_company, get_supplier_for_product_type, get_margin_from_customer, to_bool, update_address_links_from_contact
+from microsynth.microsynth.utils import (
+    get_customer,
+    create_oligo,
+    create_sample,
+    get_express_shipping_item,
+    get_billing_address,
+    configure_new_customer,
+    has_webshop_service,
+    get_customer_from_company,
+    get_supplier_for_product_type,
+    get_margin_from_customer,
+    to_bool,
+    update_address_links_from_contact,
+    send_email_from_template
+)
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -3202,7 +3216,16 @@ def get_account_details(webshop_account):
 
         shipping_items_response = get_contact_shipping_items(main_contact.get('contact').get('name'))
         if shipping_items_response.get('currency') != main_contact.get('customer').default_currency:
-            frappe.throw(f"The currency of the shipping items ({shipping_items_response.get('currency')}) does not match the customer's default currency {main_contact.get('customer').default_currency}.")
+            msg = (
+                f"The Currency of the Shipping Items ({shipping_items_response.get('currency')}) "
+                f"of the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong> "
+                f"does not match the Billing Currency ({main_contact.get('customer').default_currency}) "
+                f"of the Customer {main_contact.get('customer')}."
+            )
+            email_template = frappe.get_doc("Email Template", "Shipping Items Currency Mismatch with Customers Billing Currency")
+            rendered_content = frappe.render_template(email_template.response, {'details': msg})
+            send_email_from_template(email_template, rendered_content)
+            frappe.throw(msg)
 
         return {
             'success': True,
