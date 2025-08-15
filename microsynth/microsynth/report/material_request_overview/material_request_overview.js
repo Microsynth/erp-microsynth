@@ -17,7 +17,14 @@ frappe.query_reports["Material Request Overview"] = {
             fieldtype: "Link",
             options: "Company",
             default: "Microsynth AG"
-        }
+        },
+		{
+			fieldname: "mode",
+			label: __("Mode"),
+			fieldtype: "Select",
+			options: "Open Requests\nAll Material Requests",
+			default: "Open Requests"
+		}
     ],
     "onload": (report) => {
         hide_chart_buttons();
@@ -60,6 +67,10 @@ function create_purchase_order(filters, report) {
         frappe.msgprint( __("Please set the Supplier filter"), __("Validation") );
         return;
     }
+	if (filters.mode !== "Open Requests") {
+		frappe.msgprint( __("Please set the Mode filter to 'Open Requests'"), __("Validation") );
+		return;
+	}
 
     // Check for pending Item Requests in report data
     const pendingItemRequests = (report.data || []).filter(row =>
@@ -315,7 +326,7 @@ function open_item_request_dialog(report) {
                 return;
             }
             frappe.call({
-                'method': "microsynth.microsynth.report.open_material_requests.open_material_requests.create_item_request",
+                'method': "microsynth.microsynth.report.material_request_overview.material_request_overview.create_item_request",
                 'args': { 'data': values },
                 callback(r) {
                     if (!r.exc) {

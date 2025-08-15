@@ -40,7 +40,7 @@ frappe.ui.form.on('Item Request', {
 });
 
 
-// TODO: Reduce code duplication with function open_search_dialog in open_material_requests.js
+// TODO: Reduce code duplication with function open_search_dialog in material_request_overview.js
 function open_search_dialog(frm) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),

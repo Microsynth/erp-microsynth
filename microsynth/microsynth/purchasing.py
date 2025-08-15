@@ -127,7 +127,7 @@ def create_pi_from_si(sales_invoice):
 
 @frappe.whitelist()
 def create_po_from_open_mr(filters):
-    from microsynth.microsynth.report.open_material_requests.open_material_requests import get_data as get_items
+    from microsynth.microsynth.report.material_request_overview.material_request_overview import get_data as get_items
     if type(filters) == str:
         filters = json.loads(filters)
     items = get_items(filters)
