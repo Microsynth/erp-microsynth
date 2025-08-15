@@ -24,6 +24,18 @@ frappe.query_reports["Material Request Overview"] = {
 			fieldtype: "Select",
 			options: "Open Requests\nAll Material Requests",
 			default: "Open Requests"
+		},
+		{
+			fieldname: "from_date",
+			label: __("From Date"),
+			fieldtype: "Date",
+			default: frappe.datetime.add_days(frappe.datetime.get_today(), -365), // Default to one year ago
+		},
+		{
+			fieldname: "to_date",
+			label: __("To Date"),
+			fieldtype: "Date",
+			default: frappe.datetime.get_today(),
 		}
     ],
     "onload": (report) => {
