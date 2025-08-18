@@ -47,6 +47,18 @@ frappe.ui.form.on('Sales Invoice', {
             }, __("Create"));
         }
 
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1 && frm.doc.is_return == 0) {
+            frm.add_custom_button(__("Download"), function() {
+                var w = window.open(
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_invoice_pdf"
+                            + "?si=" + encodeURIComponent(frm.doc.name))
+                );
+                if (!w) {
+                    frappe.msgprint(__("Please enable pop-ups")); return;
+                }
+            });
+        }
+
         if (frm.doc.docstatus == 0 && frm.doc.net_total > 0 && !frm.doc.__islocal) {
             frappe.db.get_value('Customer', frm.doc.customer, 'customer_credits')
             .then(r => {

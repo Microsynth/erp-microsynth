@@ -9,6 +9,7 @@ import os
 import traceback
 import frappe
 from frappe import _
+from frappe.utils.pdf import get_pdf
 from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
 from frappe.utils import cint, get_url_to_form
@@ -2010,3 +2011,24 @@ def create_intercompany_booking(invoice):
     jv.submit()
 
     return jv.name
+
+
+@frappe.whitelist()
+def download_invoice_pdf(si):
+    si_doc = frappe.get_doc("Sales Invoice", si)
+    css = frappe.get_value('Print Format', 'Sales Invoice', 'css')
+    raw_html = frappe.get_value('Print Format', 'Sales Invoice', 'html')
+    css_html = f"<style>{css}</style>{raw_html}"
+    rendered_html = frappe.render_template(css_html, {'doc': si_doc})
+    content = frappe.render_template(
+        'microsynth/templates/pages/print.html',
+        {'html': rendered_html}
+    )
+    options = {
+        'disable-smart-shrinking': ''
+    }
+    pdf = get_pdf(content, options)
+
+    frappe.local.response.filename = f"{si}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"
