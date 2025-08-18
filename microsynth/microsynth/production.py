@@ -253,6 +253,56 @@ def get_next_order_for_packaging(destination="CH"):
         return {'success': False, 'message': 'Nothing more to deliver'}
 
 
+def print_at_administration(doc):
+    """
+    Print the given document (e.g. Delivery Note) at the administration printer
+    """
+    import os
+    import subprocess
+    from frappe.desk.form.load import get_attachments
+    from microsynth.microsynth.utils import get_physical_path
+    from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+
+    if not hasattr(doc, 'doctype') or not hasattr(doc, 'name') or not hasattr(doc, 'title'):
+        frappe.log_error(f"'{str(doc)}' has no doctype or name or title. Unable to print.", "production.print_at_administration")
+        return
+    doctype = printformat = doc.doctype
+    name = doc.name
+    frappe.local.lang = frappe.db.get_value(doctype, doc.name, "language") or 'en'
+    doctype_folder = create_folder(doctype, "Home")
+    title_folder = create_folder(doc.title, doctype_folder)
+    filecontent = frappe.get_print(doctype, name, printformat, doc=None, as_pdf=True, no_letterhead=False)
+
+    save_and_attach(
+        content = filecontent,
+        to_doctype = doctype,
+        to_name = name,
+        folder = title_folder,
+        hashname = None,
+        is_private = True)
+
+    attachments = get_attachments(doctype, doc.name)
+    fid = next((a["name"] for a in attachments if a["file_url"].endswith(".pdf")), None)
+    if not fid:
+        frappe.log_error(f"No PDF attachment found for {doctype} {name}", "print_at_administration")
+        return
+    frappe.db.commit()
+
+    # print the pdf with cups
+    path = get_physical_path(fid)
+    PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
+    if not PRINTER:
+        frappe.log_error("No invoice_printer configured in Microsynth Settings", "print_at_administration")
+        return
+    if not os.path.exists(path):
+        frappe.log_error(f"File not found at path: {path}", "print_at_administration")
+        return
+    try:
+        subprocess.run(["lp", path, "-d", PRINTER], check=True)
+    except subprocess.CalledProcessError as e:
+        frappe.log_error(f"Printing failed: {str(e)}", "print_at_administration")
+
+
 @frappe.whitelist()
 def oligo_delivery_packaged(delivery_note):
     """
@@ -268,6 +318,12 @@ def oligo_delivery_packaged(delivery_note):
             dn.submit()
             frappe.db.commit()
             set_shipping_date(dn)
+
+            # check for Pasteur Paris:
+            if "Pasteur" in dn.customer_name:
+                city = frappe.get_value("Address", dn.shipping_address_name, "city")
+                if city and "Paris" in city:
+                    print_at_administration(dn)
             return {'success': True, 'message': 'OK'}
         except Exception as err:
             return {'success': False, 'message': err}
