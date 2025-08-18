@@ -11,11 +11,6 @@ frappe.query_reports["Job Applicant Overview"] = {
             options: "Job Opening"
         },
         {
-            fieldname: "job_subtitle",
-            label: "Job Subtitle",
-            fieldtype: "Data"
-        },
-        {
             fieldname: "company",
             label: "Company",
             fieldtype: "Link",
@@ -45,9 +40,9 @@ frappe.query_reports["Job Applicant Overview"] = {
 
         report.page.add_inner_button(__('Reject'), function () {
             const assessment_filter = report.get_filter_value("assessment");
-
-            if (assessment_filter !== "Not Meet Requirements") {
-                frappe.msgprint(__('Reject action only available when filter "Assessment" is set to "Not Meet Requirements".'));
+            const status = report.get_filter_value("status");
+            if (!(assessment_filter === "Not Meet Requirements" || status === "Open")) {
+                frappe.msgprint(__('Reject action only available when filter "Assessment" is set to "Not Meet Requirements" or filter "Applicant Status" is set to "Open".'));
                 return;
             }
 

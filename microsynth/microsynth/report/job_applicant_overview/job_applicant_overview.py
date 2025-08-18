@@ -11,7 +11,7 @@ def get_columns(filters):
     return [
         {"label": _("Job Opening"), "fieldname": "job_opening", "fieldtype": "Link", "options": "Job Opening", "width": 140},
         {"label": _("Job Title"), "fieldname": "job_title", "fieldtype": "Data", "width": 170},
-        {"label": _("Job Subtitle"), "fieldname": "job_subtitle", "fieldtype": "Data", "width": 180},
+        # {"label": _("Job Subtitle"), "fieldname": "job_subtitle", "fieldtype": "Data", "width": 180},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
         {"label": _("Job Applicant"), "fieldname": "job_applicant", "fieldtype": "Link", "options": "Job Applicant", "width": 210},
         {"label": _("Creation"), "fieldname": "creation", "fieldtype": "Date", "width": 125},
@@ -51,7 +51,7 @@ def get_data(filters):
     if assessment_filter == "Meet Requirements":
         having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '1: Met' THEN 1 ELSE 0 END) > 0"
     elif assessment_filter == "Not Meet Requirements":
-        having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` != '3: Not met' THEN 1 ELSE 0 END) = 0"
+        having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` != '3: Not met' THEN 1 ELSE 0 END) > 0"
 
     where_clause = " AND ".join(conditions)
     if where_clause:
