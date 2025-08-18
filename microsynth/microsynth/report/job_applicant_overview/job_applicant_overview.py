@@ -46,14 +46,20 @@ def get_data(filters):
         conditions.append("`tabJob Applicant`.`status` = %(status)s")
         params["status"] = filters["status"]
 
+    if filters.get("assessor"):
+        conditions.append("`tabJob Applicant Assessment`.`assessor` = %(assessor)s")
+        params["assessor"] = filters["assessor"]
+
     assessment_filter = filters.get("assessment")
     having_clause = ""
     if assessment_filter == "Meet Requirements":
         having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '1: Met' THEN 1 ELSE 0 END) > 0"
-    if assessment_filter == "Partially Meet Requirements":
+    elif assessment_filter == "Partially Meet Requirements":
         having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '2: Partially met' THEN 1 ELSE 0 END) > 0"
     elif assessment_filter == "Not Meet Requirements":
-        having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` != '3: Not met' THEN 1 ELSE 0 END) > 0"
+        having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '3: Not met' THEN 1 ELSE 0 END) > 0"
+    elif assessment_filter == "No Assessment":
+        having_clause = "HAVING COUNT(`tabJob Applicant Assessment`.`name`) = 0"
 
     where_clause = " AND ".join(conditions)
     if where_clause:

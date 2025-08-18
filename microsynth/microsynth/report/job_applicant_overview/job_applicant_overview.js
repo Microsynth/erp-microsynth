@@ -28,11 +28,17 @@ frappe.query_reports["Job Applicant Overview"] = {
             options: ["", "Open", "Rejected", "Accepted", "On Hold"]
         },
         {
+            fieldname: "assessor",
+            label: "Assessor",
+            fieldtype: "Link",
+            options: "User"
+        },
+        {
             fieldname: "assessment",
             label: "Assessment",
             fieldtype: "Select",
             default: "All",
-            options: ["All", "Meet Requirements", "Partially Meet Requirements", "Not Meet Requirements"]
+            options: ["All", "Meet Requirements", "Partially Meet Requirements", "Not Meet Requirements", "No Assessment"]
         }
     ],
     'onload': function (report) {
