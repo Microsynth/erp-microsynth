@@ -9,7 +9,7 @@ import json
 
 def get_columns(filters):
     return [
-        {"label": _("Job Opening"), "fieldname": "job_opening", "fieldtype": "Link", "options": "Job Opening", "width": 140},
+        {"label": _("Job Opening"), "fieldname": "job_opening", "fieldtype": "Link", "options": "Job Opening", "width": 90},
         {"label": _("Job Title"), "fieldname": "job_title", "fieldtype": "Data", "width": 170},
         # {"label": _("Job Subtitle"), "fieldname": "job_subtitle", "fieldtype": "Data", "width": 180},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
@@ -18,7 +18,7 @@ def get_columns(filters):
         {"label": _("Salutation"), "fieldname": "salutation", "fieldtype": "Link", "options": "Salutation", "width": 1},
         {"label": _("Applicant Name"), "fieldname": "applicant_name", "fieldtype": "Data", "width": 160},
         {"label": _("Applicant Status"), "fieldname": "status", "fieldtype": "Data", "width": 110},
-        {"label": _("Requirements Fit Assessments"), "fieldname": "assessments", "fieldtype": "Data", "width": 600},
+        {"label": _("Requirements Fit Assessments"), "fieldname": "assessments", "fieldtype": "Data", "width": 600, "align": "left"},
     ]
 
 
@@ -50,6 +50,8 @@ def get_data(filters):
     having_clause = ""
     if assessment_filter == "Meet Requirements":
         having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '1: Met' THEN 1 ELSE 0 END) > 0"
+    if assessment_filter == "Partially Meet Requirements":
+        having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` = '2: Partially met' THEN 1 ELSE 0 END) > 0"
     elif assessment_filter == "Not Meet Requirements":
         having_clause = "HAVING SUM(CASE WHEN `tabJob Applicant Assessment`.`requirements_fit` != '3: Not met' THEN 1 ELSE 0 END) > 0"
 

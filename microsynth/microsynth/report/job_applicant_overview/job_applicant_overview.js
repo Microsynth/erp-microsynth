@@ -32,7 +32,7 @@ frappe.query_reports["Job Applicant Overview"] = {
             label: "Assessment",
             fieldtype: "Select",
             default: "All",
-            options: ["All", "Meet Requirements", "Not Meet Requirements"]
+            options: ["All", "Meet Requirements", "Partially Meet Requirements", "Not Meet Requirements"]
         }
     ],
     'onload': function (report) {
