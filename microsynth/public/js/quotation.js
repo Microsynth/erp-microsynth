@@ -244,6 +244,13 @@ frappe.ui.form.on('Quotation', {
         } else {
             frm.set_value('quotation_type', '');
         }
+    },
+
+    customer_name(frm) {
+        // set title to customer name
+        if (frm.doc.customer_name && frm.doc.customer_name != frm.doc.title) {
+            frm.set_value("title", frm.doc.customer_name);
+        }
     }
 });
 
