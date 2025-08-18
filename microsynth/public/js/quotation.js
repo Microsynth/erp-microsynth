@@ -251,6 +251,31 @@ frappe.ui.form.on('Quotation', {
         if (frm.doc.customer_name && frm.doc.customer_name != frm.doc.title) {
             frm.set_value("title", frm.doc.customer_name);
         }
+    },
+
+    company(frm) {
+        if (!frm.doc.company) return;
+        // Fetch company abbreviation
+        frappe.call({
+            "method": "frappe.client.get_value",
+            "args": {
+                "doctype": "Company",
+                "filters": { "name": frm.doc.company },
+                "fieldname": "abbr"
+            },
+            "callback": function(r) {
+                if (r.message && r.message.abbr) {
+                    let warehouse = "Stores - " + r.message.abbr;  // assuming that this is always the correct Warehouse
+                    // Update each item
+                    (frm.doc.items || []).forEach(item => {
+                        if (item.warehouse !== warehouse) {
+                            item.warehouse = warehouse;
+                        }
+                    });
+                    frm.refresh_field("items");
+                }
+            }
+        });
     }
 });
 
