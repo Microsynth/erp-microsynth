@@ -203,7 +203,7 @@ frappe.ui.form.on('Contact', {
             }
 
             // Show potential duplicates immediately (do not defer to a button)
-            if (!frm.doc.__islocal && frm.doc.status === 'Open') {
+            if (!frm.doc.__islocal && frm.doc.status === 'Open' && frm.doc.has_webshop_account) {  // only Webshop Contacts are Open, therefore use has_webshop_account to only show duplicates on a shipping Co0ntact
                 frappe.call({
                     "method": "microsynth.microsynth.utils.get_potential_contact_duplicates",
                     'args': {
