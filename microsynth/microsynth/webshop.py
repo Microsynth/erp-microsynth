@@ -1188,7 +1188,8 @@ def place_order(content, client="webshop"):
         'selling_price_list': frappe.get_value("Customer", customer.name, "default_price_list"),
         'currency': frappe.get_value("Customer", customer.name, "default_currency"),
         'comment': content['comment'] if 'comment' in content else None,
-        'hold_order': True if 'comment' in content and content['comment'] != None and content['comment'] != "" else None
+        'hold_order': True if 'comment' in content and content['comment'] != None and content['comment'] != "" else None,
+        'hold_invoice': True if (not content.get('po_no') and 'Pasteur' in customer.customer_name) else None
         })
     if 'product_type' in content:
         so_doc.product_type = content['product_type']
