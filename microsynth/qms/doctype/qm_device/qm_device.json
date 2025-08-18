@@ -18,6 +18,7 @@
   "manufacturer",
   "column_break_8",
   "supplier",
+  "supplier_name",
   "purchase_invoice",
   "section_break_14",
   "qm_documents",
@@ -123,9 +124,16 @@
    "label": "Site",
    "options": "\nBalgach\nG\u00f6ttingen\nLyon\nWien",
    "reqd": 1
+  },
+  {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Supplier Name",
+   "read_only": 1
   }
  ],
- "modified": "2025-08-14 15:48:54.189065",
+ "modified": "2025-08-18 14:37:38.034432",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Device",
