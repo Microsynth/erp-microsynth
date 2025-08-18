@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2024, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -18,7 +18,7 @@ def get_columns():
         {"label": _("ID"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 80},
         {"label": _("Reference"), "fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "width": 125},
         {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 200, 'options': 'currency'},
-        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 75},
+        {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 60},
         {"label": _("Related"), "fieldname": "related", "fieldtype": "data", "width": 200},
         {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 250}
