@@ -121,5 +121,16 @@ frappe.query_reports["Customer Finder"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
+    },
+    'after_datatable_render': function(report) {
+        // After the report is rendered, apply background color to rows if has_webshop_account is true
+        var elements= document.querySelectorAll('[data-row-index][data-indent="0"]');
+        elements.forEach(function(row, index) {
+            var rowColor = (frappe.query_report.data[index].has_webshop_account) ? '#E6FFE6' : '';
+            var cells = row.querySelectorAll('div');
+            cells.forEach(function(cell) {
+                cell.style.backgroundColor = rowColor;
+            });
+        });
     }
 };
