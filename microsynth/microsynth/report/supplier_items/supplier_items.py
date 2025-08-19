@@ -96,6 +96,9 @@ def create_purchasing_item(data):
         if existing:
             frappe.throw(_("An item with Material Code {0} already exists: {1}").format(material_code, existing))
 
+    if float(data.get("shelf_life_in_years") or 0) <= 0:
+        frappe.throw(_("Shelf Life in Years must be greater than 0."))
+
     # --- Create Item ---
     item = frappe.new_doc("Item")
     item.item_code = item_code
