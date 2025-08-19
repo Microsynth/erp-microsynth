@@ -5567,8 +5567,9 @@ def unify_contact_salutation(output_path):
     """
     Unify the salutation of all Contacts in the ERP to "Herr" or "Frau" based on their first name.
     Write the changes to the given output file.
+    Expected runtime: < 1 minute for around 30'000 Contacts
 
-    bench execute microsynth.microsynth.migration.unify_contact_salutation --kwargs "{'output_path': '/mnt/erp_share/JPe/2025-08-11_unified_contact_salutations_DEV-ERP.csv'}"
+    bench execute microsynth.microsynth.migration.unify_contact_salutation --kwargs "{'output_path': '/mnt/erp_share/JPe/2025-08-19_unified_contact_salutations_DEV-ERP.csv'}"
     """
     language_dict = {
         "Herr": "de",
@@ -5577,8 +5578,7 @@ def unify_contact_salutation(output_path):
         "Mme": "fr"
     }
     contacts = frappe.get_all("Contact",
-                              filters=[['status', '!=', 'Disabled'],
-                                       ['salutation', 'IN', ["Herr", "M.", "Frau", "Mme"]]],
+                              filters=[['salutation', 'IN', ["Herr", "M.", "Frau", "Mme"]]],
                               fields=['name', 'salutation'])
     print(f"Going to process {len(contacts)} Contacts ...")
     changes = []
@@ -5590,6 +5590,7 @@ def unify_contact_salutation(output_path):
         elif contact.salutation in ["Frau", "Mme"]:
             new_salutation = "Ms."
         else:
+            print(f"WARNING: Contact {contact.name} has unexpected salutation {contact.salutation}. Skipping.")
             continue
         changes.append({
             'contact': contact.name,
