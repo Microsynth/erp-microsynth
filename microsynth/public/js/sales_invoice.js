@@ -47,7 +47,7 @@ frappe.ui.form.on('Sales Invoice', {
             }, __("Create"));
         }
 
-        if (!frm.doc.__islocal && frm.doc.docstatus == 1 && frm.doc.is_return == 0) {
+        if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Download"), function() {
                 var w = window.open(
                     frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_invoice_pdf"
