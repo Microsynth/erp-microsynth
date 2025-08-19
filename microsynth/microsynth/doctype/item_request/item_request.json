@@ -38,7 +38,8 @@
   {
    "fieldname": "rate",
    "fieldtype": "Currency",
-   "label": "Rate"
+   "label": "Rate",
+   "options": "currency"
   },
   {
    "description": "Link to existing Supplier (optional)",
@@ -165,7 +166,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-07-15 17:34:02.725625",
+ "modified": "2025-08-19 16:18:12.392475",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
