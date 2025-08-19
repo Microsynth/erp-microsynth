@@ -226,6 +226,14 @@ function open_search_dialog(report) {
                     `;
                 });
                 html += '</tbody></table>';
+                const max_display_rows = 10;
+                if (items.length >= max_display_rows) {
+                    html += `
+                        <div class="text-muted">
+                            ${__('Showing only the first {0} results, but there could be more. Please specify your search.', [max_display_rows])}
+                        </div>
+                    `;
+                }
                 f.results.$wrapper.html(html);
 
                 f.results.$wrapper.find('input[type=radio][name=select_item]').on('change', function() {
