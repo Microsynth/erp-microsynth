@@ -216,6 +216,43 @@ frappe.ui.form.on('Quotation', {
         }
     },
 
+    before_submit(frm) {
+        // Check if contact_person is set
+        if (frm.doc.contact_person) {
+            // Prevent automatic submission while we wait for confirmation
+            frappe.validated = false;
+            frappe.call({
+                'method': 'frappe.client.get_value',
+                'args': {
+                    'doctype': 'Contact',
+                    'filters': { name: frm.doc.contact_person },
+                    'fieldname': 'has_webshop_account'
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (r.message && r.message.has_webshop_account === 0) {
+                        // Show confirmation dialog if no webshop account
+                        frappe.confirm(
+                            "The selected Contact Person " + frm.doc.contact_person + " does <b>not</b> have a Webshop Account.<br>Please click No and check to replace it.<br>Do you really want to submit this Quotation anyway?",
+                            function () {
+                                // User confirmed
+                                frappe.validated = true;
+                                frm.save('Submit');
+                            },
+                            function () {
+                                // User cancelled → do nothing, submission remains blocked
+                                frappe.msgprint("Submission cancelled. Please select a Contact Person with a Webshop Account.");
+                            }
+                        );
+                    } else {
+                        // Contact has a webshop account → allow submission
+                        frappe.validated = true;
+                    }
+                }
+            });
+        }
+    },
+
     on_submit(frm) {
         // this is a hack to prevent not allowed to change discount amount after submit because the form has an unrounded value on an item
         cur_frm.reload_doc();
