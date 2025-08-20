@@ -1237,6 +1237,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
 def send_material_request_owner_emails(doc, event=None):
     """
     Send emails to each Material Request owner listing items received on this Purchase Receipt.
+    If there is an Item Request linked to a Material Request, use the Item Request's owner instead.
     """
     owner_map = {}
 
@@ -1245,26 +1246,39 @@ def send_material_request_owner_emails(doc, event=None):
     if not material_requests:
         return
 
-    # Get Material Request and Owner mapping
+    # Fetch Material Requests and their default owners
     mr_owners = frappe.get_all('Material Request',
         filters={'name': ['in', material_requests]},
         fields=['name', 'owner'])
-
     mr_owner_map = {mr.name: mr.owner for mr in mr_owners}
 
-    # Group items by owner
+    # Fetch Item Requests linked to those Material Requests
+    item_requests = frappe.get_all('Item Request',
+        filters={'material_request': ['in', material_requests]},
+        fields=['material_request', 'owner'])
+
+    # Build override map: Material Request → Item Request Owner
+    item_request_owner_map = {ir.material_request: ir.owner for ir in item_requests}
+
+    # Final map: MR → effective owner (Item Request owner if present, else MR owner)
+    effective_owner_map = {
+        mr: item_request_owner_map.get(mr, mr_owner_map.get(mr))
+        for mr in material_requests
+    }
+
+    # Group items by effective owner
     for item in doc.items:
         mr = item.material_request
         if not mr:
             continue
-        owner = mr_owner_map.get(mr)
+        owner = effective_owner_map.get(mr)
         if not owner:
             continue
         if owner not in owner_map:
             owner_map[owner] = []
         owner_map[owner].append(item)
 
-    # Send email to each owner
+    # Send email to each effective owner
     for mr_owner, items in owner_map.items():
         if doc.owner == mr_owner:
             # Skip sending email to the owner of the Purchase Receipt
@@ -1272,9 +1286,9 @@ def send_material_request_owner_emails(doc, event=None):
         user = frappe.get_doc("User", mr_owner)
         email = user.email or mr_owner
         # TODO: Create Email Template later
-        subject = f"Items Received for Your Material Request(s) - Purchase Receipt {doc.name}"
+        subject = f"Items Received for Your Request(s) - Purchase Receipt {doc.name}"
         message = f"<p>Dear {user.full_name or mr_owner},</p>"
-        message += f"<p>The following items from your Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"
+        message += f"<p>The following items from your Item or Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"
         for i in items:
             message += f"<li><b>{i.item_name}</b> ({i.description or ''}) - Qty: {i.qty}</li>"
         message += "</ul><p>Best regards,<br>Your ERP System</p>"
