@@ -1205,6 +1205,58 @@ def adjust_si_to_dn(dn_doc, si_doc):
     return si_doc
 
 
+def create_si_from_so(so_id):
+    """
+    In the dropshipment workflow: Create a Sales Invoice from a Sales Order for the end customer.
+    Adjust the items and quantities of the Sales Invoice to match the intercompany Delivery Note specified by the PO NO matching the Sales Order.
+    Applies the customer credits if available.
+    Set the income accounts as well as the goodwill period for payment reminders.
+
+    run
+    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-LYO-25001531'}"
+    """
+
+    si_content = make_sales_invoice_from_so(so_id)
+    end_customer_si = frappe.get_doc(si_content)
+    end_customer_si.naming_series = get_naming_series("Sales Invoice", end_customer_si.company)
+    dns = frappe.get_all("Delivery Note", filters={'po_no': so_id, 'docstatus': 1}, fields=['name'])
+    if len(dns) != 1:
+        frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
+        return None
+    dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
+    # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
+    # assume that there are not different Oligos, Samples or Items while the amount of them is identical
+    # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
+    if (end_customer_si.get('oligos') and dn_doc.get('oligos') and len(end_customer_si.oligos) != len(dn_doc.oligos)) or \
+        (end_customer_si.get('samples') and dn_doc.get('samples') and len(end_customer_si.samples) != len(dn_doc.samples)) or \
+        (end_customer_si.get('items') and dn_doc.get('items') and len(end_customer_si.items) != len(dn_doc.items)):
+        end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si)  # should be call by reference but just for safety
+    if end_customer_si.total > dn_doc.total:
+        frappe.log_error(f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
+        return None
+
+    if end_customer_si.total > 0:
+        end_customer_si = allocate_credits(end_customer_si)  # check and allocate open customer credits
+
+    if not end_customer_si.tax_id:
+        end_customer_si.tax_id = frappe.get_value("Customer", end_customer_si.customer, "tax_id")
+
+    end_customer_si.insert(ignore_permissions=True)    # TODO: why do we ignore the permissions here?
+    set_income_accounts(end_customer_si)
+
+    customer_invoicing_method = frappe.get_value("Customer", end_customer_si.customer, "invoicing_method")
+    if customer_invoicing_method == "Chorus":
+        goodwill_days = 20
+    else:
+        goodwill_days = 5
+    # for payment reminders: set goodwill period
+    end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+
+    end_customer_si.submit()
+
+    return end_customer_si.name
+
+
 @frappe.whitelist()
 def transmit_sales_invoice(sales_invoice_id):
     """
@@ -1505,46 +1557,12 @@ Your administration team<br><br>{footer}"
                     frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
                 # create SI-LYO from SO-LYO
-                si_content = make_sales_invoice_from_so(so_id)
-                end_customer_si = frappe.get_doc(si_content)
-                end_customer_si.naming_series = get_naming_series("Sales Invoice", end_customer_si.company)
-                dns = frappe.get_all("Delivery Note", filters={'po_no': so_id, 'docstatus': 1}, fields=['name'])
-                if len(dns) != 1:
-                    frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
+                si_id = create_si_from_so(so_id)
+                if not si_id:
                     continue
-                dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
-                # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
-                # assume that there are not different Oligos, Samples or Items while the amount of them is identical
-                # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
-                if (end_customer_si.get('oligos') and dn_doc.get('oligos') and len(end_customer_si.oligos) != len(dn_doc.oligos)) or \
-                   (end_customer_si.get('samples') and dn_doc.get('samples') and len(end_customer_si.samples) != len(dn_doc.samples)) or \
-                   (end_customer_si.get('items') and dn_doc.get('items') and len(end_customer_si.items) != len(dn_doc.items)):
-                    end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si)  # should be call by reference but just for safety
-                if end_customer_si.total > dn_doc.total:
-                    frappe.log_error(f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
-                    continue
-
-                if end_customer_si.total > 0:
-                    end_customer_si = allocate_credits(end_customer_si)  # check and allocate open customer credits
-
-                if not end_customer_si.tax_id:
-                    end_customer_si.tax_id = frappe.get_value("Customer", end_customer_si.customer, "tax_id")
-
-                end_customer_si.insert(ignore_permissions=True)    # TODO: why do we ignore the permissions here?
-                set_income_accounts(end_customer_si)
-
-                customer_invoicing_method = frappe.get_value("Customer", end_customer_si.customer, "invoicing_method")
-                if customer_invoicing_method == "Chorus":
-                    goodwill_days = 20
-                else:
-                    goodwill_days = 5
-                # for payment reminders: set goodwill period
-                end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
-
-                end_customer_si.submit()
 
                 # transmit SI-LYO
-                transmit_sales_invoice(end_customer_si.name)
+                transmit_sales_invoice(si_id)
 
                 # close SO-LYO (there will be no delviery note)
                 so_doc = frappe.get_doc("Sales Order", so_id)
