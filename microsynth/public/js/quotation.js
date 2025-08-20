@@ -231,17 +231,19 @@ frappe.ui.form.on('Quotation', {
                 'async': false,
                 'callback': function(r) {
                     if (r.message && r.message.has_webshop_account === 0) {
+                        const escaped_contact = frappe.utils.escape_html(frm.doc.contact_person);
+                        const message = `<b>No Webshop Account</b> found for Contact Person <code>${escaped_contact}</code>.<br>
+                            A Webshop Account is strongly recommended.<br><br>
+                            Click <b>Yes</b> to abort submission and fix the Contact Person.<br>
+                            Click No to continue at your own risk.`;
                         // Show confirmation dialog if no webshop account
-                        frappe.confirm(
-                            "The selected Contact Person " + frm.doc.contact_person + " does <b>not</b> have a Webshop Account.<br>Please click No and check to replace it.<br>Do you really want to submit this Quotation anyway?",
+                        frappe.confirm(message,
                             function () {
-                                // User confirmed
-                                frappe.validated = true;
-                                frm.save('Submit');
+                                frappe.msgprint("Submission cancelled. Please select a Contact Person with a Webshop Account.");
                             },
                             function () {
-                                // User cancelled → do nothing, submission remains blocked
-                                frappe.msgprint("Submission cancelled. Please select a Contact Person with a Webshop Account.");
+                                frappe.validated = true;
+                                frm.save('Submit');
                             }
                         );
                     } else {

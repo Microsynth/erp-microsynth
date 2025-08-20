@@ -132,6 +132,44 @@ frappe.ui.form.on('Sales Order', {
         // update taxes was moved to the server-side trigger (see hooks.py)
         //update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
+    before_submit(frm) {
+        // Check if contact_person is set
+        if (frm.doc.contact_person) {
+            // Prevent automatic submission while we wait for confirmation
+            frappe.validated = false;
+            frappe.call({
+                'method': 'frappe.client.get_value',
+                'args': {
+                    'doctype': 'Contact',
+                    'filters': { name: frm.doc.contact_person },
+                    'fieldname': 'has_webshop_account'
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (r.message && r.message.has_webshop_account === 0) {
+                        const escaped_contact = frappe.utils.escape_html(frm.doc.contact_person);
+                        const message = `<b>No Webshop Account</b> found for Contact Person <code>${escaped_contact}</code>.<br>
+                            A Webshop Account is strongly recommended.<br><br>
+                            Click <b>Yes</b> to abort submission and fix the Contact Person.<br>
+                            Click No to continue at your own risk.`;
+                        // Show confirmation dialog if no webshop account
+                        frappe.confirm(message,
+                            function () {
+                                frappe.msgprint("Submission cancelled. Please select a Contact Person with a Webshop Account.");
+                            },
+                            function () {
+                                frappe.validated = true;
+                                frm.save('Submit');
+                            }
+                        );
+                    } else {
+                        // Contact has a webshop account → allow submission
+                        frappe.validated = true;
+                    }
+                }
+            });
+        }
+    },
     company(frm) {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function
