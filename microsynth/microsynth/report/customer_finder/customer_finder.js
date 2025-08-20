@@ -123,14 +123,29 @@ frappe.query_reports["Customer Finder"] = {
         hide_chart_buttons();
     },
     'after_datatable_render': function(report) {
-        // After the report is rendered, apply background color to rows if has_webshop_account is true
-        var elements= document.querySelectorAll('[data-row-index][data-indent="0"]');
-        elements.forEach(function(row, index) {
-            var rowColor = (frappe.query_report.data[index].has_webshop_account) ? '#E6FFE6' : '';
-            var cells = row.querySelectorAll('div');
-            cells.forEach(function(cell) {
-                cell.style.backgroundColor = rowColor;
+        const applyRowColors = () => {
+            const rows = document.querySelectorAll('[data-row-index]');
+            rows.forEach(row => {
+                const index = parseInt(row.getAttribute('data-row-index'), 10);
+                const rowData = frappe.query_report.data[index];
+                if (!rowData) return;
+                const highlight = rowData.has_webshop_account ? '#E6FFE6' : '';
+                row.style.backgroundColor = highlight;
             });
-        });
+        };
+        applyRowColors();  // Initial run after render
+
+        // Add MutationObserver only once
+        const scrollArea = document.querySelector('.dt-scrollable');
+        if (scrollArea && !scrollArea._observerAttached) {
+            const observer = new MutationObserver(() => {
+                applyRowColors();  // Reapply styles on changes
+            });
+            observer.observe(scrollArea, {
+                childList: true,
+                subtree: true,
+            });
+            scrollArea._observerAttached = true;
+        }
     }
 };
