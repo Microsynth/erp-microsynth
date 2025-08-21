@@ -1215,7 +1215,6 @@ def create_si_from_so(so_id):
     run
     bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-LYO-25001531'}"
     """
-
     si_content = make_sales_invoice_from_so(so_id)
     end_customer_si = frappe.get_doc(si_content)
     end_customer_si.naming_series = get_naming_series("Sales Invoice", end_customer_si.company)
@@ -1255,6 +1254,17 @@ def create_si_from_so(so_id):
     end_customer_si.submit()
 
     return end_customer_si.name
+
+
+def create_invoices_from_orders(so_ids):
+    """
+    Wrapper for create_si_from_so.
+
+    run
+    bench execute microsynth.microsynth.invoicing.create_invoices_from_orders --kwargs "{'so_ids': ['SO-LYO-25001531', 'SO-LYO-25001472']}"
+    """
+    for so_id in so_ids:
+        create_si_from_so(so_id)
 
 
 @frappe.whitelist()
