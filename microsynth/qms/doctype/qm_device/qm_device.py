@@ -47,7 +47,7 @@ def convert_price_fields(price_chf, price_eur, price_usd):
 
 def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_length=18):
     """
-    bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-07-25_Geraeteliste.csv'}"
+    bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-08-21_Geraeteliste.csv'}"
     """
     group_mapping = {
         '3.1 DNA/RNA Synthese': '3.1 DNA/RNA Synthesis',
@@ -55,12 +55,17 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
         '3.2 Lyon': '3.2 Sequencing',
         '3.2 Seqlab': '3.2 Sequencing',
         '3.2 Wien': '3.2 Sequencing',
+        '3.2 Sequencing': '3.2 Sequencing',
         '3.3 DNA/RNA Isolation': '3.3 Isolation',
+        '3.3 Isolation': '3.3 Isolation',
         '3.4 Genotyping': '3.4 Genotyping',
         '3.5 Real Time PCR': '3.5 PCR',
+        '3.5 PCR': '3.5 PCR',
         '3.6 Library Prep': 'TODO',
+        '3.6 NGS': '3.6 NGS',
         '3.7 NGS': '3.6 NGS',
         '5.1 Instrumente': '5.1 Instruments',
+        '5.1 Instruments': '5.1 Instruments'
     }
     category_mapping = {
         'A': 'A: Complex analytical system',
@@ -140,8 +145,8 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                 'device_name': device_name,
                 'category': category_mapping[device_classification],
                 'status': 'Unqualified',  # TODO: mandatory, but how to determine?
-                'location': '',  # TODO: mapping required
                 'qm_process': group_mapping[process],
+                'site': location if location in ['Lyon', 'Göttingen', 'Wien'] else 'Balgach',
                 'serial_no': serial_number,
                 'service_instructions': service_instructions,
                 'manufacturer': manufacturer,
