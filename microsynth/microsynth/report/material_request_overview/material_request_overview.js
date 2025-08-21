@@ -63,7 +63,6 @@ frappe.query_reports["Material Request Overview"] = {
         // After the report is rendered, apply background color to rows based on request_type
         var elements= document.querySelectorAll('[data-row-index][data-indent="0"]');
         elements.forEach(function(row, index) {
-            console.log("Row " + index + ": ", row);
             var rowColor = (frappe.query_report.data[index].request_type === "Item Request") ? '#eeeeee' : '';
             var cells = row.querySelectorAll('div');
             cells.forEach(function(cell) {
@@ -187,7 +186,7 @@ function open_search_dialog(report) {
                             ${__('No matching items found.')}
                             <br><button class="btn btn-primary" id="request-item-btn">${__('Request Item')}</button>
                         </div>
-                    `);
+                    `);  // TODO: Why is it necessary to click the button "Request Item" twice to open the dialog?"
 
                     f.results.$wrapper.find('#request-item-btn').on('click', () => {
                         dialog.hide();
