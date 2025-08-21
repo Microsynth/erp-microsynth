@@ -173,7 +173,7 @@ def send_reminder_before_due_date(workdays=2):
 
     qm_actions_to_remind = frappe.get_all("QM Action",
             filters = [['due_date', '=', f'{target_due_date}'], ['docstatus', '!=', 2], ['status', '!=', 'Completed']],
-            fields = ['name', 'responsible_person', 'document_type', 'document_name'])
+            fields = ['name', 'title', 'responsible_person', 'document_type', 'document_name'])
 
     for qma in qm_actions_to_remind:
         first_name = frappe.get_value("User", qma['responsible_person'], "first_name")
@@ -185,6 +185,6 @@ def send_reminder_before_due_date(workdays=2):
             sender = "qm@microsynth.ch",
             sender_full_name = "QAU",
             subject = f"Last Reminder: Your QM Action {qma['name']} is due on {target_due_date.strftime('%d.%m.%Y')}",
-            content = f"Dear {first_name},<br><br>Your QM Action <a href={url}>{qma['name']}</a> is due on {target_due_date.strftime('%d.%m.%Y')}. Please complete the task by the due date.",
+            content = f"Dear {first_name},<br><br>Your QM Action <a href={url}>{qma['name']}</a> ({qma['title']}) is due on {target_due_date.strftime('%d.%m.%Y')}. Please complete the task by the due date.",
             send_email = True
         )
