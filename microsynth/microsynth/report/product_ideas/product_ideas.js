@@ -12,8 +12,7 @@ frappe.query_reports["Product Ideas"] = {
         {
             "fieldname":"to_date",
             "label": __("To Date"),
-            "fieldtype": "Date",
-            "default": frappe.datetime.get_today()
+            "fieldtype": "Date"
         },
         {
             "fieldname": "item_group",
@@ -47,5 +46,9 @@ frappe.query_reports["Product Ideas"] = {
     ],
     "onload": (report) => {
         hide_chart_buttons();
+        // Add "New" button
+        report.page.add_inner_button(__('New'), () => {
+            frappe.set_route('Form', 'Product Idea', 'New Product Idea');
+        });
     }
 };

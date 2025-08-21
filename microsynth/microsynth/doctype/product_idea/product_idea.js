@@ -2,7 +2,9 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Product Idea', {
-	// refresh: function(frm) {
-
-	// }
+	refresh: function(frm) {
+		frm.add_custom_button(__('Overview'), function() {
+			frappe.set_route('query-report', 'Product Ideas');
+		});
+	}
 });
