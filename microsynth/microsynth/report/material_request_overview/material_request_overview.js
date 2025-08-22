@@ -120,7 +120,7 @@ function open_search_dialog(report) {
             {fieldtype:'Button', label: __('Clear Filters'), fieldname:'clear_filters'},
             {fieldtype:'Column Break'},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name'},
-            {fieldtype:'Data', label: __('Supplier Part Number'), fieldname:'supplier_part_no'},
+            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no'},
             {fieldtype:'Section Break'},
             {fieldtype:'HTML', fieldname:'results'}
         ],
@@ -190,7 +190,7 @@ function open_search_dialog(report) {
 
                     f.results.$wrapper.find('#request-item-btn').on('click', () => {
                         dialog.hide();
-                        open_item_request_dialog(report);
+                        open_item_request_dialog(report, f.item_name_part.get_value(), f.supplier_name.get_value(), f.supplier_part_no.get_value());
                     });
                     dialog.selected_item = null;
                     return;
@@ -268,7 +268,7 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Column Break' },
 
-            { fieldtype: 'Data', label: __('Supplier Part No'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
+            { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') }
@@ -313,12 +313,12 @@ function open_confirmation_dialog(selected, report) {
 }
 
 
-function open_item_request_dialog(report) {
+function open_item_request_dialog(report, item_name, supplier_name, supplier_part_no) {
     let d = new frappe.ui.Dialog({
         'title': __('New Item Request'),
         'fields': [
             // Left column
-            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd:true},
+            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd:true, default: item_name || ''},
             {fieldtype:'Link', label: __('Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd:true, default:1, min: 0.0001},
             {fieldtype:'Currency', label: __('Rate'), fieldname:'rate'},
@@ -327,8 +327,8 @@ function open_item_request_dialog(report) {
             {fieldtype:'Column Break'},
 
             // Right column
-            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no'},
-            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd:true},
+            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
+            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd:true, default: supplier_name || ''},
             {fieldtype:'Link', label: __('UOM (unit of measure)'), fieldname:'uom', options: 'UOM', default: 'Pcs'},
             {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
             {fieldtype:'Date', label: __('Required By'), fieldname:'schedule_date'},
