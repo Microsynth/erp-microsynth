@@ -38,6 +38,7 @@ frappe.query_reports["Supplier Items"] = {
 };
 
 
+// TODO: Reduce code duplication with function create_new_supplier_item in item_request.js
 function create_new_supplier_item() {
     let dialog = new frappe.ui.Dialog({
         'title': 'New Purchasing Item',
@@ -105,7 +106,16 @@ function create_new_supplier_item() {
                 fieldtype: 'Link',
                 reqd: 1,
                 options: 'Account',
-                description: '"Kostenstelle"'
+                description: '"Kostenstelle"',
+                get_query: function () {
+                    return {
+                        'filters': {
+                            'account_type': 'Expense Account',
+                            'is_group': 0,
+                            'company': dialog.get_value('company') || 'Microsynth AG'
+                        }
+                    };
+                }
             },
             { fieldtype: 'Column Break' },
             {

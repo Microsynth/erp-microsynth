@@ -298,7 +298,16 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Link',
                 reqd: 1,
                 options: 'Account',
-                description: '"Kostenstelle"'
+                description: '"Kostenstelle"',
+                get_query: function () {
+                    return {
+                        'filters': {
+                            'account_type': 'Expense Account',
+                            'is_group': 0,
+                            'company': dialog.get_value('company') || 'Microsynth AG'
+                        }
+                    };
+                }
             },
             { fieldtype: 'Column Break' },
             {
