@@ -45,12 +45,12 @@ function open_search_dialog(frm) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),
         'fields': [
-            { fieldtype: 'Data', label: __('Item Name'), fieldname: 'item_name_part' },
+            { fieldtype: 'Data', label: __('Item Name'), fieldname: 'item_name_part', default: frm.doc.item_name || '' },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code' },
             { fieldtype: 'Button', label: __('Clear Filters'), fieldname: 'clear_filters' },
             { fieldtype: 'Column Break' },
-            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name' },
-            { fieldtype: 'Data', label: __('Supplier Part Number'), fieldname: 'supplier_part_no' },
+            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', default: frm.doc.supplier_name || '' },
+            { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', default: frm.doc.supplier_part_no || '' },
             { fieldtype: 'Section Break' },
             { fieldtype: 'HTML', fieldname: 'results' }
             ],
@@ -166,11 +166,13 @@ function open_material_request_dialog(selected, frm) {
             { fieldtype: 'Data', label: __('Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Int', label: __('Quantity'), fieldname: 'qty', reqd: 1, default: frm.doc.qty, min: 1 },
+            { fieldtype: 'Link', label: __('Currency'), fieldname: 'currency', options: 'Currency', default: frm.doc.currency || '' },
             { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', default: frm.doc.schedule_date, reqd: 1 },
             { fieldtype: 'Column Break' },
-            { fieldtype: 'Data', label: __('Supplier Part No'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
+            { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
+            { fieldtype: 'Currency', label: __('Rate'), fieldname: 'rate', default: frm.doc.rate || 0 },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: 1, options: 'Company', default: frm.doc.company }
         ],
         'primary_action_label': __('Create & Submit'),
@@ -193,7 +195,9 @@ function open_material_request_dialog(selected, frm) {
                         'supplier_name': selected.supplier_name,
                         'supplier_part_no': selected.supplier_part_no,
                         'material_code': selected.material_code,
-                        'item_name': selected.item_name
+                        'item_name': selected.item_name,
+                        'currency': values.currency || 'CHF',
+                        'rate': values.rate || 0
                     }
                 },
                 callback(r) {
@@ -368,7 +372,7 @@ function create_new_supplier_item(frm) {
                         const item_code = r.message;
                         frappe.msgprint({
                             'title': __('Item Created'),
-                            'message': __('Item created: {0}', [`<a href="/app/item/${item_code}" target="_blank">${item_code}</a>`]),
+                            'message': __('Item created: {0}', [`${item_code}`]),
                             'indicator': 'green'
                         });
                         dialog.hide();
