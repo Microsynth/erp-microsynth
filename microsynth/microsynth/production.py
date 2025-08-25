@@ -308,7 +308,7 @@ def oligo_delivery_packaged(delivery_note):
     """
     Mark a delivery as packaged
 
-    bench execute "microsynth.microsynth.production.oligo_delivery_packaged" --kwargs "{'delivery_note': 'DN-BAL-25016266-1'}"
+    bench execute "microsynth.microsynth.production.oligo_delivery_packaged" --kwargs "{'delivery_note': 'DN-BAL-25040512'}"
     """
     if frappe.db.exists("Delivery Note", delivery_note):
         dn = frappe.get_doc("Delivery Note", delivery_note)
@@ -320,7 +320,7 @@ def oligo_delivery_packaged(delivery_note):
             set_shipping_date(dn)
 
             # check for Pasteur Paris:
-            if "Pasteur" in dn.customer_name:
+            if "Pasteur" in dn.customer_name or (hasattr(dn, 'order_customer_display') and dn.order_customer_display and "Pasteur" in dn.order_customer_display):
                 city = frappe.get_value("Address", dn.shipping_address_name, "city")
                 if city and "Paris" in city:
                     print_at_administration(dn)
