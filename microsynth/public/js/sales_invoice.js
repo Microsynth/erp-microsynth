@@ -231,6 +231,121 @@ frappe.ui.form.on('Sales Invoice', {
                 }
             });
         });
+    },
+    before_submit: function(frm) {
+        // Prevent default submit until user accepts or rejects changes
+        return new Promise((resolve, reject) => {
+            frappe.call({
+                'method': 'frappe.client.get',
+                'args': {
+                    'doctype': 'Intercompany Settings'
+                },
+                'callback': function(res) {
+                    const settings = res.message;
+                    if (!settings || !settings.companies) return resolve();
+                    const invoice_customer = frm.doc.customer;
+                    const invoice_company = frm.doc.company;
+                    const is_intercompany = settings.companies.some(entry => entry.customer === invoice_customer);
+                    if (!is_intercompany) return resolve(); // Not an intercompany transaction → continue as normal
+                    // Fetch Item 1008 with item_defaults
+                    frappe.call({
+                        'method': 'frappe.client.get',
+                        'args': {
+                            'doctype': 'Item',
+                            'name': '1008'
+                        },
+                        'callback': function(item_res) {
+                            const item = item_res.message;
+                            if (!item || !item.item_defaults) return resolve();
+
+                            const defaults = item.item_defaults.find(d => d.company === invoice_company);
+                            if (!defaults) return resolve();
+
+                            const reference_income_account = defaults.income_account;
+                            const reference_expense_account = defaults.expense_account;
+
+                            // Check all items for mismatched accounts
+                            let mismatched_items = [];
+                            frm.doc.items.forEach(row => {
+                                const income_mismatch = row.income_account !== reference_income_account;
+                                const expense_mismatch = row.expense_account && row.expense_account !== reference_expense_account;
+                                if (income_mismatch || expense_mismatch) {
+                                    mismatched_items.push({
+                                        'idx': row.idx,
+                                        'item_code': row.item_code,
+                                        'original_income': row.income_account,
+                                        'original_expense': row.expense_account || '',
+                                    });
+                                }
+                            });
+                            if (mismatched_items.length === 0) {
+                                return resolve(); // No issues, continue with submit
+                            }
+                            // Show confirmation dialog
+                            const message = `<strong>Intercompany invoice</strong> detected, but some Item Accounts differ from the defaults of Item 1008 for Company ${invoice_company}.<br><br>
+                                Do you want to <strong>update all Income/Expense Accounts</strong> to match those defaults<strong>?</strong><br><br>
+                                This will apply:<br>
+                                <ul>
+                                <li>Income Account: <code>${reference_income_account}</code></li>
+                                <li>Expense Account: <code>${reference_expense_account || '—'}</code></li>
+                                </ul>
+                                <strong>Affected Items:</strong>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Item Code</th>
+                                            <th>Current Income Account</th>
+                                            <th>Current Expense Account</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${mismatched_items.map(i => `
+                                            <tr>
+                                                <td>${i.idx}</td>
+                                                <td>${i.item_code}</td>
+                                                <td>${i.original_income}</td>
+                                                <td>${i.original_expense}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                                If you choose <strong>No</strong>, the Sales Invoice will be submitted with the current Accounts <strong>at your own risk</strong>.`;
+
+                            frappe.confirm(
+                                message,
+                                () => {
+                                    // User accepts: update accounts
+                                    frm.doc.items.forEach(row => {
+                                    row.income_account = reference_income_account;
+                                    if (reference_expense_account) {
+                                        row.expense_account = reference_expense_account;
+                                    }
+                                    });
+                                frm.save('Submit').catch(err => {
+                                    console.error("Save & Submit failed:", err);
+                                    frappe.msgprint(__('Submit failed. See console for details.'));
+                                    reject();
+                                });
+                                },
+                                () => {
+                                    // User rejects: continue with original submit
+                                    resolve();
+                                }
+                            );
+
+                            // Force wider confirm dialog
+                            setTimeout(() => {
+                                const modals = document.getElementsByClassName('modal-dialog');
+                                if (modals.length > 0) {
+                                    modals[modals.length - 1].style.width = '800px';
+                                }
+                            }, 200);
+                        }
+                    });
+                }
+            });
+        });
     }
 });
 
