@@ -5569,7 +5569,7 @@ def unify_contact_salutation(output_path):
     Write the changes to the given output file.
     Expected runtime: < 1 minute for around 30'000 Contacts
 
-    bench execute microsynth.microsynth.migration.unify_contact_salutation --kwargs "{'output_path': '/mnt/erp_share/JPe/2025-08-19_unified_contact_salutations_DEV-ERP.csv'}"
+    bench execute microsynth.microsynth.migration.unify_contact_salutation --kwargs "{'output_path': '/mnt/erp_share/JPe/2025-08-26_unified_contact_salutations.csv'}"
     """
     language_dict = {
         "Herr": "de",
@@ -5577,38 +5577,38 @@ def unify_contact_salutation(output_path):
         "Frau": "de",
         "Mme": "fr"
     }
-    contacts = frappe.get_all("Contact",
-                              filters=[['salutation', 'IN', ["Herr", "M.", "Frau", "Mme"]]],
-                              fields=['name', 'salutation'])
-    print(f"Going to process {len(contacts)} Contacts ...")
-    changes = []
-    for i, contact in enumerate(contacts):
-        if i % 200 == 0:
-            print(f"Processing Contact {i+1}/{len(contacts)}: {contact.name}")
-        if contact.salutation in ["Herr", "M."]:
-            new_salutation = "Mr."
-        elif contact.salutation in ["Frau", "Mme"]:
-            new_salutation = "Ms."
-        else:
-            print(f"WARNING: Contact {contact.name} has unexpected salutation {contact.salutation}. Skipping.")
-            continue
-        changes.append({
-            'contact': contact.name,
-            'old_salutation': contact.salutation,
-            'new_salutation': new_salutation,
-            'language': language_dict.get(contact.salutation, '-')
-        })
-        try:
-            # use frappe.db.set_value instead of contact_doc.save() to avoid loading the whole document (uncritical operation that does not require validation)
-            frappe.db.set_value("Contact", contact.name, "salutation", new_salutation)
-        except Exception as e:
-            print(f"Failed to update Contact {contact.name}: {e}")
+    with open(output_path, mode='w') as file:
+        contacts = frappe.get_all("Contact",
+                                filters=[['salutation', 'IN', ["Herr", "M.", "Frau", "Mme"]]],
+                                fields=['name', 'salutation'])
+        print(f"Going to process {len(contacts)} Contacts ...")
+        changes = []
+        for i, contact in enumerate(contacts):
+            if i % 200 == 0:
+                print(f"Processing Contact {i+1}/{len(contacts)}: {contact.name}")
+            if contact.salutation in ["Herr", "M."]:
+                new_salutation = "Mr."
+            elif contact.salutation in ["Frau", "Mme"]:
+                new_salutation = "Ms."
+            else:
+                print(f"WARNING: Contact {contact.name} has unexpected salutation {contact.salutation}. Skipping.")
+                continue
+            changes.append({
+                'contact': contact.name,
+                'old_salutation': contact.salutation,
+                'new_salutation': new_salutation,
+                'language': language_dict.get(contact.salutation, '-')
+            })
+            try:
+                # use frappe.db.set_value instead of contact_doc.save() to avoid loading the whole document (uncritical operation that does not require validation)
+                frappe.db.set_value("Contact", contact.name, "salutation", new_salutation)
+            except Exception as e:
+                print(f"Failed to update Contact {contact.name}: {e}")
 
-    if changes:
-        with open(output_path, mode='w') as file:
+        if changes:
             writer = csv.DictWriter(file, fieldnames=changes[0].keys())
             writer.writeheader()
             writer.writerows(changes)
-        print(f"Wrote {len(changes)} changes to {output_path}.")
-    else:
-        print("No changes made.")
+            print(f"Wrote {len(changes)} changes to {output_path}.")
+        else:
+            print("No changes made.")
