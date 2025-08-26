@@ -90,7 +90,7 @@ def create_tracking_code(web_order_id, tracking_code):
 @frappe.whitelist()
 def check_tracking_code(web_order_id, tracking_code):
     """
-    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '4933668294'}"
+    bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4492332', 'tracking_code': 'A00216192C000000B095'}"
     bench execute microsynth.microsynth.doctype.tracking_code.tracking_code.check_tracking_code --kwargs "{'web_order_id': '4194198', 'tracking_code': '779487631663'}"
     """
     sales_orders = frappe.get_all("Sales Order",
@@ -127,6 +127,8 @@ def check_tracking_code(web_order_id, tracking_code):
             regex_str = '^7\d{11}$'
         elif shipping_item == '1105':  # Post AT
             regex_str = '^\d{22}$'
+        elif shipping_item in ['1106', '1115']:  # Post DE
+            regex_str = '^A[A-Z0-9]{19}$'
         elif shipping_item in ['1120', '1123']:  # DHL
             regex_str = '^\d{10}$'
         elif shipping_item in ['1101', '1102']:  # Post CH

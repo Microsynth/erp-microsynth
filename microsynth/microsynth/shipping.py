@@ -15,9 +15,11 @@ TRACKING_URLS = {
     '1101': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
     '1102': "https://www.post.ch/swisspost-tracking?formattedParcelCodes=",
     '1105': "https://www.post.at/sv/sendungssuche?snr=",
+    '1106': "https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=",
     '1108': "https://www.ups.com/track?tracknum=",
     '1113': "https://www.ups.com/track?tracknum=",
     '1114': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
+    '1115': "https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=",
     '1117': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
