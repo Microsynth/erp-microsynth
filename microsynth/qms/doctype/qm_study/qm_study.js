@@ -10,5 +10,9 @@ frappe.ui.form.on('QM Study', {
             frappe.msgprint("Please set the Completion Date.");
             frappe.validated = false;
         }
+        if (frm.doc.completion_date && frm.doc.completion_date > frappe.datetime.nowdate()) {
+            frappe.msgprint("Completion Date cannot be in the future.");
+            frappe.validated = false;
+        }
     }
 });
