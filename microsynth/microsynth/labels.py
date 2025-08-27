@@ -2,6 +2,8 @@
 # Copyright (c) 2022, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
 
+import re
+import unicodedata  # part of standard library, no installation required
 import frappe
 import socket
 from datetime import datetime
@@ -257,6 +259,36 @@ def notify_ups_batchfile_error(msg, title="create_ups_batch_file"):
     send_email_from_template(email_template, rendered_content)
 
 
+def sanitize_text(text):
+    """
+    bench execute microsynth.microsynth.labels.sanitize_text --kwargs "{'text': 'Wrocław – ul. Łódzka 3, piętro 2. Empfänger: Jörg Weißstraße'}"
+    """
+    # List of allowed characters according to UPS documentation
+    ALLOWED_CHARS = r"A-Za-z0-9 .,:;?!@#$%^&_\"*\-+=><\/\[\]‘’(){}~|"
+
+    MANUAL_REPLACEMENTS = {
+        "ß": "ss",
+        "Ä": "Ae", "ä": "ae",
+        "Ö": "Oe", "ö": "oe",
+        "Ü": "Ue", "ü": "ue",
+        "Ł": "L", "ł": "l",
+        "Ø": "O", "ø": "o",
+        "Æ": "AE", "æ": "ae",
+        "Œ": "OE", "œ": "oe"
+    }
+    # 1. Manual Replacements
+    for original, replacement in MANUAL_REPLACEMENTS.items():
+        text = text.replace(original, replacement)
+
+    # 2. Unicode normalization (e. g. ü → u)
+    normalized = unicodedata.normalize("NFKD", text)
+    ascii_text = normalized.encode("ASCII", "ignore").decode("ASCII")
+
+    # 3. Only keep allowed characters
+    filtered = re.sub(f"[^{ALLOWED_CHARS}]", "", ascii_text)
+    return filtered
+
+
 @frappe.whitelist()
 def create_ups_batch_file(sales_orders):
     """
@@ -264,12 +296,11 @@ def create_ups_batch_file(sales_orders):
 
     bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
     """
-    import re
     lines_to_write = []
     for o in sales_orders:
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
-        # TODO: Store a mapping from Shipping Item Codes to UPS Service Types somewhere in the ERP settings
+        # TODO: Create a mapping from Shipping Item Codes to UPS Service Types and store it somewhere in the ERP settings
         if not label_data or not label_data['shipping_service'] or not 'UPS' in label_data['shipping_service']:
             continue
         address = frappe.get_doc("Address", sales_order.shipping_address_name)
@@ -306,9 +337,11 @@ def create_ups_batch_file(sales_orders):
         if sales_order.contact_phone and phone and not phone.isdigit():
             frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
         weight = '"0,1"'
-        customer_name = (address.overwrite_company or sales_order.order_customer_display or sales_order.customer_name).replace(',', '').replace('–', '-')[:35]
-        contact_display = sales_order.contact_display.replace(',', '').replace('–', '-')[:35]
-        lines_to_write.append(f"{contact_display},{customer_name},{country_code.upper()},{address.address_line1.replace(',', '')[:35]},,,{address.city.replace(',', '')[:30]},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,11,,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
+        customer_name = sanitize_text((address.overwrite_company or sales_order.order_customer_display or sales_order.customer_name).replace(',', '').replace('–', '-'))[:35]
+        contact_display = sanitize_text(sales_order.contact_display.replace(',', '').replace('–', '-'))[:35]
+        address_line1 = sanitize_text(address.address_line1.replace(',', ''))[:35]
+        city = sanitize_text(address.city.replace(',', ''))[:30]
+        lines_to_write.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},,,{city},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,11,,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
 
     if len(lines_to_write) > 0:
         with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
