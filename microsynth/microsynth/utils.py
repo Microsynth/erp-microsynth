@@ -3247,3 +3247,111 @@ def get_sql_list(raw_list):
         return (','.join('"{0}"'.format(e) for e in raw_list))
     else:
         return '""'
+
+
+def is_contact_safe_to_disable(contact_id):
+    """
+    bench execute microsynth.microsynth.migration.is_contact_safe_to_disable --kwargs "{'contact_id': '247270'}"
+    """
+    # 1. Linked to Sales Invoices
+    invoice = frappe.db.exists({
+        "doctype": "Sales Invoice",
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "outstanding_amount": [">", 0]
+    })
+    if invoice:
+        return True
+
+    # 2. Linked to Delivery Notes
+    dn = frappe.db.exists({
+        "doctype": "Delivery Note",
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "per_billed": 0
+    })
+    if dn:
+        return True
+
+    # 3. Used by another Customer (invoice_to or reminder_to)
+    customer_id = get_customer(contact_id)
+    other_customers = frappe.db.sql("""
+        SELECT name FROM `tabCustomer`
+        WHERE name != %s
+            AND (invoice_to = %s OR reminder_to = %s)
+            AND disabled = 0
+        LIMIT 1
+    """, (customer_id, contact_id, contact_id))
+    if other_customers:
+        return True
+
+    # 4. Linked on Sales Orders
+    so = frappe.db.exists({
+        "doctype": "Sales Order",
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "per_delivered": 0
+    })
+    if so:
+        return True
+
+    # 5. Linked on Quotations
+    quotation = frappe.db.exists({
+        "doctype": "Quotation",
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "status": 'Open',
+        "valid_till": [">=", frappe.utils.nowdate()]
+    })
+    if quotation:
+        return True
+
+    return False
+
+
+def is_address_safe_to_disable(address_id):
+    """
+    bench execute microsynth.microsynth.migration.is_address_safe_to_disable --kwargs "{'address_id': '247270'}"
+    """
+    # 1. Linked to submitted Sales Invoices
+    invoice = frappe.db.exists({
+        "doctype": "Sales Invoice",
+        "customer_address": address_id,
+        "docstatus": 1,
+        "outstanding_amount": [">", 0]
+    })
+    if invoice:
+        return True
+
+    # 2. Linked to Delivery Notes
+    dn = frappe.db.exists({
+        "doctype": "Delivery Note",
+        "shipping_address_name": address_id,
+        "docstatus": 1,
+        "per_billed": 0
+    })
+    if dn:
+        return True
+
+    # 3. Linked on Sales Orders
+    so = frappe.db.exists({
+        "doctype": "Sales Order",
+        "shipping_address_name": address_id,
+        "docstatus": 1,
+        "per_delivered": 0
+    })
+    if so:
+        return True
+
+    # 4. Linked on Quotations
+    quotation = frappe.db.exists({
+        "doctype": "Quotation",
+        "shipping_address_name": address_id,
+        "docstatus": 1,
+        "status": 'Open',
+        "valid_till": [">=", frappe.utils.nowdate()]
+    })
+    if quotation:
+        return True
+
+    return False
