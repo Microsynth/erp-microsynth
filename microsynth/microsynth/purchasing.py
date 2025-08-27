@@ -1312,7 +1312,7 @@ def create_material_request(item_code, qty, rate, currency, schedule_date, compa
     mr.transaction_date = today()
     mr.schedule_date = schedule_date
     mr.company = company
-    mr.currency = currency
+    #mr.currency = currency
     mr.append("items", {
         "item_code": item_code,
         "qty": qty,
