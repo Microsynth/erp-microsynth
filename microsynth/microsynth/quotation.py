@@ -98,6 +98,20 @@ def link_quotation_to_order(sales_order, quotation):
         so_doc = sales_order_doc
     if created_new_order:
         so_doc.insert()
+        try:
+            # Add a comment about cancel reason
+            new_comment = frappe.get_doc({
+                'doctype': 'Comment',
+                'comment_type': "Comment",
+                'subject': sales_order_doc.name,
+                'content': f"Cancelled to link Quotation {quotation}, see the new Sales Order {so_doc.name}",
+                'reference_doctype': "Sales Order",
+                'status': "Linked",
+                'reference_name': sales_order_doc.name
+            })
+            new_comment.insert(ignore_permissions=True)
+        except Exception as err:
+            frappe.log_error(err, "quotation.link_quotation_to_order")
     # write the Quotation ID into the field Sales Order Item.prevdoc_docname
     for item in so_doc.items:
         item.prevdoc_docname = quotation
