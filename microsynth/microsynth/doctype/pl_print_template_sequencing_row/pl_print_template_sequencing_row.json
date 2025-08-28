@@ -36,11 +36,13 @@
    "options": "Item"
   },
   {
+   "columns": 1,
    "default": "Row",
    "fieldname": "type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Type",
-   "options": "Main Heading\nSubheading\nRow"
+   "options": "Main Heading\nSubheading\nSubsubheading\nRow"
   },
   {
    "columns": 2,
@@ -51,7 +53,7 @@
   }
  ],
  "istable": 1,
- "modified": "2025-07-24 13:51:57.311938",
+ "modified": "2025-08-28 14:10:27.807247",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Sequencing Row",
