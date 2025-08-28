@@ -37,11 +37,11 @@ frappe.ui.form.on('Customer', {
             });
         }
         // show button "Customer Credits" only if Customer has credits for any company
-        if (has_credits(frm)) { 
+        if (has_credits(frm)) {
             frm.add_custom_button(__("Customer Credits"), function() {
                 frappe.set_route("query-report", "Customer Credits", {'customer': frm.doc.name, 'company': frm.doc.default_company});
             });
-        };   
+        };
         if ((!frm.doc.__islocal) && (frm.doc.default_price_list)) {
             frm.add_custom_button(__("Gecko Export"), function() {
                 frappe.call({
@@ -98,9 +98,108 @@ frappe.ui.form.on('Customer', {
             });
             frappe.validated=false;
         }
-        // if (frm.doc.tax_id && frm.doc.customer_type != 'Individual') {
-        //     verify_tax_id(frm.doc.tax_id);
-        // }
+        if (!frm.doc.__islocal && frm.doc.disabled && !frm.doc.__checked_contacts) {
+            (async function () {
+                const customer_id = frm.doc.name;
+
+                const getOpenDocsHtml = (docs) =>
+                    docs.map(doc => `<li>${doc.doctype}: <a href="${doc.url}" target="_blank">${doc.name}</a></li>`).join("");
+
+                const showDisableDialog = (to_disable, not_to_disable) => {
+                    const toDisableHtml = getOpenDocsHtml(to_disable);
+                    const notToDisableHtml = not_to_disable.length > 0
+                        ? "<br>" +
+                        __("The following linked records will <b>not</b> be disabled since they are used on a non-completed document or another Customer:") +
+                        "<br><br><ul>" + getOpenDocsHtml(not_to_disable) + "</ul>"
+                        : "";
+
+                    frappe.confirm(
+                        __("Would you like to also <b>disable</b> the following Contacts and Addresses linking to this Customer?<br><ul>{0}</ul>", [toDisableHtml]) +
+                        notToDisableHtml,
+                        async function () {
+                            await frappe.call({
+                                method: "microsynth.microsynth.utils.disable_linked_contacts_addresses",
+                                args: { links: to_disable }
+                            });
+                            frappe.msgprint(__("Linked records disabled."));
+                            frm.doc.__checked_contacts = true;
+                            frm.save();
+                        },
+                        function () {
+                            frm.doc.__checked_contacts = true;
+                            frm.save();
+                        }
+                    );
+                };
+
+                const checkContactsAndAddresses = async () => {
+                    const result = await frappe.call({
+                        method: "microsynth.microsynth.utils.check_linked_contacts_addresses",
+                        args: { customer_id }
+                    });
+                    const { to_disable = [], not_to_disable = [] } = result.message || {};
+
+                    if (to_disable.length > 0) {
+                        showDisableDialog(to_disable, not_to_disable);
+                    } else {
+                        frm.doc.__checked_contacts = true;
+                        frm.save();
+                    }
+                };
+
+                // First check for open documents
+                const resultOpenDocs = await frappe.call({
+                    method: "microsynth.microsynth.utils.get_open_documents_for_customer",
+                    args: { customer_id }
+                });
+
+                const open_docs_by_type = resultOpenDocs.message || {};
+                const open_docs = Object.entries(open_docs_by_type)
+                    .flatMap(([doctype, docs]) => docs.map(doc => ({ ...doc, doctype })));
+
+                if (open_docs.length > 0) {
+                    const openDocsHtml = getOpenDocsHtml(open_docs);
+
+                    const dialog = new frappe.ui.Dialog({
+                        title: __("Open Documents Found"),
+                        indicator: "orange",
+                        fields: [
+                            {
+                                fieldtype: "HTML",
+                                fieldname: "message",
+                                options: `
+                                    <div>
+                                        ${__("This Customer is still linked to open documents. You should resolve these before disabling the Customer:")}
+                                        <ul>${openDocsHtml}</ul>
+                                    </div>`
+                            }
+                        ],
+                        primary_action_label: __("Disable Anyway"),
+                        secondary_action_label: __("Close"),
+                    });
+                    dialog.secondary_action_label = __("Close");
+
+                    dialog.set_primary_action(__("Disable Anyway"), async function () {
+                        dialog.hide();
+                        await checkContactsAndAddresses();  // ✅ Reuse
+                    });
+
+                    dialog.set_secondary_action(function () {
+                        dialog.hide();
+                    });
+
+                    dialog.show();
+                    frappe.validated = false;
+                    return;
+                }
+
+                // No open docs → just continue
+                await checkContactsAndAddresses();
+
+            })();
+            frappe.validated = false;
+        }
+
     },
     after_save(frm) {
         if (!frm.doc.disabled) {
@@ -135,7 +234,7 @@ function fetch_primary_contact(frm) {
             if (r.message) {
                 var contact = r.message;
                 cur_frm.set_value("invoice_to", contact.name);
-            } 
+            }
         }
     });
 }
@@ -145,12 +244,12 @@ function create_payment_reminder(frm) {
     // ask for which company relation
     frappe.prompt([
             {
-                'fieldname': 'company', 
-                'fieldtype': 'Link', 
-                'label': __('Company'), 
-                'options': 'Company', 
+                'fieldname': 'company',
+                'fieldtype': 'Link',
+                'label': __('Company'),
+                'options': 'Company',
                 'default': frappe.defaults.get_user_default("Company"),
-                'reqd': 1}  
+                'reqd': 1}
         ],
         function(values) {
             frappe.call({
@@ -163,9 +262,9 @@ function create_payment_reminder(frm) {
                 },
                 'callback': function(response) {
                     if (response.message) {
-                        frappe.show_alert( __("Reminder created") + 
-                            ": <a href='/desk#Form/Payment Reminder/" + 
-                            response.message + "'>" + response.message + 
+                        frappe.show_alert( __("Reminder created") +
+                            ": <a href='/desk#Form/Payment Reminder/" +
+                            response.message + "'>" + response.message +
                             "</a>"
                         );
                     } else {

@@ -3249,9 +3249,87 @@ def get_sql_list(raw_list):
         return '""'
 
 
+@frappe.whitelist()
+def get_open_documents_for_customer(customer_id):
+    """
+    Returns a dictionary of open documents linked directly to a Customer,
+    including form URLs for each entry.
+
+    Usage:
+    bench execute microsynth.microsynth.utils.get_open_documents_for_customer --kwargs "{'customer_id': '37545653'}"
+    """
+    from frappe.utils import get_url_to_form, nowdate
+
+    result = {
+        "Sales Invoice": [],
+        "Delivery Note": [],
+        "Sales Order": [],
+        "Quotation": []
+    }
+
+    def with_url(doctype, docs):
+        return [
+            {
+                **doc,
+                "url": get_url_to_form(doctype, doc["name"])
+            }
+            for doc in docs
+        ]
+
+    # 1. Sales Invoices with outstanding amount
+    invoices = frappe.get_all("Sales Invoice",
+        filters={
+            "customer": customer_id,
+            "docstatus": 1,
+            "outstanding_amount": [">", 0]
+        },
+        fields=["name", "posting_date", "outstanding_amount"]
+    )
+    result["Sales Invoice"] = with_url("Sales Invoice", invoices)
+
+    # 2. Delivery Notes not fully billed
+    delivery_notes = frappe.get_all("Delivery Note",
+        filters={
+            "customer": customer_id,
+            "docstatus": 1,
+            "status": ["!=", "Closed"],
+            "per_billed": 0
+        },
+        fields=["name", "posting_date", "per_billed"]
+    )
+    result["Delivery Note"] = with_url("Delivery Note", delivery_notes)
+
+    # 3. Sales Orders not fully delivered
+    sales_orders = frappe.get_all("Sales Order",
+        filters={
+            "customer": customer_id,
+            "docstatus": 1,
+            "status": ["!=", "Closed"],
+            "per_delivered": 0
+        },
+        fields=["name", "transaction_date", "per_delivered"]
+    )
+    result["Sales Order"] = with_url("Sales Order", sales_orders)
+
+    # 4. Open and valid Quotations
+    quotations = frappe.get_all("Quotation",
+        filters={
+            "party_name": customer_id,
+            "docstatus": 1,
+            "status": "Open",
+            "valid_till": [">=", nowdate()]
+        },
+        fields=["name", "transaction_date", "valid_till"]
+    )
+    result["Quotation"] = with_url("Quotation", quotations)
+
+    return result
+
+
+
 def is_contact_safe_to_disable(contact_id):
     """
-    bench execute microsynth.microsynth.migration.is_contact_safe_to_disable --kwargs "{'contact_id': '247270'}"
+    bench execute microsynth.microsynth.utils.is_contact_safe_to_disable --kwargs "{'contact_id': '247270'}"
     """
     # 1. Linked to Sales Invoices
     invoice = frappe.db.exists({
@@ -3261,17 +3339,18 @@ def is_contact_safe_to_disable(contact_id):
         "outstanding_amount": [">", 0]
     })
     if invoice:
-        return True
+        return False
 
     # 2. Linked to Delivery Notes
     dn = frappe.db.exists({
         "doctype": "Delivery Note",
         "contact_person": contact_id,
         "docstatus": 1,
+        "status": ["!=", "Closed"],
         "per_billed": 0
     })
     if dn:
-        return True
+        return False
 
     # 3. Used by another Customer (invoice_to or reminder_to)
     customer_id = get_customer(contact_id)
@@ -3283,17 +3362,18 @@ def is_contact_safe_to_disable(contact_id):
         LIMIT 1
     """, (customer_id, contact_id, contact_id))
     if other_customers:
-        return True
+        return False
 
     # 4. Linked on Sales Orders
     so = frappe.db.exists({
         "doctype": "Sales Order",
         "contact_person": contact_id,
         "docstatus": 1,
+        "status": ["!=", "Closed"],
         "per_delivered": 0
     })
     if so:
-        return True
+        return False
 
     # 5. Linked on Quotations
     quotation = frappe.db.exists({
@@ -3304,14 +3384,14 @@ def is_contact_safe_to_disable(contact_id):
         "valid_till": [">=", frappe.utils.nowdate()]
     })
     if quotation:
-        return True
+        return False
 
-    return False
+    return True
 
 
 def is_address_safe_to_disable(address_id):
     """
-    bench execute microsynth.microsynth.migration.is_address_safe_to_disable --kwargs "{'address_id': '247270'}"
+    bench execute microsynth.microsynth.utils.is_address_safe_to_disable --kwargs "{'address_id': '247270'}"
     """
     # 1. Linked to submitted Sales Invoices
     invoice = frappe.db.exists({
@@ -3321,27 +3401,29 @@ def is_address_safe_to_disable(address_id):
         "outstanding_amount": [">", 0]
     })
     if invoice:
-        return True
+        return False
 
     # 2. Linked to Delivery Notes
     dn = frappe.db.exists({
         "doctype": "Delivery Note",
         "shipping_address_name": address_id,
         "docstatus": 1,
+        "status": ["!=", "Closed"],
         "per_billed": 0
     })
     if dn:
-        return True
+        return False
 
     # 3. Linked on Sales Orders
     so = frappe.db.exists({
         "doctype": "Sales Order",
         "shipping_address_name": address_id,
         "docstatus": 1,
+        "status": ["!=", "Closed"],
         "per_delivered": 0
     })
     if so:
-        return True
+        return False
 
     # 4. Linked on Quotations
     quotation = frappe.db.exists({
@@ -3352,6 +3434,70 @@ def is_address_safe_to_disable(address_id):
         "valid_till": [">=", frappe.utils.nowdate()]
     })
     if quotation:
-        return True
+        return False
 
-    return False
+    return True
+
+
+@frappe.whitelist()
+def check_linked_contacts_addresses(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.check_linked_contacts_addresses --kwargs "{'customer_id': '37545653'}"
+    """
+    customer = frappe.get_doc("Customer", customer_id)
+
+    to_disable = []
+    not_to_disable = []
+
+    # Check Contacts
+    contacts = frappe.get_all("Contact",
+        filters={
+            "link_doctype": "Customer",
+            "link_name": customer.name,
+            "status": ["!=", "Disabled"]
+        },
+        fields=["name"],
+        distinct=True
+    )
+    for c in contacts:
+        if is_contact_safe_to_disable(c.name):
+            to_disable.append({"doctype": "Contact",
+                               "name": c.name,
+                               "url": get_url_to_form("Contact", c.name)})
+        else:
+            not_to_disable.append({"doctype": "Contact",
+                                   "name": c.name,
+                                   "url": get_url_to_form("Contact", c.name)})
+
+    # Check Addresses
+    addresses = frappe.get_all("Address",
+        filters={"link_doctype": "Customer", "link_name": customer.name, "disabled": 0},
+        fields=["name"], distinct=True
+    )
+    for a in addresses:
+        if is_address_safe_to_disable(a.name):
+            to_disable.append({"doctype": "Address",
+                               "name": a.name,
+                               "url": get_url_to_form("Address", a.name)})
+        else:
+            not_to_disable.append({"doctype": "Address",
+                                   "name": a.name,
+                                   "url": get_url_to_form("Address", a.name)})
+
+    return {"to_disable": to_disable, "not_to_disable": not_to_disable}
+
+
+@frappe.whitelist()
+def disable_linked_contacts_addresses(links):
+    import json
+    links = json.loads(links) if isinstance(links, str) else links
+
+    for entry in links:
+        doc = frappe.get_doc(entry["doctype"], entry["name"])
+        if doc.doctype == "Contact":
+            doc.status = "Disabled"
+        elif doc.doctype == "Address":
+            doc.disabled = 1
+        doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
