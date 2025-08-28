@@ -48,7 +48,7 @@
   }
  ],
  "issingle": 1,
- "modified": "2025-08-27 11:38:18.075459",
+ "modified": "2025-08-27 11:45:17.634093",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Intercompany Settings",
@@ -71,6 +71,10 @@
   {
    "read": 1,
    "role": "Accounts User"
+  },
+  {
+   "read": 1,
+   "role": "Order Biller"
   }
  ],
  "sort_field": "modified",
