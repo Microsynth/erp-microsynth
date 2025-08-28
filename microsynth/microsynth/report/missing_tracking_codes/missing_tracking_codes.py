@@ -60,6 +60,7 @@ def get_data(filters):
             AND `tabSales Order`.`transaction_date` >= DATE('{filters.get('from_date')}')
             AND `tabSales Order Item`.`item_code` IN ({tracking_shipping_items})
             AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
+            AND (`tabSales Order Item`.`item_code` NOT IN ('1106', '1115') OR `tabSales Order`.`transaction_date` > DATE('2025-08-27'))  -- 1106 and 1115 have tracking since 2025-08-27
             AND `tabTracking Code`.`sales_order` IS NULL
             AND `tabDelivery Note`.`docstatus` != 2
             {conditions}
