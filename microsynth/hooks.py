@@ -97,7 +97,8 @@ jenv = {
         "fetch_quotation:microsynth.microsynth.utils.fetch_quotation",
         "xml_normalize:microsynth.microsynth.jinja.xml_normalize",
         "get_customer_id_from_supplier:microsynth.microsynth.purchasing.get_customer_id_from_supplier",
-        "get_all_outstanding_invoices:microsynth.microsynth.payment_reminder.get_all_outstanding_invoices"
+        "get_all_outstanding_invoices:microsynth.microsynth.payment_reminder.get_all_outstanding_invoices",
+        "get_webshop_services:microsynth.microsynth.utils.get_webshop_services"
     ]
 }
 

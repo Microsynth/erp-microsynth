@@ -969,6 +969,19 @@ def set_distributor(customer, distributor, product_type):
     customer.save()
 
 
+def get_webshop_services(customer_id):
+    """
+    Return a list of the Webshop Services set for the given Customer.
+
+    bench execute microsynth.microsynth.utils.get_webshop_services --kwargs "{'customer_id':'832188'}"
+    """
+    webshop_services = frappe.get_all("Webshop Service Link",
+        filters={'parent': customer_id, 'parenttype': "Customer"},
+        fields=['name', 'parent', 'webshop_service']
+    )
+    return [ws.get('webshop_service') for ws in webshop_services]
+
+
 def has_webshop_service(customer, service):
     """
     Check if a csutomer has the specified webshop service (e.g. 'EasyRun', 'FullPlasmidSeq')
