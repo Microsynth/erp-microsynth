@@ -79,6 +79,18 @@ frappe.ui.form.on('Customer', {
                 create_payment_reminder(frm);
             }, __("Create") );
         }
+        if (!frm.doc.__islocal && !frm.doc.disabled && frm.doc.invoice_to) {
+            frm.add_custom_button(__("Price List PDF"), function () {
+                const encodedContact = encodeURIComponent(frm.doc.invoice_to);
+                const url = frappe.urllib.get_full_url(
+                    "/api/method/microsynth.microsynth.webshop.prepare_price_list_pdf_download?contact=" + encodedContact
+                );
+                const w = window.open(url);
+                if (!w) {
+                    frappe.msgprint(__("Please enable pop-ups"));
+                }
+            }, __("Create"));
+        }
         if ((!frm.doc.__islocal)
             && ['ARIBA', 'Paynet', 'GEP', 'Scientist'].includes(frm.doc.invoicing_method)
             && (!frm.doc.invoice_network_id)) {
