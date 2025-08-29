@@ -11,15 +11,8 @@ frappe.query_reports["Sales Document Overview"] = {
             reqd: 0
         },
         {
-            fieldname: "doctype",
-            label: __("DocType"),
-            fieldtype: "Select",
-            options: ["", "Quotation", "Sales Order", "Delivery Note", "Sales Invoice"],
-            reqd: 0
-        },
-        {
             fieldname: "document_id",
-            label: __("Document ID"),
+            label: __("Document ID (QTN/SO/DN/SI)"),
             fieldtype: "Data",
             reqd: 0
         }
