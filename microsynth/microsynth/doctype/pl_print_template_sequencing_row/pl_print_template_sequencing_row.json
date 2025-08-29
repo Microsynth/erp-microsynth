@@ -8,11 +8,12 @@
   "item_name",
   "min_qty",
   "item_code",
-  "type"
+  "type",
+  "webshop_service"
  ],
  "fields": [
   {
-   "columns": 4,
+   "columns": 3,
    "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
@@ -50,10 +51,18 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title (overwrites Item Name)"
+  },
+  {
+   "columns": 1,
+   "fieldname": "webshop_service",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Webshop Service",
+   "options": "Webshop Service"
   }
  ],
  "istable": 1,
- "modified": "2025-08-28 14:10:27.807247",
+ "modified": "2025-08-29 08:51:23.334422",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Sequencing Row",
