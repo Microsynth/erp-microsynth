@@ -18,9 +18,11 @@
    "label": "Title (overwrites Item Name)"
   },
   {
+   "columns": 1,
    "default": "Row",
    "fieldname": "type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Type",
    "options": "Heading\nRow"
   },
@@ -43,7 +45,7 @@
   }
  ],
  "istable": 1,
- "modified": "2025-07-24 13:48:17.562885",
+ "modified": "2025-08-29 09:30:30.990517",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Two Column Row",

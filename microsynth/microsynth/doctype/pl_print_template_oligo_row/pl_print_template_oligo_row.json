@@ -61,15 +61,17 @@
    "options": "Item"
   },
   {
+   "columns": 1,
    "default": "Row",
    "fieldname": "type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Type",
    "options": "Heading\nRow"
   }
  ],
  "istable": 1,
- "modified": "2025-07-23 09:07:27.933419",
+ "modified": "2025-08-29 09:29:14.820266",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Oligo Row",

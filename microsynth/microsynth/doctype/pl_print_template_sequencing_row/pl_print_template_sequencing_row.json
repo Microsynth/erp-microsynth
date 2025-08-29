@@ -8,8 +8,8 @@
   "item_name",
   "min_qty",
   "item_code",
-  "type",
-  "webshop_service"
+  "webshop_service",
+  "type"
  ],
  "fields": [
   {
@@ -62,7 +62,7 @@
   }
  ],
  "istable": 1,
- "modified": "2025-08-29 08:51:23.334422",
+ "modified": "2025-08-29 09:31:14.944866",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "PL Print Template Sequencing Row",
