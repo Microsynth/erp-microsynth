@@ -62,6 +62,14 @@ frappe.ui.form.on('Quotation', {
             }).addClass("btn-primary");
         }
 
+        if (!frm.doc.__islocal && frm.doc.status == "Ordered") {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Sales Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
+        }
+
         // replace button "Create > Sales Order" with a custom button
         // that checks if there are already Sales Orders linked to this Quotation
         if (frm.doc.docstatus == 1) {

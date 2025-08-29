@@ -17,11 +17,11 @@ frappe.ui.form.on('Delivery Note', {
             frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
         }
 
-        if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
-            frm.add_custom_button(__("Search valid version"), function() {
-                frappe.set_route("List", "Delivery Note", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
-            });
-        }
+        // if (frm.doc.docstatus === 2 && frm.doc.web_order_id) {
+        //     frm.add_custom_button(__("Search valid version"), function() {
+        //         frappe.set_route("List", "Delivery Note", {"web_order_id": frm.doc.web_order_id, "docstatus": 1});
+        //     });
+        // }
 
         hide_in_words();
 
@@ -43,6 +43,14 @@ frappe.ui.form.on('Delivery Note', {
 
         if (!frm.doc.product_type && cur_frm.doc.docstatus == 0 && !frm.doc.__islocal) {
             frappe.msgprint( __("Please set a Product Type"), __("Validation") );
+        }
+
+        if (!frm.doc.__islocal && frm.doc.web_order_id) {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Sales Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
         }
 
         // allow force cancel
