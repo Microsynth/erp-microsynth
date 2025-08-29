@@ -5612,3 +5612,44 @@ def unify_contact_salutation(output_path):
             print(f"Wrote {len(changes)} changes to {output_path}.")
         else:
             print("No changes made.")
+
+
+def disable_contacts_of_disabled_customer(contact_ids):
+    """
+    Disable contacts only if they are linked to exactly one disabled Customer.
+
+    bench execute microsynth.microsynth.migration.disable_contacts_of_disabled_customer --kwargs "{'contact_ids': ['242854', '77367']}"
+    """
+    if isinstance(contact_ids, str):
+        contact_ids = frappe.parse_json(contact_ids)
+    if not isinstance(contact_ids, list):
+        frappe.throw("Expected a list of Contact IDs.")
+    counter = 0
+
+    for contact_id in contact_ids:
+        try:
+            contact = frappe.get_doc("Contact", contact_id)
+            if contact.status == "Disabled":
+                print(f"Contact {contact_id} is already disabled. Skipping.")
+                continue
+            # Get all linked Customers
+            linked_customers = [
+                link.link_name for link in contact.links
+                if link.link_doctype == "Customer"
+            ]
+            if len(linked_customers) != 1:
+                print(f"Contact {contact_id} is linked to {len(linked_customers)} Customers (expected exactly one). Skipping.")
+                continue
+            if not frappe.get_value("Customer", linked_customers[0], "disabled"):
+                print(f"Contact {contact_id} is linked to Customer {linked_customers[0]}, which is not disabled. Skipping.")
+                continue
+            # Disable the Contact
+            contact.status = "Disabled"
+            contact.save(ignore_permissions=True)
+            print(f"Contact {contact_id} has been disabled.")
+            counter += 1
+        except frappe.DoesNotExistError:
+            print(f"Contact {contact_id} does not exist. Skipping.")
+        except Exception:
+            print(f"An error occurred while processing Contact {contact_id}:\n{frappe.get_traceback()}")
+    print(f"Successfully disabled {counter} Contacts.")
