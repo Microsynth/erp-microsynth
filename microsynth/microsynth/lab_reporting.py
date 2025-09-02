@@ -331,7 +331,7 @@ def send_reports(recipient, cc_mails, analysis_reports):
             email_template = frappe.get_doc("Email Template", f"Analysis Report {report_type}")
             rendered_subject = frappe.render_template(email_template.subject, {'web_order_id': web_order_id})
             rendered_message = frappe.render_template(email_template.response, {'contact_display': contact_display})
-        make(
+            make(
                 recipients = recipient,
                 sender = email_template.sender,
                 sender_full_name = email_template.sender_full_name,

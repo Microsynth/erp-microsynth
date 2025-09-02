@@ -23,7 +23,7 @@ def print_raw(ip, port, content):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip, port))
     s.send(content.encode())
-    s.close()
+    s.close()  # TODO: Is this necessary? Remove to avoid connection refused errors?
     return
 
 
@@ -232,6 +232,7 @@ def print_oligo_order_labels(sales_orders):
             label_data = get_label_data(sales_order)
             content = frappe.render_template(NOVEXX_PRINTER_TEMPLATE, label_data)
             if not sales_order.label_printed_on:
+                # TODO: Add small timeout to avoid connection refused errors?
                 print_raw(settings.label_printer_ip, settings.label_printer_port, content)
                 sales_order.label_printed_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 sales_order.save()
