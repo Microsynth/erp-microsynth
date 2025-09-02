@@ -54,7 +54,7 @@ def oligo_status_changed(content=None):
             WHERE
               `tabOligo`.`web_id` = "{web_id}"
               AND `tabOligo Link`.`parenttype` = "Sales Order"
-            ORDER BY `tabOligo Link`.`creation` DESC;
+            ORDER BY `tabOligo Link`.`creation` DESC, `tabOligo Link`.`parent` DESC;
         """.format(web_id=oligo['web_id']), as_dict=True)
 
         if len(oligos) > 0:
