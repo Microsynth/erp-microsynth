@@ -12,6 +12,7 @@
   "column_break_2",
   "qm_process",
   "site",
+  "device_manager",
   "section_break_4",
   "serial_no",
   "service_instructions",
@@ -52,7 +53,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Category",
-   "options": "\nA: Complex analytical system\nB: Standard measuring device\nC: Auxiliary non-measuring equipment",
+   "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 device without measuring function",
    "reqd": 1
   },
   {
@@ -102,10 +103,11 @@
    "options": "Purchase Invoice"
   },
   {
+   "default": "Unapproved",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nUnqualified\nQualified\nOut of order\nArchived\nDisposed",
+   "options": "\nUnapproved\nActive\nOut of order\nArchived\nDisposed",
    "reqd": 1
   },
   {
@@ -115,7 +117,7 @@
   {
    "fieldname": "qm_documents",
    "fieldtype": "Table",
-   "label": "SOPs",
+   "label": "QM Documents",
    "options": "QM Document Link"
   },
   {
@@ -131,9 +133,15 @@
    "fieldtype": "Data",
    "label": "Supplier Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "device_manager",
+   "fieldtype": "Link",
+   "label": "Device Manager",
+   "options": "User"
   }
  ],
- "modified": "2025-08-18 14:37:38.034432",
+ "modified": "2025-09-02 15:18:39.145945",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Device",
