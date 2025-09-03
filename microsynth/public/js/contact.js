@@ -13,9 +13,17 @@ cur_frm.dashboard.add_transactions([
 ]);
 
 
+let original_customer_link = null;
+
+
 frappe.ui.form.on('Contact', {
     before_save(frm) {
-        update_address_links(frm);
+        const current_customer_link = get_customer_link_from_links(frm.doc.links);
+
+        if (original_customer_link !== current_customer_link) {
+            // console.log(`Customer link changed from '${original_customer_link}' to '${current_customer_link}'`);
+            update_address_links(frm);
+        }
 
         let first_name = frm.doc.first_name || "";
         let last_name = frm.doc.last_name || "";
@@ -77,6 +85,9 @@ frappe.ui.form.on('Contact', {
         if (frm.doc.name && pattern.test(frm.doc.name)) {
             frm.dashboard.hide();
         }
+
+        // Store the original customer link (if any)
+        original_customer_link = get_customer_link_from_links(frm.doc.links);
     },
     refresh(frm) {
         const link = frm.doc.links?.[0];
@@ -426,4 +437,11 @@ function open_mail_dialog(frm){
         txt: "",
         check_all_attachments: false
     });
+}
+
+
+// Helper function to extract customer link name from links table
+function get_customer_link_from_links(links) {
+    const customer_link = (links || []).find(link => link.link_doctype === 'Customer');
+    return customer_link ? customer_link.link_name : null;
 }

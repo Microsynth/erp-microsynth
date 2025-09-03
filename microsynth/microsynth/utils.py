@@ -204,22 +204,61 @@ def get_webshop_url():
 
 @frappe.whitelist()
 def update_address_links_from_contact(address_name, links):
-    if frappe.db.exists("Address", address_name):
-        # check if the Address is used at more than one Contact
-        if frappe.db.count("Contact", filters={'address': address_name, 'status': 'Passive'}) > 1:
-            msg = f"Address '{address_name}' is used at more than one Contact, cannot update links. Unable to change Customer."
-            #frappe.log_error(msg, "update_address_links_from_contact")
-            frappe.throw(msg)
-        address = frappe.get_doc("Address", address_name)
-        address.links = []
-        if type(links) == str:
-           links = json.loads(links)
-        for link in links:
-            address.append("links", {
-                "link_doctype": link.get('link_doctype'),
-                "link_name": link.get('link_name')
-            } )
-        address.save()
+    if not address_name:
+        return
+    if not frappe.db.exists("Address", address_name):
+        frappe.throw(f"Address '{address_name}' does not exist.")
+
+    # Parse links if passed as JSON string
+    if isinstance(links, str):
+        links = json.loads(links)
+
+    # Step 1: Collect all unique Customers linked to this address (directly or indirectly)
+    customer_set = set()
+    # 1.1 Customers directly linked to the Address
+    direct_customers = frappe.get_all("Dynamic Link", filters={
+        "parenttype": "Address",
+        "parent": address_name,
+        "link_doctype": "Customer"
+    }, fields=["link_name"])
+    customer_set.update(c.link_name for c in direct_customers)
+    # 1.2 Customers linked via Contacts that reference this address
+    contacts = frappe.get_all("Contact", filters={
+        "address": address_name,
+        "status": ["!=", "Inactive"]
+    }, fields=["name"])
+    for contact in contacts:
+        contact_customers = frappe.get_all("Dynamic Link", filters={
+            "parenttype": "Contact",
+            "parent": contact.name,
+            "link_doctype": "Customer"
+        }, fields=["link_name"])
+        customer_set.update(c.link_name for c in contact_customers)
+    # Remove the new Customer from customer_set because it seems to be already set on the Contact
+    for l in links:
+        if l.get("link_doctype") == "Customer":
+            customer_set.discard(l.get("link_name"))
+
+    # Step 2: Throw error if more than one Customer is linked (directly or via contacts)
+    if len(customer_set) > 1:
+        msg = (
+            f"Address '{address_name}' is linked to multiple Customers: {', '.join(customer_set)}.<br>"
+            f"Contacts using this Address: {', '.join(c.name for c in contacts)}.<br>"
+            f"Cannot safely update Customer link."
+        )
+        frappe.throw(msg)
+
+    # Step 3: Update the single existing Customer link
+    address = frappe.get_doc("Address", address_name)
+    customer_links = [l for l in address.links if l.link_doctype == "Customer"]
+    if len(customer_links) != 1:
+        frappe.throw(f"Expected exactly one Customer link on Address '{address_name}', found {len(customer_links)}.")
+    input_customer_links = [l for l in links if l.get("link_doctype") == "Customer"]
+    if len(input_customer_links) != 1:
+        frappe.throw("Exactly one Customer link must be provided.")
+    customer_links[0].link_name = input_customer_links[0].get("link_name")
+    customer_links[0].link_title = input_customer_links[0].get("link_title")
+    address.save()
     return
 
 
