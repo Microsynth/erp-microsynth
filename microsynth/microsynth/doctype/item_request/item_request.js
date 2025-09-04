@@ -109,10 +109,12 @@ function open_search_dialog(frm) {
                 <br><button class="btn btn-primary" id="new-purchasing-item">${__('New Purchasing Item')}</button>
                 </div>
             `);
-            f.results.$wrapper.find('#new-purchasing-item').on('click', () => {
-                dialog.hide();
-                create_new_supplier_item(frm);
-            });
+            setTimeout(() => {
+                f.results.$wrapper.find('#new-purchasing-item').on('click', () => {
+                    dialog.hide();
+                    create_new_supplier_item(frm);
+                });
+            }, 0);
             return;
             }
 
