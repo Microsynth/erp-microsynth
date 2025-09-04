@@ -7,16 +7,16 @@ import frappe
 
 def get_columns():
     return [
-        {"label": "DocType", "fieldname": "doctype", "fieldtype": "Data", "width": 85},
-        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 125},
+        {"label": "DocType", "fieldname": "doctype", "fieldtype": "Data", "width": 90},
+        {"label": "Document ID", "fieldname": "name", "fieldtype": "Dynamic Link", "options": "doctype", "width": 130},
         {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": "Web Order ID", "fieldname": "web_order_id", "fieldtype": "Data", "width": 90},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 125},
-        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
+        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 85},
         {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65},
-        {"label": "Contact Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 160},
+        {"label": "Contact Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 155},
         {"label": "Total Amount", "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
         {"label": "Comments", "fieldname": "comments", "fieldtype": "Int", "width": 80},

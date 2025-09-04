@@ -14,13 +14,6 @@ def get_data():
                        "description": _("Quotation")
                     },
                     {
-                        "type": "report",
-                        "name": "Quotation Tracker",
-                        "label": _("Quotation Tracker"),
-                        "doctype": "Quotation",
-                        "is_query_report": True
-                    },
-                    {
                        "type": "doctype",
                        "name": "Standing Quotation",
                        "label": _("Standing Quotation"),
@@ -43,6 +36,13 @@ def get_data():
                        "name": "Sales Invoice",
                        "label": _("Sales Invoice"),
                        "description": _("Sales Invoice")
+                    },
+                    {
+                        "type": "report",
+                        "name": "Sales Document Overview",
+                        "label": _("Sales Document Overview"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
                     }
             ]
         },
@@ -80,6 +80,13 @@ def get_data():
                         "name": "Find Notes",
                         "label": _("Find Notes"),
                         "doctype": "Contact Note",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Quotation Tracker",
+                        "label": _("Quotation Tracker"),
+                        "doctype": "Quotation",
                         "is_query_report": True
                     }
             ]
