@@ -5665,7 +5665,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
     :param dry_run: If True, simulate the actions without saving changes.
 
     Usage:
-    bench execute microsynth.microsynth.migration.update_web_orders --kwargs "{'json_file_path': '/mnt/erp_share/JPe/2025-09-05_Webshop_orders_with_oligos.json', 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.update_web_orders --kwargs "{'json_file_path': '/mnt/erp_share/Migration/PriceCalc/All_OligoPriceRecalculation_2025-09-05_09-14-09.JSON', 'dry_run': True}"
     """
     with open(json_file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -5707,7 +5707,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
             print(f"[ERROR] Order {web_order_id} has no ErpOrderReference. Skipping.")
             continue
         try:
-            frappe.db.savepoint("before_order")
+            frappe.db.sql("SAVEPOINT before_order")
             # Step 1: Fetch Sales Order by name (ErpOrderReference)
             so = frappe.get_doc("Sales Order", erp_order_ref)
 
@@ -5718,6 +5718,11 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
             if so.docstatus != 1:
                 print(f"[ERROR] Sales Order {so.name} is not submitted. Skipping.")
                 continue
+
+            if so.status == 'Closed':
+                # re-open Sales Order
+                so.update_status('To Deliver and Bill')
+                print(f"[INFO] Re-opened previously closed Sales Order {so.name}.")
 
             # Step 3: Find linked Delivery Notes
             old_dns = frappe.get_all("Delivery Note Item",
@@ -5742,9 +5747,9 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                         dn_doc.cancel()
 
             # Step 4: Cancel & Amend Sales Order
-            print(f"[INFO] Cancelling Sales Order {so.name}")
             if not dry_run:
                 so.cancel()
+                print(f"[INFO] Cancelled Sales Order {so.name}")
                 amended_so = frappe.get_doc(so.as_dict())
                 amended_so.amended_from = so.name
                 amended_so.docstatus = 0
@@ -5753,7 +5758,8 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                 new_so = amended_so
                 print(f"[INFO] Created amended Sales Order {new_so.name}")
             else:
-                new_so = so.copy()
+                print(f"[DRY_RUN] Would have cancelled Sales Order {so.name} and created an amended draft.")
+                new_so = frappe.get_doc(so.as_dict())
                 new_so.name = f"DRY_RUN_SO_{web_order_id}"
 
             # Step 5: Process Oligos
@@ -5797,7 +5803,6 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                     consolidated_items[code]["total_price"] += flt(p["TotalPrice"])
 
             # Step 6: Add items to new Sales Order
-            new_so.items = []
             for item_code, details in consolidated_items.items():
                 #item = frappe.get_doc("Item", item_code)
                 new_so.append("items", {
@@ -5860,7 +5865,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
 
         except Exception as e:
             print(f"[EXCEPTION] Order {web_order_id}: {str(e)}")
-            frappe.db.rollback(save_point="before_order")
+            frappe.db.sql("ROLLBACK TO SAVEPOINT before_order")
             continue
 
     if dry_run:
