@@ -5665,7 +5665,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
     :param dry_run: If True, simulate the actions without saving changes.
 
     Usage:
-    bench execute microsynth.microsynth.migration.update_web_orders --kwargs "{'json_file_path': '/mnt/erp_share/Migration/PriceCalc/All_OligoPriceRecalculation_2025-09-05_09-14-09.JSON', 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.update_web_orders --kwargs "{'json_file_path': '/mnt/erp_share/Migration/PriceCalc/All_OligoPriceRecalculation_2025-09-05_15-08-40.JSON', 'dry_run': True}"
     """
     with open(json_file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -5696,7 +5696,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
 
     for order in orders:
         if not order.get("Success", False):
-            print(f"[SKIP] Order {order.get('OrderNo')} most likely because it already has prices.")
+            print(f"[SKIP] Order {order.get('OrderNo')} due to Success False in JSON most likely because it already has prices.")
             continue
 
         web_order_id = order.get("OrderNo")
@@ -5704,10 +5704,18 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
         oligos = order.get("Oligos", [])
 
         if not erp_order_ref:
-            print(f"[ERROR] Order {web_order_id} has no ErpOrderReference. Skipping.")
-            continue
+            sales_orders = frappe.get_all("Sales Order", filters={"web_order_id": web_order_id, "docstatus": 1}, fields=["name"])
+            if len(sales_orders) == 0:
+                print(f"[ERROR] Order {web_order_id} has no ErpOrderReference and no submitted Sales Order with matching web_order_id. Skipping.")
+                continue
+            elif len(sales_orders) == 1:
+                erp_order_ref = sales_orders[0].name
+                print(f"[INFO] Order {web_order_id} has no ErpOrderReference, but found one submitted Sales Order {erp_order_ref} with matching web_order_id. Going to process {sales_orders[0].name}.")
+            else:
+                print(f"[ERROR] Order {web_order_id} has no ErpOrderReference and {len(sales_orders)} submitted Sales Orders with matching web_order_id. Skipping.")
+                continue
         try:
-            frappe.db.sql("SAVEPOINT before_order")
+            #frappe.db.sql("SAVEPOINT before_order")
             # Step 1: Fetch Sales Order by name (ErpOrderReference)
             so = frappe.get_doc("Sales Order", erp_order_ref)
 
@@ -5716,7 +5724,13 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                 print(f"[ERROR] Sales Order {so.name} has mismatching web_order_id. Expected {web_order_id}, found {so.web_order_id}. Skipping.")
                 continue
             if so.docstatus != 1:
-                print(f"[ERROR] Sales Order {so.name} is not submitted. Skipping.")
+                print(f"[ERROR] Sales Order {so.name} is not submitted and has docstatus {so.docstatus}. Skipping.")
+                continue
+            if so.product_type != "Oligos":
+                print(f"[ERROR] Sales Order {so.name} has product_type {so.product_type} instead of 'Oligos'. Skipping.")
+                continue
+            if len(so.items) > 1:
+                print(f"[ERROR] Sales Order {so.name} has {len(so.items)} items, but expected max. one (the shipping item). Skipping.")
                 continue
 
             if so.status == 'Closed':
@@ -5803,6 +5817,11 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                     consolidated_items[code]["total_price"] += flt(p["TotalPrice"])
 
             # Step 6: Add items to new Sales Order
+            if len(new_so.items) > 1:
+                print(f"[ERROR] Amended Sales Order {new_so.name} has {len(new_so.items)} items, but expected max. one (the shipping item). Skipping.")
+                continue
+            existing_item = new_so.items[0] if new_so.items else None
+            new_so.items = []
             for item_code, details in consolidated_items.items():
                 #item = frappe.get_doc("Item", item_code)
                 new_so.append("items", {
@@ -5811,6 +5830,8 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
                     "qty": details["qty"],
                     "rate": flt(details["total_price"]) / flt(details["qty"]) if details["qty"] else 0,  # TODO?
                 })
+            if existing_item:
+                new_so.append("items", existing_item)  # re-add the existing item
 
             if not dry_run:
                 # TODO: Sum up total_price of all consolidated items and compare to new_so.grand_total (consider shipping item if already existed)?
@@ -5865,7 +5886,7 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
 
         except Exception as e:
             print(f"[EXCEPTION] Order {web_order_id}: {str(e)}")
-            frappe.db.sql("ROLLBACK TO SAVEPOINT before_order")
+            #frappe.db.sql("ROLLBACK TO SAVEPOINT before_order")
             continue
 
     if dry_run:
