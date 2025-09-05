@@ -20,9 +20,11 @@ from microsynth.microsynth.utils import (find_label,
                                          get_alternative_account,
                                          get_alternative_income_account,
                                          add_webshop_service,
-                                         get_customer
+                                         get_customer,
+                                         force_cancel
 )
 from microsynth.microsynth.invoicing import get_income_accounts
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 import sys
@@ -5653,3 +5655,216 @@ def disable_contacts_of_disabled_customer(contact_ids):
         except Exception:
             print(f"An error occurred while processing Contact {contact_id}:\n{frappe.get_traceback()}")
     print(f"Successfully disabled {counter} Contacts.")
+
+
+def update_web_orders(json_file_path: str, dry_run: bool = True):
+    """
+    Process web orders from a JSON file and update corresponding Sales Orders, Oligos, Delivery Notes and Tracking Codes.
+
+    :param json_file_path: Path to the JSON file.
+    :param dry_run: If True, simulate the actions without saving changes.
+
+    Usage:
+    bench execute microsynth.microsynth.migration.update_web_orders --kwargs "{'json_file_path': '/mnt/erp_share/JPe/2025-09-05_Webshop_orders_with_oligos.json', 'dry_run': True}"
+    """
+    with open(json_file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    orders = data.get("Orders", [])
+
+    item_code_set = set()
+    # Pre-scan the JSON file for all item codes to prefetch item names
+    for order in orders:
+        if not order.get("Success", False):
+            continue
+        for oligo in order.get("Oligos", []):
+            for price in oligo.get("Prices", []):
+                item_code_set.add(price["ArticleNo"])
+    item_name_map = {
+        item["name"]: item["item_name"]
+        for item in frappe.get_all("Item", filters={"name": ["in", list(item_code_set)]}, fields=["name", "item_name"])
+    }
+    # Pre-fetch all enabled Items with Item Group "Shipping"
+    shipping_item_codes = set(
+        item["name"]
+        for item in frappe.get_all(
+            "Item",
+            filters={"item_group": "Shipping", "disabled": 0},
+            fields=["name"]
+        )
+    )
+
+    for order in orders:
+        if not order.get("Success", False):
+            print(f"[SKIP] Order {order.get('OrderNo')} most likely because it already has prices.")
+            continue
+
+        web_order_id = order.get("OrderNo")
+        erp_order_ref = order.get("ErpOrderReference")
+        oligos = order.get("Oligos", [])
+
+        if not erp_order_ref:
+            print(f"[ERROR] Order {web_order_id} has no ErpOrderReference. Skipping.")
+            continue
+        try:
+            frappe.db.savepoint("before_order")
+            # Step 1: Fetch Sales Order by name (ErpOrderReference)
+            so = frappe.get_doc("Sales Order", erp_order_ref)
+
+            # Step 2: Check if it has web_order_id and is submitted
+            if not flt(so.web_order_id) == flt(web_order_id):
+                print(f"[ERROR] Sales Order {so.name} has mismatching web_order_id. Expected {web_order_id}, found {so.web_order_id}. Skipping.")
+                continue
+            if so.docstatus != 1:
+                print(f"[ERROR] Sales Order {so.name} is not submitted. Skipping.")
+                continue
+
+            # Step 3: Find linked Delivery Notes
+            old_dns = frappe.get_all("Delivery Note Item",
+                                     filters={"against_sales_order": so.name},
+                                     fields=["parent"])
+            old_dn_docs = list({d["parent"] for d in old_dns})
+            old_dn_status_map = {}
+
+            for dn_name in old_dn_docs:
+                dn_doc = frappe.get_doc("Delivery Note", dn_name)
+                old_dn_status_map[dn_name] = dn_doc.docstatus
+                if dn_doc.docstatus == 0:
+                    print(f"[INFO] Cancelling Draft Delivery Note {dn_name}")
+                    if not dry_run:
+                        force_cancel("Delivery Note", dn_name)
+                elif dn_doc.docstatus == 2:
+                    print(f"[INFO] Delivery Note {dn_name} is already cancelled. Skipping.")
+                    continue
+                elif dn_doc.docstatus == 1:
+                    print(f"[INFO] Cancelling Submitted Delivery Note {dn_name}")
+                    if not dry_run:
+                        dn_doc.cancel()
+
+            # Step 4: Cancel & Amend Sales Order
+            print(f"[INFO] Cancelling Sales Order {so.name}")
+            if not dry_run:
+                so.cancel()
+                amended_so = frappe.get_doc(so.as_dict())
+                amended_so.amended_from = so.name
+                amended_so.docstatus = 0
+                amended_so.name = None
+                amended_so.insert()
+                new_so = amended_so
+                print(f"[INFO] Created amended Sales Order {new_so.name}")
+            else:
+                new_so = so.copy()
+                new_so.name = f"DRY_RUN_SO_{web_order_id}"
+
+            # Step 5: Process Oligos
+            consolidated_items = {}
+
+            for oligo_data in oligos:
+                oligo_web_id = oligo_data.get("Id")
+                oligo_name = oligo_data.get("Name")
+                prices = oligo_data.get("Prices", [])
+
+                oligos_found = frappe.get_all("Oligo", filters={"web_id": oligo_web_id})
+                if len(oligos_found) != 1:
+                    print(f"[ERROR] Expected 1 Oligo with web_id {oligo_web_id}, found {len(oligos_found)}. Skipping.")
+                    continue
+
+                oligo_doc = frappe.get_doc("Oligo", oligos_found[0].name)
+                if oligo_doc.oligo_name != oligo_name:
+                    print(f"[ERROR] Oligo name mismatch: expected '{oligo_name}', found '{oligo_doc.oligo_name}'. Skipping.")
+                    continue
+
+                if oligo_doc.items:
+                    print(f"[ERROR] Oligo {oligo_doc.name} already has items. Skipping.")
+                    continue
+
+                # Add items to Oligo
+                if not dry_run:
+                    for p in prices:
+                        oligo_doc.append("items", {
+                            "item_code": p["ArticleNo"],
+                            "item_name": item_name_map.get(p["ArticleNo"], p["ArticleNo"]),
+                            "qty": p["Quantity"]
+                        })
+                    oligo_doc.save()
+
+                # Consolidate items
+                for p in prices:
+                    code = p["ArticleNo"]
+                    if code not in consolidated_items:
+                        consolidated_items[code] = {"qty": 0, "total_price": 0}
+                    consolidated_items[code]["qty"] += flt(p["Quantity"])
+                    consolidated_items[code]["total_price"] += flt(p["TotalPrice"])
+
+            # Step 6: Add items to new Sales Order
+            new_so.items = []
+            for item_code, details in consolidated_items.items():
+                #item = frappe.get_doc("Item", item_code)
+                new_so.append("items", {
+                    "item_code": item_code,
+                    "item_name": item_name_map.get(item_code, item_code),
+                    "qty": details["qty"],
+                    "rate": flt(details["total_price"]) / flt(details["qty"]) if details["qty"] else 0,  # TODO?
+                })
+
+            if not dry_run:
+                # TODO: Sum up total_price of all consolidated items and compare to new_so.grand_total (consider shipping item if already existed)?
+                new_so.save()
+                total = new_so.rounded_total or new_so.grand_total
+                print(f"[INFO] Saved Sales Order {new_so.name} with total amount: {total}")
+
+                # Step 7: Check shipping item
+                shipping_items = [i for i in new_so.items if i.item_code in shipping_item_codes]
+                if len(shipping_items) != 1:
+                    print(f"[ERROR] Sales Order {new_so.name} has {len(shipping_items)} Shipping items, but expected exactly one. Skipping submission.")
+                    continue
+
+                # Step 8: Submit Sales Order
+                new_so.submit()
+                print(f"[INFO] Submitted Sales Order {new_so.name}")
+            else:
+                print(f"[DRY_RUN] Would have saved and submitted amended Sales Order.")
+
+            # Step 9: Re-create Delivery Notes
+            for dn_name in old_dn_docs:
+                old_status = old_dn_status_map.get(dn_name)
+
+                if old_status is None:
+                    print(f"[ERROR] Missing old status for Delivery Note {dn_name}. Skipping recreation.")
+                    continue
+
+                if dry_run:
+                    print(f"[DRY_RUN] Would have created Delivery Note from {new_so.name} in docstatus {old_status} (previously {dn_name})")
+                    continue
+
+                # Create DN from SO
+                dn_content = make_delivery_note(new_so.name)
+                dn = frappe.get_doc(dn_content)
+                dn.naming_series = get_naming_series("Delivery Note", new_so.company)
+                #dn.flags.ignore_missing = True
+                dn.insert(ignore_permissions=True)
+                if old_status == 1:
+                    dn.submit()
+                    print(f"[INFO] Recreated & submitted Delivery Note {dn.name}")
+                else:
+                    print(f"[INFO] Recreated Draft Delivery Note {dn.name}")
+
+            # Step 10: Update Tracking Code
+            tracking_codes = frappe.get_all("Tracking Code", filters={"sales_order": so.name})
+            for tc in tracking_codes:
+                if not dry_run:
+                    frappe.db.set_value("Tracking Code", tc.name, "sales_order", new_so.name)
+                    print(f"[INFO] Updated Tracking Code {tc.name} to point to Sales Order {new_so.name}")
+                else:
+                    print(f"[DRY_RUN] Would have updated Tracking Code {tc.name} to point to Sales Order {new_so.name}")
+
+        except Exception as e:
+            print(f"[EXCEPTION] Order {web_order_id}: {str(e)}")
+            frappe.db.rollback(save_point="before_order")
+            continue
+
+    if dry_run:
+        print("[DRY_RUN] No changes were committed.")
+    else:
+        frappe.db.commit()
+        print("[COMMIT] All changes saved.")
