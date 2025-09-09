@@ -58,10 +58,10 @@ frappe.ui.form.on('Purchase Invoice', {
             frappe.validated = false;
         }
 
-        if (frm.doc.due_date < frappe.datetime.get_today()) {
+        if (frm.doc.due_date < frappe.datetime.get_today() && frm.doc.status != "Paid") {
             frm.dashboard.add_comment('Due date <b>exceeded</b>', 'red', true);
         }
-        
+
         hide_in_words();
     },
     before_save(frm) {
@@ -120,9 +120,9 @@ frappe.ui.form.on('Purchase Invoice', {
                     }
                 } else {
                     frappe.msgprint("None or multiple Items, unable to change Item according to Supplier.");
-                }                
+                }
                 if (response.message.taxes_and_charges) {
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         cur_frm.set_value('taxes_and_charges', response.message.taxes_and_charges);
                     }, 400);
                 } else {
