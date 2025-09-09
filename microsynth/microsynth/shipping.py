@@ -6,8 +6,9 @@ import frappe
 from frappe.utils import nowdate, add_months
 from frappe.utils.password import get_decrypted_password
 import json
+import base64
 from datetime import datetime
-from urllib import request
+from urllib import request, parse
 from urllib.error import URLError
 
 
@@ -330,18 +331,20 @@ def add_shipping_items_to_countries(country_to_code, code_to_rate, threshold, pr
 
 
 def get_ups_settings():
+    """
+    Fetch UPS OAuth credentials and API base URL from settings.
+    """
     settings = frappe.get_single("Shipment Tracking Settings")
-    ups_password = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "ups_password")
-    ups_access_key = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "ups_access_key")
-    return settings.ups_rest_url, settings.ups_username, ups_password, ups_access_key
+    client_id = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "client_id")
+    client_secret = get_decrypted_password("Shipment Tracking Settings", "Shipment Tracking Settings", "client_secret")
+    return settings.ups_rest_url, settings.oauth_token_url, client_id, client_secret, settings.merchant_id
 
 
 def fetch_pending_tracking_codes():
     """
-    bench execute microsynth.microsynth.shipping.get_pending_tracking_codes
+    Fetch tracking codes that are missing a delivery date and were created in the last 3 months.
     """
     three_months_ago = add_months(nowdate(), -3)
-
     query = """
         SELECT `name`, `tracking_code`
         FROM `tabTracking Code`
@@ -351,63 +354,67 @@ def fetch_pending_tracking_codes():
           AND `creation` > %s
         ORDER BY `creation` DESC
     """
-    pending_tracking_codes = frappe.db.sql(query, ("1ZH%", three_months_ago), as_dict=True)
-    return pending_tracking_codes
+    return frappe.db.sql(query, ("1ZH%", three_months_ago), as_dict=True)
 
 
-def call_ups_tracking_api(tracking_code, url, username, password, access_key):
+def get_ups_oauth_token(client_id: str, client_secret: str, token_url: str, merchant_id: str) -> str:
     """
-    Calls the UPS Tracking API to get the delivery date for a given tracking code.
-
-    :param tracking_code: The UPS tracking code to query.
-    :param url: The UPS API URL for tracking.
-    :param username: The UPS API username.
-    :param password: The UPS API password.
-    :param access_key: The UPS API access key.
-    :return: The JSON response from the UPS API containing tracking information.
-    :raises Exception: If there is an HTTP error or if the response cannot be parsed.
-
-    https://developer.ups.com/tag/Tracking?loc=en_US&tag=Tracking
-
-    bench execute microsynth.microsynth.shipping.call_ups_tracking_api --kwargs "{'tracking_code': '1Z12345E029123456', 'url': 'https://onlinetools.ups.com/rest/Track', 'username': 'xxx', 'password': 'xxx', 'access_key': 'xxx'}"
+    Retrieve UPS OAuth2 access token using client credentials.
     """
-    # payload is the request body sent to the API (standard naming for POST data)
+    data = parse.urlencode({'grant_type': 'client_credentials'}).encode()
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+        'Authorization': f'Basic {base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()}',
+        'Merchant-Id': merchant_id
+    }
+    req = request.Request(token_url, data=data, headers=headers)
+    try:
+        with request.urlopen(req, timeout=15) as response:
+            raw = response.read().decode()
+            result = json.loads(raw)
+            return result.get('access_token')
+    except URLError as e:
+        raise Exception(f"Failed to get UPS OAuth token: {e}") from e
+    except json.JSONDecodeError:
+        raise Exception(f"Invalid JSON response from UPS OAuth endpoint: {raw}")
+
+
+def call_ups_tracking_api(tracking_code: str, url: str, access_token: str, merchant_id: str) -> dict:
+    """
+    Calls the UPS Tracking API using the provided OAuth2 access token.
+    """
+    if not access_token:
+        raise Exception("Missing UPS access token.")
     payload = {
-        "UPSSecurity": {
-            "UsernameToken": {
-                "Username": username,
-                "Password": password
-            },
-            "ServiceAccessToken": {
-                "AccessLicenseNumber": access_key
-            }
-        },
         "TrackRequest": {
-            "Request": {
-                "RequestOption": "1"
-            },
+            "Request": {"RequestOption": "1"},
             "InquiryNumber": tracking_code
         }
     }
-
-    # Convert payload dict to JSON-formatted string and encode it to bytes.
     data = json.dumps(payload).encode('utf-8')
-    # Set the headers for the request indicating JSON content type.
-    headers = {'Content-Type': 'application/json'}
-    # Create a HTTP request object using the urllib.
-    # Since data is provided, it will be a POST request.
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {access_token}',
+        'Merchant-Id': merchant_id
+    }
     req = request.Request(url, data=data, headers=headers)
     try:
-        # Send the request and wait up to 15 seconds for a response.
         with request.urlopen(req, timeout=15) as response:
-            # Read the response and decode it from bytes to string to dict.
-            result = json.loads(response.read().decode())
-            return result
+            return json.loads(response.read().decode())
     except URLError as e:
-        raise Exception(f"HTTP error: {e}") from e
+        raise Exception(f"UPS tracking API error: {e}") from e
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse UPS tracking response for {tracking_code}") from e
 
 
-def parse_delivery_datetime(response_json):
+def parse_delivery_datetime(response_json: dict):
+    """
+    Extract delivery datetime from the UPS tracking API response.
+    """
+    if "Fault" in response_json:
+        raise Exception(f"UPS API returned error: {json.dumps(response_json['Fault'], indent=2)}")
     try:
         shipment = response_json["TrackResponse"]["Shipment"]
         packages = shipment["Package"]
@@ -425,42 +432,45 @@ def parse_delivery_datetime(response_json):
                     date_str = activity.get("Date")  # e.g., '20250626'
                     time_str = activity.get("Time", "000000")  # e.g., '144152'
                     if date_str:
-                        # Combine date + time and convert to datetime
-                        delivery_datetime = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
-                        return delivery_datetime
+                        return datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
     except Exception as e:
-        msg = f"Error parsing delivery datetime from response: {response_json}\nException: {e}"
-        frappe.log_error(message=msg, title="shipping.parse_delivery_datetime")
+        msg = f"Error parsing delivery datetime: {e}\nRaw response:\n{json.dumps(response_json, indent=2)}"
+        frappe.log_error(msg, title="UPS Delivery Date Parsing Error")
         print(msg)
-        return None
+    return None
 
 
-def update_ups_delivery_dates(request_limit=None):
+def update_ups_delivery_dates(request_limit: int = None):
     """
     Should be run once per night by a daily cronjob:
     # Status request for UPS tracking codes without a delivery date
-    30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
+    30 3 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 50}"
 
-    sudo bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 90}"
+    bench execute microsynth.microsynth.shipping.update_ups_delivery_dates --kwargs "{'request_limit': 1}"
     """
-    url, username, password, access_key = get_ups_settings()
-    pending_tracking_codes = fetch_pending_tracking_codes()
+    url, token_url, client_id, client_secret, merchant_id = get_ups_settings()
+    access_token = get_ups_oauth_token(client_id, client_secret, token_url, merchant_id)
+    #print("Access token:", access_token)
+    tracking_codes = fetch_pending_tracking_codes()
 
-    for i, tracking_code in enumerate(pending_tracking_codes):
+    for i, tracking_code in enumerate(tracking_codes):
         if request_limit and i >= request_limit:
-            return
+            break
+
+        code = tracking_code["tracking_code"]
         try:
-            resp_json = call_ups_tracking_api(tracking_code["tracking_code"], url, username, password, access_key)
-            delivery_datetime = parse_delivery_datetime(resp_json)
+            response_json = call_ups_tracking_api(code, url, access_token, merchant_id)
+            delivery_datetime = parse_delivery_datetime(response_json)
+
             if delivery_datetime:
-                tracking_doc = frappe.get_doc("Tracking Code", tracking_code["name"])
-                tracking_doc.delivery_date = delivery_datetime
-                tracking_doc.save(ignore_permissions=True)
-                frappe.db.commit()  # necessary?
-                print(f"Updated: {tracking_code['tracking_code']} -> Delivered on {delivery_datetime}")
+                doc = frappe.get_doc("Tracking Code", tracking_code["name"])
+                doc.delivery_date = delivery_datetime
+                doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                print(f"✅ Delivered: {code} on {delivery_datetime}")
             else:
-                print(f"Not delivered yet: {tracking_code['tracking_code']}")
+                print(f"⏳ Still in transit: {code}")
         except Exception as e:
-            msg = f"Error processing {tracking_code['tracking_code']}: {e}"
-            frappe.log_error(message=msg, title="shipping.update_ups_delivery_dates")
-            print(msg)
+            error_msg = f"Error updating {code}: {e}"
+            frappe.log_error(title="UPS Tracking Update Failed", message=error_msg)
+            print(f"❌ {error_msg}")
