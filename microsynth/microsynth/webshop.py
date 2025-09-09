@@ -3221,7 +3221,7 @@ def get_account_details(webshop_account):
                 f"The Currency of the Shipping Items ({shipping_items_response.get('currency')}) "
                 f"of the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong> "
                 f"does not match the Billing Currency ({main_contact.get('customer').default_currency}) "
-                f"of the Customer {main_contact.get('customer')}."
+                f"of the Customer {main_contact.get('customer').get('name')}."
             )
             email_template = frappe.get_doc("Email Template", "Shipping Items Currency Mismatch with Customers Billing Currency")
             rendered_content = frappe.render_template(email_template.response, {'details': msg})
