@@ -47,7 +47,7 @@ def convert_price_fields(price_chf, price_eur, price_usd):
 
 def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_length=18):
     """
-    bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-08-21_Geraeteliste.csv'}"
+    bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-09-09_Geraeteliste.csv'}"
     """
     group_mapping = {
         '3.1 DNA/RNA Synthese': '3.1 DNA/RNA Synthesis',
@@ -68,9 +68,9 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
         '5.1 Instruments': '5.1 Instruments'
     }
     category_mapping = {
-        'A': 'A: Complex analytical system',
-        'B': 'B: Standard measuring device',
-        'C': 'C: Auxiliary non-measuring equipment'
+        'A': 'A – complex or computerised devices',
+        'B': 'B – standard devices with straightforward measurement',
+        'C': 'C – device without measuring function'
     }
     imported_counter = 0
 
@@ -144,7 +144,7 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                 'doctype': "QM Device",
                 'device_name': device_name,
                 'category': category_mapping[device_classification],
-                'status': 'Unqualified',  # TODO: mandatory, but how to determine?
+                'status': 'Unapproved',  # TODO: mandatory, but how to determine?
                 'qm_process': group_mapping[process],
                 'site': location if location in ['Lyon', 'Göttingen', 'Wien'] else 'Balgach',
                 'serial_no': serial_number,
