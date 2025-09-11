@@ -1188,7 +1188,14 @@ def get_debtor_account(company, currency, country):
             account = 4119000
 
     elif company == "Microsynth Seqlab GmbH":
-        account = 1400
+        if currency == "PLN":
+            account = 1403
+        elif currency == "SEK":
+            account = 1404
+        # Note: USD debtor account 1401 is not used because there is no USD bank account
+        # USD invoices are assigned to the EUR debtor account 1400
+        else:
+            account = 1400
 
     elif company == "Ecogenics GmbH":
         if currency == "EUR":
