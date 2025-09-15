@@ -3474,22 +3474,26 @@ def prepare_price_list_pdf_download(contact):
 def get_price_list_doc(contact):
     """
     Return a base64-encoded PDF and a file name of the Price List for the Customer of the given contact.
+
+    bench execute microsynth.microsynth.webshop.get_price_list_doc --kwargs "{'contact': '215856'}"
     """
     try:
         pdf = get_price_list_pdf(contact)
-        encoded_pdf = base64.b64encode(pdf)
+        encoded_pdf = base64.b64encode(pdf).decode("utf-8")
         file_name = f"Price_List_{contact.replace(' ', '_')}.pdf"
         return {
             "success": True,
-            "base64_pdf": encoded_pdf,
-            "file_name": file_name,
+            "file": {
+                "file_name": file_name,
+                "content_base64": encoded_pdf,
+                "mime_type": "application/pdf"
+            },
             "message": "OK"
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "webshop.get_price_list_doc")
         return {
             "success": False,
-            "base64_pdf": None,
-            "file_name": None,
+            "file": None,
             "message": f"Failed to generate PDF: {str(e)}"
         }
