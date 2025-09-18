@@ -23,7 +23,8 @@ from microsynth.microsynth.utils import (
     get_margin_from_customer,
     to_bool,
     update_address_links_from_contact,
-    send_email_from_template
+    send_email_from_template,
+    get_sql_list
 )
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
@@ -1514,11 +1515,27 @@ def order_quote(quotation_id, client="webshop"):
 def get_countries(client="webshop"):
     """
     Returns all available countries
+
+    bench execute microsynth.microsynth.webshop.get_countries
     """
+    top_country_names = ['Switzerland', 'Germany', 'Austria', 'France']
     countries = frappe.db.sql(
         """SELECT `country_name`, `code`, `export_code`, `default_currency`
            FROM `tabCountry`
-           WHERE `disabled` = 0;""", as_dict=True)
+           WHERE `disabled` = 0
+           ORDER BY `country_name` ASC;""", as_dict=True)
+    filtered_countries = []
+    top_countries = []
+    for top_country in top_country_names:
+        for country in countries:
+            if top_country == country.get('country_name'):
+                top_countries.append(country)
+
+    for country in countries:
+        if country.get('country_name') not in top_country_names:
+            filtered_countries.append(country)
+
+    countries = top_countries + filtered_countries
 
     return {'success': True, 'message': None, 'countries': countries}
 
