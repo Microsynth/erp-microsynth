@@ -5894,3 +5894,126 @@ def update_web_orders(json_file_path: str, dry_run: bool = True):
     else:
         frappe.db.commit()
         print("[COMMIT] All changes saved.")
+
+
+def disable_contacts(contact_ids):
+    """
+    Disable the given Contacts if they are safe to disable.
+
+    bench execute microsynth.microsynth.migration.disable_contacts --kwargs "{'contact_ids': ['247270', '242854']}"
+    """
+    if isinstance(contact_ids, str):
+        contact_ids = frappe.parse_json(contact_ids)
+    if not isinstance(contact_ids, list):
+        frappe.throw("Expected a list of Contact IDs.")
+    counter = 0
+
+    for contact_id in contact_ids:
+        try:
+            success = disable_contact(contact_id)
+            if success:
+                counter += 1
+        except Exception:
+            print(f"An error occurred while processing Contact {contact_id}:\n{frappe.get_traceback()}")
+    print(f"Successfully disabled {counter} Contacts.")
+
+
+def disable_contact(contact_id):
+    """
+    bench execute microsynth.microsynth.utils.disable_contact --kwargs "{'contact_id': '247270'}"
+    """
+    try:
+        contact = frappe.get_doc("Contact", contact_id)
+    except frappe.DoesNotExistError:
+        print(f"❌ Contact '{contact_id}' does not exist. Skipping.")
+        return False
+
+    if contact.status == "Disabled":
+        print(f"❌ Contact '{contact_id}' is already disabled. Skipping.")
+        return False
+
+    if not contact.has_webshop_account:
+        print(f"❌ Contact '{contact_id}' does not have 'has_webshop_account' set. Skipping.")
+        return False
+
+    # 1. Check Sales Invoices with outstanding amounts
+    invoices = frappe.db.get_all("Sales Invoice", filters={
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "outstanding_amount": [">", 0]
+    }, fields=["name"])
+
+    if invoices:
+        print(f"❌ Contact '{contact_id}' is linked to Sales Invoices with an outstanding amount:")
+        for inv in invoices:
+            print(f"   - Sales Invoice: {inv.get('name')}")
+        print("   Skipping.")
+        return False
+
+    # 2. Check Delivery Notes not closed and not billed
+    delivery_notes = frappe.db.get_all("Delivery Note", filters={
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "status": ["!=", "Closed"],
+        "per_billed": 0
+    }, fields=["name"])
+
+    if delivery_notes:
+        print(f"❌ Contact '{contact_id}' is linked to unbilled Delivery Notes:")
+        for dn in delivery_notes:
+            print(f"   - Delivery Note: {dn.get('name')}")
+        print("   Skipping.")
+        return False
+
+    # 3. Check if used by other active Customers as invoice_to or reminder_to
+    customer_id = get_customer(contact_id)
+
+    other_customers = frappe.db.sql("""
+        SELECT name FROM `tabCustomer`
+        WHERE name != %s
+            AND (invoice_to = %s OR reminder_to = %s)
+            AND disabled = 0
+    """, (customer_id, contact_id, contact_id), as_dict=True)
+
+    if other_customers:
+        print(f"❌ Contact '{contact_id}' is linked to Customer {customer_id} but used as 'invoice_to' or 'reminder_to' by other enabled Customers:")
+        for cust in other_customers:
+            print(f"   - Customer: {cust['name']}")
+        print("   Skipping.")
+        return False
+
+    # 4. Check Sales Orders not delivered or closed
+    sales_orders = frappe.db.get_all("Sales Order", filters={
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "status": ["!=", "Closed"],
+        "per_delivered": 0
+    }, fields=["name"])
+
+    if sales_orders:
+        print(f"❌ Contact '{contact_id}' is linked to open Sales Orders:")
+        for so in sales_orders:
+            print(f"   - Sales Order: {so.get('name')}")
+        print("   Skipping.")
+        return False
+
+    # 5. Check open Quotations
+    quotations = frappe.db.get_all("Quotation", filters={
+        "contact_person": contact_id,
+        "docstatus": 1,
+        "status": "Open",
+        "valid_till": [">=", frappe.utils.nowdate()]
+    }, fields=["name"])
+
+    if quotations:
+        print(f"❌ Contact '{contact_id}' is linked to open and valid Quotations:")
+        for q in quotations:
+            print(f"   - Quotation: {q.get('name')}")
+        print("   Skipping.")
+        return False
+
+    # Disable the Contact
+    contact.status = "Disabled"
+    contact.save()
+    print(f"✅ Contact '{contact_id}' has been successfully disabled.")
+    return True
