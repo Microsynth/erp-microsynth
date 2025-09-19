@@ -2899,6 +2899,8 @@ def has_items_delivered_by_supplier(sales_order_id):
     """
     Checks if there are any Sales Order Items for the given Sales Order ID
     with the flag "Supplier delivers to Customer" set.
+
+    bench execute microsynth.microsynth.utils.has_items_delivered_by_supplier --kwargs "{'sales_order_id': 'SO-GOE-25011431'}"
     """
     items_delivered_by_supplier = frappe.db.sql(f"""
         SELECT `tabSales Order Item`.`name`
@@ -3383,7 +3385,6 @@ def get_open_documents_for_customer(customer_id):
     result["Quotation"] = with_url("Quotation", quotations)
 
     return result
-
 
 
 def is_contact_safe_to_disable(contact_id):

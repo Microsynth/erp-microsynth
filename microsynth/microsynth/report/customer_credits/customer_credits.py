@@ -44,6 +44,7 @@ def get_data(filters, short=False):
 
     if filters.get('customer'):
         # customer based evaluation: ledger
+        # TODO: Use territory from Sales Invoice instead of Customer? What if it changed?
         sql_query = """
         SELECT
             `raw`.`type` AS `type`,
