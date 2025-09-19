@@ -184,7 +184,15 @@ function first_barcode_dialog() {
             },
             __("Pick first label"),
             __("OK")
-        )
+        );
+
+        // Ensure cursor is placed in the from_barcode field
+        frappe.after_ajax(() => {
+            setTimeout(() => {
+                const input = document.querySelector('.frappe-control[data-fieldname="from_barcode"] input');
+                if (input) input.focus();
+            }, 200);
+        });
     }
 }
 
