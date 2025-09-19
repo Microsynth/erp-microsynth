@@ -1537,6 +1537,9 @@ def get_countries(client="webshop"):
 
     countries = top_countries + filtered_countries
 
+    for i, c in enumerate(countries):
+        c['sort_order'] = i + 1
+
     return {'success': True, 'message': None, 'countries': countries}
 
 
