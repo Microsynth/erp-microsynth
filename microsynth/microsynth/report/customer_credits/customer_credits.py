@@ -23,7 +23,8 @@ def get_columns():
         {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125}
+        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200}
     ]
     return columns
 
@@ -56,7 +57,8 @@ def get_data(filters, short=False):
             `raw`.`product_type` AS `product_type`,
             `raw`.`status` AS `status`,
             `raw`.`reference` AS `reference`,
-            `raw`.`currency` AS `currency`
+            `raw`.`currency` AS `currency`,
+            `tabCustomer`.`territory` AS `territory`
         FROM (
             SELECT
                 IF(`tabSales Invoice`.`is_return` = 0,
@@ -106,6 +108,7 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 {conditions}
         ) AS `raw`
+        LEFT JOIN `tabCustomer` ON `raw`.`customer` = `tabCustomer`.`name`
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
@@ -166,7 +169,8 @@ def get_data(filters, short=False):
             `raw`.`customer_name` AS `customer_name`,
             SUM(`raw`.`net_amount`) AS `outstanding`,
             `raw`.`product_type` AS `product_type`,
-            `raw`.`currency` AS `currency`
+            `raw`.`currency` AS `currency`,
+            `tabCustomer`.`territory` AS `territory`
         FROM (
             SELECT
                 "Credit" AS `type`,
@@ -203,6 +207,7 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`docstatus` = 1
                 {conditions}
         ) AS `raw`
+        LEFT JOIN `tabCustomer` ON `raw`.`customer` = `tabCustomer`.`name`
         GROUP BY `raw`.`customer`
         ORDER BY `raw`.`customer` ASC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
