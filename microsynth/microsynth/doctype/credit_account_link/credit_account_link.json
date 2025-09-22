@@ -1,0 +1,28 @@
+{
+ "creation": "2025-09-22 15:50:42.239120",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "credit_account"
+ ],
+ "fields": [
+  {
+   "fieldname": "credit_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Credit Account",
+   "options": "Credit Account",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2025-09-22 15:51:44.760227",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Credit Account Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
