@@ -33,7 +33,7 @@ frappe.query_reports["Customer Credits"] = {
             "fieldname": "currency",
             "label": __("Currency"),
             "fieldtype": "Select",
-            "options": "\nCHF\n\EUR\nUSD"
+            "options": "\nCHF\n\EUR\nPLN\nSEK\nUSD"
         }
     ],
     "onload": (report) => {
