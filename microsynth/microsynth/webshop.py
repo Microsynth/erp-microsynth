@@ -2489,7 +2489,8 @@ def get_customer_dto(customer):
     customer_dto = {
         'name': customer.name,
         'customer_name': customer.customer_name,
-        'tax_id': customer.tax_id
+        'tax_id': customer.tax_id,
+        'disabled': customer.disabled
     }
     return customer_dto
 
@@ -3219,7 +3220,7 @@ def get_account_settings_dto(webshop_address):
 @frappe.whitelist()
 def get_account_details(webshop_account):
     """
-    bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account': '215856'}"
+    bench execute microsynth.microsynth.webshop.get_account_details --kwargs "{'webshop_account': '241884'}"
     """
     try:
         webshop_address_doc = frappe.get_doc("Webshop Address", webshop_account)
@@ -3230,6 +3231,29 @@ def get_account_details(webshop_account):
             if a.get('contact').get('name').split('-')[0] == webshop_account:
                 main_contact = a
                 break
+
+        if main_contact and main_contact.get('contact').get('status') == 'Disabled':
+            msg = f"The Contact {main_contact.get('contact').get('name')} of the webshop account '{webshop_account}' is disabled."
+            return {
+                'success': False,
+                'message': msg,
+                'webshop_account': webshop_account,
+                'currency': None,
+                'shipping_items': [],
+                'webshop_addresses': [],
+                'webshop_services': []
+            }
+        if main_contact and main_contact.get('customer').disabled:
+            msg = f"The Customer {main_contact.get('customer').get('name')} of the webshop account '{webshop_account}' is disabled."
+            return {
+                'success': False,
+                'message': msg,
+                'webshop_account': webshop_account,
+                'currency': None,
+                'shipping_items': [],
+                'webshop_addresses': [],
+                'webshop_services': []
+            }
 
         services = []
         for s in main_contact.get('customer').webshop_service:
