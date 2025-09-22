@@ -282,7 +282,7 @@ frappe.ui.form.on('Sales Invoice', {
                             // Show confirmation dialog
                             const message = `<strong>Intercompany invoice</strong> detected, but some Item Accounts differ from the defaults of Item 1008 for Company ${invoice_company}.<br><br>
                                 Do you want to <strong>update all Income/Expense Accounts</strong> to match those defaults<strong>?</strong><br><br>
-                                This will apply:<br>
+                                The Accounts will be changed to:<br>
                                 <ul>
                                 <li>Income Account: <code>${reference_income_account}</code></li>
                                 <li>Expense Account: <code>${reference_expense_account || '—'}</code></li>
