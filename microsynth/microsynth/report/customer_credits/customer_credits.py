@@ -24,7 +24,8 @@ def get_columns():
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
         {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
-        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200}
+        {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200},
+        {"label": _("InvoiceByDefaultCompany"), "fieldname": "invoice_by_default_company", "fieldtype": "Check", "width": 165}
     ]
     return columns
 
@@ -59,7 +60,8 @@ def get_data(filters, short=False):
             `raw`.`status` AS `status`,
             `raw`.`reference` AS `reference`,
             `raw`.`currency` AS `currency`,
-            `tabCustomer`.`territory` AS `territory`
+            `tabCustomer`.`territory` AS `territory`,
+            IF(`webshop_service`.`customer_id` IS NOT NULL, 1, 0) AS `invoice_by_default_company`
         FROM (
             SELECT
                 IF(`tabSales Invoice`.`is_return` = 0,
@@ -110,6 +112,12 @@ def get_data(filters, short=False):
                 {conditions}
         ) AS `raw`
         LEFT JOIN `tabCustomer` ON `raw`.`customer` = `tabCustomer`.`name`
+        LEFT JOIN (
+            SELECT DISTINCT `tabWebshop Service Link`.`parent` AS `customer_id`
+            FROM `tabWebshop Service Link`
+            JOIN `tabWebshop Service` ON `tabWebshop Service Link`.`webshop_service` = `tabWebshop Service`.`name`
+            WHERE `tabWebshop Service`.`service_name` = 'InvoiceByDefaultCompany'
+        ) AS `webshop_service` ON `raw`.`customer` = `webshop_service`.`customer_id`
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
@@ -171,7 +179,8 @@ def get_data(filters, short=False):
             SUM(`raw`.`net_amount`) AS `outstanding`,
             `raw`.`product_type` AS `product_type`,
             `raw`.`currency` AS `currency`,
-            `tabCustomer`.`territory` AS `territory`
+            `tabCustomer`.`territory` AS `territory`,
+            IF(`webshop_service`.`customer_id` IS NOT NULL, 1, 0) AS `invoice_by_default_company`
         FROM (
             SELECT
                 "Credit" AS `type`,
@@ -209,6 +218,12 @@ def get_data(filters, short=False):
                 {conditions}
         ) AS `raw`
         LEFT JOIN `tabCustomer` ON `raw`.`customer` = `tabCustomer`.`name`
+        LEFT JOIN (
+            SELECT DISTINCT `tabWebshop Service Link`.`parent` AS `customer_id`
+            FROM `tabWebshop Service Link`
+            JOIN `tabWebshop Service` ON `tabWebshop Service Link`.`webshop_service` = `tabWebshop Service`.`name`
+            WHERE `tabWebshop Service`.`service_name` = 'InvoiceByDefaultCompany'
+        ) AS `webshop_service` ON `raw`.`customer` = `webshop_service`.`customer_id`
         GROUP BY `raw`.`customer`
         ORDER BY `raw`.`customer` ASC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
