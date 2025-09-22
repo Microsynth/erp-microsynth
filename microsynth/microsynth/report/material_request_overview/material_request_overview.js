@@ -22,8 +22,10 @@ frappe.query_reports["Material Request Overview"] = {
 			fieldname: "mode",
 			label: __("Mode"),
 			fieldtype: "Select",
-			options: "Open Requests\nAll Material Requests",
-			default: "Open Requests"
+			options: "To Order\nUnreceived Material Requests\nAll Material Requests",
+			default: (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User'))
+                ? "To Order"
+                : "All Material Requests"
 		},
 		{
 			fieldname: "from_date",

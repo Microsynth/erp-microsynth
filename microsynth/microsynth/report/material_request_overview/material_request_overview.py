@@ -16,7 +16,7 @@ def get_columns(mode=None):
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 50},
     ]
-    if mode == "All Material Requests":
+    if mode != "To Order":
         columns += [
             {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
             {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 95},
@@ -86,7 +86,58 @@ def get_data(filters):
             ORDER BY `tabMaterial Request`.`transaction_date` ASC
         """, filters, as_dict=True)
         return data
-    else:
+    elif mode == "Unreceived Material Requests":
+        return frappe.db.sql(f"""
+            SELECT *
+            FROM (
+                SELECT
+                    `tabMaterial Request`.`name` AS `material_request`,
+                    'Material Request' AS `request_type`,
+                    `tabMaterial Request`.`transaction_date`,
+                    `tabMaterial Request Item`.`schedule_date`,
+                    `tabMaterial Request Item`.`item_code`,
+                    `tabMaterial Request Item`.`item_name`,
+                    `tabMaterial Request Item`.`qty`,
+                    `tabMaterial Request Item`.`name` AS `material_request_item`,
+                    (
+                        SELECT IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0)
+                        FROM `tabPurchase Order Item`
+                        WHERE
+                            `tabPurchase Order Item`.`docstatus` = 1
+                            AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    ) AS `ordered_qty`,
+                    (
+                        SELECT IFNULL(SUM(`tabPurchase Receipt Item`.`qty`), 0)
+                        FROM `tabPurchase Receipt Item`
+                        WHERE
+                            `tabPurchase Receipt Item`.`docstatus` = 1
+                            AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    ) AS `received_qty`,
+                    `tabItem Supplier`.`supplier`,
+                    `tabSupplier`.`supplier_name`,
+                    `tabItem Supplier`.`supplier_part_no`,
+                    IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`
+                FROM
+                    `tabMaterial Request Item`
+                LEFT JOIN `tabMaterial Request`
+                    ON `tabMaterial Request Item`.`parent` = `tabMaterial Request`.`name`
+                LEFT JOIN `tabItem Supplier`
+                    ON `tabItem Supplier`.`parent` = `tabMaterial Request Item`.`item_code`
+                    AND `tabItem Supplier`.`parenttype` = 'Item'
+                    AND `tabItem Supplier`.`idx` = 1
+                LEFT JOIN `tabSupplier`
+                    ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
+                WHERE
+                    `tabMaterial Request`.`material_request_type` = 'Purchase'
+                    AND `tabMaterial Request`.`docstatus` = 1
+                    {conditions}
+            ) AS raw
+            WHERE
+                raw.received_qty < raw.qty
+            ORDER BY
+                raw.transaction_date ASC;
+            """, filters, as_dict=True)
+    elif mode == "To Order":
         return frappe.db.sql(f"""
             SELECT
                 `tabMaterial Request`.`name` AS `material_request`,
@@ -147,6 +198,8 @@ def get_data(filters):
             ORDER BY
                 `schedule_date` ASC
         """, filters, as_dict=True)
+    else:
+        frappe.throw(_("Invalid mode"))
 
 
 def execute(filters=None):
