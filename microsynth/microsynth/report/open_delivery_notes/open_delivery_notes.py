@@ -11,17 +11,19 @@ def get_columns():
         {"label": _("Delivery Note"), "fieldname": "name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 100},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 55},
         {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 215},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
         {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 185},
-        {"label": _("Is Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 85},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
         {"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 90},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 105},
         {"label": _("First Sales Invoice"), "fieldname": "first_sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("First Credit Note"), "fieldname": "first_credit_note", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
         {"label": _("Invoice Count"), "fieldname": "sales_invoice_count", "fieldtype": "Int", "width": 95},
+        {"label": _("Is Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 85, "align": "left"},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
     ]
 
 
@@ -35,7 +37,7 @@ def get_data(filters):
     conditions = """
         `tabDelivery Note`.`per_billed` < 0.01
         AND `tabDelivery Note`.`posting_date` <= %(to_date)s
-        AND `tabDelivery Note`.`docstatus` = 1
+        AND (`tabDelivery Note`.`docstatus` = 1 OR (`tabDelivery Note`.`docstatus` = 0 AND `tabDelivery Note`.`customer` != '8003'))
         AND `tabDelivery Note`.`status` NOT IN ('Closed', 'Completed')
         AND `tabDelivery Note`.`total` > 0
     """
@@ -89,7 +91,8 @@ def get_data(filters):
                 JOIN `tabSales Invoice` ON `tabSales Invoice`.`name` = `tabSales Invoice Item`.`parent`
                 WHERE `tabSales Invoice Item`.`delivery_note` = `tabDelivery Note`.`name`
                   AND `tabSales Invoice`.`docstatus` = 1
-            ) AS `sales_invoice_count`
+            ) AS `sales_invoice_count`,
+            `tabDelivery Note`.`status`
         FROM `tabDelivery Note`
         LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabDelivery Note`.`customer`
         WHERE {conditions}
