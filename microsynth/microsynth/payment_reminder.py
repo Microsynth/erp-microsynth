@@ -174,7 +174,7 @@ def print_payment_reminder(prm):
     path = get_physical_path(fid)
     PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
     import subprocess
-    subprocess.run(["lp", path, "-d", PRINTER])
+    subprocess.run(["lp", path, "-d", PRINTER, "-o", "sides=two-sided-long-edge"])
 
 
 @frappe.whitelist()
