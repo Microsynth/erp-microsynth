@@ -44,6 +44,52 @@ def check_and_get_label(label):
         return {'success': True, 'message': "OK", 'label': sequencing_labels[0]}
 
 
+def check_and_get_labels(labels):
+    """
+    Batch-fetch Sequencing Labels from the ERP based on barcode and item pairs.
+
+    Parameters:
+        labels (list): List of label dicts with 'barcode' and 'item' keys.
+
+    Returns:
+        dict: Mapping from (barcode, item) → label data or error
+    """
+    if not labels:
+        return {}
+
+    # Deduplicate input
+    keys = set((label.get("barcode") or label.get("label_id"), label.get("item") or label.get("item_code")) for label in labels)
+    if not keys:
+        return {}
+
+    conditions = ' OR '.join(['(label_id = %s AND item = %s)'] * len(keys))
+    values = [val for pair in keys for val in pair]
+
+    sql = f"""
+        SELECT
+            name, item, label_id AS barcode, status, registered, contact, registered_to,
+            sales_order, customer
+        FROM `tabSequencing Label`
+        WHERE {conditions};
+    """
+    results = frappe.db.sql(sql, values, as_dict=True)
+
+    label_map = {}
+    for label in results:
+        key = (label['barcode'], label['item'])
+        if key in label_map:
+            label_map[key] = {"error": "duplicate"}
+        else:
+            label_map[key] = label
+
+    # Add missing entries
+    for key in keys:
+        if key not in label_map:
+            label_map[key] = {"error": "not_found"}
+
+    return label_map
+
+
 def process_label_status_change(labels, target_status, required_current_status=None, check_not_used=False, stop_on_first_failure=False):
     """
     Unified handler to change the status of sequencing labels, with options for validation and strict failure handling.
@@ -76,44 +122,42 @@ def process_label_status_change(labels, target_status, required_current_status=N
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
 
     success = True
-    processed_labels = []
-    customers = set()
-    disabled_customers = []
 
     try:
+        # Normalize and deduplicate
+        normalized = [{
+            "barcode": l.get("barcode") or l.get("label_id"),
+            "item": l.get("item") or l.get("item_code")
+        } for l in labels]
+
+        label_lookup = check_and_get_labels(normalized)
+        processed_labels = []
         labels_to_process = []
+        customers_to_enable = set()
 
-        # Normalize label keys
-        normalized_labels = []
-        for label in labels:
-            normalized_label = {
-                "barcode": label.get("barcode") or label.get("label_id"),
-                "item": label.get("item") or label.get("item_code")
-            }
-            normalized_labels.append(normalized_label)
+        for label in normalized:
+            key = (label["barcode"], label["item"])
+            result = label_lookup.get(key)
 
-        labels = normalized_labels
+            if "error" in result:
+                if result["error"] == "not_found":
+                    label['message'] = f"Label {key[0]} with Item {key[1]} not found."
+                    processed_labels.append(label)
+                    success = False
+                    if stop_on_first_failure:
+                        return {'success': False, 'message': label['message'], 'labels': None}
+                    continue
 
-        for label in labels:
-            response = check_and_get_label(label)
-            if not response['success']:
-                label['message'] = response['message']
-                processed_labels.append(label)
-                success = False
-                if stop_on_first_failure:
-                    return {'success': False, 'message': label['message'], 'labels': None}
-                continue
+                elif result["error"] == "duplicate":
+                    label['message'] = f"Multiple labels found for {key[0]} and {key[1]}."
+                    processed_labels.append(label)
+                    success = False
+                    if stop_on_first_failure:
+                        return {'success': False, 'message': label['message'], 'labels': None}
+                    continue
 
-            erp_label = response['label']
-            if not erp_label:
-                label['message'] = response['message'] or "Did not find exactly one label in the ERP."
-                processed_labels.append(label)
-                success = False
-                if stop_on_first_failure:
-                    return {'success': False, 'message': label['message'], 'labels': None}
-                continue
+            erp_label = result
 
-            # Status check
             if required_current_status and erp_label['status'] != required_current_status:
                 erp_label['message'] = f"The label has currently not the required status {required_current_status} in the ERP."
                 processed_labels.append(erp_label)
@@ -122,7 +166,6 @@ def process_label_status_change(labels, target_status, required_current_status=N
                     return {'success': False, 'message': erp_label['message'], 'labels': None}
                 continue
 
-            # Sales Order usage check
             if check_not_used:
                 sql_query = """
                     SELECT `tabSample`.`name` AS `sample`
@@ -137,22 +180,26 @@ def process_label_status_change(labels, target_status, required_current_status=N
                 samples = frappe.db.sql(sql_query, (erp_label['barcode'], erp_label['sales_order']), as_dict=True)
                 if samples:
                     erp_label['message'] = f"Label '{erp_label['barcode']}' is used in open Sales Orders other than {erp_label['sales_order']}."
+                    processed_labels.append(erp_label)
                     success = False
                     if stop_on_first_failure:
                         return {'success': False, 'message': erp_label['message'], 'labels': None}
                     continue
 
-            labels_to_process.append(erp_label)
             if erp_label.get('customer'):
-                customers.add(erp_label['customer'])
+                customers_to_enable.add(erp_label['customer'])
 
-        # Enable disabled Customers
-        for customer in customers:
-            customer_doc = frappe.get_doc("Customer", customer)
-            if customer_doc.disabled:
+            labels_to_process.append(erp_label)
+
+        # Batch enable Customers (only fetch and modify disabled ones)
+        disabled_customers = []
+        if customers_to_enable:
+            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", list(customers_to_enable)], "disabled": 1}, fields=["name"])
+            for c in disabled_customers_to_enable:
+                customer_doc = frappe.get_doc("Customer", c.name)
                 customer_doc.disabled = 0
                 customer_doc.save(ignore_permissions=True)
-                disabled_customers.append(customer)
+                disabled_customers.append(c.name)
 
         # Set label statuses
         for erp_label in labels_to_process:
