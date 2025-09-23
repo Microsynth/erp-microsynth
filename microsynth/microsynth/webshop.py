@@ -26,6 +26,7 @@ from microsynth.microsynth.utils import (
     send_email_from_template,
     get_sql_list
 )
+from microsynth.microsynth.seqblatt import process_label_status_change
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
@@ -2228,34 +2229,6 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         return {'success': False, 'message': msg}
 
 
-def check_and_get_label(label):
-    """
-    Take a label dictionary (item, barcode, status), search it in the ERP and return it if it is unique or an error message otherwise.
-
-    bench execute microsynth.microsynth.webshop.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}}"
-    """
-    sql_query = """
-        SELECT `name`,
-            `item`,
-            `label_id` AS `barcode`,
-            `status`,
-            `registered`,
-            `contact`,
-            `registered_to`,
-            `sales_order`
-        FROM `tabSequencing Label`
-        WHERE `label_id` = %s
-            AND `item` = %s
-        ;"""
-    sequencing_labels = frappe.db.sql(sql_query, (label['barcode'], label['item']), as_dict=True)
-    if len(sequencing_labels) == 0:
-        return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
-    elif len(sequencing_labels) > 1:
-        return {'success': False, 'message': f"Found multiple labels with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
-    else:
-        return {'success': True, 'message': "OK", 'label': sequencing_labels[0]}
-
-
 @frappe.whitelist()
 def set_label_submitted(labels):
     """
@@ -2264,44 +2237,11 @@ def set_label_submitted(labels):
 
     bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
     """
-    if not labels or len(labels) == 0:
-        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
-    try:
-        success = True
-        labels_to_return = []
-        for label in labels:
-            response = check_and_get_label(label)
-            if not response['success']:
-                label['message'] = response['message']
-                labels_to_return.append(label)
-                success = False
-                continue
-            if not response['label']:  # should not happen here, but just for safety
-                label['message'] = response['message'] or "Did not found exactly one label in the ERP."
-                labels_to_return.append(label)
-                success = False
-                continue
-            erp_label = response['label']
-            if response['label']['status'] != 'unused':
-                erp_label['message'] = "The label has not status unused in the ERP."
-                labels_to_return.append(erp_label)
-                success = False
-                continue
-            seq_label = frappe.get_doc("Sequencing Label", erp_label['name'])
-            # set label sumitted
-            seq_label.status = "submitted"
-            seq_label.save()
-            erp_label['status'] = seq_label.status
-            erp_label['message'] = "OK"
-            labels_to_return.append(erp_label)
-        if success:
-            return {'success': success, 'message': 'OK', 'labels': labels_to_return}
-        else:
-            return {'success': success, 'message': 'There was at least one label that could not be set to status submitted. Please check the label messages.', 'labels': labels_to_return}
-    except Exception as err:
-        msg = f"Error setting labels to submitted: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_label_submitted")
-        return {'success': False, 'message': msg, 'labels': None}
+    return process_label_status_change(
+        labels=labels,
+        target_status="submitted",
+        required_current_status="unused"
+    )
 
 
 @frappe.whitelist()
@@ -2311,60 +2251,13 @@ def set_label_unused(labels):
 
     bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
     """
-    if not labels or len(labels) == 0:
-        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
-    try:
-        labels_to_set_unused = []
-        for label_to_check in labels:
-            response = check_and_get_label(label_to_check)
-            if not response['success']:
-                return {'success': False, 'message': response['message'], 'labels': None}
-            if not response['label']:  # should not happen here, but just for safety
-                return {'success': False, 'message': response['message'] or "Did not found exactly one label in the ERP.", 'labels': None}
-            erp_label = response['label']
-            if erp_label['status'] != 'submitted':
-                return {'success': False, 'message': f"The label with barcode '{erp_label['barcode']}' and Item '{erp_label['item']}' has not status submitted in the ERP.", 'labels': None}
-            labels_to_set_unused.append(erp_label)
-        # Check that the Sequencing Labels are NOT used on Sales Order.samples of Sales Orders with DocStatus <= 1
-        # The Sequencing Label.sales_order is the order from ordering the labels. Do not consider this entry
-        for label in labels_to_set_unused:
-            sql_query = """
-                SELECT
-                    `tabSample`.`name` AS `sample`,
-                    `tabSample`.`sequencing_label` AS `barcode`,
-                    `tabSales Order`.`name` AS `sales_order`
-                FROM `tabSample Link`
-                LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
-                LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSample Link`.`parent`
-                WHERE
-                    `tabSample`.`sequencing_label` = %s
-                    AND `tabSample Link`.`parent` != %s
-                    AND `tabSample Link`.`parenttype` = "Sales Order"
-                    AND `tabSales Order`.`docstatus` <= 1
-                ;"""
-            samples = frappe.db.sql(sql_query, (label['barcode'], label['sales_order']), as_dict=True)
-            if len(samples) > 0:
-                return {
-                    'success': False,
-                    'message': f"The label '{label['barcode']}' occurs on {len(samples)} Sample(s) that are on a non-Cancelled Sales Order unequals the Sales Order {label['sales_order']} on the Sequencing Label.",
-                    'labels': None
-                }
-        labels_set_unused = []
-        for label in labels_to_set_unused:
-            seq_label = frappe.get_doc("Sequencing Label", label['name'])
-            # set label unused
-            seq_label.status = "unused"
-            seq_label.save()
-            labels_set_unused.append({
-                "item": seq_label.item,
-                "barcode": seq_label.label_id,
-                "status": seq_label.status
-            })
-        return {'success': True, 'message': 'OK', 'labels': labels_set_unused}
-    except Exception as err:
-        msg = f"Error setting labels to unused: {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_label_unused")
-        return {'success': False, 'message': msg, 'labels': None}
+    return process_label_status_change(
+        labels=labels,
+        target_status="unused",
+        required_current_status="submitted",
+        check_not_used=True,
+        stop_on_first_failure=True
+    )
 
 
 @frappe.whitelist()
