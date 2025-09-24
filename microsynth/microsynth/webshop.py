@@ -3517,3 +3517,198 @@ def get_price_list_doc(contact):
             "file": None,
             "message": f"Failed to generate PDF: {str(e)}"
         }
+
+
+# Credit Accounting
+
+
+def get_credit_account_balance(account_id):
+    """
+    stub
+    """
+    balance = 100.0
+    return balance
+
+
+@frappe.whitelist()
+def get_credit_accounts(webshop_account, workgroup_members):
+    """
+    stub
+    """
+    # TODO: What to do with workgroup_members?
+    credit_accounts = frappe.get_all('Credit Account', filters={'contact': webshop_account}, fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'expiry_date'])
+    if len(credit_accounts) == 0:
+        return {
+            "success": False,
+            "message": f"No Credit Account found for Contact '{webshop_account}'",
+            "credit_accounts": []
+        }
+
+    for ca in credit_accounts:
+        ca['balance'] = get_credit_account_balance(ca.get('account_id'))
+        ca['forecast_balance'] = ca['balance']  # TODO implement forecast balance
+        ca['currency'] = 'CHF'
+        ca['product_types'] = ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
+
+    return {
+        "success": True,
+        "message": "OK",
+        "credit_accounts": credit_accounts
+    }
+
+
+@frappe.whitelist()
+def create_credit_account(webshop_account, name, description, company):
+    """
+    stub
+    """
+    try:
+        credit_account = frappe.get_doc({
+            'doctype': 'Credit Account',
+            'contact': webshop_account,
+            'account_name': name,
+            'description': description,
+            'company': company,
+            'status': 'Active'
+        })
+        credit_account.insert()
+        credit_account['account_id'] = credit_account.name
+        credit_account['name'] = credit_account.account_name
+        credit_account['balance'] = 0.0
+        credit_account['forecast_balance'] = 0.0
+        credit_account['currency'] = 'CHF'  # TODO How to fetch? From Customer?
+        credit_account['product_types'] = ["Oligos"]  # TODO: How to set?
+        return {
+            "success": True,
+            "message": "OK",
+            "credit_account": credit_account
+        }
+    except Exception as err:
+        msg = f"Error creating Credit Account for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_credit_account")
+        return {
+            "success": False,
+            "message": msg,
+            "credit_accounts": []
+        }
+
+
+@frappe.whitelist()
+def update_credit_account(credit_account):
+    """
+    stub
+
+    "credit_account": {
+        "account_id": "Account-000003",
+        "name": "MyChangedName",
+        "description": "some changed description"
+    }
+    """
+    # TODO: ERP must check that the company is not changed if it is included in the request
+    # TODO: restrictions might not be changed if the credit account is locked for editing by the webshop
+    try:
+        credit_account_doc = frappe.get_doc('Credit Account', credit_account.get('account_id'))
+        if 'name' in credit_account and credit_account.get('name') != credit_account_doc.account_name:
+            credit_account_doc.account_name = credit_account.get('name')
+        if 'description' in credit_account and credit_account.get('description') != credit_account_doc.description:
+            credit_account_doc.description = credit_account.get('description')
+        credit_account_doc.save()
+        credit_account_doc['account_id'] = credit_account_doc.name
+        credit_account_doc['name'] = credit_account_doc.account_name
+        credit_account_doc['balance'] = get_credit_account_balance(credit_account_doc.name)
+        credit_account_doc['forecast_balance'] = credit_account_doc['balance']  # TODO implement forecast balance
+        credit_account_doc['currency'] = 'CHF'  # TODO How to fetch? From Customer?
+        credit_account_doc['product_types'] = ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
+        return {
+            "success": True,
+            "message": "OK",
+            "credit_account": credit_account_doc
+        }
+    except Exception as err:
+        msg = f"Error updating Credit Account '{credit_account.get('account_id')}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_credit_account")
+        return {
+            "success": False,
+            "message": msg,
+            "credit_accounts": []
+        }
+
+
+@frappe.whitelist()
+def disable_credit_account(account_id):
+    """
+    Disable the given Credit Account.
+    """
+    try:
+        credit_account = frappe.get_doc('Credit Account', account_id)
+        if credit_account.status == 'Disabled':
+            return {
+                "success": True,
+                "message": f"Credit Account '{account_id}' is already disabled.",
+                "credit_account": credit_account
+            }
+        credit_account.status = 'Disabled'
+        credit_account.save()
+        return {
+            "success": True,
+            "message": "OK",
+            "credit_account": credit_account
+        }
+    except Exception as err:
+        msg = f"Error disabling Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.disable_credit_account")
+        return {
+            "success": False,
+            "message": msg,
+            "credit_accounts": []
+        }
+
+
+@frappe.whitelist()
+def get_transactions(account_id):
+    """
+    stub
+    """
+    try:
+        credit_account = frappe.get_doc('Credit Account', account_id)
+        transactions = []  # TODO fetch actual transactions
+        return {
+            "success": True,
+            "message": "OK",
+            "credit_account": credit_account,
+            "transactions": transactions
+        }
+    except Exception as err:
+        msg = f"Error fetching Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_transactions")
+        return {
+            "success": False,
+            "message": msg,
+            "transactions": []
+        }
+
+@frappe.whitelist()
+def get_balance_sheet_pdf(account_id):
+    """
+    stub
+    """
+    try:
+        pdf = b""  # TODO generate actual PDF
+        encoded_pdf = base64.b64encode(pdf).decode("utf-8")
+        file_name = f"Balance_Sheet_{account_id.replace(' ', '_')}.pdf"
+        return {
+            "success": False,
+            "file": {
+                "file_name": file_name,
+                "content_base64": encoded_pdf,
+                "mime_type": "application/pdf"
+            },
+            "message": "Not yet implemented"
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
+        return {
+            "success": False,
+            "file": None,
+            "message": f"Failed to generate PDF: {str(e)}"
+        }
