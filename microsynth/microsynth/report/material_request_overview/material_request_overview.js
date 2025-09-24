@@ -154,6 +154,12 @@ function open_search_dialog(report) {
     const f = dialog.fields_dict;
     dialog.selected_item = null;
 
+    f.results.$wrapper.on('click.request_item', '#request-item-btn', function () {
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+        dialog.hide();
+    });
+
     // Clear filters button
     f.clear_filters.$input.addClass('btn-secondary');
     f.clear_filters.$input.on('click', () => {
@@ -188,12 +194,19 @@ function open_search_dialog(report) {
                             ${__('No matching items found.')}
                             <br><button class="btn btn-primary" id="request-item-btn">${__('Request Item')}</button>
                         </div>
-                    `);  // TODO: Why is it necessary to click the button "Request Item" twice to open the dialog?"
+                    `);
 
-                    f.results.$wrapper.find('#request-item-btn').on('click', () => {
+                    // Now attach the click listener AFTER the button exists
+                    f.results.$wrapper.find('#request-item-btn').off('click').on('click', () => {
                         dialog.hide();
-                        open_item_request_dialog(report, f.item_name_part.get_value(), f.supplier_name.get_value(), f.supplier_part_no.get_value());
+                        open_item_request_dialog(
+                            report,
+                            f.item_name_part.get_value(),
+                            f.supplier_name.get_value(),
+                            f.supplier_part_no.get_value()
+                        );
                     });
+
                     dialog.selected_item = null;
                     return;
                 }
