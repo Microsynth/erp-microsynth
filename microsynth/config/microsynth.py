@@ -268,6 +268,13 @@ def get_data():
             "icon": "fa fa-money",
             "items": [
                     {
+                        "type": "report",
+                        "name": "Material Request Overview",
+                        "label": _("Material Request Overview"),
+                        "doctype": "Material Request",
+                        "is_query_report": True
+                    },
+                    {
                         "type": "doctype",
                         "name": "Supplier",
                         "label": _("Supplier"),
@@ -278,13 +285,6 @@ def get_data():
                         "name": "Supplier Items",
                         "label": _("Supplier Items"),
                         "doctype": "Item",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Material Request Overview",
-                        "label": _("Material Request Overview"),
-                        "doctype": "Material Request",
                         "is_query_report": True
                     },
                     {
