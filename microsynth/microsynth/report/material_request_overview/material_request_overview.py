@@ -19,6 +19,7 @@ def get_columns(mode=None):
     if mode != "To Order":
         columns += [
             {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
+            {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
             {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 95},
         ]
     columns += [
@@ -65,6 +66,15 @@ def get_data(filters):
                         `tabPurchase Receipt Item`.`docstatus` = 1
                         AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                 ) AS `received_qty`,
+                (
+                    SELECT `tabPurchase Order Item`.`parent`
+                    FROM `tabPurchase Order Item`
+                    WHERE
+                        `tabPurchase Order Item`.`docstatus` = 1
+                        AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                    ORDER BY `tabPurchase Order Item`.`creation` DESC
+                    LIMIT 1
+                ) AS `purchase_order`,
                 `tabItem Supplier`.`supplier`,
                 `tabSupplier`.`supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
@@ -113,6 +123,15 @@ def get_data(filters):
                             `tabPurchase Receipt Item`.`docstatus` = 1
                             AND `tabPurchase Receipt Item`.`material_request_item` = `tabMaterial Request Item`.`name`
                     ) AS `received_qty`,
+                    (
+                        SELECT `tabPurchase Order Item`.`parent`
+                        FROM `tabPurchase Order Item`
+                        WHERE
+                            `tabPurchase Order Item`.`docstatus` = 1
+                            AND `tabPurchase Order Item`.`material_request_item` = `tabMaterial Request Item`.`name`
+                        ORDER BY `tabPurchase Order Item`.`creation` DESC
+                        LIMIT 1
+                    ) AS `purchase_order`,
                     `tabItem Supplier`.`supplier`,
                     `tabSupplier`.`supplier_name`,
                     `tabItem Supplier`.`supplier_part_no`,

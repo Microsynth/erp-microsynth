@@ -80,8 +80,8 @@ function create_purchase_order(filters, report) {
         frappe.msgprint( __("Please set the Supplier filter"), __("Validation") );
         return;
     }
-	if (filters.mode !== "Open Requests") {
-		frappe.msgprint( __("Please set the Mode filter to 'Open Requests'"), __("Validation") );
+	if (filters.mode !== "To Order") {
+		frappe.msgprint( __("Please set the Mode filter to 'To Order'"), __("Validation") );
 		return;
 	}
 
