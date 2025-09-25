@@ -34,8 +34,10 @@ def get_columns(mode=None):
 def get_data(filters):
     mode = filters.get("mode") if filters else None
     conditions = ""
+    item_request_conditions = ""
     if filters and filters.get("supplier"):
         conditions += " AND `tabItem Supplier`.`supplier` = %(supplier)s"
+        item_request_conditions += " AND `tabItem Request`.`supplier` = %(supplier)s"
     if filters and filters.get("from_date"):
         conditions += " AND `tabMaterial Request`.`transaction_date` >= %(from_date)s"
     if filters and filters.get("to_date"):
@@ -153,6 +155,7 @@ def get_data(filters):
             ) AS raw
             WHERE
                 raw.received_qty < raw.qty
+                -- AND raw.ordered_qty > 0
             ORDER BY
                 raw.transaction_date ASC;
             """, filters, as_dict=True)
@@ -167,6 +170,8 @@ def get_data(filters):
                 `tabMaterial Request Item`.`item_name`,
                 (`tabMaterial Request Item`.`qty` - IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0)) AS `qty`,
                 `tabMaterial Request Item`.`name` AS `material_request_item`,
+                `tabMaterial Request Item`.`rate`,
+                `tabMaterial Request Item`.`item_request_currency` AS `currency`,
                 `tabItem Supplier`.`supplier`,
                 `tabSupplier`.`supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
@@ -205,6 +210,8 @@ def get_data(filters):
                 `tabItem Request`.`item_name`,
                 `tabItem Request`.`qty`,
                 NULL AS `material_request_item`,
+                `tabItem Request`.`rate`,
+                `tabItem Request`.`currency`,
                 `tabItem Request`.`supplier`,
                 `tabItem Request`.`supplier_name`,
                 `tabItem Request`.`supplier_part_no`,
@@ -214,6 +221,7 @@ def get_data(filters):
             WHERE
                 `tabItem Request`.`docstatus` = 1
                 AND `tabItem Request`.`status` = 'Pending'
+                {item_request_conditions}
             ORDER BY
                 `schedule_date` ASC
         """, filters, as_dict=True)

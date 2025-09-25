@@ -131,11 +131,14 @@ def create_po_from_open_mr(filters):
     if type(filters) == str:
         filters = json.loads(filters)
     items = get_items(filters)
+    currencies = set(item.get('currency') for item in items)
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
+    if len(currencies) > 1:
+        frappe.throw(_("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(", ".join(currencies)))
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': filters.get('supplier'),
-        'currency': supplier_doc.default_currency,
+        'currency': currencies.pop() if currencies else supplier_doc.default_currency,
         'buying_price_list': supplier_doc.default_price_list
     })
     for item in items:
@@ -143,6 +146,7 @@ def create_po_from_open_mr(filters):
             'item_code': item.get('item_code'),
             'schedule_date': item.get('schedule_date'),
             'qty': item.get('qty'),
+            'rate': item.get('rate'),
             'item_name': item.get('item_name'),
             'material_request': item.get('material_request'),
             'material_request_item': item.get('material_request_item')
@@ -1304,7 +1308,7 @@ def send_material_request_owner_emails(doc, event=None):
 
 
 @frappe.whitelist()
-def create_material_request(item_code, qty, schedule_date, company, item_name=None):
+def create_material_request(item_code, qty, schedule_date, company, item_name=None, rate=0, currency=None):
     if not (item_code and qty and schedule_date and company):
         frappe.throw("Required parameters missing")
     mr = frappe.new_doc("Material Request")
@@ -1312,12 +1316,13 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     mr.transaction_date = today()
     mr.schedule_date = schedule_date
     mr.company = company
-    #mr.currency = currency
     mr.append("items", {
         "item_code": item_code,
+        "item_name": item_name,
         "qty": qty,
         "schedule_date": schedule_date,
-        #"rate": rate
+        "rate": rate,
+        "item_request_currency": currency
     })
     mr.insert()
     mr.submit()
@@ -1331,15 +1336,19 @@ def create_mr_from_item_request(item_request_id, item):
     Link the created Material Request on the Item Request.
     Set the status of the Item Request to 'Done'.
     """
-    item = frappe._dict(json.loads(item))
-    mr_id = create_material_request(item.item_code, item.qty, item.schedule_date, item.company, item_name=item.item_name)
-    # Link back to Item Request
-    ir = frappe.get_doc('Item Request', item_request_id)
-    ir.material_request = mr_id
-    ir.material_request_item = item.item_code
-    ir.status = 'Done'
-    ir.save()
-    return mr_id
+    try:
+        item = frappe._dict(json.loads(item))
+        mr_id = create_material_request(item.item_code, item.qty, item.schedule_date, item.company, item_name=item.item_name, rate=item.rate, currency=item.currency)
+        # Link back to Item Request
+        ir = frappe.get_doc('Item Request', item_request_id)
+        ir.material_request = mr_id
+        ir.material_request_item = item.item_code
+        ir.status = 'Done'
+        ir.save()
+        return mr_id
+    except Exception as err:
+        frappe.log_error(f"{err}\n\n{frappe.get_traceback()}", "purchasing.create_mr_from_item_request")
+        frappe.throw(f"Error creating Material Request from Item Request {item_request_id}: {err}")
 
 
 @frappe.whitelist()
