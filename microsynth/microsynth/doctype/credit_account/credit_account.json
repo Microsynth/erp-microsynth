@@ -12,6 +12,7 @@
   "product_types_locked",
   "column_break_3",
   "company",
+  "currency",
   "status",
   "expiry_date",
   "section_break_10",
@@ -93,10 +94,17 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
   }
  ],
- "modified": "2025-09-24 14:25:35.957067",
- "modified_by": "Administrator",
+ "modified": "2025-09-25 10:09:27.887559",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
  "owner": "Administrator",
