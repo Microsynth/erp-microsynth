@@ -2,7 +2,13 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Credit Account', {
-	// refresh: function(frm) {
-
-	// }
+    refresh: function(frm) {
+        frm.add_custom_button(__('Overview'), function() {
+            frappe.set_route('query-report', 'Customer Credits', {
+                customer: frm.doc.customer,
+                company: frm.doc.company,
+                credit_account: frm.doc.name
+            });
+        });
+    }
 });
