@@ -11,6 +11,26 @@ frappe.query_reports["Customer Credits"] = {
             "options": "Customer"
         },
         {
+            "fieldname": "credit_account",
+            "label": __("Credit Account"),
+            "fieldtype": "Link",
+            "options": "Credit Account",
+            "get_query": function() {
+                let company = frappe.query_report.get_filter_value("company");
+                let customer = frappe.query_report.get_filter_value("customer");
+                let filters = {};
+                if (company) {
+                    filters["company"] = company;
+                }
+                if (customer) {
+                    filters["customer"] = customer;
+                }
+                return {
+                    'filters': filters
+                };
+            }
+        },
+        {
             "fieldname": "company",
             "label": __("Company"),
             "fieldtype": "Link",
