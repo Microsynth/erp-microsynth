@@ -176,6 +176,23 @@ def check_sales_order_completion(sales_orders):
                 close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
                 continue
 
+            if len(cleaned_oligos) == 0:
+                msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. Please check manually."
+                frappe.log_error(msg, "check_sales_order_completion")
+                # Add a comment to the Sales Order
+                new_comment = frappe.get_doc({
+                    'doctype': 'Comment',
+                    'comment_type': 'Comment',
+                    'subject': 'No non-cancelled Oligos left -> Close',
+                    'content': msg,
+                    'reference_doctype': 'Sales Order',
+                    'status': 'Linked',
+                    'reference_name': sales_order,
+                })
+                new_comment.insert(ignore_permissions=True)
+                close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
+                continue
+
             dn.items = keep_items
             # insert record
             dn.flags.ignore_missing = True
