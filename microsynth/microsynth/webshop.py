@@ -3526,29 +3526,51 @@ def get_credit_account_balance(account_id):
     """
     stub
     """
+    # TODO: Implement real balance fetching
     balance = 100.0
     return balance
+
+
+def get_credit_account_dto(credit_account):
+    """
+    Takes a Credit Account DocType or dict and returns a DTO suitable for the webshop.
+    """
+    return {
+        "account_id": credit_account.name,
+        "name": credit_account.account_name,
+        "description": credit_account.description,
+        "status": credit_account.status,
+        "company": credit_account.company,
+        "currency": credit_account.currency,
+        "expiry_date": credit_account.expiry_date,
+        "balance": get_credit_account_balance(credit_account.name),
+        "forecast_balance": get_credit_account_balance(credit_account.name),  # TODO implement forecast balance
+        "product_types": ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
+    }
 
 
 @frappe.whitelist()
 def get_credit_accounts(webshop_account, workgroup_members):
     """
     stub
+
+    bench execute microsynth.microsynth.webshop.get_credit_accounts --kwargs "{'webshop_account': '215856', 'workgroup_members': '["215856", "243755"]'}"
     """
-    # TODO: What to do with workgroup_members?
-    credit_accounts = frappe.get_all('Credit Account', filters={'contact': webshop_account}, fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'expiry_date'])
+    # Check if webshop_account is part of workgroup_members
+    if isinstance(workgroup_members, str):
+        workgroup_members = json.loads(workgroup_members)
+    if webshop_account not in workgroup_members:
+        workgroup_members.append(webshop_account)
+    credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', get_sql_list(workgroup_members)]], fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'currency', 'expiry_date'])
     if len(credit_accounts) == 0:
         return {
             "success": False,
             "message": f"No Credit Account found for Contact '{webshop_account}'",
             "credit_accounts": []
         }
-
+    credit_accounts_to_return = []
     for ca in credit_accounts:
-        ca['balance'] = get_credit_account_balance(ca.get('account_id'))
-        ca['forecast_balance'] = ca['balance']  # TODO implement forecast balance
-        ca['currency'] = 'CHF'
-        ca['product_types'] = ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
+        credit_accounts_to_return.append(get_account_settings_dto(ca))
 
     return {
         "success": True,
@@ -3558,11 +3580,15 @@ def get_credit_accounts(webshop_account, workgroup_members):
 
 
 @frappe.whitelist()
-def create_credit_account(webshop_account, name, description, company):
+def create_credit_account(webshop_account, name, description, company, product_types):
     """
     stub
+
+    bench execute microsynth.microsynth.webshop.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'My New Credit Account', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': '["Oligos", "Sequencing"]'}"
     """
     try:
+        if isinstance(product_types, str):
+            product_types = json.loads(product_types)
         credit_account = frappe.get_doc({
             'doctype': 'Credit Account',
             'contact': webshop_account,
@@ -3571,17 +3597,12 @@ def create_credit_account(webshop_account, name, description, company):
             'company': company,
             'status': 'Active'
         })
+        # TODO: Set product types
         credit_account.insert()
-        credit_account['account_id'] = credit_account.name
-        credit_account['name'] = credit_account.account_name
-        credit_account['balance'] = 0.0
-        credit_account['forecast_balance'] = 0.0
-        credit_account['currency'] = 'CHF'  # TODO How to fetch? From Customer?
-        credit_account['product_types'] = ["Oligos"]  # TODO: How to set?
         return {
             "success": True,
             "message": "OK",
-            "credit_account": credit_account
+            "credit_account": get_credit_account_dto(credit_account)
         }
     except Exception as err:
         msg = f"Error creating Credit Account for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
@@ -3603,6 +3624,8 @@ def update_credit_account(credit_account):
         "name": "MyChangedName",
         "description": "some changed description"
     }
+
+    bench execute microsynth.microsynth.webshop.update_credit_account --kwargs "{'credit_account': {'account_id': 'CA-000001', 'name': 'Changed Name', 'description': 'Changed Description'}}"
     """
     # TODO: ERP must check that the company is not changed if it is included in the request
     # TODO: restrictions might not be changed if the credit account is locked for editing by the webshop
@@ -3613,16 +3636,10 @@ def update_credit_account(credit_account):
         if 'description' in credit_account and credit_account.get('description') != credit_account_doc.description:
             credit_account_doc.description = credit_account.get('description')
         credit_account_doc.save()
-        credit_account_doc['account_id'] = credit_account_doc.name
-        credit_account_doc['name'] = credit_account_doc.account_name
-        credit_account_doc['balance'] = get_credit_account_balance(credit_account_doc.name)
-        credit_account_doc['forecast_balance'] = credit_account_doc['balance']  # TODO implement forecast balance
-        credit_account_doc['currency'] = 'CHF'  # TODO How to fetch? From Customer?
-        credit_account_doc['product_types'] = ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
         return {
             "success": True,
             "message": "OK",
-            "credit_account": credit_account_doc
+            "credit_account": get_credit_account_dto(credit_account_doc)
         }
     except Exception as err:
         msg = f"Error updating Credit Account '{credit_account.get('account_id')}': {err}. Check ERP Error Log for details."
@@ -3638,6 +3655,8 @@ def update_credit_account(credit_account):
 def disable_credit_account(account_id):
     """
     Disable the given Credit Account.
+
+    bench execute microsynth.microsynth.webshop.disable_credit_account --kwargs "{'account_id': 'CA-000001'}"
     """
     try:
         credit_account = frappe.get_doc('Credit Account', account_id)
@@ -3652,7 +3671,7 @@ def disable_credit_account(account_id):
         return {
             "success": True,
             "message": "OK",
-            "credit_account": credit_account
+            "credit_account": get_credit_account_dto(credit_account)
         }
     except Exception as err:
         msg = f"Error disabling Credit Account '{account_id}': {err}. Check ERP Error Log for details."
@@ -3668,14 +3687,42 @@ def disable_credit_account(account_id):
 def get_transactions(account_id):
     """
     stub
+
+    bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000002'}"
     """
+    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
+    type_mapping = {
+        'Allocation': 'Credit Note',  # TODO
+        'Credit': 'Deposit'
+    }
     try:
         credit_account = frappe.get_doc('Credit Account', account_id)
-        transactions = []  # TODO fetch actual transactions
+        filters = {
+            'credit_account': account_id,
+            'company': credit_account.company,
+            'customer': credit_account.customer
+        }
+        customer_credits = get_data(filters)
+        transactions = []
+        # TODO: sort transactions by date descending
+        # Field idx: sort order, 0-based, starting with the oldest document (idx=0), Posting date, if the same date: consider creation date
+        for i, row in enumerate(customer_credits):
+            transactions.append({
+                "idx": i,
+                "date": row.get('date'),
+                "type": type_mapping.get(row.get('type'), ""),
+                "reference": row.get('reference'),
+                "web_order_id": row.get('web_order_id'),
+                "currency": row.get('currency'),
+                "amount": row.get('net_amount'),
+                "balance": 0.0,  # TODO
+                "product_type": row.get('product_type'),
+                "po_no": row.get('po_no')
+            })
         return {
             "success": True,
             "message": "OK",
-            "credit_account": credit_account,
+            "credit_account": get_credit_account_dto(credit_account),
             "transactions": transactions
         }
     except Exception as err:
@@ -3687,10 +3734,13 @@ def get_transactions(account_id):
             "transactions": []
         }
 
+
 @frappe.whitelist()
 def get_balance_sheet_pdf(account_id):
     """
     stub
+
+    bench execute microsynth.microsynth.webshop.get_balance_sheet_pdf --kwargs "{'account_id': 'CA-000002'}"
     """
     try:
         pdf = b""  # TODO generate actual PDF
