@@ -3534,7 +3534,21 @@ def get_credit_account_balance(account_id):
 def get_credit_account_dto(credit_account):
     """
     Takes a Credit Account DocType or dict and returns a DTO suitable for the webshop.
+
+    bench execute microsynth.microsynth.webshop.get_credit_account_dto --kwargs "{'credit_account': 'CA-000001'}"
     """
+    if isinstance(credit_account, str):
+        credit_account = frappe.get_doc("Credit Account", credit_account)
+
+    product_types = frappe.get_all(
+        "Product Type Link",
+        filters={
+            "parent": credit_account.name,
+            "parentfield": "product_types",
+            "parenttype": "Credit Account"
+        },
+        fields=["product_type"]
+    )
     return {
         "account_id": credit_account.name,
         "name": credit_account.account_name,
@@ -3545,7 +3559,7 @@ def get_credit_account_dto(credit_account):
         "expiry_date": credit_account.expiry_date,
         "balance": get_credit_account_balance(credit_account.name),
         "forecast_balance": get_credit_account_balance(credit_account.name),  # TODO implement forecast balance
-        "product_types": ["Oligos"]  # TODO: What is the best way to fetch the product types of a credit account?
+        "product_types": [pt["product_type"] for pt in product_types]
     }
 
 
@@ -3589,6 +3603,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
     try:
         if isinstance(product_types, str):
             product_types = json.loads(product_types)
+
         credit_account = frappe.get_doc({
             'doctype': 'Credit Account',
             'contact': webshop_account,
@@ -3597,7 +3612,11 @@ def create_credit_account(webshop_account, name, description, company, product_t
             'company': company,
             'status': 'Active'
         })
-        # TODO: Set product types
+        # Add product types
+        for pt in product_types:
+            credit_account.append("product_types", {
+                "product_type": pt
+            })
         credit_account.insert()
         return {
             "success": True,
