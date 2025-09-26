@@ -31,6 +31,8 @@
   "pdf_export_path",
   "col_datev",
   "pdf_print_format",
+  "at_vat_export_section",
+  "at_vat_export_path",
   "alternative_accounts_section",
   "alternative_accounts"
  ],
@@ -184,10 +186,20 @@
    "fieldtype": "Link",
    "label": "Inbound Freight Item",
    "options": "Item"
+  },
+  {
+   "fieldname": "at_vat_export_section",
+   "fieldtype": "Section Break",
+   "label": "AT VAT Export"
+  },
+  {
+   "fieldname": "at_vat_export_path",
+   "fieldtype": "Data",
+   "label": "AT VAT Export Path"
   }
  ],
  "issingle": 1,
- "modified": "2025-07-17 14:00:54.953020",
+ "modified": "2025-09-26 15:41:43.316848",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",

@@ -1,5 +1,7 @@
-import frappe
+import os
+import re
 from datetime import datetime
+import frappe
 from frappe import _
 
 
@@ -224,3 +226,192 @@ def update_taxes(doc, event=None):
         })
 
     return
+
+
+def write_pdf(doc, path):
+    try:
+        pdf_content = frappe.get_print(
+            doc.doctype,
+            doc.name,
+            print_format=doc.doctype,
+            as_pdf=True)
+        filename = f"{doc.name}.pdf"
+        filepath = os.path.join(path, filename)
+        with open(filepath, mode='wb') as file:
+            file.write(pdf_content)
+    except Exception as e:
+        msg = f"PDF generation failed for {doc.doctype} {doc.name}: {str(e)}"
+        print(msg)
+        frappe.log_error(msg, "AT VAT Export")
+
+
+def write_summary_csv(rows, export_path, declaration_name):
+    import csv
+    if not rows:
+        return  # Nothing to write
+    keys = sorted({key for row in rows for key in row.keys()})
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    filename = f"{timestamp}_AT_VAT_Declaration_{declaration_name}.csv"
+    filepath = os.path.join(export_path, filename)
+
+    with open(filepath, mode="w", encoding="utf-8", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=keys)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: row.get(key, "") for key in keys})
+
+
+def replace_placeholders(template: str, values: dict, code: str) -> str:
+    """
+    Safely replaces placeholders like {company} in the template with values from the dict.
+    Logs an error and raises ValueError if any placeholder is missing.
+    """
+    def replacer(match):
+        key = match.group(1)
+        if key not in values:
+            raise ValueError(f"Missing placeholder '{key}' in AT VAT Declaration for query code {code}")
+        return str(values[key])
+
+    pattern = re.compile(r"\{(\w+)\}")
+    return pattern.sub(replacer, template)
+
+
+@frappe.whitelist()
+def package_export(declaration_name, debug=False):
+    """
+    Export documents related to the AT VAT Declaration as XML and PDF files.
+    The export path is configured in Microsynth Settings.
+
+    bench execute microsynth.microsynth.taxes.package_export --kwargs "{'declaration_name': '2025-08', 'debug': True}"
+    """
+    if debug:
+        start_ts = datetime.now()
+        print(f"{start_ts.strftime('%Y-%m-%d %H:%M:%S')} Starting package export for AT VAT Declaration {declaration_name}")
+    declaration = frappe.get_doc("AT VAT Declaration", declaration_name)
+    if not declaration:
+        frappe.throw(f"AT VAT Declaration {declaration_name} not found.")
+
+    base_path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "at_vat_export_path") or "/tmp/at_vat_exports"
+    export_path = os.path.join(base_path, declaration.name)
+    os.makedirs(export_path, exist_ok=True)
+
+    document_map = {}
+    fields = declaration.meta.fields
+    declaration_dict = declaration.as_dict()
+
+    start_date = declaration_dict.get("start_date")
+    end_date = declaration_dict.get("end_date")
+
+    if not (start_date and end_date):
+        msg = f"Missing start_date or end_date in AT VAT Declaration"
+        frappe.log_error(msg, "AT VAT Export")
+        if debug:
+            print(msg)
+        frappe.throw(msg)
+
+    code_pattern = re.compile(r"\b(0\d{2})\b")  # Match 3-digit codes starting with 0
+    if debug:
+        print(f"Export path: {export_path}")
+        print(f"Declaration data: {declaration_dict}")
+        print(f"Processing fields: {[df.fieldname for df in fields]}")
+
+    for df in fields:
+        if df.fieldtype != "Float":
+            continue
+
+        value = declaration.get(df.fieldname)
+        if not value or value <= 0:
+            continue
+
+        match = code_pattern.search(df.label or "")
+        if not match:
+            continue
+
+        code = match.group(1)
+
+        # Find corresponding AT VAT query
+        vat_query = frappe.get_all("AT VAT query", filters={"code": code}, fields=["query"])
+        if not vat_query:
+            continue
+
+        raw_query = vat_query[0]["query"]
+
+        try:
+            if debug:
+                print(f"\n\n\nProcessing code {code} with query:\n{raw_query}")
+            query = replace_placeholders(raw_query, declaration_dict, code)
+            if debug:
+                print(f"\nFinal query for code {code}:\n{query}")
+        except ValueError as e:
+            msg = f"Placeholder error in query for code {code}: {str(e)}"
+            frappe.log_error(msg, "AT VAT Export")
+            if debug:
+                print(msg)
+            continue
+
+        try:
+            # Wrap the entire query in an outer SELECT to apply the posting_date filter
+            wrapped_query = f"""
+                SELECT *
+                FROM ({query}) AS s
+                WHERE s.posting_date >= '{start_date}'
+                  AND s.posting_date <= '{end_date}'
+            """
+            results = frappe.db.sql(wrapped_query, as_dict=True)
+            if debug:
+                print(f"\n{len(results)} query results for code {code}.")
+        except Exception as e:
+            msg = f"SQL error executing wrapped query for code {code}: {str(e)}"
+            frappe.log_error(msg, "AT VAT Export")
+            if debug:
+                print(msg)
+            continue
+
+        for row in results:
+            doctype = row.get("doctype")
+            name = row.get("name")
+            if doctype and name:
+                key = (doctype, name)
+                # Keep only the first row if a document appears multiple times
+                if key not in document_map:
+                    document_map[key] = row
+
+    if debug:
+        list_to_export = list(document_map.keys())
+        list_length = len(list_to_export)
+        print(f"\n\n{list_length} documents to export.\n")
+
+    # Write summary CSV
+    try:
+        write_summary_csv(document_map.values(), export_path, declaration.name)
+    except Exception as e:
+        msg = f"Failed to write summary CSV: {str(e)}"
+        frappe.log_error(msg, "AT VAT Export")
+        if debug:
+            print(msg)
+    if debug:
+        print(f"\nSummary CSV written.\n")
+
+    export_count = 0
+    for (doctype, name), row in document_map.items():
+        try:
+            doc = frappe.get_doc(doctype, name)
+            write_pdf(doc, export_path)
+            export_count += 1
+            if debug:
+                print(f"{export_count}/{list_length}. Exported {doctype} {name} to PDF.")
+        except Exception as e:
+            msg = f"Failed to export {doctype} {name}: {str(e)}"
+            frappe.log_error(msg, "AT VAT Export")
+            if debug:
+                print(msg)
+
+    if debug:
+        end_ts = datetime.now()
+        duration = (end_ts - start_ts).total_seconds()
+        print(f"\nExported {export_count} PDFs and one summary CSV to {export_path} in {duration:.2f} seconds.\n")
+
+
+@frappe.whitelist()
+def async_package_export(declaration_name):
+    frappe.enqueue(method=package_export, queue='long', timeout=600, declaration_name=declaration_name)

@@ -33,6 +33,7 @@ app_include_js = [
 # include js in doctype views
 doctype_js = {
     "Address" :           "public/js/address.js",
+    "AT VAT Declaration": "public/js/at_vat_declaration.js",
     "Contact" :           "public/js/contact.js",
     "Customer" :          "public/js/customer.js",
     "Delivery Note":      "public/js/delivery_note.js",
