@@ -277,14 +277,16 @@ def update_status(qm_document, status):
 
 @frappe.whitelist()
 def assign_after_review(qm_document, description=None):
-    add({
-        'doctype': "QM Document",
-        'name': qm_document,
-        'assign_to': frappe.get_value("QM Document", qm_document, "created_by"),
-        'description': description or f"Your QM Document '{qm_document}' has been reviewed.",
-        'notify': True
-    })
-    return
+    # send a notification to the creator
+    url_string = f"<a href={get_url_to_form('QM Document', qm_document)}>{qm_document}</a>"
+    make(
+        recipients = frappe.get_value("QM Document", qm_document, "created_by"),
+        sender = 'erp@microsynth.ch',
+        sender_full_name = 'Microsynth ERP',
+        subject = f"Reviewed: {qm_document}",
+        content = description or f"INFO Message<br><br>Your QM Document {url_string} has been reviewed by {frappe.session.user} and will be released by QAU.",
+        send_email = True
+    )
 
 
 def find_first_number_gap(base_name, length):

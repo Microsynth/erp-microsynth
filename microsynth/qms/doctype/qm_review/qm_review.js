@@ -7,7 +7,7 @@ frappe.ui.form.on('QM Review', {
         // reset buttons
         cur_frm.page.clear_primary_action();
         cur_frm.page.clear_secondary_action();
-        
+
         // reset overview html
         cur_frm.set_df_property('overview', 'options', '<p><span class="text-muted">No data for overview available.</span></p>');
 
@@ -35,13 +35,13 @@ frappe.ui.form.on('QM Review', {
 
             // add reject button (the owner can also reject when he/she wants to retract a review)
             cur_frm.page.set_secondary_action(
-                __("Reject"), 
-                function() { 
-                    reject(); 
+                __("Reject"),
+                function() {
+                    reject();
                 }
             );
         }
-        
+
         // allow the creator or QAU to change reviewer (transfer document)
         if ((!frm.doc.__islocal)
             && (frm.doc.docstatus === 0)
@@ -55,7 +55,7 @@ frappe.ui.form.on('QM Review', {
                 }
             );
         }
-        
+
         // remove Menu > Duplicate
         var target ="span[data-label='" + __("Duplicate") + "']";
         $(target).parent().parent().remove();
@@ -67,7 +67,7 @@ function sign() {
     cur_frm.set_value("reviewer", frappe.session.user);
     cur_frm.save().then(function() {
         frappe.prompt([
-                {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}  
+                {'fieldname': 'password', 'fieldtype': 'Password', 'label': __('Approval Password'), 'reqd': 1}
             ],
             function(values){
                 // check password and if correct, submit
@@ -91,7 +91,7 @@ function sign() {
                                 });
                             }
                             // positive response: signature correct, open document
-                            window.open("/" 
+                            window.open("/"
                                 + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
                                 /* + "?dt=" + (new Date()).getTime()*/, "_self");
                         }
@@ -120,13 +120,13 @@ function reject() {
                             'method': 'microsynth.qms.doctype.qm_document.qm_document.assign_after_review',
                             'args': {
                                 'qm_document': cur_frm.doc.document_name,
-                                'description': "Your document " + cur_frm.doc.document_name + " has been rejected."
+                                'description': "Your document " + cur_frm.doc.document_name + " has been rejected by " + frappe.session.user + "."
                             },
                             "async": false
                         });
                     }
                     // positive response: signature correct, open document
-                    window.open("/" 
+                    window.open("/"
                         + frappe.utils.get_form_link(cur_frm.doc.document_type, cur_frm.doc.document_name)
                         /* + "?dt=" + (new Date()).getTime()*/, "_self");
                 }
@@ -142,7 +142,7 @@ function reject() {
 function change_reviewer(frm) {
     frappe.prompt(
         [
-            {'fieldname': 'new_reviewer', 
+            {'fieldname': 'new_reviewer',
              'fieldtype': 'Link',
              'label': __('New Reviewer'),
              'reqd': 1,
