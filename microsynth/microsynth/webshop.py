@@ -3534,6 +3534,8 @@ def get_credit_account_balance(account_id):
 def get_product_types(account_id):
     """
     Get the product types linked to the given Credit Account.
+
+    bench execute microsynth.microsynth.webshop.get_product_types --kwargs "{'account_id': 'CA-000002'}"
     """
     product_types = frappe.get_all(
         "Product Type Link",
@@ -3551,7 +3553,7 @@ def get_credit_account_dto(credit_account):
     """
     Takes a Credit Account DocType or dict and returns a DTO suitable for the webshop.
 
-    bench execute microsynth.microsynth.webshop.get_credit_account_dto --kwargs "{'credit_account': 'CA-000001'}"
+    bench execute microsynth.microsynth.webshop.get_credit_account_dto --kwargs "{'credit_account': 'CA-000002'}"
     """
     if isinstance(credit_account, str):
         credit_account = frappe.get_doc("Credit Account", credit_account)
@@ -3583,7 +3585,8 @@ def get_credit_accounts(webshop_account, workgroup_members):
             workgroup_members = json.loads(workgroup_members)
         if webshop_account not in workgroup_members:
             workgroup_members.append(webshop_account)
-        credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', get_sql_list(workgroup_members)]], fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'currency', 'expiry_date'])
+        workgroup_members = [str(member) for member in workgroup_members]
+        credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', workgroup_members]], fields=['name', 'account_name', 'description', 'status', 'company', 'currency', 'expiry_date'])
         if len(credit_accounts) == 0:
             return {
                 "success": False,
@@ -3592,12 +3595,12 @@ def get_credit_accounts(webshop_account, workgroup_members):
             }
         credit_accounts_to_return = []
         for ca in credit_accounts:
-            credit_accounts_to_return.append(get_account_settings_dto(ca))
+            credit_accounts_to_return.append(get_credit_account_dto(ca.get('name')))
 
         return {
             "success": True,
             "message": "OK",
-            "credit_accounts": credit_accounts
+            "credit_accounts": credit_accounts_to_return
         }
     except Exception as err:
         msg = f"Error getting Credit Accounts for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
@@ -3614,7 +3617,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
     """
     Create a new Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
 
-    bench execute microsynth.microsynth.webshop.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'Test', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': '["Oligos", "Sequencing"]'}"
+    bench execute microsynth.microsynth.webshop.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'Test', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': ['Oligos', 'Sequencing']}"
     """
     try:
         if isinstance(product_types, str):
@@ -3623,6 +3626,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
         credit_account = frappe.get_doc({
             'doctype': 'Credit Account',
             'contact': webshop_account,
+            'customer': get_customer(webshop_account),
             'account_name': name,
             'description': description,
             'company': company,
@@ -3664,7 +3668,7 @@ def update_credit_account(credit_account):
         "product_types": ["Oligos", "Sequencing"] # not implemented yet
     }
 
-    bench execute microsynth.microsynth.webshop.update_credit_account --kwargs "{'credit_account': {'account_id': 'CA-000001', 'name': 'Changed Name', 'description': 'Changed Description'}}"
+    bench execute microsynth.microsynth.webshop.update_credit_account --kwargs "{'credit_account': {'account_id': 'CA-000003', 'name': 'Changed Name', 'description': 'Changed Description', 'product_types': ['Oligos', 'Sequencing', 'NGS']}}"
     """
     try:
         credit_account_doc = frappe.get_doc('Credit Account', credit_account.get('account_id'))
