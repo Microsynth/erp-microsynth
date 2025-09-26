@@ -3519,7 +3519,7 @@ def get_price_list_doc(contact):
         }
 
 
-# Credit Accounting
+# Credit Account API
 
 
 def get_credit_account_balance(account_id):
@@ -3573,39 +3573,48 @@ def get_credit_account_dto(credit_account):
 @frappe.whitelist()
 def get_credit_accounts(webshop_account, workgroup_members):
     """
-    stub
+    Takes a webshop_account (Contact ID) and a list of workgroup_members (Contact IDs) and returns all Credit Accounts linked to any of these Contacts.
 
     bench execute microsynth.microsynth.webshop.get_credit_accounts --kwargs "{'webshop_account': '215856', 'workgroup_members': '["215856", "243755"]'}"
     """
-    # Check if webshop_account is part of workgroup_members
-    if isinstance(workgroup_members, str):
-        workgroup_members = json.loads(workgroup_members)
-    if webshop_account not in workgroup_members:
-        workgroup_members.append(webshop_account)
-    credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', get_sql_list(workgroup_members)]], fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'currency', 'expiry_date'])
-    if len(credit_accounts) == 0:
+    try:
+        # Check if webshop_account is part of workgroup_members
+        if isinstance(workgroup_members, str):
+            workgroup_members = json.loads(workgroup_members)
+        if webshop_account not in workgroup_members:
+            workgroup_members.append(webshop_account)
+        credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', get_sql_list(workgroup_members)]], fields=['name AS account_id', 'account_name AS name', 'description', 'status', 'company', 'currency', 'expiry_date'])
+        if len(credit_accounts) == 0:
+            return {
+                "success": False,
+                "message": f"No Credit Account found for Contact '{webshop_account}'",
+                "credit_accounts": []
+            }
+        credit_accounts_to_return = []
+        for ca in credit_accounts:
+            credit_accounts_to_return.append(get_account_settings_dto(ca))
+
+        return {
+            "success": True,
+            "message": "OK",
+            "credit_accounts": credit_accounts
+        }
+    except Exception as err:
+        msg = f"Error getting Credit Accounts for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_accounts")
         return {
             "success": False,
-            "message": f"No Credit Account found for Contact '{webshop_account}'",
+            "message": msg,
             "credit_accounts": []
         }
-    credit_accounts_to_return = []
-    for ca in credit_accounts:
-        credit_accounts_to_return.append(get_account_settings_dto(ca))
-
-    return {
-        "success": True,
-        "message": "OK",
-        "credit_accounts": credit_accounts
-    }
 
 
 @frappe.whitelist()
 def create_credit_account(webshop_account, name, description, company, product_types):
     """
-    stub
+    Create a new Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
 
-    bench execute microsynth.microsynth.webshop.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'My New Credit Account', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': '["Oligos", "Sequencing"]'}"
+    bench execute microsynth.microsynth.webshop.create_credit_account --kwargs "{'webshop_account': '215856', 'name': 'Test', 'description': 'some description', 'company': 'Microsynth AG', 'product_types': '["Oligos", "Sequencing"]'}"
     """
     try:
         if isinstance(product_types, str):
@@ -3632,7 +3641,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
         }
     except Exception as err:
         msg = f"Error creating Credit Account for webshop_account '{webshop_account}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_credit_account")
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_credit_account")
         return {
             "success": False,
             "message": msg,
@@ -3643,7 +3652,8 @@ def create_credit_account(webshop_account, name, description, company, product_t
 @frappe.whitelist()
 def update_credit_account(credit_account):
     """
-    stub
+    Update the Credit Account with the given account_id (Credit Account name) with the given fields.
+    Only the fields name, description, status, webshop_account (Contact ID) and product_types can be changed.
 
     "credit_account": {
         "account_id": "Account-000003",
@@ -3667,6 +3677,11 @@ def update_credit_account(credit_account):
                 frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' because it is Disabled.")
             if credit_account.get('status') not in ['Active', 'Frozen', 'Disabled']:
                 frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to '{credit_account.get('status')}'. Allowed values are 'Active', 'Frozen' and 'Disabled'.")
+            if credit_account.get('status') == 'Disabled':
+                # Only allow to disable a Credit Account if its balance is zero
+                balance = get_credit_account_balance(credit_account.get('account_id'))
+                if balance != 0.0:
+                    frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to 'Disabled' because its balance is not zero (balance: {balance}).")
             credit_account_doc.status = credit_account.get('status')
         if 'webshop_account' in credit_account and credit_account.get('webshop_account') != credit_account_doc.contact:
             # Change the owner of the credit account
@@ -3697,6 +3712,10 @@ def update_credit_account(credit_account):
                     })
         if 'company' in credit_account and credit_account.get('company') != credit_account_doc.company:
             frappe.throw(f"Not allowed to change company of Credit Account '{credit_account.get('account_id')}'.")
+        if 'customer' in credit_account and credit_account.get('customer') != get_customer(credit_account_doc.contact):
+            frappe.throw(f"Not allowed to change customer of Credit Account '{credit_account.get('account_id')}'.")
+        if 'currency' in credit_account and credit_account.get('currency') != credit_account_doc.currency:
+            frappe.throw(f"Not allowed to change currency of Credit Account '{credit_account.get('account_id')}'.")
         credit_account_doc.save()
         return {
             "success": True,
@@ -3705,7 +3724,7 @@ def update_credit_account(credit_account):
         }
     except Exception as err:
         msg = f"Error updating Credit Account '{credit_account.get('account_id')}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_credit_account")
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.update_credit_account")
         return {
             "success": False,
             "message": msg,
@@ -3716,7 +3735,7 @@ def update_credit_account(credit_account):
 @frappe.whitelist()
 def get_transactions(account_id):
     """
-    stub
+    stub (not yet sorted, no running balance)
 
     bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000002'}"
     """
@@ -3768,7 +3787,7 @@ def get_transactions(account_id):
 @frappe.whitelist()
 def get_balance_sheet_pdf(account_id):
     """
-    stub
+    stub (actual PDF generation not yet implemented)
 
     bench execute microsynth.microsynth.webshop.get_balance_sheet_pdf --kwargs "{'account_id': 'CA-000002'}"
     """
