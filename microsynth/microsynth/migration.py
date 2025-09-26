@@ -4466,7 +4466,7 @@ def find_unused_enabled_items():
 
     bench execute microsynth.microsynth.migration.find_unused_enabled_items
     """
-    enabled_items = frappe.db.get_all("Item", filters={'disabled': 0}, fields=['name', 'item_name', 'item_group', 'creation'])
+    enabled_items = frappe.db.get_all("Item", filters=[['disabled', '=', 0], ['item_group', '!=', 'Purchasing']], fields=['name', 'item_name', 'item_group', 'creation'])
     counter = 0
     price_counter = 0
     print("There are Item Prices for the following enabled Items that do not occur on any valid SQ, QTN, SO, DN, SI, Oligo or Sample in the ERP:")
