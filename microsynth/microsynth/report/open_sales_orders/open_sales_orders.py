@@ -57,8 +57,9 @@ def get_data(filters=None):
             inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -14 DAY)"
 
     data = frappe.db.sql(f"""
-        SELECT * FROM
-            (SELECT `tabSales Order`.`name`,
+        SELECT * FROM (
+            SELECT
+                `tabSales Order`.`name`,
                 `tabSales Order`.`transaction_date` AS `date`,
                 ROUND(`tabSales Order`.`total`, 2) AS `total`,
                 `tabSales Order`.`currency`,
@@ -80,11 +81,11 @@ def get_data(filters=None):
                 `tabSales Order`.`product_type`,
                 `tabSales Order`.`status`,
                 (
-                    SELECT COUNT(*) as `count`
+                    SELECT COUNT(*)
                     FROM `tabComment`
                     WHERE `comment_type` = 'Comment'
-                        AND `reference_doctype` = 'Sales Order'
-                        AND `reference_name` = `tabSales Order`.`name`
+                      AND `reference_doctype` = 'Sales Order'
+                      AND `reference_name` = `tabSales Order`.`name`
                 ) AS `comments`,
                 `tabSales Order`.`company`,
                 `tabSales Order`.`hold_order`,
@@ -93,62 +94,84 @@ def get_data(filters=None):
                 `tabSales Order`.`owner`,
                 '-' AS `pending_samples`,
                 '-' AS `open_oligos`,
-                (SELECT COUNT(`tabSales Invoice Item`.`name`)
-                    FROM `tabSales Invoice Item`
-                    WHERE `tabSales Invoice Item`.`docstatus` = 1
-                        AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
-                ) AS `has_sales_invoice`,
+                IFNULL(`sii`.`has_sales_invoice`, 0) AS `has_sales_invoice`,
                 GROUP_CONCAT(`tabSales Order Item`.`item_code`) AS `items`
             FROM `tabSales Order`
             LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Order`.`customer`
             LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+            LEFT JOIN (
+                SELECT
+                    `sales_order`,
+                    COUNT(*) AS `has_sales_invoice`
+                FROM `tabSales Invoice Item`
+                WHERE `docstatus` = 1
+                GROUP BY `sales_order`
+            ) AS `sii` ON `sii`.`sales_order` = `tabSales Order`.`name`
             WHERE `tabSales Order`.`per_delivered` < 0.01
-                AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
-                AND NOT (`tabCustomer`.`invoicing_method` = 'Stripe Prepayment' AND `tabSales Order`.`hold_order` = 1)
-                {inner_conditions}
+              AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+              AND NOT (
+                `tabCustomer`.`invoicing_method` = 'Stripe Prepayment'
+                AND `tabSales Order`.`hold_order` = 1
+              )
+              {inner_conditions}
             GROUP BY `tabSales Order`.`name`
-            ) AS `raw`
+        ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
-            {outer_conditions}
-        ORDER BY `raw`.`date`;
+        {outer_conditions}
+        ORDER BY `raw`.`date`
     """, as_dict=True)
 
+    # Batch delivery notes (by web_order_id)
+    web_order_ids = [so["web_order_id"] for so in data if so["web_order_id"]]
+    dn_map = {}
+    if web_order_ids:
+        placeholders = ','.join(['%s'] * len(web_order_ids))
+        delivery_notes = frappe.db.sql(f"""
+            SELECT `tabDelivery Note`.`web_order_id`, COUNT(DISTINCT `tabDelivery Note Item`.`parent`) AS `count`
+            FROM `tabDelivery Note`
+            JOIN `tabDelivery Note Item` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+            WHERE `tabDelivery Note`.`web_order_id` IN ({placeholders})
+            GROUP BY `tabDelivery Note`.`web_order_id`
+        """, tuple(web_order_ids), as_dict=True)
+        dn_map = {row["web_order_id"]: row["count"] for row in delivery_notes}
+
+    # Batch fetch: pending samples and open oligos
+    so_names = [so["name"] for so in data]
+    sample_map = {}
+    oligo_map = {}
+
+    if so_names:
+        placeholders = ','.join(['%s'] * len(so_names))
+
+        pending_samples = frappe.db.sql(f"""
+            SELECT `tabSample Link`.`parent` AS `so_name`, COUNT(`tabSample`.`name`) AS `count`
+            FROM `tabSample Link`
+            JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+            JOIN `tabSequencing Label` ON `tabSample`.`sequencing_label` = `tabSequencing Label`.`name`
+            WHERE `tabSample Link`.`parent` IN ({placeholders})
+              AND `tabSample Link`.`parenttype` = 'Sales Order'
+              AND `tabSequencing Label`.`status` NOT IN ('received', 'processed')
+            GROUP BY `tabSample Link`.`parent`
+        """, tuple(so_names), as_dict=True)
+        sample_map = {row["so_name"]: row["count"] for row in pending_samples}
+
+        open_oligos = frappe.db.sql(f"""
+            SELECT `tabOligo Link`.`parent` AS `so_name`, COUNT(`tabOligo`.`name`) AS `count`
+            FROM `tabOligo Link`
+            JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
+            WHERE `tabOligo Link`.`parent` IN ({placeholders})
+              AND `tabOligo Link`.`parenttype` = 'Sales Order'
+              AND `tabOligo`.`status` = 'Open'
+            GROUP BY `tabOligo Link`.`parent`
+        """, tuple(so_names), as_dict=True)
+        oligo_map = {row["so_name"]: row["count"] for row in open_oligos}
+
     for so in data:
-        if so['web_order_id']:
-            delivery_notes = frappe.db.sql(f"""
-                SELECT DISTINCT `tabDelivery Note Item`.`parent` AS `unlinked_dn_name`
-                FROM `tabDelivery Note Item`
-                LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-                WHERE `tabDelivery Note`.`web_order_id` = {so['web_order_id']};
-                """, as_dict=True)
-            so['dns'] = len(delivery_notes)
-        else:
-            so['dns'] = 0
-        if 'product_type' in so and so['product_type'] == 'Sequencing':
-            pending_samples = frappe.db.sql(f"""
-                SELECT
-                    `tabSample`.`name`
-                FROM `tabSample Link`
-                LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
-                LEFT JOIN `tabSequencing Label` on `tabSample`.`sequencing_label`= `tabSequencing Label`.`name`
-                WHERE
-                    `tabSample Link`.`parent` = "{so['name']}"
-                    AND `tabSample Link`.`parenttype` = "Sales Order"
-                    AND `tabSequencing Label`.`status` NOT IN ("received", "processed");
-                """, as_dict=True)
-            so['pending_samples'] = len(pending_samples)
-        if 'product_type' in so and so['product_type'] == 'Oligos':
-            open_oligos = frappe.db.sql(f"""
-                SELECT
-                    `tabOligo`.`name`
-                FROM `tabOligo Link`
-                LEFT JOIN `tabOligo` ON `tabOligo Link`.`oligo` = `tabOligo`.`name`
-                WHERE
-                    `tabOligo Link`.`parent` = "{so['name']}"
-                    AND `tabOligo Link`.`parenttype` = "Sales Order"
-                    AND `tabOligo`.`status` = "Open";
-                """, as_dict=True)
-            so['open_oligos'] = len(open_oligos)
+        so['dns'] = dn_map.get(so['web_order_id'], 0) if so['web_order_id'] else 0
+        if so['product_type'] == 'Sequencing':
+            so['pending_samples'] = sample_map.get(so['name'], 0)
+        if so['product_type'] == 'Oligos':
+            so['open_oligos'] = oligo_map.get(so['name'], 0)
 
     return data
 
