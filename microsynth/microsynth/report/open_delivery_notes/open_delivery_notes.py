@@ -9,15 +9,16 @@ from frappe import _
 def get_columns():
     return [
         {"label": _("Delivery Note"), "fieldname": "name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
-        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+        {"label": _("Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 75},
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 55},
         {"label": _("Customer ID"), "fieldname": "customer_id", "fieldtype": "Link", "options": "Customer", "width": 90},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 215},
-        {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
+        {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 90},
         {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 185},
         {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
-        {"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 90},
+        {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Int", "width": 80},
+        {"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 55},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 105},
         {"label": _("First Sales Invoice"), "fieldname": "first_sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("First Credit Note"), "fieldname": "first_credit_note", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
@@ -57,6 +58,13 @@ def get_data(filters):
             `tabDelivery Note`.`po_no`,
             `tabDelivery Note`.`is_punchout`,
             `tabDelivery Note`.`web_order_id`,
+            (
+                SELECT COUNT(*) as `count`
+                FROM `tabComment`
+                WHERE `comment_type` = 'Comment'
+                    AND `reference_doctype` = 'Delivery Note'
+                    AND `reference_name` = `tabDelivery Note`.`name`
+            ) AS `comments`,
             `tabDelivery Note`.`product_type`,
             (
                 SELECT MAX(`tabSales Order`.`hold_invoice`)
