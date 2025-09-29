@@ -3,12 +3,21 @@
 # For license information, please see license.txt
 
 import os
-import frappe
+import traceback
 import pandas as pd
 import numpy as np
 import json
-from frappe.utils import cint, flt, get_url_to_form
 from datetime import datetime, timedelta
+import sys
+import csv
+csv.field_size_limit(sys.maxsize)
+
+import frappe
+from frappe.utils import cint, flt, get_url_to_form
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+from erpnextswiss.scripts.crm_tools import get_primary_customer_address
+from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
+
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (find_label,
                                          get_sql_list,
@@ -21,15 +30,11 @@ from microsynth.microsynth.utils import (find_label,
                                          get_alternative_income_account,
                                          add_webshop_service,
                                          get_customer,
-                                         force_cancel
+                                         force_cancel,
+                                         set_debtor_accounts
 )
 from microsynth.microsynth.invoicing import get_income_accounts
-from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
-from erpnextswiss.scripts.crm_tools import get_primary_customer_address
-from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
-import sys
-import csv
-csv.field_size_limit(sys.maxsize)
+
 
 PRICE_LIST_NAMES = {
     'CHF': "Sales Prices CHF",
@@ -2093,8 +2098,6 @@ def set_debtors():
     run
     bench execute microsynth.microsynth.migration.set_debtors
     """
-    from microsynth.microsynth.utils import set_debtor_accounts
-
     customers = frappe.db.get_all("Customer",
         filters = {'disabled': 0 },
         fields = ['name'])
@@ -5920,7 +5923,7 @@ def disable_contacts(contact_ids):
 
 def disable_contact(contact_id):
     """
-    bench execute microsynth.microsynth.utils.disable_contact --kwargs "{'contact_id': '247270'}"
+    bench execute microsynth.microsynth.migration.disable_contact --kwargs "{'contact_id': '247270'}"
     """
     try:
         contact = frappe.get_doc("Contact", contact_id)
@@ -6017,3 +6020,77 @@ def disable_contact(contact_id):
     contact.save()
     print(f"✅ Contact '{contact_id}' has been successfully disabled.")
     return True
+
+
+def migrate_debtors(customer_id, company, currency, verbose=True):
+    """
+    bench execute microsynth.microsynth.migration.migrate_debtors --kwargs "{'customer_id': '801234', 'company': 'Microsynth Seqlab GmbH', 'currency': 'SEK'}"
+    """
+    try:
+        customer_doc = frappe.get_doc("Customer", customer_id)
+
+        if customer_doc.disabled:
+            print(f"Customer {customer_id} is disabled. Going to return.")
+            return
+
+        # Check if default_company matches the given company parameter
+        if customer_doc.default_company != company:
+            print(f"Customer {customer_id} has default_company '{customer_doc.default_company}', does not match given Company '{company}'. Going to return.")
+            return
+
+        # rename Customer (e.g. 801234 → x801234)
+        renamed_customer_id = f"x{customer_id}"
+        if verbose:
+            print(f"Renaming Customer {customer_id} to {renamed_customer_id} ...")
+        old_customer_name = customer_doc.customer_name
+        frappe.rename_doc(doctype="Customer", old=customer_id, new=renamed_customer_id, merge=False)
+        renamed_customer_doc = frappe.get_doc("Customer", renamed_customer_id)
+        renamed_customer_doc.customer_name = old_customer_name
+        renamed_customer_doc.save()
+
+        # duplicate existing customer x801234 to create a new Customer 801234
+        if verbose:
+            print(f"Duplicating Customer {renamed_customer_doc.name} to create a new Customer {customer_id} ...")
+        new_customer = frappe.copy_doc(renamed_customer_doc)
+        new_customer.name = customer_id
+        new_customer.customer_name = customer_id
+        # ensure that billing currency is set to the given new billing currency
+        new_customer.default_currency = currency
+        # delete all account settings
+        new_customer.accounts = []
+        # save the customer
+        new_customer.insert()
+        new_customer.customer_name = old_customer_name
+        new_customer.save()
+        #frappe.db.commit()  # necessary?
+
+        # relink Contacts and Addresses to new customer 801234
+        if verbose:
+            print(f"Relinking Contacts and Addresses from Customer {renamed_customer_doc.name} to the new Customer {new_customer.name} ...")
+        dynamic_links = frappe.get_all("Dynamic Link",
+            filters={
+                "link_doctype": "Customer",
+                "link_name": renamed_customer_id
+            },
+            fields=["name", "parenttype", "parent"]
+        )
+        for link in dynamic_links:
+            dl = frappe.get_doc("Dynamic Link", link.name)
+            dl.link_name = new_customer.name
+            dl.link_title = new_customer.customer_name
+            dl.save()
+        #frappe.db.commit()  # necessary?
+        if verbose:
+            print(f"Setting Debtor Accounts ...")
+        set_debtor_accounts(new_customer.name)
+        if verbose:
+            print(f"Successfully migrated customer {customer_id}")
+
+    except Exception as err:
+        print(f"Error migrating customer {customer_id}: {err}")
+        traceback.print_exc()
+
+
+def migrate_multiple_debtors(customers, company, currency):
+    for customer in customers:
+        migrate_debtors(customer, company, currency)
