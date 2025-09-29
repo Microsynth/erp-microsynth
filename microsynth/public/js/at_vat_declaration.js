@@ -6,7 +6,7 @@ frappe.ui.form.on('AT VAT Declaration', {
                 frappe.show_alert({ 'message': __('Starting background package export ...'), 'indicator': 'blue' });
 
                 frappe.call({
-                    'method': 'microsynth.microsynth.taxes.async_package_export',
+                    'method': 'microsynth.microsynth.taxes.async_at_vat_package_export',
                     'args': {
                         'declaration_name': frm.doc.name
                     },

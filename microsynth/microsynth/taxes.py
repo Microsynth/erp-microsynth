@@ -277,12 +277,12 @@ def replace_placeholders(template: str, values: dict, code: str) -> str:
 
 
 @frappe.whitelist()
-def package_export(declaration_name, debug=False):
+def at_vat_package_export(declaration_name, debug=False):
     """
-    Export documents related to the AT VAT Declaration as XML and PDF files.
+    Export documents related to the AT VAT Declaration as PDF files and one summary CSV.
     The export path is configured in Microsynth Settings.
 
-    bench execute microsynth.microsynth.taxes.package_export --kwargs "{'declaration_name': '2025-08', 'debug': True}"
+    bench execute microsynth.microsynth.taxes.at_vat_package_export --kwargs "{'declaration_name': '2025-08', 'debug': True}"
     """
     if debug:
         start_ts = datetime.now()
@@ -392,6 +392,7 @@ def package_export(declaration_name, debug=False):
     if debug:
         print(f"\nSummary CSV written.\n")
 
+    # Write PDFs
     export_count = 0
     for (doctype, name), row in document_map.items():
         try:
@@ -413,5 +414,5 @@ def package_export(declaration_name, debug=False):
 
 
 @frappe.whitelist()
-def async_package_export(declaration_name):
-    frappe.enqueue(method=package_export, queue='long', timeout=600, declaration_name=declaration_name)
+def async_at_vat_package_export(declaration_name):
+    frappe.enqueue(method=at_vat_package_export, queue='long', timeout=600, declaration_name=declaration_name)
