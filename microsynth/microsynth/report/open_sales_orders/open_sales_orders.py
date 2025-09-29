@@ -14,13 +14,13 @@ def get_columns():
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 115},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
-        {"label": _("First unlinked DN"), "fieldname": "unlinked_dn_name", "fieldtype": "Link", "options": "Delivery Note", "width": 125},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "HTML", "width": 90},
         {"label": _("DNs"), "fieldname": "dns", "fieldtype": "Integer", "width": 45},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Pending Samples"), "fieldname": "pending_samples", "fieldtype": "Data", "width": 45},
         {"label": _("Open Oligos"), "fieldname": "open_oligos", "fieldtype": "Data", "width": 45},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 90},
+        {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Int", "width": 80},
         {"label": _("Company"), "fieldname": "company", "fieldtype": "Data", "width": 155},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 75},
         {"label": _("Hold Order"), "fieldname": "hold_order", "fieldtype": "Check", "width": 80},
@@ -66,8 +66,26 @@ def get_data(filters=None):
                 `tabSales Order`.`customer_name`,
                 `tabCustomer`.`invoicing_method` AS `inv_method_customer`,
                 `tabSales Order`.`web_order_id`,
+                CASE
+                    WHEN `tabSales Order`.`web_order_id` IS NOT NULL AND `tabSales Order`.`web_order_id` != ''
+                    THEN CONCAT(
+                        '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                        `tabSales Order`.`web_order_id`,
+                        '" target="_blank">',
+                        `tabSales Order`.`web_order_id`,
+                        '</a>'
+                    )
+                    ELSE ''
+                END AS `web_order_id_html`,
                 `tabSales Order`.`product_type`,
                 `tabSales Order`.`status`,
+                (
+                    SELECT COUNT(*) as `count`
+                    FROM `tabComment`
+                    WHERE `comment_type` = 'Comment'
+                        AND `reference_doctype` = 'Sales Order'
+                        AND `reference_name` = `tabSales Order`.`name`
+                ) AS `comments`,
                 `tabSales Order`.`company`,
                 `tabSales Order`.`hold_order`,
                 `tabSales Order`.`hold_invoice`,
@@ -103,14 +121,8 @@ def get_data(filters=None):
                 LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
                 WHERE `tabDelivery Note`.`web_order_id` = {so['web_order_id']};
                 """, as_dict=True)
-
-            if len(delivery_notes) > 0:
-                so['unlinked_dn_name'] = delivery_notes[0]['unlinked_dn_name']
-            else:
-                so['unlinked_dn_name'] = ''
             so['dns'] = len(delivery_notes)
         else:
-            so['unlinked_dn_name'] = ''
             so['dns'] = 0
         if 'product_type' in so and so['product_type'] == 'Sequencing':
             pending_samples = frappe.db.sql(f"""
