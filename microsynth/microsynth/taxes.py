@@ -283,6 +283,8 @@ def at_vat_package_export(declaration_name, debug=False):
 
     bench execute microsynth.microsynth.taxes.at_vat_package_export --kwargs "{'declaration_name': '2025-08', 'debug': True}"
     """
+    from erpnextaustria.erpnextaustria.doctype.at_vat_declaration.at_vat_declaration import create_uva_pdf
+
     if debug:
         start_ts = datetime.now()
         print(f"{start_ts.strftime('%Y-%m-%d %H:%M:%S')} Starting package export for AT VAT Declaration {declaration_name}")
@@ -319,7 +321,23 @@ def at_vat_package_export(declaration_name, debug=False):
             print(msg)
         frappe.throw(msg)
 
-    # TODO: add PDF
+    # Generate and save PDF file
+    try:
+        generated_pdf_path = create_uva_pdf(declaration.name)
+        pdf_filename = f"AT_VAT_Declaration_{declaration.name}.pdf"
+        pdf_filepath = os.path.join(export_path, pdf_filename)
+        with open(generated_pdf_path, mode='rb') as src_file:
+            pdf_data = src_file.read()
+        with open(pdf_filepath, mode='wb') as dest_file:
+            dest_file.write(pdf_data)
+        if debug:
+            print(f"PDF file written: {pdf_filepath}")
+    except Exception as e:
+        msg = f"Failed to generate or write PDF: {str(e)}"
+        frappe.log_error(msg, "AT VAT Export")
+        if debug:
+            print(msg)
+        frappe.throw(msg)
 
     summary_document_map = {}
     fields = declaration.meta.fields
