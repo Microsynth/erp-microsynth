@@ -3038,10 +3038,6 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     si_rna_items = frappe.db.sql(item_query, as_dict=True)
 
     for si_rna_item in si_rna_items:
-        if si_rna_item['company'] != 'Microsynth AG':
-            msg = f"Company = {si_rna_item['company']} on {si_rna_item['name']}"
-            print(msg)
-            frappe.log_error(msg, "utils.report_therapeutic_oligo_sales")
         sirnas.append(si_rna_item)
         si_rna_item['items'] = set([si_rna_item['items']])
         si_rna_item['delivery_notes'] = set([si_rna_item['delivery_note']])
@@ -3073,10 +3069,6 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     print(f"{datetime.now()}: Going to distinguish between siRNA, ASO and neither for {len(potential_sales_invoices)} Sales Invoices.")
 
     for si in potential_sales_invoices:
-        if si['company'] != 'Microsynth AG':
-            msg = f"Company = {si['company']} on {si['name']}"
-            print(msg)
-            frappe.log_error(msg, "utils.report_therapeutic_oligo_sales")
         si_doc = frappe.get_doc("Sales Invoice", si['name'])
         items = set()
         delivery_notes = set()
