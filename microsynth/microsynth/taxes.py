@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 
 def find_tax_template(company, customer, shipping_address, category):
@@ -233,7 +234,7 @@ def write_pdf(doc, path):
         pdf_content = frappe.get_print(
             doc.doctype,
             doc.name,
-            print_format=doc.doctype,
+            print_format=doc.doctype,  # assuming that the print format has the same name as the doctype
             as_pdf=True)
         filename = f"{doc.name}.pdf"
         filepath = os.path.join(path, filename)
@@ -245,13 +246,11 @@ def write_pdf(doc, path):
         frappe.log_error(msg, "AT VAT Export")
 
 
-def write_summary_csv(rows, export_path, declaration_name):
+def write_summary_csv(rows, export_path, filename):
     import csv
     if not rows:
         return  # Nothing to write
     keys = sorted({key for row in rows for key in row.keys()})
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    filename = f"{timestamp}_AT_VAT_Declaration_{declaration_name}.csv"
     filepath = os.path.join(export_path, filename)
 
     with open(filepath, mode="w", encoding="utf-8", newline="") as csvfile:
@@ -292,10 +291,37 @@ def at_vat_package_export(declaration_name, debug=False):
         frappe.throw(f"AT VAT Declaration {declaration_name} not found.")
 
     base_path = frappe.get_value("Microsynth Settings", "Microsynth Settings", "at_vat_export_path") or "/tmp/at_vat_exports"
-    export_path = os.path.join(base_path, declaration.name)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    folder_name = f"{timestamp}_AT_VAT_Declaration_{declaration.name}"
+    export_path = os.path.join(base_path, folder_name)
     os.makedirs(export_path, exist_ok=True)
 
-    document_map = {}
+    # Generate and save XML file
+    try:
+        # Ensure start_date and end_date are strings for downstream compatibility
+        if hasattr(declaration, "start_date") and declaration.start_date and not isinstance(declaration.start_date, str):
+            declaration.start_date = declaration.start_date.strftime("%Y-%m-%d")
+        if hasattr(declaration, "end_date") and declaration.end_date and not isinstance(declaration.end_date, str):
+            declaration.end_date = declaration.end_date.strftime("%Y-%m-%d")
+        xml_result = declaration.generate_transfer_file()
+        xml_content = xml_result.get('content') if xml_result else None
+        if xml_content:
+            xml_filename = f"AT_VAT_Declaration_{declaration.name}.xml"
+            xml_filepath = os.path.join(export_path, xml_filename)
+            with open(xml_filepath, mode="w", encoding="utf-8") as xmlfile:
+                xmlfile.write(xml_content)
+            if debug:
+                print(f"XML file written: {xml_filepath}")
+    except Exception as e:
+        msg = f"Failed to generate or write XML: {str(e)}"
+        frappe.log_error(msg, "AT VAT Export")
+        if debug:
+            print(msg)
+        frappe.throw(msg)
+
+    # TODO: add PDF
+
+    summary_document_map = {}
     fields = declaration.meta.fields
     declaration_dict = declaration.as_dict()
 
@@ -309,20 +335,21 @@ def at_vat_package_export(declaration_name, debug=False):
             print(msg)
         frappe.throw(msg)
 
-    code_pattern = re.compile(r"\b(0\d{2})\b")  # Match 3-digit codes starting with 0
+    code_pattern = re.compile(r"\b(\d{3})\b")  # Match 3-digit codes
     if debug:
         print(f"Export path: {export_path}")
-        print(f"Declaration data: {declaration_dict}")
-        print(f"Processing fields: {[df.fieldname for df in fields]}")
+        print(f"\nDeclaration data: {declaration_dict}")
+        print(f"\nProcessing fields: {[(df.label, df.fieldname) for df in fields if df.label and df.fieldtype == 'Float']}")
 
     for df in fields:
         if df.fieldtype != "Float":
             continue
 
         value = declaration.get(df.fieldname)
-        if not value or value <= 0:
+        if not flt(value):
             continue
 
+        # Label of fields contains the 3-digit code matching AT VAT queries
         match = code_pattern.search(df.label or "")
         if not match:
             continue
@@ -338,10 +365,10 @@ def at_vat_package_export(declaration_name, debug=False):
 
         try:
             if debug:
-                print(f"\n\n\nProcessing code {code} with query:\n{raw_query}")
+                print(f"\n\n\nProcessing code {code} with raw query:\n{raw_query}")
             query = replace_placeholders(raw_query, declaration_dict, code)
             if debug:
-                print(f"\nFinal query for code {code}:\n{query}")
+                print(f"\n\nFinal query for code {code}:\n{query}")
         except ValueError as e:
             msg = f"Placeholder error in query for code {code}: {str(e)}"
             frappe.log_error(msg, "AT VAT Export")
@@ -367,23 +394,47 @@ def at_vat_package_export(declaration_name, debug=False):
                 print(msg)
             continue
 
+        query_document_map = {}
+
         for row in results:
             doctype = row.get("doctype")
             name = row.get("name")
             if doctype and name:
                 key = (doctype, name)
-                # Keep only the first row if a document appears multiple times
-                if key not in document_map:
-                    document_map[key] = row
+                # Add a column with the file name of the exported PDF
+                row['filename'] = f"{name}.pdf"
+                if key not in query_document_map:
+                    query_document_map[key] = row
+                if key not in summary_document_map:
+                    # Add a column with the query code to each row
+                    row['codes'] = [code]
+                    summary_document_map[key] = row
+                else:
+                    # Document already exists from a previous query, just append the code
+                    summary_document_map[key]['codes'].append(code)
+
+        if query_document_map:
+            # Write one CSV per query/code/field
+            try:
+                filename = f"AT_VAT_Declaration_{declaration.name}_Code_{code}.csv"
+                write_summary_csv(query_document_map.values(), export_path, filename)
+            except Exception as e:
+                msg = f"Failed to write summary CSV for code {code}: {str(e)}"
+                frappe.log_error(msg, "AT VAT Export")
+                if debug:
+                    print(msg)
+            if debug:
+                print(f"\nSummary CSV for code {code} written.\n")
 
     if debug:
-        list_to_export = list(document_map.keys())
+        list_to_export = list(summary_document_map.keys())
         list_length = len(list_to_export)
         print(f"\n\n{list_length} documents to export.\n")
 
-    # Write summary CSV
+    # Write overall summary CSV
     try:
-        write_summary_csv(document_map.values(), export_path, declaration.name)
+        filename = f"AT_VAT_Declaration_{declaration_name}_summary.csv"
+        write_summary_csv(summary_document_map.values(), export_path, filename)
     except Exception as e:
         msg = f"Failed to write summary CSV: {str(e)}"
         frappe.log_error(msg, "AT VAT Export")
@@ -394,7 +445,7 @@ def at_vat_package_export(declaration_name, debug=False):
 
     # Write PDFs
     export_count = 0
-    for (doctype, name), row in document_map.items():
+    for (doctype, name), row in summary_document_map.items():
         try:
             doc = frappe.get_doc(doctype, name)
             write_pdf(doc, export_path)
