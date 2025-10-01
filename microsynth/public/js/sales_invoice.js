@@ -109,11 +109,17 @@ frappe.ui.form.on('Sales Invoice', {
         //     });
         // }
 
-        if (!frm.doc.__islocal && frm.doc.web_order_id) {
+        if (!frm.doc.__islocal) {
             frm.add_custom_button("Related Documents", function () {
-                frappe.set_route("query-report", "Sales Document Overview", {
-                    "document_id": frm.doc.name
-                });
+                if (frm.doc.web_order_id) {
+                    frappe.set_route("query-report", "Sales Document Overview", {
+                        "web_order_id": frm.doc.web_order_id
+                    });
+                } else {
+                    frappe.set_route("query-report", "Sales Document Overview", {
+                        "document_id": frm.doc.name
+                    });
+                }
             }, __("View"));
         }
 
