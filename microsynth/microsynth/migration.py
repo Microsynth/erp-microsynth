@@ -2082,12 +2082,12 @@ def activate_fullplasmidseq_all_customers():
         i += 1
 
 
-def activate_invoicebydefaultcompany_france(blacklist_customers):
+def activate_invoicebydefaultcompany(blacklist_customers, territories):
     """
-    bench execute microsynth.microsynth.migration.activate_invoicebydefaultcompany_france --kwargs "{'blacklist_customers': ['35414300', '8003']}"
+    bench execute microsynth.microsynth.migration.activate_invoicebydefaultcompany --kwargs "{'blacklist_customers': ['35414300', '8003'], 'territories': ['Austria', 'Göttingen', 'Germany (Northeast)', 'Germany (Northwest)', 'Germany (South)']}"
     """
     customers = frappe.db.get_all("Customer",
-        filters = [['disabled', '=', 0], ['territory', 'IN', ['Paris', 'France (Southeast)', 'France (Northwest)']]],
+        filters = [['disabled', '=', 0], ['territory', 'IN', territories]],
         fields = ['name'])
 
     for customer in customers:
