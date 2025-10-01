@@ -597,7 +597,12 @@ def update_customer(customer_data):
         if 'default_company' in customer_data:
             companies = frappe.get_all("Company", filters={'abbr': customer_data['default_company']}, fields=['name'])
             if len(companies) > 0:
-                customer.default_company = companies[0]['name']
+                company_to_set = companies[0]['name']
+                if country:
+                    country_default_company = frappe.get_value("Country", country, "default_company")
+                    if company_to_set != country_default_company:
+                        frappe.log_error(f"Warning: Customer {customer.name}: Company {company_to_set} to set does not match the default Company {country_default_company} of country {country}", "migration.update_customer")
+                customer.default_company = company_to_set
         if 'punchout_shop_id' in customer_data:
             customer.punchout_buyer = customer_data['punchout_shop_id']
         if 'punchout_buyer' in customer_data:
