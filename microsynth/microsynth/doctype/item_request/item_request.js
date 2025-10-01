@@ -27,7 +27,7 @@ frappe.ui.form.on('Item Request', {
                             },
                             'callback': function(r) {
                                 if (!r.exc) {
-                                    frappe.msgprint(__("Item Request rejected"));
+                                    frappe.show_alert({message: __('Item Request rejected'), indicator: 'red'});
                                     frm.reload_doc();
                                 }
                             }

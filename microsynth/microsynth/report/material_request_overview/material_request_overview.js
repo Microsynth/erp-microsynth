@@ -305,11 +305,7 @@ function open_confirmation_dialog(selected, report) {
                 callback(r) {
                     if (!r.exc && r.message) {
                         const link = `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`;
-                        frappe.msgprint({
-                            'title': __('Success'),
-                            'indicator': 'green',
-                            'message': __('Material Request created and submitted: {0}', [link])
-                        });
+                        frappe.show_alert({message: __('Material Request created and submitted: {0}', [link]), indicator: 'green'});
                         d.hide();
                         report.refresh();
                     }
