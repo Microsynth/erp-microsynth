@@ -1330,7 +1330,7 @@ def set_webshop_services(customer_id):
 
     if customer.territory in ['Rest of Europe (West)', 'Rest of Europe (East)', 'Rest of Europe (PL)']:
         add_webshop_service(customer_id, 'EasyRun')
-    elif customer.territory in ['Paris', 'France (Southeast)', 'France (Northwest)']:
+    elif customer.territory in ['Paris', 'France (Southeast)', 'France (Northwest)', 'Austria', 'Göttingen', 'Germany (Northeast)', 'Germany (South)', 'Germany (Northwest)']:
         add_webshop_service(customer_id, 'InvoiceByDefaultCompany')
 
     if customer.default_company and customer.default_company != 'Microsynth Austria GmbH':
