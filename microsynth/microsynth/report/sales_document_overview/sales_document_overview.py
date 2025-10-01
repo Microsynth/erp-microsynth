@@ -48,21 +48,88 @@ def get_data(filters):
     if not filters.get("web_order_id") and not filters.get("document_id"):
         return []
 
-    web_order_ids = set()
     collected_docs = []
     seen_keys = set()  # Track (doctype, name)
 
     def add_doc(doc_dict):
-        key = (doc_dict["doctype"], doc_dict["name"])
-        if key not in seen_keys:
+        if doc_dict not in collected_docs:
             collected_docs.append(doc_dict)
-            seen_keys.add(key)
 
-    # Case 1: document_id + doctype provided
+    def safe_get_and_traverse(doctype, name):
+        key = (doctype, name)
+        if key in seen_keys:
+            return
+        try:
+            doc = frappe.get_doc(doctype, name)
+            _traverse(doc)
+        except frappe.DoesNotExistError:
+            pass
+
+    def _traverse(doc):
+        key = (doc.doctype, doc.name)
+        if key in seen_keys:
+            return
+        seen_keys.add(key)
+        add_doc(extract_doc_data(doc))
+        handler = doctype_handlers.get(doc.doctype)
+        if handler:
+            handler(doc)
+
+    def handle_quotation(doc):
+        items = frappe.get_all("Sales Order Item", filters={"prevdoc_docname": doc.name}, fields=["parent"])
+        for item in items:
+            if item.parent:
+                safe_get_and_traverse("Sales Order", item.parent)
+
+    def handle_sales_order(doc):
+        so_items = frappe.get_all("Sales Order Item", filters={"parent": doc.name}, fields=["prevdoc_docname"])
+        for item in so_items:
+            if item.prevdoc_docname:
+                safe_get_and_traverse("Quotation", item.prevdoc_docname)
+
+        dn_items = frappe.get_all("Delivery Note Item", filters={"against_sales_order": doc.name}, fields=["parent"])
+        for item in dn_items:
+            if item.parent:
+                safe_get_and_traverse("Delivery Note", item.parent)
+
+        si_items = frappe.get_all("Sales Invoice Item", filters={"sales_order": doc.name}, fields=["parent"])
+        for item in si_items:
+            if item.parent:
+                safe_get_and_traverse("Sales Invoice", item.parent)
+
+    def handle_delivery_note(doc):
+        dn_items = frappe.get_all("Delivery Note Item", filters={"parent": doc.name}, fields=["against_sales_order"])
+        for item in dn_items:
+            if item.against_sales_order:
+                safe_get_and_traverse("Sales Order", item.against_sales_order)
+
+        si_items = frappe.get_all("Sales Invoice Item", filters={"delivery_note": doc.name}, fields=["parent"])
+        for item in si_items:
+            if item.parent:
+                safe_get_and_traverse("Sales Invoice", item.parent)
+
+    def handle_sales_invoice(doc):
+        si_items = frappe.get_all(
+            "Sales Invoice Item",
+            filters={"parent": doc.name},
+            fields=["sales_order", "delivery_note"]
+        )
+        for item in si_items:
+            if item.sales_order:
+                safe_get_and_traverse("Sales Order", item.sales_order)
+            if item.delivery_note:
+                safe_get_and_traverse("Delivery Note", item.delivery_note)
+
+    doctype_handlers = {
+        "Quotation": handle_quotation,
+        "Sales Order": handle_sales_order,
+        "Delivery Note": handle_delivery_note,
+        "Sales Invoice": handle_sales_invoice
+    }
+
+    # Starting point 1: Document ID
     if filters.get("document_id"):
-        # Try to infer the DocType from the prefix
         prefix = filters["document_id"].split("-")[0]
-
         prefix_to_doctype = {
             "QTN": "Quotation",
             "SO": "Sales Order",
@@ -72,60 +139,17 @@ def get_data(filters):
         inferred_doctype = prefix_to_doctype.get(prefix)
         if not inferred_doctype:
             frappe.throw("Could not infer DocType from Document ID prefix.<br>Please enter a valid Document ID starting with QTN, SO, DN or SI followed by '-'.")
-
         filters["doctype"] = inferred_doctype
-        doc = frappe.get_doc(filters["doctype"], filters["document_id"])
-        add_doc(extract_doc_data(doc))
+        safe_get_and_traverse(inferred_doctype, filters["document_id"])
 
-        # Handle Quotation specially
-        if filters["doctype"] == "Quotation":
-            so_items = frappe.get_all("Sales Order Item", filters={"prevdoc_docname": doc.name}, fields=["parent"])
-            for item in so_items:
-                so = frappe.get_doc("Sales Order", item.parent)
-                add_doc(extract_doc_data(so))
-                if so.web_order_id:
-                    web_order_ids.add(so.web_order_id)
-        elif getattr(doc, "web_order_id", None):
-            web_order_ids.add(doc.web_order_id)
-
-    # Case 2: web_order_id directly
+    # Starting point 2: Web Order ID
     if filters.get("web_order_id"):
-        web_order_ids.add(filters["web_order_id"])
+        web_order_id = filters["web_order_id"]
+        for doctype in ("Sales Order", "Delivery Note", "Sales Invoice"):
+            docs = frappe.get_all(doctype, filters={"web_order_id": web_order_id}, fields=["name"])
+            for rec in docs:
+                safe_get_and_traverse(doctype, rec.name)
 
-    # Case 3: gather all docs linked to Web Order IDs
-    for woid in web_order_ids:
-        # Sales Orders
-        sales_orders = frappe.get_all("Sales Order", filters={"web_order_id": woid},
-                                      fields=["name", "status", "company", "customer", "customer_name", "contact_person", "contact_display",
-                                              "transaction_date as posting_date", "total", "currency", "web_order_id", "owner", "creation"])
-        for so in sales_orders:
-            add_doc(so | {"doctype": "Sales Order"})
-
-            # Quotations linked via SO Items
-            quote_links = frappe.get_all("Sales Order Item", filters={"parent": so.name}, fields=["prevdoc_docname"])
-            for qr in quote_links:
-                if qr.prevdoc_docname:
-                    try:
-                        quotation = frappe.get_doc("Quotation", qr.prevdoc_docname)
-                        add_doc(extract_doc_data(quotation))
-                    except frappe.DoesNotExistError:
-                        pass
-
-        # Delivery Notes
-        dns = frappe.get_all("Delivery Note", filters={"web_order_id": woid},
-                             fields=["name", "status", "company", "customer", "customer_name", "contact_person", "contact_display",
-                                     "posting_date", "total", "currency", "web_order_id", "owner", "creation"])
-        for dn in dns:
-            add_doc(dn | {"doctype": "Delivery Note"})
-
-        # Sales Invoices
-        sis = frappe.get_all("Sales Invoice", filters={"web_order_id": woid},
-                             fields=["name", "status", "company", "customer", "customer_name", "contact_person", "contact_display",
-                                     "posting_date", "total", "currency", "web_order_id", "owner", "creation"])
-        for si in sis:
-            add_doc(si | {"doctype": "Sales Invoice"})
-
-    # Sort results by creation date
     collected_docs.sort(key=lambda d: d.get("creation"))
 
     # Prepare keys to query comment counts in one batch
@@ -133,9 +157,8 @@ def get_data(filters):
 
     # Query all comment counts at once
     if doc_keys:
-        # Build WHERE clause with IN tuples
         placeholders = ', '.join(['(%s, %s)'] * len(doc_keys))
-        flat_values = [v for tup in doc_keys for v in tup]
+        values = [item for pair in doc_keys for item in pair]
 
         comment_counts = frappe.db.sql(f"""
             SELECT reference_doctype, reference_name, COUNT(*) as count
@@ -143,7 +166,7 @@ def get_data(filters):
             WHERE comment_type = 'Comment'
             AND (reference_doctype, reference_name) IN ({placeholders})
             GROUP BY reference_doctype, reference_name
-        """, flat_values, as_dict=True)
+        """, values, as_dict=True)
 
         # Create a quick lookup
         count_map = {
@@ -162,5 +185,5 @@ def get_data(filters):
 
 def execute(filters=None):
     columns = get_columns()
-    data = get_data(filters)
+    data = get_data(filters or {})
     return columns, data
