@@ -25,7 +25,7 @@ def get_columns(mode=None):
     columns += [
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Supplier Part No."), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120},
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120},
         {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 200}
     ]
     return columns

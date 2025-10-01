@@ -127,7 +127,7 @@ function open_search_dialog(frm) {
                 <tr>
                     <th>${__('Select')}</th><th>${__('Item')}</th><th>${__('Item Name')}</th>
                     <th>${__('Material Code')}</th><th>${__('Supplier')}</th>
-                    <th>${__('Supplier Name')}</th><th>${__('Supplier Part No')}</th>
+                    <th>${__('Supplier Name')}</th><th>${__('Supplier Item Code')}</th>
                 </tr>
                 </thead>
                 <tbody>`;

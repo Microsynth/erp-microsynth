@@ -221,7 +221,7 @@ function open_search_dialog(report) {
                                 <th>${__('Material Code')}</th>
                                 <th>${__('Supplier')}</th>
                                 <th>${__('Supplier Name')}</th>
-                                <th>${__('Supplier Part No')}</th>
+                                <th>${__('Supplier Item Code')}</th>
                             </tr>
                         </thead>
                         <tbody>
