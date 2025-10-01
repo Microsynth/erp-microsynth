@@ -429,8 +429,9 @@ function assert_po_and_mr_traces(frm) {
     // Ensure each item line traces to its original Purchase Order and Material Request, grouped by item_code
     const last_po_by_item = {};
     const last_mr_by_item = {};
+    const last_mr_item_by_item = {};
+    const last_schedule_date_by_item = {};
     let has_changes = false;
-    console.log("Tracing fields before save...");
 
     frm.doc.items.forEach(row => {
         const item_code = row.item_code;
@@ -450,6 +451,24 @@ function assert_po_and_mr_traces(frm) {
             last_mr_by_item[item_code] = row.material_request;
         } else if (last_mr_by_item[item_code]) {
             row.material_request = last_mr_by_item[item_code];
+            row.__unsaved = 1;
+            has_changes = true;
+        }
+
+        // Material Request Item trace
+        if (row.material_request_item) {
+            last_mr_item_by_item[item_code] = row.material_request_item;
+        } else if (last_mr_item_by_item[item_code]) {
+            row.material_request_item = last_mr_item_by_item[item_code];
+            row.__unsaved = 1;
+            has_changes = true;
+        }
+
+        // Required By (Schedule Date) trace
+        if (row.schedule_date) {
+            last_schedule_date_by_item[item_code] = row.schedule_date;
+        } else if (last_schedule_date_by_item[item_code]) {
+            row.schedule_date = last_schedule_date_by_item[item_code];
             row.__unsaved = 1;
             has_changes = true;
         }
