@@ -698,6 +698,35 @@ def delete_item_prices(item_codes, price_lists_to_exclude, log_file_path, dry_ru
         print(f"{'Would have deleted' if dry_run else 'Deleted'} {total_counter_formatted} Item Prices in total.")
 
 
+def delete_item_prices(item_price_names, item_code=None, min_qty=None, dry_run=False):
+    """
+    Delete Item Prices by their names.
+    Optionally check that the Item Code and/or the Minimum Quantity match.
+
+    bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'item_price_names': ['b7c71209f3', '5cc7ecca51'], 'item_code': '30102', 'min_qty': 380, 'dry_run': True}"
+    """
+    for item_price_name in item_price_names:
+        try:
+            item_price = frappe.get_doc("Item Price", item_price_name)
+        except Exception as e:
+            print(f"Unable to load Item Price {item_price_name}: {e}. Going to continue.")
+            continue
+        if item_code and item_price.item_code != item_code:
+            print(f"Item Price {item_price_name} has Item Code {item_price.item_code} which does not match the expected Item Code {item_code}. Going to skip.")
+            continue
+        if min_qty and item_price.min_qty != min_qty:
+            print(f"Item Price {item_price_name} has Minimum Quantity {item_price.min_qty} which does not match the expected Minimum Quantity {min_qty}. Going to skip.")
+            continue
+        details = f"Item Price {item_price.name} (Price List '{item_price.price_list}', Item Code {item_price.item_code}, Minimum Qty {item_price.min_qty}, Rate {item_price.price_list_rate} {item_price.currency})"
+        if not dry_run:
+            try:
+                item_price.delete()
+            except Exception as e:
+                print(f"Unable to delete {details}: {e}. Going to continue.")
+                continue
+        print(f"{'Would delete' if dry_run else 'Deleted'} {details}.")
+
+
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=False):
     """
     Takes a list of Item Codes and copies the corresponding Item Prices from the Projects to the respective reference Price List.
