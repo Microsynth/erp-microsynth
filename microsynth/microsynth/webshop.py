@@ -3588,13 +3588,16 @@ def get_credit_account_dto(credit_account):
         "account_id": credit_account.name,
         "name": credit_account.account_name,
         "description": credit_account.description,
+        "webshop_account": credit_account.contact,
         "status": credit_account.status,
         "company": credit_account.company,
+        "customer": credit_account.customer,
         "currency": credit_account.currency,
         "expiry_date": credit_account.expiry_date,
         "balance": balance,
         "forecast_balance": get_ca_forecast_balance(credit_account, balance),
-        "product_types": get_product_types(credit_account.name)
+        "product_types": get_product_types(credit_account.name),
+        "product_types_locked": credit_account.product_types_locked
     }
 
 
@@ -3760,6 +3763,25 @@ def update_credit_account(credit_account):
             "message": msg,
             "credit_accounts": []
         }
+
+
+@frappe.whitelist()
+def create_deposit_invoice():
+    """
+    stub
+
+    * Create a Sales Invoice to deposit customer credits
+    * Company, Currency and Customer are pulled from the Credit Account an transmitted over the API for validation
+    * Credits will be available as soon as the payment of the Sales Invoice is received
+    * ERP validates that the company, customer and currency matches the account currency
+    * The description will be used to name the item. if not set (null) the standard text "Primers and Sequencing" will be shown on the Sales Invoice
+    """
+    # TODO: Implement
+    return {
+        "success": False,
+        "message": "Not yet implemented",
+        "reference": None
+    }
 
 
 @frappe.whitelist()

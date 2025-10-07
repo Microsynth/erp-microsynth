@@ -85,7 +85,7 @@ def get_data(filters, short=False):
                     "Allocation"
                     ) AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
-                `tabSales Invoice Item`.`creation` AS `creation`,
+                `tabSales Invoice`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
@@ -114,7 +114,7 @@ def get_data(filters, short=False):
             UNION ALL SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
-                `tabSales Invoice Item`.`creation` AS `creation`,
+                `tabSales Invoice`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
