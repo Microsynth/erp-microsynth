@@ -3524,10 +3524,24 @@ def get_price_list_doc(contact):
 
 def get_credit_account_balance(account_id):
     """
-    stub
+    Fetch the current balance of the given Credit Account.
     """
-    # TODO: Implement real balance fetching
-    balance = 100.0
+    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
+    try:
+        credit_account = frappe.get_doc('Credit Account', account_id)
+        filters = {
+            'credit_account': account_id,
+            'company': credit_account.company,
+            'customer': credit_account.customer
+        }
+        customer_credits = get_data(filters)
+        balance = 0.0
+        for transaction in customer_credits:
+            balance += transaction.get('net_amount', 0.0)
+    except Exception as err:
+        msg = f"Error getting balance for Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_account_balance")
+        frappe.throw(msg)
     return balance
 
 
@@ -3549,6 +3563,17 @@ def get_product_types(account_id):
     return [pt["product_type"] for pt in product_types]
 
 
+def get_ca_forecast_balance(credit_account_doc, balance):
+    """
+    stub
+    """
+    # TODO: How to reliably find all Sales Orders that are not yet billed and belong to this Credit Account?
+    #       Then sum up the totals of these Sales Orders and subtract them from the balance.
+    # What about Sales Order that are partially billed?
+    forecast_balance = balance
+    return forecast_balance
+
+
 def get_credit_account_dto(credit_account):
     """
     Takes a Credit Account DocType or dict and returns a DTO suitable for the webshop.
@@ -3557,6 +3582,7 @@ def get_credit_account_dto(credit_account):
     """
     if isinstance(credit_account, str):
         credit_account = frappe.get_doc("Credit Account", credit_account)
+    balance = get_credit_account_balance(credit_account.name)
 
     return {
         "account_id": credit_account.name,
@@ -3566,8 +3592,8 @@ def get_credit_account_dto(credit_account):
         "company": credit_account.company,
         "currency": credit_account.currency,
         "expiry_date": credit_account.expiry_date,
-        "balance": get_credit_account_balance(credit_account.name),
-        "forecast_balance": get_credit_account_balance(credit_account.name),  # TODO implement forecast balance
+        "balance": balance,
+        "forecast_balance": get_ca_forecast_balance(credit_account, balance),
         "product_types": get_product_types(credit_account.name)
     }
 
@@ -3739,7 +3765,7 @@ def update_credit_account(credit_account):
 @frappe.whitelist()
 def get_transactions(account_id):
     """
-    stub (not yet sorted, no running balance)
+    Get all transactions for the given Credit Account.
 
     bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000002'}"
     """
@@ -3756,22 +3782,37 @@ def get_transactions(account_id):
             'customer': credit_account.customer
         }
         customer_credits = get_data(filters)
+
+        # 1. Sort chronologically (date ascending) to compute running balance
+        customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
+
+        running_balance = 0.0
         transactions = []
-        # TODO: sort transactions by date descending
-        # Field idx: sort order, 0-based, starting with the oldest document (idx=0), Posting date, if the same date: consider creation date
-        for i, row in enumerate(customer_credits):
+
+        for row in customer_credits:
+            net_amount = row.get('net_amount') or 0.0
+            running_balance += net_amount
             transactions.append({
-                "idx": i,
                 "date": row.get('date'),
                 "type": type_mapping.get(row.get('type'), ""),
                 "reference": row.get('reference'),
                 "web_order_id": row.get('web_order_id'),
                 "currency": row.get('currency'),
-                "amount": row.get('net_amount'),
-                "balance": 0.0,  # TODO: implement running balance
+                "amount": net_amount,
+                "balance": running_balance,
                 "product_type": row.get('product_type'),
-                "po_no": row.get('po_no')
+                "po_no": row.get('po_no'),
+                "creation": row.get('creation')  # for sorting
             })
+
+        # 2. Sort back to reverse-chronological order (date + creation descending)
+        transactions.sort(key=lambda x: (x['date'], x['creation']), reverse=True)
+
+        # Assign idx (0 = oldest, so reverse the list again for idx)
+        for i, tx in enumerate(reversed(transactions)):
+            tx['idx'] = i
+            del tx['creation']  # clean up internal field needed for sorting only
+
         return {
             "success": True,
             "message": "OK",
