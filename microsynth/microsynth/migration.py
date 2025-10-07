@@ -5005,16 +5005,75 @@ def rename_lost_reasons():
         print(f"Renamed Lost Reason '{current_reason}' on all Lost Reason Detail entries to '{new_reason}'.")
 
 
-def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_in_webshop_output):
+def find_missing_plate_labels(input_filename, not_in_erp_output):
     """
-    Parse a Webshop export of Barcode Labels.
-    Write those Sequencing Labels to the given output file that are unused in the ERP but received or processed in the given Webshop export.
+    Parse a Webshop export of Barcode Plate Labels.
+    Write those Plate Labels to the given output file that are not present in the ERP.
 
-    bench execute microsynth.microsynth.migration.lookup_unused_sequencing_labels --kwargs "{'input_filepath': '/mnt/erp_share/Sequencing/Label_Sync/2025-03-21_Webshop_Export.txt', 'not_in_webshop_output': '/mnt/erp_share/Sequencing/Label_Sync/2025-04-08_Missing_in_Webshop_Export.csv', 'used_in_webshop_output': '/mnt/erp_share/Sequencing/Label_Sync/2025-04-08_Used_in_Webshop_Export.csv'}"
+    bench execute microsynth.microsynth.migration.find_missing_plate_labels --kwargs "{'input_filename': '/mnt/erp_share/JPe/2025-10-07_Webshop_PlateBarcodes.txt', 'not_in_erp_output': '/mnt/erp_share/JPe/2024-10-07_Webshop_Plate_Labels_missing_in_ERP.txt'}"
     """
-    print(f"Selecting unused and submitted Sequencing Labels from ERP ...")
-    erp_unused_labels = frappe.get_all('Sequencing Label', filters=[['status', 'IN', ['unused', 'submitted'] ]],
-                                       fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp}: Parsing Webshop export ...")
+    webshop_labels = set()
+    with open(input_filename, 'r') as file:
+        csv_reader = csv.reader(file, delimiter='\t')
+        next(csv_reader)  # skip header
+        for line in csv_reader:
+            if len(line) != 9:
+                print(f"{len(line)=}; {line=}; skipping")
+                continue
+            number = line[1]
+            webshop_labels.add(number)
+    print(f"There are {len(webshop_labels)} unique Plate Labels in the Webshop export.")
+    print(f"Selecting all Plate Labels from ERP ...")
+    erp_labels = set(
+        row["label_id"]
+        for row in frappe.get_all(
+            "Sequencing Label",
+            filters=[['item', 'in', ['3100', '3110', '3120', '3140', '3240', '3251', '3262', '6232']]],
+            fields=["label_id"]
+        )
+    )
+    print(f"There are {len(erp_labels)} unique Plate Labels in the ERP.")
+    not_in_erp = webshop_labels - erp_labels
+    print(f"There are {len(not_in_erp)} Plate Labels in the Webshop export that are not in the ERP.")
+    if len(not_in_erp) > 0:
+        rows_to_write = []
+        with open(input_filename, 'r') as file:
+            csv_reader = csv.reader(file, delimiter='\t')
+            header = csv_reader.__next__()
+            for line in csv_reader:
+                if len(line) != 9:
+                    print(f"{len(line)=}; {line=}; skipping")
+                    continue
+                number = line[1]
+                if number in not_in_erp:
+                    rows_to_write.append(line)
+        print(f"Writing file {not_in_erp_output} ...")
+        with open(not_in_erp_output, mode='w') as file:
+            writer = csv.writer(file, delimiter='\t', lineterminator='\n')
+            # Write the header (column names)
+            writer.writerow(header)
+            # Write each row
+            writer.writerows(rows_to_write)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp}: Finished migration.find_missing_plate_labels")
+
+
+def lookup_unused_plate_labels(input_filepath, not_in_webshop_output, used_in_webshop_output):
+    """
+    Parse a Webshop export of Barcode Plate Labels.
+    Write those Plate Labels to the given output file that are unused in the ERP but received or processed in the given Webshop export.
+
+    bench execute microsynth.microsynth.migration.lookup_unused_plate_labels --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-07_Webshop_PlateBarcodes.txt', 'not_in_webshop_output': '/mnt/erp_share/JPe/2025-10-07_Missing_in_Webshop_Export.csv', 'used_in_webshop_output': '/mnt/erp_share/JPe/2025-10-07_Used_in_Webshop_Export.csv'}"
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp}: Selecting unused and submitted Sequencing Labels from ERP ...")
+    erp_unused_labels = frappe.get_all('Sequencing Label',
+                                        filters=[['status', 'IN', ['unused', 'submitted'] ],
+                                                 ['item', 'IN', ['3100', '3110', '3120', '3140', '3240', '3251', '3262', '6232']]],
+                                        fields=['name', 'creation', 'owner', 'customer_name', 'locked', 'customer', 'sales_order', 'item', 'registered', 'contact', 'label_id', 'status', 'registered_to'])
     print(f"There are {len(erp_unused_labels)} unused Sequencing Labels in the ERP.")
     use_states = ['unknown', 'unused_unregistered', 'unused_registered', 'submitted', 'received', 'processed']
     counters = {state: 0 for state in use_states}
@@ -5066,7 +5125,8 @@ def lookup_unused_sequencing_labels(input_filepath, not_in_webshop_output, used_
             writer.writeheader()
             # Write each dictionary as a row
             writer.writerows(used_in_webshop)
-    print("Finished migration.lookup_unused_sequencing_labels")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp}: Finished migration.lookup_unused_plate_labels")
 
 
 def lookup_used_sequencing_labels(input_filepath, output_filepath):
