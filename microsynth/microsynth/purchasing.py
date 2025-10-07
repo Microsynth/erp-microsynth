@@ -1403,3 +1403,19 @@ def get_inbound_freight_item():
     if not item_code:
         frappe.throw("No Inbound Freight Item found. Please set it in the Microsynth Settings.")
     return item_code
+
+
+@frappe.whitelist()
+def get_purchase_tax_template(supplier, company):
+    tax_templates = frappe.get_all("Party Account",
+        filters={
+            'parent': supplier,
+            'parenttype': "Supplier",
+            'company': company
+        },
+        fields=['name', 'default_tax_template']
+    )
+    if len(tax_templates) > 0:
+        return tax_templates[0]['default_tax_template']
+    else:
+        return None

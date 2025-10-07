@@ -40,6 +40,10 @@ frappe.ui.form.on('Purchase Order', {
         if (frm.doc.__islocal) {
             set_naming_series(frm);                 // common function
         }
+        get_supplier_tax_template(frm);
+    },
+    supplier(frm) {
+        get_supplier_tax_template(frm);
     }
 });
 
@@ -68,5 +72,26 @@ function add_freight_item(frm) {
             'description': 'Inbound Freight Cost'
         });
         frm.refresh_field('items');
+    }
+}
+
+
+function get_supplier_tax_template(frm) {
+    if ((frm.doc.company) && (frm.doc.supplier)) {
+        frappe.call({
+            'method': 'microsynth.microsynth.purchasing.get_purchase_tax_template',
+            'args': {
+                'supplier': frm.doc.supplier,
+                'company': frm.doc.company
+            },
+            'callback': function(response) {
+                if (response.message) {
+                    console.log("set taxes to: " + response.message);
+                    setTimeout(function() {
+                        cur_frm.set_value("taxes_and_charges", response.message);
+                    }, 500);
+                }
+            }
+        });
     }
 }
