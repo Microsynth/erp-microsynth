@@ -16,7 +16,7 @@ def get_columns():
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 215},
         {"label": _("Invoicing Method"), "fieldname": "inv_method_customer", "fieldtype": "Data", "width": 90},
         {"label": _("Customer's Purchase Order No"), "fieldname": "po_no", "fieldtype": "Data", "width": 185},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "HTML", "width": 90},
         {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Int", "width": 80},
         {"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 55},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 105},
@@ -57,7 +57,17 @@ def get_data(filters):
             `tabCustomer`.`invoicing_method` AS `inv_method_customer`,
             `tabDelivery Note`.`po_no`,
             `tabDelivery Note`.`is_punchout`,
-            `tabDelivery Note`.`web_order_id`,
+            CASE
+                WHEN `tabDelivery Note`.`web_order_id` IS NOT NULL AND `tabDelivery Note`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabDelivery Note`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabDelivery Note`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             (
                 SELECT COUNT(*) as `count`
                 FROM `tabComment`
