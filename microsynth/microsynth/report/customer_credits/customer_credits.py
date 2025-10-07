@@ -45,6 +45,14 @@ def get_data(filters, short=False):
         conditions += f"AND `tabSales Invoice`.`currency` = '{filters.get('currency')}'"
     if filters and filters.get('credit_account'):
         credit_account = filters.get('credit_account')
+        credit_account_customer = frappe.get_value("Credit Account", credit_account, 'customer')
+        if not filters.get('customer'):
+            filters['customer'] = credit_account_customer
+        else:
+            # check if credit account belongs to customer
+            if filters['customer'] != credit_account_customer:
+                frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}, but Customer {credit_account_customer}.")
+        conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
     else:
         credit_account = None
 
@@ -77,6 +85,7 @@ def get_data(filters, short=False):
                     "Allocation"
                     ) AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice Item`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
@@ -105,6 +114,7 @@ def get_data(filters, short=False):
             UNION ALL SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice Item`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
