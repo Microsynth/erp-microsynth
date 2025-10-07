@@ -3615,7 +3615,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
         credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', workgroup_members]], fields=['name', 'account_name', 'description', 'status', 'company', 'currency', 'expiry_date'])
         if len(credit_accounts) == 0:
             return {
-                "success": False,
+                "success": True,
                 "message": f"No Credit Account found for Contact '{webshop_account}'",
                 "credit_accounts": []
             }
