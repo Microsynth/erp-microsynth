@@ -19,7 +19,7 @@ def check_and_get_label(label):
     """
     Take a label dictionary (item, barcode, status), search it in the ERP and return it if it is unique or an error message otherwise.
 
-    bench execute microsynth.microsynth.webshop.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}}"
+    bench execute microsynth.microsynth.seqblatt.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY004450', 'status': 'submitted'}}"
     """
     sql_query = """
         SELECT `name`,
@@ -53,16 +53,20 @@ def check_and_get_labels(labels):
 
     Returns:
         dict: Mapping from (barcode, item) → label data or error
+
+    bench execute microsynth.microsynth.seqblatt.check_and_get_labels --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}]}"
     """
     if not labels:
         return {}
 
-    # Deduplicate input
-    keys = set((label.get("barcode") or label.get("label_id"), label.get("item") or label.get("item_code")) for label in labels)
+    # Use dict to deduplicate input
+    keys = {(label.get("barcode") or label.get("label_id"), label.get("item") or label.get("item_code")): None for label in labels}
+
     if not keys:
         return {}
 
-    conditions = ' OR '.join(['(label_id = %s AND item = %s)'] * len(keys))
+    conditions = ' OR '.join(f"(label_id = %s AND item = %s)" for _ in keys)
+    # flatten a set of 2-tuples into a single list of values
     values = [val for pair in keys for val in pair]
 
     sql = f"""
@@ -76,16 +80,17 @@ def check_and_get_labels(labels):
 
     label_map = {}
     for label in results:
-        key = (label['barcode'], label['item'])
-        if key in label_map:
-            label_map[key] = {"error": "duplicate"}
+        key_str = f"{label['barcode']}|{label['item']}"
+        if key_str in label_map:
+            label_map[key_str] = {"error": "duplicate"}
         else:
-            label_map[key] = label
+            label_map[key_str] = label
 
     # Add missing entries
     for key in keys:
-        if key not in label_map:
-            label_map[key] = {"error": "not_found"}
+        key_str = f"{key[0]}|{key[1]}"
+        if key_str not in label_map:
+            label_map[key_str] = {"error": "not_found"}
 
     return label_map
 
@@ -116,7 +121,7 @@ def process_label_status_change(labels, target_status, required_current_status=N
             }
 
     Example usage:
-    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': '10000001', 'item_code': '3000'}, {'label_id': '10000051', 'item_code': '3000'}], 'target_status': 'locked', 'required_current_status': 'submitted', 'check_not_used': True, 'stop_on_first_failure': True}"
+    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'locked', 'required_current_status': 'unused', 'check_not_used': True, 'stop_on_first_failure': True}"
     """
     if not labels or len(labels) == 0:
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
@@ -137,7 +142,8 @@ def process_label_status_change(labels, target_status, required_current_status=N
 
         for label in normalized:
             key = (label["barcode"], label["item"])
-            result = label_lookup.get(key)
+            key_str = f"{label['barcode']}|{label['item']}"
+            result = label_lookup.get(key_str)
 
             if "error" in result:
                 if result["error"] == "not_found":
@@ -203,6 +209,7 @@ def process_label_status_change(labels, target_status, required_current_status=N
 
         # Set label statuses
         for erp_label in labels_to_process:
+            #frappe.db.set_value("Sequencing Label", erp_label['name'], "status", target_status)  # would be much faster, but no validation
             label_doc = frappe.get_doc("Sequencing Label", erp_label['name'])
             label_doc.status = target_status
             label_doc.save(ignore_permissions=True)
@@ -257,7 +264,7 @@ def set_status(status, labels):
         }
     ]
 
-    bench execute microsynth.microsynth.seqblatt.set_status --kwargs "{'status': 'locked', 'labels': [{'label_id': '10000001', 'item_code': '3000'}, {'label_id': '10000051', 'item_code': '3000'}]}"
+    bench execute microsynth.microsynth.seqblatt.set_status --kwargs "{'status': 'locked', 'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}]}"
     """
     if isinstance(labels, str):
         labels = json.loads(labels)

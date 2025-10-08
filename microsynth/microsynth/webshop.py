@@ -2235,7 +2235,7 @@ def set_label_submitted(labels):
     Set the Status of the given Labels to submitted if they are unused and pass further tests.
     Try to submit as many labels as possible, return False if at least one given label could not be submitted
 
-    bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    bench execute microsynth.microsynth.webshop.set_label_submitted --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'unused'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'unused'}]}"
     """
     return process_label_status_change(
         labels=labels,
@@ -2249,7 +2249,7 @@ def set_label_unused(labels):
     """
     Set the Status of the given Labels to unused if they are all submitted and pass further tests.
 
-    bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY00042', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY00043', 'status': 'submitted'}]}"
+    bench execute microsynth.microsynth.webshop.set_label_unused --kwargs "{'labels': [{'item': '6030', 'barcode': 'MY004450', 'status': 'submitted'}, {'item': '6030', 'barcode': 'MY004449', 'status': 'submitted'}]}"
     """
     return process_label_status_change(
         labels=labels,
