@@ -229,6 +229,14 @@ frappe.ui.form.on('Sales Invoice', {
                 }
             });
         });
+        // block item 6100 on sales invoices together with other items
+        let restricted_item = "6100";
+        let item_codes = frm.doc.items.map(item => item.item_code);
+
+        if (item_codes.includes(restricted_item) && item_codes.length > 1) {
+            frappe.validated=false;
+            frappe.throw(__("Item 6100 must be the only item in the Sales Invoice."));
+        }
     },
     before_submit: function(frm) {
         // Prevent default submit until user accepts or rejects changes
