@@ -3766,22 +3766,77 @@ def update_credit_account(credit_account):
 
 
 @frappe.whitelist()
-def create_deposit_invoice():
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer):
     """
-    stub
+    Create a Sales Invoice to deposit customer credits.
 
-    * Create a Sales Invoice to deposit customer credits
-    * Company, Currency and Customer are pulled from the Credit Account an transmitted over the API for validation
+    Request:
+    {
+        "webshop_account": "215856",
+        "account_id": "CA-000003",
+        "amount": "1000.00",
+        "currency": "CHF",
+        "description": "Cloning Primers",
+        "company": "Microsynth AG",
+        "customer": "801234"
+    }
+    * Company, Currency and Customer are pulled from the Credit Account and transmitted over the API for validation
     * Credits will be available as soon as the payment of the Sales Invoice is received
     * ERP validates that the company, customer and currency matches the account currency
     * The description will be used to name the item. if not set (null) the standard text "Primers and Sequencing" will be shown on the Sales Invoice
+
+    bench execute microsynth.microsynth.webshop.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003'}"
     """
-    # TODO: Implement
-    return {
-        "success": False,
-        "message": "Not yet implemented",
-        "reference": None
-    }
+    try:
+        credit_account_doc = frappe.get_doc('Credit Account', account_id)
+        # Validate that the company, customer and currency matches the account currency
+        if credit_account_doc.company != company:
+            frappe.throw(f"The given Company '{company}' does not match the company '{credit_account_doc.company}' of Credit Account '{account_id}'.")
+        if credit_account_doc.customer != customer:
+            frappe.throw(f"The given Customer '{customer}' does not match the customer '{credit_account_doc.customer}' of Credit Account '{account_id}'.")
+        if credit_account_doc.currency != currency:
+            frappe.throw(f"The given Currency '{currency}' does not match the currency '{credit_account_doc.currency}' of Credit Account '{account_id}'.")
+
+        # Fetch credit item from Microsynth Settings
+        credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+        credit_item = frappe.get_doc("Item", credit_item_code)
+
+        # Create the Sales Invoice
+        invoice = frappe.get_doc({
+            "doctype": "Sales Invoice",
+            "company": company,
+            "customer": customer,
+            "contact_person": webshop_account,
+            "territory": frappe.get_value("Customer", customer, "territory") or "All Territories",
+            "currency": currency,
+            "items": [{
+                "item_code": credit_item.item_code,
+                "qty": 1,
+                "rate": amount,
+                "item_name": description if description else credit_item.item_name,
+                "cost_center": credit_item.get("selling_cost_center") or frappe.get_value("Company", company, "cost_center")
+            }],
+            "taxes_and_charges": "BAL Export (220) - BAL",  # TODO: How to fetch?
+            "credit_account": account_id,
+            "remarks": f"Webshop deposit for Credit Account {account_id}"
+            # TODO: Product Type? Customer PO No?
+        })
+        invoice.insert()
+        invoice.submit()
+        # TODO: Transmit the Sales Invoice?
+        return {
+            "success": True,
+            "message": "OK",
+            "reference": invoice.name
+        }
+    except Exception as err:
+        msg = f"Error creating deposit invoice for Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
+        return {
+            "success": False,
+            "message": msg,
+            "reference": None
+        }
 
 
 @frappe.whitelist()
