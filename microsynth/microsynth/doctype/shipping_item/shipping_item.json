@@ -9,6 +9,7 @@
   "qty",
   "rate",
   "threshold",
+  "currency",
   "preferred_express"
  ],
  "fields": [
@@ -27,7 +28,7 @@
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Item name",
+   "label": "Item Name",
    "read_only": 1
   },
   {
@@ -59,16 +60,25 @@
    "reqd": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "default": "0",
    "fieldname": "preferred_express",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Preferred express"
+   "label": "Preferred Express"
+  },
+  {
+   "columns": 1,
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2025-05-21 11:26:20.804962",
+ "modified": "2025-10-09 16:08:55.316285",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Shipping Item",
