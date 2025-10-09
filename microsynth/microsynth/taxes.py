@@ -230,11 +230,15 @@ def update_taxes(doc, event=None):
 
 
 def write_pdf(doc, path):
+    export_format = {
+        "Sales Invoice": "Sales Invoice",
+        "Delivery Note": "Delivery Note Proforma Invoice",
+    }
     try:
         pdf_content = frappe.get_print(
             doc.doctype,
             doc.name,
-            print_format=doc.doctype,  # assuming that the print format has the same name as the doctype
+            print_format=export_format.get(doc.doctype) if doc.doctype in export_format else "Standard",
             as_pdf=True)
         filename = f"{doc.name}.pdf"
         filepath = os.path.join(path, filename)
