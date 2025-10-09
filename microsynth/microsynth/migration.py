@@ -6159,3 +6159,79 @@ def migrate_debtors(customer_id, company, currency, verbose=True):
 def migrate_multiple_debtors(customers, company, currency):
     for customer in customers:
         migrate_debtors(customer, company, currency)
+
+
+def add_currency_to_customer_shipping_items(dry_run=False, verbose=True):
+    """
+    Set the currency of all Shipping Items whose parent is an enabled Customer to the Customer's default_currency if not already set.
+    If the Shipping Item already has a currency that does not match the Customer's default_currency, print a warning but do not change it.
+
+    bench execute microsynth.microsynth.migration.add_currency_to_customer_shipping_items --kwargs "{'dry_run': True, 'verbose': True}"
+    """
+    print("Starting migration: Set currency on Shipping Items of enabled Customers.")
+
+    if dry_run:
+        print("Running in DRY RUN mode — no changes will be saved.")
+
+    # Query all Shipping Items whose parent is an enabled Customer
+    shipping_items = frappe.db.sql("""
+        SELECT
+            `tabShipping Item`.`name`,
+            `tabShipping Item`.`currency`,
+            `tabShipping Item`.`item`,
+            `tabCustomer`.`name` AS `customer_id`,
+            `tabCustomer`.`default_currency`
+        FROM `tabShipping Item`
+        INNER JOIN `tabCustomer`
+            ON `tabShipping Item`.`parent` = `tabCustomer`.`name`
+        WHERE
+            `tabShipping Item`.`parenttype` = 'Customer'
+            AND IFNULL(`tabCustomer`.`disabled`, 0) = 0
+    """, as_dict=True)
+
+    updated_count = 0
+    warning_count = 0
+    skipped_count = 0
+
+    for item in shipping_items:
+        shipping_item_id = item["name"]
+        shipping_item_name = item["item"] or "<Unnamed>"
+        customer_id = item["customer_id"]
+        current_currency = item["currency"]
+        customer_currency = item["default_currency"]
+
+        if not customer_currency:
+            if verbose:
+                print(f"WARNING: Customer '{customer_id}' has no `default_currency`. Skipping Shipping Item '{shipping_item_name}'.")
+            skipped_count += 1
+            continue
+
+        if current_currency is None:
+            if dry_run:
+                if verbose:
+                    print(f"DRY RUN: Would update Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') — set currency to '{customer_currency}'")
+            else:
+                frappe.db.set_value("Shipping Item", shipping_item_id, "currency", customer_currency)
+                if verbose:
+                    print(f"Updated Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') — set currency to '{customer_currency}'")
+            updated_count += 1
+
+        elif current_currency != customer_currency:
+            if verbose:
+                print(
+                    f"WARNING: Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') has currency '{current_currency}', "
+                    f"but Customer expects '{customer_currency}'. No change made."
+                )
+            warning_count += 1
+
+        else:
+            skipped_count += 1  # already correct
+
+    # Summary
+    print("\nMigration complete.")
+    print(f"- Updated: {updated_count}")
+    print(f"- Warnings (mismatched currency): {warning_count}")
+    print(f"- Skipped (already correct or missing default): {skipped_count}")
+
+    if dry_run:
+        print("NOTE: No changes were made due to dry run mode.")
