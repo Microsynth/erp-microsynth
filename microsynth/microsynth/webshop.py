@@ -3564,14 +3564,46 @@ def get_product_types(account_id):
     return [pt["product_type"] for pt in product_types]
 
 
+def get_open_sales_orders(credit_account_id):
+    """
+    Get all Sales Orders that are associated with the given Credit Account and are not yet fully billed.
+
+    bench execute microsynth.microsynth.webshop.get_open_sales_orders --kwargs "{'credit_account_id': 'CA-000002'}"
+    """
+    sql_query = """
+        SELECT
+            `tabSales Order`.`name`,
+            `tabSales Order`.`grand_total`,
+            `tabSales Order`.`per_billed`,
+            `tabSales Order`.`grand_total` * (1 - `tabSales Order`.`per_billed` / 100) AS `unbilled_amount`
+        FROM
+            `tabSales Order`
+        JOIN
+            `tabCredit Account Link`
+            ON `tabCredit Account Link`.`parent` = `tabSales Order`.`name`
+        WHERE
+            `tabCredit Account Link`.`credit_account` = %s
+            AND `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`per_billed` < 100;
+        """
+    sales_orders = frappe.db.sql(sql_query, (credit_account_id,), as_dict=True)
+    return sales_orders
+
+
 def get_ca_forecast_balance(credit_account_doc, balance):
     """
-    stub
+    Calculate the forecast balance of the given Credit Account by considering unbilled Sales Orders.
+
+    bench execute microsynth.microsynth.webshop.get_ca_forecast_balance --kwargs "{'credit_account_doc': 'CA-000002', 'balance': 1000.0}"
     """
-    # TODO: How to reliably find all Sales Orders that are not yet billed and belong to this Credit Account?
-    #       Then sum up the totals of these Sales Orders and subtract them from the balance.
-    # What about Sales Order that are partially billed?
-    forecast_balance = balance
+    if isinstance(credit_account_doc, str):
+        credit_account_doc = frappe.get_doc("Credit Account", credit_account_doc)
+    unbilled_sales_orders = get_open_sales_orders(credit_account_doc.name)
+    if len(unbilled_sales_orders) > 0:
+        total_unbilled_amount = sum(so.get('unbilled_amount', 0.0) for so in unbilled_sales_orders)
+        forecast_balance = balance - total_unbilled_amount
+    else:
+        forecast_balance = balance
     return forecast_balance
 
 
