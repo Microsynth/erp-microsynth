@@ -474,3 +474,12 @@ def update_ups_delivery_dates(request_limit: int = None):
             error_msg = f"Error updating {code}: {e}"
             frappe.log_error(title="UPS Tracking Update Failed", message=error_msg)
             print(f"❌ {error_msg}")
+
+
+def validate_customer_shipping_currencies(doc, method):
+    if not doc.shipping_items:
+        return
+
+    for item in doc.shipping_items:
+        if item.currency != doc.default_currency:
+            frappe.throw(f"Currency mismatch on Customer '{doc.name}' ({doc.customer_name}): Shipping Item {item.item or item.item_name} has currency {item.currency}, but Customer default currency is {doc.default_currency}.")

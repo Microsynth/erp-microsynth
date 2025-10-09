@@ -160,6 +160,9 @@ jenv = {
 #	}
 # }
 doc_events = {
+    "Customer": {
+        "validate": "microsynth.microsynth.shipping.validate_customer_shipping_currencies"
+    },
     "Contact": {
         "after_insert": "microsynth.microsynth.marketing.lock_contact"
     },
