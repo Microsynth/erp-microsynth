@@ -6161,33 +6161,48 @@ def migrate_multiple_debtors(customers, company, currency):
         migrate_debtors(customer, company, currency)
 
 
-def add_currency_to_customer_shipping_items(dry_run=False, verbose=True):
+def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=False, verbose=True):
     """
-    Set the currency of all Shipping Items whose parent is an enabled Customer to the Customer's default_currency if not already set.
-    If the Shipping Item already has a currency that does not match the Customer's default_currency, print a warning but do not change it.
+    Set the currency of all Shipping Items whose parent is an enabled DocType (Customer or Country)
+    to the parent's default_currency if not already set.
 
-    bench execute microsynth.microsynth.migration.add_currency_to_customer_shipping_items --kwargs "{'dry_run': True, 'verbose': True}"
+    If the Shipping Item already has a currency that does not match the parent's default_currency,
+    print a warning but do not change it.
+
+    Parameters:
+    - parent_doctype (str): "Customer" or "Country"
+    - dry_run (bool): If True, no changes will be saved
+    - verbose (bool): If True, print details
+
+    bench execute microsynth.microsynth.migration.set_shipping_item_currency_from_parent --kwargs "{'parent_doctype': 'Country', 'dry_run': True, 'verbose': True}"
     """
-    print("Starting migration: Set currency on Shipping Items of enabled Customers.")
+    print(f"Starting migration: Set currency on Shipping Items with parent type '{parent_doctype}'.")
+
+    if parent_doctype not in ("Customer", "Country"):
+        print(f"ERROR: Unsupported parent_doctype '{parent_doctype}'. Only 'Customer' and 'Country' are supported.")
+        return
 
     if dry_run:
         print("Running in DRY RUN mode — no changes will be saved.")
 
-    # Query all Shipping Items whose parent is an enabled Customer
-    shipping_items = frappe.db.sql("""
+    # Compose table names and field names
+    parent_table = f"`tab{parent_doctype}`"
+
+    # Build query dynamically
+    shipping_items = frappe.db.sql(f"""
         SELECT
             `tabShipping Item`.`name`,
             `tabShipping Item`.`currency`,
             `tabShipping Item`.`item`,
-            `tabCustomer`.`name` AS `customer_id`,
-            `tabCustomer`.`default_currency`
+            {parent_table}.`name` AS `parent_id`,
+            {parent_table}.`default_currency`
         FROM `tabShipping Item`
-        INNER JOIN `tabCustomer`
-            ON `tabShipping Item`.`parent` = `tabCustomer`.`name`
+        INNER JOIN {parent_table}
+            ON `tabShipping Item`.`parent` = {parent_table}.`name`
         WHERE
-            `tabShipping Item`.`parenttype` = 'Customer'
-            AND IFNULL(`tabCustomer`.`disabled`, 0) = 0
-    """, as_dict=True)
+            `tabShipping Item`.`parenttype` = %s
+            AND IFNULL({parent_table}.`disabled`, 0) = 0
+    """, (parent_doctype,), as_dict=True)
 
     updated_count = 0
     warning_count = 0
@@ -6196,31 +6211,31 @@ def add_currency_to_customer_shipping_items(dry_run=False, verbose=True):
     for item in shipping_items:
         shipping_item_id = item["name"]
         shipping_item_name = item["item"] or "<Unnamed>"
-        customer_id = item["customer_id"]
+        parent_id = item["parent_id"]
         current_currency = item["currency"]
-        customer_currency = item["default_currency"]
+        default_currency = item["default_currency"]
 
-        if not customer_currency:
+        if not default_currency:
             if verbose:
-                print(f"WARNING: Customer '{customer_id}' has no `default_currency`. Skipping Shipping Item '{shipping_item_name}'.")
+                print(f"WARNING: {parent_doctype} '{parent_id}' has no `default_currency`. Skipping Shipping Item '{shipping_item_name}'.")
             skipped_count += 1
             continue
 
         if current_currency is None:
             if dry_run:
                 if verbose:
-                    print(f"DRY RUN: Would update Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') — set currency to '{customer_currency}'")
+                    print(f"DRY RUN: Would update Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{default_currency}'")
             else:
-                frappe.db.set_value("Shipping Item", shipping_item_id, "currency", customer_currency)
+                frappe.db.set_value("Shipping Item", shipping_item_id, "currency", default_currency)
                 if verbose:
-                    print(f"Updated Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') — set currency to '{customer_currency}'")
+                    print(f"Updated Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{default_currency}'")
             updated_count += 1
 
-        elif current_currency != customer_currency:
+        elif current_currency != default_currency:
             if verbose:
                 print(
-                    f"WARNING: Shipping Item '{shipping_item_name}' (Customer: '{customer_id}') has currency '{current_currency}', "
-                    f"but Customer expects '{customer_currency}'. No change made."
+                    f"WARNING: Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') has currency '{current_currency}', "
+                    f"but expected '{default_currency}'. No change made."
                 )
             warning_count += 1
 
