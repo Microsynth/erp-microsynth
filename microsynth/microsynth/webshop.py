@@ -2631,6 +2631,7 @@ def validate_webshop_address(webshop_address):
     if (webshop_address.get('is_default_shipping') or webshop_address.get('is_default_billing')) and address is None:
         frappe.throw(f"Cannot set missing address to default.")
 
+
 def validate_contact_in_webshop_address_doc(webshop_address_doc, contact_id):
     """
     Ensure that the webshop addresses contain the given contact and that the contact is active (not disabled).
@@ -3765,6 +3766,19 @@ def update_credit_account(credit_account):
         }
 
 
+def get_default_shipping_address(webshop_address_id):
+    """
+    Get the default shipping address of the given Webshop Address.
+
+    bench execute microsynth.microsynth.webshop.get_default_shipping_address --kwargs "{'webshop_address_id': '215856'}"
+    """
+    webshop_address_doc = frappe.get_doc("Webshop Address", webshop_address_id)
+    for a in webshop_address_doc.addresses:
+        if a.is_default_shipping and not a.disabled:
+            return frappe.get_value("Contact", a.contact, "address")
+    return None
+
+
 @frappe.whitelist()
 def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer):
     """
@@ -3801,6 +3815,12 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
         credit_item = frappe.get_doc("Item", credit_item_code)
 
+        # Fetch shipping address of the webshop account
+        shipping_address = get_default_shipping_address(webshop_account)
+        if not shipping_address:
+            frappe.throw(f"Webshop Address '{webshop_account}' has no default shipping address. Unable to create deposit invoice.")
+        tax_template = find_dated_tax_template(company, customer, shipping_address, "Services", datetime.now().date())  # TODO: Is category "Services" correct?
+
         # Create the Sales Invoice
         invoice = frappe.get_doc({
             "doctype": "Sales Invoice",
@@ -3816,7 +3836,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
                 "item_name": description if description else credit_item.item_name,
                 "cost_center": credit_item.get("selling_cost_center") or frappe.get_value("Company", company, "cost_center")
             }],
-            "taxes_and_charges": "BAL Export (220) - BAL",  # TODO: How to fetch?
+            "taxes_and_charges": tax_template,
             "credit_account": account_id,
             "remarks": f"Webshop deposit for Credit Account {account_id}"
             # TODO: Product Type? Customer PO No?
