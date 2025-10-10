@@ -3851,7 +3851,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         shipping_address = get_default_shipping_address(webshop_account)
         if not shipping_address:
             frappe.throw(f"Webshop Address '{webshop_account}' has no default shipping address. Unable to create deposit invoice.")
-        tax_template = find_dated_tax_template(company, customer, shipping_address, "Services", datetime.now().date())  # TODO: Is category "Services" correct?
+        tax_template = find_dated_tax_template(company, customer, shipping_address, "Service", datetime.now().date())  # TODO: Is category "Service" correct?
 
         # Create the Sales Invoice
         invoice = frappe.get_doc({
