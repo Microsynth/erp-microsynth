@@ -428,9 +428,9 @@ def remove_control_characters(input_string):
     return re.sub(r'[\x00-\x1F\x7F-\x9F]', '', input_string)
 
 
-def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=34):
+def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=35):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-16_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-17_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-06-17_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-10_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-10_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -486,6 +486,13 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             #quantity_supplier = line[26].strip()
             material_code = line[27]  # Kurzname
             item_id = line[28].strip()  # Datensatznummer
+            to_import = line[34].strip().lower()  # Export ERP (Ja/nein)
+            if to_import not in ['ja', 'nein']:
+                print(f"ERROR: Item with Index {item_id} has invalid value '{to_import}' in column 'Export ERP'. Going to continue with the next supplier item.")
+                continue
+            if to_import == 'nein':
+                continue
+            # check if item was ordered from 2021 to 2025
             try:
                 ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0)])
             except ValueError as err:
@@ -534,12 +541,21 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 try:
                     safety_stock = float(safety_stock)
                 except Exception as err:
-                    print(f"ERROR: Unable to convert {safety_stock=} to a float.")
+                    print(f"ERROR: Item {item_id}: Unable to convert {safety_stock=} to a float.")
 
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
             else:
                 item_code = f"P01{int(item_id):0{4}d}"
+
+            if frappe.db.exists("Item", item_code):
+                existing_item_name = frappe.get_value("Item", item_code, 'item_name')
+                if internal_code:
+                    print(f"ERROR: Item with internal code {internal_code} and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import of Item with Index {item_id} ('{item_name}').")
+                    continue
+                else:
+                    print(f"ERROR: Item with 'Datensatznummer' {item_id} ('{item_name}') and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import.")
+                    continue
 
             item = frappe.get_doc({
                 'doctype': "Item",
@@ -555,9 +571,17 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'is_sales_item': 0,
                 'material_code': material_code or None
             })
-            if not supplier_index in supplier_mapping:
-                print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}).")
-            else:
+            if supplier_index not in supplier_mapping:
+                # Search for an existing Supplier with the supplier_index as external creditor number?
+                existing_suppliers = frappe.get_all("Supplier", filters={'ext_creditor_id': supplier_index}, fields=['name'])
+                if len(existing_suppliers) == 1:
+                    print(f"WARNING: Found no Supplier with Index {supplier_index} in the supplier mapping file, but found one Supplier {existing_suppliers[0]['name']} with the same external creditor number. Going to use this Supplier for Item with Index {item_id} ({item.item_name}).")
+                    supplier_mapping[supplier_index] = existing_suppliers[0]['name']
+                elif len(existing_suppliers) > 1:
+                    print(f"WARNING: Found no Supplier with Index {supplier_index} in the supplier mapping file, but found {len(existing_suppliers)} Suppliers with the same external creditor number. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}).")
+                else:
+                    print(f"WARNING: Found no Supplier with Index {supplier_index}. Unable to link a Supplier on Item with Index {item_id} ({item.item_name}).")
+            if supplier_index in supplier_mapping:
                 item.append("supplier_items", {
                     'supplier': supplier_mapping[supplier_index],
                     'supplier_part_no': supplier_item_id,
@@ -584,7 +608,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-06-16_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-06-17_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-10_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -671,9 +695,14 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 currency = 'GBP'
 
             # check some values
-            if salutation and salutation not in ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'):
-                #print(f"WARNING: Salutation '{salutation}' is not in the list of allowed salutations ('Frau', 'Herr', 'Ms.', 'Mr.', 'Mme', 'M.'), going to ignore salutation of {ext_creditor_number}.")
-                salutation = None
+            if salutation:
+                if salutation == 'Frau':
+                    salutation = 'Ms.'
+                elif salutation == 'Herr':
+                    salutation = 'Mr.'
+                if salutation not in ('Ms.', 'Mr.'):
+                    print(f"WARNING: Salutation '{salutation}' is not in the list of allowed salutations ('Frau', 'Herr', 'Ms.', 'Mr.'), going to ignore salutation of {ext_creditor_number}.")
+                    salutation = None
             if country_code not in country_code_mapping:
                 countries = frappe.get_all("Country", filters={'code': country_code}, fields=['name'])
                 if len(countries) == 0:
@@ -697,7 +726,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             #company = f"{company} 2"  # Only for testing
             existing_suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name', 'ext_creditor_id'])
             if existing_suppliers and (not (update_countries or add_ext_creditor_id)) and len(existing_suppliers) > 0:
-                print(f"ERROR: There exists already {len(existing_suppliers)} Supplier with the Supplier Name '{company}' and it has the External Creditor ID {','.join((s['ext_creditor_id'] or 'None') for s in existing_suppliers)}. Going to skip {ext_creditor_number}.")
+                print(f"ERROR: There exists already {len(existing_suppliers)} Supplier {','.join(s['name'] for s in existing_suppliers)} with the Supplier Name '{company}' and it has the External Creditor ID {','.join((s['ext_creditor_id'] or 'None') for s in existing_suppliers)}. Going to skip {ext_creditor_number}.")
                 continue
 
             if add_ext_creditor_id:
