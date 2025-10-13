@@ -264,6 +264,7 @@ def replace_shipping_items_on_countries(items_to_replace, country_to_code, code_
             `tabShipping Item`.`qty`,
             `tabShipping Item`.`rate`,
             `tabShipping Item`.`threshold`,
+            `tabShipping Item`.`currency`,
             `tabShipping Item`.`preferred_express`
         FROM `tabShipping Item`
         LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`

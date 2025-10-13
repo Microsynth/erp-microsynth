@@ -1558,6 +1558,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`currency`,
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
@@ -1586,6 +1587,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`currency`,
                 `tabShipping Item`.`preferred_express`
         FROM `tabShipping Item`
         LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
@@ -1607,6 +1609,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     if not contact or not frappe.db.exists("Contact", contact):
         return {'success': False, 'message': 'A valid and existing contact is required', 'shipping_items': []}
     customer_id = get_customer(contact)
+    customer_currency = frappe.get_value("Customer", customer_id, 'default_currency')
     # find by customer id
     if customer_id:
         shipping_items = frappe.db.sql("""
@@ -1615,6 +1618,7 @@ def get_contact_shipping_items(contact, client="webshop"):
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`currency`,
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabShipping Item`.`item`
@@ -1623,7 +1627,7 @@ def get_contact_shipping_items(contact, client="webshop"):
                 AND `tabItem`.`disabled` = 0
             ORDER BY `tabShipping Item`.`idx` ASC;""", (customer_id,), as_dict=True)
         if len(shipping_items) > 0:
-            return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
+            return {'success': True, 'message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
         else:
             country = None
             # check if customer has a punchout_shop
@@ -1650,13 +1654,15 @@ def get_contact_shipping_items(contact, client="webshop"):
                 `tabShipping Item`.`qty`,
                 `tabShipping Item`.`rate`,
                 `tabShipping Item`.`threshold`,
+                `tabShipping Item`.`currency`,
                 `tabShipping Item`.`preferred_express`
             FROM `tabShipping Item`
             LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabShipping Item`.`item`
             WHERE `tabShipping Item`.`parent` = %s
                 AND `tabShipping Item`.`parenttype` = "Country"
                 AND `tabItem`.`disabled` = 0
-            ORDER BY `tabShipping Item`.`idx` ASC;""", (country,), as_dict=True)
+                AND (`tabShipping Item`.`currency` = %s OR `tabShipping Item`.`currency` IS NULL)
+            ORDER BY `tabShipping Item`.`idx` ASC;""", (country, customer_currency), as_dict=True)
     if len(shipping_items) > 0:
         return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
     else:
