@@ -3812,7 +3812,7 @@ def get_default_shipping_address(webshop_address_id):
 
 
 @frappe.whitelist()
-def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer):
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number):
     """
     Create a Sales Invoice to deposit customer credits.
 
@@ -3824,14 +3824,15 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         "currency": "CHF",
         "description": "Cloning Primers",
         "company": "Microsynth AG",
-        "customer": "801234"
+        "customer": "801234",
+        "customer_order_number": "PO-12345"
     }
     * Company, Currency and Customer are pulled from the Credit Account and transmitted over the API for validation
     * Credits will be available as soon as the payment of the Sales Invoice is received
     * ERP validates that the company, customer and currency matches the account currency
     * The description will be used to name the item. if not set (null) the standard text "Primers and Sequencing" will be shown on the Sales Invoice
 
-    bench execute microsynth.microsynth.webshop.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003'}"
+    bench execute microsynth.microsynth.webshop.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003', 'customer_order_number': 'PO-12345'}"
     """
     try:
         credit_account_doc = frappe.get_doc('Credit Account', account_id)
@@ -3858,6 +3859,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "doctype": "Sales Invoice",
             "company": company,
             "customer": customer,
+            "po_no": customer_order_number,
             "contact_person": webshop_account,
             "territory": customer_doc.territory or "All Territories",
             "currency": currency,
@@ -3872,7 +3874,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "taxes_and_charges": tax_template,
             "credit_account": account_id,
             "remarks": f"Webshop deposit for Credit Account {account_id}"
-            # TODO: Product Type? Customer PO No?
+            # TODO: Product Type?
         })
         invoice.insert()
         invoice.submit()
