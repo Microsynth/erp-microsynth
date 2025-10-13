@@ -26,7 +26,8 @@ def get_columns(mode=None):
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
         {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120},
-        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 200}
+        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 200},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"}
     ]
     return columns
 
@@ -80,7 +81,8 @@ def get_data(filters):
                 `tabItem Supplier`.`supplier`,
                 `tabSupplier`.`supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
-                IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`
+                IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
+                `tabMaterial Request`.`comment` AS `comment`
             FROM
                 `tabMaterial Request Item`
             LEFT JOIN `tabMaterial Request`
@@ -137,7 +139,8 @@ def get_data(filters):
                     `tabItem Supplier`.`supplier`,
                     `tabSupplier`.`supplier_name`,
                     `tabItem Supplier`.`supplier_part_no`,
-                    IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`
+                    IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
+                    `tabMaterial Request`.`comment` AS `comment`
                 FROM
                     `tabMaterial Request Item`
                 LEFT JOIN `tabMaterial Request`
@@ -175,7 +178,8 @@ def get_data(filters):
                 `tabItem Supplier`.`supplier`,
                 `tabSupplier`.`supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
-                IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`
+                IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
+                `tabMaterial Request`.`comment` AS `comment`
             FROM
                 `tabMaterial Request Item`
             LEFT JOIN `tabMaterial Request`
@@ -215,7 +219,8 @@ def get_data(filters):
                 `tabItem Request`.`supplier`,
                 `tabItem Request`.`supplier_name`,
                 `tabItem Request`.`supplier_part_no`,
-                `tabItem Request`.`owner` AS `requested_by`
+                `tabItem Request`.`owner` AS `requested_by`,
+                `tabItem Request`.`comment` AS `comment`
             FROM
                 `tabItem Request`
             WHERE

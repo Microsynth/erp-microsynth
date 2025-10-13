@@ -286,7 +286,11 @@ function open_confirmation_dialog(selected, report) {
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
-            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') }
+            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') },
+
+            { fieldtype: 'Section Break' },
+
+            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment' }
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
@@ -300,7 +304,8 @@ function open_confirmation_dialog(selected, report) {
                     'item_code': selected.name,
                     'qty': values.qty,
                     'schedule_date': values.schedule_date,
-                    'company': values.company
+                    'company': values.company,
+                    'comment': values.comment || '',
                 },
                 callback(r) {
                     if (!r.exc && r.message) {

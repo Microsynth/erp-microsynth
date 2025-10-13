@@ -178,7 +178,9 @@ function open_material_request_dialog(selected, frm) {
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
             { fieldtype: 'Currency', label: __('Rate'), fieldname: 'rate', default: frm.doc.rate || 0 },
-            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: 1, options: 'Company', default: frm.doc.company }
+            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: 1, options: 'Company', default: frm.doc.company },
+            { fieldtype: 'Section Break' },
+            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment', default: frm.doc.comment || '' }
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
@@ -202,7 +204,8 @@ function open_material_request_dialog(selected, frm) {
                         'material_code': selected.material_code,
                         'item_name': selected.item_name,
                         'currency': values.currency || 'CHF',
-                        'rate': values.rate || 0
+                        'rate': values.rate || 0,
+                        'comment': values.comment || ''
                     }
                 },
                 callback(r) {
