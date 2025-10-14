@@ -10,6 +10,7 @@ from datetime import datetime, date
 from frappe.desk.form.load import get_attachments
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
+from microsynth.qms.doctype.qm_training_record.qm_training_record import create_training_record
 
 
 document_types_with_review = ['SOP', 'FLOW', 'QMH']
@@ -233,7 +234,21 @@ def set_released(doc, user):
         set_valid_document(qm_doc.name)
     else:
         update_status(qm_doc.name, "Released")
-    return
+    # Create QM Training Record Drafts
+    # Get all users with the QAU role
+    qau_users = [user["name"] for user in frappe.get_all("User", filters={"role": "QAU"}, fields=["name"])]
+    # Collect all users who need training
+    training_candidates = {  # use a set for uniqueness
+        *qau_users,
+        qm_doc.created_by,
+        qm_doc.reviewed_by,
+        qm_doc.released_by
+    }
+    # Remove any None values
+    users_to_train = [user for user in training_candidates if user]
+    due_date = frappe.utils.add_days(date.today(), 14)
+    for trainee in users_to_train:
+        create_training_record(trainee, "QM Document", qm_doc.name, due_date)
 
 
 @frappe.whitelist()
