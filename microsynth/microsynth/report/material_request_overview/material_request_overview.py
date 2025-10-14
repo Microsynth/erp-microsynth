@@ -5,29 +5,31 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
+from microsynth.qms.report.users_by_process.users_by_process import get_users
 
 
 def get_columns(mode=None):
     columns = [
-        {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 100},
+        {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 95},
         {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95},
         {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 240},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 50},
+        {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
     ]
     if mode != "To Order":
         columns += [
-            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 90},
+            {"label": _("Ordered Qty"), "fieldname": "ordered_qty", "fieldtype": "Int", "width": 85},
             {"label": _("Purchase Order"), "fieldname": "purchase_order", "fieldtype": "Link", "options": "Purchase Order", "width": 105},
             {"label": _("Received Qty"), "fieldname": "received_qty", "fieldtype": "Int", "width": 95},
         ]
     columns += [
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120},
-        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 200},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"}
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
+        {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 150},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"},
+        {"label": _("QM Process"), "fieldname": "qm_processes", "fieldtype": "Data", "width": 400, "align": "left"}
     ]
     return columns
 
@@ -36,6 +38,36 @@ def get_data(filters):
     mode = filters.get("mode") if filters else None
     conditions = ""
     item_request_conditions = ""
+
+    # Get users assigned to selected QM Process(es)
+    user_qm_mapping = {}
+    user_filter_clause = ""
+    if filters and filters.get("qm_process"):
+        # Wrap single process into a list if needed
+        qm_processes = [filters.get("qm_process")]
+        companies = [filters.get("company")]
+        matched_users = get_users(qm_processes=qm_processes, companies=companies)
+        users = [u.user_name for u in matched_users]
+        if users:
+            filters["users"] = users
+            user_filter_clause = " AND IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) IN %(users)s"
+        else:
+            return []  # No users match QM Process
+
+        # Build user -> QM Process list mapping
+        if matched_users:
+            user_qm_mapping = {}
+
+            qm_user_rows = frappe.db.sql("""
+                SELECT parent AS user, qm_process
+                FROM `tabQM User Process Assignment`
+                WHERE parent IN %(users)s
+            """, {"users": users}, as_dict=True)
+
+            for row in qm_user_rows:
+                user_qm_mapping.setdefault(row.user, []).append(row.qm_process)
+        conditions += user_filter_clause
+
     if filters and filters.get("supplier"):
         conditions += " AND `tabItem Supplier`.`supplier` = %(supplier)s"
         item_request_conditions += " AND `tabItem Request`.`supplier` = %(supplier)s"
@@ -99,9 +131,8 @@ def get_data(filters):
                 {conditions}
             ORDER BY `tabMaterial Request`.`transaction_date` ASC
         """, filters, as_dict=True)
-        return data
     elif mode == "Unreceived Material Requests":
-        return frappe.db.sql(f"""
+        data = frappe.db.sql(f"""
             SELECT *
             FROM (
                 SELECT
@@ -163,7 +194,7 @@ def get_data(filters):
                 raw.transaction_date ASC;
             """, filters, as_dict=True)
     elif mode == "To Order":
-        return frappe.db.sql(f"""
+        data = frappe.db.sql(f"""
             SELECT
                 `tabMaterial Request`.`name` AS `material_request`,
                 'Material Request' AS `request_type`,
@@ -232,6 +263,13 @@ def get_data(filters):
         """, filters, as_dict=True)
     else:
         frappe.throw(_("Invalid mode"))
+
+    for row in data:
+        user = row.get("requested_by")
+        processes = user_qm_mapping.get(user, [])
+        row["qm_processes"] = ", ".join(sorted(set(processes))) if processes else ""
+
+    return data
 
 
 def execute(filters=None):

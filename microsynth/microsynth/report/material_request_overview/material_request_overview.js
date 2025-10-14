@@ -38,7 +38,13 @@ frappe.query_reports["Material Request Overview"] = {
 			label: __("To Date"),
 			fieldtype: "Date",
 			default: frappe.datetime.get_today(),
-		}
+		},
+        {
+            fieldname: "qm_process",
+            label: __("QM Process"),
+            fieldtype: "Link",
+            options: "QM Process"
+        }
     ],
     "onload": (report) => {
         hide_chart_buttons();
