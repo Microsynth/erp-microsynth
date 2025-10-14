@@ -608,7 +608,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-10_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-14_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -645,12 +645,12 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             web_username = line[15].strip()
             web_pwd = line[16].strip()
             supplier_tax_id = line[17].strip()
-            #skonto = line[18].strip()  # will be imported manually
+            skonto = line[18].strip()  # imported as text into "Supplier Details"
             payment_days = str(line[19].strip())
             currency = line[20].strip()
-            #reliability = line[21].strip()  # import later
-            phone_note = line[22].strip()
-            notes = line[23].strip()
+            reliability = line[21].strip()  # imported as text into "Supplier Details"
+            phone_note = line[22].strip()  # imported as text into "Supplier Details"
+            notes = line[23].strip()  # imported as text into "Supplier Details"
             bic = line[24].strip()
             iban = line[25].strip()
             #bank_name = line[26].strip()  # do not import
@@ -663,10 +663,10 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             contact_person_3 = line[33].strip()
             email_3 = line[34].strip()
             notes_3 = line[35].strip()
-            discount = line[36].strip()
-            threshold = line[37].strip()
-            small_qty_surcharge = line[38].strip()
-            transportation_costs = line[39].strip()
+            discount = line[36].strip()  # imported as text into "Supplier Details"
+            threshold = line[37].strip()  # imported as text into "Supplier Details"
+            small_qty_surcharge = line[38].strip()  # imported as text into "Supplier Details"
+            transportation_costs = line[39].strip()  # imported as text into "Supplier Details"
             ext_creditor_number = line[40].strip()
             #print(f"INFO: Processing Supplier with Index {ext_creditor_number} (external creditor number) ...")
 
@@ -677,18 +677,23 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 company = company_addition
             company = company.replace('\n', ' ').replace('\r', '')
             details = ""
+            if reliability:
+                details += f"Zuverlässigkeit: {reliability}\n"
             if phone_note:
                 details += f"Phone Note: {phone_note}\n"
             if notes:
                 details += f"Notes: {notes}"
             if discount:
                 details += f"\nKundenrabatt: {discount}"
+            if skonto:
+                details += f"\nSkonto: {skonto}"
             if threshold:
                 details += f"\nKleinmengenzuschlag bis Bestellwert {threshold}"
             if small_qty_surcharge:
                 details += f"\nKleinmengenzuschlag (Betrag): {small_qty_surcharge}"
             if transportation_costs:
                 details += f"\nTransportkosten: {transportation_costs}"
+
             if post_box and not "Postfach" in post_box:
                 post_box = f"Postfach {post_box}"
             if currency == '£':
@@ -726,7 +731,12 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             #company = f"{company} 2"  # Only for testing
             existing_suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name', 'ext_creditor_id'])
             if existing_suppliers and (not (update_countries or add_ext_creditor_id)) and len(existing_suppliers) > 0:
+                # TODO: Try to update existing Supplier?
                 print(f"ERROR: There exists already {len(existing_suppliers)} Supplier {','.join(s['name'] for s in existing_suppliers)} with the Supplier Name '{company}' and it has the External Creditor ID {','.join((s['ext_creditor_id'] or 'None') for s in existing_suppliers)}. Going to skip {ext_creditor_number}.")
+                if len(existing_suppliers) == 1:
+                    # write mapping of existing ERP Supplier ID to FM Index to a file
+                    with open(output_filepath, 'a') as txt_file:
+                        txt_file.write(f"{existing_suppliers[0]['name']};{ext_creditor_number}\n")
                 continue
 
             if add_ext_creditor_id:
