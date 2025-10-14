@@ -375,13 +375,13 @@ def set_income_accounts(sales_invoice):
         address = sales_invoice.customer_address
 
     country = frappe.db.get_value("Address", address, "country")
-
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     intercompany = {}
     for item in sales_invoice.items:
         if item.get('sales_order') and item.get('sales_order') not in intercompany:
             intercompany[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "is_intercompany")
 
-        if item.item_code == "6100":
+        if item.item_code == credit_item_code:
             # credit item
             item.income_account = get_alternative_account(item.income_account, sales_invoice.currency)
         elif item.get('sales_order') and intercompany[item.get('sales_order')] == 1:
@@ -398,13 +398,14 @@ def get_income_accounts(customer, address, currency, sales_invoice_items):
         sales_invoice_items = json.loads(sales_invoice_items)
 
     country = frappe.db.get_value("Address", address, "country")
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     income_accounts = []
     intercompany = {}
     for item in sales_invoice_items:
         if item.get('sales_order') and item.get('sales_order') not in intercompany:
             intercompany[item.get('sales_order')] = frappe.get_value("Sales Order", item.get('sales_order'), "is_intercompany")
 
-        if item.get("item_code") == "6100":
+        if item.get("item_code") == credit_item_code:
             # credit item
             income_accounts.append(get_alternative_account(item.get("income_account"), currency))
         elif item.get('sales_order') and intercompany[item.get('sales_order')] == 1:

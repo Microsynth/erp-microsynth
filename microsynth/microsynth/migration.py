@@ -1762,7 +1762,7 @@ def create_credit_import_sales_invoice(company, customer, currency, total, produ
         'taxes_and_charges': tax_templates[company]
     })
     item_detail = {
-        'item_code': '6100',
+        'item_code': frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
         'qty': 1,
         'rate': total
     }
@@ -2269,7 +2269,7 @@ def remove_item_account_settings():
     run
     bench execute microsynth.microsynth.migration.remove_item_account_settings
     """
-
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     items = frappe.db.get_all("Item",
         fields = ['name'])
 
@@ -2279,7 +2279,7 @@ def remove_item_account_settings():
     for item_name in items:
         item = frappe.get_doc("Item", item_name)
 
-        if item.item_code == "6100":
+        if item.item_code == credit_item_code:
             continue
 
         print("{progress}% remove account settings of item '{item}'".format(item = item.item_code, progress = int(100 * i / length)))
@@ -4287,6 +4287,7 @@ def find_oligo_orders_without_shipping_item(from_date):
                                         ['product_type', '=', 'Oligos'],
                                         ['transaction_date', '>=', from_date]],
                                fields=['name'])
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     print(f"Sales Order;Is Punchout;Date;Web Order ID;Status;Customer;Customer Name;Grand Total;Currency;Creator")
     for i, order in enumerate(orders):
         if i % 100 == 0:
@@ -4298,7 +4299,7 @@ def find_oligo_orders_without_shipping_item(from_date):
             if item.item_group == "Shipping":
                 shipping = True
                 break
-            if item.item_code == '0975' or item.item_code == '6100':
+            if item.item_code == '0975' or item.item_code == credit_item_code:
                 unwanted_item = True
                 break
         if not shipping and not unwanted_item:

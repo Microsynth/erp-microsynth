@@ -339,6 +339,9 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     run
     bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kwargs "{'currency': 'EUR', 'date': '2023-06-15'}"
     """
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    if not credit_item_code:
+        frappe.throw("Please define a credit item in the Microsynth Settings.")
     results = []
     for d in frappe.db.sql("""
         SELECT
@@ -368,7 +371,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice Item`.`item_code` = "6100"
+                AND `tabSales Invoice Item`.`item_code` = "{credit_item_code}"
                 AND `tabSales Invoice`.`company` = '{company}'
                 AND `tabSales Invoice`.`posting_date` = "{date}"
                 AND `tabSales Invoice`.`currency` = '{currency}'
@@ -394,7 +397,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
                 AND `tabSales Invoice`.`currency` = '{currency}'
         ) AS `raw`
         WHERE `raw`.`net_amount` != 0
-        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date, company=company), as_dict=True):
+        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(credit_item_code=credit_item_code, currency=currency, date=date, company=company), as_dict=True):
         results.append("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
             d['date'],
             d['customer'],
