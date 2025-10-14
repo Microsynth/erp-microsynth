@@ -246,7 +246,7 @@ def set_released(doc, user):
     }
     # Remove any None values
     users_to_train = [user for user in training_candidates if user]
-    due_date = frappe.utils.add_days(date.today(), 14)
+    due_date = frappe.utils.add_days(date.today(), 30)
     for trainee in users_to_train:
         create_training_record(trainee, "QM Document", qm_doc.name, due_date)
 
