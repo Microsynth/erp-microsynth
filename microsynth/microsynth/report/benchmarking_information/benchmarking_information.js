@@ -12,8 +12,7 @@ frappe.query_reports["Benchmarking Information"] = {
         {
             "fieldname":"to_date",
             "label": __("To Date"),
-            "fieldtype": "Date",
-            "default": frappe.datetime.get_today()
+            "fieldtype": "Date"
         },
         {
             "fieldname": "item_group",
