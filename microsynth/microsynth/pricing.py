@@ -706,7 +706,9 @@ def delete_item_prices(item_price_names, blacklist_price_lists=None, item_code=N
 
     bench execute microsynth.microsynth.pricing.delete_item_prices --kwargs "{'item_price_names': ['b7c71209f3', '5cc7ecca51'], 'blacklist_price_lists': ['Contract Research Prices CHF', 'Contract Research Prices EUR', 'Contract Research Prices USD'], 'item_code': '30102', 'min_qty': 380, 'dry_run': True}"
     """
-    for item_price_name in item_price_names:
+    total_count = len(item_price_names)
+    print(f"Going to process {total_count} Item Prices ...")
+    for i, item_price_name in enumerate(item_price_names):
         try:
             item_price = frappe.get_doc("Item Price", item_price_name)
         except Exception as e:
@@ -728,7 +730,7 @@ def delete_item_prices(item_price_names, blacklist_price_lists=None, item_code=N
             except Exception as e:
                 print(f"Unable to delete {details}: {e}. Going to continue.")
                 continue
-        print(f"{'Would delete' if dry_run else 'Deleted'} {details}.")
+        print(f"{i}/{total_count}: {'Would delete' if dry_run else 'Deleted'} {details}.")
 
 
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=False):
