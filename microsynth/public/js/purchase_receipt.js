@@ -191,7 +191,8 @@ function enter_batches(frm) {
                             'batch_data': data
                         },
                         'callback': function() {
-                            frappe.msgprint(__('Batches processed successfully.'));
+                            //frappe.msgprint(__('Batches processed successfully.'));
+                            frappe.show_alert({message: __('Batches processed successfully.'), indicator: 'green'});
                             frm.reload_doc();
                             d.hide();
                         }
