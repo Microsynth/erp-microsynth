@@ -90,7 +90,7 @@ def link_quotation_to_order(sales_order, quotation):
         sales_order_doc.cancel()
         sales_order_doc_dict = sales_order_doc.as_dict()
         del sales_order_doc_dict["name"]
-        del sales_order_doc_dict["creation"]
+        del sales_order_doc_dict["creation"]  # TODO: Why does this not work?
         del sales_order_doc_dict["modified"]
         del sales_order_doc_dict["modified_by"]
         del sales_order_doc_dict["owner"]
