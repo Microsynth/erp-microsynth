@@ -397,6 +397,7 @@ function display_material_request_owners(frm) {
                 });
                 // Group items by owner
                 frm.doc.items.forEach(item => {
+                    if (!item.material_request) return;
                     let owner = mr_owner_map[item.material_request];
                     if (!owner) {
                         owner = 'Unknown';
