@@ -225,6 +225,10 @@ async function print_labels(frm) {
     const rows = [];
 
     for (const pr_item of items) {
+        if (pr_item.item_code === "P020000") {
+            // Skip "Inbound Freight" Item
+            continue;
+        }
         const item = await frappe.db.get_doc('Item', pr_item.item_code);
 
         let labels_to_print = pr_item.qty;
