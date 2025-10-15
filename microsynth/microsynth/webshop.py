@@ -3968,18 +3968,19 @@ def get_balance_sheet_pdf(account_id):
 
     bench execute microsynth.microsynth.webshop.get_balance_sheet_pdf --kwargs "{'account_id': 'CA-000002'}"
     """
+    from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
     try:
-        pdf = b""  # TODO generate actual PDF
-        encoded_pdf = base64.b64encode(pdf).decode("utf-8")
+        pdf = get_pdf_data(doctype='Credit Account', name=account_id, print_format='Standard')
+        encoded_pdf = base64.b64encode(pdf)
         file_name = f"Balance_Sheet_{account_id.replace(' ', '_')}.pdf"
         return {
-            "success": False,
+            "success": True,
             "file": {
                 "file_name": file_name,
                 "content_base64": encoded_pdf,
                 "mime_type": "application/pdf"
             },
-            "message": "Not yet implemented"
+            "message": "Print Format will be changed"
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
