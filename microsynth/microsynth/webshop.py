@@ -1194,6 +1194,11 @@ def place_order(content, client="webshop"):
         })
     if 'product_type' in content:
         so_doc.product_type = content['product_type']
+    if 'credit_accounts' in content:
+        for ca in content['credit_accounts']:
+            so_doc.append('credit_accounts', {
+                'credit_account': ca
+            })
     # quotation reference (NOTE: ignores same item at different qtys (staged pricing) )
     if 'quotation' in content and frappe.db.exists("Quotation", content['quotation']):
         quotation = content['quotation']
