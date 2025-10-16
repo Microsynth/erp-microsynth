@@ -13,14 +13,15 @@ def get_columns():
         {"label": "Web Order ID", "fieldname": "web_order_id", "fieldtype": "Data", "width": 90},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 90},
         {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 125},
-        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 85},
-        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
+        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
+        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 160},
+        {"label": "Customer PO No", "fieldname": "po_no", "fieldtype": "Data", "width": 100},
         {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 65},
-        {"label": "Contact Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 155},
+        {"label": "Contact Name", "fieldname": "contact_display", "fieldtype": "Data", "width": 110},
         {"label": "Total Amount", "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
         {"label": "Comments", "fieldname": "comments", "fieldtype": "Int", "width": 80},
-        {"label": "Creator", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 175},
+        {"label": "Creator", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 150},
         {"label": "Creation Date", "fieldname": "creation", "fieldtype": "Date", "width": 125},
     ]
 
@@ -33,6 +34,7 @@ def extract_doc_data(doc):
         "company": doc.get("company"),
         "customer": doc.get("customer") or doc.get("party_name"),
         "customer_name": doc.get("customer_name", ""),
+        "po_no": doc.get("po_no", ""),
         "contact_person": doc.get("contact_person"),
         "contact_display": doc.get("contact_display"),
         "posting_date": doc.get("transaction_date") or doc.get("posting_date"),
@@ -45,7 +47,7 @@ def extract_doc_data(doc):
 
 
 def get_data(filters):
-    if not filters.get("web_order_id") and not filters.get("document_id"):
+    if not filters.get("web_order_id") and not filters.get("document_id") and not filters.get("customer_po_no"):
         return []
 
     collected_docs = []
@@ -147,6 +149,14 @@ def get_data(filters):
         web_order_id = filters["web_order_id"]
         for doctype in ("Sales Order", "Delivery Note", "Sales Invoice"):
             docs = frappe.get_all(doctype, filters={"web_order_id": web_order_id}, fields=["name"])
+            for rec in docs:
+                safe_get_and_traverse(doctype, rec.name)
+
+    # Starting point 3: Customer's Purchase Order
+    if filters.get("customer_po_no"):
+        customer_po_no = filters["customer_po_no"]
+        for doctype in ("Sales Order", "Delivery Note", "Sales Invoice"):
+            docs = frappe.get_all(doctype, filters={"po_no": customer_po_no}, fields=["name"])
             for rec in docs:
                 safe_get_and_traverse(doctype, rec.name)
 

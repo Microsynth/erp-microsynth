@@ -15,6 +15,12 @@ frappe.query_reports["Sales Document Overview"] = {
             label: __("Document ID (QTN/SO/DN/SI)"),
             fieldtype: "Data",
             reqd: 0
+        },
+        {
+            fieldname: "customer_po_no",
+            label: __("Customer's Purchase Order"),
+            fieldtype: "Data",
+            reqd: 0
         }
     ],
     "onload": function(report) {
