@@ -430,7 +430,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=35):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-10_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-10_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-16_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-16_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -594,7 +594,11 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         'expense_account': account_name,
                         'default_supplier': supplier_mapping[supplier_index]
                     })
-            item.insert()
+            try:
+                item.insert()
+            except Exception as err:
+                print(f"ERROR: Unable to insert Item with Index {item_id} ('{item_name}') ({err}). Going to continue with the next supplier item.")
+                continue
             imported_counter += 1
 
             # write mapping of ERP Item ID to FM Index (Datensatznummer) to a file
@@ -608,7 +612,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-14_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-16_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -974,7 +978,7 @@ def decrypt_access_password(cdn):
         return {'password': password, 'warning': "Please set a password and save the Supplier before using the button 'Copy password'."}
     strength = test_password_strength(new_password=password)
     if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
-        return {'password': password, 'warning': f"The password does not match our security policy. Please change it to a strong password. {strength['feedback']['warning'] or ''}"}
+        return {'password': password, 'warning': f"The password does not match our security policy. Please change it to a strong password. Please do not use the company name inside the password. {strength['feedback']['warning'] or ''}"}
     else:
         return {'password': password, 'warning': None}
 
@@ -987,7 +991,7 @@ def check_supplier_shop_password(password):
     # check strength
     strength = test_password_strength(new_password=password)
     if 'microsynth' in password.lower() or not strength['feedback']['password_policy_validation_passed']:
-        return {'error': _("The new password does not match the security policy. Please try again with a strong password.") + " " + (strength['feedback']['warning'] or "")}
+        return {'error': _("The new password does not match the security policy. Please try again with a strong password. Please do not use the company name inside the password.") + " " + (strength['feedback']['warning'] or "")}
     else:
         return {'success': True}
 
