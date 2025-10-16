@@ -17,11 +17,12 @@ def get_columns():
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("ID"), "fieldname": "link", "fieldtype": "Link", "options": "Accounting Note", "width": 80},
         {"label": _("Reference"), "fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "width": 125},
-        {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 200, 'options': 'currency'},
+        {"label": _("SI Customer Name"), "fieldname": "reference_customer", "fieldtype": "Data", "width": 200},
+        {"label": _("Note"), "fieldname": "note", "fieldtype": "Data", "width": 250, 'options': 'currency'},
         {"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "options": "currency", "width": 90},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 60},
         {"label": _("Related"), "fieldname": "related", "fieldtype": "data", "width": 200},
-        {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 250}
+        {"label": _("Remarks"), "fieldname": "remarks", "fieldtype": "Data", "width": 550}
     ]
     return columns
 
@@ -38,6 +39,7 @@ def get_data(filters, short=False):
             `tabAccounting Note`.`date`,
             `tabAccounting Note`.`reference_doctype`,
             `tabAccounting Note`.`reference_name`,
+            (SELECT `customer_name` FROM `tabSales Invoice` WHERE `name` = `tabAccounting Note`.`reference_name`) AS `reference_customer`,
             `tabAccounting Note`.`note`,
             `tabAccounting Note`.`amount`,
             `tabAccounting Note`.`currency`,
