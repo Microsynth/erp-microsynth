@@ -3533,7 +3533,8 @@ def get_credit_account_balance(account_id):
         filters = {
             'credit_account': account_id,
             'company': credit_account.company,
-            'customer': credit_account.customer
+            'customer': credit_account.customer,
+            'exclude_unpaid_deposits': True
         }
         customer_credits = get_data(filters)
         balance = 0.0
@@ -3852,7 +3853,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         shipping_address = get_default_shipping_address(webshop_account)
         if not shipping_address:
             frappe.throw(f"Webshop Address '{webshop_account}' has no default shipping address. Unable to create deposit invoice.")
-        tax_template = find_dated_tax_template(company, customer, shipping_address, "Service", datetime.now().date())  # TODO: Is category "Service" always correct?
+        tax_template = find_dated_tax_template(company, customer, shipping_address, "Service", datetime.now().date())
         customer_doc = frappe.get_doc("Customer", customer)
         # Create the Sales Invoice
         invoice = frappe.get_doc({
@@ -3860,6 +3861,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "company": company,
             "customer": customer,
             "po_no": customer_order_number,
+            "product_type": "Service",
             "contact_person": webshop_account,
             "territory": customer_doc.territory or "All Territories",
             "currency": currency,
@@ -3874,7 +3876,6 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "taxes_and_charges": tax_template,
             "credit_account": account_id,
             "remarks": f"Webshop deposit for Credit Account {account_id}"
-            # TODO: Product Type?
         })
         invoice.insert()
         invoice.submit()

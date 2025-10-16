@@ -33,6 +33,10 @@ def get_columns():
 
 def get_data(filters, short=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
+    deposit_conditions = ""
+
+    if filters and filters.get('exclude_unpaid_deposits'):
+        deposit_conditions += f"AND `tabSales Invoice`.`status` IN ('Paid', 'Return', 'Credit Note Issued')"
 
     if filters and filters.get('credit_type') == 'Standard':
         conditions += f"AND (`tabSales Invoice`.`product_type` is null or `tabSales Invoice`.`product_type` != 'Project')"
@@ -109,6 +113,7 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 {conditions}
+                {deposit_conditions}
             GROUP BY `tabSales Invoice`.`name`
 
             UNION ALL SELECT
@@ -148,7 +153,8 @@ def get_data(filters, short=False):
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
-            conditions=conditions)
+            conditions=conditions,
+            deposit_conditions=deposit_conditions)
 
         raw_data = frappe.db.sql(sql_query, as_dict=True)
 
