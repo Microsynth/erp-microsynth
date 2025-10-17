@@ -339,7 +339,8 @@ def create_ups_batch_file(sales_orders):
             frappe.log_error(f"WARNING: Cleaned phone='{phone}' on Sales Order {sales_order.name} contains characters that are not digits. The original contact_phone was '{sales_order.contact_phone}'.", "create_ups_batch_file")
         weight = '"0,1"'
         customer_name = sanitize_text((address.overwrite_company or sales_order.order_customer_display or sales_order.customer_name).replace(',', '').replace('–', '-'))[:35]
-        contact_display = sanitize_text(sales_order.contact_display.replace(',', '').replace('–', '-'))[:35]
+        shipping_contact_full_name = frappe.get_value("Contact", sales_order.shipping_contact or sales_order.contact_person, "full_name")
+        contact_display = sanitize_text(shipping_contact_full_name.replace(',', '').replace('–', '-'))[:35]
         address_line1 = sanitize_text(address.address_line1.replace(',', ''))[:35]
         city = sanitize_text(address.city.replace(',', ''))[:30]
         lines_to_write.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},,,{city},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,11,,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
