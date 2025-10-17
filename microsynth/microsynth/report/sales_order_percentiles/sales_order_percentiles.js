@@ -24,17 +24,7 @@ frappe.query_reports["Sales Order Percentiles"] = {
             reqd: 0
         }
     ],
-
-    onload: function(report) {
+    onload: function() {
 		hide_chart_buttons();
-        report.page.set_title("Sales Order Percentiles");
-    },
-
-    before_load: function(report) {
-        const filters = report.get_values();
-
-        if (filters.from_date && filters.to_date && filters.from_date > filters.to_date) {
-            frappe.throw(__("From Date must be before To Date"));
-        }
     }
 };
