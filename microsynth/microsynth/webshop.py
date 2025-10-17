@@ -3615,7 +3615,7 @@ def get_ca_forecast_balance(credit_account_doc, balance):
 
 def get_credit_account_dto(credit_account):
     """
-    Takes a Credit Account DocType or dict and returns a DTO suitable for the webshop.
+    Takes a Credit Account DocType or dict and returns a data transfer object (DTO) suitable for the webshop.
 
     bench execute microsynth.microsynth.webshop.get_credit_account_dto --kwargs "{'credit_account': 'CA-000002'}"
     """
@@ -3625,6 +3625,7 @@ def get_credit_account_dto(credit_account):
 
     return {
         "account_id": credit_account.name,
+        "type": credit_account.account_type,
         "name": credit_account.account_name,
         "description": credit_account.description,
         "webshop_account": credit_account.contact,
