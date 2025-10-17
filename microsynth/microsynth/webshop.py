@@ -3931,9 +3931,16 @@ def get_transactions(account_id):
         for row in customer_credits:
             net_amount = row.get('net_amount') or 0.0
             running_balance += net_amount
+            new_type = ""
+            if row.get('type') == 'Allocation' and net_amount < 0:
+                new_type = 'Return'
+            elif row.get('type') == 'Credit' and net_amount < 0:
+                new_type = 'Deposit Return'
+            else:
+                new_type = type_mapping.get(row.get('type'), "")
             transactions.append({
                 "date": row.get('date'),
-                "type": type_mapping.get(row.get('type'), ""),
+                "type": new_type,
                 "reference": row.get('reference'),
                 "web_order_id": row.get('web_order_id'),
                 "currency": row.get('currency'),
