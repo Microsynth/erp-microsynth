@@ -28,7 +28,7 @@ frappe.query_reports["Sales Pivot"] = {
             "fieldname": "product_type",
             "label": __("Product Type"),
             "fieldtype": "Select",
-            "options": "\nOligos\nLabels\nSequencingn\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
+            "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
         },
         {
             "fieldname": "fiscal_year_1",
