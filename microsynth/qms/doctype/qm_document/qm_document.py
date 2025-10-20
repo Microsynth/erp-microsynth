@@ -236,7 +236,7 @@ def set_released(doc, user):
         update_status(qm_doc.name, "Released")
     # Create QM Training Record Drafts
     # Get all users with the QAU role
-    qau_users = [user["name"] for user in frappe.get_all("User", filters={"role": "QAU"}, fields=["name"])]
+    qau_users = [user["name"] for user in frappe.get_all("User", filters={"role": "QAU", "enabled": 1}, fields=["name"])]
     # Collect all users who need training
     training_candidates = {  # use a set for uniqueness
         *qau_users,
