@@ -7,7 +7,7 @@ from frappe import _
 from datetime import date
 from frappe.utils import cint
 import calendar
-from microsynth.microsynth.utils import get_child_territories
+from microsynth.microsynth.utils import get_child_territories, get_sql_list
 
 MONTHS = {
     1: _("January"),
@@ -274,11 +274,20 @@ def get_revenue_details(filters, month, item_groups, debug=False):
     return details
 
 
+def get_intercompany_condition():
+    intercompany_condition = ""
+    intercompany_customers = frappe.get_all("Intercompany Settings Company", fields=['customer'])
+    intercompany_customers_list = [entry['customer'] for entry in intercompany_customers]
+    if intercompany_customers_list:
+        intercompany_condition = f" AND `tabSales Invoice`.`customer` NOT IN ({get_sql_list(intercompany_customers_list)}) "
+    return intercompany_condition
+
+
 def get_item_revenues(filters, month, item_groups, debug=False):
     """
     Get raw item records for revenue calculation (Sales Invoice Item). Base net amount
     is corrected for additional discounts and includes payments with customer credits.
-    Exclude the customer credit item 6100.
+    Exclude the customer credit item 6100 and intercompany Sales Invoices.
     """
     if filters.get("company"):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
@@ -311,6 +320,7 @@ def get_item_revenues(filters, month, item_groups, debug=False):
             WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
+                {intercompany_condition}
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
@@ -318,7 +328,7 @@ def get_item_revenues(filters, month, item_groups, debug=False):
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition)
+            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=get_intercompany_condition())
     items = frappe.db.sql(query, as_dict=True)
 
     return items
@@ -363,6 +373,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
             WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
+                {intercompany_condition}
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
                 {territory_condition}
@@ -378,7 +389,7 @@ def get_invoice_revenues(filters, month, item_groups, debug=False):
                 ) IN ({group_condition})
             ;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition)
+            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=get_intercompany_condition())
     invoices = frappe.db.sql(query, as_dict=True)
 
     return invoices
