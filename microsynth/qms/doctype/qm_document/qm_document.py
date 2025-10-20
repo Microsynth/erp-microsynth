@@ -234,21 +234,22 @@ def set_released(doc, user):
         set_valid_document(qm_doc.name)
     else:
         update_status(qm_doc.name, "Released")
-    # Create QM Training Record Drafts
-    # Get all users with the QAU role
-    qau_users = [user["name"] for user in frappe.get_all("User", filters={"role": "QAU", "enabled": 1}, fields=["name"])]
-    # Collect all users who need training
-    training_candidates = {  # use a set for uniqueness
-        *qau_users,
-        qm_doc.created_by,
-        qm_doc.reviewed_by,
-        qm_doc.released_by
-    }
-    # Remove any None values
-    users_to_train = [user for user in training_candidates if user]
-    due_date = frappe.utils.add_days(date.today(), 30)
-    for trainee in users_to_train:
-        create_training_record(trainee, "QM Document", qm_doc.name, due_date)
+    if qm_doc.document_type in document_types_with_review + ['APPX']:
+        # Create QM Training Record Drafts
+        # Get all users with the QAU role
+        qau_users = [user["name"] for user in frappe.get_all("User", filters={"role": "QAU", "enabled": 1}, fields=["name"])]
+        # Collect all users who need training
+        training_candidates = {  # use a set for uniqueness
+            *qau_users,
+            qm_doc.created_by,
+            qm_doc.reviewed_by,
+            qm_doc.released_by
+        }
+        # Remove any None values
+        users_to_train = [user for user in training_candidates if user]
+        due_date = frappe.utils.add_days(date.today(), 30)
+        for trainee in users_to_train:
+            create_training_record(trainee, "QM Document", qm_doc.name, due_date)
 
 
 @frappe.whitelist()
