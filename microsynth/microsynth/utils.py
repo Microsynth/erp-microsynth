@@ -2989,9 +2989,13 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     Run by a monthly cronjob on the first of each month at 0:40:
     40 0 1 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.utils.report_therapeutic_oligo_sales
 
-    bench execute microsynth.microsynth.utils.report_therapeutic_oligo_sales --kwargs "{'from_date': '2023-01-01', 'to_date': '2024-11-30'}"
+    bench execute microsynth.microsynth.utils.report_therapeutic_oligo_sales --kwargs "{'from_date': '2025-09-01', 'to_date': '2025-09-30'}"
     """
     start_ts = datetime.now()
+
+    intercompany_customers = frappe.get_all("Intercompany Settings Company", fields=['customer'])
+    intercompany_customer_list = [entry['customer'] for entry in intercompany_customers]
+
     _0672_to_0679 = set(['0672', '0673', '0674', '0677', '0678', '0679'])
     _0830_to_0837 = set(['0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837'])
     _0870_to_0890 = set(['0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890'])
@@ -3034,6 +3038,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
             AND `tabSales Invoice Item`.`docstatus` = 1
             AND `tabSales Invoice Item`.`item_code` IN ('0640', '0650', '0660', '0670', '0671', '0652', '0653', '0655', '0665')
             AND `tabSales Invoice`.`posting_date` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
+            AND `tabSales Invoice`.`customer` NOT IN ({get_sql_list(intercompany_customer_list)})
         """
     si_rna_items = frappe.db.sql(item_query, as_dict=True)
 
@@ -3063,6 +3068,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
                 `tabSales Invoice`.`docstatus` = 1
                 AND `tabSales Invoice Item`.`item_code` IN ('0352', '0353', '0354', '0355', '0372', '0373', '0374', '0379', '0380', '0381', '0382', '0383', '0448', '0449', '0450', '0451', '0452', '0453', '0454', '0455', '0570', '0571', '0572', '0573', '0574', '0575', '0576', '0600', '0601', '0602', '0605', '0606', '0607', '0608', '0672', '0673', '0674', '0677', '0678', '0679', '0820', '0821', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0845', '0860', '0861', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890' )
                 AND `tabSales Invoice`.`posting_date` BETWEEN DATE('{from_date}') AND DATE('{to_date}')
+                AND `tabSales Invoice`.`customer` NOT IN ({get_sql_list(intercompany_customer_list)})
             GROUP BY `tabSales Invoice`.`name`
             """
     potential_sales_invoices = frappe.db.sql(query, as_dict=True)
