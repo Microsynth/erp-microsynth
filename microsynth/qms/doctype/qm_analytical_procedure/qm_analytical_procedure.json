@@ -95,6 +95,7 @@
    "allow_on_submit": 1,
    "fieldname": "assay_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Assay Name"
   },
@@ -246,7 +247,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-05-28 14:32:31.522004",
+ "modified": "2025-10-20 10:55:10.373936",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Analytical Procedure",
