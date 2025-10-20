@@ -730,7 +730,7 @@ def delete_item_prices(item_price_names, blacklist_price_lists=None, item_code=N
             except Exception as e:
                 print(f"Unable to delete {details}: {e}. Going to continue.")
                 continue
-        print(f"{i}/{total_count}: {'Would delete' if dry_run else 'Deleted'} {details}.")
+        print(f"{i+1}/{total_count}: {'Would delete' if dry_run else 'Deleted'} {details}.")
 
 
 def copy_prices_from_projects_to_reference(item_codes, dry_run=True, verbose=False):
