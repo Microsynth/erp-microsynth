@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 import calendar
-from microsynth.microsynth.utils import get_child_territories
+from microsynth.microsynth.utils import get_child_territories, get_sql_list
 from microsynth.microsynth.report.sales_overview.sales_overview import calculate_chf_eur, get_exchange_rate, get_item_groups
 import json
 
@@ -81,6 +81,12 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
 
+    intercompany_condition = ""
+    intercompany_customers = frappe.get_all("Intercompany Settings Company", fields=['customer'])
+    intercompany_customers_list = [entry['customer'] for entry in intercompany_customers]
+    if intercompany_customers_list:
+        intercompany_condition = f" AND `tabSales Invoice`.`customer` NOT IN ({get_sql_list(intercompany_customers_list)}) "
+
     query = """
             SELECT
                 `tabSales Invoice Item`.`parent` AS `sales_invoice`,
@@ -124,6 +130,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
             WHERE
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
+                {intercompany_condition}
                 AND `tabSales Invoice Item`.`item_code` <> '6100'
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
@@ -131,7 +138,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition)
+            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=intercompany_condition)
     items = frappe.db.sql(query, as_dict=True)
 
     return items
