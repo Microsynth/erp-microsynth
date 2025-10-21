@@ -127,13 +127,13 @@ def check_tracking_code(web_order_id, tracking_code):
             regex_str = '^7\d{11}$'
         elif shipping_item == '1105':  # Post AT
             regex_str = '^\d{22}$'
-        elif shipping_item in ['1106', '1115']:  # Post DE
+        elif shipping_item in ['1106']:  # Post DE
             regex_str = '^A[A-Z0-9]{19}$'
         elif shipping_item in ['1120', '1123']:  # DHL
             regex_str = '^\d{10}$'
         elif shipping_item in ['1101', '1102']:  # Post CH
             regex_str = '^\d{18}$'
-        elif shipping_item in ['1108', '1113', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
+        elif shipping_item in ['1108', '1113', '1115', '1160', '1161', '1162', '1165', '1166', '1167']:  # UPS
             regex_str = '^1ZH\d{4}X\d{10}$'
         else:
             msg = f"Unable to check tracking code '{tracking_code}', because of unknown Shipping Item {shipping_item}."

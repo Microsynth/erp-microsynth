@@ -20,7 +20,7 @@ TRACKING_URLS = {
     '1108': "https://www.ups.com/track?tracknum=",
     '1113': "https://www.ups.com/track?tracknum=",
     '1114': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
-    '1115': "https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=",
+    '1115': "https://www.ups.com/track?tracknum=",
     '1117': "https://www.ups.com/track?tracknum=",  # should be disabled once all open invoices are paid
     '1120': "https://www.dhl.com/en/express/tracking.html?brand=DHL&AWB=",
     '1123': "https://www.dhl.com/ch-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
@@ -55,10 +55,10 @@ def get_shipping_service(item_code, ship_adr, cstm_ID):
         '1106': "Germany",
         '1108': "UPS EXP DE",
         '1110': "Abholung",
-        '1112': "EU Post DE",
-        '1113': "UPS STD",
-        '1114': "UPS",  # should be disabled once all open invoices are paid (replaced by 1160 and 1165)
-        '1115': "EU Post DE",
+        '1112': "EU Post DE",  # should be disabled once all open invoices are paid, replaced by 1115
+        '1113': "UPS STD",  # Standard Mail France
+        #'1114': "UPS",  # disabled (replaced by 1160 and 1165)
+        '1115': "UPS STD",  # formerly: "EU Post DE",
         '1117': "UPS",  # should be disabled once all open invoices are paid
         '1118': "Post CH",
         #'1119': "DHL Economy Select",  # only for EU, disabled
