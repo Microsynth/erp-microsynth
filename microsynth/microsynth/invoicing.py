@@ -1316,7 +1316,7 @@ def transmit_sales_invoice(sales_invoice_id):
             return
 
         # Determine transmission mode
-        if sales_invoice.is_punchout:
+        if sales_invoice.is_punchout and customer.invoicing_method != "Intercompany":
             if (sales_invoice.punchout_shop == "ROC-PENGEP" and sales_invoice.company == "Microsynth AG" ):
                 mode = "Email"
             else:
