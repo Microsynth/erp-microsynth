@@ -95,7 +95,7 @@ def check_and_get_labels(labels):
     return label_map
 
 
-def process_label_status_change(labels, target_status, required_current_status=None, check_not_used=False, stop_on_first_failure=False):
+def process_label_status_change(labels, target_status, required_current_statuses=None, check_not_used=False, stop_on_first_failure=False):
     """
     Unified handler to change the status of sequencing labels, with options for validation and strict failure handling.
 
@@ -105,7 +105,7 @@ def process_label_status_change(labels, target_status, required_current_status=N
                          - "barcode" (or "label_id")
                          - "item" (or "item_code")
         target_status (str): The status to which the label should be set, e.g., "submitted" or "unused".
-        required_current_status (str, optional): If set, only labels that currently have this status in the ERP will be processed.
+        required_current_status (list of str or None, optional): If set, only labels that currently have one of these statuses in the ERP will be processed.
                                                  Others will be skipped (or cause immediate failure if `stop_on_first_failure` is True).
         check_not_used (bool, optional): If True, verifies that the label is not used for any open Sales Orders
                                          (DocStatus <= 1) other than the one it was ordered with.
@@ -121,7 +121,7 @@ def process_label_status_change(labels, target_status, required_current_status=N
             }
 
     Example usage:
-    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'locked', 'required_current_status': 'unused', 'check_not_used': True, 'stop_on_first_failure': True}"
+    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'locked', 'required_current_statuses': ['unused'], 'check_not_used': True, 'stop_on_first_failure': True}"
     """
     if not labels or len(labels) == 0:
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
@@ -164,8 +164,8 @@ def process_label_status_change(labels, target_status, required_current_status=N
 
             erp_label = result
 
-            if required_current_status and erp_label['status'] != required_current_status:
-                erp_label['message'] = f"The label has currently not the required status {required_current_status} in the ERP."
+            if required_current_statuses and erp_label['status'] not in required_current_statuses:
+                erp_label['message'] = f"The label has currently not one of the required status {', '.join(required_current_statuses)} in the ERP."
                 processed_labels.append(erp_label)
                 success = False
                 if stop_on_first_failure:

@@ -2240,7 +2240,7 @@ def set_label_submitted(labels):
     return process_label_status_change(
         labels=labels,
         target_status="submitted",
-        required_current_status="unused"
+        required_current_statuses=["unused"]
     )
 
 
@@ -2254,7 +2254,7 @@ def set_label_unused(labels):
     return process_label_status_change(
         labels=labels,
         target_status="unused",
-        required_current_status="submitted",
+        required_current_statuses=["submitted"],
         check_not_used=True,
         stop_on_first_failure=True
     )
