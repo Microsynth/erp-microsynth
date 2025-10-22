@@ -6177,45 +6177,68 @@ def migrate_multiple_debtors(customers, company, currency):
 
 def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=False, verbose=True):
     """
-    Set the currency of all Shipping Items whose parent is an enabled DocType (Customer or Country)
-    to the parent's default_currency if not already set.
+    Set the currency of all Shipping Items whose parent is an enabled DocType (Customer, Country, or Standing Quotation)
+    to the parent's currency field (default_currency or currency) if not already set.
 
-    If the Shipping Item already has a currency that does not match the parent's default_currency,
+    If the Shipping Item already has a currency that does not match the parent's currency,
     print a warning but do not change it.
 
     Parameters:
-    - parent_doctype (str): "Customer" or "Country"
+    - parent_doctype (str): "Customer", "Country", or "Standing Quotation"
     - dry_run (bool): If True, no changes will be saved
     - verbose (bool): If True, print details
 
-    bench execute microsynth.microsynth.migration.set_shipping_item_currency_from_parent --kwargs "{'parent_doctype': 'Country', 'dry_run': True, 'verbose': True}"
+    Example:
+    bench execute microsynth.microsynth.migration.set_shipping_item_currency_from_parent --kwargs "{'parent_doctype': 'Standing Quotation', 'dry_run': True, 'verbose': True}"
     """
     print(f"Starting migration: Set currency on Shipping Items with parent type '{parent_doctype}'.")
 
-    if parent_doctype not in ("Customer", "Country"):
-        print(f"ERROR: Unsupported parent_doctype '{parent_doctype}'. Only 'Customer' and 'Country' are supported.")
+    # Map supported doctypes to their currency fields and disabled checks
+    parent_config = {
+        "Customer": {
+            "currency_field": "default_currency",
+            "disabled_field": "disabled"
+        },
+        "Country": {
+            "currency_field": "default_currency",
+            "disabled_field": "disabled"
+        },
+        "Standing Quotation": {
+            "currency_field": "currency",
+            "disabled_field": None  # No disabled field
+        }
+    }
+
+    if parent_doctype not in parent_config:
+        print(f"ERROR: Unsupported parent_doctype '{parent_doctype}'. Supported: {', '.join(parent_config.keys())}.")
         return
 
     if dry_run:
         print("Running in DRY RUN mode — no changes will be saved.")
 
-    # Compose table names and field names
+    currency_field = parent_config[parent_doctype]["currency_field"]
+    disabled_field = parent_config[parent_doctype]["disabled_field"]
     parent_table = f"`tab{parent_doctype}`"
 
-    # Build query dynamically
+    # Construct WHERE clause for enabled parents, if applicable
+    disabled_filter = ""
+    if disabled_field:
+        disabled_filter = f"AND IFNULL({parent_table}.`{disabled_field}`, 0) = 0"
+
+    # Build and run SQL query
     shipping_items = frappe.db.sql(f"""
         SELECT
             `tabShipping Item`.`name`,
             `tabShipping Item`.`currency`,
             `tabShipping Item`.`item`,
             {parent_table}.`name` AS `parent_id`,
-            {parent_table}.`default_currency`
+            {parent_table}.`{currency_field}` AS `parent_currency`
         FROM `tabShipping Item`
         INNER JOIN {parent_table}
             ON `tabShipping Item`.`parent` = {parent_table}.`name`
         WHERE
             `tabShipping Item`.`parenttype` = %s
-            AND IFNULL({parent_table}.`disabled`, 0) = 0
+            {disabled_filter}
     """, (parent_doctype,), as_dict=True)
 
     updated_count = 0
@@ -6227,29 +6250,29 @@ def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=Fa
         shipping_item_name = item["item"] or "<Unnamed>"
         parent_id = item["parent_id"]
         current_currency = item["currency"]
-        default_currency = item["default_currency"]
+        parent_currency = item["parent_currency"]
 
-        if not default_currency:
+        if not parent_currency:
             if verbose:
-                print(f"WARNING: {parent_doctype} '{parent_id}' has no `default_currency`. Skipping Shipping Item '{shipping_item_name}'.")
+                print(f"WARNING: {parent_doctype} '{parent_id}' has no currency set ('{currency_field}'). Skipping Shipping Item '{shipping_item_name}'.")
             skipped_count += 1
             continue
 
         if current_currency is None:
             if dry_run:
                 if verbose:
-                    print(f"DRY RUN: Would update Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{default_currency}'")
+                    print(f"DRY RUN: Would update Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{parent_currency}'")
             else:
-                frappe.db.set_value("Shipping Item", shipping_item_id, "currency", default_currency)
+                frappe.db.set_value("Shipping Item", shipping_item_id, "currency", parent_currency)
                 if verbose:
-                    print(f"Updated Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{default_currency}'")
+                    print(f"Updated Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') — set currency to '{parent_currency}'")
             updated_count += 1
 
-        elif current_currency != default_currency:
+        elif current_currency != parent_currency:
             if verbose:
                 print(
                     f"WARNING: Shipping Item '{shipping_item_name}' ({parent_doctype}: '{parent_id}') has currency '{current_currency}', "
-                    f"but expected '{default_currency}'. No change made."
+                    f"but expected '{parent_currency}'. No change made."
                 )
             warning_count += 1
 
@@ -6260,7 +6283,7 @@ def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=Fa
     print("\nMigration complete.")
     print(f"- Updated: {updated_count}")
     print(f"- Warnings (mismatched currency): {warning_count}")
-    print(f"- Skipped (already correct or missing default): {skipped_count}")
+    print(f"- Skipped (already correct or missing currency): {skipped_count}")
 
     if dry_run:
         print("NOTE: No changes were made due to dry run mode.")
