@@ -430,7 +430,7 @@ def remove_control_characters(input_string):
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=35):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-16_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-16_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-22_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-22_supplier_mapping_DEV-ERP.txt'}"
     """
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
@@ -467,7 +467,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             currency = line[7].strip()
             #supplier_quote = line[8].strip()
             #list_price = line[9].strip()
-            #purchase_price = line[10].strip()
+            purchase_price = line[10].strip()
             #customer_discount = line[11].strip()
             #content_quantity = line[12].strip()
             #item_group = line[13].strip()
@@ -525,6 +525,12 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
             if currency == "£":
                 currency = "GBP"
+            if purchase_price:
+                try:
+                    purchase_price = float(purchase_price)
+                except Exception as err:
+                    print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to convert {purchase_price=} to a float ({err}). Going to continue with the next supplier item.")
+                    continue
 
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
@@ -601,6 +607,25 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 continue
             imported_counter += 1
 
+            if purchase_price:
+                if currency in ['CHF', 'EUR', 'USD']:
+                    # add it to the Price List "Standard Buying CHF/EUR/USD"
+                    price_list_name = f"Standard Buying {currency}"
+                    item_price = frappe.get_doc({
+                        'doctype': "Item Price",
+                        'item_code': item.item_code,
+                        'price_list': price_list_name,
+                        'price_list_rate': purchase_price,
+                        'currency': currency,
+                        'buying': 1
+                    })
+                    try:
+                        item_price.insert()
+                    except Exception as err:
+                        print(f"ERROR: Unable to insert Price List Rate for Item with Index {item_id} ('{item_name}') in Price List '{price_list_name}' ({err}). Going to continue with the next supplier item.")
+                else:
+                    print(f"ERROR: Item with Index {item_id} ('{item_name}'): Currency '{currency}' is not supported. Going to skip the creation of an Item Price.")
+
             # write mapping of ERP Item ID to FM Index (Datensatznummer) to a file
             with open(output_filepath, 'a') as txt_file:
                 txt_file.write(f"{item.name};{item_id}\n")
@@ -612,7 +637,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-16_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-22_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -732,7 +757,8 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             if not company:
                 print(f"ERROR: Column 'Firma' is mandatory, going to skip {ext_creditor_number}.")
                 continue
-            #company = f"{company} 2"  # Only for testing
+            if currency not in ['CHF', 'EUR', 'USD']:
+                print(f"WARNING: There is no Standard Buying Price List in Currency '{currency}'. Not going to set a default Price List for {ext_creditor_number}.")
             existing_suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name', 'ext_creditor_id'])
             if existing_suppliers and (not (update_countries or add_ext_creditor_id)) and len(existing_suppliers) > 0:
                 # TODO: Try to update existing Supplier?
@@ -782,6 +808,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 'website': web_url,
                 'tax_id': supplier_tax_id,
                 'default_currency': currency,
+                'default_price_list': f'Standard Buying {currency}' if currency in ['CHF', 'EUR', 'USD'] else None,
                 'payment_terms': payment_terms_mapping[payment_days],
                 'bic': bic,
                 'iban': iban,
