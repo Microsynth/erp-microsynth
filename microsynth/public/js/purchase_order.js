@@ -46,6 +46,8 @@ frappe.ui.form.on('Purchase Order', {
     },
     supplier(frm) {
         get_supplier_tax_template(frm);
+
+        show_order_method(frm);
     }
 });
 
@@ -99,8 +101,47 @@ function get_supplier_tax_template(frm) {
 }
 
 
+function open_mail_dialog(frm, contact, email) {
+    if (frm.doc.docstatus !== 1) {
+        frappe.show_alert(__('Cannot email Purchase Order because it is not submitted.'));
+        return;
+    }
+    if (!contact) {
+        frappe.show_alert(__('Please set an Order Contact on Supplier ' + frm.doc.supplier + ' with a valid email address.'));
+        return;
+    }
+    // Fetch the Email Template from server
+    const email_template_name = "Purchase Order";
+    frappe.call({
+        'method': "frappe.client.get",
+        'args': {
+            'doctype': "Email Template",
+            'name': email_template_name
+        },
+        callback: function(r) {
+            if (!r.message) {
+                frappe.msgprint('Email Template "'+ email_template_name +'" not found.');
+                return;
+            }
+            new frappe.erpnextswiss.MailComposer({
+                'doc': frm.doc,
+                'frm': frm,
+                'subject': "Purchase Order " + frm.doc.name + " from Microsynth",
+                'recipients': email,
+                'cc': "purchase@microsynth.ch",
+                'attach_document_print': true,
+                'txt': r.message.response,
+                'check_all_attachments': false,
+                'replace_template': true
+            });
+        }
+    });
+}
+
+
 function show_order_method(frm) {
     if (!frm.doc.supplier) return;
+    cur_frm.dashboard.clear_comment();
 
     frappe.db.get_doc('Supplier', frm.doc.supplier).then(supplier => {
         let has_webshop = supplier.supplier_shops && supplier.supplier_shops.length > 0;
@@ -110,10 +151,12 @@ function show_order_method(frm) {
         }
         if (supplier.order_contact) {
             frappe.db.get_doc('Contact', supplier.order_contact).then(contact => {
-                let has_email = (contact.email_ids || []).length > 0;
+                if (contact.email_id) {
+                    frm.dashboard.add_comment(__('Order by Email to {0}', [contact.email_id]), 'blue', true);
 
-                if (has_email) {
-                    frm.dashboard.add_comment(__('Order by Email to {0}', [contact.email_ids[0].email_id]), 'blue', true);
+                    frm.add_custom_button(__('Send Order by Email'), function() {
+                        open_mail_dialog(frm, supplier.order_contact, contact.email_id);
+                    });
                 } else {
                     frm.dashboard.add_comment(__('⚠️ Order Contact {0} of Supplier {1} has no email address.', [contact.name, supplier.name]), 'orange', true);
                 }
