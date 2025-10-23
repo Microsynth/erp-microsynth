@@ -20,6 +20,8 @@ frappe.ui.form.on('Purchase Order', {
         }, 1000);
 
         hide_in_words();
+
+        show_order_method(frm);
     },
     onload(frm) {
         if (!locals.inbound_freight_item) {
@@ -94,4 +96,30 @@ function get_supplier_tax_template(frm) {
             }
         });
     }
+}
+
+
+function show_order_method(frm) {
+    if (!frm.doc.supplier) return;
+
+    frappe.db.get_doc('Supplier', frm.doc.supplier).then(supplier => {
+        let has_webshop = supplier.supplier_shops && supplier.supplier_shops.length > 0;
+        if (has_webshop) {
+            frm.dashboard.add_comment(__('Order through Webshop, see Supplier {0} for credentials.', [supplier.name]), 'green', true);
+            return;
+        }
+        if (supplier.order_contact) {
+            frappe.db.get_doc('Contact', supplier.order_contact).then(contact => {
+                let has_email = (contact.email_ids || []).length > 0;
+
+                if (has_email) {
+                    frm.dashboard.add_comment(__('Order by Email to {0}', [contact.email_ids[0].email_id]), 'blue', true);
+                } else {
+                    frm.dashboard.add_comment(__('⚠️ Order Contact {0} of Supplier {1} has no email address.', [contact.name, supplier.name]), 'orange', true);
+                }
+            });
+        } else {
+            frm.dashboard.add_comment(__('⚠️ Order Method unclear: Supplier {0} has no Supplier Shop and no Order Contact with an email.', [supplier.name]), 'red', true);
+        }
+    });
 }
