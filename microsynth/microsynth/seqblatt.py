@@ -121,7 +121,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
             }
 
     Example usage:
-    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'locked', 'required_current_statuses': ['unused'], 'check_not_used': True, 'stop_on_first_failure': True}"
+    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'unused', 'required_current_statuses': ['locked'], 'check_not_used': True, 'stop_on_first_failure': True}"
     """
     if not labels or len(labels) == 0:
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
@@ -204,7 +204,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
             for c in disabled_customers_to_enable:
                 customer_doc = frappe.get_doc("Customer", c.name)
                 customer_doc.disabled = 0
-                customer_doc.save(ignore_permissions=True)
+                customer_doc.save(ignore_permissions=True, ignore_version=True)  # Do not create a version.
                 disabled_customers.append(c.name)
 
         # Set label statuses
@@ -224,7 +224,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         for customer in disabled_customers:
             customer_doc = frappe.get_doc("Customer", customer)
             customer_doc.disabled = 1
-            customer_doc.save(ignore_permissions=True)
+            customer_doc.save(ignore_permissions=True, ignore_version=True)  # Do not create a version.
 
         frappe.db.commit()
         #message = f"The following Customers were temporarily enabled and are now disabled again: {','.join(disabled_customers)}" if disabled_customers else "OK"
