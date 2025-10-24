@@ -1567,8 +1567,6 @@ def apply_item_price_changes(price_list, adds, updates):
     updates = json.loads(updates)
 
     for entry in adds:
-        if not entry.get("apply"):
-            continue
         doc = frappe.new_doc("Item Price")
         doc.item_code = entry["item_code"]
         doc.price_list = price_list
@@ -1579,8 +1577,6 @@ def apply_item_price_changes(price_list, adds, updates):
         doc.save()
 
     for entry in updates:
-        if not entry.get("apply"):
-            continue
         ip = frappe.get_all(
             "Item Price",
             filters={
@@ -1593,7 +1589,6 @@ def apply_item_price_changes(price_list, adds, updates):
         if ip:
             doc = frappe.get_doc("Item Price", ip[0].name)
             doc.price_list_rate = flt(entry["rate"])
-            #doc.min_qty = entry["min_qty"]
             doc.save()
 
     frappe.db.commit()
