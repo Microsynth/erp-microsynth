@@ -3,21 +3,22 @@
 # For license information, please see license.txt
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
 
+import json
+import csv
+import re
+from datetime import datetime
+
 import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
-from frappe.utils import get_url_to_form
+from frappe.utils import get_url_to_form, flt
 from frappe.utils.data import today
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
-from datetime import datetime
-import json
-import csv
-import re
 
 
 def create_pi_from_si(sales_invoice):
@@ -1490,3 +1491,110 @@ def get_purchase_tax_template(supplier, company):
         return tax_templates[0]['default_tax_template']
     else:
         return None
+
+
+@frappe.whitelist()
+def check_po_item_prices(purchase_order_name):
+    """
+    Return suggested item prices to add or update based on PO data.
+    """
+    po = frappe.get_doc("Purchase Order", purchase_order_name)
+    precision = int(frappe.db.get_single_value("System Settings", "currency_precision") or 2)
+
+    if not po.buying_price_list:
+        return {"status": "no_price_list"}
+
+    price_list = po.buying_price_list
+    price_list_currency = frappe.db.get_value("Price List", price_list, "currency")
+    if price_list_currency != po.currency:
+        return {
+            "status": "currency_mismatch",
+            "price_list_currency": price_list_currency,
+        }
+
+    add_list, update_list = [], []
+
+    for item in po.items:
+        if not item.item_code:
+            continue
+        if item.item_code == "P020000":  # skip Inbound Freight Item
+            continue
+
+        # Fetch all existing prices for this Item & Price List
+        item_prices = frappe.get_all(
+            "Item Price",
+            filters=[["price_list", "=", price_list], ["item_code", "=", item.item_code], ["min_qty", "<=", item.qty]],
+            fields=["name", "min_qty", "price_list_rate"],
+            order_by="min_qty desc",
+        )
+
+        if not item_prices:
+            # Suggest to add a new Item Price
+            add_list.append({
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "min_qty": 1,
+                "current_rate": None,
+                "rate": flt(item.rate, precision),
+            })
+            continue
+
+        current_price = item_prices[0]
+
+        diff = abs(flt(current_price.price_list_rate - item.rate, precision))
+        if diff > 0.01:
+            current_rate = flt(current_price.price_list_rate, precision)
+            new_rate = flt(item.rate, precision)
+            rate_diff_pct = ((new_rate - current_rate) / current_rate * 100) if current_rate else 0
+            update_list.append({
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "min_qty": current_price.min_qty,
+                "current_rate": current_rate,
+                "rate": new_rate,
+                "rate_diff_pct": flt(rate_diff_pct, 2)
+            })
+
+    return {"status": "ok", "adds": add_list, "updates": update_list}
+
+
+@frappe.whitelist()
+def apply_item_price_changes(price_list, adds, updates):
+    """
+    Apply user-approved Add and Update operations on Item Prices.
+    """
+    adds = json.loads(adds)
+    updates = json.loads(updates)
+
+    for entry in adds:
+        if not entry.get("apply"):
+            continue
+        doc = frappe.new_doc("Item Price")
+        doc.item_code = entry["item_code"]
+        doc.price_list = price_list
+        doc.min_qty = flt(entry["min_qty"])
+        doc.price_list_rate = flt(entry["rate"])
+        doc.selling = 0
+        doc.buying = 1
+        doc.save()
+
+    for entry in updates:
+        if not entry.get("apply"):
+            continue
+        ip = frappe.get_all(
+            "Item Price",
+            filters={
+                "price_list": price_list,
+                "item_code": entry["item_code"],
+                "min_qty": entry["min_qty"]
+            },
+            limit=1,
+        )
+        if ip:
+            doc = frappe.get_doc("Item Price", ip[0].name)
+            doc.price_list_rate = flt(entry["rate"])
+            #doc.min_qty = entry["min_qty"]
+            doc.save()
+
+    frappe.db.commit()
+    return {"status": "done"}

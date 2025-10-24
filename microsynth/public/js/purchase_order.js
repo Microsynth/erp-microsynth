@@ -38,9 +38,17 @@ frappe.ui.form.on('Purchase Order', {
     before_save: function(frm) {
         add_freight_item(frm);
     },
+    before_submit: function(frm) {
+        // frappe.validated = false;
+        // check_prices(frm).then(() => {
+        //     frappe.validated = true;
+        // }).catch(() => {
+        //     frappe.validated = false;
+        // });
+    },
     company(frm) {
         if (frm.doc.__islocal) {
-            set_naming_series(frm);                 // common function
+            set_naming_series(frm);  // common function
         }
         get_supplier_tax_template(frm);
     },
@@ -50,6 +58,133 @@ frappe.ui.form.on('Purchase Order', {
         show_order_method(frm);
     }
 });
+
+
+function check_prices(frm) {
+    return new Promise((resolve, reject) => {
+        // Try to avoid recursion
+        if (frm.__price_check_done) return resolve();
+        frm.__price_check_done = true;
+
+        frappe.call({
+            method: "microsynth.microsynth.purchasing.check_po_item_prices",
+            args: { 'purchase_order_name': frm.doc.name },
+            callback: function(r) {
+                if (!r.message) return resolve();
+
+                const data = r.message;
+
+                // --- Case 1: Missing or wrong Price List ---
+                if (data.status === "no_price_list" || data.status === "currency_mismatch") {
+                    const msg = `Please set a Price List with Currency ${
+                        data.price_list_currency || frm.doc.currency
+                    } on this Purchase Order to enable Price checking.`;
+
+                    frappe.confirm(
+                        msg,
+                        () => {
+                            frappe.show_alert("Please set Price List with matching currency before submitting.");
+                            reject(); // leave PO as Draft
+                        },
+                        () => {
+                            //frappe.validated = true;
+                            resolve();
+                        }
+                    );
+                    return;
+                }
+
+                // --- Case 2: Nothing to add/update ---
+                if ((!data.adds || !data.adds.length) && (!data.updates || !data.updates.length)) {
+                    return resolve();
+                }
+
+                // --- Case 3: Show dialog with add/update tables ---
+                const dialog = new frappe.ui.Dialog({
+                    title: "Item Price Check",
+                    fields: [
+                        {
+                            fieldname: "add_section",
+                            fieldtype: "Section Break"
+                        },
+                        {
+                            fieldname: "adds",
+                            fieldtype: "Table",
+                            label: "Item Prices to Add",
+                            cannot_add_rows: true,
+                            in_place_edit: true,
+                            data: data.adds,
+                            get_data: () => dialog.get_value("adds"),
+                            fields: [
+                                { fieldtype: "Check", fieldname: "apply", label: "Add", default: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Data", fieldname: "item_code", label: "Item Code", read_only: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Data", fieldname: "item_name", label: "Item Name", read_only: 1, in_list_view: 1, columns: 3 },
+                                { fieldtype: "Float", fieldname: "min_qty", label: "Min. Qty", in_list_view: 1, columns: 1 },
+                                { fieldtype: "Currency", fieldname: "rate", label: "Rate", in_list_view: 1, columns: 1 }
+                            ]
+                        },
+                        {
+                            fieldname: "update_section",
+                            fieldtype: "Section Break"
+                        },
+                        {
+                            fieldname: "updates",
+                            fieldtype: "Table",
+                            label: "Item Prices to Update",
+                            cannot_add_rows: true,
+                            in_place_edit: true,
+                            data: data.updates,
+                            get_data: () => dialog.get_value("updates"),
+                            fields: [
+                                { fieldtype: "Check", fieldname: "apply", label: "Update", default: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Data", fieldname: "item_code", label: "Item Code", read_only: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Data", fieldname: "item_name", label: "Item Name", read_only: 1, in_list_view: 1, columns: 3 },
+                                { fieldtype: "Float", fieldname: "min_qty", label: "Min. Qty", read_only: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Currency", fieldname: "current_rate", label: "Current Rate", read_only: 1, in_list_view: 1, columns: 1 },
+                                { fieldtype: "Currency", fieldname: "rate", label: "New Rate", in_list_view: 1, columns: 1 },
+                                { fieldtype: "Percent", fieldname: "rate_diff_pct", label: "% Change", read_only: 1, in_list_view: 1, columns: 1 }
+                            ]
+                        }
+                    ],
+                    primary_action_label: "Add / Update Selected",
+                    primary_action(values) {
+                        frappe.call({
+                            method: "microsynth.microsynth.purchasing.apply_item_price_changes",
+                            args: {
+                                price_list: frm.doc.buying_price_list,
+                                adds: JSON.stringify(values.adds || []),
+                                updates: JSON.stringify(values.updates || [])
+                            },
+                            callback: function() {
+                                frappe.show_alert("Item Prices updated.");
+                                dialog.hide();
+                                // frappe.validated = true;
+                                resolve();
+                            }
+                        });
+                    },
+                    secondary_action_label: "Ignore All",
+                    secondary_action() {
+                        dialog.hide();
+                        // frappe.validated = true;
+                        return resolve();
+                        // TODO: Why do I still get "InternalError: too much recursion" and how to resolve it?
+                    }
+                });
+
+                dialog.show();
+
+                // Make dialog wider
+                setTimeout(() => {
+                    const modals = document.getElementsByClassName('modal-dialog');
+                    if (modals.length > 0) {
+                        modals[modals.length - 1].style.width = '1200px';
+                    }
+                }, 300);
+            }
+        });
+    });
+}
 
 
 function add_freight_item(frm) {
