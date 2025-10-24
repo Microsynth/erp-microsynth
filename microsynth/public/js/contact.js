@@ -99,7 +99,8 @@ frappe.ui.form.on('Contact', {
 
         // set Contact source
         if (frm.doc.__islocal) {
-            cur_frm.set_value("source", "Manual");
+            cur_frm.set_value("source", "Manual");  // TODO: Remove source after migration
+            cur_frm.set_value("contact_source", "Manual");
             cur_frm.set_value("has_webshop_account", 0);
         }
 
@@ -119,7 +120,8 @@ frappe.ui.form.on('Contact', {
         $("button[data-label='" + encodeURI(__("Invite as User")) + "']").remove();
 
         // lock all fields except Institute Key, Group Leader, Cost Center if First Name = "Anonymous" or if source = Punchout
-        if (!frappe.user.has_role("System Manager") && (frm.doc.first_name == "Anonymous" || (frm.doc.source && frm.doc.source == "Punchout"))) {
+        if (!frappe.user.has_role("System Manager") && (frm.doc.first_name == "Anonymous" || (frm.doc.source && frm.doc.source == "Punchout") || (frm.doc.contact_source && frm.doc.contact_source == "Punchout"))) {
+            // TODO: Remove source condition after migration
             cur_frm.set_df_property('first_name', 'read_only', true);
             cur_frm.set_df_property('middle_name', 'read_only', true);
             cur_frm.set_df_property('last_name', 'read_only', true);
@@ -153,7 +155,7 @@ frappe.ui.form.on('Contact', {
         }
 
         // show a banner if source = Punchout
-        if (frm.doc.source && frm.doc.source == "Punchout") {
+        if (frm.doc.source && (frm.doc.source == "Punchout" || frm.doc.contact_source == "Punchout")) {  // TODO: Remove source after migration
             frm.dashboard.add_comment( __("Punchout Contact! Please do <b>not</b> edit."), 'red', true);
         }
 
@@ -186,7 +188,7 @@ frappe.ui.form.on('Contact', {
             });
 
             // Button to change the Customer
-            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.source !== "Punchout") {
+            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.source !== "Punchout" && frm.doc.contact_source !== "Punchout") {  // TODO: Remove source after migration
                 frm.add_custom_button(__("Change Customer"), function () {
                     change_customer(frm);
                 });

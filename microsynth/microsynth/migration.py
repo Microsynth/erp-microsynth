@@ -834,7 +834,7 @@ def update_contact(contact_data):
     if 'has_webshop_account' in contact_data and contact_data['has_webshop_account'] is not None:
         contact.has_webshop_account = contact_data['has_webshop_account']
     if 'source' in contact_data:
-        contact.source = contact_data['source']
+        contact.contact_source = contact_data['source']
     if 'punchout_identifier' in contact_data:
         contact.punchout_identifier = contact_data['punchout_identifier']
     if 'newsletter_registration_state' in contact_data:
@@ -925,7 +925,7 @@ def update_address(address_data, is_deleted=False, customer_id=None):
     if 'country' in address_data:
         address.country = robust_get_country(address_data['country'])
     if 'source' in address_data:
-        address.source = address_data['source']
+        address.address_source = address_data['source']
     if customer_id or 'customer_id' in address_data:
         address.links = []
         if not is_deleted:

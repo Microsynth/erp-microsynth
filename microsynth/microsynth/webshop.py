@@ -185,12 +185,15 @@ def create_update_contact_doc(contact_data):
     contact.full_name = f"{contact.first_name}{' ' if contact.last_name else ''}{contact.last_name or ''}"
 
     # Optional fields
-    for field in ['status', 'institute', 'department', 'institute_key', 'group_leader', 'address', 'room', 'has_webshop_account', 'source', 'punchout_identifier', 'salutation']:
+    for field in ['status', 'institute', 'department', 'institute_key', 'group_leader', 'address', 'room', 'has_webshop_account', 'punchout_identifier', 'salutation']:
         if field in contact_data:
             setattr(contact, field, contact_data[field])  # built-in Python function, no import needed
 
     if 'title' in contact_data:
         contact.designation = contact_data['title']
+
+    if 'source' in contact_data:
+        contact.contact_source = contact_data.get('source')
 
     # Newsletter preferences
     newsletter_state = contact_data.get('newsletter_registration_state', "")
@@ -290,9 +293,12 @@ def create_update_address_doc(address_data, is_deleted=False, customer_id=None):
         address.address_title = f"{customer_name} - {address_line1}"
 
     # Set fields
-    for field in ['overwrite_company', 'address_line1', 'address_line2', 'pincode', 'city', 'source', 'customer_address_id']:
+    for field in ['overwrite_company', 'address_line1', 'address_line2', 'pincode', 'city', 'customer_address_id']:
         if field in address_data:
             setattr(address, field, address_data[field])
+
+    if 'source' in address_data:
+        address.address_source = address_data.get('source')
 
     # Set country via helper
     if 'country' in address_data:
@@ -561,7 +567,7 @@ def create_update_contact(contact):
     contact_name = create_update_contact_doc(contact)
     lock_contact_by_name(contact_name)
 
-    if contact.get('source') == "Registration":
+    if contact.get('source') == "Registration" or contact.get('contact_source') == "Registration":
         billing_contact = frappe.get_value("Customer", contact.get('customer_id'), "invoice_to")
         if not billing_contact:
             frappe.throw(f"Customer '{contact.get('customer_id')}' has no 'Invoice to' contact.")
@@ -2529,7 +2535,7 @@ def get_contact_dto(contact):
         'email_cc': cc_email,
         'phone': contact.phone,
         'status': contact.status,
-        'source': contact.source,
+        'source': contact.source or contact.contact_source,  # TODO: remove Contact.source after migration
         'address': contact.address,
         'customer': get_customer(contact.name)
     }

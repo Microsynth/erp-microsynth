@@ -5,11 +5,12 @@ frappe.ui.form.on('Address', {
             cur_frm.set_value("source", "Manual");
         }
         // show a banner if source = Punchout
-        if (frm.doc.source && frm.doc.source == "Punchout") {
+        if ((frm.doc.source && frm.doc.source == "Punchout") || (frm.doc.address_source && frm.doc.address_source == "Punchout")) {
             frm.dashboard.add_comment( __("Punchout Address! Please do <b>not</b> edit."), 'red', true);
         }
         // lock all fields if source = Punchout
-        if (!frappe.user.has_role("System Manager") && (frm.doc.source && frm.doc.source == "Punchout")) {
+        if (!frappe.user.has_role("System Manager") && ((frm.doc.source && frm.doc.source == "Punchout") || (frm.doc.address_source && frm.doc.address_source == "Punchout"))) {
+            // TODO: Remove source condition after migration
             cur_frm.set_df_property('address_title', 'read_only', true);
             cur_frm.set_df_property('address_type', 'read_only', true);
             cur_frm.set_df_property('overwrite_company', 'read_only', true);
