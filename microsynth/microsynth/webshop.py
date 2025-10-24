@@ -3728,13 +3728,16 @@ def create_credit_account(webshop_account, name, description, company, product_t
         if isinstance(product_types, str):
             product_types = json.loads(product_types)
 
+        customer_id = get_customer(webshop_account)
+
         credit_account = frappe.get_doc({
             'doctype': 'Credit Account',
             'contact': webshop_account,
-            'customer': get_customer(webshop_account),
+            'customer': customer_id,
             'account_name': name,
             'description': description,
             'company': company,
+            'currency': frappe.db.get_value('Customer', customer_id, 'default_currency'),
             'status': 'Active'
         })
         # Add product types
