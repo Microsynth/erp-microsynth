@@ -1,0 +1,137 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2025-09-22 14:43:55.405865",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "account_name",
+  "customer",
+  "contact",
+  "product_types",
+  "product_types_locked",
+  "column_break_3",
+  "account_type",
+  "company",
+  "currency",
+  "status",
+  "expiry_date",
+  "section_break_10",
+  "description",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "description": "Webshop Account",
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Contact",
+   "options": "Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nFrozen\nDisabled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "product_types",
+   "fieldtype": "Table MultiSelect",
+   "label": "Product Types",
+   "options": "Product Type Link"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "CA-.######"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "product_types_locked",
+   "fieldtype": "Check",
+   "label": "Product Types Locked"
+  },
+  {
+   "fieldname": "account_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "default": "Standard",
+   "fieldname": "account_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Standard\nEnforced Credit",
+   "reqd": 1
+  }
+ ],
+ "modified": "2025-10-17 13:20:41.897643",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "Microsynth",
+ "name": "Credit Account",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

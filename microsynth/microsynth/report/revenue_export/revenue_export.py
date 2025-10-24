@@ -66,7 +66,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     """
     Get raw item records for revenue export (Sales Invoice Item). Base net amount
     is corrected for additional discounts and includes payments with customer credits.
-    Exclude the customer credit item 6100.
+    Exclude the customer credit item defined in the Microsynth Settings.
     """
     if filters and filters.get("company"):
         company_condition = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}' "
@@ -78,6 +78,7 @@ def get_item_revenue(filters, month, item_groups, debug=False):
     else:
         territory_condition = ""
 
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
     last_day = calendar.monthrange(cint(filters.get("fiscal_year")), month)
     group_condition = "'{0}'".format("', '".join(item_groups))
 
@@ -131,14 +132,14 @@ def get_item_revenue(filters, month, item_groups, debug=False):
                 `tabSales Invoice`.`docstatus` = 1
                 AND (`tabSales Invoice`.`invoicing_method` != 'Intercompany' or `tabSales Invoice`.`invoicing_method` is null)
                 {intercompany_condition}
-                AND `tabSales Invoice Item`.`item_code` <> '6100'
+                AND `tabSales Invoice Item`.`item_code` <> '{credit_item_code}'
                 AND `tabSales Invoice`.`posting_date` BETWEEN "{year}-{month:02d}-01" AND "{year}-{month:02d}-{to_day:02d}"
                 {company_condition}
                 {territory_condition}
                 AND `tabSales Invoice Item`.`item_group` IN ({group_condition})
             ORDER BY `tabSales Invoice`.`posting_date`, `tabSales Invoice`.`posting_time`, `tabSales Invoice`.`name`, `tabSales Invoice Item`.`idx`;
         """.format(company_condition=company_condition, year=filters.get("fiscal_year"), month=month, to_day=last_day[1],
-            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=intercompany_condition)
+            territory_condition=territory_condition, group_condition=group_condition, intercompany_condition=intercompany_condition, credit_item_code=credit_item_code)
     items = frappe.db.sql(query, as_dict=True)
 
     return items

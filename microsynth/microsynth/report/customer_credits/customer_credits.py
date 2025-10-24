@@ -24,6 +24,7 @@ def get_columns():
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
         {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
+        {"label": _("Credit Account"), "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200},
         {"label": _("InvoiceByDefaultCompany"), "fieldname": "invoice_by_default_company", "fieldtype": "Check", "width": 165}
     ]
@@ -32,6 +33,10 @@ def get_columns():
 
 def get_data(filters, short=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
+    deposit_conditions = ""
+
+    if filters and filters.get('exclude_unpaid_deposits'):
+        deposit_conditions += f"AND `tabSales Invoice`.`status` IN ('Paid', 'Return', 'Credit Note Issued')"
 
     if filters and filters.get('credit_type') == 'Standard':
         conditions += f"AND (`tabSales Invoice`.`product_type` is null or `tabSales Invoice`.`product_type` != 'Project')"
@@ -42,6 +47,18 @@ def get_data(filters, short=False):
         conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
     if filters and filters.get('currency'):
         conditions += f"AND `tabSales Invoice`.`currency` = '{filters.get('currency')}'"
+    if filters and filters.get('credit_account'):
+        credit_account = filters.get('credit_account')
+        credit_account_customer = frappe.get_value("Credit Account", credit_account, 'customer')
+        if not filters.get('customer'):
+            filters['customer'] = credit_account_customer
+        else:
+            # check if credit account belongs to customer
+            if filters['customer'] != credit_account_customer:
+                frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}, but Customer {credit_account_customer}.")
+        conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
+    else:
+        credit_account = None
 
     if filters.get('customer'):
         # customer based evaluation: ledger
@@ -59,7 +76,10 @@ def get_data(filters, short=False):
             `raw`.`product_type` AS `product_type`,
             `raw`.`status` AS `status`,
             `raw`.`reference` AS `reference`,
+            `raw`.`credit_account` AS `credit_account`,
             `raw`.`currency` AS `currency`,
+            `raw`.`web_order_id` AS `web_order_id`,
+            `raw`.`po_no` AS `po_no`,
             `tabCustomer`.`territory` AS `territory`,
             IF(`webshop_service`.`customer_id` IS NOT NULL, 1, 0) AS `invoice_by_default_company`
         FROM (
@@ -69,6 +89,7 @@ def get_data(filters, short=False):
                     "Allocation"
                     ) AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
@@ -81,7 +102,10 @@ def get_data(filters, short=False):
                     `tabSales Invoice Item`.`name`,
                     `tabSales Invoice`.`return_against`
                 ) AS `reference`,
-                `tabSales Invoice`.`currency` AS `currency`
+                `tabSales Invoice`.`credit_account` AS `credit_account`,
+                `tabSales Invoice`.`currency` AS `currency`,
+                `tabSales Invoice`.`web_order_id` AS `web_order_id`,
+                `tabSales Invoice`.`po_no` AS `po_no`
             FROM `tabSales Invoice Item`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE
@@ -89,11 +113,13 @@ def get_data(filters, short=False):
                 AND `tabSales Invoice Item`.`item_code` = "{credit_item}"
                 AND `tabSales Invoice`.`customer` = "{customer}"
                 {conditions}
+                {deposit_conditions}
             GROUP BY `tabSales Invoice`.`name`
 
             UNION ALL SELECT
                 "Allocation" AS `type`,
                 `tabSales Invoice`.`posting_date` AS `date`,
+                `tabSales Invoice`.`creation` AS `creation`,
                 `tabSales Invoice`.`customer` AS `customer`,
                 `tabSales Invoice`.`customer_name` AS `customer_name`,
                 `tabSales Invoice`.`name` AS `sales_invoice`,
@@ -103,7 +129,13 @@ def get_data(filters, short=False):
                 `tabSales Invoice`.`product_type` AS `product_type`,
                 `tabSales Invoice`.`status` AS `status`,
                 `tabSales Invoice Customer Credit`.`sales_invoice` AS `reference`,
-                `tabSales Invoice`.`currency` AS `currency`
+                (SELECT `deposit_invoice`.`credit_account`
+                    FROM `tabSales Invoice` AS `deposit_invoice`
+                    WHERE `deposit_invoice`.`name` = `tabSales Invoice Customer Credit`.`sales_invoice`
+                ) AS `credit_account`,
+                `tabSales Invoice`.`currency` AS `currency`,
+                `tabSales Invoice`.`web_order_id` AS `web_order_id`,
+                `tabSales Invoice`.`po_no` AS `po_no`
             FROM `tabSales Invoice Customer Credit`
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
             WHERE
@@ -121,9 +153,18 @@ def get_data(filters, short=False):
         ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
-            conditions=conditions)
+            conditions=conditions,
+            deposit_conditions=deposit_conditions)
 
-        data = frappe.db.sql(sql_query, as_dict=True)
+        raw_data = frappe.db.sql(sql_query, as_dict=True)
+
+        data = []
+        if credit_account:
+            for r in raw_data:
+                if r['credit_account'] == credit_account:
+                    data.append(r)
+        else:
+            data = raw_data
 
         credit_positions = {}       # Key is per invoice
         # find open balances that have credit left

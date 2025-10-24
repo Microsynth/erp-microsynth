@@ -8,7 +8,7 @@ from frappe.utils import flt, cint, get_link_to_form
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
 
 
 def get_available_credits(customer, company, credit_type):
@@ -222,6 +222,86 @@ def book_credit(sales_invoice, event=None):
     return jv.name
 
 
+def reverse_credit(sales_invoice, net_amount):
+    """
+    Reverse previously booked credit for a sales invoice.
+
+    bench execute microsynth.microsynth.credits.reverse_credit --kwargs "{'sales_invoice': 'SI-BAL-25025600', 'net_amount': 50.0}"
+    """
+    credit_note_doc = frappe.get_doc(make_sales_return(sales_invoice))
+
+    if len(credit_note_doc.items) != 1:
+        frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Return Sales Invoice has multiple items", "credits.reverse_credit")
+
+    if credit_note_doc.items[0].qty != -1:
+        frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Return Sales Invoice item has quantity different from -1", "credits.reverse_credit")
+
+    credit_note_doc.items[0].rate = net_amount
+    # TODO: check naming series of the credit_note_doc: Currently, it is SI-BAL-...
+    # TODO: check entries in customer credit table of the credit_note_doc
+    credit_note_doc.invoice_sent_on = None
+    credit_note_doc.insert()
+    credit_note_doc.submit()
+
+    sales_invoice_outstanding = frappe.get_value("Sales Invoice", sales_invoice, "outstanding_amount")
+
+    if sales_invoice_outstanding == 0:
+        return credit_note_doc.name
+
+    if sales_invoice_outstanding > 0:
+        frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Outstanding amount greater than zero", "credits.reverse_credit")
+
+    # fetch original journal entry
+    jvs = frappe.get_all("Journal Entry",
+        filters={
+            'docstatus': 1,
+            'reference_type': "Sales Invoice",
+            'reference_name': sales_invoice},
+        fields=['name'])
+
+    if len(jvs) != 1:
+        frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: {len(jvs)} Journal Entries found", "credits.reverse_credit")
+
+    original_jv = frappe.get_doc("Journal Entry", jvs[0].name)
+
+    for entry in original_jv.accounts:
+        if entry.debit > 0:
+            expense_account = entry.account
+            break
+
+    jv = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'posting_date': credit_note_doc.posting_date,
+        'company': credit_note_doc.company,
+        'accounts': [
+            # Take from the debtor account e.g. '1102 - Debitoren EUR - BAL'
+            {
+                'account': credit_note_doc.debit_to,
+                'debit_in_account_currency': sales_invoice_outstanding * -1,
+                'exchange_rate': credit_note_doc.conversion_rate,
+                'cost_center': credit_note_doc.items[0].cost_center,
+                'party_type': "Customer",
+                'party': credit_note_doc.customer,
+                'reference_type': "Sales Invoice",
+                'reference_name': sales_invoice
+            },
+            # put into expense account e.g. '6600 - Werbung Allgemein - BAL'
+            {
+                'account': expense_account,
+                'credit_in_account_currency': sales_invoice_outstanding * credit_note_doc.conversion_rate * -1,
+                'exchange_rate': 1 ,
+                'cost_center': credit_note_doc.items[0].cost_center
+            }
+        ],
+        'user_remark': f"Reverse Credit for {sales_invoice}",
+        'multi_currency': 1
+    })
+    jv.insert()
+    jv.submit()
+
+    return credit_note_doc.name
+
+
 def cancel_credit_journal_entry(sales_invoice, event=None):
     """
     Cancel the journal entry used for booking credits from the credit account with the book_credit function
@@ -339,6 +419,9 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
     run
     bench execute microsynth.microsynth.credits.get_customer_credit_transactions --kwargs "{'currency': 'EUR', 'date': '2023-06-15'}"
     """
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    if not credit_item_code:
+        frappe.throw("Please define a credit item in the Microsynth Settings.")
     results = []
     for d in frappe.db.sql("""
         SELECT
@@ -368,7 +451,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
             LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
             WHERE
                 `tabSales Invoice`.`docstatus` = 1
-                AND `tabSales Invoice Item`.`item_code` = "6100"
+                AND `tabSales Invoice Item`.`item_code` = "{credit_item_code}"
                 AND `tabSales Invoice`.`company` = '{company}'
                 AND `tabSales Invoice`.`posting_date` = "{date}"
                 AND `tabSales Invoice`.`currency` = '{currency}'
@@ -394,7 +477,7 @@ def get_customer_credit_transactions(currency, date, company="Microsynth AG"):
                 AND `tabSales Invoice`.`currency` = '{currency}'
         ) AS `raw`
         WHERE `raw`.`net_amount` != 0
-        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(currency=currency, date=date, company=company), as_dict=True):
+        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;""".format(credit_item_code=credit_item_code, currency=currency, date=date, company=company), as_dict=True):
         results.append("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}".format(d['type'],
             d['date'],
             d['customer'],

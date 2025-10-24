@@ -109,6 +109,13 @@ frappe.ui.form.on('Delivery Note', {
                 }
             });
         });
+        // block item 6100 on delivery notes
+        var blocked_item = "6100";
+        var has_blocked_item = frm.doc.items.some(item => item.item_code === blocked_item);
+
+        if (has_blocked_item) {
+            frappe.throw(__("Item {0} is not allowed on Delivery Notes.", [blocked_item]));
+        }
     }
 });
 
