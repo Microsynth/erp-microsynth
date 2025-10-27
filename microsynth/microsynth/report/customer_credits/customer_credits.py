@@ -17,16 +17,17 @@ def get_columns():
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
-        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
-        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 75},
-        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
-        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 125, 'options': 'currency'},
+        {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
+        {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
+        {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
+        {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 125},
+        {"label": _("Reference"), "fieldname": "reference", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("Credit Account"), "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
+        {"label": _("Account Type"), "fieldname": "account_type", "fieldtype": "Data", "width": 95},
         {"label": _("Territory"), "fieldname": "territory", "fieldtype": "Link", "options": "Territory", "width": 200},
-        {"label": _("InvoiceByDefaultCompany"), "fieldname": "invoice_by_default_company", "fieldtype": "Check", "width": 165}
+        {"label": _("InvoiceByDefaultCompany"), "fieldname": "invoice_by_default_company", "fieldtype": "Check", "width": 165, "align": "left"}
     ]
     return columns
 
@@ -81,6 +82,7 @@ def get_data(filters, short=False):
             `raw`.`web_order_id` AS `web_order_id`,
             `raw`.`po_no` AS `po_no`,
             `tabCustomer`.`territory` AS `territory`,
+            `tabCredit Account`.`account_type` AS `account_type`,
             IF(`webshop_service`.`customer_id` IS NOT NULL, 1, 0) AS `invoice_by_default_company`
         FROM (
             SELECT
@@ -144,6 +146,7 @@ def get_data(filters, short=False):
                 {conditions}
         ) AS `raw`
         LEFT JOIN `tabCustomer` ON `raw`.`customer` = `tabCustomer`.`name`
+        LEFT JOIN `tabCredit Account` ON `raw`.`credit_account` = `tabCredit Account`.`name`
         LEFT JOIN (
             SELECT DISTINCT `tabWebshop Service Link`.`parent` AS `customer_id`
             FROM `tabWebshop Service Link`
