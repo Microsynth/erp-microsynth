@@ -6288,3 +6288,72 @@ def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=Fa
 
     if dry_run:
         print("NOTE: No changes were made due to dry run mode.")
+
+
+def migrate_source_fields(dry_run=True, verbose=True):
+    """
+    Migrates data from 'source' -> 'contact_source' (Contact)
+    and 'source' -> 'address_source' (Address).
+
+    Args:
+        dry_run (bool): If True, only shows what would happen (no database writes)
+        verbose (bool): If True, prints detailed logs
+
+    bench execute microsynth.microsynth.migration.migrate_source_fields --kwargs "{'dry_run': True, 'verbose': True}"
+    """
+    def migrate_doc_type(doctype, old_field, new_field):
+        if verbose:
+            print(f"\n--- Migrating {doctype} ---")
+
+        docs = frappe.get_all(doctype, fields=["name", old_field, new_field])
+        migrated = 0
+        skipped = 0
+        warned = 0
+
+        for d in docs:
+            old_val = d.get(old_field)
+            new_val = d.get(new_field)
+
+            # Case 1: Both fields are empty — skip
+            if not old_val and not new_val:
+                continue
+
+            # Case 2: Both have values but differ — warn
+            if old_val and new_val and old_val.strip() != new_val.strip():
+                warned += 1
+                print(f"WARNING: {doctype} '{d.name}' has differing values: {old_field}: '{old_val}'; {new_field}: '{new_val}' -> Skipping migration for this record.")
+                continue
+
+            # Case 3: new_field empty but old_field has value — migrate
+            if old_val and not new_val:
+                if verbose:
+                    print(f"Migrating {doctype} '{d.name}': {old_field}='{old_val}' -> {new_field}")
+                if not dry_run:
+                    frappe.db.set_value(doctype, d.name, new_field, old_val)
+                migrated += 1
+            else:
+                skipped += 1
+
+        if verbose:
+            print(f"{doctype} summary: {migrated} migrated, {warned} warnings, {skipped} skipped.")
+        return migrated, warned, skipped
+
+    total_migrated = total_warned = total_skipped = 0
+
+    for doctype, fields in [
+        ("Contact", ("source", "contact_source")),
+        ("Address", ("source", "address_source")),
+    ]:
+        migrated, warned, skipped = migrate_doc_type(doctype, *fields)
+        total_migrated += migrated
+        total_warned += warned
+        total_skipped += skipped
+
+    print("\n=== Migration Summary ===")
+    print(f"  Migrated: {total_migrated}")
+    print(f"  Warnings: {total_warned}")
+    print(f"  Skipped:  {total_skipped}")
+    print(f"  Dry run:  {dry_run}")
+
+    if dry_run:
+        print("\nDry run mode — no changes were written to the database.")
