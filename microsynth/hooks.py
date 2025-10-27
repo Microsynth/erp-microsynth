@@ -171,6 +171,9 @@ doc_events = {
         "after_insert": "microsynth.microsynth.payment_reminder.extend_values",
         "on_submit": "microsynth.microsynth.payment_reminder.transmit_payment_reminder"
     },
+    "Standing Quotation": {
+        "validate": "microsynth.microsynth.shipping.validate_standing_qtn_shipping_currencies"
+    },
     "Quotation": {
         "before_save": "microsynth.microsynth.taxes.quotation_before_save",
         "validate": "microsynth.microsynth.quotation.validate_item_sales_status"

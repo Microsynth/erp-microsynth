@@ -484,3 +484,12 @@ def validate_customer_shipping_currencies(doc, method):
     for item in doc.shipping_items:
         if item.currency != doc.default_currency:
             frappe.throw(f"Currency mismatch on Customer '{doc.name}' ({doc.customer_name}): Shipping Item {item.item or item.item_name} has currency {item.currency}, but Customer default currency is {doc.default_currency}.")
+
+
+def validate_standing_qtn_shipping_currencies(doc, method):
+    if not doc.shipping_items:
+        return
+
+    for item in doc.shipping_items:
+        if item.currency != doc.currency:
+            frappe.throw(f"Currency mismatch on Standing Quotation '{doc.name}' ({doc.customer_name}): Shipping Item {item.item or item.item_name} has currency {item.currency}, but Standing Quotation currency is {doc.currency}.")
