@@ -3905,6 +3905,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "doctype": "Sales Invoice",
             "company": company,
             "customer": customer,
+            "contact_person": webshop_account,
             "po_no": customer_order_number,
             "product_type": "Service",
             "contact_person": webshop_account,
@@ -3931,7 +3932,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "reference": invoice.name
         }
     except Exception as err:
-        msg = f"Error creating deposit invoice for Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        msg = f"Error creating deposit invoice for Credit Account '{account_id}'. Details have been recorded."
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
         return {
             "success": False,
