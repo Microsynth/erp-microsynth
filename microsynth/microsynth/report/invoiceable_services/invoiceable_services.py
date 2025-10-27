@@ -52,7 +52,10 @@ def get_data(filters=None):
                 `tabDelivery Note`.`currency` AS `currency`,
                 `tabCustomer`.`invoicing_method` AS `invoicing_method`,
                 `tabCustomer`.`customer_credits` AS `customer_credits`,
-                `tabCustomer`.`collective_billing` AS `collective_billing`,
+                CASE
+                    WHEN `tabCustomer`.`customer_credits` = 'Credit Account' THEN 0
+                    ELSE `tabCustomer`.`collective_billing`
+                END AS `collective_billing`,
                 `tabDelivery Note`.`is_punchout` AS `is_punchout`,
                 `tabDelivery Note`.`po_no` AS `po_no`,
                 `tabCountry`.`export_code` AS `region`,
