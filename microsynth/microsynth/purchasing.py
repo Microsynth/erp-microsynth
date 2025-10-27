@@ -132,14 +132,19 @@ def create_po_from_open_mr(filters):
     if type(filters) == str:
         filters = json.loads(filters)
     items = get_items(filters)
-    currencies = set(item.get('currency') for item in items)
+    currencies = {item.get('currency') for item in items if item.get('currency') is not None}
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     if len(currencies) > 1:
         frappe.throw(_("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(", ".join(currencies)))
+    elif len(currencies) == 1:
+        currency = currencies.pop() or supplier_doc.default_currency  # getting a random element from the set does not matter because there is exactly one element in the set
+    else:  # no currencies
+        currency = supplier_doc.default_currency
+
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': filters.get('supplier'),
-        'currency': currencies.pop() if currencies else supplier_doc.default_currency,
+        'currency': currency,
         'buying_price_list': supplier_doc.default_price_list
     })
     for item in items:
