@@ -1571,6 +1571,14 @@ def apply_item_price_changes(price_list, adds, updates):
     adds = json.loads(adds)
     updates = json.loads(updates)
 
+    price_list_doc = frappe.get_doc("Price List", price_list)
+
+    if not price_list_doc.enabled:
+        frappe.throw(f"The selected Price List {price_list} is disabled. Unable to add or update Item Prices.")
+
+    if not price_list_doc.buying:
+        frappe.throw(f"The selected Price List {price_list} is not configured for buying/purchasing. Unable to add or update Item Prices.")
+
     for entry in adds:
         doc = frappe.new_doc("Item Price")
         doc.item_code = entry["item_code"]
@@ -1579,7 +1587,7 @@ def apply_item_price_changes(price_list, adds, updates):
         doc.price_list_rate = flt(entry["rate"])
         doc.selling = 0
         doc.buying = 1
-        doc.save()
+        doc.save(ignore_permissions=True)
 
     for entry in updates:
         ip = frappe.get_all(
@@ -1594,7 +1602,7 @@ def apply_item_price_changes(price_list, adds, updates):
         if ip:
             doc = frappe.get_doc("Item Price", ip[0].name)
             doc.price_list_rate = flt(entry["rate"])
-            doc.save()
+            doc.save(ignore_permissions=True)
 
     frappe.db.commit()
     return {"status": "done"}
