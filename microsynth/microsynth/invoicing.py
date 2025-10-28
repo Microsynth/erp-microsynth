@@ -1316,6 +1316,10 @@ def transmit_sales_invoice(sales_invoice_id):
         if sales_invoice.total == 0:
             return
 
+        # Do not send single customer credit invoices for collective billing customers
+        if cint(customer.collective_billing) and sales_invoice.net_total == 0:
+            return
+
         # Determine transmission mode
         if sales_invoice.is_punchout and customer.invoicing_method != "Intercompany":
             if (sales_invoice.punchout_shop == "ROC-PENGEP" and sales_invoice.company == "Microsynth AG" ):
