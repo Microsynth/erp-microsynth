@@ -852,11 +852,17 @@ def request_quote(content, client="webshop"):
         return {'success': False, 'message': "Invoice address not found", 'reference': None}
     if not frappe.db.exists("Contact", content['contact']):
         return {'success': False, 'message': "Contact not found", 'reference': None}
-    if "company" not in content:
+    if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
         company = frappe.get_value("Customer", content['customer'], 'default_company')
         if not company:
             company = frappe.defaults.get_default('company')
-    company = "Microsynth AG"       # TODO send company with webshop request. Currently request_quote is only used for oligo orders.
+    elif not "company" in content:
+        company = "Microsynth AG"
+    else:
+        company = content['company']
+    if "company" in content and content['company'] and content["company"] != company:
+        return {'success': False, 'message': f"The given company {content['company']} does not match the determined company {company}.", 'reference': None}
+
     # create quotation
     transaction_date = date.today()
     qtn_doc = frappe.get_doc({
@@ -864,6 +870,7 @@ def request_quote(content, client="webshop"):
         'quotation_to': "Customer",
         'company': company,
         'party_name': content['customer'],
+        'product_type': "Oligos" if content['oligos'] else None,
         'customer_address': content['invoice_address'],
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
