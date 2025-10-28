@@ -385,5 +385,18 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         }
     });
     d.show();
-    // TODO: Fetch Supplier Name if Supplier is set but not Supplier Name
+    // Fetch Supplier Name if Supplier is set but not Supplier Name
+    d.fields_dict.supplier.df.onchange = function() {
+        const supplier = d.get_value('supplier');
+        const current_name = d.get_value('supplier_name');
+
+        if (supplier && !current_name) {
+            frappe.db.get_value('Supplier', supplier, 'supplier_name')
+                .then(r => {
+                    if (r && r.message && r.message.supplier_name) {
+                        d.set_value('supplier_name', r.message.supplier_name);
+                    }
+                });
+        }
+    };
 }
