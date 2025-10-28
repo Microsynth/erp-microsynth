@@ -1,10 +1,11 @@
 # Copyright (c) 2023, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
-from __future__ import unicode_literals
+import json
 import frappe
 from frappe import _
 from frappe.utils.pdf import get_pdf
+from microsynth.microsynth.utils import get_sql_list
 
 def execute(filters=None):
     columns = get_columns()
@@ -32,9 +33,15 @@ def get_columns():
     return columns
 
 
+def validate_credit_account_customer(credit_account, customer):
+    credit_account_customer = frappe.get_value("Credit Account", credit_account, 'customer')
+    return customer == credit_account_customer
+
+
 def get_data(filters, short=False):
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
     deposit_conditions = ""
+    credit_accounts = []
 
     if filters and filters.get('exclude_unpaid_deposits'):
         deposit_conditions += f"AND `tabSales Invoice`.`status` IN ('Paid', 'Return', 'Credit Note Issued')"
@@ -48,18 +55,45 @@ def get_data(filters, short=False):
         conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
     if filters and filters.get('currency'):
         conditions += f"AND `tabSales Invoice`.`currency` = '{filters.get('currency')}'"
+
     if filters and filters.get('credit_account'):
         credit_account = filters.get('credit_account')
-        credit_account_customer = frappe.get_value("Credit Account", credit_account, 'customer')
+
         if not filters.get('customer'):
-            filters['customer'] = credit_account_customer
+            credit_account_customer = frappe.get_value("Credit Account", credit_account, 'customer')
+            filters['customer'] = credit_account_customer       # the customer is needed to select the correct report mode (customer)
+            credit_accounts.append(credit_account)
         else:
             # check if credit account belongs to customer
-            if filters['customer'] != credit_account_customer:
-                frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}, but Customer {credit_account_customer}.")
+            if validate_credit_account_customer(credit_account, customer=filters.get('customer')):
+                credit_accounts.append(credit_account)
+            else:
+                frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}.", "Customer Credits Report")
+
         conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
-    else:
-        credit_account = None
+
+    if filters and filters.get('credit_accounts'):
+        if isinstance(filters.get('credit_accounts'), str):
+            raw_credit_accounts = json.loads(filters.get('credit_accounts'))
+        else:
+            raw_credit_accounts = filters.get('credit_accounts')
+
+        if not filters.get('customer'):
+            frappe.throw("When selecting multiple Credit Accounts, the Customer must be selected as well to avoid data leakage.", "Customer Credits Report")
+
+        customer_id = filters.get('customer')
+        # validate that all credit accounts belong to the customer
+
+        for account in raw_credit_accounts:
+            if validate_credit_account_customer(account, customer=customer_id):
+                credit_accounts.append(account)
+            else:
+                frappe.log_error(f"The selected Credit Account {account} does not belong to the selected Customer {customer_id}.", "Customer Credits Report")
+
+        if len(credit_accounts) == 0:
+            frappe.throw(f"None of the selected Credit Accounts ({', '.join(credit_accounts)}) belong to the selected Customer {customer_id}. Cannot generate report.", "Customer Credits Report")
+
+        conditions += f"AND `tabSales Invoice`.`credit_account` IN ({get_sql_list(credit_accounts)})"
 
     if filters.get('customer'):
         # customer based evaluation: ledger
@@ -162,9 +196,9 @@ def get_data(filters, short=False):
         raw_data = frappe.db.sql(sql_query, as_dict=True)
 
         data = []
-        if credit_account:
+        if credit_accounts:
             for r in raw_data:
-                if r['credit_account'] == credit_account:
+                if r['credit_account'] in credit_accounts:
                     data.append(r)
         else:
             data = raw_data

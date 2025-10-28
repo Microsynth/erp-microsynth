@@ -88,6 +88,8 @@ def allocate_credits(sales_invoice_doc):
     else:
         credit_type = "Standard"
 
+    # TODO
+    # get list of applicable credit accounts (fetch data from Sales Order)
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     if len(customer_credits) > 0:
