@@ -243,6 +243,10 @@ frappe.ui.form.on('Sales Invoice', {
             frappe.validated=false;
             frappe.throw(__("Item 6100 must be the only item in the Sales Invoice."));
         }
+        // block Product Type NGS
+        if (frm.doc.product_type === "NGS") {
+            frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
+        }
     },
     before_submit: function(frm) {
         // Prevent default submit until user accepts or rejects changes

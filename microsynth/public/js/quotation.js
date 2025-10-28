@@ -277,6 +277,10 @@ frappe.ui.form.on('Quotation', {
             });
             frappe.validated=false;
         }
+        // block Product Type NGS
+        if (frm.doc.product_type === "NGS") {
+            frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
+        }
     },
 
     product_type(frm){

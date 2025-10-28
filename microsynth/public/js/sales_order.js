@@ -145,6 +145,12 @@ frappe.ui.form.on('Sales Order', {
         // update taxes was moved to the server-side trigger (see hooks.py)
         //update_taxes(frm.doc.company, frm.doc.customer, frm.doc.shipping_address_name, category, frm.doc.delivery_date);
     },
+    validate(frm) {
+        // block Product Type NGS
+        if (frm.doc.product_type === "NGS") {
+            frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
+        }
+    },
     before_submit(frm) {
         // Check if contact_person is set
         if (frm.doc.contact_person) {

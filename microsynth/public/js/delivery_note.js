@@ -116,6 +116,10 @@ frappe.ui.form.on('Delivery Note', {
         if (has_blocked_item) {
             frappe.throw(__("Item {0} is not allowed on Delivery Notes.", [blocked_item]));
         }
+        // block Product Type NGS
+        if (frm.doc.product_type === "NGS") {
+            frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
+        }
     }
 });
 
