@@ -835,13 +835,13 @@ def address_exists(address):
         return {'success': False, 'message': "Address not found or disabled."}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def request_quote(content, client="webshop"):
     """
     Request quote will create a new quote (and open the required oligos, if provided)
     """
     # prepare parameters
-    if type(content) == str:
+    if isinstance(content, str):
         content = json.loads(content)
     # validate input
     if not frappe.db.exists("Customer", content['customer']):
@@ -945,7 +945,7 @@ def request_quote(content, client="webshop"):
         qtn_doc.service_specification = "<h3>Service Description</h3>" + "".join(service_specifications)
     # insert new quotation
     try:
-        qtn_doc.insert(ignore_permissions=True)
+        qtn_doc.insert()
         if 'warnings' in content and content['warnings']:
             new_comment = frappe.get_doc({
                 'doctype': 'Comment',
