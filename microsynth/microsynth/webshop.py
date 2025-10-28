@@ -1682,7 +1682,7 @@ def get_contact_shipping_items(contact, client="webshop"):
                 AND (`tabShipping Item`.`currency` = %s OR `tabShipping Item`.`currency` IS NULL)
             ORDER BY `tabShipping Item`.`idx` ASC;""", (country, customer_currency), as_dict=True)
     if len(shipping_items) > 0:
-        return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
+        return {'success': True, 'message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
     else:
         return {'success': False, 'message': 'No data', 'shipping_items': []}
 
