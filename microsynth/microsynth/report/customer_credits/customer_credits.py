@@ -236,6 +236,8 @@ def get_data(filters, short=False):
             letter_head = frappe.get_doc("Letter Head", filters.get('company'))
             customer = frappe.get_doc("Customer", filters.get('customer'))
             address = frappe.get_value("Contact", customer.invoice_to, 'address')
+            if not address:
+                frappe.throw(f"The Invoice To Contact '{customer.invoice_to}' of Customer '{customer.name}' has no Address.")
             print_format['header'] = letter_head.content
             print_format['customer_address'] = frappe.render_template("microsynth/templates/includes/address.html", {'contact': customer.invoice_to, 'address': address, 'customer_name': customer.customer_name })
             print_format['footer'] = letter_head.footer
