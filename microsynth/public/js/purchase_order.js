@@ -21,7 +21,9 @@ frappe.ui.form.on('Purchase Order', {
 
         hide_in_words();
 
-        show_order_method(frm);
+        if (['Draft', 'On Hold', 'To Receive and Bill', 'To Receive'].includes(frm.doc.status)) {
+            show_order_method(frm);
+        }
     },
     onload(frm) {
         if (!locals.inbound_freight_item) {
@@ -229,6 +231,14 @@ function show_order_method(frm) {
         let has_webshop = supplier.supplier_shops && supplier.supplier_shops.length > 0 && supplier.supplier_shops[0].username;
         if (has_webshop) {
             frm.dashboard.add_comment(__('Order through Webshop, see Supplier {0} for credentials.', [supplier.name]), 'green', true);
+            if (supplier.supplier_shops[0].webshop_url) {
+                frm.add_custom_button(__('Open Supplier Webshop'), function() {
+                    window.open(
+                        supplier.supplier_shops[0].webshop_url,
+                        '_blank' // open in a new window.
+                    );
+                }).addClass("btn-primary");
+            }
             return;
         }
         if (supplier.order_contact) {
