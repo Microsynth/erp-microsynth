@@ -865,10 +865,12 @@ def request_quote(content, client="webshop"):
                 return {'success': False,
                         'message': f"The provided customer {content['customer']} has not InvoiceByDefaultCompany but the provided company {content['company']} differs from 'Microsynth AG'.",
                         'reference': None}
+        company = content['company']
     else:
         if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
             if not customer_doc.default_company:
                 return {'success': False, 'message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
+            company = customer_doc.default_company
         else:
             company = "Microsynth AG"
 
