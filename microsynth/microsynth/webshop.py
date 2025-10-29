@@ -2445,7 +2445,7 @@ def get_contact_dto(contact):
         'email_cc': cc_email,
         'phone': contact.phone,
         'status': contact.status,
-        'source': contact.source or contact.contact_source,  # TODO: remove Contact.source after migration
+        'source': contact.contact_source,
         'address': contact.address,
         'customer': get_customer(contact.name)
     }
