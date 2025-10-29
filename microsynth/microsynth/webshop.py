@@ -838,30 +838,38 @@ def address_exists(address):
 @frappe.whitelist(allow_guest=False)
 def request_quote(content, client="webshop"):
     """
-    Request quote will create a new quote (and open the required oligos, if provided)
+    Request quote will create a new Oligo quote (and open the required oligos, if provided)
     """
     # prepare parameters
     if isinstance(content, str):
         content = json.loads(content)
     # validate input
+    required_keys = ['customer', 'delivery_address', 'invoice_address', 'contact']
+    missing = [k for k in required_keys if not content.get(k)]
+    if missing:
+        return {'success': False, 'message': f"Missing required fields: {', '.join(missing)}"}
+
     if not frappe.db.exists("Customer", content['customer']):
         return {'success': False, 'message': "Customer not found", 'reference': None}
-    if not frappe.db.exists("Address", content['delivery_address']):
-        return {'success': False, 'message': "Delivery address not found", 'reference': None}
-    if not frappe.db.exists("Address", content['invoice_address']):
-        return {'success': False, 'message': "Invoice address not found", 'reference': None}
-    if not frappe.db.exists("Contact", content['contact']):
-        return {'success': False, 'message': "Contact not found", 'reference': None}
-    if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
-        company = frappe.get_value("Customer", content['customer'], 'default_company')
-        if not company:
-            company = frappe.defaults.get_default('company')
-    elif not "company" in content:
-        company = "Microsynth AG"
+    customer_doc = frappe.get_doc("Customer", content['customer'])
+
+    if "company" in content:
+        if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
+            if not customer_doc.default_company:
+                return {'success': False, 'message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
+            if content["company"] != customer_doc.default_company:
+                return {'success': False, 'message': f"The given company {content['company']} does not match the determined company {customer_doc.default_company}.", 'reference': None}
+        else:
+            if content['company'] != 'Microsynth AG':
+                return {'success': False,
+                        'message': f"The provided customer {content['customer']} has not InvoiceByDefaultCompany but the provided company {content['company']} differs from 'Microsynth AG'.",
+                        'reference': None}
     else:
-        company = content['company']
-    if "company" in content and content['company'] and content["company"] != company:
-        return {'success': False, 'message': f"The given company {content['company']} does not match the determined company {company}.", 'reference': None}
+        if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
+            if not customer_doc.default_company:
+                return {'success': False, 'message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
+        else:
+            company = "Microsynth AG"
 
     # create quotation
     transaction_date = date.today()
@@ -870,18 +878,18 @@ def request_quote(content, client="webshop"):
         'quotation_to': "Customer",
         'company': company,
         'party_name': content['customer'],
-        'product_type': "Oligos" if content['oligos'] else None,
+        'product_type': "Oligos" if content.get('oligos') else None,
         'customer_address': content['invoice_address'],
         'shipping_address_name': content['delivery_address'],
         'contact_person': content['contact'],
         'contact_display': frappe.get_value("Contact", content['contact'], "full_name"),
-        'territory': frappe.get_value("Customer", content['customer'], "territory"),
+        'territory': customer_doc.territory,
         'customer_request': content['customer_request'],
-        'currency': frappe.get_value("Customer", content['customer'], "default_currency"),
-        'selling_price_list': frappe.get_value("Customer", content['customer'], "default_price_list"),
+        'currency': customer_doc.default_currency,
+        'selling_price_list': customer_doc.default_price_list,
         'transaction_date': transaction_date,
         'valid_till': transaction_date + timedelta(days=90),
-        'sales_manager': frappe.get_value("Customer", content['customer'], "account_manager")
+        'sales_manager': customer_doc.account_manager
     })
     oligo_items_consolidated = dict()
     # create oligos
