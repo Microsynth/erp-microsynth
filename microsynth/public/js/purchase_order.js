@@ -226,7 +226,7 @@ function show_order_method(frm) {
     cur_frm.dashboard.clear_comment();
 
     frappe.db.get_doc('Supplier', frm.doc.supplier).then(supplier => {
-        let has_webshop = supplier.supplier_shops && supplier.supplier_shops.length > 0;
+        let has_webshop = supplier.supplier_shops && supplier.supplier_shops.length > 0 && supplier.supplier_shops[0].username;
         if (has_webshop) {
             frm.dashboard.add_comment(__('Order through Webshop, see Supplier {0} for credentials.', [supplier.name]), 'green', true);
             return;
@@ -244,7 +244,7 @@ function show_order_method(frm) {
                 }
             });
         } else {
-            frm.dashboard.add_comment(__('⚠️ Order Method unclear: Supplier {0} has no Supplier Shop and no Order Contact with an email.', [supplier.name]), 'red', true);
+            frm.dashboard.add_comment(__('⚠️ Order Method unclear: Supplier {0} has no Supplier Shop with a username and no Order Contact with an email.', [supplier.name]), 'red', true);
         }
     });
 }
