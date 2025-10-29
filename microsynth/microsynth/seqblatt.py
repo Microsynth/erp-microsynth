@@ -15,6 +15,239 @@ from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier
 
 
+def check_and_get_label(label):
+    """
+    Take a label dictionary (item, barcode, status), search it in the ERP and return it if it is unique or an error message otherwise.
+
+    bench execute microsynth.microsynth.seqblatt.check_and_get_label --kwargs "{'label': {'item': '6030', 'barcode': 'MY004450', 'status': 'submitted'}}"
+    """
+    sql_query = """
+        SELECT `name`,
+            `item`,
+            `label_id` AS `barcode`,
+            `status`,
+            `registered`,
+            `contact`,
+            `registered_to`,
+            `sales_order`,
+            `customer`
+        FROM `tabSequencing Label`
+        WHERE `label_id` = %s
+            AND `item` = %s
+        ;"""
+    sequencing_labels = frappe.db.sql(sql_query, (label['barcode'], label['item']), as_dict=True)
+    if len(sequencing_labels) == 0:
+        return {'success': False, 'message': f"Found no label with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
+    elif len(sequencing_labels) > 1:
+        return {'success': False, 'message': f"Found multiple labels with barcode {label['barcode']} and Item {label['item']} in the ERP.", 'label': None}
+    else:
+        return {'success': True, 'message': "OK", 'label': sequencing_labels[0]}
+
+
+def check_and_get_labels(labels):
+    """
+    Batch-fetch Sequencing Labels from the ERP based on barcode and item pairs.
+
+    Parameters:
+        labels (list): List of label dicts with 'barcode' and 'item' keys.
+
+    Returns:
+        dict: Mapping from (barcode, item) → label data or error
+
+    bench execute microsynth.microsynth.seqblatt.check_and_get_labels --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}]}"
+    """
+    if not labels:
+        return {}
+
+    # Use dict to deduplicate input
+    keys = {(label.get("barcode") or label.get("label_id"), label.get("item") or label.get("item_code")): None for label in labels}
+
+    if not keys:
+        return {}
+
+    conditions = ' OR '.join(f"(label_id = %s AND item = %s)" for _ in keys)
+    # flatten a set of 2-tuples into a single list of values
+    values = [val for pair in keys for val in pair]
+
+    sql = f"""
+        SELECT
+            name, item, label_id AS barcode, status, registered, contact, registered_to,
+            sales_order, customer
+        FROM `tabSequencing Label`
+        WHERE {conditions};
+    """
+    results = frappe.db.sql(sql, values, as_dict=True)
+
+    label_map = {}
+    for label in results:
+        key_str = f"{label['barcode']}|{label['item']}"
+        if key_str in label_map:
+            label_map[key_str] = {"error": "duplicate"}
+        else:
+            label_map[key_str] = label
+
+    # Add missing entries
+    for key in keys:
+        key_str = f"{key[0]}|{key[1]}"
+        if key_str not in label_map:
+            label_map[key_str] = {"error": "not_found"}
+
+    return label_map
+
+
+def process_label_status_change(labels, target_status, required_current_statuses=None, check_not_used=False, stop_on_first_failure=False):
+    """
+    Unified handler to change the status of sequencing labels, with options for validation and strict failure handling.
+
+    Parameters:
+        labels (list): A list of dictionaries representing labels.
+                       Each label must contain:
+                         - "barcode" (or "label_id")
+                         - "item" (or "item_code")
+        target_status (str): The status to which the label should be set, e.g., "submitted" or "unused".
+        required_current_status (list of str or None, optional): If set, only labels that currently have one of these statuses in the ERP will be processed.
+                                                 Others will be skipped (or cause immediate failure if `stop_on_first_failure` is True).
+        check_not_used (bool, optional): If True, verifies that the label is not used for any open Sales Orders
+                                         (DocStatus <= 1) other than the one it was ordered with.
+        stop_on_first_failure (bool, optional): If True, aborts processing immediately upon the first invalid label
+                                                (e.g. not found, wrong status, or used for another SO).
+                                                If False, attempts to process all valid labels and returns partial success if any fail.
+    Returns:
+        dict:
+            {
+                "success": bool,     # False if any label failed (or immediately on first error, if strict mode)
+                "message": str,      # 'OK' or error message
+                "labels": list       # List of labels with their status and optional error messages (if not strict mode)
+            }
+
+    Example usage:
+    bench execute microsynth.microsynth.seqblatt.process_label_status_change --kwargs "{'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}], 'target_status': 'unused', 'required_current_statuses': ['locked'], 'check_not_used': True, 'stop_on_first_failure': True}"
+    """
+    if not labels or len(labels) == 0:
+        return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
+
+    success = True
+
+    try:
+        # Normalize and deduplicate
+        normalized = [{
+            "barcode": l.get("barcode") or l.get("label_id"),
+            "item": l.get("item") or l.get("item_code")
+        } for l in labels]
+
+        label_lookup = check_and_get_labels(normalized)
+        processed_labels = []
+        labels_to_process = []
+        customers_to_enable = set()
+
+        for label in normalized:
+            key = (label["barcode"], label["item"])
+            key_str = f"{label['barcode']}|{label['item']}"
+            result = label_lookup.get(key_str)
+
+            if "error" in result:
+                if result["error"] == "not_found":
+                    label['message'] = f"Label {key[0]} with Item {key[1]} not found."
+                    processed_labels.append(label)
+                    success = False
+                    if stop_on_first_failure:
+                        return {'success': False, 'message': label['message'], 'labels': None}
+                    continue
+
+                elif result["error"] == "duplicate":
+                    label['message'] = f"Multiple labels found for {key[0]} and {key[1]}."
+                    processed_labels.append(label)
+                    success = False
+                    if stop_on_first_failure:
+                        return {'success': False, 'message': label['message'], 'labels': None}
+                    continue
+
+            erp_label = result
+
+            if required_current_statuses and erp_label['status'] not in required_current_statuses:
+                erp_label['message'] = f"The label has currently not one of the required status {', '.join(required_current_statuses)} in the ERP."
+                processed_labels.append(erp_label)
+                success = False
+                if stop_on_first_failure:
+                    return {'success': False, 'message': erp_label['message'], 'labels': None}
+                continue
+
+            if check_not_used:
+                sql_query = """
+                    SELECT `tabSample`.`name` AS `sample`
+                    FROM `tabSample Link`
+                    LEFT JOIN `tabSample` ON `tabSample Link`.`sample` = `tabSample`.`name`
+                    LEFT JOIN `tabSales Order` ON `tabSales Order`.`name` = `tabSample Link`.`parent`
+                    WHERE `tabSample`.`sequencing_label` = %s
+                        AND `tabSample Link`.`parent` != %s
+                        AND `tabSample Link`.`parenttype` = "Sales Order"
+                        AND `tabSales Order`.`docstatus` <= 1;
+                """
+                samples = frappe.db.sql(sql_query, (erp_label['barcode'], erp_label['sales_order']), as_dict=True)
+                if samples:
+                    erp_label['message'] = f"Label '{erp_label['barcode']}' is used in open Sales Orders other than {erp_label['sales_order']}."
+                    processed_labels.append(erp_label)
+                    success = False
+                    if stop_on_first_failure:
+                        return {'success': False, 'message': erp_label['message'], 'labels': None}
+                    continue
+
+            if erp_label.get('customer'):
+                customers_to_enable.add(erp_label['customer'])
+
+            labels_to_process.append(erp_label)
+
+        # Batch enable Customers (only fetch and modify disabled ones)
+        disabled_customers = []
+        if customers_to_enable:
+            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", list(customers_to_enable)], "disabled": 1}, fields=["name"])
+            for c in disabled_customers_to_enable:
+                customer_doc = frappe.get_doc("Customer", c.name)
+                customer_doc.disabled = 0
+                customer_doc.save(ignore_permissions=True, ignore_version=True)  # Do not create a version.
+                disabled_customers.append(c.name)
+
+        # Set label statuses
+        for erp_label in labels_to_process:
+            #frappe.db.set_value("Sequencing Label", erp_label['name'], "status", target_status)  # would be much faster, but no validation
+            label_doc = frappe.get_doc("Sequencing Label", erp_label['name'])
+            label_doc.status = target_status
+            label_doc.save(ignore_permissions=True)
+            processed_labels.append({
+                "item": label_doc.item,
+                "barcode": label_doc.label_id,
+                "status": label_doc.status,
+                "message": "OK"
+            })
+
+        # Disable previously disabled Customers
+        for customer in disabled_customers:
+            customer_doc = frappe.get_doc("Customer", customer)
+            customer_doc.disabled = 1
+            customer_doc.save(ignore_permissions=True, ignore_version=True)  # Do not create a version.
+
+        frappe.db.commit()
+        #message = f"The following Customers were temporarily enabled and are now disabled again: {','.join(disabled_customers)}" if disabled_customers else "OK"
+
+        if not processed_labels:
+            return {
+                'success': False,
+                'message': "All labels failed validation",
+                'labels': labels
+            }
+
+        return {
+            'success': success,
+            'message': "OK",
+            'labels': processed_labels
+        }
+
+    except Exception as err:
+        msg = f"Error setting labels to {target_status}: {err}"
+        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", f"process_label_status_change")
+        return {'success': False, 'message': msg, 'labels': None}
+
+
 def set_status(status, labels):
     """
     This is the generic core function that will be called by the
@@ -31,55 +264,12 @@ def set_status(status, labels):
         }
     ]
 
-    bench execute microsynth.microsynth.seqblatt.set_status --kwargs "{'status': 'locked', 'labels': [{'label_id': '10000001', 'item_code': '3000'}, {'label_id': '10000051', 'item_code': '3000'}]}"
+    bench execute microsynth.microsynth.seqblatt.set_status --kwargs "{'status': 'locked', 'labels': [{'label_id': 'MY004450', 'item_code': '6030'}, {'label_id': 'MY004449', 'item_code': '6030'}]}"
     """
-    if type(labels) == str:
+    if isinstance(labels, str):
         labels = json.loads(labels)
-    try:
-        customers = set()
-        disabled_customers = []
-        labels_to_process = []
-
-        for l in labels or []:
-            matching_labels = frappe.get_all("Sequencing Label",filters={
-                'label_id': l.get("label_id"),
-                'item': l.get("item_code")
-            }, fields=['name', 'customer'])
-
-            if not matching_labels or len(matching_labels) != 1:
-                #return {'success': False, 'message': "none or multiple labels." }
-                return {'success': False, 'message': f"Found {len(matching_labels)} Sequencing Label(s) for Label {l} in the ERP."}
-            else:
-                if matching_labels[0]['customer']:
-                    customers.add(matching_labels[0]['customer'])
-                labels_to_process.append(matching_labels[0]['name'])
-
-        # Enable Customer if necessary
-        for customer in customers:
-            customer_doc = frappe.get_doc("Customer", customer)
-            if customer_doc.disabled:
-                customer_doc.disabled = 0
-                customer_doc.save(ignore_permissions=True)
-                disabled_customers.append(customer)
-
-        # Set status of Sequencing Labels
-        for label in labels_to_process:
-            label_doc = frappe.get_doc("Sequencing Label", label)
-            # ToDo: Check if status transition is allowed
-            label_doc.status = status
-            label_doc.save(ignore_permissions=True)
-
-        # Disable Customers that were disabled before calling this function
-        for customer_to_disable in disabled_customers:
-            customer_doc = frappe.get_doc("Customer", customer_to_disable)
-            customer_doc.disabled = 1
-            customer_doc.save(ignore_permissions=True)
-
-        frappe.db.commit()
-        message = f"The following Customers are disabled: {','.join(disabled_customers)}" if len(disabled_customers) > 0 else None
-        return {'success': True, 'message': message }
-    except Exception as err:
-        return {'success': False, 'message': err }
+    check_not_used = status == "unused"
+    return process_label_status_change(labels, target_status=status, check_not_used=check_not_used)
 
 
 @frappe.whitelist(allow_guest=True)
