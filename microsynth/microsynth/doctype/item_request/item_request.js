@@ -37,8 +37,8 @@ frappe.ui.form.on('Item Request', {
             }
         }
         frm.add_custom_button(__('Material Request Overview'), function() {
-			frappe.set_route('query-report', 'Material Request Overview');
-		});
+            frappe.set_route('query-report', 'Material Request Overview', { reload: new Date().getTime() });
+        });
     }
 });
 
