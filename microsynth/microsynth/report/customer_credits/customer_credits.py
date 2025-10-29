@@ -39,6 +39,11 @@ def validate_credit_account_customer(credit_account, customer):
 
 
 def get_data(filters, short=False):
+    """
+    bench execute microsynth.microsynth.report.customer_credits.customer_credits.get_data --kwargs "{'filters': {'company': 'Microsynth AG', 'exclude_unpaid_deposits': False, 'credit_accounts': ['CA-000003'], 'customer': '8003'}}"
+    """
+    if not 'company' in filters:
+        frappe.throw("Company is a mandatory filter.")
     conditions = f"AND `tabSales Invoice`.`company` = '{filters.get('company')}'"  # company has to be always set
     deposit_conditions = ""
     credit_accounts = []
@@ -314,8 +319,8 @@ def get_data(filters, short=False):
     # Debugging:
     #pf = data[(len(data) - 1)]
     #frappe.log_error(f"{pf=}\n\n{pf['header']=}\n\n{pf['customer_address']=}")
-
     return data
+
 
 @frappe.whitelist()
 def download_pdf(company, customer):
@@ -333,5 +338,3 @@ def download_pdf(company, customer):
     frappe.local.response.filename = "Customer_Credits_{0}.pdf".format(customer)
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
-
-    return
