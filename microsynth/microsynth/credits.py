@@ -5,16 +5,15 @@ import frappe
 from datetime import date, datetime, timedelta
 from frappe.utils.data import today
 from frappe.utils import flt, cint, get_link_to_form
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
+from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
 
 def get_available_credits(customer, company, credit_type):
-    from microsynth.microsynth.report.customer_credits.customer_credits import \
-        get_data
-    customer_credits = get_data({'customer': customer, 'company': company, 'credit_type': credit_type})
+    customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_type': credit_type})
     return customer_credits
 
 
@@ -53,6 +52,28 @@ def get_total_credit(customer, company, credit_type):
     return total
 
 
+def get_applicable_customer_credits(customer, company, credit_accounts):
+    """
+    Return the customer credits for the specified credit accounts.
+    Run
+    bench execute microsynth.microsynth.credits.get_multi_credits --kwargs "{ 'customer': '36660316', 'company': 'Microsynth AG', 'credit_accounts': [ 'CA-000003', 'CA-000002', 'CA-000001' ] }"
+    """
+    # TODO: set the filter exclude_unpaid_deposits=True
+    raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts})
+
+    enforced_credits = []
+    standard_credits = []
+
+    for credit in reversed(raw_customer_credits):                   # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
+        if 'outstanding' in credit and flt(credit['outstanding']) > 0:
+            if credit['account_type'] == "Enforced Credit":
+                enforced_credits.append(credit)
+            else:
+                standard_credits.append(credit)
+
+    return enforced_credits + standard_credits
+
+
 # def get_total_credit_without_project(customer, company):
 #     """
 #     Return the total credit amount available to a customer for the specified company excluding credits with product type project.
@@ -76,6 +97,21 @@ def get_total_credit(customer, company, credit_type):
 #     return total
 
 
+def get_credit_accounts(sales_order_id):
+    """
+    Return the credit accounts defined in the Sales Order.
+
+    Run
+    bench execute microsynth.microsynth.credits.get_credit_accounts --kwargs "{ 'sales_order_id': 'SO-BAL-25043861' }"
+    """
+    credit_accounts = frappe.get_all("Credit Account Link",
+                                        filters={'parent': sales_order_id, 'parenttype': 'Sales Order'},
+                                        fields=['credit_account'],
+                                        order_by='idx asc')
+
+    return [ account['credit_account'] for account in credit_accounts ]
+
+
 def allocate_credits(sales_invoice_doc):
     """
     Allocate the matching customer credit (Project / non-Project) to the given Sales Invoice.
@@ -88,10 +124,24 @@ def allocate_credits(sales_invoice_doc):
     else:
         credit_type = "Standard"
 
-    # TODO
     # get list of applicable credit accounts (fetch data from Sales Order)
-    customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
+    sales_order_ids = set()
+    for item in  sales_invoice_doc.items:
+        if item.sales_order:
+            sales_order_ids.add(item.sales_order)
+
+    if len(sales_order_ids) == 0:
+        return sales_invoice_doc
+    if len(sales_order_ids) > 1:
+        frappe.throw(f"Cannot allocate credits for Sales Invoice '{sales_invoice_doc.name}': Multiple Sales Orders found:\n{', '.join(list(sales_order_ids))}", "Allocate Credits Error")
+
+    credit_account_ids = get_credit_accounts(sales_order_ids.pop())
+
+    # get applicable customer credits
+    customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_account_ids)
+    # total_customer_credit is needed only for the print format --> refactor later
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
+
     if len(customer_credits) > 0:
         if hasattr(sales_invoice_doc, 'customer_credits') and sales_invoice_doc.customer_credits and len(sales_invoice_doc.customer_credits) > 0:
             for credit_entry in sales_invoice_doc.customer_credits:
@@ -104,17 +154,11 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.save()
         invoice_amount = sales_invoice_doc.net_total
         allocated_amount = 0
-        for credit in reversed(customer_credits):       # customer credits are sorted newest to oldest
+
+        for credit in customer_credits:       # customer_credits is sorted by the get_applicable_customer_credits function
             if credit.currency != sales_invoice_doc.currency:
                 frappe.throw("The currency of Sales Invoice '{0}' does not match the currency of the credit account. Cannot allocate credits.".format(sales_invoice_doc.name))
-            if not 'outstanding' in credit or flt(credit['outstanding']) < 0.01:
-                continue
-            # if sales_invoice_doc.product_type != "Project" and credit['product_type'] == "Project":
-            #     # don't pay non-Project invoice with Project credits
-            #     continue
-            # if sales_invoice_doc.product_type == "Project" and credit['product_type'] != "Project":
-            #     # don't pay Project invoice with non-Project credits
-            #     continue
+
             if credit['outstanding'] <= invoice_amount:
                 # outstanding invoice amount greater or equal this credit
                 sales_invoice_doc.append('customer_credits', {
@@ -144,6 +188,7 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.total_customer_credit = allocated_amount
 
         sales_invoice_doc.remaining_customer_credit = total_customer_credit - allocated_amount
+        # TODO: change Print Format to show remaining customer credits per applied credit account
     return sales_invoice_doc
 
 
