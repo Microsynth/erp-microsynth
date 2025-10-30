@@ -762,7 +762,7 @@
    "modified_by": "Administrator",
    "name": "Customer-invoicing_method",
    "no_copy": 0,
-   "options": "Email\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nStripe Prepayment\nChorus\nX-Rechnung\nScientist\nIntercompany",
+   "options": "Email\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nStripe Prepayment\nChorus\nX-Rechnung\nPeppol\nScientist\nIntercompany",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,

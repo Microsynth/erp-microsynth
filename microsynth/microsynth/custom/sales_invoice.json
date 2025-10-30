@@ -1542,7 +1542,7 @@
    "modified_by": "jens.petermann@microsynth.ch",
    "name": "Sales Invoice-invoicing_method",
    "no_copy": 0,
-   "options": "\nEmail\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nStripe Prepayment\nChorus\nX-Rechnung\nScientist\nIntercompany\nEmailAdministration",
+   "options": "\nEmail\nPost\nARIBA\nCarlo ERBA\nPaynet\nGEP\nStripe Prepayment\nChorus\nX-Rechnung\nPeppol\nScientist\nIntercompany\nEmailAdministration",
    "owner": "jens.petermann@microsynth.ch",
    "parent": null,
    "parentfield": null,
