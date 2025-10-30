@@ -127,7 +127,15 @@ function enter_batches(frm) {
                                 label: __('Existing Batch'),
                                 options: 'Batch',
                                 in_list_view: 1,
-                                columns: 2
+                                columns: 2,
+                                // Restrict the batch link options to the same Item
+                                get_query: function(row) {
+                                    return {
+                                        filters: {
+                                            'item': row.item_code || ''
+                                        }
+                                    };
+                                }
                             },
                             {
                                 fieldname: 'new_batch_id',
