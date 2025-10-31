@@ -504,9 +504,9 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             except ValueError as err:
                 print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
                 continue
-            if ordered_2021_2025 == 0 and not line[33].strip():
+            if ordered_2021_2025 == 0 and not line[33].strip() and not internal_code:
                 # do not import Items that were not ordered from 2021 to 2024
-                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024. Going to continue with the next supplier item.")
+                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024 and has no 'EAN'. Going to continue with the next supplier item.")
                 continue
 
             if not item_name:
