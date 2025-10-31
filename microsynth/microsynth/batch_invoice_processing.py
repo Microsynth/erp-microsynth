@@ -287,9 +287,9 @@ def create_invoice(file_name, invoice, settings):
     f = open(file_name, "rb")
     content = f.read()
     f.close()
-    # TODO: Replace # in file names (leading to a misleading permission error in the Invoice Entry page, Task #22440 KB ERP)
     save_file(
-        fname=os.path.basename(file_name),
+        # Replace # in file names (leading to a misleading permission error in the Invoice Entry page)
+        fname=os.path.basename(file_name).replace("#", "_"),
         content=content,
         dt=pinv_doc.doctype,
         dn=pinv_doc.name,
