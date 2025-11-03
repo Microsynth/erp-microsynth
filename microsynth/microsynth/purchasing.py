@@ -138,6 +138,8 @@ def create_po_from_open_mr(filters):
         frappe.throw(_("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(", ".join(currencies)))
     elif len(currencies) == 1:
         currency = currencies.pop() or supplier_doc.default_currency  # getting a random element from the set does not matter because there is exactly one element in the set
+        if currency != supplier_doc.default_currency:
+            frappe.throw(f"The selected Supplier has default currency {supplier_doc.default_currency}, but the Material Requests are in {currency}. Unable to create Purchase Order.", "Currency Mismatch")
     else:  # no currencies
         currency = supplier_doc.default_currency
 

@@ -297,7 +297,7 @@ def create_item_request(data):
     ir.supplier_name = data.get('supplier_name')
     ir.uom = data.get('uom') or "Pcs"
     ir.rate = data.get('rate')
-    ir.currency = data.get('currency')
+    ir.currency = data.get('currency')  # TODO: How to avoid that it is set to CHF by default if it is not in data?
     ir.company = data.get('company')
     ir.schedule_date = data.get('schedule_date')
     ir.comment = data.get('comment')
