@@ -112,7 +112,7 @@
    "reqd": 1
   }
  ],
- "modified": "2025-10-27 08:08:00.399351",
+ "modified": "2025-11-03 14:49:06.443102",
  "modified_by": "rolf.suter@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
@@ -132,6 +132,7 @@
   },
   {
    "create": 1,
+   "print": 1,
    "read": 1,
    "role": "Webshop",
    "write": 1
