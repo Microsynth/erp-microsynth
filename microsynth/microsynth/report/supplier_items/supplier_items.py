@@ -123,6 +123,7 @@ def create_purchasing_item(data):
     item.is_purchase_item = 1
     item.is_sales_item = 0
     item.is_stock_item = 1
+    item.has_batch_no = 1
 
     # --- UOM Conversion (single entry) ---
     if data.get("uom"):
