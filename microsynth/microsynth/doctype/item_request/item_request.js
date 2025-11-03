@@ -205,7 +205,8 @@ function open_material_request_dialog(selected, frm) {
                         'item_name': selected.item_name,
                         'currency': values.currency || 'CHF',
                         'rate': values.rate || 0,
-                        'comment': values.comment || ''
+                        'comment': values.comment || '',
+                        'requested_by': frm.doc.owner
                     }
                 },
                 callback(r) {

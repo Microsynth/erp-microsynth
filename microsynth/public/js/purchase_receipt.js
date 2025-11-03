@@ -430,13 +430,13 @@ function display_material_request_owners(frm) {
         'args': {
             'doctype': 'Material Request',
             'filters': { 'name': ['in', material_requests] },
-            'fields': ['name', 'owner'],
+            'fields': ['name', 'requested_by', 'owner'],
         },
         'callback': function(r) {
             if (r.message) {
                 let mr_owner_map = {};
                 r.message.forEach(mr => {
-                    mr_owner_map[mr.name] = mr.owner;
+                    mr_owner_map[mr.name] = mr.requested_by || mr.owner || 'Unknown';
                 });
                 // Group items by owner
                 frm.doc.items.forEach(item => {
