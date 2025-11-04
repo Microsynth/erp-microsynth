@@ -108,12 +108,12 @@
    "fieldname": "account_type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "Standard\nEnforced Credit",
+   "options": "Standard\nEnforced Credit\nLegacy",
    "reqd": 1
   }
  ],
- "modified": "2025-11-03 14:49:06.443102",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-11-04 16:59:54.170074",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
  "owner": "Administrator",
