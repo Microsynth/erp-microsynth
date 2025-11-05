@@ -497,7 +497,7 @@ def set_order_label_printed(sales_orders):
     return
 
 
-def get_country_express_shipping_item(country_name):
+def get_country_express_shipping_item(country_name, currency):
     """
     Return the preferred shipping item for the given country name.
     """
@@ -506,16 +506,16 @@ def get_country_express_shipping_item(country_name):
     express_items = []
 
     for item in country.shipping_items:
-        if item.preferred_express:
+        if item.preferred_express and item.currency == currency:
             express_items.append(item)
 
     if len(express_items) == 0:
-        frappe.log_error("No preferred express item found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
+        frappe.log_error(f"No preferred express item found for country '{country_name}' and currency {currency}", "utils.get_country_express_shipping_item")
         return None
     if len(express_items) > 0:
 
         if len(express_items) > 1:
-            frappe.log_error("Multiple preferred express shipping items found for country '{0}'".format(country_name), "utils.get_country_express_shipping_item")
+            frappe.log_error(f"Multiple preferred express shipping items found for country '{country_name}' and currency {currency}", "utils.get_country_express_shipping_item")
         return express_items[0]
 
 
@@ -549,14 +549,14 @@ def get_express_shipping_item(customer_name, country_name):
     country is returned.
 
     run
-    bench execute microsynth.microsynth.utils.get_express_shipping_item --kwargs "{ 'customer_name': '38480', 'country_name': 'Germany' }"
+    bench execute microsynth.microsynth.utils.get_express_shipping_item --kwargs "{ 'customer_name': '840574', 'country_name': 'Poland' }"
     """
-
     customer_express_item = get_customer_express_shipping_item(customer_name)
     if customer_express_item:
         return customer_express_item
     else:
-        country_express_item = get_country_express_shipping_item(country_name)
+        customer_currency = frappe.get_value("Customer", customer_name, "default_currency")
+        country_express_item = get_country_express_shipping_item(country_name, customer_currency)
         return country_express_item
 
 
