@@ -1403,6 +1403,21 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     mr.company = company
     mr.comment = comment
     mr.requested_by = requested_by
+    # get default supplier from Item and its default currency
+    supplier = None
+    supplier_currency = None
+    item_doc = frappe.get_doc("Item", item_code)
+    for entry in item_doc.supplier_items:
+        if not entry.substitute_status or (entry.substitute_status and entry.substitute_status == "Verified"):
+            supplier = entry.supplier
+            supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+            break
+    if not currency and supplier_currency:
+        currency = supplier_currency
+    elif supplier and supplier_currency and currency and supplier_currency != currency:
+        frappe.throw(f"Currency mismatch: Item {item_code} belongs to Supplier {supplier} with currency {supplier_currency} and cannot be purchased in currency {currency}.")
+    elif not currency:
+        currency = frappe.get_value("Company", company, "default_currency")
     mr.append("items", {
         "item_code": item_code,
         "item_name": item_name,
