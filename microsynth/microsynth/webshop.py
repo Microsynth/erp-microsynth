@@ -3944,7 +3944,7 @@ def get_balance_sheet_pdf(account_id):
     """
     from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
     try:
-        pdf = get_pdf_data(doctype='Credit Account', name=account_id, print_format='Standard')
+        pdf = get_pdf_data(doctype='Credit Account', name=account_id, print_format='Credit Account')
         encoded_pdf = base64.b64encode(pdf)
         file_name = f"Balance_Sheet_{account_id.replace(' ', '_')}.pdf"
         return {
