@@ -6371,11 +6371,12 @@ def get_total_outstanding_credits(credit_data):
     return total
 
 
-def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None):
+def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False):
     """
     Create a Legacy Credit Account for the given customer/company/credit_type if not already existing.
     Use credit_data to find the latest deposit Sales Invoice of type "Credit" to base the Credit Account on.
     If contact_id is given, use it as contact for the Credit Account, otherwise use the contact_person from the Sales Invoice.
+    If dry_run=True, no data will be written to the database — all create/save operations will be simulated and logged instead.
     """
     # check if "outstanding" > 0
     if get_total_outstanding_credits(credit_data) <= 0.01:
@@ -6407,107 +6408,132 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             },
             fields=["name"]
         )
+
     if credit_accounts:
         if verbose_level > 0:
             print(f"ERROR: Credit Account of type 'Legacy' for Customer {customer_id}, Company {company}, Credit Type {credit_type} already exists. Skipping creation.")
         return
+
     error = False
     credit_account_doc = None
+
     # find latest deposit sales invoice for a customer/Company/credit_type combination
     for credit in credit_data:
-        if credit.get('type') == "Credit":
-            if credit_type == "Project" and credit.get('product_type') != "Project":
-                if verbose_level > 0:
-                    print(f"INFO: Skipping credit {credit.get('sales_invoice')} of type 'Credit' for Customer {customer_id}, Company {company} as it is not of product_type 'Project'.")
-                continue
-            si_doc = frappe.get_doc("Sales Invoice", credit.get('sales_invoice'))
-            if si_doc.docstatus != 1:
-                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} is not submitted (docstatus={si_doc.docstatus}). Cannot create Legacy Credit Account.")
-                error = True
-                continue
-            if si_doc.company != company:
-                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching company '{si_doc.company}'. Cannot create Legacy Credit Account.")
-                error = True
-                continue
-            if frappe.get_value("Customer", si_doc.customer, "disabled"):
-                print(f"ERROR: Disabled Customer '{si_doc.customer}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
-                error = True
-                continue
-            if si_doc.customer != customer_id:
-                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching customer '{si_doc.customer}'. Cannot create Legacy Credit Account.")
-                error = True
-                continue
+        if credit.get('type') != "Credit":
+            continue
 
-            if not contact_id:
-                if not si_doc.contact_person:
-                    print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has no contact person set. Cannot create Legacy Credit Account.")
-                    error = True
-                    continue
-                contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
-                if contact_doc.status == "Disabled":
-                    print(f"ERROR: Disabled contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
-                    error = True
-                    continue
-                if not contact_doc.has_webshop_account:
-                    #print(f"ERROR: contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} does not have 'has_webshop_account' set. Not going to create Legacy Credit Account.")
-                    #error = True
-                    continue
-
-            # create Credit Account
-            credit_account_doc = frappe.get_doc({
-                "doctype": "Credit Account",
-                "account_name": "Transferred Funds",
-                "customer": si_doc.customer,
-                "contact": contact_id or si_doc.contact_person,
-                "account_type": "Legacy",
-                "company": si_doc.company,
-                "currency": si_doc.currency,
-                "status": "Active",
-                "expiry_date": None,
-                "description": "Migration from legacy customer credits",
-            })
-            if credit_type == "Project":
-                credit_account_doc.append("product_types", { "product_type": "Project" })
-                credit_account_doc.lock_product_types = 1
-            else:
-                credit_account_doc.append("product_types", { "product_type": "Oligos"} )
-                credit_account_doc.append("product_types", { "product_type": "Sequencing"} )
-            credit_account_doc.insert(ignore_permissions=True)
+        if credit_type == "Project" and credit.get('product_type') != "Project":
             if verbose_level > 0:
-                print(f"INFO: Created Legacy Credit Account {credit_account_doc.name} for Customer {customer_id}, Company {company}, Credit Type {credit_type} based on deposit invoice {si_doc.name}.")
-            break
+                print(f"INFO: Skipping credit {credit.get('sales_invoice')} of type 'Credit' for Customer {customer_id}, Company {company} as it is not of product_type 'Project'.")
+            continue
 
-    # Link Credit Account to each Sales Invoice in credit_data to ensure correct balance overview in the Customer Credits report.
+        si_doc = frappe.get_doc("Sales Invoice", credit.get('sales_invoice'))
+        if si_doc.docstatus != 1:
+            print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} is not submitted (docstatus={si_doc.docstatus}). Cannot create Legacy Credit Account.")
+            error = True
+            continue
+
+        if si_doc.company != company:
+            print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching company '{si_doc.company}'. Cannot create Legacy Credit Account.")
+            error = True
+            continue
+
+        if frappe.get_value("Customer", si_doc.customer, "disabled"):
+            print(f"ERROR: Disabled Customer '{si_doc.customer}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
+            error = True
+            continue
+
+        if si_doc.customer != customer_id:
+            print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching customer '{si_doc.customer}'. Cannot create Legacy Credit Account.")
+            error = True
+            continue
+
+        if not contact_id:
+            if not si_doc.contact_person:
+                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has no contact person set. Cannot create Legacy Credit Account.")
+                error = True
+                continue
+
+            contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
+            if contact_doc.status == "Disabled":
+                print(f"ERROR: Disabled contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
+                error = True
+                continue
+
+            if not contact_doc.has_webshop_account:
+                #print(f"ERROR: contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} does not have 'has_webshop_account' set. Not going to create Legacy Credit Account.")
+                #error = True
+                continue
+
+        # simulate creation
+        if verbose_level > 0:
+            print(f"{'[DRY-RUN] ' if dry_run else ''}INFO: Creating Legacy Credit Account for Customer {customer_id}, Company {company}, Credit Type {credit_type} based on deposit invoice {si_doc.name}.")
+
+        credit_account_doc = frappe.get_doc({
+            "doctype": "Credit Account",
+            "account_name": "Transferred Funds",
+            "customer": si_doc.customer,
+            "contact": contact_id or si_doc.contact_person,
+            "account_type": "Legacy",
+            "company": si_doc.company,
+            "currency": si_doc.currency,
+            "status": "Active",
+            "expiry_date": None,
+            "description": "Migration from legacy customer credits",
+        })
+
+        if credit_type == "Project":
+            credit_account_doc.append("product_types", {"product_type": "Project"})
+            credit_account_doc.lock_product_types = 1
+        else:
+            credit_account_doc.append("product_types", {"product_type": "Oligos"})
+            credit_account_doc.append("product_types", {"product_type": "Sequencing"})
+
+        if not dry_run:
+            credit_account_doc.insert(ignore_permissions=True)
+        else:
+            print(f"[DRY-RUN] Would insert Credit Account {credit_account_doc.as_dict()}")
+
+        break
+
+    # Link Credit Account to each Sales Invoice
     if credit_account_doc:
         for credit in credit_data:
             si_name = credit.get('sales_invoice')
             si_doc = frappe.get_doc("Sales Invoice", si_name)
+
             if si_doc.credit_account == credit_account_doc.name:
                 continue
+
             if si_doc.credit_account and si_doc.credit_account != credit_account_doc.name:
-                print(f"WARNING: Sales Invoice {si_name} is already linked to Credit Account {si_doc.credit_account}. NOT going to overwrite to link to newly created Legacy Credit Account {credit_account_doc.name}.")
+                print(f"WARNING: Sales Invoice {si_name} is already linked to Credit Account {si_doc.credit_account}. NOT going to overwrite to link to Legacy Credit Account {credit_account_doc.name}.")
                 continue
+
             if si_doc.docstatus != 1:
                 print(f"WARNING: Sales Invoice {si_name} is not submitted (docstatus={si_doc.docstatus}). NOT going to link to newly created Legacy Credit Account {credit_account_doc.name}.")
                 continue
-            si_doc.credit_account = credit_account_doc.name
-            si_doc.save()
-            if verbose_level > 1:
-                print(f"INFO: Linked Credit Account {credit_account_doc.name} to Sales Invoice {si_name}.")
+
+            if dry_run:
+                print(f"[DRY-RUN] Would link Sales Invoice {si_name} to Credit Account {credit_account_doc.name}.")
+            else:
+                si_doc.credit_account = credit_account_doc.name
+                si_doc.save()
+                if verbose_level > 1:
+                    print(f"INFO: Linked Credit Account {credit_account_doc.name} to Sales Invoice {si_name}.")
     elif not error:
-        print(f"ERROR: No deposit invoice of type 'Credit' and a Contact Person with a Webshop Account found for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create a Legacy Credit Account. {credit_data=}")
+        print(f"ERROR: No deposit invoice of type 'Credit' and a Contact Person with a Webshop Account found for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create a Legacy Credit Account. {credit_data if verbose_level > 1 else ''}")
     else:
         pass  # errors already printed above
 
 
-def create_legacy_credit_accounts(limit=None, verbose_level=1):
+def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     """
     Create Legacy Credit Accounts for all Customers with customer_credits = "Credit Account".
     Uses data from microsynth.microsynth.report.customer_credits.customer_credits.get_data to find outstanding credits.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
     The parameter 'verbose_level' controls the verbosity of the output from 0 to 2 (1 recommended).
 
-    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'limit': 10, 'verbose_level': 1}"
+    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 1, 'dry_run': True}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
@@ -6522,11 +6548,11 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1):
             company = c["name"]
             standard_credits = get_customer_credits({'customer': customer_id, 'company': company, 'credit_type': 'Standard'})
             if standard_credits:
-                create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level)
+                create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
 
             project_credits = get_customer_credits({'customer': customer_id, 'company': company, 'credit_type': 'Project'})
             if project_credits:
-                create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level)
+                create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
         if limit and i > limit:
             print(f"Limit of {limit} Customers reached. Stopping.")
             return
