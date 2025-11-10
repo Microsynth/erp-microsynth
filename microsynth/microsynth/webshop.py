@@ -3500,7 +3500,8 @@ def get_credit_account_balance(account_id):
         customer_credits = get_data(filters)
         balance = 0.0
         for transaction in customer_credits:
-            balance += transaction.get('net_amount', 0.0)
+            if transaction.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
+                balance += transaction.get('net_amount', 0.0)
     except Exception as err:
         msg = f"Error getting balance for Credit Account '{account_id}': {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_account_balance")
@@ -3926,7 +3927,8 @@ def get_transactions(account_id):
 
         for row in customer_credits:
             net_amount = row.get('net_amount') or 0.0
-            running_balance += net_amount
+            if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
+                running_balance += net_amount
             new_type = ""
             if row.get('type') == 'Allocation' and net_amount < 0:
                 new_type = 'Return'
