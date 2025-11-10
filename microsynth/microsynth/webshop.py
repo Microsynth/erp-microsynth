@@ -3600,28 +3600,64 @@ def get_credit_account_dto(credit_account):
 @frappe.whitelist()
 def get_credit_accounts(webshop_account, workgroup_members):
     """
-    Takes a webshop_account (Contact ID) and a list of workgroup_members (Contact IDs) and returns all Credit Accounts linked to any of these Contacts.
+    Takes a webshop_account (Contact ID) and a list of workgroup_members (Contact IDs)
+    and returns all Credit Accounts linked to any of these Contacts.
+
+    Also includes all Credit Accounts with account_type='Legacy' of the Customer
+    of the webshop_account (if not already included).
 
     bench execute microsynth.microsynth.webshop.get_credit_accounts --kwargs "{'webshop_account': '215856', 'workgroup_members': '["215856", "243755"]'}"
     """
     try:
-        # Check if webshop_account is part of workgroup_members
+        # Parse workgroup_members
         if isinstance(workgroup_members, str):
             workgroup_members = json.loads(workgroup_members)
         if webshop_account not in workgroup_members:
             workgroup_members.append(webshop_account)
         workgroup_members = [str(member) for member in workgroup_members]
-        credit_accounts = frappe.get_all('Credit Account', filters=[['contact', 'IN', workgroup_members]], fields=['name', 'account_name', 'description', 'status', 'company', 'currency', 'expiry_date'])
-        if len(credit_accounts) == 0:
+
+        # Get the Customer linked to the webshop_account
+        customer_id = get_customer(webshop_account)
+
+        # Use a single SQL query to fetch both:
+        #   1. Credit Accounts linked to any workgroup member contact
+        #   2. Legacy Credit Accounts of the same Customer
+        #   (avoid duplicates via DISTINCT)
+        contacts = ', '.join(['%s'] * len(workgroup_members))
+        params = workgroup_members.copy()
+
+        sql = f"""
+            SELECT DISTINCT
+                name,
+                account_name,
+                description,
+                status,
+                company,
+                currency,
+                expiry_date,
+                account_type,
+                customer
+            FROM `tabCredit Account`
+            WHERE
+                contact IN ({contacts})
+        """
+
+        if customer_id:
+            sql += " OR (customer = %s AND account_type = 'Legacy')"
+            params.append(customer_id)
+
+        credit_accounts = frappe.db.sql(sql, params, as_dict=True)
+
+        if not credit_accounts:
             return {
                 "success": True,
                 "message": f"No Credit Account found for Contact '{webshop_account}'",
                 "credit_accounts": []
             }
-        credit_accounts_to_return = []
-        for ca in credit_accounts:
-            credit_accounts_to_return.append(get_credit_account_dto(ca.get('name')))
-
+        # Build DTO list
+        credit_accounts_to_return = [
+            get_credit_account_dto(ca.get('name')) for ca in credit_accounts
+        ]
         return {
             "success": True,
             "message": "OK",
