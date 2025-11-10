@@ -3902,6 +3902,7 @@ def get_transactions(account_id):
                 "date": row.get('date'),
                 "type": new_type,
                 "reference": row.get('reference'),
+                "status": "Paid" if row.get('status') in ('Paid', 'Return', 'Credit Note Issued') else "Unpaid",
                 "web_order_id": row.get('web_order_id'),
                 "currency": row.get('currency'),
                 "amount": net_amount,
