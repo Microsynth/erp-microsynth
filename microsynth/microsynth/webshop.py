@@ -3189,12 +3189,22 @@ def get_account_details(webshop_account):
 
         shipping_items_response = get_contact_shipping_items(main_contact.get('contact').get('name'))
         if shipping_items_response.get('currency') != main_contact.get('customer').default_currency:
-            msg = (
-                f"The Currency of the Shipping Items ({shipping_items_response.get('currency')}) "
-                f"of the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong> "
-                f"does not match the Billing Currency ({main_contact.get('customer').default_currency}) "
-                f"of the Customer {main_contact.get('customer').get('name')}."
-            )
+            if not shipping_items_response.get('currency'):
+                msg = (
+                    f"Found no Shipping Item with Currency {main_contact.get('customer').default_currency} "
+                    f"for the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong> "
+                    f"of the Customer {main_contact.get('customer').get('name')}.<br> "
+                    f"Please consider adding Shipping Items in Currency {main_contact.get('customer').default_currency} "
+                    f"to the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong>."
+                )
+            else:
+                msg = (
+                    f"The Currency of the Shipping Items ({shipping_items_response.get('currency')}) "
+                    f"of the Country of Contact <strong>{main_contact.get('contact').get('name')}</strong> "
+                    f"does not match the Billing Currency ({main_contact.get('customer').default_currency}) "
+                    f"of the Customer {main_contact.get('customer').get('name')}.<br>"
+                    f"Please consider to add Shipping Items to the Customer in the Customers Billing Currency."
+                )
             email_template = frappe.get_doc("Email Template", "Shipping Items Currency Mismatch with Customers Billing Currency")
             rendered_content = frappe.render_template(email_template.response, {'details': msg})
             send_email_from_template(email_template, rendered_content)

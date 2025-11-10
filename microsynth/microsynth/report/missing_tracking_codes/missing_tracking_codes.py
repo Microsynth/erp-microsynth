@@ -8,7 +8,6 @@ from microsynth.microsynth.shipping import get_shipping_items_with_tracking
 from microsynth.microsynth.utils import get_sql_list
 
 
-
 def get_columns(filters):
     return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
@@ -28,11 +27,19 @@ def get_columns(filters):
 
 
 def get_data(filters):
-    conditions = ""
-    if filters.get('item_code'):
-        conditions += f" AND `tabSales Order Item`.`item_code` = '{filters.get('item_code')}' "
+    params = {
+        "from_date": filters.get("from_date") or "2000-01-01"
+    }
+    if filters.get("item_code"):
+        item_condition = " AND `tabSales Order Item`.`item_code` = %(item_code)s"
+        params["item_code"] = filters.get("item_code")
+    else:
+        item_condition = ""
 
-    tracking_shipping_items = get_sql_list(get_shipping_items_with_tracking())
+    tracking_shipping_items = get_shipping_items_with_tracking()
+    placeholders = ", ".join([f"%(item_{i})s" for i in range(len(tracking_shipping_items))])
+    for i, code in enumerate(tracking_shipping_items):
+        params[f"item_{i}"] = code
 
     query = f"""
         SELECT DISTINCT
@@ -51,23 +58,30 @@ def get_data(filters):
             `tabDelivery Note`.`name` AS `delivery_note`,
             `tabDelivery Note`.`status` AS `dn_status`
         FROM `tabSales Order`
-        LEFT JOIN `tabSales Order Item` ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
-        LEFT JOIN `tabTracking Code` ON `tabTracking Code`.`sales_order` = `tabSales Order`.`name`
-        LEFT JOIN `tabDelivery Note Item` ON `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
-        LEFT JOIN `tabDelivery Note` ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
-        WHERE `tabSales Order`.`docstatus` = 1
+        LEFT JOIN `tabSales Order Item`
+            ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+        LEFT JOIN `tabTracking Code`
+            ON `tabTracking Code`.`sales_order` = `tabSales Order`.`name`
+        LEFT JOIN `tabDelivery Note Item`
+            ON `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+        LEFT JOIN `tabDelivery Note`
+            ON `tabDelivery Note`.`name` = `tabDelivery Note Item`.`parent`
+        WHERE
+            `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` != 'Closed'
-            AND `tabSales Order`.`transaction_date` >= DATE('{filters.get('from_date')}')
-            AND `tabSales Order Item`.`item_code` IN ({tracking_shipping_items})
+            AND `tabSales Order`.`transaction_date` >= DATE(%(from_date)s)
+            AND `tabSales Order Item`.`item_code` IN ({placeholders})
             AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
-            AND (`tabSales Order Item`.`item_code` NOT IN ('1106', '1115') OR `tabSales Order`.`transaction_date` > DATE('2025-08-27'))  -- 1106 and 1115 have tracking since 2025-08-27
+            AND (
+                `tabSales Order Item`.`item_code` NOT IN ('1106', '1115')
+                OR `tabSales Order`.`transaction_date` > DATE('2025-08-27')
+            )
             AND `tabTracking Code`.`sales_order` IS NULL
             AND `tabDelivery Note`.`docstatus` != 2
-            {conditions}
-        ORDER BY `tabSales Order`.`transaction_date` DESC;
-        """
-    data = frappe.db.sql(query, as_dict=True)
-    return data
+            {item_condition}
+        ORDER BY `tabSales Order`.`transaction_date` DESC
+    """
+    return frappe.db.sql(query, values=params, as_dict=True)
 
 
 def execute(filters=None):

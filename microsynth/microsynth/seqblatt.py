@@ -59,36 +59,61 @@ def check_and_get_labels(labels):
     if not labels:
         return {}
 
-    # Use dict to deduplicate input
-    keys = {(label.get("barcode") or label.get("label_id"), label.get("item") or label.get("item_code")): None for label in labels}
+    label_map = {}
+    valid_pairs = []
+    seen_keys = set()
 
-    if not keys:
-        return {}
+    # Normalize and deduplicate input
+    for l in labels:
+        barcode = l.get("barcode") or l.get("label_id")
+        item = l.get("item") or l.get("item_code")
+        key_str = f"{barcode}|{item}"
 
-    conditions = ' OR '.join(f"(label_id = %s AND item = %s)" for _ in keys)
-    # flatten a set of 2-tuples into a single list of values
-    values = [val for pair in keys for val in pair]
+        if key_str in seen_keys:
+            continue
+        seen_keys.add(key_str)
+
+        if not barcode or not item:
+            # Incomplete pair — cannot query
+            label_map[key_str] = {"error": "not_found"}
+        else:
+            valid_pairs.append((barcode, item))
+
+    if not valid_pairs:
+        # All were incomplete → nothing to query
+        return label_map
+
+    # Build tuple-based condition
+    values = [v for pair in valid_pairs for v in pair]
+    tuple_conditions = ', '.join(['(%s, %s)'] * len(valid_pairs))
 
     sql = f"""
         SELECT
-            name, item, label_id AS barcode, status, registered, contact, registered_to,
-            sales_order, customer
+            name,
+            item,
+            label_id AS barcode,
+            status,
+            registered,
+            contact,
+            registered_to,
+            sales_order,
+            customer
         FROM `tabSequencing Label`
-        WHERE {conditions};
+        WHERE (label_id, item) IN ({tuple_conditions});
     """
     results = frappe.db.sql(sql, values, as_dict=True)
 
-    label_map = {}
-    for label in results:
-        key_str = f"{label['barcode']}|{label['item']}"
+    for row in results:
+        key_str = f"{row['barcode']}|{row['item']}"
         if key_str in label_map:
+            # mark duplicates
             label_map[key_str] = {"error": "duplicate"}
         else:
-            label_map[key_str] = label
+            label_map[key_str] = row
 
-    # Add missing entries
-    for key in keys:
-        key_str = f"{key[0]}|{key[1]}"
+    # Add not_found for valid pairs not returned from DB
+    for barcode, item in valid_pairs:
+        key_str = f"{barcode}|{item}"
         if key_str not in label_map:
             label_map[key_str] = {"error": "not_found"}
 

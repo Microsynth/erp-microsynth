@@ -1343,6 +1343,8 @@ def transmit_sales_invoice(sales_invoice_id):
                 mode = "EmailAdministration"
             elif customer.invoicing_method == "Chorus":
                 mode = "EmailAdministration"
+            elif customer.invoicing_method == "Peppol":
+                mode = "EmailAdministration"
             elif customer.invoicing_method == "Intercompany":
                 intercompany_customer = get_customer_from_company(sales_invoice.company)
                 if intercompany_customer and intercompany_customer != sales_invoice.customer:

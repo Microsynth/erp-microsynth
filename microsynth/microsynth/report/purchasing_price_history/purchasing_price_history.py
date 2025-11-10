@@ -23,17 +23,14 @@ def get_columns():
 
 
 def get_data(filters):
-    if not filters:
-        #frappe.msgprint(_("Please set filters to fetch data."))
-        return []
     conditions = ""
-    if filters.get("item_code"):
+    if filters and filters.get("item_code"):
         conditions += " AND `tabPurchase Invoice Item`.`item_code` = %(item_code)s"
-    if filters.get("supplier"):
+    if filters and filters.get("supplier"):
         conditions += " AND `tabPurchase Invoice`.`supplier` = %(supplier)s"
-    if filters.get("from_date"):
+    if filters and filters.get("from_date"):
         conditions += " AND `tabPurchase Invoice`.`posting_date` >= %(from_date)s"
-    if filters.get("to_date"):
+    if filters and filters.get("to_date"):
         conditions += " AND `tabPurchase Invoice`.`posting_date` <= %(to_date)s"
 
     conditions += " AND `tabItem`.`item_group` != 'Financial Accounting'"

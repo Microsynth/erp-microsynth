@@ -9,13 +9,19 @@ from frappe import _
 
 def get_columns():
     return [
-        {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 180, "align": "left"},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 450, "align": "left"},
-        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 100},
-        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 80},
+        {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 140, "align": "left"},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 360, "align": "left"},
+        {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
+        {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 70},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
-        {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 100},
         {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 105},
+        #{"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 95},
+        {"label": _("Purchase UOM"), "fieldname": "purchase_uom", "fieldtype": "Data", "width": 100},
+        {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 80},
+        {"label": _("Safety Stock"), "fieldname": "safety_stock", "fieldtype": "Float", "width": 90},
+        {"label": _("Lead Time Days"), "fieldname": "lead_time_days", "fieldtype": "Int", "width": 110},
+        {"label": _("Shelf Life Days"), "fieldname": "shelf_life_in_days", "fieldtype": "Int", "width": 105},
+        #{"label": _("Shelf Life (Years)"), "fieldname": "shelf_life_in_years", "fieldtype": "Float", "width": 120},
         {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
     ]
 
@@ -48,7 +54,13 @@ def get_data(filters):
             `tabItem Supplier`.`substitute_status`,
             `tabItem`.`item_group`,
             `tabItem`.`stock_uom`,
+            `tabItem`.`purchase_uom`,
             `tabItem Price`.`price_list_rate`,
+            `tabItem`.`min_order_qty`,
+            `tabItem`.`safety_stock`,
+            `tabItem`.`lead_time_days`,
+            `tabItem`.`shelf_life_in_days`,
+            -- ROUND(`tabItem`.`shelf_life_in_days` / 365, 2) AS shelf_life_in_years,
             `tabItem Price`.`currency`
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier`
@@ -111,6 +123,7 @@ def create_purchasing_item(data):
     item.is_purchase_item = 1
     item.is_sales_item = 0
     item.is_stock_item = 1
+    item.has_batch_no = 1
 
     # --- UOM Conversion (single entry) ---
     if data.get("uom"):

@@ -52,110 +52,166 @@ def get_data(filters=None):
     """
     bench execute microsynth.microsynth.report.same_day_oligos.same_day_oligos.get_data --kwargs "{'filters': {'from_date': '2024-01-01', 'to_date': '2024-02-29'}}"
     """
-    conditions = ""
-
-    if filters.get('customer'):
-        conditions += f"AND `tabSales Order`.`customer` = '{filters.get('customer')}'"
-    if filters.get('customer_name'):
-        conditions += f"AND `tabSales Order`.`customer_name` LIKE '%{filters.get('customer_name')}%'"
-
-    sql_query = f"""
-        SELECT *
-        FROM (
-            SELECT
-                `tabSales Order`.`name`,
-                `tabSales Order`.`status`,
-                `tabSales Order`.`web_order_id`,
-                `tabSales Order`.`customer`,
-                `tabSales Order`.`customer_name`,
-                `tabSales Order`.`creation`,
-                `tabSales Order`.`transaction_date`,
-                `tabSales Order`.`label_printed_on`,
-
-                (SELECT COUNT(`incl`.`name`)
-                FROM `tabSales Order Item` AS `incl`
-                WHERE `incl`.`parent` = `tabSales Order`.`name`
-                AND `incl`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
-                ) AS `included`,
-
-                (SELECT COUNT(`excl`.`name`)
-                FROM `tabSales Order Item` AS `excl`
-                WHERE `excl`.`parent` = `tabSales Order`.`name`
-                AND `excl`.`item_code` NOT IN ('0010', '0050', '0100', '1100', '1101', '1102')
-                ) AS `notincluded`
-
-            FROM `tabSales Order`
-            WHERE `tabSales Order`.`docstatus` = 1
-                AND `tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'Closed')
-                AND `tabSales Order`.`product_type` = 'Oligos'
-                AND `tabSales Order`.`customer` != '8003'
-                AND `tabSales Order`.`transaction_date` BETWEEN DATE('{filters.get('from_date')}') AND DATE('{filters.get('to_date')}')
-                {conditions}
-        ) AS `order`
-        WHERE `order`.`included` > 0
-            AND `order`.`notincluded` = 0
-        ORDER BY `order`.`transaction_date`
-        """
-    query_results = frappe.db.sql(sql_query, as_dict=True)
-    same_day_orders = []
+    filters = frappe._dict(filters or {})
     holidays = get_holidays()
+
+    # Build base SQL conditions and parameter list
+    conditions = [
+        "`tabSales Order`.`docstatus` = 1",
+        "`tabSales Order`.`status` NOT IN ('Draft', 'Cancelled', 'Closed')",
+        "`tabSales Order`.`product_type` = 'Oligos'",
+        "`tabSales Order`.`customer` != '8003'",
+        "`tabSales Order`.`transaction_date` BETWEEN %(from_date)s AND %(to_date)s"
+    ]
+    params = {
+        "from_date": filters.get("from_date"),
+        "to_date": filters.get("to_date"),
+    }
+
+    if filters.get("customer"):
+        conditions.append("`tabSales Order`.`customer` = %(customer)s")
+        params["customer"] = filters.get("customer")
+
+    if filters.get("customer_name"):
+        conditions.append("`tabSales Order`.`customer_name` LIKE %(customer_name)s")
+        params["customer_name"] = f"%{filters.get('customer_name')}%"
+
+    base_condition_sql = " AND ".join(conditions)
+
+    # Base SQL: pull only the Sales Orders that could possibly qualify
+    sql_query = f"""
+        SELECT
+            `tabSales Order`.`name`,
+            `tabSales Order`.`status`,
+            `tabSales Order`.`web_order_id`,
+            `tabSales Order`.`customer`,
+            `tabSales Order`.`customer_name`,
+            `tabSales Order`.`creation`,
+            `tabSales Order`.`transaction_date`,
+            `tabSales Order`.`label_printed_on`,
+            SUM(
+                CASE WHEN `tabSales Order Item`.`item_code` IN ('0010', '0050', '0100', '1100', '1101', '1102')
+                THEN 1 ELSE 0 END
+            ) AS `included`,
+            SUM(
+                CASE WHEN `tabSales Order Item`.`item_code` NOT IN ('0010', '0050', '0100', '1100', '1101', '1102')
+                THEN 1 ELSE 0 END
+            ) AS `notincluded`
+        FROM `tabSales Order`
+        LEFT JOIN `tabSales Order Item`
+            ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
+        WHERE {base_condition_sql}
+        GROUP BY `tabSales Order`.`name`
+        HAVING `included` > 0 AND `notincluded` = 0
+        ORDER BY `tabSales Order`.`transaction_date`
+    """
+    query_results = frappe.db.sql(sql_query, values=params, as_dict=True)
+    if not query_results:
+        return []
+
+    # Bulk fetch relevant Sales Orders
+    so_names = [r["name"] for r in query_results]
+    sales_orders = {
+        so.name: so for so in frappe.get_all(
+            "Sales Order",
+            filters={"name": ["in", so_names]},
+            fields=["name", "creation", "transaction_date", "label_printed_on", "web_order_id"]
+        )
+    }
+    # Bulk fetch all linked Oligos
+    oligo_links = frappe.get_all(
+        "Oligo Link",
+        filters={"parent": ["in", so_names]},
+        fields=["parent", "oligo"]
+    )
+    oligo_names = [o.oligo for o in oligo_links]
+    oligos_by_so = {}
+    for link in oligo_links:
+        oligos_by_so.setdefault(link.parent, []).append(link.oligo)
+
+    # Bulk fetch Oligos and their items
+    oligos = {
+        o.name: o for o in frappe.get_all(
+            "Oligo",
+            filters={"name": ["in", oligo_names]},
+            fields=["name", "sequence"]
+        )
+    }
+    oligo_items = frappe.get_all(
+        "Oligo Item",
+        filters={"parent": ["in", oligo_names]},
+        fields=["parent", "qty"]
+    )
+    items_by_oligo = {}
+    for item in oligo_items:
+        items_by_oligo.setdefault(item.parent, []).append(item)
+
+    same_day_orders = []
     should_be_same_day = is_same_day = 0
 
-    for result in query_results:
-        sales_order = frappe.get_doc("Sales Order", result['name'])
+    for r in query_results:
+        so = sales_orders[r["name"]]
+        oligo_names_for_so = oligos_by_so.get(so.name, [])
         # the same day criteria only applies to Sales Orders with less than 20 Oligos
-        if len(sales_order.oligos) >= 20:
+        if len(oligo_names_for_so) >= 20:
             continue
-        unallowed_items = False
-        # for i in sales_order.items:
-        #     if i.item_code not in ('0010', '0050', '0100', '1100', '1101', '1102'):
-        #         unallowed_items = True
-        #         break
-        if not unallowed_items:
-            oligo_too_complicated = False
-            for oligo_link in sales_order.oligos:
-                oligo = frappe.get_doc("Oligo", oligo_link.oligo)
-                if len(oligo.items) != 1:  # exclude Oligos with modifications (more than one item) and Oligos without any items
-                    if len(oligo.items) == 0:
-                        #print(f"WARNING: {len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to take sequence length instead")
-                        if not oligo.sequence:
-                            #print(f"Oligo {oligo.name} from Sales Order {sales_order.name} has no items and no sequence. Going to skip this Sales Order.")
-                            oligo_too_complicated = True
-                            break
-                        if len(oligo.sequence) <= 25:  # check if oligo is longer than 25 nt
-                            continue
-                        else:
-                            oligo_too_complicated = True
-                            break
-                    else:
-                        #print(f"{len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}")
+
+        oligo_too_complicated = False
+        for oligo_name in oligo_names_for_so:
+            oligo = oligos.get(oligo_name)
+            oligo_item_list = items_by_oligo.get(oligo_name, [])
+            # exclude Oligos with modifications (more than one item) and Oligos without any items
+            if len(oligo_item_list) != 1:
+                if len(oligo_item_list) == 0:
+                    #print(f"WARNING: {len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to take sequence length instead")
+                    if not oligo.sequence or len(oligo.sequence) > 25:  # check if oligo is longer than 25 nt
+                        #print(f"Oligo {oligo.name} from Sales Order {sales_order.name} has no items and no sequence. Going to skip this Sales Order.")
                         oligo_too_complicated = True
                         break
-                if oligo.items[0].qty > 25:  # check if oligo is longer than 25 nt
+                else:
                     oligo_too_complicated = True
                     break
-            if not oligo_too_complicated:
-                creation_date = str(sales_order.creation).split(' ')[0]
-                if creation_date != str(sales_order.transaction_date):
-                    #print(f"creation_date != sales_order.transaction_date for {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
-                    continue
-                if is_workday_before_10am(sales_order.creation, holidays):
-                    if not sales_order.label_printed_on:
-                        #print(f"There is no Label printed on date on {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
-                        continue
-                    should_be_same_day += 1
-                    same_day_fulfilled = (sales_order.creation.day == sales_order.label_printed_on.day) and (sales_order.label_printed_on.hour < 18)
-                    if same_day_fulfilled:
-                        is_same_day += 1
-                        result['fulfilled'] = '1'
-                    same_day_orders.append(result)
+            else:
+                #print(f"{len(oligo.items)=} for {sales_order.name}, Web Order ID {sales_order.web_order_id}")
+                if oligo_item_list[0].qty > 25:  # check if oligo is longer than 25 nt
+                    oligo_too_complicated = True
+                    break
+
+        if oligo_too_complicated:
+            continue
+
+        creation_date = str(so.creation).split(" ")[0]
+        if creation_date != str(so.transaction_date):
+            continue
+
+        if not is_workday_before_10am(so.creation, holidays):
+            continue
+
+        if not so.label_printed_on:
+            #print(f"There is no Label printed on date on {sales_order.name}, Web Order ID {sales_order.web_order_id}. Going to skip this Sales Order.")
+            continue
+
+        should_be_same_day += 1
+        same_day_fulfilled = (
+            so.creation.day == so.label_printed_on.day
+            and so.label_printed_on.hour < 18
+        )
+        if same_day_fulfilled:
+            is_same_day += 1
+            r["fulfilled"] = "1"
+
+        same_day_orders.append(r)
+
+    # Sort results by Sales Order creation date ascending (before adding summary)
+    same_day_orders.sort(key=lambda r: sales_orders[r["name"]].creation if "name" in r else datetime.max)
 
     if should_be_same_day > 0:  # avoid dividing by zero
-        summary_line = {
-            'web_order_id': "Summary",
-            'customer_name': f"{is_same_day}/{should_be_same_day} fulfilled ({((is_same_day/should_be_same_day)*100):.2f} %)"
-        }
-        same_day_orders.append(summary_line)
+        pct = (is_same_day / should_be_same_day) * 100
+        same_day_orders.append({
+            "web_order_id": "Summary",
+            "customer_name": f"{is_same_day}/{should_be_same_day} fulfilled ({pct:.2f} %)"
+        })
+
     return same_day_orders
 
 

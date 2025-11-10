@@ -132,6 +132,7 @@
   },
   {
    "create": 1,
+   "print": 1,
    "read": 1,
    "role": "Webshop",
    "write": 1

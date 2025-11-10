@@ -205,17 +205,24 @@ function open_material_request_dialog(selected, frm) {
                         'item_name': selected.item_name,
                         'currency': values.currency || 'CHF',
                         'rate': values.rate || 0,
-                        'comment': values.comment || ''
+                        'comment': values.comment || '',
+                        'requested_by': frm.doc.owner
                     }
                 },
                 callback(r) {
                     if (!r.exc && r.message) {
-                        frappe.msgprint({
-                            'title': __('Success'),
-                            'indicator': 'green',
-                            'message': __('Material Request {0} created', [
+                        // frappe.msgprint({
+                        //     'title': __('Success'),
+                        //     'indicator': 'green',
+                        //     'message': __('Material Request {0} created', [
+                        //         `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
+                        //     ])
+                        // });
+                        frappe.show_alert({
+                            message: __('Material Request {0} created', [
                                 `<a href="/desk#Form/Material Request/${r.message}" target="_blank">${r.message}</a>`
-                            ])
+                            ]),
+                            indicator: 'green'
                         });
                         cur_frm.reload_doc();
                     }
@@ -387,10 +394,14 @@ function create_new_supplier_item(frm) {
                 'callback': function (r) {
                     if (!r.exc && r.message) {
                         const item_code = r.message;
-                        frappe.msgprint({
-                            'title': __('Item Created'),
-                            'message': __('Item created: {0}', [`${item_code}`]),
-                            'indicator': 'green'
+                        // frappe.msgprint({
+                        //     'title': __('Item Created'),
+                        //     'message': __('Item created: {0}', [`${item_code}`]),
+                        //     'indicator': 'green'
+                        // });
+                        frappe.show_alert({
+                            message: __('Item created: {0}', [`${item_code}`]),
+                            indicator: 'green'
                         });
                         dialog.hide();
 

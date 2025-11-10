@@ -127,7 +127,15 @@ function enter_batches(frm) {
                                 label: __('Existing Batch'),
                                 options: 'Batch',
                                 in_list_view: 1,
-                                columns: 2
+                                columns: 2,
+                                // Restrict the batch link options to the same Item
+                                get_query: function(row) {
+                                    return {
+                                        filters: {
+                                            'item': row.item_code || ''
+                                        }
+                                    };
+                                }
                             },
                             {
                                 fieldname: 'new_batch_id',
@@ -181,22 +189,56 @@ function enter_batches(frm) {
                         return;
                     }
 
-                    // Clean up style on success
-                    try { document.head.removeChild(styleSheet); } catch {}
+                    // Check if existing batches belong to correct Item
+                    const existing_batches = data
+                        .filter(row => row.existing_batch)
+                        .map(row => row.existing_batch);
 
-                    frappe.call({
-                        'method': "microsynth.microsynth.purchasing.create_batches_and_assign",
-                        'args': {
-                            'purchase_receipt': frm.doc.name,
-                            'batch_data': data
-                        },
-                        'callback': function() {
-                            //frappe.msgprint(__('Batches processed successfully.'));
-                            frappe.show_alert({message: __('Batches processed successfully.'), indicator: 'green'});
-                            frm.reload_doc();
-                            d.hide();
-                        }
-                    });
+                    if (existing_batches.length > 0) {
+                        frappe.db.get_list('Batch', {
+                            fields: ['name', 'item'],
+                            filters: [['name', 'in', existing_batches]]
+                        }).then(batch_list => {
+                            const batch_map = {};
+                            (batch_list || []).forEach(b => batch_map[b.name] = b.item);
+
+                            const wrong = data.filter(row =>
+                                row.existing_batch && batch_map[row.existing_batch] !== row.item_code
+                            );
+
+                            if (wrong.length > 0) {
+                                const bad = wrong.map(r => `${r.existing_batch} (Item: ${batch_map[r.existing_batch]}, Expected: ${r.item_code})`).join('<br>');
+                                frappe.msgprint({
+                                    title: __('Invalid Batch Assignments'),
+                                    message: __('The following existing batches belong to different items:<br>') + bad,
+                                    indicator: 'red'
+                                });
+                                return;
+                            }
+                            // Proceed only if all good
+                            finalize_batches();
+                        });
+                    } else {
+                        finalize_batches();
+                    }
+
+                    function finalize_batches() {
+                        // Clean up style on success
+                        try { document.head.removeChild(styleSheet); } catch {}
+
+                        frappe.call({
+                            'method': "microsynth.microsynth.purchasing.create_batches_and_assign",
+                            'args': {
+                                'purchase_receipt': frm.doc.name,
+                                'batch_data': data
+                            },
+                            'callback': function() {
+                                frappe.show_alert({message: __('Batches processed successfully.'), indicator: 'green'});
+                                frm.reload_doc();
+                                d.hide();
+                            }
+                        });
+                    }
                 },
                 secondary_action: function() {
                     try { document.head.removeChild(styleSheet); } catch {}
@@ -388,13 +430,13 @@ function display_material_request_owners(frm) {
         'args': {
             'doctype': 'Material Request',
             'filters': { 'name': ['in', material_requests] },
-            'fields': ['name', 'owner'],
+            'fields': ['name', 'requested_by', 'owner'],
         },
         'callback': function(r) {
             if (r.message) {
                 let mr_owner_map = {};
                 r.message.forEach(mr => {
-                    mr_owner_map[mr.name] = mr.owner;
+                    mr_owner_map[mr.name] = mr.requested_by || mr.owner || 'Unknown';
                 });
                 // Group items by owner
                 frm.doc.items.forEach(item => {

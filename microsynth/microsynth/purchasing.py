@@ -138,6 +138,8 @@ def create_po_from_open_mr(filters):
         frappe.throw(_("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(", ".join(currencies)))
     elif len(currencies) == 1:
         currency = currencies.pop() or supplier_doc.default_currency  # getting a random element from the set does not matter because there is exactly one element in the set
+        if currency != supplier_doc.default_currency:
+            frappe.throw(f"The selected Supplier has default currency {supplier_doc.default_currency}, but the Material Requests are in {currency}. Unable to create Purchase Order.", "Currency Mismatch")
     else:  # no currencies
         currency = supplier_doc.default_currency
 
@@ -504,9 +506,9 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             except ValueError as err:
                 print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
                 continue
-            if ordered_2021_2025 == 0 and not line[33].strip():
+            if ordered_2021_2025 == 0 and not line[33].strip() and not internal_code:
                 # do not import Items that were not ordered from 2021 to 2024
-                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024. Going to continue with the next supplier item.")
+                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024 and has no 'EAN'. Going to continue with the next supplier item.")
                 continue
 
             if not item_name:
@@ -1317,7 +1319,10 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
 def send_material_request_owner_emails(doc, event=None):
     """
     Send emails to each Material Request owner listing items received on this Purchase Receipt.
-    If there is an Item Request linked to a Material Request, use the Item Request's owner instead.
+    Priority for effective owner:
+      1. Material Request.requested_by
+      2. Item Request.owner
+      3. Material Request.owner
     """
     owner_map = {}
 
@@ -1326,25 +1331,29 @@ def send_material_request_owner_emails(doc, event=None):
     if not material_requests:
         return
 
-    # Fetch Material Requests and their default owners
+    # Fetch Material Requests and their requested_by + owner
     mr_owners = frappe.get_all('Material Request',
         filters={'name': ['in', material_requests]},
-        fields=['name', 'owner'])
-    mr_owner_map = {mr.name: mr.owner for mr in mr_owners}
+        fields=['name', 'requested_by', 'owner'])
+    mr_owner_map = {mr.name: {'requested_by': mr.requested_by, 'owner': mr.owner} for mr in mr_owners}
 
     # Fetch Item Requests linked to those Material Requests
     item_requests = frappe.get_all('Item Request',
         filters={'material_request': ['in', material_requests]},
         fields=['material_request', 'owner'])
 
-    # Build override map: Material Request → Item Request Owner
+    # Build Item Request owner map: Material Request → Item Request Owner
     item_request_owner_map = {ir.material_request: ir.owner for ir in item_requests}
 
-    # Final map: MR → effective owner (Item Request owner if present, else MR owner)
-    effective_owner_map = {
-        mr: item_request_owner_map.get(mr, mr_owner_map.get(mr))
-        for mr in material_requests
-    }
+    # Determine effective owner using priority: requested_by → Item Request.owner → MR.owner
+    effective_owner_map = {}
+    for mr in material_requests:
+        mr_info = mr_owner_map.get(mr, {})
+        requested_by = mr_info.get('requested_by')
+        mr_owner = mr_info.get('owner')
+        item_request_owner = item_request_owner_map.get(mr)
+        # Priority: requested_by > item_request_owner > mr_owner
+        effective_owner_map[mr] = requested_by or item_request_owner or mr_owner
 
     # Group items by effective owner
     for item in doc.items:
@@ -1375,16 +1384,16 @@ def send_material_request_owner_emails(doc, event=None):
 
         # Send email
         make(
-            recipients = [email],
-            sender = frappe.session.user,
-            subject = subject,
-            content = message,
-            send_email = True
+            recipients=[email],
+            sender=frappe.session.user,
+            subject=subject,
+            content=message,
+            send_email=True
         )
 
 
 @frappe.whitelist()
-def create_material_request(item_code, qty, schedule_date, company, item_name=None, rate=0, currency=None, comment=None):
+def create_material_request(item_code, qty, schedule_date, company, item_name=None, rate=0, currency=None, comment=None, requested_by=None):
     if not (item_code and qty and schedule_date and company):
         frappe.throw("Required parameters missing")
     mr = frappe.new_doc("Material Request")
@@ -1393,6 +1402,7 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     mr.schedule_date = schedule_date
     mr.company = company
     mr.comment = comment
+    mr.requested_by = requested_by
     mr.append("items", {
         "item_code": item_code,
         "item_name": item_name,
@@ -1415,7 +1425,7 @@ def create_mr_from_item_request(item_request_id, item):
     """
     try:
         item = frappe._dict(json.loads(item))
-        mr_id = create_material_request(item.item_code, item.qty, item.schedule_date, item.company, item_name=item.item_name, rate=item.rate, currency=item.currency, comment=item.comment)
+        mr_id = create_material_request(item.item_code, item.qty, item.schedule_date, item.company, item_name=item.item_name, rate=item.rate, currency=item.currency, comment=item.comment, requested_by=item.requested_by)
         # Link back to Item Request
         ir = frappe.get_doc('Item Request', item_request_id)
         ir.material_request = mr_id

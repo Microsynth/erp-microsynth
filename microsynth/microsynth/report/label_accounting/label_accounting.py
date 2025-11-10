@@ -211,7 +211,7 @@ def get_data(filters):
                     destination = 'CH'
                 else:
                     # This should never happen
-                    frappe.log_error(f"The Territory {d['territory']} could not be matched to any destination (CH, DE, Europe, ROW).\n{d=}", "label_accounting.get_data")
+                    frappe.log_error(f"The Territory {d['territory']} could not be matched to any destination (CH, DE, Europe, ROW).\n{d=}\n{filters=}", "label_accounting.get_data")
                     destination = None
             company_item_dest = (d['company'], d['item_code'], destination)
         else:
