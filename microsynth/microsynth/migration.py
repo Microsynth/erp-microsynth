@@ -6371,10 +6371,11 @@ def get_total_outstanding_credits(credit_data):
     return total
 
 
-def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0):
+def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None):
     """
     Create a Legacy Credit Account for the given customer/company/credit_type if not already existing.
     Use credit_data to find the latest deposit Sales Invoice of type "Credit" to base the Credit Account on.
+    If contact_id is given, use it as contact for the Credit Account, otherwise use the contact_person from the Sales Invoice.
     """
     # check if "outstanding" > 0
     if get_total_outstanding_credits(credit_data) <= 0.01:
@@ -6411,6 +6412,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             print(f"ERROR: Credit Account of type 'Legacy' for Customer {customer_id}, Company {company}, Credit Type {credit_type} already exists. Skipping creation.")
         return
     error = False
+    credit_account_doc = None
     # find latest deposit sales invoice for a customer/Company/credit_type combination
     for credit in credit_data:
         if credit.get('type') == "Credit":
@@ -6420,41 +6422,43 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 continue
             si_doc = frappe.get_doc("Sales Invoice", credit.get('sales_invoice'))
             if si_doc.docstatus != 1:
-                print(f"ERROR: Latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} is not submitted (docstatus={si_doc.docstatus}). Cannot create Legacy Credit Account.")
+                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} is not submitted (docstatus={si_doc.docstatus}). Cannot create Legacy Credit Account.")
                 error = True
                 continue
             if si_doc.company != company:
-                print(f"ERROR: Latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching company '{si_doc.company}'. Cannot create Legacy Credit Account.")
+                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching company '{si_doc.company}'. Cannot create Legacy Credit Account.")
+                error = True
+                continue
+            if frappe.get_value("Customer", si_doc.customer, "disabled"):
+                print(f"ERROR: Disabled Customer '{si_doc.customer}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
                 error = True
                 continue
             if si_doc.customer != customer_id:
-                print(f"ERROR: Latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching customer '{si_doc.customer}'. Cannot create Legacy Credit Account.")
+                print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has mismatching customer '{si_doc.customer}'. Cannot create Legacy Credit Account.")
                 error = True
                 continue
-            if not si_doc.contact_person:
-                print(f"ERROR: Latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has no contact person set. Cannot create Legacy Credit Account.")
-                error = True
-                continue
-            contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
-            if contact_doc.status == "Disabled":
-                print(f"ERROR: Disabled contact_person '{si_doc.contact_person}' on latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
-                error = True
-                continue
-            if not contact_doc.has_webshop_account:
-                print(f"ERROR: contact_person '{si_doc.contact_person}' on latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} does not have 'has_webshop_account' set. Not going to create Legacy Credit Account.")
-                error = True
-                # TODO: warning instead of error and continue?
-                continue
-            if frappe.get_value("Customer", si_doc.customer, "disabled"):
-                print(f"ERROR: Disabled Customer '{si_doc.customer}' on latest deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
-                error = True
-                continue
+
+            if not contact_id:
+                if not si_doc.contact_person:
+                    print(f"ERROR: Deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} has no contact person set. Cannot create Legacy Credit Account.")
+                    error = True
+                    continue
+                contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
+                if contact_doc.status == "Disabled":
+                    print(f"ERROR: Disabled contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create Legacy Credit Account.")
+                    error = True
+                    continue
+                if not contact_doc.has_webshop_account:
+                    #print(f"ERROR: contact_person '{si_doc.contact_person}' on deposit invoice {credit.get('sales_invoice')} for Customer {customer_id}, Company {company}, Credit Type {credit_type} does not have 'has_webshop_account' set. Not going to create Legacy Credit Account.")
+                    #error = True
+                    continue
+
             # create Credit Account
             credit_account_doc = frappe.get_doc({
                 "doctype": "Credit Account",
                 "account_name": "Transferred Funds",
                 "customer": si_doc.customer,
-                "contact": si_doc.contact_person,
+                "contact": contact_id or si_doc.contact_person,
                 "account_type": "Legacy",
                 "company": si_doc.company,
                 "currency": si_doc.currency,
@@ -6474,23 +6478,26 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             break
 
     # Link Credit Account to each Sales Invoice in credit_data to ensure correct balance overview in the Customer Credits report.
-    for credit in credit_data:
-        si_name = credit.get('sales_invoice')
-        si_doc = frappe.get_doc("Sales Invoice", si_name)
-        if si_doc.credit_account == credit_account_doc.name:
-            continue
-        if si_doc.credit_account and si_doc.credit_account != credit_account_doc.name:
-            print(f"WARNING: Sales Invoice {si_name} is already linked to Credit Account {si_doc.credit_account}. NOT going to overwrite to link to newly created Legacy Credit Account {credit_account_doc.name}.")
-            continue
-        if si_doc.docstatus != 1:
-            print(f"WARNING: Sales Invoice {si_name} is not submitted (docstatus={si_doc.docstatus}). NOT going to link to newly created Legacy Credit Account {credit_account_doc.name}.")
-            continue
-        si_doc.credit_account = credit_account_doc.name
-        si_doc.save()
-        if verbose_level > 1:
-            print(f"INFO: Linked Credit Account {credit_account_doc.name} to Sales Invoice {si_name}.")
-    if not error:
-        print(f"ERROR: No deposit invoice of type 'Credit' found for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create a Legacy Credit Account. {credit_data=}")
+    if credit_account_doc:
+        for credit in credit_data:
+            si_name = credit.get('sales_invoice')
+            si_doc = frappe.get_doc("Sales Invoice", si_name)
+            if si_doc.credit_account == credit_account_doc.name:
+                continue
+            if si_doc.credit_account and si_doc.credit_account != credit_account_doc.name:
+                print(f"WARNING: Sales Invoice {si_name} is already linked to Credit Account {si_doc.credit_account}. NOT going to overwrite to link to newly created Legacy Credit Account {credit_account_doc.name}.")
+                continue
+            if si_doc.docstatus != 1:
+                print(f"WARNING: Sales Invoice {si_name} is not submitted (docstatus={si_doc.docstatus}). NOT going to link to newly created Legacy Credit Account {credit_account_doc.name}.")
+                continue
+            si_doc.credit_account = credit_account_doc.name
+            si_doc.save()
+            if verbose_level > 1:
+                print(f"INFO: Linked Credit Account {credit_account_doc.name} to Sales Invoice {si_name}.")
+    elif not error:
+        print(f"ERROR: No deposit invoice of type 'Credit' and a Contact Person with a Webshop Account found for Customer {customer_id}, Company {company}, Credit Type {credit_type}. Cannot create a Legacy Credit Account. {credit_data=}")
+    else:
+        pass  # errors already printed above
 
 
 def create_legacy_credit_accounts(limit=None, verbose_level=1):
