@@ -1223,6 +1223,38 @@ def place_order(content, client="webshop"):
             so_doc.append('credit_accounts', {
                 'credit_account': ca
             })
+    else:
+        # check for Legacy Credit Accounts with matching Customer, Company and Product Type != Project
+        legacy_credit_accounts = frappe.get_all('Credit Account',
+            filters={
+                'customer': customer.name,
+                'company': company,
+                'credit_type': 'Project' if so_doc.product_type == 'Project' else 'Standard',
+                'account_type': 'Legacy',
+                'status': 'Active'
+            },
+            fields=['name', 'product_types']
+        )
+        applicable_legacy_credit_accounts = []
+        for lca in legacy_credit_accounts:
+            if not lca.product_types:
+                applicable_legacy_credit_accounts.append(lca.name)
+            else:
+                if so_doc.product_type == 'Project' and 'Project' in lca.product_types:
+                    applicable_legacy_credit_accounts.append(lca.name)
+                elif so_doc.product_type != 'Project' and 'Project' not in lca.product_types:
+                    applicable_legacy_credit_accounts.append(lca.name)
+                else:
+                    pass  # not applicable
+        if len(applicable_legacy_credit_accounts) > 1:
+            frappe.log_error(f"WARNING: Found {len(applicable_legacy_credit_accounts)} applicable legacy credit accounts "
+                             f"for Customer {customer.name}, Company {company} and product type {so_doc.product_type}, "
+                             f"going to add them all on Sales Order {so_doc.name}: {applicable_legacy_credit_accounts}",
+                             "webshop.place_order")
+        for alca in applicable_legacy_credit_accounts:
+            so_doc.append('credit_accounts', {
+                'credit_account': alca
+            })
     # quotation reference (NOTE: ignores same item at different qtys (staged pricing) )
     if 'quotation' in content and frappe.db.exists("Quotation", content['quotation']):
         quotation = content['quotation']

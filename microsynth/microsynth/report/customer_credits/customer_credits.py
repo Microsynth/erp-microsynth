@@ -77,6 +77,10 @@ def get_data(filters, short=False):
 
         conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
 
+        if filters.get('account_type'):
+            account_type = filters.get('account_type')
+            conditions += f"AND `tabCredit Account`.`account_type` = '{account_type}'"
+
     if filters and filters.get('credit_accounts'):
         if isinstance(filters.get('credit_accounts'), str):
             raw_credit_accounts = json.loads(filters.get('credit_accounts'))
