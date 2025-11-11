@@ -638,7 +638,9 @@ function request_training_prompt(trainees) {
     ],
     function(values){
         for (var i = 0; i < values.trainees.length; i++) {
-            create_training_request(values.trainees[i].user_name, values.due_date);
+            if (values.trainees[i].user_name) {
+                create_training_request(values.trainees[i].user_name, values.due_date);
+            }
         }
     },
     __('Add or delete Trainees if necessary'),
