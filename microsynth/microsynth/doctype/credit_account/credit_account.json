@@ -7,6 +7,7 @@
  "field_order": [
   "account_name",
   "customer",
+  "customer_name",
   "contact",
   "product_types",
   "product_types_locked",
@@ -116,9 +117,16 @@
    "label": "Type",
    "options": "Standard\nEnforced Credit\nLegacy",
    "reqd": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
   }
  ],
- "modified": "2025-11-11 10:50:06.769314",
+ "modified": "2025-11-11 15:03:48.995536",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
