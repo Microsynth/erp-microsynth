@@ -168,6 +168,13 @@ def process_label_status_change(labels, target_status, required_current_statuses
         for label in normalized:
             key = (label["barcode"], label["item"])
             key_str = f"{label['barcode']}|{label['item']}"
+            if key_str not in label_lookup:
+                label['message'] = f"Label {key[0]} with Item {key[1]} not found."
+                processed_labels.append(label)
+                success = False
+                if stop_on_first_failure:
+                    return {'success': False, 'message': label['message'], 'labels': None}
+                continue
             result = label_lookup.get(key_str)
 
             if "error" in result:
