@@ -131,6 +131,115 @@ def change_reference_rate(reference_price_list_name, item_code, min_qty, referen
     return negative_discount_warnings
 
 
+def change_single_customer_rates_from_csv(csv_file):
+    """
+    Change the customer rates for all entries in the given CSV file using the function set_rate.
+    IMPORTANT: It is expected that the CSV file has a header and exactly the following columns in this order:
+    Price List Name, Item Code, Item Name (only for human readability), Minimum Qty, Item Price ID, Current Rate, Currency, New Rate
+
+    bench execute microsynth.microsynth.pricing.change_single_customer_rates_from_csv --kwargs "{'csv_file': '/mnt/erp_share/test.csv'}"
+    """
+    start_ts = datetime.now()
+    error = False
+    # Dry run only to check the CSV file (no changes)
+    with open(csv_file, 'r') as file:
+        print(f"Checking {csv_file} ...")
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        total_lines = 0
+        for line in csv_reader:
+            if len(line) != 8:
+                print(f"Expected line length 8 but was {len(line)} for the following line:\n{line}\n"
+                      f"No Prices are changed. Please correct CSV file and restart. Going to return.")
+                return
+            try:
+                price_list_name = line[0]
+                item_code = line[1]  # keep as string since leading zeros are removed when converting it to an integer
+                #item_name = line[2]  # only for human readability
+                min_qty = int(line[3])
+                item_price_id = line[4]
+                current_rate = float(line[5])
+                #currency = line[6]  # only for human readability
+                new_rate = float(line[7])
+            except Exception as error:
+                print(f"The following exception occurred during type conversion of min_qty, reference_rate or new_reference_rate:"
+                      f"\n{error}\n{line=}\nPlease correct CSV file.")
+                error = True
+                continue
+            total_lines += 1
+
+            if 'Sales Prices' in price_list_name:
+                print(f"Got reference price list '{line[0]}'. To change a reference rate, please use the function 'change_rates_from_csv'.")
+                error = True
+                continue
+
+            item_prices = frappe.get_all('Item Price',
+                                filters={
+                                'item_code': item_code,
+                                'price_list': price_list_name,
+                                'min_qty': min_qty
+                                },
+                                fields=['name', 'rate'])
+            if len(item_prices) == 0:
+                print(f"No Item Price found for {item_code=}, {price_list_name=}, {min_qty=}. Going to continue.")
+                error = True
+                continue
+            elif len(item_prices) > 1:
+                print(f"Multiple Item Prices found for {item_code=}, {price_list_name=}, {min_qty=}: {[ip['name'] for ip in item_prices]}. Going to continue.")
+                error = True
+                continue
+            elif item_prices[0]['name'] != item_price_id:
+                print(f"Item Price ID '{item_price_id}' does not match found Item Price ID '{item_prices[0]['name']}' for {item_code=}, {price_list_name=}, {min_qty=}.")
+                error = True
+
+            current_erp_rate = item_prices[0]['rate']
+
+            if current_erp_rate is None:
+                print(f"No reference rate found for {item_code=}, {price_list_name=}, {min_qty=}.")
+                error = True
+                continue
+
+            if abs(current_rate - new_rate) < 0.0001:
+                print(f"WARNING: {current_rate=} == {new_rate=} -> nothing to do, please remove line from CSV.")
+                error = True
+
+            if abs(current_erp_rate - current_rate) > 0.0001:
+                print(f"{current_erp_rate=} in the ERP is unequals given {current_rate=} ({price_list_name=}, {item_code=}, {min_qty=}).")
+                error = True
+
+            if frappe.get_value('Item', item_code, 'disabled'):
+                print(f"Item {item_code} is disabled. Unable to change Item Prices with {min_qty=} for price list '{price_list_name}'. Going to continue.")
+                error = True
+    if error:
+        print("Errors or critical warnings found during checking the CSV file. No Prices are changed. Please correct CSV file and restart. Going to return.")
+        return
+
+    with open(csv_file, 'r') as file:
+        print(f"Changing prices according to {csv_file} ...")
+        csv_reader = csv.reader(file, delimiter=';')
+        next(csv_reader)  # skip header
+        line_counter = 0
+        for line in csv_reader:
+            price_list_name = line[0]
+            item_code = line[1]  # keep as string since leading zeros are removed when converting it to an integer
+            #item_name = line[2]  # only for human readability
+            min_qty = int(line[3])
+            item_price_id = line[4]
+            current_rate = float(line[5])
+            #currency = line[6]  # only for human readability
+            new_rate = float(line[7])
+            try:
+                set_rate(item_code, price_list_name, min_qty, new_rate)
+            except Exception as e:
+                msg = f"Got the following exception when trying to save the new customer rate {new_rate} for item {item_code} with minimum quantity {min_qty} on Price List '{price_list_name}':\n{e}"
+                print(msg)
+            line_counter += 1
+            print(f"Finished line {line_counter}/{total_lines}: {line}")
+
+    elapsed_time = timedelta(seconds=(datetime.now() - start_ts).total_seconds())
+    print(f"Finished after {elapsed_time} hh:mm:ss.")
+
+
 def change_rates_from_csv(csv_file, user):
     """
     Change the reference rate and all dependent customer rates for all entries in the given CSV file
