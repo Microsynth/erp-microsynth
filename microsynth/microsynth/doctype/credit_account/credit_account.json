@@ -19,6 +19,7 @@
   "expiry_date",
   "section_break_10",
   "description",
+  "has_transactions",
   "naming_series"
  ],
  "fields": [
@@ -124,9 +125,16 @@
    "fieldtype": "Data",
    "label": "Customer Name",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_transactions",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Has Transactions"
   }
  ],
- "modified": "2025-11-11 15:03:48.995536",
+ "modified": "2025-11-12 09:12:56.187037",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",

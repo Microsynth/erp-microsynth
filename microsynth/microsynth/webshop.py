@@ -1223,6 +1223,11 @@ def place_order(content, client="webshop"):
             so_doc.append('credit_accounts', {
                 'credit_account': ca
             })
+            # set has_transaction on Credit Account
+            ca_doc = frappe.get_doc("Credit Account", ca)
+            if not ca_doc.has_transactions:
+                ca_doc.has_transactions = 1
+                ca_doc.save()
     else:
         # check for Legacy Credit Accounts with matching Customer, Company and Product Type != Project
         legacy_credit_accounts = frappe.get_all('Credit Account',
@@ -3915,6 +3920,11 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         invoice.insert()
         invoice.submit()
         # TODO: Transmit the Sales Invoice?
+        # Set has_transaction on the Credit Account
+        account_doc = frappe.get_doc("Credit Account", account_id)
+        if not account_doc.has_transaction:
+            account_doc.has_transaction = True
+            account_doc.save()
         return {
             "success": True,
             "message": "OK",

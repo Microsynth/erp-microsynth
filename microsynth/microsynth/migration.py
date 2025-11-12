@@ -6484,6 +6484,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             "status": "Active",
             "expiry_date": None,
             "description": "Migration from legacy customer credits",
+            "has_transactions": 1
         })
 
         if credit_type == "Project":

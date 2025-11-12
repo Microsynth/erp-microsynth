@@ -10,5 +10,11 @@ frappe.ui.form.on('Credit Account', {
                 credit_account: frm.doc.name
             });
         });
+        if (!frm.doc.__islocal && frm.doc.has_transactions) {
+            cur_frm.set_df_property('customer', 'read_only', true);
+            cur_frm.set_df_property('company', 'read_only', true);
+            cur_frm.set_df_property('currency', 'read_only', true);
+            cur_frm.set_df_property('account_type', 'read_only', true);
+        }
     }
 });
