@@ -137,6 +137,8 @@ function open_search_dialog(frm) {
                 <td><input type="radio" name="select_item" value="${it.name}"></td>
                 <td>${frappe.utils.escape_html(it.name)}</td>
                 <td>${frappe.utils.escape_html(it.item_name||'')}</td>
+                <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
+                <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
                 <td>${frappe.utils.escape_html(it.material_code||'')}</td>
                 <td>${frappe.utils.escape_html(it.supplier||'')}</td>
                 <td>${frappe.utils.escape_html(it.supplier_name||'')}</td>

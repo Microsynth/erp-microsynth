@@ -224,6 +224,8 @@ function open_search_dialog(report) {
                                 <th>${__('Select')}</th>
                                 <th>${__('Item')}</th>
                                 <th>${__('Item Name')}</th>
+                                <th>${__('Pack Size')}</th>
+                                <th>${__('Pack UOM')}</th>
                                 <th>${__('Material Code')}</th>
                                 <th>${__('Supplier')}</th>
                                 <th>${__('Supplier Name')}</th>
@@ -238,6 +240,8 @@ function open_search_dialog(report) {
                             <td><input type="radio" name="select_item" value="${it.name}"></td>
                             <td>${frappe.utils.escape_html(it.name)}</td>
                             <td>${frappe.utils.escape_html(it.item_name || '')}</td>
+                            <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
+                            <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
                             <td>${frappe.utils.escape_html(it.material_code || '')}</td>
                             <td>${frappe.utils.escape_html(it.supplier || '')}</td>
                             <td>${frappe.utils.escape_html(it.supplier_name || '')}</td>

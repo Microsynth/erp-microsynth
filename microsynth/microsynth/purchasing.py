@@ -1301,6 +1301,9 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         SELECT
             `tabItem`.`name`,
             `tabItem`.`item_name`,
+            `tabItem`.`pack_size`,
+            `tabItem`.`pack_uom`,
+            `tabItem`.`stock_uom`,
             `tabItem`.`material_code`,
             MIN(`tabItem Supplier`.`supplier`) AS supplier,
             MIN(`tabSupplier`.`supplier_name`) AS supplier_name,
