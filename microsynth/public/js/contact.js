@@ -4,13 +4,12 @@
 cur_frm.dashboard.add_transactions([
     {
         'label': __("Selling"),
-        'items': ["Quotation"]
+        'items': ["Quotation"]  //, "Credit Account"]  // TODO: Add Credit Account (Task #22732)
     },
     {
         'label': __("Marketing"),
         'items': ["Contact Note", "Benchmark", "Product Idea"]
     }
-    // TODO: Add Credit Account (Task #22732)
 ]);
 
 
