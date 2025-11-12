@@ -20,6 +20,7 @@ from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
 
+SUPPORTED_BUYING_CURRENCIES = ['CHF', 'EUR', 'USD', 'GBP']
 
 def create_pi_from_si(sales_invoice):
     """
@@ -557,6 +558,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 except Exception as err:
                     print(f"ERROR: Item {item_id}: Unable to convert {safety_stock=} to a float.")
 
+            # TODO: Check UOMs
+
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
             else:
@@ -576,7 +579,10 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'item_code': item_code,
                 'item_name': item_name[:140],
                 'item_group': 'Purchasing',
-                'stock_uom': 'Pcs',
+                'stock_uom': 'Pcs',  # TODO: derive from input data
+                # 'pack_size': 1,
+                # 'pack_uom': 'Pcs',
+                # 'purchase_uom': 'Pcs',
                 'is_stock_item': 1,  # if internal_code else 0,
                 'description': item_name,
                 'shelf_life_in_days': shelf_life_in_days,
@@ -616,8 +622,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             imported_counter += 1
 
             if purchase_price:
-                if currency in ['CHF', 'EUR', 'USD']:
-                    # add it to the Price List "Standard Buying CHF/EUR/USD"
+                if currency in SUPPORTED_BUYING_CURRENCIES:
+                    # add it to the Price List "Standard Buying ..."
                     price_list_name = f"Standard Buying {currency}"
                     item_price = frappe.get_doc({
                         'doctype': "Item Price",
@@ -765,7 +771,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
             if not company:
                 print(f"ERROR: Column 'Firma' is mandatory, going to skip {ext_creditor_number}.")
                 continue
-            if currency not in ['CHF', 'EUR', 'USD']:
+            if currency not in SUPPORTED_BUYING_CURRENCIES:
                 print(f"WARNING: There is no Standard Buying Price List in Currency '{currency}'. Not going to set a default Price List for {ext_creditor_number}.")
             existing_suppliers = frappe.get_all("Supplier", filters=[['supplier_name', '=', company]], fields=['name', 'ext_creditor_id'])
             if existing_suppliers and (not (update_countries or add_ext_creditor_id)) and len(existing_suppliers) > 0:
@@ -816,7 +822,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                 'website': web_url,
                 'tax_id': supplier_tax_id,
                 'default_currency': currency,
-                'default_price_list': f'Standard Buying {currency}' if currency in ['CHF', 'EUR', 'USD'] else None,
+                'default_price_list': f'Standard Buying {currency}' if currency in SUPPORTED_BUYING_CURRENCIES else None,
                 'payment_terms': payment_terms_mapping[payment_days],
                 'bic': bic,
                 'iban': iban,
