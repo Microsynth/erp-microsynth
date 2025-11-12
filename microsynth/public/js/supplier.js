@@ -20,6 +20,16 @@ frappe.ui.form.on('Supplier', {
             return {'filters': filters}
         });
 
+        frm.set_query('order_contact', function() {
+            return {
+                query: "frappe.contacts.doctype.contact.contact.contact_query",
+                filters: {
+                    link_doctype: "Supplier",
+                    link_name: frm.doc.name
+                }
+            };
+        });
+
         if (frm.doc.supplier_shops.length > 0 && frm.doc.supplier_shops[0].webshop_url) {
             frm.add_custom_button(__('Open Supplier Webshop'), function() {
                 window.open(
