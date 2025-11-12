@@ -320,25 +320,46 @@ def get_data(filters, short=False):
 
         data = frappe.db.sql(sql_query, as_dict=True)
 
-    # Debugging:
-    #pf = data[(len(data) - 1)]
-    #frappe.log_error(f"{pf=}\n\n{pf['header']=}\n\n{pf['customer_address']=}")
     return data
 
 
 @frappe.whitelist()
-def download_pdf(company, customer):
+def download_pdf(company, customer, credit_account=None):
     filters={'customer': customer, 'company': company}
-    content = frappe.render_template(
-        "microsynth/microsynth/report/customer_credits/customer_credits_server.html",
-        {
-            'data': get_data(filters),
-            'filters': filters
-        }
-    )
 
+    # --- CASE 1: Specific Credit Account ---
+    if credit_account:
+        filters['credit_account'] = credit_account
+        credit_account_doc = frappe.get_doc("Credit Account", credit_account)
+
+        if credit_account_doc.customer != customer:
+            frappe.throw(
+                _(f"The selected Credit Account {credit_account} does not belong to the selected Customer {customer}."),
+                _("Customer Credits Report")
+            )
+        if credit_account_doc.company != company:
+            frappe.throw(
+                _(f"The selected Credit Account {credit_account} does not belong to the selected Company {company}."),
+                _("Customer Credits Report")
+            )
+        # Use the configured print format "Credit Account"
+        print_format_doc = frappe.get_doc("Print Format", "Credit Account")
+        css_html = f"<style>{print_format_doc.css or ''}</style>{print_format_doc.html or ''}"
+        content = frappe.render_template(css_html, {'doc': credit_account_doc})
+        filename = f"Credit_Account_{credit_account_doc.name}.pdf"
+        # TODO: Why is the text "Letterhead" printed and why is the Microsynth logo such huge and how to fix it?
+
+    # --- CASE 2: Overview for entire Customer ---
+    else:
+        data = get_data(filters)
+        content = frappe.render_template(
+            "microsynth/microsynth/report/customer_credits/customer_credits_server.html",
+            {'data': data, 'filters': filters}
+        )
+        filename = f"Customer_Credits_{customer}.pdf"
+
+    # Generate and send PDF response
     pdf = get_pdf(content)
-
-    frappe.local.response.filename = "Customer_Credits_{0}.pdf".format(customer)
+    frappe.local.response.filename = filename
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"

@@ -60,24 +60,26 @@ frappe.query_reports["Customer Credits"] = {
         report.page.add_inner_button(__('Download PDF'), function () {
             create_pdf(
                 frappe.query_report.get_filter_value("company"),
-                frappe.query_report.get_filter_value("customer")
+                frappe.query_report.get_filter_value("customer"),
+                frappe.query_report.get_filter_value("credit_account")
             );
         })
     }
 };
 
 
-function create_pdf(company, customer) {
-    if (customer) {
-        var w = window.open(
-            frappe.urllib.get_full_url("/api/method/microsynth.microsynth.report.customer_credits.customer_credits.download_pdf"
-                    + "?company=" + encodeURIComponent(company)
-                    + "&customer=" + encodeURIComponent(customer))
-        );
-        if (!w) {
-            frappe.msgprint(__("Please enable pop-ups")); return;
-        }
-    } else {
-        frappe.msgprint(__("Please enter a Customer in the report filter, overview printing is not supported by this button.")); return;
+function create_pdf(company, customer, credit_account) {
+    if (!customer) {
+        frappe.msgprint(__("Please enter a Customer in the report filter. Overview printing is not supported without a Customer."));
+        return;
     }
+    let url = `/api/method/microsynth.microsynth.report.customer_credits.customer_credits.download_pdf`
+            + `?company=${encodeURIComponent(company)}`
+            + `&customer=${encodeURIComponent(customer)}`;
+
+    if (credit_account) {
+        url += `&credit_account=${encodeURIComponent(credit_account)}`;
+    }
+    const w = window.open(frappe.urllib.get_full_url(url));
+    if (!w) frappe.msgprint(__("Please enable pop-ups"));
 }
