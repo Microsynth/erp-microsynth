@@ -3,8 +3,19 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-# import frappe
+import frappe
 from frappe.model.document import Document
 
 class CreditAccount(Document):
-	pass
+	def validate(self):
+		# Ensure that once there are transactions, certain fields cannot be changed
+		if self.has_transactions:
+			original = frappe.get_doc("Credit Account", self.name)
+			if self.customer != original.customer:
+				frappe.throw("Cannot change Customer of Credit Account with existing transactions.")
+			if self.company != original.company:
+				frappe.throw("Cannot change Company of Credit Account with existing transactions.")
+			if self.currency != original.currency:
+				frappe.throw("Cannot change Currency of Credit Account with existing transactions.")
+			if self.account_type != original.account_type:
+				frappe.throw("Cannot change Account Type of Credit Account with existing transactions.")

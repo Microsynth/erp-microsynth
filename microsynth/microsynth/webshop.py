@@ -3816,11 +3816,11 @@ def update_credit_account(credit_account):
                     credit_account_doc.append("product_types", {
                         "product_type": pt
                     })
-        if 'company' in credit_account and credit_account.get('company') != credit_account_doc.company:
+        if 'company' in credit_account and (credit_account.get('company') != credit_account_doc.company or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change company of Credit Account '{credit_account.get('account_id')}'.")
-        if 'customer' in credit_account and credit_account.get('customer') != get_customer(credit_account_doc.contact):
+        if 'customer' in credit_account and (credit_account.get('customer') != get_customer(credit_account_doc.contact) or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change customer of Credit Account '{credit_account.get('account_id')}'.")
-        if 'currency' in credit_account and credit_account.get('currency') != credit_account_doc.currency:
+        if 'currency' in credit_account and (credit_account.get('currency') != credit_account_doc.currency or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change currency of Credit Account '{credit_account.get('account_id')}'.")
         credit_account_doc.save()
         return {
