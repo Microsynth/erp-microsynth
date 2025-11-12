@@ -10,7 +10,7 @@
   "account_name",
   "customer",
   "customer_name",
-  "contact",
+  "contact_person",
   "product_types",
   "product_types_locked",
   "column_break_3",
@@ -32,16 +32,6 @@
    "in_standard_filter": 1,
    "label": "Customer",
    "options": "Customer",
-   "reqd": 1
-  },
-  {
-   "description": "Webshop Account",
-   "fieldname": "contact",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Contact",
-   "options": "Contact",
    "reqd": 1
   },
   {
@@ -142,9 +132,16 @@
   {
    "fieldname": "section_break_2",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Link",
+   "label": "Contact",
+   "options": "Contact",
+   "reqd": 1
   }
  ],
- "modified": "2025-11-12 10:24:36.825756",
+ "modified": "2025-11-12 15:44:21.079502",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",

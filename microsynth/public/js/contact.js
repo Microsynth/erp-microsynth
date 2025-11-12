@@ -10,6 +10,7 @@ cur_frm.dashboard.add_transactions([
         'label': __("Marketing"),
         'items': ["Contact Note", "Benchmark", "Product Idea"]
     }
+    // TODO: Add Credit Account (Task #22732)
 ]);
 
 

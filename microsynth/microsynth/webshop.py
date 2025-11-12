@@ -3622,7 +3622,7 @@ def get_credit_account_dto(credit_account):
         "type": credit_account.account_type,
         "name": credit_account.account_name,
         "description": credit_account.description,
-        "webshop_account": credit_account.contact,
+        "webshop_account": credit_account.contact_person,
         "status": credit_account.status,
         "company": credit_account.company,
         "customer": credit_account.customer,
@@ -3789,18 +3789,18 @@ def update_credit_account(credit_account):
                 if balance != 0.0:
                     frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to 'Disabled' because its balance is not zero (balance: {balance}).")
             credit_account_doc.status = credit_account.get('status')
-        if 'webshop_account' in credit_account and credit_account.get('webshop_account') != credit_account_doc.contact:
+        if 'webshop_account' in credit_account and credit_account.get('webshop_account') != credit_account_doc.contact_person:
             # Change the owner of the credit account
             new_contact = credit_account.get('webshop_account')
             if not new_contact:
                 frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' to empty value.")
             if not frappe.db.exists('Contact', new_contact):
                 frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' to Contact '{new_contact}' that does not exist.")
-            old_customer = get_customer(credit_account_doc.contact)
+            old_customer = get_customer(credit_account_doc.contact_person)
             new_customer = get_customer(new_contact)
             if old_customer != new_customer:
-                frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' from Contact '{credit_account_doc.contact}' (Customer '{old_customer}') to Contact '{new_contact}' (Customer '{new_customer}') because they belong to different Customers.")
-            credit_account_doc.contact = new_contact
+                frappe.throw(f"Not allowed to change owner of Credit Account '{credit_account.get('account_id')}' from Contact '{credit_account_doc.contact_person}' (Customer '{old_customer}') to Contact '{new_contact}' (Customer '{new_customer}') because they belong to different Customers.")
+            credit_account_doc.contact_person = new_contact
         if 'product_types' in credit_account:
             if not isinstance(credit_account.get('product_types'), list):
                 new_product_types = json.loads(credit_account.get('product_types'))
@@ -3818,7 +3818,7 @@ def update_credit_account(credit_account):
                     })
         if 'company' in credit_account and (credit_account.get('company') != credit_account_doc.company or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change company of Credit Account '{credit_account.get('account_id')}'.")
-        if 'customer' in credit_account and (credit_account.get('customer') != get_customer(credit_account_doc.contact) or credit_account_doc.has_transactions):
+        if 'customer' in credit_account and (credit_account.get('customer') != get_customer(credit_account_doc.contact_person) or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change customer of Credit Account '{credit_account.get('account_id')}'.")
         if 'currency' in credit_account and (credit_account.get('currency') != credit_account_doc.currency or credit_account_doc.has_transactions):
             frappe.throw(f"Not allowed to change currency of Credit Account '{credit_account.get('account_id')}'.")
