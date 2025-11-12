@@ -279,24 +279,74 @@ function open_search_dialog(report) {
 function open_confirmation_dialog(selected, report) {
     const today = frappe.datetime.nowdate();
 
+    // Compute schedule_date default: If lead_time_days is set, use today + lead_time_days, otherwise today + 30 days
+    const default_schedule_date = frappe.datetime.add_days(
+        today,
+        selected.lead_time_days ? cint(selected.lead_time_days) : 30
+    );
+
+    // Compute conversion info: If purchase_uom and stock_uom differ, display conversion text
+    let conversion_info = '';
+    if (selected.purchase_uom && selected.stock_uom && selected.purchase_uom !== selected.stock_uom) {
+        const cf = selected.conversion_factor || 1;
+        conversion_info = __('1 {0} = {1} {2}(s)', [
+            selected.purchase_uom,
+            cf,
+            selected.stock_uom
+        ]);
+    }
+    // try to mimic the look of a read-only frappe field for the conversion info
+    const conversion_field = conversion_info
+        ? {
+            fieldtype: 'HTML',
+            fieldname: 'conversion_html',
+            options: `
+                <div class="frappe-control input-max-width" style="margin-top: 3px;">
+                    <label class="control-label" style="display:block; margin-bottom:5px;">${__('Conversion')}</label>
+                    <div class="control-value like-disabled-input" style="
+                        display:block;
+                        width:100%;
+                        padding:6px 8px;
+                        min-height:28px;
+                        line-height:1.42857143;
+                        color:#495057;
+                        background-color:#f4f5f6;
+                        border:1px solid #d1d8dd;
+                        border-radius:4px;
+                        font-size:13px;
+                        white-space:nowrap;
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+                    ">
+                        ${frappe.utils.escape_html(conversion_info)}
+                    </div>
+                </div>`
+        }
+        : null;
+
     let d = new frappe.ui.Dialog({
         'title': __('Confirm Material Request'),
         'fields': [
             { fieldtype: 'Data', label: __('Item Name'), fieldname: 'item_name', read_only: 1, default: selected.item_name },
+            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
 
             { fieldtype: 'Section Break' },
 
-            { fieldtype: 'Data', label: __('Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
+            { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
             { fieldtype: 'Int', label: __('Quantity'), fieldname: 'qty', reqd: true, default: 1, min: 1 },
-            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', reqd: true },
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
-            { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
-            { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') },
+            { fieldtype: 'Data', label: __('Purchase UOM'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
+
+            { fieldtype: 'Column Break' },
+
+            { fieldtype: 'Data', label: __('Microsynth Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
+            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', reqd: true, default: default_schedule_date },
+            ...(conversion_field ? [conversion_field] : []),
 
             { fieldtype: 'Section Break' },
 

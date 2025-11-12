@@ -1304,10 +1304,26 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`pack_size`,
             `tabItem`.`pack_uom`,
             `tabItem`.`stock_uom`,
+            `tabItem`.`purchase_uom`,
+            `tabItem`.`lead_time_days`,
+            CASE
+                WHEN `tabItem`.`stock_uom` IS NOT NULL
+                    AND `tabItem`.`purchase_uom` IS NOT NULL
+                    AND `tabItem`.`stock_uom` <> `tabItem`.`purchase_uom`
+                THEN (
+                    SELECT `tabUOM Conversion Detail`.`conversion_factor`
+                    FROM `tabUOM Conversion Detail`
+                    WHERE
+                        `tabUOM Conversion Detail`.`parent` = `tabItem`.`name`
+                        AND `tabUOM Conversion Detail`.`uom` = `tabItem`.`purchase_uom`
+                    LIMIT 1
+                )
+                ELSE 1
+            END AS `conversion_factor`,
             `tabItem`.`material_code`,
-            MIN(`tabItem Supplier`.`supplier`) AS supplier,
-            MIN(`tabSupplier`.`supplier_name`) AS supplier_name,
-            MIN(`tabItem Supplier`.`supplier_part_no`) AS supplier_part_no
+            MIN(`tabItem Supplier`.`supplier`) AS `supplier`,
+            MIN(`tabSupplier`.`supplier_name`) AS `supplier_name`,
+            MIN(`tabItem Supplier`.`supplier_part_no`) AS `supplier_part_no`
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
