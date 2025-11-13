@@ -3940,8 +3940,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         # TODO: Transmit the Sales Invoice?
         # Set has_transaction on the Credit Account
         account_doc = frappe.get_doc("Credit Account", account_id)
-        if not account_doc.has_transaction:
-            account_doc.has_transaction = True
+        if not account_doc.has_transactions:
+            account_doc.has_transactions = True
             account_doc.save()
         return {
             "success": True,
