@@ -92,6 +92,7 @@ def allocate_credits(sales_invoice_doc):
 
     # TODO
     # get list of applicable credit accounts (fetch data from Sales Order)
+    # TODO: consider the field Sales Invoice.override_credit_accounts
     customer_credits = get_available_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
     if len(customer_credits) > 0:
