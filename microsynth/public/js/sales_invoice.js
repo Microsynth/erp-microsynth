@@ -123,6 +123,17 @@ frappe.ui.form.on('Sales Invoice', {
             }, __("View"));
         }
 
+        if (
+            frm.doc.docstatus === 1 &&
+            !frm.doc.is_return &&
+            frm.doc.total_customer_credit > 0
+        ) {
+            frm.add_custom_button(__("Change Credit Accounts"), function() {
+                //frappe.msgprint(__("Coming soon"));
+                open_change_credit_accounts_dialog(frm);
+            });
+        }
+
         hide_in_words();
 
         var time_out = 500;
@@ -733,6 +744,133 @@ function display_customer_credit_bookings(frm) {
             } else {
                 cur_frm.set_df_property('customer_credit_booking_html', 'options', "<div></div>");
             }
+        }
+    });
+}
+
+function open_change_credit_accounts_dialog(frm) {
+    frappe.call({
+        'method': "microsynth.microsynth.credits.get_available_credit_accounts",
+        'args': {
+            'company': frm.doc.company,
+            'currency': frm.doc.currency,
+            'customer': frm.doc.customer
+        },
+        callback: function(r) {
+            if (r.exc) return;
+            const available_accounts = r.message || [];
+
+            let html_table = `
+                <div style="max-height: 250px; overflow-y: auto; margin-top: 10px;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%; text-align:center;">${__("Select")}</th>
+                            <th style="width: 25%;">${__("Credit Account")}</th>
+                            <th style="width: 35%;">${__("Account Name")}</th>
+                            <th style="width: 20%;">${__("Account Type")}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (available_accounts.length === 0) {
+                html_table += `
+                    <tr><td colspan="4" class="text-center text-muted">${__("No active Credit Accounts found")}</td></tr>
+                `;
+            } else {
+                available_accounts.forEach(acc => {
+                    html_table += `
+                        <tr>
+                            <td style="text-align:center;">
+                                <input type="checkbox" class="credit-account-checkbox" value="${acc.name}">
+                            </td>
+                            <td>${frappe.utils.escape_html(acc.name)}</td>
+                            <td>${frappe.utils.escape_html(acc.account_name || "")}</td>
+                            <td>${frappe.utils.escape_html(acc.account_type || "")}</td>
+                        </tr>
+                    `;
+                });
+            }
+            html_table += `
+                    </tbody>
+                </table>
+                </div>
+            `;
+            const d = new frappe.ui.Dialog({
+                title: __("Other Credit Account"),
+                fields: [
+                    {
+                        fieldtype: "HTML",
+                        fieldname: "intro_html",
+                        options: `
+                            <p>${__(
+                                "Select another Credit Account to return this Sales Invoice by a Credit Note and create a new Sales Invoice."
+                            )}</p>`
+                    },
+                    { fieldtype: "HTML", fieldname: "accounts_table", options: html_table },
+                    { fieldtype: "Section Break" },
+                    {
+                        fieldtype: "Link",
+                        fieldname: "manual_credit_account",
+                        label: __("Additional Credit Account"),
+                        options: "Credit Account",
+                        get_query: () => ({
+                            filters: {
+                                company: frm.doc.company,
+                                currency: frm.doc.currency,
+                                status: "Active"
+                            }
+                        }),
+                        description: __("Optionally specify another Active Credit Account of the same Company and currency.")
+                    }
+                ],
+                primary_action_label: __("Select"),
+                primary_action(values) {
+                    // Collect selected Credit Accounts
+                    const selected_accounts = [];
+                    $(d.$wrapper)
+                        .find(".credit-account-checkbox:checked")
+                        .each(function() {
+                            selected_accounts.push($(this).val());
+                        });
+
+                    if (values.manual_credit_account) {
+                        selected_accounts.push(values.manual_credit_account);
+                    }
+
+                    if (selected_accounts.length === 0) {
+                        frappe.msgprint(__("Please select or enter at least one Credit Account."));
+                        return;
+                    }
+
+                    frappe.call({
+                        method: "microsynth.microsynth.credits.change_si_credit_accounts",
+                        args: {
+                            sales_invoice: frm.doc.name,
+                            new_credit_accounts: selected_accounts
+                        },
+                        freeze: true,
+                        freeze_message: __("Processing..."),
+                        callback: function(r) {
+                            if (!r.exc && r.message) {
+                                frappe.show_alert({
+                                    message: __("New Sales Invoice created: {0}", [
+                                        `<a href="/desk#Form/Sales Invoice/${r.message}" target="_blank">${r.message}</a>`
+                                    ]),
+                                    indicator: "green"
+                                });
+                                frappe.set_route("Form", "Sales Invoice", r.message);
+                            }
+                        }
+                    });
+                    d.hide();
+                },
+                secondary_action_label: __("Close"),
+                secondary_action() {
+                    return;
+                }
+            });
+            d.show();
         }
     });
 }

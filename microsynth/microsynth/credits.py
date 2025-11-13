@@ -1,14 +1,16 @@
-# Copyright (c) 2021-2024, Microsynth, libracore and contributors
+# Copyright (c) 2021-2025, Microsynth, libracore and contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
 from datetime import date, datetime, timedelta
+import frappe
+from frappe import _
+from frappe.utils import nowdate
 from frappe.utils.data import today
 from frappe.utils import flt, cint, get_link_to_form
+from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
-from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
 
 
 def get_available_credits(customer, company, credit_type):
@@ -618,3 +620,109 @@ def report_credit_balance_diff():
             details += diff
         rendered_content = frappe.render_template(email_template.response, {'details': details})
         send_email_from_template(email_template, rendered_content)
+
+
+@frappe.whitelist()
+def get_available_credit_accounts(company, currency, customer):
+    """
+    Returns active, non-expired Credit Accounts for the given company, currency, and customer.
+    """
+    today = nowdate()
+    return frappe.db.sql("""
+        SELECT
+            `name`,
+            `account_name`,
+            `account_type`,
+            `expiry_date`
+        FROM `tabCredit Account`
+        WHERE
+            `company` = %(company)s
+            AND `currency` = %(currency)s
+            AND `customer` = %(customer)s
+            AND `status` = 'Active'
+            AND (
+                `expiry_date` IS NULL
+                OR `expiry_date` = ''
+                OR `expiry_date` >= %(today)s
+            )
+        ORDER BY `account_name` ASC
+    """, {"company": company, "currency": currency, "customer": customer, "today": today}, as_dict=True)
+
+
+@frappe.whitelist()
+def change_si_credit_accounts(sales_invoice, new_credit_accounts):
+    """
+    Creates a Credit Note for the given Sales Invoice and a new Sales Invoice with updated Credit Accounts.
+
+    Steps:
+    1. Validate and load target accounts.
+    2. Create and submit Credit Note (full refund).
+    3. Duplicate Sales Invoice.
+    4. Adjust customer if different.
+    5. Update override_credit_accounts.
+    6. Call credit allocation logic.
+    7. Return new Sales Invoice name.
+    """
+    if isinstance(new_credit_accounts, str):
+        import json
+        new_credit_accounts = json.loads(new_credit_accounts)
+
+    si_doc = frappe.get_doc("Sales Invoice", sales_invoice)
+    if si_doc.docstatus != 1 or si_doc.is_return:
+        frappe.throw(_("You can only change Credit Accounts for submitted, non-return Sales Invoices."))
+
+    # Load Credit Account docs and check consistency
+    credit_accounts = [frappe.get_doc("Credit Account", acc) for acc in new_credit_accounts]
+    if not credit_accounts:
+        frappe.throw(_("No Credit Accounts selected."))
+
+    # Validate all accounts
+    for acc in credit_accounts:
+        if acc.status != "Active":
+            frappe.throw(_("Credit Account {0} is not active.").format(acc.name))
+        if acc.company != si_doc.company or acc.currency != si_doc.currency:
+            frappe.throw(_("Credit Account {0} does not match Company or Currency.").format(acc.name))
+        if acc.expiry_date and acc.expiry_date < nowdate():
+            frappe.throw(_("Credit Account {0} is expired.").format(acc.name))
+
+    # Ensure all selected accounts share same customer
+    customers = {acc.customer for acc in credit_accounts if acc.customer}
+    new_customer = customers.pop() if customers else None
+    if len(customers) > 0:
+        frappe.throw(_("Selected Credit Accounts must all belong to the same Customer."))
+
+    # Create and submit Credit Note
+    credit_note_doc = frappe.get_doc(make_sales_return(sales_invoice))
+    credit_note_doc.flags.ignore_permissions = True
+    credit_note_doc.insert()
+    credit_note_doc.submit()
+
+    # Create new Sales Invoice by copying
+    new_si = frappe.copy_doc(si_doc)
+    new_si.is_return = 0
+    new_si.return_against = None
+    new_si.docstatus = 0
+    new_si.name = None
+
+    # Adjust customer if different
+    if new_customer and new_customer != si_doc.customer:
+        new_si.customer = new_customer
+        new_si.customer_name = frappe.db.get_value("Customer", new_customer, "customer_name")
+        # Remove linkages that reference previous customer
+        for item in new_si.items:
+            item.sales_order = None
+            item.delivery_note = None
+            item.project = None
+
+    # Reset override_credit_accounts
+    new_si.set("override_credit_accounts", [])
+    for acc in credit_accounts:
+        new_si.append("override_credit_accounts", {"credit_account": acc.name})
+
+    # Save and run credit allocation logic
+    new_si.insert()
+    frappe.get_doc("Sales Invoice", new_si.name)
+    frappe.get_attr("microsynth.microsynth.credits.allocate_credits_to_invoice")(new_si.name)
+
+    frappe.db.commit()
+    return new_si.name
