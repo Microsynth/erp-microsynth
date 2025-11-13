@@ -1242,19 +1242,21 @@ def place_order(content, client="webshop"):
                 'account_type': 'Legacy',
                 'status': 'Active'
             },
-            fields=['name', 'product_types']
+            fields=['name']
         )
         applicable_legacy_credit_accounts = []
         for lca in legacy_credit_accounts:
-            if not lca.product_types:
-                applicable_legacy_credit_accounts.append(lca.name)
-            else:
-                if so_doc.product_type == 'Project' and 'Project' in lca.product_types:
-                    applicable_legacy_credit_accounts.append(lca.name)
-                elif so_doc.product_type != 'Project' and 'Project' not in lca.product_types:
-                    applicable_legacy_credit_accounts.append(lca.name)
-                else:
-                    pass  # not applicable
+            # TODO: get product types
+            pass
+            # if not lca.product_types:
+            #     applicable_legacy_credit_accounts.append(lca.name)
+            # else:
+            #     if so_doc.product_type == 'Project' and 'Project' in lca.product_types:
+            #         applicable_legacy_credit_accounts.append(lca.name)
+            #     elif so_doc.product_type != 'Project' and 'Project' not in lca.product_types:
+            #         applicable_legacy_credit_accounts.append(lca.name)
+            #     else:
+            #         pass  # not applicable
         if len(applicable_legacy_credit_accounts) > 1:
             frappe.log_error(f"WARNING: Found {len(applicable_legacy_credit_accounts)} applicable legacy credit accounts "
                              f"for Customer {customer.name}, Company {company} and product type {so_doc.product_type}, "
