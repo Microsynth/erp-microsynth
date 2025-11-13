@@ -1220,11 +1220,15 @@ def place_order(content, client="webshop"):
         so_doc.product_type = content['product_type']
     if 'credit_accounts' in content:
         for ca in content['credit_accounts']:
+            ca_doc = frappe.get_doc("Credit Account", ca)
+            if ca_doc.expiry_date and ca_doc.expiry_date < date.today():
+                return {'success': False, 'message': f"Credit Account '{ca_doc.name}' is expired.", 'reference': None}
+            if ca_doc.status != "Active":
+                return {'success': False, 'message': f"Credit Account '{ca_doc.name}' is not Active.", 'reference': None}
             so_doc.append('credit_accounts', {
-                'credit_account': ca
+                'credit_account': ca_doc.name
             })
             # set has_transaction on Credit Account
-            ca_doc = frappe.get_doc("Credit Account", ca)
             if not ca_doc.has_transactions:
                 ca_doc.has_transactions = 1
                 ca_doc.save()
