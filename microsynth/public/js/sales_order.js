@@ -169,7 +169,7 @@ frappe.ui.form.on('Sales Order', {
                         const escaped_contact = frappe.utils.escape_html(frm.doc.contact_person);
                         const message = `<b>No Webshop Account</b> found for Contact Person <code>${escaped_contact}</code>.<br>
                             A Webshop Account is strongly recommended.<br><br>
-                            Click <b>Yes</b> to abort submission and fix the Contact Person.<br>
+                            Click <b>Yes</b> to abort submission and fix the Contact Person in the section 'Address and Contact'.<br>
                             Click No to continue at your own risk.`;
                         // Show confirmation dialog if no webshop account
                         frappe.confirm(message,
