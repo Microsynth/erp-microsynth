@@ -1238,25 +1238,37 @@ def place_order(content, client="webshop"):
             filters={
                 'customer': customer.name,
                 'company': company,
-                'credit_type': 'Project' if so_doc.product_type == 'Project' else 'Standard',
                 'account_type': 'Legacy',
                 'status': 'Active'
             },
             fields=['name']
         )
         applicable_legacy_credit_accounts = []
-        for lca in legacy_credit_accounts:
-            # TODO: get product types
-            pass
-            # if not lca.product_types:
-            #     applicable_legacy_credit_accounts.append(lca.name)
-            # else:
-            #     if so_doc.product_type == 'Project' and 'Project' in lca.product_types:
-            #         applicable_legacy_credit_accounts.append(lca.name)
-            #     elif so_doc.product_type != 'Project' and 'Project' not in lca.product_types:
-            #         applicable_legacy_credit_accounts.append(lca.name)
-            #     else:
-            #         pass  # not applicable
+        for account in legacy_credit_accounts:
+            # Fetch product types from child table "Product Type Link"
+            product_type_rows = frappe.get_all(
+                'Product Type Link',
+                filters={
+                    'parent': account.name,
+                    'parenttype': 'Credit Account',
+                    'parentfield': 'product_types'
+                },
+                fields=['product_type']
+            )
+            product_types = [r['product_type'] for r in product_type_rows]
+
+            # If Legacy Credit Account has no product types, consider it as applicable to all Sales Orders
+            if not product_types:
+                applicable_legacy_credit_accounts.append(account.name)
+                continue
+
+            if so_doc.product_type == 'Project':
+                if 'Project' in product_types:
+                    applicable_legacy_credit_accounts.append(account.name)
+            else:
+                if 'Project' not in product_types:
+                    applicable_legacy_credit_accounts.append(account.name)
+
         if len(applicable_legacy_credit_accounts) > 1:
             frappe.log_error(f"WARNING: Found {len(applicable_legacy_credit_accounts)} applicable legacy credit accounts "
                              f"for Customer {customer.name}, Company {company} and product type {so_doc.product_type}, "
