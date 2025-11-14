@@ -3870,7 +3870,7 @@ def get_default_shipping_address(webshop_address_id):
 
 
 @frappe.whitelist()
-def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number):
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False):
     """
     Create a Sales Invoice to deposit customer credits.
 
@@ -3893,6 +3893,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
     bench execute microsynth.microsynth.webshop.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003', 'customer_order_number': 'PO-12345'}"
     """
     try:
+        if ignore_permissions and frappe.get_user().name == 'webshop@microsynth.ch':
+            frappe.throw("Not allowed to use ignore_permissions.")
         credit_account_doc = frappe.get_doc('Credit Account', account_id)
         # Validate that the company, customer and currency matches the account currency
         if credit_account_doc.company != company:
@@ -3937,8 +3939,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "credit_account": account_id,
             "remarks": f"Webshop deposit for Credit Account {account_id}"
         })
-        invoice.insert()
-        invoice.submit()
+        invoice.insert(ignore_permissions=ignore_permissions)
+        invoice.submit()  # TODO: ignore_permissions is not applicable here
         # TODO: Transmit the Sales Invoice?
         # Set has_transaction on the Credit Account
         account_doc = frappe.get_doc("Credit Account", account_id)
