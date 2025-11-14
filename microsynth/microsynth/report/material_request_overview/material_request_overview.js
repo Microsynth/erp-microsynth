@@ -289,11 +289,17 @@ function open_confirmation_dialog(selected, report) {
     let conversion_info = '';
     if (selected.purchase_uom && selected.stock_uom && selected.purchase_uom !== selected.stock_uom) {
         const cf = selected.conversion_factor || 1;
-        conversion_info = __('1 {0} = {1} {2}(s)', [
-            selected.purchase_uom,
-            cf,
-            selected.stock_uom
-        ]);
+        let stock_uom = selected.stock_uom || "";
+        let plural = stock_uom.toLowerCase().endsWith("s") ? "" : "(s)";
+        conversion_info = __(
+            '1 {0} = {1} {2}{3}',
+            [
+                selected.purchase_uom,
+                cf,
+                stock_uom,
+                plural
+            ]
+        );
     }
     // try to mimic the look of a read-only frappe field for the conversion info
     const conversion_field = conversion_info
