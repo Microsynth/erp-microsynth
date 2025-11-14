@@ -163,7 +163,7 @@ def allocate_credits_to_invoice(sales_invoice):
     sales_invoice.save()
 
 
-def book_credit(sales_invoice, event=None):
+def book_credit(sales_invoice, credit_item, event=None):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
 
@@ -176,21 +176,6 @@ def book_credit(sales_invoice, event=None):
 
     credit_item = frappe.get_doc("Item",
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
-
-    for item in sales_invoice.items:
-        if item.item_code == credit_item:
-            # check that the sales invoice has a valid credit_account set
-            if not sales_invoice.credit_account:
-                frappe.throw("Please set a valid Credit Account.")
-            else:
-                credit_account_doc = frappe.get_doc("Credit Account", sales_invoice.credit_account)
-                if credit_account_doc.company != sales_invoice.company:
-                    frappe.throw(f"Sales Invoice has Company '{sales_invoice.company}', but the selected Credit Account {sales_invoice.credit_account} has Company '{credit_account_doc.company}'.")
-                if credit_account_doc.currency != sales_invoice.currency:
-                    frappe.throw(f"Sales Invoice has currency '{sales_invoice.currency}', but the selected Credit Account {sales_invoice.credit_account} has currency '{credit_account_doc.currency}'.")
-                # if credit_account_doc.customer != sales_invoice.customer:
-                #     frappe.throw(f"Sales Invoice has Customer '{sales_invoice.customer}', but the selected Credit Account {sales_invoice.credit_account} has Customer '{credit_account_doc.customer}'.")
-            break
 
     if sales_invoice.shipping_address_name:
         country = frappe.get_value("Address", sales_invoice.shipping_address_name, "country")
@@ -240,6 +225,36 @@ def book_credit(sales_invoice, event=None):
     jv.submit()
     # frappe.db.commit()
     return jv.name
+
+
+def validate_invoice_credit_account(sales_invoice, credit_item, event=None):
+    """
+    Check that the Sales Invoice has a valid credit_account set.
+    """
+    for item in sales_invoice.items:
+        if item.item_code == credit_item:
+            # check that the sales invoice has a valid credit_account set
+            if not sales_invoice.credit_account:
+                frappe.throw("Please set a valid Credit Account.")
+            else:
+                credit_account_doc = frappe.get_doc("Credit Account", sales_invoice.credit_account)
+                if credit_account_doc.company != sales_invoice.company:
+                    frappe.throw(f"Sales Invoice has Company '{sales_invoice.company}', but the selected Credit Account {sales_invoice.credit_account} has Company '{credit_account_doc.company}'.")
+                if credit_account_doc.currency != sales_invoice.currency:
+                    frappe.throw(f"Sales Invoice has currency '{sales_invoice.currency}', but the selected Credit Account {sales_invoice.credit_account} has currency '{credit_account_doc.currency}'.")
+                # if credit_account_doc.customer != sales_invoice.customer:
+                #     frappe.throw(f"Sales Invoice has Customer '{sales_invoice.customer}', but the selected Credit Account {sales_invoice.credit_account} has Customer '{credit_account_doc.customer}'.")
+            return
+
+
+def sales_invoice_on_submit(sales_invoice, event=None):
+    """
+    Wrapper that is called on_submit of a Sales Invoice, see hooks.py
+    """
+    credit_item = frappe.get_doc("Item",
+        frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
+    #validate_invoice_credit_account(sales_invoice, credit_item, event)  # TODO: Comment in on go-live of Credit Accounts
+    book_credit(sales_invoice, credit_item, event)
 
 
 def reverse_credit(sales_invoice, net_amount):
