@@ -2,10 +2,10 @@ frappe.ui.form.on('Address', {
     refresh(frm) {
         // set Address source
         if (frm.doc.__islocal) {
-            cur_frm.set_value("source", "Manual");
+            cur_frm.set_value("address_source", "Manual");
         }
         // show a banner if source = Punchout
-        if ((frm.doc.source && frm.doc.source == "Punchout") || (frm.doc.address_source && frm.doc.address_source == "Punchout")) {
+        if (frm.doc.address_source && frm.doc.address_source == "Punchout") {
             frm.dashboard.add_comment( __("Punchout Address! Please do <b>not</b> edit."), 'red', true);
         }
         // lock all fields if source = Punchout
