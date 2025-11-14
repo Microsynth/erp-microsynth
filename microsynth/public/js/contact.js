@@ -153,7 +153,7 @@ frappe.ui.form.on('Contact', {
         }
 
         // show a banner if source = Punchout
-        if (frm.doc.source && frm.doc.contact_source == "Punchout") {
+        if (frm.doc.contact_source && frm.doc.contact_source == "Punchout") {
             frm.dashboard.add_comment( __("Punchout Contact! Please do <b>not</b> edit."), 'red', true);
         }
 
@@ -191,6 +191,13 @@ frappe.ui.form.on('Contact', {
                     change_customer(frm);
                 });
             }
+
+            // Button to create promotion credit
+            // if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.has_webshop_account && frappe.user.has_role("Sales Manager")) {
+            //     frm.add_custom_button(__("Promotion Credits"), function () {
+            //         create_promotion_credits(frm);
+            //     }, __("Create"));
+            // }
 
             // Show buttons if a customer is linked
             if (is_customer && link_name) {
@@ -316,6 +323,11 @@ function update_address_links(frm) {
             }
         })
     }
+}
+
+
+function create_promotion_credits(frm) {
+    return;
 }
 
 
