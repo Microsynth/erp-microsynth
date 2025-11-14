@@ -143,8 +143,8 @@
    "reqd": 1
   }
  ],
- "modified": "2025-11-14 08:26:26.859301",
- "modified_by": "rolf.suter@microsynth.ch",
+ "modified": "2025-11-14 12:05:11.879829",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Credit Account",
  "owner": "Administrator",
@@ -166,6 +166,24 @@
    "print": 1,
    "read": 1,
    "role": "Webshop",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Manager",
    "write": 1
   }
  ],
