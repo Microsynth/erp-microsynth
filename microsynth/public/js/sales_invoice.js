@@ -438,123 +438,141 @@ function full_return(frm) {
     });
 }
 
-
 function allocate_credits(frm) {
     if (!contains_credit_item(frm)) {
-        // Show a dialog that shows available Credit Accounts
         frappe.call({
-                'method': "microsynth.microsynth.credits.get_available_credit_accounts",
-                'args': {
-                    'company': frm.doc.company,
-                    'currency': frm.doc.currency,
-                    'customer': frm.doc.customer
-                },
-                callback: function(r) {
-                    if (r.exc) return;
-                    const available_accounts = r.message || [];
-
-                    let html_table = `
-                        <div style="max-height: 250px; overflow-y: auto; margin-top: 10px;">
-                        <table class="table table-bordered table-sm">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%; text-align:center;">${__("Select")}</th>
-                                    <th style="width: 25%;">${__("Credit Account")}</th>
-                                    <th style="width: 35%;">${__("Account Name")}</th>
-                                    <th style="width: 20%;">${__("Account Type")}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    if (available_accounts.length === 0) {
-                        html_table += `
-                            <tr><td colspan="4" class="text-center text-muted">${__("No active Credit Accounts found")}</td></tr>
-                        `;
-                    } else {
-                        available_accounts.forEach(acc => {
-                            html_table += `
-                                <tr>
-                                    <td style="text-align:center;">
-                                        <input type="checkbox" class="credit-account-checkbox" value="${acc.name}">
-                                    </td>
-                                    <td>${frappe.utils.escape_html(acc.name)}</td>
-                                    <td>${frappe.utils.escape_html(acc.account_name || "")}</td>
-                                    <td>${frappe.utils.escape_html(acc.account_type || "")}</td>
-                                </tr>
-                            `;
-                        });
-                    }
-                    html_table += `
-                            </tbody>
-                        </table>
-                        </div>
-                    `;
-                    const d = new frappe.ui.Dialog({
-                        title: __("Select Credit Account to deduct from"),
-                        fields: [
-                            {
-                                fieldtype: "HTML",
-                                fieldname: "intro_html",
-                                options: `
-                                    <p>${__(
-                                        "Select one Credit Account to deduct from. This selection overrides the Credit Accounts on the Sales Order intended to deduct from."
-                                    )}</p>`
-                            },
-                            { fieldtype: "HTML", fieldname: "accounts_table", options: html_table },
-                        ],
-                        primary_action_label: __("Select"),
-                        primary_action(values) {
-                            // Collect selected Credit Accounts
-                            const selected_accounts = [];
-                            $(d.$wrapper)
-                                .find(".credit-account-checkbox:checked")
-                                .each(function() {
-                                    selected_accounts.push($(this).val());
-                                });
-
-                            if (values.manual_credit_account) {
-                                selected_accounts.push(values.manual_credit_account);
-                            }
-
-                            if (selected_accounts.length != 1) {
-                                frappe.msgprint(__("Please select exactly one Credit Account."));
-                                return;
-                            }
-                            // Enter selected Credit account (only one) into Sales Invoice.override_credit_accounts
-                            // The field Sales Invoice.override_credit_accounts has Type "Table" and Options "Credit Account Link".
-                            // The DocType "Credit Account Link" has a Link field credit_account with Options "Credit Account".
-                            frm.clear_table("override_credit_accounts");
-                            let child = frm.add_child("override_credit_accounts");
-                            child.credit_account = selected_account;
-                            frm.refresh_field("override_credit_accounts");
-
-                            frappe.call({
-                                'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
-                                'args': {
-                                    'sales_invoice': frm.doc.name
-                                },
-                                'freeze': true,
-                                'freeze_message': __("Processing..."),
-                                'callback': function(r)
-                                {
-                                    cur_frm.reload_doc();
-                                    frappe.show_alert( __("allocated credits") );
-                                }
-                            });
-                            d.hide();
-                        },
-                        secondary_action_label: __("Close"),
-                        secondary_action() {
-                            return;
-                        }
-                    });
-                    d.show();
-                }
-            });
+            'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
+            'args': {
+                'sales_invoice': frm.doc.name
+            },
+            'callback': function(r)
+            {
+                cur_frm.reload_doc();
+                frappe.show_alert( __("allocated credits") );
+            }
+        });
     } else {
         frappe.msgprint( __("Please do not apply a customer credit to create a new customer credit"), __("Allocate credits") );
     }
 }
+
+// TODO: comment in new version on go-live of credit accounts:
+// function allocate_credits(frm) {
+//     if (!contains_credit_item(frm)) {
+//         // Show a dialog that shows available Credit Accounts
+//         frappe.call({
+//                 'method': "microsynth.microsynth.credits.get_available_credit_accounts",
+//                 'args': {
+//                     'company': frm.doc.company,
+//                     'currency': frm.doc.currency,
+//                     'customer': frm.doc.customer
+//                 },
+//                 callback: function(r) {
+//                     if (r.exc) return;
+//                     const available_accounts = r.message || [];
+
+//                     let html_table = `
+//                         <div style="max-height: 250px; overflow-y: auto; margin-top: 10px;">
+//                         <table class="table table-bordered table-sm">
+//                             <thead>
+//                                 <tr>
+//                                     <th style="width: 5%; text-align:center;">${__("Select")}</th>
+//                                     <th style="width: 25%;">${__("Credit Account")}</th>
+//                                     <th style="width: 35%;">${__("Account Name")}</th>
+//                                     <th style="width: 20%;">${__("Account Type")}</th>
+//                                 </tr>
+//                             </thead>
+//                             <tbody>
+//                     `;
+//                     if (available_accounts.length === 0) {
+//                         html_table += `
+//                             <tr><td colspan="4" class="text-center text-muted">${__("No active Credit Accounts found")}</td></tr>
+//                         `;
+//                     } else {
+//                         available_accounts.forEach(acc => {
+//                             html_table += `
+//                                 <tr>
+//                                     <td style="text-align:center;">
+//                                         <input type="checkbox" class="credit-account-checkbox" value="${acc.name}">
+//                                     </td>
+//                                     <td>${frappe.utils.escape_html(acc.name)}</td>
+//                                     <td>${frappe.utils.escape_html(acc.account_name || "")}</td>
+//                                     <td>${frappe.utils.escape_html(acc.account_type || "")}</td>
+//                                 </tr>
+//                             `;
+//                         });
+//                     }
+//                     html_table += `
+//                             </tbody>
+//                         </table>
+//                         </div>
+//                     `;
+//                     const d = new frappe.ui.Dialog({
+//                         title: __("Select Credit Account to deduct from"),
+//                         fields: [
+//                             {
+//                                 fieldtype: "HTML",
+//                                 fieldname: "intro_html",
+//                                 options: `
+//                                     <p>${__(
+//                                         "Select one Credit Account to deduct from. This selection overrides the Credit Accounts on the Sales Order intended to deduct from."
+//                                     )}</p>`
+//                             },
+//                             { fieldtype: "HTML", fieldname: "accounts_table", options: html_table },
+//                         ],
+//                         primary_action_label: __("Select"),
+//                         primary_action(values) {
+//                             // Collect selected Credit Accounts
+//                             const selected_accounts = [];
+//                             $(d.$wrapper)
+//                                 .find(".credit-account-checkbox:checked")
+//                                 .each(function() {
+//                                     selected_accounts.push($(this).val());
+//                                 });
+
+//                             if (values.manual_credit_account) {
+//                                 selected_accounts.push(values.manual_credit_account);
+//                             }
+
+//                             if (selected_accounts.length != 1) {
+//                                 frappe.msgprint(__("Please select exactly one Credit Account."));
+//                                 return;
+//                             }
+//                             // Enter selected Credit account (only one) into Sales Invoice.override_credit_accounts
+//                             // The field Sales Invoice.override_credit_accounts has Type "Table" and Options "Credit Account Link".
+//                             // The DocType "Credit Account Link" has a Link field credit_account with Options "Credit Account".
+//                             frm.clear_table("override_credit_accounts");
+//                             let child = frm.add_child("override_credit_accounts");
+//                             child.credit_account = selected_account;
+//                             frm.refresh_field("override_credit_accounts");
+
+//                             frappe.call({
+//                                 'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
+//                                 'args': {
+//                                     'sales_invoice': frm.doc.name
+//                                 },
+//                                 'freeze': true,
+//                                 'freeze_message': __("Processing..."),
+//                                 'callback': function(r)
+//                                 {
+//                                     cur_frm.reload_doc();
+//                                     frappe.show_alert( __("allocated credits") );
+//                                 }
+//                             });
+//                             d.hide();
+//                         },
+//                         secondary_action_label: __("Close"),
+//                         secondary_action() {
+//                             return;
+//                         }
+//                     });
+//                     d.show();
+//                 }
+//             });
+//     } else {
+//         frappe.msgprint( __("Please do not apply a customer credit to create a new customer credit"), __("Allocate credits") );
+//     }
+// }
 
 
 function set_income_accounts(frm) {
