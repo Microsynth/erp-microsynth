@@ -437,10 +437,131 @@ def remove_control_characters(input_string):
     return re.sub(r'[\x00-\x1F\x7F-\x9F]', '', input_string)
 
 
-def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=35):
+COMPANY_CITY_MAPPING = {
+    'Microsynth AG': 'Balgach',
+    'Microsynth Seqlab GmbH': 'Göttingen',
+    'Microsynth Austria GmbH': 'Wien',
+    'Microsynth France SAS': 'Lyon'
+}
+
+FLOOR_MAPPING = {
+    '10': 'Ground Floor',
+    '11': '1st Floor',
+    '12': '2nd Floor',
+    '13': '3rd Floor',
+    '14': '4th Floor'
+}
+
+
+def _get_or_create_single_location(location_name, parent_location, is_group=True):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-08_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-22_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-10-22_supplier_mapping_DEV-ERP.txt'}"
+    Helper: Get or create a single Location under the given parent.
+    Returns the Location name.
     """
+    existing = frappe.db.exists("Location", {"location_name": location_name, "parent_location": parent_location})
+    if existing:
+        # ensure correct group flag
+        if frappe.db.get_value("Location", existing, "is_group") != int(is_group):
+            frappe.db.set_value("Location", existing, "is_group", int(is_group))
+        return existing
+
+    loc = frappe.get_doc({
+        "doctype": "Location",
+        "location_name": location_name,
+        "parent_location": parent_location,
+        "is_group": 1 if is_group else 0
+    })
+    loc.insert()
+    frappe.db.commit()
+    return loc.name
+
+
+def get_or_create_location(floor, room, destination, fridge_rack, company='Microsynth AG'):
+    """
+    Returns the final Location document (creates any missing lower-level locations).
+
+    Hierarchy: All Locations → CITY → FLOOR → ROOM → DESTINATION → FRIDGE_RACK
+
+    - 'All Locations', city, floor, and room must already exist.
+    - Room lookup matches 'floor-room-*' exactly (e.g. '11-03-' for floor=11, room=03).
+    - Creates missing DESTINATION or FRIDGE_RACK if necessary.
+    """
+    city = COMPANY_CITY_MAPPING.get(company)
+    if not city:
+        frappe.throw(f"Unknown company mapping for {company}")
+
+    # City
+    city_location = frappe.db.exists("Location", {"location_name": city})
+    if not city_location:
+        frappe.throw(f"City location '{city}' not found under 'All Locations'.")
+    if not floor:
+        return frappe.get_doc("Location", city)
+
+    # Floor
+    if not floor in FLOOR_MAPPING:
+        frappe.throw(f"Got unknown floor '{floor}'.")
+    floor_name = FLOOR_MAPPING.get(str(floor), '')
+    floor_location = frappe.db.exists("Location", {"location_name": floor_name, "parent_location": city_location})
+    if not floor_location:
+        frappe.throw(f"Floor '{floor_name}' not found under city '{city}'.")
+    if not room:
+        return frappe.get_doc("Location", floor_name)
+
+    # Room — exact structured match "{floor}-{room}-..."
+    floor_str = str(floor).strip()
+    room_str = str(room).strip()
+
+    # Validate that floor and room are exactly two digits
+    if not (floor_str.isdigit() and len(floor_str) == 2):
+        frappe.throw(f"Invalid floor '{floor}': must be exactly two digits (e.g. '10', '11').")
+    if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
+        frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
+
+    pattern = f"{floor_str}-{room_str}%"
+
+    room_doc = frappe.db.sql("""
+        SELECT `name`
+        FROM `tabLocation`
+        WHERE `parent_location` = %s
+          AND `location_name` LIKE %s
+    """, (floor_location, pattern), as_dict=True)
+
+    if len(room_doc) == 0:
+        frappe.throw(f"No room matching pattern '{pattern}' found under floor '{floor_name}' in '{city}'.")
+    elif len(room_doc) > 1:
+        frappe.throw(f"Multiple rooms matching pattern '{pattern}' found under floor '{floor_name}' in '{city}'.")
+
+    room_location = room_doc[0].name
+    parent_location = room_location
+
+    # Optional deeper levels (Destination, Fridge Rack)
+    for i, level_name in enumerate([destination, fridge_rack]):
+        if not level_name:
+            continue
+        level_name = str(level_name).strip()
+        is_last = (i == 1 or not fridge_rack)  # last if fridge_rack is None or this is fridge_rack
+        # ensure parent is a group before adding children
+        parent_doc = frappe.get_doc("Location", parent_location)
+        if not parent_doc.is_group:
+            parent_doc.is_group = 1
+            parent_doc.save()
+        # create or fetch the child
+        parent_location = _get_or_create_single_location(
+            level_name,
+            parent_location,
+            is_group=not is_last
+        )
+    # Return final location
+    final_doc = frappe.get_doc("Location", parent_location)
+    return final_doc
+
+
+def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
+    """
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-13_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-14_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-14_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
+    """
+    # TODO: Refactor code
+    known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
     supplier_mapping = {}
     with open(supplier_mapping_file) as sm_file:
         print(f"INFO: Parsing Supplier Mapping from '{supplier_mapping_file}' ...")
@@ -468,21 +589,21 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             # parse values
             supplier_index = line[0].strip()  # remove leading and trailing whitespaces
             #auftraggeber = line[1].strip()
-            #lk = line[2].strip()
+            #lk = line[2].strip()  # Lagerkontrolle -> all Items get "Maintain Stock"
             internal_code = line[3].strip()  # if given, Item should have "Maintain Stock"
             supplier_item_id = line[4].strip()
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
-            #unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
+            unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
             #supplier_quote = line[8].strip()
             #list_price = line[9].strip()
             purchase_price = line[10].strip()
             #customer_discount = line[11].strip()
-            #content_quantity = line[12].strip()
+            #content_quantity = line[12].strip()  # "Inhaltsmenge_Angabe" -> split into pack_size and pack_uom
             #item_group = line[13].strip()
             #group = line[14].strip()
             account = line[15].strip()
-            #storage_location = line[16].strip()  # warehouse
+            #storage_location = line[16].strip()  # "Lagerort" -> split into floor, room, destination, fridge_rack
             #annual_consumption_budget = line[17].strip()
             #order_quantity_6mt = line[18].strip()
             safety_stock = line[19].strip()  # "Schwellenwert"
@@ -495,7 +616,18 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             #quantity_supplier = line[26].strip()
             material_code = line[27]  # Kurzname
             item_id = line[28].strip()  # Datensatznummer
+            # line[29]..line[32]: order quantities 2021..2024
+            # last_order_date = line[33].strip()
             to_import = line[34].strip().lower()  # Export ERP (Ja/nein)
+            purchase_uom = line[35].strip()
+            stock_uom = line[36].strip()
+            pack_uom = line[37].strip()
+            pack_size = line[38].strip()
+            floor = line[39].strip()
+            room = line[40].strip()
+            destination = line[41].strip()
+            fridge_rack = line[42].strip()
+
             if to_import not in ['ja', 'nein']:
                 print(f"ERROR: Item with Index {item_id} has invalid value '{to_import}' in column 'Export ERP'. Going to continue with the next supplier item.")
                 continue
@@ -508,7 +640,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
                 continue
             if ordered_2021_2025 == 0 and not line[33].strip() and not internal_code:
-                # do not import Items that were not ordered from 2021 to 2024
+                # do not import Items that were not ordered from 2021 to 2024 and have no "EAN"
                 print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024 and has no 'EAN'. Going to continue with the next supplier item.")
                 continue
 
@@ -532,6 +664,34 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 print(f"ERROR: No account number given for Item with Index {item_id} ('{item_name}'). Going to continue with the next supplier item.")
                 continue
 
+            if purchase_uom in ['ul', 'ug', 'umol']:
+                purchase_uom = purchase_uom.replace('u', 'µ')  # replace micro symbol
+            if stock_uom in ['ul', 'ug', 'umol']:
+                stock_uom = stock_uom.replace('u', 'µ')  # replace micro symbol
+            if pack_uom in ['ul', 'ug', 'umol']:
+                pack_uom = pack_uom.replace('u', 'µ')  # replace micro symbol
+            if purchase_uom and purchase_uom not in known_uoms:
+                print(f"ERROR: Item with Index {item_id} has unknown Purchase UOM '{purchase_uom}'. Going to continue with the next supplier item.")
+                continue
+            if stock_uom and stock_uom not in known_uoms:
+                print(f"ERROR: Item with Index {item_id} has unknown Stock UOM '{stock_uom}'. Going to continue with the next supplier item.")
+                continue
+            if pack_uom and pack_uom not in known_uoms:
+                print(f"ERROR: Item with Index {item_id} has unknown Pack UOM '{pack_uom}'. Going to continue with the next supplier item.")
+                continue
+            if purchase_uom and stock_uom and purchase_uom != stock_uom:
+                if not unit_size:
+                    print(f"ERROR: Item with Index {item_id} has different Purchase UOM '{purchase_uom}' and Stock UOM '{stock_uom}', but no Unit Size given. Going to continue with the next supplier item.")
+                    continue
+                try:
+                    unit_size = float(unit_size)
+                except Exception as err:
+                    print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to convert {unit_size=} to a float ({err}). Going to continue with the next supplier item.")
+                    continue
+                if unit_size <= 0:
+                    print(f"ERROR: Item with Index {item_id} ('{item_name}'): Invalid {unit_size=} <= 0. Going to continue with the next supplier item.")
+                    continue
+
             if currency == "£":
                 currency = "GBP"
             if purchase_price:
@@ -540,6 +700,17 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 except Exception as err:
                     print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to convert {purchase_price=} to a float ({err}). Going to continue with the next supplier item.")
                     continue
+            if pack_size:
+                try:
+                    pack_size = float(pack_size)
+                except Exception as err:
+                    print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to convert {pack_size=} to a float ({err}). Going to continue with the next supplier item.")
+                    continue
+            try:
+                location = get_or_create_location(floor, room, destination, fridge_rack, company=company)
+            except Exception as err:
+                print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to get or create Location for {floor=}, {room=}, {destination=}, {fridge_rack=} ({err}). Going to continue with the next supplier item.")
+                continue
 
             if len(item_name) > 140:
                 print(f"WARNING: Item name '{item_name}' has {len(item_name)} characters. Going to shorten it to 140 characters.")
@@ -558,20 +729,87 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 except Exception as err:
                     print(f"ERROR: Item {item_id}: Unable to convert {safety_stock=} to a float.")
 
-            # TODO: Check UOMs
-
             if internal_code:
                 item_code = f"P00{int(internal_code):0{4}d}"
             else:
                 item_code = f"P01{int(item_id):0{4}d}"
 
             if frappe.db.exists("Item", item_code):
-                existing_item_name = frappe.get_value("Item", item_code, 'item_name')
-                if internal_code:
-                    print(f"ERROR: Item with internal code {internal_code} and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import of Item with Index {item_id} ('{item_name}').")
-                    continue
+                existing_item_doc = frappe.get_doc("Item", item_code)
+                existing_item_name = existing_item_doc.item_name
+                if not update_existing_items:
+                    if internal_code:
+                        print(f"ERROR: Item with internal code {internal_code} and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import of Item with Index {item_id} ('{item_name}').")
+                        continue
+                    else:
+                        print(f"ERROR: Item with 'Datensatznummer' {item_id} ('{item_name}') and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import.")
+                        continue
                 else:
-                    print(f"ERROR: Item with 'Datensatznummer' {item_id} ('{item_name}') and Supplier {supplier_index} already exists as Item {item_code} ('{existing_item_name}'). Going to skip import.")
+                    # Update existing item fields as necessary
+                    if existing_item_doc.item_name != item_name:
+                        existing_item_doc.item_name = item_name[:140]
+                    if stock_uom and existing_item_doc.stock_uom != stock_uom:
+                        existing_item_doc.stock_uom = stock_uom
+                    if pack_size and existing_item_doc.pack_size != pack_size:
+                        existing_item_doc.pack_size = pack_size
+                    if pack_uom and existing_item_doc.pack_uom != pack_uom:
+                        existing_item_doc.pack_uom = pack_uom
+                    if purchase_uom and existing_item_doc.purchase_uom != purchase_uom:
+                        existing_item_doc.purchase_uom = purchase_uom
+                        if purchase_uom and stock_uom and purchase_uom != stock_uom and unit_size:
+                            # add UOM conversion
+                            existing_item_doc.append("uoms", {
+                                'uom': purchase_uom,
+                                'conversion_factor': unit_size
+                            })
+                    if existing_item_doc.description != item_name:
+                        existing_item_doc.description = item_name
+                    if existing_item_doc.shelf_life_in_days != shelf_life_in_days:
+                        existing_item_doc.shelf_life_in_days = shelf_life_in_days
+                    if safety_stock and existing_item_doc.safety_stock != safety_stock:
+                        existing_item_doc.safety_stock = safety_stock
+                    if material_code and existing_item_doc.material_code != material_code:
+                        existing_item_doc.material_code = material_code
+                    if location and location.name:
+                        # Check if location.name is already in Table MultiSelect field existing_item_doc.storage_locations with Options "Location Link".
+                        # If not, add it. DocType "Location Link" has a Link field "location".
+                        existing_locations = [row.location for row in existing_item_doc.get("storage_locations") or [] ]
+                        # Add only if not present
+                        if location.name not in existing_locations:
+                            existing_item_doc.append("storage_locations", {
+                                "location": location.name
+                            })
+                    # Check if there is already a matching Item Price. If not, create one
+                    if purchase_price and currency and currency in SUPPORTED_BUYING_CURRENCIES:
+                        existing_item_prices = frappe.get_all("Item Price", filters={
+                                                        'item_code': item_code,
+                                                        'price_list': f"Standard Buying {currency}",
+                                                        'currency': currency,
+                                                        'buying': 1
+                                                    }, fields=['name'])
+                        if len(existing_item_prices) == 0:
+                            price_list_name = f"Standard Buying {currency}"
+                            item_price = frappe.get_doc({
+                                'doctype': "Item Price",
+                                'item_code': item_code,
+                                'price_list': price_list_name,
+                                'price_list_rate': purchase_price,
+                                'currency': currency,
+                                'buying': 1
+                            })
+                            try:
+                                item_price.insert()
+                            except Exception as err:
+                                print(f"ERROR: Unable to insert Price List Rate for Item with Index {item_id} ('{item_name}') in Price List '{price_list_name}' ({err}).")
+                    try:
+                        existing_item_doc.save()
+                    except Exception as err:
+                        print(f"ERROR: Unable to update existing Item {item_code} for Item with Index {item_id} ('{item_name}') ({err}). Going to continue with the next supplier item.")
+                        continue
+                    imported_counter += 1
+                    print(f"INFO: Successfully updated existing Item '{existing_item_doc.item_name}' ({existing_item_doc.name}).")
+                    if imported_counter % 1000 == 0:
+                        frappe.db.commit()
                     continue
 
             item = frappe.get_doc({
@@ -579,11 +817,11 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'item_code': item_code,
                 'item_name': item_name[:140],
                 'item_group': 'Purchasing',
-                'stock_uom': 'Pcs',  # TODO: derive from input data
-                # 'pack_size': 1,
-                # 'pack_uom': 'Pcs',
-                # 'purchase_uom': 'Pcs',
-                'is_stock_item': 1,  # if internal_code else 0,
+                'stock_uom': stock_uom or 'Pcs',
+                'pack_size': pack_size or 1,
+                'pack_uom': pack_uom or 'Pcs',
+                'purchase_uom': purchase_uom or stock_uom or 'Pcs',
+                'is_stock_item': 1,
                 'description': item_name,
                 'shelf_life_in_days': shelf_life_in_days,
                 'safety_stock': safety_stock or 0.0,
@@ -591,6 +829,11 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'is_sales_item': 0,
                 'material_code': material_code or None
             })
+            if location and location.name:
+                # Add Location location.name to Table MultiSelect storage_locations
+                item.append("storage_locations", {
+                    "location": location.name
+                })
             if supplier_index not in supplier_mapping:
                 # Search for an existing Supplier with the supplier_index as external creditor number?
                 existing_suppliers = frappe.get_all("Supplier", filters={'ext_creditor_id': supplier_index}, fields=['name'])
@@ -614,6 +857,12 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         'expense_account': account_name,
                         'default_supplier': supplier_mapping[supplier_index]
                     })
+            if purchase_uom and stock_uom and purchase_uom != stock_uom and unit_size:
+                # add UOM conversion
+                item.append("uoms", {
+                    'uom': purchase_uom,
+                    'conversion_factor': unit_size
+                })
             try:
                 item.insert()
             except Exception as err:
@@ -636,7 +885,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                     try:
                         item_price.insert()
                     except Exception as err:
-                        print(f"ERROR: Unable to insert Price List Rate for Item with Index {item_id} ('{item_name}') in Price List '{price_list_name}' ({err}). Going to continue with the next supplier item.")
+                        print(f"ERROR: Unable to insert Price List Rate for Item with Index {item_id} ('{item_name}') in Price List '{price_list_name}' ({err}).")
                 else:
                     print(f"ERROR: Item with Index {item_id} ('{item_name}'): Currency '{currency}' is not supported. Going to skip the creation of an Item Price.")
 
@@ -651,7 +900,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-10-22_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-14_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
