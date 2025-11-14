@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Job Offer",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2025-11-14 12:12:34.510578",
+   "default_value": null,
+   "doc_type": "Job Offer",
+   "docstatus": 0,
+   "doctype_or_field": "DocType",
+   "field_name": null,
+   "idx": 0,
+   "modified": "2025-11-14 12:12:34.510578",
+   "modified_by": "jens.petermann@microsynth.ch",
+   "name": "Job Offer-track_changes",
+   "owner": "jens.petermann@microsynth.ch",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "track_changes",
+   "property_type": "Check",
+   "value": "1"
+  }
+ ],
+ "sync_on_migrate": 1
+}
