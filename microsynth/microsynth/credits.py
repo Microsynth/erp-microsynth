@@ -177,6 +177,21 @@ def book_credit(sales_invoice, event=None):
     credit_item = frappe.get_doc("Item",
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
+    for item in sales_invoice.items:
+        if item.item_code == credit_item:
+            # check that the sales invoice has a valid credit_account set
+            if not sales_invoice.credit_account:
+                frappe.throw("Please set a valid Credit Account.")
+            else:
+                credit_account_doc = frappe.get_doc("Credit Account", sales_invoice.credit_account)
+                if credit_account_doc.company != sales_invoice.company:
+                    frappe.throw(f"Sales Invoice has Company '{sales_invoice.company}', but the selected Credit Account {sales_invoice.credit_account} has Company '{credit_account_doc.company}'.")
+                if credit_account_doc.currency != sales_invoice.currency:
+                    frappe.throw(f"Sales Invoice has currency '{sales_invoice.currency}', but the selected Credit Account {sales_invoice.credit_account} has currency '{credit_account_doc.currency}'.")
+                # if credit_account_doc.customer != sales_invoice.customer:
+                #     frappe.throw(f"Sales Invoice has Customer '{sales_invoice.customer}', but the selected Credit Account {sales_invoice.credit_account} has Customer '{credit_account_doc.customer}'.")
+            break
+
     if sales_invoice.shipping_address_name:
         country = frappe.get_value("Address", sales_invoice.shipping_address_name, "country")
     else:

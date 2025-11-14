@@ -3901,6 +3901,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             frappe.throw(f"The given Customer '{customer}' does not match the customer '{credit_account_doc.customer}' of Credit Account '{account_id}'.")
         if credit_account_doc.currency != currency:
             frappe.throw(f"The given Currency '{currency}' does not match the currency '{credit_account_doc.currency}' of Credit Account '{account_id}'.")
+        if credit_account_doc.has_transactions and credit_account_doc.account_type in ['Enforced Credit', 'Legacy']:
+            frappe.throw(f"Not allowed to create a deposit invoice for a Credit Account of type 'Legacy' or 'Enforced Credit' that already has transactions.")
 
         # Fetch credit item from Microsynth Settings
         credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
