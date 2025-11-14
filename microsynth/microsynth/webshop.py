@@ -3744,7 +3744,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
 
         credit_account = frappe.get_doc({
             'doctype': 'Credit Account',
-            'contact': webshop_account,
+            'contact_person': webshop_account,
             'customer': customer_id,
             'account_name': name,
             'description': description,
