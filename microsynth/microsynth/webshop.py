@@ -930,6 +930,18 @@ def request_quote(content, client="webshop"):
     # insert shipping item
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
     express_shipping = get_express_shipping_item(content['customer'], shipping_address.country)
+    if not express_shipping:
+        frappe.log_error(f"Found no express shipping item for Customer {content['customer']} and Country {shipping_address.country} in currency {customer_doc.default_currency}.", "webshop.request_quote")
+        shipping_items = get_contact_shipping_items(content['shipping_contact'] or content['contact'])
+        for item in shipping_items:
+            if item.get('preferred_express'):
+                express_shipping = item
+                break
+    #     if shipping_items and not express_shipping:
+    #         express_shipping = shipping_items[0]
+    #     elif not express_shipping:
+    #         frappe.throw("Unable to fetch an express_shipping item.")
+    # if express_shipping:
     qtn_doc.append('items', {
         'item_code': express_shipping.item,
         'item_name': express_shipping.item_name,
