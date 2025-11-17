@@ -654,30 +654,72 @@ def report_credit_balance_diff():
 
 
 @frappe.whitelist()
-def get_available_credit_accounts(company, currency, customer):
+def get_available_credit_accounts(company, currency, customer, product_types=None):
     """
     Returns active, non-expired Credit Accounts for the given company, currency, and customer.
+    If product_types is provided, it filters by them.
+    If a Credit Account has no Product Types, it is returned even when product_types is given.
+
+    bench execute microsynth.microsynth.credits.get_available_credit_accounts --kwargs "{'company': 'Microsynth Austria GmbH', 'currency': 'EUR', 'customer': '840931', 'product_types': ['Oligos', 'Project']}"
     """
     today = nowdate()
-    return frappe.db.sql("""
+    product_types = product_types or []
+
+    conditions = [
+        "`tabCredit Account`.`company` = %(company)s",
+        "`tabCredit Account`.`currency` = %(currency)s",
+        "`tabCredit Account`.`customer` = %(customer)s",
+        "`tabCredit Account`.`status` = 'Active'",
+        "(`tabCredit Account`.`expiry_date` IS NULL OR `tabCredit Account`.`expiry_date` = '' OR `tabCredit Account`.`expiry_date` >= %(today)s)"
+    ]
+    # Apply special filter only if product_types provided
+    if product_types:
+        # Match product types OR include accounts with no product types at all
+        conditions.append(
+            "(`tabProduct Type Link`.`product_type` IN %(product_types)s "
+            "OR `tabProduct Type Link`.`product_type` IS NULL)"
+        )
+    where_clause = " AND ".join(conditions)
+
+    query = f"""
         SELECT
-            `name`,
-            `account_name`,
-            `account_type`,
-            `expiry_date`
+            `tabCredit Account`.`name`,
+            `tabCredit Account`.`account_name`,
+            `tabCredit Account`.`account_type`,
+            `tabCredit Account`.`company`,
+            `tabCredit Account`.`currency`,
+            `tabCredit Account`.`customer`,
+            `tabCredit Account`.`expiry_date`,
+            GROUP_CONCAT(`tabProduct Type Link`.`product_type`
+                         ORDER BY `tabProduct Type Link`.`product_type`
+                         SEPARATOR ', ') AS `product_types`
         FROM `tabCredit Account`
-        WHERE
-            `company` = %(company)s
-            AND `currency` = %(currency)s
-            AND `customer` = %(customer)s
-            AND `status` = 'Active'
-            AND (
-                `expiry_date` IS NULL
-                OR `expiry_date` = ''
-                OR `expiry_date` >= %(today)s
-            )
-        ORDER BY `account_name` ASC
-    """, {"company": company, "currency": currency, "customer": customer, "today": today}, as_dict=True)
+        LEFT JOIN `tabProduct Type Link`
+            ON `tabProduct Type Link`.`parent` = `tabCredit Account`.`name`
+            AND `tabProduct Type Link`.`parenttype` = 'Credit Account'
+            AND `tabProduct Type Link`.`parentfield` = 'product_types'
+        WHERE {where_clause}
+        GROUP BY
+            `tabCredit Account`.`name`,
+            `tabCredit Account`.`account_name`,
+            `tabCredit Account`.`account_type`,
+            `tabCredit Account`.`expiry_date`
+        ORDER BY
+            `tabCredit Account`.`account_type`,
+            `tabCredit Account`.`expiry_date`,
+            `tabCredit Account`.`creation`
+    """
+    return frappe.db.sql(
+        query,
+        {
+            "company": company,
+            "currency": currency,
+            "customer": customer,
+            "today": today,
+            "product_types": tuple(product_types) if product_types else None,
+        },
+        as_dict=True,
+    )
 
 
 @frappe.whitelist()
