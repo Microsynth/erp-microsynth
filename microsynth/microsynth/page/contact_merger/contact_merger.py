@@ -6,6 +6,7 @@
 #
 
 import json
+import traceback
 import frappe
 from frappe.model.rename_doc import rename_doc
 from microsynth.microsynth.marketing import update_marketing_classification
@@ -174,7 +175,7 @@ def merge_contacts(contact_1, contact_2, values):
         frappe.db.commit()
         update_marketing_classification(new_contact_name)
     except Exception as err:
-        frappe.log_error(f"Error when merging contact {contact_2} into {contact_1}\n{err}", "contact_merger.merge_contacts")
+        frappe.log_error(f"Error when merging contact {contact_2} into {contact_1}\n{err}\n{traceback.format_exc()}", "contact_merger.merge_contacts")
         return {'error': err, 'contact': None}
     else:
         return {'error': None, 'contact': new_contact_name}

@@ -456,7 +456,7 @@ function allocate_credits(frm) {
     }
 }
 
-// TODO: comment in new version on go-live of credit accounts:
+// TODO: comment in this new version on go-live of credit accounts, comment out the function above:
 // function allocate_credits(frm) {
 //     if (!contains_credit_item(frm)) {
 //         // Show a dialog that shows available Credit Accounts
