@@ -6522,7 +6522,11 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 log("DRY-RUN", f"Would link Sales Invoice {si_name} to Credit Account {credit_account_doc.name}.")
             else:
                 si_doc.credit_account = credit_account_doc.name
-                si_doc.save()
+                try:
+                    si_doc.save()
+                except Exception as err:
+                    log("WARNING", f"Error when saving {si_doc.name}. Force update Sales Invoice.credit_account. Error message: {err}")
+                    frappe.db.set_value("Sales Invoice", si_doc.name, "credit_account", credit_account_doc.name, update_modified = False)
                 if verbose_level > 1:
                     log("INFO", f"Linked {si_name} to {credit_account_doc.name}.")
     elif not error:
@@ -6542,6 +6546,7 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
+    #TODO: fetch customers from Customer Credits report. Iterate through companies.
     credit_account_customers = frappe.get_all("Customer",
         filters={"customer_credits": "Credit Account"},
         fields=["name", "customer_name"]
