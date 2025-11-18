@@ -38,7 +38,7 @@ def validate_credit_account_customer(credit_account, customer):
     return customer == credit_account_customer
 
 
-def get_data(filters, short=False):
+def get_data(filters, short=False, add_print_format=True):
     """
     bench execute microsynth.microsynth.report.customer_credits.customer_credits.get_data --kwargs "{'filters': {'company': 'Microsynth AG', 'exclude_unpaid_deposits': False, 'credit_accounts': ['CA-000003'], 'customer': '8003'}}"
     """
@@ -239,7 +239,7 @@ def get_data(filters, short=False):
                     output.append(d)
             data = output
 
-        if len(data) > 0:  # prevent crash if there are no entries
+        if len(data) > 0 and add_print_format:  # prevent crash if there are no entries
             # add data required in the print format
             print_format = {}
             letter_head = frappe.get_doc("Letter Head", filters.get('company'))

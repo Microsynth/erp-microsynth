@@ -6404,20 +6404,27 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 AND `tabCredit Account`.`account_type` = 'Legacy'
         """, (credit_type, customer_id, company), as_dict=True)
     else:
-        #TODO if there is already a legacy Credit Account of type Project, we will not create a new Standard Credit Account. Fix it ;-)
-        credit_accounts = frappe.get_all(
-            "Credit Account",
-            filters={
-                "customer": customer_id,
-                "company": company,
-                "account_type": "Legacy"
-            },
-            fields=["name"]
-        )
+        # Find Legacy Credit Accounts for this customer/company that do NOT have Product Type "Project"
+        credit_accounts = frappe.db.sql("""
+            SELECT DISTINCT `tabCredit Account`.`name`
+            FROM `tabCredit Account`
+            LEFT JOIN `tabProduct Type Link`
+                ON `tabProduct Type Link`.`parent` = `tabCredit Account`.`name`
+                AND `tabProduct Type Link`.`parenttype` = 'Credit Account'
+                AND `tabProduct Type Link`.`parentfield` = 'product_types'
+            WHERE
+                `tabCredit Account`.`customer` = %s
+                AND `tabCredit Account`.`company` = %s
+                AND `tabCredit Account`.`account_type` = 'Legacy'
+                AND (
+                    `tabProduct Type Link`.`product_type` IS NULL
+                    OR `tabProduct Type Link`.`product_type` != 'Project'
+                )
+        """, (customer_id, company), as_dict=True)
 
     if credit_accounts:
         if verbose_level > 0:
-            log("ERROR", "Legacy Credit Account already exists. Skipping creation.")
+            log("ERROR", f"{company=}; {customer_id=}; {credit_type=}: Legacy Credit Account already exists. Skipping creation.")
         return
 
     error = False
@@ -6501,7 +6508,6 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             log("INFO", f"Created Credit Account {credit_account_doc.name}.")
         else:
             log("DRY-RUN", f"Would insert Credit Account for Sales Invoice {si_doc.name}.")
-
         break
 
     # Link Credit Account to each Sales Invoice
@@ -6541,8 +6547,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
 
 def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     """
-    Create Legacy Credit Accounts for all Customers with customer_credits = "Credit Account".
-    Uses data from microsynth.microsynth.report.customer_credits.customer_credits.get_data to find outstanding credits.
+    Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
     The parameter 'verbose_level' controls the verbosity of the output from 0 to 2 (1 recommended).
 
@@ -6550,40 +6555,48 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
-    #TODO: fetch customers from Customer Credits report. Iterate through companies.
-    credit_account_customers = frappe.get_all("Customer",
-        filters={"customer_credits": "Credit Account"},
-        fields=["name", "customer_name"]
-    )
-    print(f"INFO;Found {len(credit_account_customers)} customers with customer_credits='Credit Account'.")
+    processed_customers = 0
     print("\nLevel;Customer;Company;Credit Type;Message")
-    for i, customer in enumerate(credit_account_customers):
-        customer_id = customer["name"]
-        for c in frappe.get_all("Company", fields=["name"]):
-            company = c["name"]
 
+    for c in frappe.get_all("Company", fields=["name"]):
+        company = c["name"]
+        standard_credit_customers = get_customer_credits({
+            'company': company,
+            'credit_type': 'Standard'
+        })
+        standard_customers_to_process = [c['customer'] for c in standard_credit_customers if c['outstanding'] > 0.01]
+        for customer_id in standard_customers_to_process:
             standard_credits = get_customer_credits({
                 'customer': customer_id,
                 'company': company,
                 'credit_type': 'Standard'
-            })
-            if standard_credits:
-                create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
+            }, add_print_format=False)
+            create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
+            processed_customers += 1
+            if processed_customers % 10 == 0:
+                frappe.db.commit()
+            if limit and processed_customers > limit:
+                print(f"Limit of {limit} Customers reached. Stopping.")
+                return
 
+        project_credit_customers = get_customer_credits({
+            'company': company,
+            'credit_type': 'Project'
+        })
+        project_customers_to_process = [c['customer'] for c in project_credit_customers if c['outstanding'] > 0.01]
+        for customer_id in project_customers_to_process:
             project_credits = get_customer_credits({
                 'customer': customer_id,
                 'company': company,
                 'credit_type': 'Project'
-            })
-            if project_credits:
-                create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
-
-        if i % 10 == 0:
-            frappe.db.commit()
-
-        if limit and i > limit:
-            print(f"Limit of {limit} Customers reached. Stopping.")
-            return
+            }, add_print_format=False)
+            create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
+            processed_customers += 1
+            if processed_customers % 10 == 0:
+                frappe.db.commit()
+            if limit and processed_customers > limit:
+                print(f"Limit of {limit} Customers reached. Stopping.")
+                return
 
 
 def link_legacy_credit_accounts_to_sales_orders(verbose=True):
