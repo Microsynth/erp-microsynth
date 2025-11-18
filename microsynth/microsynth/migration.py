@@ -6467,8 +6467,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 continue
 
             if not contact_doc.has_webshop_account:
-                log("INFO", f"Contact '{si_doc.contact_person}' has no webshop account, skipping Sales Invoice {si_doc.name}.")
-                continue
+                log("INFO", f"Contact person '{si_doc.contact_person}' on Sales Invoice {si_doc.name} has no webshop account.")
 
         if verbose_level > 0:
             log("INFO", f"{'[DRY-RUN] ' if dry_run else ''}Creating Legacy Credit Account based on deposit invoice {si_doc.name}.")
@@ -6527,7 +6526,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 if verbose_level > 1:
                     log("INFO", f"Linked {si_name} to {credit_account_doc.name}.")
     elif not error:
-        log("ERROR", "No valid deposit invoice found with a Contact having a Webshop Account.")
+        log("ERROR", "No valid deposit invoice found.")
     else:
         pass  # errors already printed above
 
