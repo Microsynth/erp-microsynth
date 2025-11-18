@@ -345,7 +345,7 @@ def download_pdf(company, customer, credit_account=None):
             )
         pdf = get_pdf_data(doctype='Credit Account', name=credit_account, print_format='Credit Account')
         filename = f"Credit_Account_{credit_account_doc.name}.pdf"
-
+    # TODO: Unify print formats regarding style
     # --- CASE 2: Overview for entire Customer ---
     else:
         data = get_data(filters)
@@ -354,7 +354,10 @@ def download_pdf(company, customer, credit_account=None):
             {'data': data, 'filters': filters}
         )
         filename = f"Customer_Credits_{customer}.pdf"
-        pdf = get_pdf(content)
+        options = {
+            'disable-smart-shrinking': ''
+        }
+        pdf = get_pdf(content, options)
 
     # Generate and send PDF response
     frappe.local.response.filename = filename
