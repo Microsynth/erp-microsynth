@@ -3952,7 +3952,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "remarks": f"Webshop deposit for Credit Account {account_id}"
         })
         invoice.insert(ignore_permissions=ignore_permissions)
-        invoice.submit()  # TODO: ignore_permissions is not applicable here
+        invoice.submit()
         # TODO: Transmit the Sales Invoice?
         # Set has_transaction on the Credit Account
         account_doc = frappe.get_doc("Credit Account", account_id)
