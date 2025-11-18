@@ -6492,6 +6492,8 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
         else:
             credit_account_doc.append("product_types", {"product_type": "Oligos"})
             credit_account_doc.append("product_types", {"product_type": "Sequencing"})
+            credit_account_doc.append("product_types", {"product_type": "Labels"})
+            credit_account_doc.append("product_types", {"product_type": "FLA"})
 
         if not dry_run:
             credit_account_doc.insert(ignore_permissions=True)
@@ -6573,6 +6575,10 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
             })
             if project_credits:
                 create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
+
+        if i % 10 == 0:
+            frappe.db.commit()
+
         if limit and i > limit:
             print(f"Limit of {limit} Customers reached. Stopping.")
             return
