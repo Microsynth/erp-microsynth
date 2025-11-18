@@ -40,6 +40,8 @@ def validate_credit_account_customer(credit_account, customer):
 
 def get_data(filters, short=False):
     """
+    Get data for Customer Credits Report
+
     bench execute microsynth.microsynth.report.customer_credits.customer_credits.get_data --kwargs "{'filters': {'company': 'Microsynth AG', 'exclude_unpaid_deposits': False, 'credit_accounts': ['CA-000003'], 'customer': '8003'}}"
     """
     if not 'company' in filters:

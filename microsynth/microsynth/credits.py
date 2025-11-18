@@ -12,14 +12,18 @@ from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
 
+from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
 def get_available_credits(customer, company, credit_type):
-    from microsynth.microsynth.report.customer_credits.customer_credits import \
-        get_data
-    customer_credits = get_data({'customer': customer, 'company': company, 'credit_type': credit_type})
+    """
+    Wrapper around get_customer_credits / customer_credits.get_data to return only available credits for a customer, company and credit_type. Excludes unpaid deposits.
+    Returns the complete entry line of the customer credit report.
+    """
+    customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_type': credit_type, 'exclude_unpaid_deposits': True})
     return customer_credits
 
 
+## TODO: replace this function with a has_credit_account function that checks if there is at least one credit account for the customer
 @frappe.whitelist()
 def has_credits(customer, credit_type=None):
     """
@@ -34,7 +38,7 @@ def has_credits(customer, credit_type=None):
             return True
     return False
 
-
+#TODO: drop this function once the print format does not need total credit anymore
 def get_total_credit(customer, company, credit_type):
     """
     Return the total credit amount available to a customer for the specified company and credit_type. Returns None if there is no credit account.
@@ -57,13 +61,11 @@ def get_total_credit(customer, company, credit_type):
 
 def get_applicable_customer_credits(customer, company, credit_accounts):
     """
-    Return the customer credits for the specified credit accounts.
+    Return the customer credits for the specified credit accounts. Excludes unpaid deposits.
     Run
     bench execute microsynth.microsynth.credits.get_multi_credits --kwargs "{ 'customer': '36660316', 'company': 'Microsynth AG', 'credit_accounts': [ 'CA-000003', 'CA-000002', 'CA-000001' ] }"
     """
-    # TODO: set the filter exclude_unpaid_deposits=True
-    # TODO: fix this
-    raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts})
+    raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts, 'exclude_unpaid_deposits': True})
 
     enforced_credits = []
     standard_credits = []
@@ -76,29 +78,6 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
                 standard_credits.append(credit)
 
     return enforced_credits + standard_credits
-
-
-# def get_total_credit_without_project(customer, company):
-#     """
-#     Return the total credit amount available to a customer for the specified company excluding credits with product type project.
-#     Returns None if there is no credit account.
-
-#     Run
-#     bench execute microsynth.microsynth.credits.get_total_credit_without_project --kwargs "{ 'customer': '1194', 'company': 'Microsynth AG' }"
-#     """
-#     credits = get_available_credits(customer, company, None)
-
-#     if len(credits) == 0:
-#         return None
-
-#     total = 0
-#     for credit in credits:
-#         if credit['credit_type'] == "Project":
-#             continue
-#         if not 'outstanding' in credit:
-#             continue
-#         total = total + credit['outstanding']
-#     return total
 
 
 def get_credit_accounts(sales_order_id):
@@ -194,8 +173,10 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.discount_amount = initial_discount + allocated_amount
             sales_invoice_doc.total_customer_credit = allocated_amount
 
-        sales_invoice_doc.remaining_customer_credit = total_customer_credit - allocated_amount
-        # TODO: change Print Format to show remaining customer credits per applied credit account
+        if len(credit_account_ids) == 1:
+            sales_invoice_doc.remaining_customer_credit = total_customer_credit - allocated_amount
+        # TODO: change Print Format to handle null values of remaining_customer_credit
+        # TODO: change Print Format to not show remaining customer credits anymore, because if multiple credit accounts are used, this value is not correct.
     return sales_invoice_doc
 
 
@@ -581,7 +562,6 @@ def get_total_credit_difference(company, currency, account, to_date):
 
     bench execute microsynth.microsynth.credits.get_total_credit_difference --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'to_date': '2024-09-23'}"
     """
-    from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
     def get_closing(company, account, to_date):
         from erpnext.accounts.report.general_ledger.general_ledger import get_gl_entries, initialize_gle_map, get_accountwise_gle
