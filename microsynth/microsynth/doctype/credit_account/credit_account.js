@@ -4,41 +4,28 @@
 frappe.ui.form.on('Credit Account', {
     refresh: function(frm) {
         // Add Overview button to get to Customer Credits report
-        frm.add_custom_button(__('Overview'), function() {
+        frm.add_custom_button(__('Customer Credits'), function() {
             frappe.set_route('query-report', 'Customer Credits', {
                 customer: frm.doc.customer,
                 company: frm.doc.company,
                 credit_account: frm.doc.name
             });
-        });
-        // Make fields read-only if there are transactions
+        }, __("View"));
+
         if (!frm.doc.__islocal && frm.doc.has_transactions) {
+            // Make fields read-only if there are transactions
             cur_frm.set_df_property('customer', 'read_only', true);
             cur_frm.set_df_property('company', 'read_only', true);
             cur_frm.set_df_property('currency', 'read_only', true);
             cur_frm.set_df_property('account_type', 'read_only', true);
 
-            // TODO: Replace this workaround once a better solution is found
             frm.add_custom_button(__('Sales Orders'), function() {
-                frappe.call({
-                    method: "frappe.client.get_list",
-                    args: {
-                        doctype: "Sales Order",
-                        filters: [
-                            ["Credit Account Link", "credit_account", "=", frm.doc.name]
-                        ],
-                        fields: ["name"]
-                    },
-                    callback: function(r) {
-                        if (r.message && r.message.length) {
-                            const names = r.message.map(d => d.name);
-                            frappe.set_route("List", "Sales Order", { "name": ["in", names] });
-                        } else {
-                            frappe.msgprint(__("No Sales Orders linked to this Credit Account."));
-                        }
-                    }
-                });
-            });
+                frappe.set_route("List", "Sales Order", {"credit_account": frm.doc.name});
+            }, __("View"));
+
+            frm.add_custom_button(__('Sales Invoices'), function() {
+                frappe.set_route("List", "Sales Invoice", {"credit_account": frm.doc.name});
+            }, __("View"));
         }
         // Show button to create deposit invoice only if:
         // - status == "Active"
@@ -47,9 +34,9 @@ frappe.ui.form.on('Credit Account', {
             frm.doc.status === "Active" &&
             (!frm.doc.expiry_date || frappe.datetime.get_diff(frm.doc.expiry_date, frappe.datetime.nowdate()) >= 0)
         ) {
-            frm.add_custom_button(__("Create Deposit Invoice"), function() {
+            frm.add_custom_button(__("Deposit Invoice"), function() {
                 create_deposit_invoice_dialog(frm);
-            });
+            }, __("Create"));
         }
     }
 });
