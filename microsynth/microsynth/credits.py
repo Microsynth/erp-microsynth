@@ -62,6 +62,7 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     bench execute microsynth.microsynth.credits.get_multi_credits --kwargs "{ 'customer': '36660316', 'company': 'Microsynth AG', 'credit_accounts': [ 'CA-000003', 'CA-000002', 'CA-000001' ] }"
     """
     # TODO: set the filter exclude_unpaid_deposits=True
+    # TODO: fix this
     raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts})
 
     enforced_credits = []
@@ -127,19 +128,21 @@ def allocate_credits(sales_invoice_doc):
     else:
         credit_type = "Standard"
 
-    # get list of applicable credit accounts (fetch data from Sales Order)
-    # TODO: consider the field Sales Invoice.override_credit_accounts
-    sales_order_ids = set()
-    for item in  sales_invoice_doc.items:
-        if item.sales_order:
-            sales_order_ids.add(item.sales_order)
+    # get list of applicable credit accounts
+    if sales_invoice_doc.override_credit_accounts:
+        credit_account_ids = [entry.credit_account for entry in sales_invoice_doc.override_credit_accounts]
+    else:
+        sales_order_ids = set()
+        for item in  sales_invoice_doc.items:
+            if item.sales_order:
+                sales_order_ids.add(item.sales_order)
 
-    if len(sales_order_ids) == 0:
-        return sales_invoice_doc
-    if len(sales_order_ids) > 1:
-        frappe.throw(f"Cannot allocate credits for Sales Invoice '{sales_invoice_doc.name}': Multiple Sales Orders found:\n{', '.join(list(sales_order_ids))}", "Allocate Credits Error")
+        if len(sales_order_ids) == 0:
+            return sales_invoice_doc
+        if len(sales_order_ids) > 1:
+            frappe.throw(f"Cannot allocate credits for Sales Invoice '{sales_invoice_doc.name}': Multiple Sales Orders found:\n{', '.join(list(sales_order_ids))}", "Allocate Credits Error")
 
-    credit_account_ids = get_credit_accounts(sales_order_ids.pop())
+        credit_account_ids = get_credit_accounts(sales_order_ids.pop())
 
     # get applicable customer credits
     customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_account_ids)
