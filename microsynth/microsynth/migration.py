@@ -6404,6 +6404,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 AND `tabCredit Account`.`account_type` = 'Legacy'
         """, (credit_type, customer_id, company), as_dict=True)
     else:
+        #TODO if there is already a legacy Credit Account of type Project, we will not create a new Standard Credit Account. Fix it ;-)
         credit_accounts = frappe.get_all(
             "Credit Account",
             filters={
@@ -6510,6 +6511,7 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
             si_doc = frappe.get_doc("Sales Invoice", si_name)
 
             if si_doc.credit_account == credit_account_doc.name:
+                log("WARNING", f"Sales Inovice {si_name} is already linked to Credit Account {credit_account_doc.name}.")
                 continue
 
             if si_doc.credit_account and si_doc.credit_account != credit_account_doc.name:
