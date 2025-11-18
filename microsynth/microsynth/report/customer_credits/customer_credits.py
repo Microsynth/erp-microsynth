@@ -325,6 +325,7 @@ def get_data(filters, short=False):
 
 @frappe.whitelist()
 def download_pdf(company, customer, credit_account=None):
+    from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
     filters={'customer': customer, 'company': company}
 
     # --- CASE 1: Specific Credit Account ---
@@ -342,12 +343,8 @@ def download_pdf(company, customer, credit_account=None):
                 _(f"The selected Credit Account {credit_account} does not belong to the selected Company {company}."),
                 _("Customer Credits Report")
             )
-        # Use the configured print format "Credit Account"
-        print_format_doc = frappe.get_doc("Print Format", "Credit Account")
-        css_html = f"<style>{print_format_doc.css or ''}</style>{print_format_doc.html or ''}"
-        content = frappe.render_template(css_html, {'doc': credit_account_doc})
+        pdf = get_pdf_data(doctype='Credit Account', name=credit_account, print_format='Credit Account')
         filename = f"Credit_Account_{credit_account_doc.name}.pdf"
-        # TODO: Why is the text "Letterhead" printed and why is the Microsynth logo such huge and how to fix it?
 
     # --- CASE 2: Overview for entire Customer ---
     else:
@@ -357,9 +354,9 @@ def download_pdf(company, customer, credit_account=None):
             {'data': data, 'filters': filters}
         )
         filename = f"Customer_Credits_{customer}.pdf"
+        pdf = get_pdf(content)
 
     # Generate and send PDF response
-    pdf = get_pdf(content)
     frappe.local.response.filename = filename
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
