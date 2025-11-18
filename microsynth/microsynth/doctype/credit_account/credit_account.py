@@ -9,7 +9,7 @@ from frappe.model.document import Document
 class CreditAccount(Document):
     def validate(self):
         # Ensure that once there are transactions, certain fields cannot be changed
-        if self.has_transactions:
+        if self.has_transactions and frappe.db.exists("Credit Account", self.name):
             original = frappe.get_doc("Credit Account", self.name)
             if self.customer != original.customer:
                 frappe.throw("Cannot change Customer of Credit Account with existing transactions.")
