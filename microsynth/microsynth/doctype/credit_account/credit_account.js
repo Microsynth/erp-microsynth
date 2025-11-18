@@ -65,7 +65,7 @@ function create_deposit_invoice_dialog(frm) {
                 fieldtype: "Data",
                 fieldname: "override_item_name",
                 label: __("Override Item Name"),
-                description: __("Optional custom item description."),
+                description: __("Optional custom item description. Default: 'Primers and Sequencing'"),
             }
         ],
         'primary_action_label': __("Create"),
@@ -81,7 +81,7 @@ function create_deposit_invoice_dialog(frm) {
                     'account_id': frm.doc.name,
                     'amount': values.amount,
                     'currency': frm.doc.currency,
-                    'description': values.override_item_name,
+                    'description': values.override_item_name || '',
                     'company': frm.doc.company,
                     'customer': frm.doc.customer,
                     'customer_order_number': ""
