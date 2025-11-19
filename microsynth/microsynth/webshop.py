@@ -3996,7 +3996,7 @@ def get_transactions(account_id):
         customer_credits = get_data(filters)
 
         # 1. Sort chronologically (creation datetime ascending) to compute running balance
-        customer_credits.sort(key=lambda x: x.get('creation'))
+        customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
 
         running_balance = 0.0
         transactions = []
