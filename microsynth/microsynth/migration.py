@@ -6512,6 +6512,19 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
     # Link Credit Account to each Sales Invoice
     if credit_account_doc:
         for credit in credit_data:
+            net_amount = credit.get('net_amount') or 0.0
+            if credit.get('type') == 'Allocation' and net_amount <= 0:
+                # do not fill Sales Invoice.credit_account for deductions
+                continue
+            # if credit.get('type') == 'Allocation' and net_amount > 0:
+            #     new_type = 'Return'
+            # elif credit.get('type') == 'Credit' and net_amount < 0:
+            #     new_type = 'Deposit Return'
+            # elif credit.get('type') == 'Credit':
+            #     new_type = 'Deposit'
+            # elif credit.get('type') == 'Allocation':
+            #     new_type = 'Charge'
+
             si_name = credit.get('sales_invoice')
             si_doc = frappe.get_doc("Sales Invoice", si_name)
 
@@ -6550,7 +6563,6 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
     The parameter 'verbose_level' controls the verbosity of the output from 0 to 2 (1 recommended).
-    With verbose_level 2, 22k to 26k lines will be output if run in November 2025.
 
     bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False}"
     """
