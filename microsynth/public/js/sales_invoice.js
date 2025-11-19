@@ -929,7 +929,7 @@ function open_change_credit_accounts_dialog(frm) {
                     {
                         fieldtype: "Link",
                         fieldname: "manual_credit_account",
-                        label: __("Additional Credit Account"),
+                        label: __("Unlisted Credit Account"),
                         options: "Credit Account",
                         get_query: () => ({
                             filters: {

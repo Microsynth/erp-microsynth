@@ -4,10 +4,11 @@
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
-from frappe.utils import nowdate
+from frappe.utils import nowdate, getdate
 from frappe.utils.data import today
 from frappe.utils import flt, cint, get_link_to_form
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
+from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
@@ -264,7 +265,7 @@ def reverse_credit(sales_invoice, net_amount):
     bench execute microsynth.microsynth.credits.reverse_credit --kwargs "{'sales_invoice': 'SI-BAL-25025600', 'net_amount': 50.0}"
     """
     credit_note_doc = frappe.get_doc(make_sales_return(sales_invoice))
-
+    credit_note_doc.naming_series = get_naming_series("Credit Note", credit_note_doc.company)
     if len(credit_note_doc.items) != 1:
         frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Return Sales Invoice has multiple items", "credits.reverse_credit")
 
@@ -272,7 +273,6 @@ def reverse_credit(sales_invoice, net_amount):
         frappe.throw(f"Cannot reverse credit for Sales Invoice {sales_invoice}: Return Sales Invoice item has quantity different from -1", "credits.reverse_credit")
 
     credit_note_doc.items[0].rate = net_amount
-    # TODO: check naming series of the credit_note_doc: Currently, it is SI-BAL-...
     # TODO: check entries in customer credit table of the credit_note_doc
     credit_note_doc.invoice_sent_on = None
     credit_note_doc.insert()
@@ -433,17 +433,12 @@ def close_invoice_against_expense(sales_invoice, account):
 
 @frappe.whitelist()
 def create_full_return(sales_invoice):
-    from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
-    from microsynth.microsynth.naming_series import get_naming_series
-
     credit_note = frappe.get_doc(make_sales_return(sales_invoice))
     credit_note.naming_series = get_naming_series("Credit Note", credit_note.company)
     credit_note.remaining_customer_credit = None
     credit_note.insert()
     credit_note.submit()
-
     frappe.db.commit()
-
     return credit_note.name
 
 
@@ -755,7 +750,7 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
             frappe.throw(_("Credit Account {0} is not active.").format(acc.name))
         if acc.company != si_doc.company or acc.currency != si_doc.currency:
             frappe.throw(_("Credit Account {0} does not match Company or Currency.").format(acc.name))
-        if acc.expiry_date and acc.expiry_date < nowdate():
+        if acc.expiry_date and getdate(acc.expiry_date) < getdate():
             frappe.throw(_("Credit Account {0} is expired.").format(acc.name))
 
     # Ensure all selected accounts share same customer
@@ -766,6 +761,8 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
 
     # Create and submit Credit Note
     credit_note_doc = frappe.get_doc(make_sales_return(sales_invoice))
+    credit_note_doc.naming_series = get_naming_series("Credit Note", credit_note_doc.company)
+    credit_note_doc.return_against = sales_invoice  # TODO?
     credit_note_doc.flags.ignore_permissions = True
     credit_note_doc.insert()
     credit_note_doc.submit()
@@ -774,6 +771,9 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     new_si = frappe.copy_doc(si_doc)
     new_si.is_return = 0
     new_si.return_against = None
+    new_si.customer_credits = []
+    new_si.credit_account = None
+    # TODO: Set the no_copy flag for fields customer_credits and credit_account on DocType Sales Invoice?
     new_si.docstatus = 0
     new_si.name = None
 
@@ -784,8 +784,9 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
         # Remove linkages that reference previous customer
         for item in new_si.items:
             item.sales_order = None
+            item.so_detail = None
             item.delivery_note = None
-            item.project = None
+            item.dn_detail = None
 
     # Reset override_credit_accounts
     new_si.set("override_credit_accounts", [])
