@@ -461,7 +461,7 @@ function create_promotion_credits(frm) {
                     // --- 5. Call backend to create credit account + SI ---
                     // TODO: Why does the freeze not work?
                     frappe.call({
-                        'method': "microsynth.microsynth.doctype.credit_account.credit_account.create_promotion_credit_account",
+                        'method': "microsynth.microsynth.credits.create_promotion_credit_account",
                         'args': {
                             'account_name': values.account_name,
                             'customer_id': customer_id,

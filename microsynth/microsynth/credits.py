@@ -1,6 +1,7 @@
 # Copyright (c) 2021-2025, Microsynth, libracore and contributors
 # License: GNU General Public License v3. See license.txt
 
+import json
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
@@ -226,6 +227,87 @@ def book_credit(sales_invoice, credit_item, event=None):
     jv.submit()
     # frappe.db.commit()
     return jv.name
+
+
+@frappe.whitelist()
+def create_promotion_credit_account(account_name, customer_id, company, webshop_account, currency, product_types, expiry_date, description, amount, override_item_name=None):
+    """
+    Create a new Enforced (Promotion) Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
+
+    bench execute microsynth.microsynth.credits.create_promotion_credit_account --kwargs "{'account_name': 'Test', 'customer_id': '8003', 'company': 'Microsynth AG', 'webshop_account': '215856', 'currency': 'CHF', 'product_types': ['Oligos', 'Sequencing'], 'expiry_date': '2025-12-31', 'description': 'some description', 'amount': 123.45 }"
+    """
+    from microsynth.microsynth.webshop import create_deposit_invoice
+
+    if isinstance(product_types, str):
+        product_types = json.loads(product_types)
+
+    credit_account = frappe.get_doc({
+        'doctype': 'Credit Account',
+        'account_name': account_name,
+        'account_type': 'Enforced Credit',
+        'customer': customer_id,
+        'company': company,
+        'contact_person': webshop_account,
+        'currency': currency,
+        'status': 'Active',
+        'product_types_locked': 1,
+        'expiry_date': expiry_date,
+        'description': description
+    })
+    # Add product types
+    for pt in product_types:
+        credit_account.append("product_types", {
+            "product_type": pt
+        })
+    credit_account.insert(ignore_permissions=True)
+    # create deposit Sales Invoice
+    response = create_deposit_invoice(webshop_account, credit_account.name, amount, currency, override_item_name, company, customer_id, customer_order_number='', ignore_permissions=True)
+    if not response['success']:
+        frappe.throw(response.get('message'))
+    sales_invoice_id = response.get('reference')
+    si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+    # fetch Item used for advertising/promo/marketing
+    promo_item_code = "AC-6600"
+    promo_item = frappe.get_doc("Item", promo_item_code)
+    expense_account = None
+    for entry in promo_item.item_defaults:
+        if entry.company == company:
+            expense_account = entry.expense_account
+            break
+    if not expense_account:
+        frappe.log_error(f"Item {promo_item_code} has no Default Expense Account for company {company}. Unable to create a Journal Entry for Sales Invoice {sales_invoice_id} automatically.")
+        return sales_invoice_id
+    # create Journal Entry
+    jv = frappe.get_doc({
+        'doctype': 'Journal Entry',
+        'company': company,
+        'posting_date': datetime.now(),
+        'accounts': [
+            {
+                'account': si_doc.debit_to,
+                'credit_in_account_currency': si_doc.outstanding_amount,
+                'exchange_rate': si_doc.conversion_rate,
+                'credit': si_doc.outstanding_amount / si_doc.conversion_rate,
+                'party_type': "Customer",
+                'party': si_doc.customer,
+                'reference_type': "Sales Invoice",
+                'reference_name': si_doc.name,
+                'cost_center': si_doc.items[0].cost_center
+            },
+            {
+                'account': expense_account,
+                'debit_in_account_currency': si_doc.outstanding_amount,
+                'exchange_rate': si_doc.conversion_rate,
+                'debit': si_doc.outstanding_amount / si_doc.conversion_rate,
+                'cost_center': si_doc.items[0].cost_center
+            }
+        ],
+        'multi_currency': 1,
+        'user_remark': "promotional credit"
+    })
+    jv.insert(ignore_permissions=True)
+    jv.submit()
+    return sales_invoice_id
 
 
 def validate_invoice_credit_account(sales_invoice, credit_item, event=None):
