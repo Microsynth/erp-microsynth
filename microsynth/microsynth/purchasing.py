@@ -558,7 +558,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-13_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-14_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-14_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-17_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-17_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-17_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
     """
     # TODO: Refactor code
     known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
@@ -746,10 +746,16 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         continue
                 else:
                     # Update existing item fields as necessary
-                    if existing_item_doc.item_name != item_name:
-                        existing_item_doc.item_name = item_name[:140]
                     if stock_uom and existing_item_doc.stock_uom != stock_uom:
                         existing_item_doc.stock_uom = stock_uom
+                        try:
+                            existing_item_doc.save()
+                        except Exception as err:
+                            print(f"WARNING: Unable to update stock_uom of existing Item {item_code} for Item with Index {item_id} ('{item_name}'): {err}. Trying to update all other fields.")
+                        finally:
+                            existing_item_doc = frappe.get_doc("Item", item_code)  # re-fetch to avoid error "document has been modified after you have opened it"
+                    if existing_item_doc.item_name != item_name:
+                        existing_item_doc.item_name = item_name[:140]
                     if pack_size and existing_item_doc.pack_size != pack_size:
                         existing_item_doc.pack_size = pack_size
                     if pack_uom and existing_item_doc.pack_uom != pack_uom:
@@ -900,7 +906,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-14_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-17_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
