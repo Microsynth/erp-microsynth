@@ -21,6 +21,7 @@ def get_columns():
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
         {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
+        #{"label": _("Type"), "fieldname": "type", "fieldtype": "Data", "width": 100},
         {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
@@ -111,6 +112,7 @@ def get_data(filters, short=False, add_print_format=True):
         SELECT
             `raw`.`type` AS `type`,
             `raw`.`date` AS `date`,
+            `raw`.`creation` AS `creation`,
             `raw`.`customer` AS `customer`,
             `raw`.`customer_name` AS `customer_name`,
             `raw`.`sales_invoice` AS `sales_invoice`,

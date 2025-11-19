@@ -3995,8 +3995,8 @@ def get_transactions(account_id):
         }
         customer_credits = get_data(filters)
 
-        # 1. Sort chronologically (date ascending) to compute running balance
-        customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
+        # 1. Sort chronologically (creation datetime ascending) to compute running balance
+        customer_credits.sort(key=lambda x: x.get('creation'))
 
         running_balance = 0.0
         transactions = []
@@ -4006,7 +4006,7 @@ def get_transactions(account_id):
             if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
                 running_balance += net_amount
             new_type = ""
-            if row.get('type') == 'Allocation' and net_amount < 0:
+            if row.get('type') == 'Allocation' and net_amount > 0:
                 new_type = 'Return'
             elif row.get('type') == 'Credit' and net_amount < 0:
                 new_type = 'Deposit Return'
@@ -4015,7 +4015,7 @@ def get_transactions(account_id):
             transactions.append({
                 "date": row.get('date'),
                 "type": new_type,
-                "reference": row.get('reference'),
+                "reference": row.get('sales_invoice'),
                 "status": "Paid" if row.get('status') in ('Paid', 'Return', 'Credit Note Issued') else "Unpaid",
                 "web_order_id": row.get('web_order_id'),
                 "currency": row.get('currency'),
