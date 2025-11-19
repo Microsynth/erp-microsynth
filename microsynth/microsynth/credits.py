@@ -762,7 +762,6 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     # Create and submit Credit Note
     credit_note_doc = frappe.get_doc(make_sales_return(sales_invoice))
     credit_note_doc.naming_series = get_naming_series("Credit Note", credit_note_doc.company)
-    credit_note_doc.return_against = sales_invoice  # TODO?
     credit_note_doc.flags.ignore_permissions = True
     credit_note_doc.insert()
     credit_note_doc.submit()
