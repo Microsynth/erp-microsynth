@@ -192,13 +192,6 @@ frappe.ui.form.on('Contact', {
                 });
             }
 
-            // Button to create promotion credit
-            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.has_webshop_account && frappe.user.has_role("Sales Manager")) {
-                frm.add_custom_button(__("Promotion Credits"), function () {
-                    create_promotion_credits(frm);
-                }, __("Create"));
-            }
-
             // Show buttons if a customer is linked
             if (is_customer && link_name) {
                 if (!frm.doc.__islocal && frm.doc.has_webshop_account && frm.doc.status === "Passive") {
@@ -270,6 +263,13 @@ frappe.ui.form.on('Contact', {
                 // Quotation button in Create menu
                 frm.add_custom_button(__("Quotation"), function () {
                     create_quotation(frm);
+                }, __("Create"));
+            }
+
+            // Button to create promotion credit
+            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.has_webshop_account && frappe.user.has_role("Sales Manager")) {
+                frm.add_custom_button(__("Promotion Credits"), function () {
+                    create_promotion_credits(frm);
                 }, __("Create"));
             }
 
@@ -459,6 +459,7 @@ function create_promotion_credits(frm) {
                     }
 
                     // --- 5. Call backend to create credit account + SI ---
+                    // TODO: Why does the freeze not work?
                     frappe.call({
                         'method': "microsynth.microsynth.doctype.credit_account.credit_account.create_promotion_credit_account",
                         'args': {
