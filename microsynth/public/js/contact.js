@@ -4,7 +4,7 @@
 cur_frm.dashboard.add_transactions([
     {
         'label': __("Selling"),
-        'items': ["Quotation"]  //, "Credit Account"]  // TODO: Add Credit Account (Task #22732)
+        'items': ["Quotation", "Credit Account"]
     },
     {
         'label': __("Marketing"),
