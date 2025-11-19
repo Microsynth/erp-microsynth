@@ -9,22 +9,22 @@ from frappe import _
 
 def get_columns():
     return [
-        {"label": _("Supplier Part Number"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 140, "align": "left"},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 320, "align": "left"},
-        {"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 80},
+        {"label": _("Supplier Part Nr."), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120, "align": "left"},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 315, "align": "left"},
+        {"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
         {"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Data", "width": 80},
         {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
-        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 220},
-        {"label": _("Price List Rate"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 105},
-        #{"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 95},
+        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 210},
+        {"label": _("Price"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 95},
         {"label": _("Purchase UOM"), "fieldname": "purchase_uom", "fieldtype": "Data", "width": 100},
         {"label": _("Conv. Factor"), "fieldname": "conversion_factor", "fieldtype": "Float", "precision": 2, "width": 80},
         {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 80},
         {"label": _("Safety Stock"), "fieldname": "safety_stock", "fieldtype": "Float", "precision": 2, "width": 90},
         {"label": _("Lead Time Days"), "fieldname": "lead_time_days", "fieldtype": "Int", "width": 110},
-        {"label": _("Shelf Life Days"), "fieldname": "shelf_life_in_days", "fieldtype": "Int", "width": 105, "align": "left"},
         {"label": _("Shelf Life Years"), "fieldname": "shelf_life_in_years", "fieldtype": "Float", "precision": 2, "width": 115},
+        {"label": _("Shelf Life Days"), "fieldname": "shelf_life_in_days", "fieldtype": "Int", "width": 105, "align": "left"},
+        {"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 100},
         {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
     ]
 
