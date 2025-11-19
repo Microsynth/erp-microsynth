@@ -27,6 +27,11 @@ frappe.ui.form.on('Credit Account', {
             //     frappe.set_route("List", "Sales Invoice", {"credit_account": frm.doc.name});
             // }, __("View"));
         }
+        if (!frm.doc.__islocal && frm.doc.product_types_locked) {
+            cur_frm.set_df_property('product_types', 'read_only', true);
+        } else {
+            cur_frm.set_df_property('product_types', 'read_only', false);
+        }
         // Show button to create deposit invoice only if:
         // - status == "Active"
         // - expiry_date is empty or in the future
