@@ -6371,7 +6371,7 @@ def get_total_outstanding_credits(credit_data):
     return total
 
 
-def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False):
+def create_legacy_credit_account(customer_id, company, credit_type, credit_data, verbose_level=0, contact_id=None, dry_run=False, contact_replacement_map={}):
     """
     Create a Legacy Credit Account for the given customer/company/credit_type if not already existing.
     Use credit_data to find the latest deposit Sales Invoice of type "Credit" to base the Credit Account on.
@@ -6470,9 +6470,14 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
 
             contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
             if contact_doc.status == "Disabled":
-                log("ERROR", f"Contact '{si_doc.contact_person}' on deposit invoice {si_doc.name} is disabled. Going to find the next deposit invoice.")
-                error = True
-                continue
+                if not contact_id and si_doc.contact_person in contact_replacement_map:
+                    contact_id = contact_replacement_map.get(si_doc.contact_person)
+                if not contact_id:
+                    log("ERROR", f"Contact '{si_doc.contact_person}' on deposit invoice {si_doc.name} is disabled and no replacement known. Going to find the next deposit invoice.")
+                    error = True
+                    continue
+                else:
+                    log("WARNING", f"Disabled Contact '{si_doc.contact_person}' on deposit invoice {si_doc.name} is going to be replaced with Contact '{contact_id}'.")
 
             if not contact_doc.has_webshop_account:
                 log("INFO", f"Contact person '{si_doc.contact_person}' on Sales Invoice {si_doc.name} has no webshop account.")
@@ -6558,13 +6563,13 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
         pass  # errors already printed above
 
 
-def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
+def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False, contact_replacement_map={}):
     """
     Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
     The parameter 'verbose_level' controls the verbosity of the output from 0 to 2 (1 recommended).
 
-    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False}"
+    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False, 'contact_replacement_map': {'103257': '233464', '212799': '240974', '3016274': '208158', '216049': '215228', '210106': '243942', '225107': '217154'}}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
@@ -6584,7 +6589,7 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
                 'company': company,
                 'credit_type': 'Standard'
             }, add_print_format=False)
-            create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
+            create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run, contact_replacement_map=contact_replacement_map)
             processed_customers += 1
             if processed_customers % 10 == 0:
                 frappe.db.commit()
@@ -6603,7 +6608,7 @@ def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
                 'company': company,
                 'credit_type': 'Project'
             }, add_print_format=False)
-            create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
+            create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run, contact_replacement_map=contact_replacement_map)
             processed_customers += 1
             if processed_customers % 10 == 0:
                 frappe.db.commit()
