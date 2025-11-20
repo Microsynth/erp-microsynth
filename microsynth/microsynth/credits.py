@@ -878,15 +878,24 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     credit_note_doc.insert()
     credit_note_doc.submit()
 
+    user = frappe.get_user()
+
     # Create new Sales Invoice by copying
-    new_si = frappe.copy_doc(si_doc)
+    new_si = frappe.get_doc(si_doc.as_dict())
+    new_si.name = None
+    new_si.docstatus = 0
+    new_si.set_posting_time = 1
+    new_si.invoice_sent_on = None
+    new_si.creation = datetime.now()
+    new_si.owner = user.name
+    new_si.exported_to_abacus = 0                                          # reset abacus export flag
     new_si.is_return = 0
     new_si.return_against = None
     new_si.customer_credits = []
+    new_si.remaining_customer_credit = None
     new_si.credit_account = None
     # TODO: Set the no_copy flag for fields customer_credits and credit_account on DocType Sales Invoice?
-    new_si.docstatus = 0
-    new_si.name = None
+    # TODO: check date and payment due date
 
     # Adjust customer if different
     if new_customer and new_customer != si_doc.customer:
@@ -906,8 +915,7 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
 
     # Save and run credit allocation logic
     new_si.insert()
-    frappe.get_doc("Sales Invoice", new_si.name)
-    frappe.get_attr("microsynth.microsynth.credits.allocate_credits_to_invoice")(new_si.name)
-
+    allocate_credits(new_si)
+    new_si.save()
     frappe.db.commit()
     return new_si.name
