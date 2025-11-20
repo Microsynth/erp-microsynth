@@ -3951,6 +3951,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "credit_account": account_id,
             "remarks": f"Webshop deposit for Credit Account {account_id}"
         })
+        invoice.naming_series = get_naming_series("Sales Invoice", company)
         invoice.insert(ignore_permissions=ignore_permissions)
         invoice.submit()
         # TODO: Transmit the Sales Invoice?
