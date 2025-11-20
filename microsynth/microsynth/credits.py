@@ -278,6 +278,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
         frappe.log_error(f"Item {promo_item_code} has no Default Expense Account for company {company}. Unable to create a Journal Entry for Sales Invoice {sales_invoice_id} automatically.")
         return sales_invoice_id
     # create Journal Entry
+    base_amount = si_doc.outstanding_amount * si_doc.conversion_rate
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
         'company': company,
@@ -287,7 +288,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
                 'account': si_doc.debit_to,
                 'credit_in_account_currency': si_doc.outstanding_amount,
                 'exchange_rate': si_doc.conversion_rate,
-                'credit': si_doc.outstanding_amount / si_doc.conversion_rate,
+                'credit': base_amount,
                 'party_type': "Customer",
                 'party': si_doc.customer,
                 'reference_type': "Sales Invoice",
@@ -296,9 +297,9 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
             },
             {
                 'account': expense_account,
-                'debit_in_account_currency': si_doc.outstanding_amount,
-                'exchange_rate': si_doc.conversion_rate,
-                'debit': si_doc.outstanding_amount / si_doc.conversion_rate,
+                'debit_in_account_currency': base_amount,
+                'exchange_rate': 1,
+                'debit': base_amount,
                 'cost_center': si_doc.items[0].cost_center
             }
         ],
