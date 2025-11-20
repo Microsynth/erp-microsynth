@@ -76,7 +76,7 @@ def get_data(filters, short=False, add_print_format=True):
             else:
                 frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}.", "Customer Credits Report")
 
-        conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
+        #conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
 
         if filters.get('account_type'):
             account_type = filters.get('account_type')
@@ -103,7 +103,7 @@ def get_data(filters, short=False, add_print_format=True):
         if len(credit_accounts) == 0:
             frappe.throw(f"None of the selected Credit Accounts ({', '.join(credit_accounts)}) belong to the selected Customer {customer_id}. Cannot generate report.", "Customer Credits Report")
 
-        conditions += f"AND `tabSales Invoice`.`credit_account` IN ({get_sql_list(credit_accounts)})"
+        #conditions += f"AND `tabSales Invoice`.`credit_account` IN ({get_sql_list(credit_accounts)})"
 
     if filters.get('customer'):
         # customer based evaluation: ledger
