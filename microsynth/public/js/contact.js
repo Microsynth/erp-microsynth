@@ -15,7 +15,6 @@ cur_frm.dashboard.add_transactions([
 
 let original_customer_link = null;
 
-
 frappe.ui.form.on('Contact', {
     before_save(frm) {
         const current_customer_link = get_customer_link_from_links(frm.doc.links);
@@ -361,138 +360,128 @@ function create_promotion_credits(frm) {
             let default_currency = customer.default_currency || "";
 
             // --- 3. Build dialog ---
-            let d = new frappe.ui.Dialog({
-                'title': __("Create Promotion Credits"),
-                'fields': [
-                    {
-                        label: __("Account Title"),
-                        fieldname: "account_name",
-                        fieldtype: "Data",
-                        reqd: 1
-                    },
-                    {
-                        label: __("Company"),
-                        fieldname: "company",
-                        fieldtype: "Link",
-                        options: "Company",
-                        reqd: 1,
-                        default: default_company
-                    },
-                    {
-                        fieldtype: "MultiSelectList",
-                        fieldname: "product_types",
-                        label: __("Product Types"),
-                        reqd: 1,
-                        get_data: function (txt) {
-                            return frappe.call({
-                                method: "frappe.desk.search.search_link",
-                                args: {
-                                    doctype: "Product Type",
-                                    txt: txt
-                                }
-                            }).then(r => {
-                                return (r && r.results || []).map(pt => {
-                                    return {
-                                        value: pt.value,
-                                        description: pt.description
-                                    };
-                                });
-                            });
+            
+        
+            frappe.model.with_doctype("Product Type Link", function() {
+                let d = new frappe.ui.Dialog({
+                    'title': __("Create Promotion Credits"),
+                    'fields': [
+                        {
+                            label: __("Account Title"),
+                            fieldname: "account_name",
+                            fieldtype: "Data",
+                            reqd: 1
+                        },
+                        {
+                            label: __("Company"),
+                            fieldname: "company",
+                            fieldtype: "Link",
+                            options: "Company",
+                            reqd: 1,
+                            default: default_company
+                        },
+                        {
+                            'fieldtype': 'Table MultiSelect',
+                            'fieldname': 'product_types',
+                            'label': __("Product Types"),
+                            'reqd': 1,
+                            'options': 'Product Type Link'
+                        },
+                        {
+                            label: __("Amount"),
+                            fieldname: "amount",
+                            fieldtype: "Currency",
+                            reqd: 1
+                        },
+                        {
+                            label: __("Currency"),
+                            fieldname: "currency",
+                            fieldtype: "Link",
+                            options: "Currency",
+                            reqd: 1,
+                            read_only: 1,
+                            default: default_currency
+                        },
+                        {
+                            label: __("Expiry Date"),
+                            fieldname: "expiry_date",
+                            fieldtype: "Date",
+                            reqd: 1
+                        },
+                        {
+                            label: __("Override Item Name"),
+                            fieldname: "override_item_name",
+                            fieldtype: "Data",
+                            reqd: 0
+                        },
+                        {
+                            label: __("Description"),
+                            fieldname: "description",
+                            fieldtype: "Small Text",
+                            reqd: 0
                         }
+                    ],
+                    'primary_action_label': __("Create"),
+                    'primary_action'(values) {
+                        d.hide();                                       // hide the dialog first - then freeze is visible
+                        // --- 4. Validate required fields ---
+                        if (!values.account_name ||
+                            !values.company ||
+                            !values.product_types ||
+                            !values.amount ||
+                            !values.currency ||
+                            !values.expiry_date) {
+                            frappe.msgprint(__("Please fill all mandatory fields."));
+                            return;
+                        }
+                        let raw = values.product_types;
+                        let product_types = [];
+                        if (!raw) {
+                            product_types = [];
+                        } else if (Array.isArray(raw) && typeof raw[0] === "string") {
+                            product_types = raw;
+                        } else if (Array.isArray(raw) && raw[0] && typeof raw[0] === "object") {
+                            product_types = raw.map(x => x.value).filter(Boolean);
+                        } else if (typeof raw === "string") {
+                            product_types = raw.split(',').map(x => x.trim()).filter(Boolean);
+                        }
+
+                        // --- 5. Call backend to create credit account + SI ---
+                        // TODO: Why does the freeze not work?
+                        frappe.call({
+                            'method': "microsynth.microsynth.credits.create_promotion_credit_account",
+                            'args': {
+                                'account_name': values.account_name,
+                                'customer_id': customer_id,
+                                'company': values.company,
+                                'webshop_account': frm.doc.name,  // Contact ID
+                                'currency': values.currency,
+                                'product_types': product_types,
+                                'expiry_date': values.expiry_date,
+                                'description': values.description || "",
+                                'amount': values.amount,
+                                'override_item_name': values.override_item_name || null
+                            },
+                            'freeze': true,
+                            'freeze_message': __("Creating Promotion Credits..."),
+                            'callback': function (r) {
+                                if (r.exc) return;
+                                let si = r.message;
+                                if (si) {
+                                    frappe.show_alert(__("Promotion Credits created"));
+                                    frappe.set_route("Form", "Sales Invoice", si);
+                                }
+                            }
+                        });
+                        return;
                     },
-                    {
-                        label: __("Amount"),
-                        fieldname: "amount",
-                        fieldtype: "Currency",
-                        reqd: 1
-                    },
-                    {
-                        label: __("Currency"),
-                        fieldname: "currency",
-                        fieldtype: "Link",
-                        options: "Currency",
-                        reqd: 1,
-                        read_only: 1,
-                        default: default_currency
-                    },
-                    {
-                        label: __("Expiry Date"),
-                        fieldname: "expiry_date",
-                        fieldtype: "Date",
-                        reqd: 1
-                    },
-                    {
-                        label: __("Override Item Name"),
-                        fieldname: "override_item_name",
-                        fieldtype: "Data",
-                        reqd: 0
-                    },
-                    {
-                        label: __("Description"),
-                        fieldname: "description",
-                        fieldtype: "Small Text",
-                        reqd: 0
-                    }
-                ],
-                'primary_action_label': __("Create"),
-                primary_action(values) {
-                    // --- 4. Validate required fields ---
-                    if (!values.account_name ||
-                        !values.company ||
-                        !values.product_types ||
-                        !values.amount ||
-                        !values.currency ||
-                        !values.expiry_date) {
-                        frappe.msgprint(__("Please fill all mandatory fields."));
+                    'secondary_action_label': __("Close"),
+                    'secondary_action'() {
                         return;
                     }
-                    let raw = values.product_types;
-                    let product_types = [];
-                    if (!raw) {
-                        product_types = [];
-                    } else if (Array.isArray(raw) && typeof raw[0] === "string") {
-                        product_types = raw;
-                    } else if (Array.isArray(raw) && raw[0] && typeof raw[0] === "object") {
-                        product_types = raw.map(x => x.value).filter(Boolean);
-                    } else if (typeof raw === "string") {
-                        product_types = raw.split(',').map(x => x.trim()).filter(Boolean);
-                    }
-
-                    // --- 5. Call backend to create credit account + SI ---
-                    // TODO: Why does the freeze not work?
-                    frappe.call({
-                        'method': "microsynth.microsynth.credits.create_promotion_credit_account",
-                        'args': {
-                            'account_name': values.account_name,
-                            'customer_id': customer_id,
-                            'company': values.company,
-                            'webshop_account': frm.doc.name,  // Contact ID
-                            'currency': values.currency,
-                            'product_types': product_types,
-                            'expiry_date': values.expiry_date,
-                            'description': values.description || "",
-                            'amount': values.amount,
-                            'override_item_name': values.override_item_name || null
-                        },
-                        'freeze': true,
-                        'freeze_message': __("Creating Promotion Credits..."),
-                        callback: function (r) {
-                            if (r.exc) return;
-                            let si = r.message;
-                            if (si) {
-                                frappe.show_alert(__("Promotion Credits created"));
-                                frappe.set_route("Form", "Sales Invoice", si);
-                            }
-                        }
-                    });
-                    return;
-                },
-                'secondary_action_label': __("Close"),
-                secondary_action() {
-                    return;
-                }
+                });
+                d.show();
             });
-            d.show();
         }
     });
 }
