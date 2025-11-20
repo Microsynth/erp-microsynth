@@ -541,9 +541,10 @@ function allocate_credits(frm) {
                             // The field Sales Invoice.override_credit_accounts has Type "Table" and Options "Credit Account Link".
                             // The DocType "Credit Account Link" has a Link field credit_account with Options "Credit Account".
                             frm.clear_table("override_credit_accounts");
-                            // TODO: Iterate over selected_accounts, ensure that override_credit_accounts is filled correctly
-                            let child = frm.add_child("override_credit_accounts");
-                            child.credit_account = selected_accounts[0];
+                            selected_accounts.forEach(acc_name => {
+                                let row = frm.add_child("override_credit_accounts");
+                                row.credit_account = acc_name;
+                            });
                             frm.refresh_field("override_credit_accounts");
 
                             frappe.call({
