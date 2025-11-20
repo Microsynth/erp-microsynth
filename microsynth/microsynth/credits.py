@@ -283,7 +283,7 @@ def sales_invoice_on_submit(sales_invoice, event=None):
     """
     credit_item = frappe.get_doc("Item",
         frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
-    #validate_invoice_credit_account(sales_invoice, credit_item, event)  # TODO: Comment in on go-live of Credit Accounts
+    validate_invoice_credit_account(sales_invoice, credit_item, event)
     book_credit(sales_invoice, credit_item, event)
 
 
