@@ -21,6 +21,7 @@ def get_columns():
         {"label": _("Sales Invoice"), "fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice", "width": 120},
         {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
         {"label": _("Net Amount"), "fieldname": "net_amount", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
+        #{"label": _("Type"), "fieldname": "type", "fieldtype": "Data", "width": 100},
         {"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 105, 'options': 'currency'},
         {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
@@ -38,7 +39,7 @@ def validate_credit_account_customer(credit_account, customer):
     return customer == credit_account_customer
 
 
-def get_data(filters, short=False):
+def get_data(filters, short=False, add_print_format=True):
     """
     Get data for Customer Credits Report
 
@@ -77,7 +78,7 @@ def get_data(filters, short=False):
             else:
                 frappe.throw(f"The selected Credit Account {credit_account} does not belong to the selected Customer {filters.get('customer')}.", "Customer Credits Report")
 
-        conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
+        #conditions += f"AND `tabSales Invoice`.`credit_account` = '{credit_account}'"
 
         if filters.get('account_type'):
             account_type = filters.get('account_type')
@@ -104,7 +105,7 @@ def get_data(filters, short=False):
         if len(credit_accounts) == 0:
             frappe.throw(f"None of the selected Credit Accounts ({', '.join(credit_accounts)}) belong to the selected Customer {customer_id}. Cannot generate report.", "Customer Credits Report")
 
-        conditions += f"AND `tabSales Invoice`.`credit_account` IN ({get_sql_list(credit_accounts)})"
+        #conditions += f"AND `tabSales Invoice`.`credit_account` IN ({get_sql_list(credit_accounts)})"
 
     if filters.get('customer'):
         # customer based evaluation: ledger
@@ -113,6 +114,7 @@ def get_data(filters, short=False):
         SELECT
             `raw`.`type` AS `type`,
             `raw`.`date` AS `date`,
+            `raw`.`creation` AS `creation`,
             `raw`.`customer` AS `customer`,
             `raw`.`customer_name` AS `customer_name`,
             `raw`.`sales_invoice` AS `sales_invoice`,
@@ -241,7 +243,7 @@ def get_data(filters, short=False):
                     output.append(d)
             data = output
 
-        if len(data) > 0:  # prevent crash if there are no entries
+        if len(data) > 0 and add_print_format:  # prevent crash if there are no entries
             # add data required in the print format
             print_format = {}
             letter_head = frappe.get_doc("Letter Head", filters.get('company'))
@@ -327,6 +329,7 @@ def get_data(filters, short=False):
 
 @frappe.whitelist()
 def download_pdf(company, customer, credit_account=None):
+    from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
     filters={'customer': customer, 'company': company}
 
     # --- CASE 1: Specific Credit Account ---
@@ -344,13 +347,9 @@ def download_pdf(company, customer, credit_account=None):
                 _(f"The selected Credit Account {credit_account} does not belong to the selected Company {company}."),
                 _("Customer Credits Report")
             )
-        # Use the configured print format "Credit Account"
-        print_format_doc = frappe.get_doc("Print Format", "Credit Account")
-        css_html = f"<style>{print_format_doc.css or ''}</style>{print_format_doc.html or ''}"
-        content = frappe.render_template(css_html, {'doc': credit_account_doc})
+        pdf = get_pdf_data(doctype='Credit Account', name=credit_account, print_format='Credit Account')
         filename = f"Credit_Account_{credit_account_doc.name}.pdf"
-        # TODO: Why is the text "Letterhead" printed and why is the Microsynth logo such huge and how to fix it?
-
+    # TODO: Unify print formats regarding style
     # --- CASE 2: Overview for entire Customer ---
     else:
         data = get_data(filters)
@@ -359,9 +358,12 @@ def download_pdf(company, customer, credit_account=None):
             {'data': data, 'filters': filters}
         )
         filename = f"Customer_Credits_{customer}.pdf"
+        options = {
+            'disable-smart-shrinking': ''
+        }
+        pdf = get_pdf(content, options)
 
     # Generate and send PDF response
-    pdf = get_pdf(content)
     frappe.local.response.filename = filename
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"

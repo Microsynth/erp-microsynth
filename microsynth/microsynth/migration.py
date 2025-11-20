@@ -6404,19 +6404,27 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
                 AND `tabCredit Account`.`account_type` = 'Legacy'
         """, (credit_type, customer_id, company), as_dict=True)
     else:
-        credit_accounts = frappe.get_all(
-            "Credit Account",
-            filters={
-                "customer": customer_id,
-                "company": company,
-                "account_type": "Legacy"
-            },
-            fields=["name"]
-        )
+        # Find Legacy Credit Accounts for this customer/company that do NOT have Product Type "Project"
+        credit_accounts = frappe.db.sql("""
+            SELECT DISTINCT `tabCredit Account`.`name`
+            FROM `tabCredit Account`
+            LEFT JOIN `tabProduct Type Link`
+                ON `tabProduct Type Link`.`parent` = `tabCredit Account`.`name`
+                AND `tabProduct Type Link`.`parenttype` = 'Credit Account'
+                AND `tabProduct Type Link`.`parentfield` = 'product_types'
+            WHERE
+                `tabCredit Account`.`customer` = %s
+                AND `tabCredit Account`.`company` = %s
+                AND `tabCredit Account`.`account_type` = 'Legacy'
+                AND (
+                    `tabProduct Type Link`.`product_type` IS NULL
+                    OR `tabProduct Type Link`.`product_type` != 'Project'
+                )
+        """, (customer_id, company), as_dict=True)
 
     if credit_accounts:
         if verbose_level > 0:
-            log("ERROR", "Legacy Credit Account already exists. Skipping creation.")
+            log("ERROR", f"{company=}; {customer_id=}; {credit_type=}: Legacy Credit Account already exists. Skipping creation.")
         return
 
     error = False
@@ -6462,16 +6470,12 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
 
             contact_doc = frappe.get_doc("Contact", si_doc.contact_person)
             if contact_doc.status == "Disabled":
-                log("ERROR", f"Contact '{si_doc.contact_person}' on deposit invoice {si_doc.name} is disabled.")
+                log("ERROR", f"Contact '{si_doc.contact_person}' on deposit invoice {si_doc.name} is disabled. Going to find the next deposit invoice.")
                 error = True
                 continue
 
             if not contact_doc.has_webshop_account:
-                log("INFO", f"Contact '{si_doc.contact_person}' has no webshop account, skipping Sales Invoice {si_doc.name}.")
-                continue
-
-        if verbose_level > 0:
-            log("INFO", f"{'[DRY-RUN] ' if dry_run else ''}Creating Legacy Credit Account based on deposit invoice {si_doc.name}.")
+                log("INFO", f"Contact person '{si_doc.contact_person}' on Sales Invoice {si_doc.name} has no webshop account.")
 
         credit_account_doc = frappe.get_doc({
             "doctype": "Credit Account",
@@ -6493,94 +6497,128 @@ def create_legacy_credit_account(customer_id, company, credit_type, credit_data,
         else:
             credit_account_doc.append("product_types", {"product_type": "Oligos"})
             credit_account_doc.append("product_types", {"product_type": "Sequencing"})
+            credit_account_doc.append("product_types", {"product_type": "Labels"})
+            credit_account_doc.append("product_types", {"product_type": "FLA"})
 
         if not dry_run:
             credit_account_doc.insert(ignore_permissions=True)
-            log("INFO", f"Created Credit Account {credit_account_doc.name}.")
+            if verbose_level > 0:
+                log("INFO", f"Created Credit Account {credit_account_doc.name} based on deposit invoice {si_doc.name}.")
         else:
-            log("DRY-RUN", f"Would insert Credit Account for Sales Invoice {si_doc.name}.")
-
+            if verbose_level > 0:
+                log("DRY-RUN", f"Would insert Credit Account for Sales Invoice {si_doc.name} based on deposit invoice {si_doc.name}.")
         break
 
     # Link Credit Account to each Sales Invoice
     if credit_account_doc:
         for credit in credit_data:
+            net_amount = credit.get('net_amount') or 0.0
+            if credit.get('type') == 'Allocation' and net_amount <= 0:
+                # do not fill Sales Invoice.credit_account for deductions
+                continue
+            # if credit.get('type') == 'Allocation' and net_amount > 0:
+            #     new_type = 'Return'
+            # elif credit.get('type') == 'Credit' and net_amount < 0:
+            #     new_type = 'Deposit Return'
+            # elif credit.get('type') == 'Credit':
+            #     new_type = 'Deposit'
+            # elif credit.get('type') == 'Allocation':
+            #     new_type = 'Charge'
+
             si_name = credit.get('sales_invoice')
             si_doc = frappe.get_doc("Sales Invoice", si_name)
 
             if si_doc.credit_account == credit_account_doc.name:
+                # will be printed if a Sales Invoice was deducted from more than one deposit invoice
+                log("WARNING", f"Sales Inovice {si_name} is already linked to Credit Account {credit_account_doc.name}, skipping.")
                 continue
 
             if si_doc.credit_account and si_doc.credit_account != credit_account_doc.name:
-                log("WARNING", f"Sales Invoice {si_name} is already linked to another Credit Account ({si_doc.credit_account}).")
+                log("ERROR", f"Sales Invoice {si_name} is already linked to another Credit Account ({si_doc.credit_account}), not going to link to Credit Account {credit_account_doc.name}.")
                 continue
 
             if si_doc.docstatus != 1:
-                log("WARNING", f"Sales Invoice {si_name} is not submitted (docstatus={si_doc.docstatus}).")
+                log("ERROR", f"Sales Invoice {si_name} is not submitted (docstatus={si_doc.docstatus}), skipping.")
                 continue
 
             if dry_run:
                 log("DRY-RUN", f"Would link Sales Invoice {si_name} to Credit Account {credit_account_doc.name}.")
             else:
                 si_doc.credit_account = credit_account_doc.name
-                si_doc.save()
+                try:
+                    si_doc.save()
+                except Exception as err:
+                    log("WARNING", f"Error when saving {si_doc.name}. Force update Sales Invoice.credit_account. Error message: {err}")
+                    frappe.db.set_value("Sales Invoice", si_doc.name, "credit_account", credit_account_doc.name, update_modified=False)
                 if verbose_level > 1:
                     log("INFO", f"Linked {si_name} to {credit_account_doc.name}.")
     elif not error:
-        log("ERROR", "No valid deposit invoice found with a Contact having a Webshop Account.")
+        log("ERROR", "No valid deposit invoice found.")
     else:
         pass  # errors already printed above
 
 
 def create_legacy_credit_accounts(limit=None, verbose_level=1, dry_run=False):
     """
-    Create Legacy Credit Accounts for all Customers with customer_credits = "Credit Account".
-    Uses data from microsynth.microsynth.report.customer_credits.customer_credits.get_data to find outstanding credits.
+    Create Legacy Credit Accounts for all Customers with outstanding credits according to the Customer Credits report.
     The parameter 'limit' can be used to limit the number of Customers processed (for testing).
     The parameter 'verbose_level' controls the verbosity of the output from 0 to 2 (1 recommended).
 
-    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 1, 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.create_legacy_credit_accounts --kwargs "{'verbose_level': 2, 'dry_run': False}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
-    credit_account_customers = frappe.get_all("Customer",
-        filters={"customer_credits": "Credit Account"},
-        fields=["name", "customer_name"]
-    )
-    print(f"INFO;Found {len(credit_account_customers)} customers with customer_credits='Credit Account'.")
+    processed_customers = 0
     print("\nLevel;Customer;Company;Credit Type;Message")
-    for i, customer in enumerate(credit_account_customers):
-        customer_id = customer["name"]
-        for c in frappe.get_all("Company", fields=["name"]):
-            company = c["name"]
 
+    for c in frappe.get_all("Company", fields=["name"]):
+        company = c["name"]
+        standard_credit_customers = get_customer_credits({
+            'company': company,
+            'credit_type': 'Standard'
+        })
+        standard_customers_to_process = [c['customer'] for c in standard_credit_customers if c['outstanding'] > 0.01]
+        for customer_id in standard_customers_to_process:
             standard_credits = get_customer_credits({
                 'customer': customer_id,
                 'company': company,
                 'credit_type': 'Standard'
-            })
-            if standard_credits:
-                create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
+            }, add_print_format=False)
+            create_legacy_credit_account(customer_id, company, 'Standard', standard_credits, verbose_level, dry_run=dry_run)
+            processed_customers += 1
+            if processed_customers % 10 == 0:
+                frappe.db.commit()
+            if limit and processed_customers > limit:
+                print(f"Limit of {limit} Customers reached. Stopping.")
+                return
 
+        project_credit_customers = get_customer_credits({
+            'company': company,
+            'credit_type': 'Project'
+        })
+        project_customers_to_process = [c['customer'] for c in project_credit_customers if c['outstanding'] > 0.01]
+        for customer_id in project_customers_to_process:
             project_credits = get_customer_credits({
                 'customer': customer_id,
                 'company': company,
                 'credit_type': 'Project'
-            })
-            if project_credits:
-                create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
-        if limit and i > limit:
-            print(f"Limit of {limit} Customers reached. Stopping.")
-            return
+            }, add_print_format=False)
+            create_legacy_credit_account(customer_id, company, 'Project', project_credits, verbose_level, dry_run=dry_run)
+            processed_customers += 1
+            if processed_customers % 10 == 0:
+                frappe.db.commit()
+            if limit and processed_customers > limit:
+                print(f"Limit of {limit} Customers reached. Stopping.")
+                return
 
 
-def link_legacy_credit_accounts_to_sales_orders(verbose=True):
+def link_legacy_credit_accounts_to_sales_orders(verbose=False):
     """
     Migration function:
     1) Get all Legacy Credit Accounts.
     2) Get all open Sales Orders without any entries in 'credit_accounts' (child table 'Credit Account Link').
     3) Match Legacy Credit Accounts to Sales Orders:
-         - If Sales Order.product_type == 'Project' → only use Legacy Credit Accounts that include 'Project'.
+         - If Sales Order.product_type == 'Project' -> only use Legacy Credit Accounts that include 'Project'.
          - Otherwise, use Legacy Credit Accounts that do NOT include 'Project'.
     4) Add the matching Legacy Credit Account to the Sales Order (in child table 'credit_accounts').
 
@@ -6605,7 +6643,7 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=True):
     """, as_dict=True)
 
     if not legacy_credit_accounts:
-        print("WARNING: No Legacy Credit Accounts found. Nothing to link.")
+        print("WARNING: No Legacy Credit Accounts found. Nothing to link, going to return.")
         return
 
     # Organize Legacy Accounts by (customer, company)
@@ -6639,7 +6677,7 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=True):
     """, as_dict=True)
 
     if not open_sales_orders:
-        print("WARNING: No open Sales Orders without Credit Accounts found.")
+        print("WARNING: No open Sales Orders without Credit Accounts found. Going to return.")
         return
 
     print(f"INFO: Found {len(open_sales_orders)} open Sales Orders without Credit Accounts.")
@@ -6651,7 +6689,7 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=True):
         candidate_accounts = credit_account_map.get(so_key, [])
         if not candidate_accounts:
             if verbose:
-                print(f"INFO: No Legacy Credit Account found for Sales Order {so['name']} (Customer {so['customer']}, Company {so['company']}). Skipping.")
+                print(f"INFO: No Legacy Credit Account found for open Sales Order {so['name']} (Customer {so['customer']}, Company {so['company']}). Skipping.")
             continue
 
         # Determine eligible accounts based on product_type
@@ -6662,12 +6700,12 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=True):
             eligible = [acc for acc in candidate_accounts if acc["product_type"] != "Project"]
 
         if not eligible:
-            print(f"INFO: No suitable Legacy Credit Account found for Sales Order {so['name']} (product_type={so['product_type']}). Skipping.")
+            print(f"INFO: No suitable Legacy Credit Account found for open Sales Order {so['name']} (product_type={so['product_type']}). {candidate_accounts=}. Skipping.")
             continue
 
         eligible_set = set(acc["credit_account"] for acc in eligible)
         if len(eligible_set) > 1:
-            print(f"WARNING: Multiple eligible Legacy Credit Accounts found for Sales Order {so['name']}. Picking the first one. {eligible_set=}")
+            print(f"WARNING: Multiple eligible Legacy Credit Accounts found for Sales Order {so['name']} with Product Type {so['product_type']}. {eligible_set=}")
 
         # --- 4) Append the Credit Account Link to the Sales Order ---
         try:
@@ -6676,9 +6714,37 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=True):
                 so_doc.append("credit_accounts", {"credit_account": credit_account})
             so_doc.save(ignore_permissions=True)
             linked_count += 1
-            print(f"INFO: Linked Legacy Credit Account(s) {eligible_set} on Sales Order {so['name']}.")
+            print(f"INFO: Linked Legacy Credit Account(s) {eligible_set} on open Sales Order {so['name']}.")
         except Exception as err:
-            frappe.log_error(f"Error linking {credit_account} to {so['name']}: {err}", "link_legacy_credit_accounts_to_sales_orders")
-            print(f"ERROR: Failed linking {credit_account} to Sales Order {so['name']}: {err}")
+            #frappe.log_error(f"Error linking {credit_account} to {so['name']}: {err}", "link_legacy_credit_accounts_to_sales_orders")
+            print(f"WARNING: Failed linking {credit_account} to open Sales Order {so['name']}, going to force it: {err}")
 
-    print(f"SUMMARY: Migration complete. Linked {linked_count} Sales Orders to Legacy Credit Accounts.")
+            # FORCE INSERT child rows without triggering validation
+            for credit_account in eligible_set:
+                try:
+                    frappe.db.sql("""
+                        INSERT INTO `tabCredit Account Link`
+                            (`name`,
+                             `parent`,
+                             `parenttype`,
+                             `parentfield`,
+                             `credit_account`,
+                             `idx`)
+                        VALUES
+                            (%s,
+                             %s,
+                             'Sales Order',
+                             'credit_accounts',
+                             %s,
+                             %s)
+                    """, (
+                        frappe.generate_hash(),      # name
+                        so["name"],                  # parent
+                        credit_account,              # credit_account
+                        1                            # idx (safe default, ERP will reorder on next save)
+                    ))
+                    frappe.db.commit()
+                except Exception as err2:
+                    print(f"ERROR: Could not force link Legacy Credit Account {credit_account} to {so['name']}: {err2}")
+
+    print(f"SUMMARY: Migration completed. Linked {linked_count} Sales Orders to Legacy Credit Accounts.")
