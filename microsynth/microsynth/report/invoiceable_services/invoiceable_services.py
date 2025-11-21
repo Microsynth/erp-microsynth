@@ -53,9 +53,23 @@ def get_data(filters=None):
                 `tabCustomer`.`invoicing_method` AS `invoicing_method`,
                 `tabCustomer`.`customer_credits` AS `customer_credits`,
                 CASE
-                    WHEN `tabCustomer`.`customer_credits` = 'Credit Account' THEN 0
+                    WHEN (
+                        SELECT
+                            COUNT(`tabCredit Account Link`.`name`)
+                        FROM `tabSales Order`
+                        LEFT JOIN `tabDelivery Note Item`
+                            ON `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                        LEFT JOIN `tabCredit Account Link`
+                            ON `tabCredit Account Link`.`parent` = `tabSales Order`.`name`
+                            AND `tabCredit Account Link`.`parenttype` = 'Sales Order'
+                            AND `tabCredit Account Link`.`parentfield` = 'credit_accounts'
+                        WHERE
+                            `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                    ) > 0
+                    THEN 0
                     ELSE `tabCustomer`.`collective_billing`
                 END AS `collective_billing`,
+
                 `tabDelivery Note`.`is_punchout` AS `is_punchout`,
                 `tabDelivery Note`.`po_no` AS `po_no`,
                 `tabCountry`.`export_code` AS `region`,

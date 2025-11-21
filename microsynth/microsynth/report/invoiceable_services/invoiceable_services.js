@@ -33,7 +33,8 @@ frappe.query_reports["Invoiceable Services"] = {
         {
             "fieldname": "show_remaining_credits",
             "label": __("Show remaining credits"),
-            "fieldtype": "Check"
+            "fieldtype": "Check",
+            "default": 1
         }
     ],
     "onload": (report) => {
