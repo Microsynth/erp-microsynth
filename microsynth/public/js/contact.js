@@ -360,8 +360,6 @@ function create_promotion_credits(frm) {
             let default_currency = customer.default_currency || "";
 
             // --- 3. Build dialog ---
-            
-        
             frappe.model.with_doctype("Product Type Link", function() {
                 let d = new frappe.ui.Dialog({
                     'title': __("Create Promotion Credits"),
@@ -434,20 +432,20 @@ function create_promotion_credits(frm) {
                             frappe.msgprint(__("Please fill all mandatory fields."));
                             return;
                         }
-                        let raw = values.product_types;
+                        let raw = values.product_types || [];
                         let product_types = [];
-                        if (!raw) {
-                            product_types = [];
-                        } else if (Array.isArray(raw) && typeof raw[0] === "string") {
-                            product_types = raw;
-                        } else if (Array.isArray(raw) && raw[0] && typeof raw[0] === "object") {
-                            product_types = raw.map(x => x.value).filter(Boolean);
-                        } else if (typeof raw === "string") {
-                            product_types = raw.split(',').map(x => x.trim()).filter(Boolean);
+
+                        if (Array.isArray(raw)) {
+                            raw.forEach(function(r) {
+                                if (r && r.product_type) {
+                                    product_types.push(r.product_type);
+                                } else if (typeof r === "string") {
+                                    product_types.push(r);
+                                }
+                            });
                         }
 
                         // --- 5. Call backend to create credit account + SI ---
-                        // TODO: Why does the freeze not work?
                         frappe.call({
                             'method': "microsynth.microsynth.credits.create_promotion_credit_account",
                             'args': {
