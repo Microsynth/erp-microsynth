@@ -110,7 +110,7 @@ def allocate_credits(sales_invoice_doc):
         credit_type = "Standard"
 
     # get list of applicable credit accounts
-    if sales_invoice_doc.override_credit_accounts:
+    if sales_invoice_doc.get('override_credit_accounts'):
         credit_account_ids = [entry.credit_account for entry in sales_invoice_doc.override_credit_accounts]
     else:
         sales_order_ids = set()
