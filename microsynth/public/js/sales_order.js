@@ -235,11 +235,11 @@ frappe.ui.form.on('Sales Order', {
                         function no() {
                             // Ask confirm #2
                             frappe.confirm(
-                                __("Do you want to apply Credit Accounts manually using the button 'Add Credit Accounts'?"),
+                                __("Do you want to apply Credit Accounts manually using the button <b>Add Credit Accounts</b>?"),
                                 function yes_manual() {
                                     // stop submit
-                                    resolve(false);
-                                    // TODO: Why is it submitted anyway?
+                                    frappe.validated = false;
+                                    return;
                                 },
                                 function no_just_submit() {
                                     // submit anyway
