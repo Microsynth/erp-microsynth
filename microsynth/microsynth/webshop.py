@@ -3708,6 +3708,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
             FROM `tabCredit Account`
             WHERE
                 contact_person IN ({contacts})
+                AND status != 'Disabled'
         """
 
         if customer_id:
