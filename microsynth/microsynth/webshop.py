@@ -3707,7 +3707,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
                 customer
             FROM `tabCredit Account`
             WHERE
-                contact IN ({contacts})
+                contact_person IN ({contacts})
         """
 
         if customer_id:
