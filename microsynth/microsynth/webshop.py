@@ -3634,7 +3634,7 @@ def get_ca_forecast_balance(credit_account_doc, balance):
         forecast_balance = balance - total_unbilled_amount
     else:
         forecast_balance = balance
-    return forecast_balance
+    return round(forecast_balance, 2)
 
 
 def get_credit_account_dto(credit_account):
@@ -3658,7 +3658,7 @@ def get_credit_account_dto(credit_account):
         "customer": credit_account.customer,
         "currency": credit_account.currency,
         "expiry_date": credit_account.expiry_date,
-        "balance": balance,
+        "balance": round(balance, 2),
         "forecast_balance": get_ca_forecast_balance(credit_account, balance),
         "product_types": get_product_types(credit_account.name),
         "product_types_locked": credit_account.product_types_locked
@@ -3817,7 +3817,7 @@ def update_credit_account(credit_account):
             if credit_account.get('status') == 'Disabled':
                 # Only allow to disable a Credit Account if its balance is zero
                 balance = get_credit_account_balance(credit_account.get('account_id'))
-                if balance != 0.0:
+                if balance >= 0.01 or balance <= -0.01:
                     frappe.throw(f"Not allowed to change status of Credit Account '{credit_account.get('account_id')}' to 'Disabled' because its balance is not zero (balance: {balance}).")
             credit_account_doc.status = credit_account.get('status')
         if 'webshop_account' in credit_account and credit_account.get('webshop_account') != credit_account_doc.contact_person:
@@ -4022,7 +4022,7 @@ def get_transactions(account_id):
                 "web_order_id": row.get('web_order_id'),
                 "currency": row.get('currency'),
                 "amount": net_amount,
-                "balance": running_balance,
+                "balance": round(running_balance, 2),
                 "product_type": row.get('product_type'),
                 "po_no": row.get('po_no'),
                 "creation": row.get('creation')  # for sorting
