@@ -770,7 +770,11 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
     bench execute microsynth.microsynth.credits.get_available_credit_accounts --kwargs "{'company': 'Microsynth Austria GmbH', 'currency': 'EUR', 'customer': '840931', 'product_types': ['Oligos', 'Project']}"
     """
     today = nowdate()
-    product_types = product_types or []
+    if product_types:
+        if isinstance(product_types, str):
+            product_types = json.loads(product_types)
+    else:
+        product_types = []
 
     conditions = [
         "`tabCredit Account`.`company` = %(company)s",

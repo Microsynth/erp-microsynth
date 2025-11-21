@@ -239,6 +239,7 @@ frappe.ui.form.on('Sales Order', {
                                 function yes_manual() {
                                     // stop submit
                                     resolve(false);
+                                    // TODO: Why is it submitted anyway?
                                 },
                                 function no_just_submit() {
                                     // submit anyway
@@ -440,6 +441,7 @@ function show_credit_account_dialog(frm) {
             if (r.exc) return;
 
             const accounts = r.message || [];
+            console.log(r.message);
             if (accounts.length === 0) {
                 frappe.msgprint(__("No Credit Accounts available."));
                 return;
