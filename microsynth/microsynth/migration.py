@@ -6138,6 +6138,7 @@ def migrate_debtors(customer_id, company, currency, verbose=True):
         new_customer.default_currency = currency
         # delete all account settings
         new_customer.accounts = []
+        new_customer.ext_debitor_number = 77777  # dummy value to allow filtering, needs to be updated with value from DATEV
         # save the customer
         new_customer.insert()
         new_customer.customer_name = old_customer_name
