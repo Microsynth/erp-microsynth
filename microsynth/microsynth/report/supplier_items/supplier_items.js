@@ -44,6 +44,13 @@ function create_new_supplier_item() {
         'title': 'New Purchasing Item',
         'fields': [
             {
+                label: 'Item Name',
+                fieldname: 'item_name',
+                fieldtype: 'Data',
+                reqd: 1
+            },
+            { fieldtype: 'Section Break' },
+            {
                 label: 'Internal Code',
                 fieldname: 'internal_code',
                 fieldtype: 'Data',
@@ -69,16 +76,16 @@ function create_new_supplier_item() {
             },
             { fieldtype: 'Section Break' },
             {
-                label: 'Item Name',
-                fieldname: 'item_name',
-                fieldtype: 'Data',
-                reqd: 1
-            },
-            { fieldtype: 'Section Break' },
-            {
                 label: 'Shelf Life in Years',
                 fieldname: 'shelf_life_in_years',
                 fieldtype: 'Float',
+                reqd: 1
+            },
+            {
+                label: 'Pack Size of one stock unit',
+                fieldname: 'pack_size',
+                fieldtype: 'Float',
+                //description: 'How much does a stock unit contain?',
                 reqd: 1
             },
             { fieldtype: 'Column Break' },
@@ -89,8 +96,15 @@ function create_new_supplier_item() {
                 options: 'UOM',
                 reqd: 1
             },
+            {
+                label: 'Pack UOM',
+                fieldname: 'pack_uom',
+                fieldtype: 'Link',
+                options: 'UOM',
+                reqd: 1
+            },
             // --- One Item Default ---
-            { fieldtype: 'Section Break', label: 'Item Default' },
+            { fieldtype: 'Section Break' },
             {
                 label: 'Company',
                 fieldname: 'company',
@@ -160,20 +174,20 @@ function create_new_supplier_item() {
                 options: '\nPotential\nVerified\nDiscontinued\nBlocked'
             },
             // --- One UOM Conversion ---
-            { fieldtype: 'Section Break', label: 'Additional UOM' },
+            { fieldtype: 'Section Break' },
             {
-                label: 'Purchasing UOM',
-                fieldname: 'uom',
+                label: 'Purchase UOM',
+                fieldname: 'purchase_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
-                description: 'Purchasing Unit of Measure'
+                description: 'Default Purchase Unit of Measure'
             },
             { fieldtype: 'Column Break' },
             {
                 label: 'Conversion Factor',
                 fieldname: 'conversion_factor',
                 fieldtype: 'Float',
-                description: 'Factor to convert to stock UOM'
+                description: 'Factor to convert from purchase to stock UOM'
             }
         ],
         'primary_action_label': 'Create',
@@ -188,7 +202,7 @@ function create_new_supplier_item() {
                         const link = frappe.utils.get_form_link('Item', r.message);
                         frappe.msgprint({
                             'title': __('Item Created'),
-                            'message': __('Item created: {0}', [`<a href="${link}" target="_blank">${r.message}</a>`]),
+                            'message': __('Item created: {0}<br>Please add its Storage Location(s), Safety Stock, Lead Time in days, Minimum Order Qty, etc. if necessary.', [`<a href="${link}" target="_blank">${r.message}</a>`]),
                             'indicator': 'green'
                         });
                         dialog.hide();

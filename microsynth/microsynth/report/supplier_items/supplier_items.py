@@ -150,20 +150,22 @@ def create_purchasing_item(data):
     item = frappe.new_doc("Item")
     item.item_code = item_code
     item.item_name = item_name
-    item.material_code = material_code
-    item.stock_uom = data.get("stock_uom")
-    item.purchase_uom = data.get("uom")
-    item.shelf_life_in_days = int(float(data.get("shelf_life_in_years") or 0) * 365)
     item.item_group = "Purchasing"
+    item.pack_size = data.get("pack_size")
+    item.pack_uom = data.get("pack_uom")
+    item.stock_uom = data.get("stock_uom")
+    item.material_code = material_code
+    item.purchase_uom = data.get("purchase_uom")
+    item.shelf_life_in_days = int(float(data.get("shelf_life_in_years") or 0) * 365)
     item.is_purchase_item = 1
     item.is_sales_item = 0
     item.is_stock_item = 1
     item.has_batch_no = 1
 
     # --- UOM Conversion (single entry) ---
-    if data.get("uom"):
+    if data.get("purchase_uom"):
         item.append("uoms", {
-            "uom": data.get("uom"),
+            "uom": data.get("purchase_uom"),
             "conversion_factor": data.get("conversion_factor") or 1.0
         })
 
@@ -185,5 +187,4 @@ def create_purchasing_item(data):
 
     item.insert(ignore_permissions=True)
     frappe.db.commit()
-
     return item.name
