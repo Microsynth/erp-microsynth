@@ -1973,3 +1973,22 @@ def get_location_path_string(location_name):
     cache.set_value(cache_key, path_str)
 
     return path_str
+
+
+@frappe.whitelist()
+def add_location_to_item(item, location):
+    """
+    Adds a row to the Table MultiSelect 'storage_locations' using child DocType 'Location Link'.
+    """
+    if not item or not location:
+        return
+
+    doc = frappe.get_doc("Item", item)
+
+    # Check if location already exists
+    existing = {row.location for row in doc.get("storage_locations")}
+    if location in existing:
+        return
+
+    doc.append("storage_locations", {"location": location})
+    doc.save()
