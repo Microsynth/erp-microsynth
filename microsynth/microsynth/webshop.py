@@ -3712,7 +3712,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
         """
 
         if customer_id:
-            sql += " OR (customer = %s AND account_type = 'Legacy')"
+            sql += " OR (customer = %s AND account_type = 'Legacy' AND status != 'Disabled')"
             params.append(customer_id)
 
         credit_accounts = frappe.db.sql(sql, params, as_dict=True)
