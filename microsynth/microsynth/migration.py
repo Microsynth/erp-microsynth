@@ -6755,4 +6755,62 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=False):
     print(f"SUMMARY: Migration completed. Linked {linked_count} Sales Orders to Legacy Credit Accounts.")
 
 
-# TODO: disable Credit Accounts of Customers who have customer_credits == 'blocked'
+def disable_blocked_credit_accounts(dry_run=True):
+    """
+    Disable all Credit Accounts belonging to Customers whose 'customer_credits' field is set to 'blocked'.
+
+    :param dry_run: If True, only print what would happen.
+                    If False, actually update the Credit Accounts.
+
+    bench execute microsynth.microsynth.migration.disable_blocked_credit_accounts --kwargs "{'dry_run': True}"
+    """
+    print("Checking for customers with customer_credits == 'blocked'")
+
+    blocked_customers = frappe.get_all(
+        "Customer",
+        filters={"customer_credits": "blocked"},
+        fields=["name"]
+    )
+    if not blocked_customers:
+        print("No customers found with customer_credits = 'blocked'. Nothing to do, going to return.")
+        return
+
+    customer_list = [c["name"] for c in blocked_customers]
+    print(f"Found {len(customer_list)} Customers with blocked credits:")
+    for c in customer_list:
+        print(f"  - {c}")
+
+    print("\n=== Fetching Credit Accounts for blocked customers ===")
+    credit_accounts = frappe.get_all(
+        "Credit Account",
+        filters={"customer": ["in", customer_list]},
+        fields=["name", "customer", "status"]
+    )
+    if not credit_accounts:
+        print("No Credit Accounts found for these customers, going to return.")
+        return
+    print(f"Found {len(credit_accounts)} Credit Accounts to evaluate.")
+    updated_count = 0
+
+    for ca in credit_accounts:
+        print(f"\nCredit Account: {ca['name']} (Customer: {ca['customer']})")
+        print(f"  Current status: {ca['status']}")
+
+        if ca["status"] == "Disabled":
+            print("  -> Already disabled. Skipping.")
+            continue
+
+        print("  -> Will be set to: Disabled")
+
+        if not dry_run:
+            doc = frappe.get_doc("Credit Account", ca["name"])
+            doc.status = "Disabled"
+            doc.save()
+            updated_count += 1
+        else:
+            print("  (dry run) Not saving.")
+
+    if not dry_run:
+        print(f"\nDONE: Updated {updated_count} Credit Accounts.")
+    else:
+        print("\nDRY RUN completed - no changes were written.")
