@@ -33,6 +33,35 @@ TRACKING_URLS = {
     '1167': "https://www.ups.com/track?tracknum="
 }
 
+# TODO: Move settings to a new DocType (Task #17847)
+
+SHIPPING_SERVICES = {
+    '1100': "P.P.A",
+    '1101': "A-plus",
+    '1102': "Express",
+    '1103': "Austria",
+    '1105': "EMS",
+    '1106': "Germany",
+    '1108': "UPS EXP DE",
+    '1110': "Abholung",
+    '1112': "EU Post DE",  # discontinued, should be disabled once all open invoices are paid, replaced by 1115
+    '1113': "UPS STD",  # Standard Mail France
+    '1115': "UPS STD",  # formerly: "EU Post DE"
+    '1117': "UPS",  # discontinued, should be disabled once all open invoices are paid
+    '1118': "Post CH",
+    '1120': "DHL CH",  # not for EU
+    '1123': "DHL/CH", # for countries out of EU
+    '1126': "FedEx",
+    '1130': "Internal",
+    '1140': "IMP/IMBA",
+    '1160': "UPS STD",
+    '1161': "UPS STD",
+    '1162': "UPS STD",
+    '1165': "UPS EXP",
+    '1166': "UPS EXP",
+    '1167': "UPS EXP"
+}
+
 
 def get_shipping_items_with_tracking():
     """
@@ -44,40 +73,6 @@ def get_shipping_items_with_tracking():
 
 
 def get_shipping_service(item_code, ship_adr, cstm_ID):
-
-    SHIPPING_SERVICES = {
-        '1100': "P.P.A",
-        '1101': "A-plus",
-        '1102': "Express",
-        '1103': "Austria",
-        '1104': "Einschreiben",
-        '1105': "EMS",
-        '1106': "Germany",
-        '1108': "UPS EXP DE",
-        '1110': "Abholung",
-        '1112': "EU Post DE",  # should be disabled once all open invoices are paid, replaced by 1115
-        '1113': "UPS STD",  # Standard Mail France
-        #'1114': "UPS",  # disabled (replaced by 1160 and 1165)
-        '1115': "UPS STD",  # formerly: "EU Post DE",
-        '1117': "UPS",  # should be disabled once all open invoices are paid
-        '1118': "Post CH",
-        #'1119': "DHL Economy Select",  # only for EU, disabled
-        '1120': "DHL CH",  # not for EU
-        #'1122': "DHL",  # disabled
-        '1123': "DHL/CH", # for countries out of EU
-        '1126': "FedEx",
-        '1130': "Internal",
-        '1133': "Sequencing",
-        '1140': "IMP/IMBA",
-        '1160': "UPS STD",
-        '1161': "UPS STD",
-        '1162': "UPS STD",
-        '1165': "UPS EXP",
-        '1166': "UPS EXP",
-        '1167': "UPS EXP"
-    }
-    # TODO: Move settings to a new DocType (Task #17847)
-
     try:
         sh_serv = SHIPPING_SERVICES[item_code]
     except:

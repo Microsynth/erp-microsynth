@@ -1,10 +1,11 @@
 # Copyright (c) 2025, Microsynth
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
 import urllib.parse
 import calendar
+import frappe
+from frappe import _
+from microsynth.microsynth.shipping import SHIPPING_SERVICES
 
 
 def validate_filters(filters):
@@ -76,6 +77,13 @@ def get_data(filters):
         "options": "Item",
         "width": 375,
         "align": "left"
+    },
+    {
+        "label": _("Internal Note"),
+        "fieldname": "internal_note",
+        "fieldtype": "Data",
+        "width": 90,
+        "align": "left"
     }]
     for m in months:
         columns.append({
@@ -98,7 +106,9 @@ def get_data(filters):
     data = []
     for item_code, month_counts in pivot.items():
         row = {
-            "item_code": f"{item_code} - {item_names.get(item_code, '')}"
+            "item_code": item_code,
+            "item_name": item_names.get(item_code, ''),
+            "internal_note": SHIPPING_SERVICES.get(item_code, "")
         }
         total = 0
         for month, count in month_counts.items():
@@ -108,7 +118,7 @@ def get_data(filters):
             # URL for clickable cell
             date_filter = ["Between", [f"{year}-{mon:02d}-01", f"{year}-{mon:02d}-{last_day}"]]
             encoded_filter = urllib.parse.quote(str(date_filter).replace("'", '"'))
-            url = f'desk#List/Delivery%20Note/List?item_code={item_code}&posting_date={encoded_filter}'
+            url = f'desk#List/Delivery%20Note/List?item_code={item_code}&posting_date={encoded_filter}&docstatus=1'
 
             # HTML cell with link
             row[month] = f'<a href="{url}" target="_blank">{count}</a>'
