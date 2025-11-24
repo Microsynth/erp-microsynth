@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
+from microsynth.microsynth.purchasing import get_location_path_string
 
 
 def get_columns():
@@ -26,6 +27,7 @@ def get_columns():
         {"label": _("Shelf Life Days"), "fieldname": "shelf_life_in_days", "fieldtype": "Int", "width": 105, "align": "left"},
         {"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 100},
         {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
+        {"label": _("Locations"), "fieldname": "locations", "fieldtype": "Data", "width": 500},
     ]
 
 
@@ -84,7 +86,31 @@ def get_data(filters):
         {conditions}
     """.format(conditions=conditions)
 
-    return frappe.db.sql(query, values, as_dict=True)
+    data = frappe.db.sql(query, values, as_dict=True)
+
+    # --- Enrich with Locations ---
+    for row in data:
+        item_code = row["item_code"]
+
+        # Get child table entries from Table MultiSelect
+        links = frappe.get_all(
+            "Location Link",
+            filters={"parent": item_code, "parentfield": "storage_locations"},
+            fields=["location"]
+        )
+        if not links:
+            row["locations"] = ""
+            continue
+
+        # Convert each location into "BAL / F1 / R101 / Freezer / Rack 4"
+        path_strings = [
+            get_location_path_string(link["location"])
+            for link in links
+            if link.get("location")
+        ]
+        row["locations"] = "  |  ".join(path_strings)
+
+    return data
 
 
 def execute(filters=None):

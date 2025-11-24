@@ -368,7 +368,7 @@ def set_default_payable_accounts(supplier, event):
     for s in frappe.get_all("Intercompany Settings Supplier", fields = ['supplier']):
         intercompany_suppliers.add(s['supplier'])
 
-    if  supplier.name in intercompany_suppliers or supplier.supplier_name in ['Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS']:  # TODO remove fallback to supplier_name once they are all entered in the supplier settings
+    if supplier.name in intercompany_suppliers or supplier.supplier_name in ['Microsynth Seqlab GmbH', 'Microsynth Austria GmbH', 'Microsynth France SAS']:  # TODO remove fallback to supplier_name once they are all entered in the supplier settings
         return
 
     for company in companies:
@@ -558,7 +558,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-17_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-17_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-17_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-19_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-24_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-24_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
     """
     # TODO: Refactor code
     known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
@@ -906,7 +906,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-10-10_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-17_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-20_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-24_supplier_mapping_DEV-ERP.txt'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -1911,3 +1911,65 @@ def apply_item_price_changes(price_list, adds, updates):
 
     frappe.db.commit()
     return {"status": "done"}
+
+
+@frappe.whitelist()
+def get_location_path_string(location_name):
+    """
+    Return the human-readable Location path for a given Location.
+
+    Skips the root "All Locations".
+    Maps the second-level node to its code (BAL, GOE, LYO, WIE).
+    Other levels are kept as their Location name.
+    """
+    # Map second-level location nodes to abbreviations
+    SECOND_LEVEL_MAP = {
+        "Balgach": "BAL",
+        "Göttingen": "GOE",
+        "Lyon": "LYO",
+        "Wien": "WIE",
+    }
+
+    if not location_name:
+        return ""
+
+    cache = frappe.cache()
+
+    # Try cache first
+    cache_key = f"location_path::{location_name}"
+    cached = cache.get_value(cache_key)
+    if cached:
+        return cached
+
+    # Get the Location doc
+    loc = frappe.get_doc("Location", location_name)
+
+    # Get the full tree path (List of ancestor names)
+    # This includes the root "All Locations"
+    ancestors = frappe.get_all(
+        "Location",
+        filters={"lft": ["<=", loc.lft], "rgt": [">=", loc.rgt]},
+        fields=["name"],
+        order_by="lft asc"
+    )
+    # Extract as list of names
+    path = [a["name"] for a in ancestors]
+
+    # Remove the top-level root
+    if path and path[0] == "All Locations":
+        path = path[1:]
+
+    if not path:
+        return ""
+
+    # Map second level if applicable
+    if len(path) >= 1:
+        first = path[0]
+        path[0] = SECOND_LEVEL_MAP.get(first, first)
+
+    path_str = " / ".join(path)
+
+    # Store in cache
+    cache.set_value(cache_key, path_str)
+
+    return path_str
