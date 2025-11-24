@@ -6753,3 +6753,6 @@ def link_legacy_credit_accounts_to_sales_orders(verbose=False):
                     print(f"ERROR: Could not force link Legacy Credit Account {credit_account} to {so['name']}: {err2}")
 
     print(f"SUMMARY: Migration completed. Linked {linked_count} Sales Orders to Legacy Credit Accounts.")
+
+
+# TODO: disable Credit Accounts of Customers who have customer_credits == 'blocked'
