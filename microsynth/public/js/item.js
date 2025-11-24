@@ -16,6 +16,37 @@ frappe.ui.form.on('Item', {
                 show_add_location_dialog(frm);
             });
         }
+
+        if (frm.doc.storage_locations.length > 0) {
+            // Remove previous dashboard comments
+            frm.dashboard.clear_comment();
+
+            // Collect all location paths
+            const storage_locations = frm.doc.storage_locations || [];
+
+            if (!storage_locations.length) return;
+
+            const location_promises = storage_locations.map(row => {
+                return frappe.call({
+                    method: "microsynth.microsynth.purchasing.get_location_path_string",
+                    args: { location_name: row.location },
+                });
+            });
+
+            // Wait for all calls to finish
+            Promise.all(location_promises).then(results => {
+                const paths = results
+                    .map(r => r.message)
+                    .filter(p => p); // remove empty
+
+                if (!paths.length) return;
+
+                const text = "<b>Storage Locations:</b><br>" + paths.join("<br>");
+
+                // Add permanent green dashboard comment
+                frm.dashboard.add_comment(text, 'green', true);
+            });
+        }
     }
 });
 
@@ -35,7 +66,15 @@ function show_add_location_dialog(frm) {
                         parent_location: ["in", ["", null]]
                     }
                 }),
-                default: "Balgach"
+                default: "Balgach",
+                onchange: () => {
+                    // Auto-clear dependents
+                    d.set_value("floor", "");
+                    d.set_value("room", "");
+                    d.set_value("destination", "");
+                    d.set_value("rack", "");
+                    refresh_field_states(d);
+                }
             },
             {
                 label: __("Floor"),
@@ -47,6 +86,12 @@ function show_add_location_dialog(frm) {
                     return d.get_value("subsidiary")
                         ? { filters: { parent_location: d.get_value("subsidiary") } }
                         : {};
+                },
+                onchange: () => {
+                    d.set_value("room", "");
+                    d.set_value("destination", "");
+                    d.set_value("rack", "");
+                    refresh_field_states(d);
                 }
             },
             {
@@ -59,6 +104,11 @@ function show_add_location_dialog(frm) {
                     return d.get_value("floor")
                         ? { filters: { parent_location: d.get_value("floor") } }
                         : {};
+                },
+                onchange: () => {
+                    d.set_value("destination", "");
+                    d.set_value("rack", "");
+                    refresh_field_states(d);
                 }
             },
             {
@@ -71,6 +121,10 @@ function show_add_location_dialog(frm) {
                     return d.get_value("room")
                         ? { filters: { parent_location: d.get_value("room") } }
                         : {};
+                },
+                onchange: () => {
+                    d.set_value("rack", "");
+                    refresh_field_states(d);
                 }
             },
             {
@@ -118,4 +172,24 @@ function show_add_location_dialog(frm) {
         }
     });
     d.show();
+
+    // Initialize states: disable child fields at start
+    refresh_field_states(d);
+}
+
+
+function refresh_field_states(d) {
+    // Retrieve values
+    const subsidiary = d.get_value("subsidiary");
+    const floor = d.get_value("floor");
+    const room = d.get_value("room");
+    const destination = d.get_value("destination");
+
+    // Enable/disable based on hierarchy
+    d.get_field("floor").df.read_only = !subsidiary;
+    d.get_field("room").df.read_only = !floor;
+    d.get_field("destination").df.read_only = !room;
+    d.get_field("rack").df.read_only = !destination;
+
+    d.refresh();
 }

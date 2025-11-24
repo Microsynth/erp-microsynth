@@ -1921,6 +1921,8 @@ def get_location_path_string(location_name):
     Skips the root "All Locations".
     Maps the second-level node to its code (BAL, GOE, LYO, WIE).
     Other levels are kept as their Location name.
+
+    bench execute microsynth.microsynth.purchasing.get_location_path_string --kwargs "{'location_name': 'Balgach'}"
     """
     # Map second-level location nodes to abbreviations
     SECOND_LEVEL_MAP = {
