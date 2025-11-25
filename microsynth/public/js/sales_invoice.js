@@ -547,20 +547,23 @@ function allocate_credits(frm) {
                             });
                             frm.refresh_field("override_credit_accounts");
 
-                            frappe.call({
-                                'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
-                                'args': {
-                                    'sales_invoice': frm.doc.name
-                                },
-                                'freeze': true,
-                                'freeze_message': __("Processing..."),
-                                'callback': function(r)
-                                {
-                                    cur_frm.reload_doc();
-                                    frappe.show_alert( __("allocated credits") );
-                                }
+                            cur_frm.save().then(() => {
+                                frappe.call({
+                                    'method': "microsynth.microsynth.credits.allocate_credits_to_invoice",
+                                    'args': {
+                                        'sales_invoice': frm.doc.name
+                                    },
+                                    'async': true,
+                                    'freeze': true,
+                                    'freeze_message': __("Processing..."),
+                                    'callback': function(r)
+                                    {
+                                        cur_frm.reload_doc();
+                                        frappe.show_alert( __("allocated credits") );
+                                    }
+                                });
+                                d.hide();
                             });
-                            d.hide();
                         },
                         secondary_action_label: __("Close"),
                         secondary_action() {
