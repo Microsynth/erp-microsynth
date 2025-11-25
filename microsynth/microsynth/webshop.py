@@ -3999,12 +3999,13 @@ def get_transactions(account_id):
         }
         customer_credits = get_data(filters)
 
-        # 1. Sort chronologically (creation datetime ascending) to compute running balance
+        # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
         customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
 
         running_balance = 0.0
         transactions = []
 
+        i = len(customer_credits) - 1
         for row in customer_credits:
             net_amount = row.get('net_amount') or 0.0
             if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
@@ -4027,16 +4028,12 @@ def get_transactions(account_id):
                 "balance": round(running_balance, 2),
                 "product_type": row.get('product_type'),
                 "po_no": row.get('po_no'),
-                "creation": row.get('creation')  # for sorting
+                "idx": i    # index for webshop api to maintain the order of transactions
             })
+            i -= 1
 
-        # 2. Sort back to reverse-chronological order (date + creation descending)
-        transactions.sort(key=lambda x: (x['date'], x['creation']), reverse=True)
-
-        # Assign idx (0 = oldest, so reverse the list again for idx)
-        for i, tx in enumerate(reversed(transactions)):
-            tx['idx'] = i
-            del tx['creation']  # clean up internal field needed for sorting only
+        # reverse to display the most recent transaction first
+        transactions.reverse()
 
         return {
             "success": True,
