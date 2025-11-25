@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-11-21 16:00:31.154660",
+ "modified": "2025-11-25 09:33:26.211875",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Shipping Item Usage",
@@ -28,6 +28,9 @@
   },
   {
    "role": "System Manager"
+  },
+  {
+   "role": "Account Manager Subsidiary"
   }
  ]
 }
