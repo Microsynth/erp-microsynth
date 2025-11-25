@@ -30,7 +30,7 @@ from microsynth.microsynth.seqblatt import process_label_status_change
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.invoicing import set_income_accounts
+from microsynth.microsynth.invoicing import set_income_accounts, transmit_sales_invoice
 from datetime import date, datetime, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
@@ -3956,7 +3956,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         invoice.naming_series = get_naming_series("Sales Invoice", company)
         invoice.insert(ignore_permissions=ignore_permissions)
         invoice.submit()
-        # TODO: Transmit the Sales Invoice?
+        # Transmit the Sales Invoice
+        transmit_sales_invoice(invoice.name)
         # Set has_transaction on the Credit Account
         account_doc = frappe.get_doc("Credit Account", account_id)
         if not account_doc.has_transactions:
