@@ -572,6 +572,13 @@ def get_data():
                         "label": _("Shipping Times"),
                         "doctype": "Tracking Code",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Shipping Item Usage",
+                        "label": _("Shipping Item Usage"),
+                        "doctype": "Delivery Note",
+                        "is_query_report": True
                     }
             ]
         },
