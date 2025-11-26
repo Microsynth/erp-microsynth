@@ -4031,7 +4031,7 @@ def get_transactions(account_id):
             'company': credit_account.company,
             'customer': credit_account.customer
         }
-        transactions = build_transactions_with_running_balance(filters, opening_balance=0, type_mapping=type_mapping)
+        transactions = build_transactions_with_running_balance(filters, type_mapping=type_mapping)
 
         # reverse to display the most recent transaction first
         transactions.reverse()

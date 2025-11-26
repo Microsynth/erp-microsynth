@@ -2,10 +2,14 @@
 # For license information, please see license.txt
 
 import json
+from datetime import datetime
+
 import frappe
 from frappe import _
 from frappe.utils.pdf import get_pdf
+
 from microsynth.microsynth.utils import get_sql_list
+
 
 def execute(filters=None):
     columns = get_columns()
@@ -59,8 +63,6 @@ def get_data(filters, short=False, add_print_format=True):
     elif filters and filters.get('credit_type') == 'Project':
         conditions += f"AND `tabSales Invoice`.`product_type` = 'Project'"
 
-    if filters and filters.get('from_date'):
-        conditions += f"AND `tabSales Invoice`.`posting_date` >= '{filters.get('from_date')}'"
     if filters and filters.get('to_date'):
         conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
     if filters and filters.get('currency'):
@@ -372,7 +374,7 @@ def download_pdf(company, customer, credit_account=None):
     frappe.local.response.type = "download"
 
 
-def build_transactions_with_running_balance(filters, opening_balance, type_mapping={}):
+def build_transactions_with_running_balance(filters, type_mapping={'Allocation': 'Charge', 'Credit': 'Deposit'}):
     """
     Takes customer credits (list of dictonaries as returned by the get_data function of the Customer Credits report),
     an opening_balance and optionally a type mapping dictionary.
@@ -383,7 +385,7 @@ def build_transactions_with_running_balance(filters, opening_balance, type_mappi
     # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
     customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
 
-    running_balance = opening_balance
+    running_balance = 0.0
     transactions = []
     i = len(customer_credits) - 1
 
@@ -418,6 +420,31 @@ def build_transactions_with_running_balance(filters, opening_balance, type_mappi
 
 
 def get_balance_sheet_data(credit_account_id, from_date, to_date):
+    """
+    Retrieve balance sheet data for a given credit account within a specified date range.
+
+    Returns opening and closing balances, and all transactions within the range with running balances.
+
+    Args:
+        credit_account_id (str): The name/ID of the Credit Account.
+        from_date (str): Start date of the reporting period (YYYY-MM-DD).
+        to_date (str): End date of the reporting period (YYYY-MM-DD).
+
+    Returns:
+        dict: {
+            'success': bool,
+            'message': str,
+            'opening_balance': float,
+            'closing_balance': float,
+            'transactions': list of dicts
+        }
+
+    bench execute microsynth.microsynth.report.customer_credits.customer_credits.get_balance_sheet_data --kwargs "{'credit_account_id': 'CA-000001', 'from_date': '2025-01-01', 'to_date': '2025-06-30'}"
+    """
+    # Convert string inputs to datetime.date
+    from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+    to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+
     try:
         credit_account_doc = frappe.get_doc("Credit Account", credit_account_id)
     except Exception as err:
@@ -430,20 +457,43 @@ def get_balance_sheet_data(credit_account_id, from_date, to_date):
         'company': credit_account_doc.company,
         'customer': credit_account_doc.customer,
         'credit_account': credit_account_id,
-        'from_date': from_date,
         'to_date': to_date
     }
-    opening_balance = 0  # TODO: How to best get the available amount of the credit_account from the day before from_date?
     try:
-        transactions = build_transactions_with_running_balance(filters, opening_balance)
+        all_transactions = build_transactions_with_running_balance(filters)
     except Exception as err:
         return {
             'success': False,
             'message': f"Error building transactions with running balance: {err}",
             'transactions': None
         }
+    opening_balance = 0.0
+    closing_balance = None
+    filtered_transactions = []
+
+    for transaction in all_transactions:
+        transaction_date = transaction.get("date")
+        if not transaction_date:
+            continue
+
+        if transaction_date < from_date:            # pre-range: remember opening balance
+            opening_balance = transaction["balance"]
+            continue
+
+        if transaction_date > to_date:              # past range: finalize and stop
+            closing_balance = closing_balance or opening_balance
+            break
+
+        filtered_transactions.append(transaction)   # inside range: keep transaction
+        closing_balance = transaction["balance"]
+
+    if closing_balance is None:                     # no in-range tx: closing = opening
+        closing_balance = opening_balance
+
     return {
         'success': True,
         'message': 'OK',
-        'transactions': transactions
+        'opening_balance': round(opening_balance, 2),
+        'closing_balance': round(closing_balance, 2),
+        'transactions': filtered_transactions
     }
