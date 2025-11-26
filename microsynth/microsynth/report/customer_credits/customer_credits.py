@@ -59,6 +59,8 @@ def get_data(filters, short=False, add_print_format=True):
     elif filters and filters.get('credit_type') == 'Project':
         conditions += f"AND `tabSales Invoice`.`product_type` = 'Project'"
 
+    if filters and filters.get('from_date'):
+        conditions += f"AND `tabSales Invoice`.`posting_date` >= '{filters.get('from_date')}'"
     if filters and filters.get('to_date'):
         conditions += f"AND `tabSales Invoice`.`posting_date` <= '{filters.get('to_date')}'"
     if filters and filters.get('currency'):
@@ -368,3 +370,80 @@ def download_pdf(company, customer, credit_account=None):
     frappe.local.response.filename = filename
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
+
+
+def build_transactions_with_running_balance(filters, opening_balance, type_mapping={}):
+    """
+    Takes customer credits (list of dictonaries as returned by the get_data function of the Customer Credits report),
+    an opening_balance and optionally a type mapping dictionary.
+    Returns transactions (list of dictionaries) containing the balance.
+    """
+    customer_credits = get_data(filters)
+
+    # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
+    customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
+
+    running_balance = opening_balance
+    transactions = []
+    i = len(customer_credits) - 1
+
+    for row in customer_credits:
+        net_amount = row.get('net_amount') or 0.0
+        if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
+            running_balance += net_amount
+        new_type = ""
+        if row.get('type') == 'Allocation' and net_amount > 0:
+            new_type = 'Return'
+        elif row.get('type') == 'Credit' and net_amount < 0:
+            new_type = 'Deposit Return'
+        else:
+            if type_mapping and row.get('type') in type_mapping:
+                new_type = type_mapping.get(row.get('type'), "")
+        transactions.append({
+            "date": row.get('date'),
+            "type": new_type,
+            "reference": row.get('sales_invoice'),
+            "contact_name": row.get('contact_name'),
+            "status": "Paid" if row.get('status') in ('Paid', 'Return', 'Credit Note Issued') else "Unpaid",
+            "web_order_id": row.get('web_order_id'),
+            "currency": row.get('currency'),
+            "amount": net_amount,
+            "balance": round(running_balance, 2),
+            "product_type": row.get('product_type'),
+            "po_no": row.get('po_no'),
+            "idx": i    # index for webshop api to maintain the order of transactions
+        })
+        i -= 1
+    return transactions
+
+
+def get_balance_sheet_data(credit_account_id, from_date, to_date):
+    try:
+        credit_account_doc = frappe.get_doc("Credit Account", credit_account_id)
+    except Exception as err:
+        return {
+            'success': False,
+            'message': f"Error fetching Credit Account: {err}",
+            'transactions': None
+        }
+    filters = {
+        'company': credit_account_doc.company,
+        'customer': credit_account_doc.customer,
+        'credit_account': credit_account_id,
+        'from_date': from_date,
+        'to_date': to_date
+    }
+    opening_balance = 0  # TODO: How to best get the available amount of the credit_account from the day before from_date?
+    try:
+        transactions = build_transactions_with_running_balance(filters, opening_balance)
+    except Exception as err:
+        return {
+            'success': False,
+            'message': f"Error building transactions with running balance: {err}",
+            'transactions': None
+        }
+    return {
+        'success': True,
+        'message': 'OK',
+        'transactions': transactions
+    }

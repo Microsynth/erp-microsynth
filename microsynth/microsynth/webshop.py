@@ -3986,7 +3986,7 @@ def get_transactions(account_id):
 
     bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000002'}"
     """
-    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
+    from microsynth.microsynth.report.customer_credits.customer_credits import build_transactions_with_running_balance
     type_mapping = {
         'Allocation': 'Charge',
         'Credit': 'Deposit'
@@ -3998,40 +3998,7 @@ def get_transactions(account_id):
             'company': credit_account.company,
             'customer': credit_account.customer
         }
-        customer_credits = get_data(filters)
-
-        # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
-        customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
-
-        running_balance = 0.0
-        transactions = []
-
-        i = len(customer_credits) - 1
-        for row in customer_credits:
-            net_amount = row.get('net_amount') or 0.0
-            if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
-                running_balance += net_amount
-            new_type = ""
-            if row.get('type') == 'Allocation' and net_amount > 0:
-                new_type = 'Return'
-            elif row.get('type') == 'Credit' and net_amount < 0:
-                new_type = 'Deposit Return'
-            else:
-                new_type = type_mapping.get(row.get('type'), "")
-            transactions.append({
-                "date": row.get('date'),
-                "type": new_type,
-                "reference": row.get('sales_invoice'),
-                "status": "Paid" if row.get('status') in ('Paid', 'Return', 'Credit Note Issued') else "Unpaid",
-                "web_order_id": row.get('web_order_id'),
-                "currency": row.get('currency'),
-                "amount": net_amount,
-                "balance": round(running_balance, 2),
-                "product_type": row.get('product_type'),
-                "po_no": row.get('po_no'),
-                "idx": i    # index for webshop api to maintain the order of transactions
-            })
-            i -= 1
+        transactions = build_transactions_with_running_balance(filters, opening_balance=0, type_mapping=type_mapping)
 
         # reverse to display the most recent transaction first
         transactions.reverse()
