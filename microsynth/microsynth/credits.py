@@ -131,7 +131,7 @@ def allocate_credits(sales_invoice_doc):
     customer_credits = [
         credit
         for credit in raw_customer_credits
-        if credit.get('credit_account_status') == 'Active'
+        if credit.get('credit_account_status') != 'Disabled'
     ]
     # total_customer_credit is needed only for the print format --> refactor later
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
