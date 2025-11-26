@@ -265,6 +265,13 @@ frappe.ui.form.on('Contact', {
                 }, __("Create"));
             }
 
+            // Button to create a Credit Account
+            if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.has_webshop_account && frappe.user.has_role("Accounts User")) {
+                frm.add_custom_button(__("Credit Account"), function () {
+                    create_credit_account(frm);
+                }, __("Create"));
+            }
+
             // Button to create promotion credit
             if (!frm.doc.__islocal && frm.doc.status !== "Disabled" && frm.doc.has_webshop_account && frappe.user.has_role("Sales Manager")) {
                 frm.add_custom_button(__("Promotion Credits"), function () {
@@ -325,128 +332,258 @@ function update_address_links(frm) {
 }
 
 
-function create_promotion_credits(frm) {
-    // --- 1. Determine the Customer linked to this Contact ---
-    let customer_id = null;
+/**
+ * Generic dialog builder for creating Credit Accounts.
+ * Parameters:
+ *   dialog_title       - string
+ *   dialog_fields      - array of field definitions
+ *   validate_fn(values) -> string|null   return error message or null
+ *   submit_fn(values)               custom backend call
+ */
+function show_credit_account_dialog(dialog_title, dialog_fields, validate_fn, submit_fn) {
+    frappe.model.with_doctype("Product Type Link", function () {
+        let d = new frappe.ui.Dialog({
+            title: dialog_title,
+            fields: dialog_fields,
+            primary_action_label: __("Create"),
+            primary_action(values) {
+                d.hide();
+
+                const error = validate_fn(values);
+                if (error) {
+                    frappe.msgprint(error);
+                    return;
+                }
+                submit_fn(values, d);
+            },
+            secondary_action_label: __("Close"),
+            secondary_action() { return; }
+        });
+
+        d.show();
+    });
+}
+
+
+/**
+ * Load default company + currency for a customer.
+ * Calls callback(default_company, default_currency)
+ */
+function load_customer_defaults(customer_id, callback) {
+    frappe.call({
+        method: "frappe.client.get",
+        args: { doctype: "Customer", name: customer_id },
+        callback(r) {
+            if (r.exc || !r.message) {
+                frappe.msgprint(__("Could not load Customer data."));
+                return;
+            }
+            const customer = r.message;
+            callback(customer.default_company || "", customer.default_currency || "");
+        }
+    });
+}
+
+
+/**
+ * Extract list of product_type from Table MultiSelect
+ */
+function extract_product_types(raw) {
+    let result = [];
+    if (!raw) return result;
+
+    if (Array.isArray(raw)) {
+        raw.forEach(r => {
+            if (r && r.product_type) {
+                result.push(r.product_type);
+            } else if (typeof r === "string") {
+                result.push(r);
+            }
+        });
+    }
+    return result;
+}
+
+
+/**
+ * Returns Customer ID linked to Contact
+ */
+function get_customer_id_from_contact(frm) {
     if (frm.doc.links && frm.doc.links.length) {
         for (let l of frm.doc.links) {
             if (l.link_doctype === "Customer") {
-                customer_id = l.link_name;
-                break;
+                return l.link_name;
             }
         }
     }
+    return null;
+}
+
+
+function create_credit_account(frm) {
+    const customer_id = get_customer_id_from_contact(frm);
     if (!customer_id) {
-        frappe.msgprint(__("This Contact is not linked to any Customer."));
+        frappe.msgprint(__("This Contact is not linked to any Customer. Unable to create a Credit Account."));
         return;
     }
+    // Load company/currency exactly like promotion credits
+    load_customer_defaults(customer_id, function(default_company, default_currency) {
 
-    // --- 2. Fetch Customer defaults (default_company, default_currency) ---
+        // Build dialog using shared helper
+        show_credit_account_dialog(
+            __("Create Credit Account"),
+            [
+                {   label: __("Account Title"),
+                    fieldname: "account_name",
+                    fieldtype: "Data",
+                    reqd: 1
+                },
+                {
+                    label: __("Type"),
+                    fieldname: "account_type",
+                    fieldtype: "Select",
+                    options: ["Standard", "Enforced Credit"].join("\n"),
+                    default: "Standard",
+                    reqd: 1
+                },
+                {
+                    label: __("Company"),
+                    fieldname: "company",
+                    fieldtype: "Link",
+                    options: "Company",
+                    reqd: 1,
+                    default: default_company
+                },
+                {
+                    label: __("Currency"),
+                    fieldname: "currency",
+                    fieldtype: "Link",
+                    options: "Currency",
+                    reqd: 1,
+                    read_only: 1,
+                    default: default_currency
+                },
+                {
+                    fieldtype: "Table MultiSelect",
+                    fieldname: "product_types",
+                    label: __("Product Types"),
+                    reqd: 1,
+                    options: "Product Type Link"
+                },
+                {
+                    label: __("Product Types Locked"),
+                    fieldname: "product_types_locked",
+                    fieldtype: "Check"
+                },
+                {
+                    label: __("Expiry Date"),
+                    fieldname: "expiry_date",
+                    fieldtype: "Date"
+                },
+                {
+                    label: __("Description"),
+                    fieldname: "description",
+                    fieldtype: "Small Text"
+                }
+            ],
+
+            // Validation
+            function validate(values) {
+                if (!values.account_name ||
+                    !values.account_type ||
+                    !values.product_types ||
+                    !values.company ||
+                    !values.currency) {
+                    return __("Please fill all mandatory fields.");
+                }
+                return null;
+            },
+
+            // Submit callback
+            function submit(values) {
+                const product_types = extract_product_types(values.product_types);
+
+                frappe.call({
+                    'method': "microsynth.microsynth.doctype.credit_account.credit_account.create_credit_account",
+                    'args': {
+                        'account_name': values.account_name,
+                        'account_type': values.account_type,
+                        'customer_id': customer_id,
+                        'company': values.company,
+                        'currency': values.currency,
+                        'contact_id': frm.doc.name,
+                        'product_types': product_types,
+                        'product_types_locked': values.product_types_locked ? 1 : 0,
+                        'expiry_date': values.expiry_date,
+                        'description': values.description || ""
+                    },
+                    'freeze': true,
+                    'freeze_message': __("Creating Credit Account..."),
+                    'callback'(r) {
+                        if (r.exc) return;
+                        frappe.show_alert(__("Credit Account created"));
+                        frappe.set_route("Form", "Credit Account", r.message);
+                    }
+                });
+            }
+        );
+    });
+}
+
+
+function create_promotion_credits(frm) {
+    let customer_id = get_customer_id_from_contact(frm);
+
+    if (!customer_id) {
+        frappe.msgprint(__("This Contact is not linked to any Customer. Unable to create promotion credits."));
+        return;
+    }
     frappe.call({
         'method': "frappe.client.get",
         'args': {
             'doctype': "Customer",
             'name': customer_id
         },
-        'callback': function (r) {
+        callback(r) {
             if (r.exc || !r.message) {
                 frappe.msgprint(__("Could not load Customer data."));
                 return;
             }
-
             let customer = r.message;
-
             let default_company = customer.default_company || "";
             let default_currency = customer.default_currency || "";
 
-            // --- 3. Build dialog ---
-            frappe.model.with_doctype("Product Type Link", function() {
-                let d = new frappe.ui.Dialog({
-                    'title': __("Create Promotion Credits"),
-                    'fields': [
-                        {
-                            label: __("Account Title"),
-                            fieldname: "account_name",
-                            fieldtype: "Data",
-                            reqd: 1
-                        },
-                        {
-                            label: __("Company"),
-                            fieldname: "company",
-                            fieldtype: "Link",
-                            options: "Company",
-                            reqd: 1,
-                            default: default_company
-                        },
-                        {
-                            'fieldtype': 'Table MultiSelect',
-                            'fieldname': 'product_types',
-                            'label': __("Product Types"),
-                            'reqd': 1,
-                            'options': 'Product Type Link'
-                        },
-                        {
-                            label: __("Amount"),
-                            fieldname: "amount",
-                            fieldtype: "Currency",
-                            reqd: 1
-                        },
-                        {
-                            label: __("Currency"),
-                            fieldname: "currency",
-                            fieldtype: "Link",
-                            options: "Currency",
-                            reqd: 1,
-                            read_only: 1,
-                            default: default_currency
-                        },
-                        {
-                            label: __("Expiry Date"),
-                            fieldname: "expiry_date",
-                            fieldtype: "Date",
-                            reqd: 1
-                        },
-                        {
-                            label: __("Override Item Name"),
-                            fieldname: "override_item_name",
-                            fieldtype: "Data",
-                            reqd: 0
-                        },
-                        {
-                            label: __("Description"),
-                            fieldname: "description",
-                            fieldtype: "Small Text",
-                            reqd: 0
-                        }
-                    ],
-                    'primary_action_label': __("Create"),
-                    'primary_action'(values) {
-                        d.hide();                                       // hide the dialog first - then freeze is visible
-                        // --- 4. Validate required fields ---
-                        if (!values.account_name ||
-                            !values.company ||
-                            !values.product_types ||
-                            !values.amount ||
-                            !values.currency ||
-                            !values.expiry_date) {
-                            frappe.msgprint(__("Please fill all mandatory fields."));
-                            return;
-                        }
-                        let raw = values.product_types || [];
-                        let product_types = [];
+            show_credit_account_dialog(
+                __("Create Promotion Credits"),
 
-                        if (Array.isArray(raw)) {
-                            raw.forEach(function(r) {
-                                if (r && r.product_type) {
-                                    product_types.push(r.product_type);
-                                } else if (typeof r === "string") {
-                                    product_types.push(r);
-                                }
-                            });
-                        }
+                // Dialog fields
+                [
+                    { label: __("Account Title"), fieldname: "account_name", fieldtype: "Data", reqd: 1 },
+                    { label: __("Company"), fieldname: "company", fieldtype: "Link", options: "Company", reqd: 1, default: default_company },
+                    { fieldtype: "Table MultiSelect", fieldname: "product_types", label: __("Product Types"), reqd: 1, options: "Product Type Link" },
+                    { label: __("Amount"), fieldname: "amount", fieldtype: "Currency", reqd: 1 },
+                    { label: __("Currency"), fieldname: "currency", fieldtype: "Link", options: "Currency", reqd: 1, read_only: 1, default: default_currency },
+                    { label: __("Expiry Date"), fieldname: "expiry_date", fieldtype: "Date", reqd: 1 },
+                    { label: __("Override Item Name"), fieldname: "override_item_name", fieldtype: "Data" },
+                    { label: __("Description"), fieldname: "description", fieldtype: "Small Text" }
+                ],
+                // Validation
+                function validate(values) {
+                    if (!values.account_name ||
+                        !values.company ||
+                        !values.product_types ||
+                        !values.amount ||
+                        !values.currency ||
+                        !values.expiry_date) {
+                        return __("Please fill all mandatory fields.");
+                    }
+                    return null;
+                },
+                // Submit
+                function submit(values) {
+                    const product_types = extract_product_types(values.product_types);
 
-                        // --- 5. Call backend to create credit account + SI ---
-                        frappe.call({
+                    frappe.call({
                             'method': "microsynth.microsynth.credits.create_promotion_credit_account",
                             'args': {
                                 'account_name': values.account_name,
@@ -463,23 +600,16 @@ function create_promotion_credits(frm) {
                             'freeze': true,
                             'freeze_message': __("Creating Promotion Credits..."),
                             'callback': function (r) {
-                                if (r.exc) return;
-                                let si = r.message;
-                                if (si) {
-                                    frappe.show_alert(__("Promotion Credits created"));
-                                    frappe.set_route("Form", "Sales Invoice", si);
-                                }
+                            if (r.exc) return;
+                            let si = r.message;
+                            if (si) {
+                                frappe.show_alert(__("Promotion Credits created"));
+                                frappe.set_route("Form", "Sales Invoice", si);
                             }
-                        });
-                        return;
-                    },
-                    'secondary_action_label': __("Close"),
-                    'secondary_action'() {
-                        return;
-                    }
-                });
-                d.show();
-            });
+                        }
+                    });
+                }
+            );
         }
     });
 }

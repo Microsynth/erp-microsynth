@@ -13,7 +13,7 @@ from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
-
+from microsynth.microsynth.doctype.credit_account.credit_account import create_credit_account
 from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
 def get_available_credits(customer, company, credit_type):
@@ -266,7 +266,9 @@ def book_credit(sales_invoice, credit_item, event=None):
 
 
 @frappe.whitelist()
-def create_promotion_credit_account(account_name, customer_id, company, webshop_account, currency, product_types, expiry_date, description, amount, override_item_name=None):
+def create_promotion_credit_account(account_name, customer_id, company, webshop_account,
+                                    currency, product_types, expiry_date, description,
+                                    amount, override_item_name=None):
     """
     Create a new Enforced (Promotion) Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
 
@@ -277,44 +279,58 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
     if isinstance(product_types, str):
         product_types = json.loads(product_types)
 
-    credit_account = frappe.get_doc({
-        'doctype': 'Credit Account',
-        'account_name': account_name,
-        'account_type': 'Enforced Credit',
-        'customer': customer_id,
-        'company': company,
-        'contact_person': webshop_account,
-        'currency': currency,
-        'status': 'Active',
-        'product_types_locked': 1,
-        'expiry_date': expiry_date,
-        'description': description
-    })
-    # Add product types
-    for pt in product_types:
-        credit_account.append("product_types", {
-            "product_type": pt
-        })
-    credit_account.insert(ignore_permissions=True)
-    # create deposit Sales Invoice
-    response = create_deposit_invoice(webshop_account, credit_account.name, amount, currency, override_item_name, company, customer_id, customer_order_number='', ignore_permissions=True)
+    # Create the Credit Account
+    credit_account_name = create_credit_account(
+        account_name=account_name,
+        account_type="Enforced Credit",
+        customer_id=customer_id,
+        company=company,
+        currency=currency,
+        contact_id=webshop_account,
+        product_types=product_types,
+        product_types_locked=1,
+        expiry_date=expiry_date,
+        description=description,
+        ignore_permissions=True
+    )
+
+    # Create deposit Sales Invoice
+    response = create_deposit_invoice(
+        webshop_account,
+        credit_account_name,
+        amount,
+        currency,
+        override_item_name,
+        company,
+        customer_id,
+        customer_order_number="",
+        ignore_permissions=True,
+        transmit_invoice=False
+    )
     if not response['success']:
         frappe.throw(response.get('message'))
+
     sales_invoice_id = response.get('reference')
     si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
     # fetch Item used for advertising/promo/marketing
     promo_item_code = "AC-6600"
     promo_item = frappe.get_doc("Item", promo_item_code)
+
     expense_account = None
     for entry in promo_item.item_defaults:
         if entry.company == company:
             expense_account = entry.expense_account
             break
+
     if not expense_account:
-        frappe.log_error(f"Item {promo_item_code} has no Default Expense Account for company {company}. Unable to create a Journal Entry for Sales Invoice {sales_invoice_id} automatically.")
+        frappe.log_error(
+            f"Item {promo_item_code} has no Default Expense Account for company {company}. "
+            f"Unable to create a Journal Entry for Sales Invoice {sales_invoice_id} automatically."
+        )
         return sales_invoice_id
     # create Journal Entry
     base_amount = si_doc.outstanding_amount * si_doc.conversion_rate
+
     jv = frappe.get_doc({
         'doctype': 'Journal Entry',
         'company': company,

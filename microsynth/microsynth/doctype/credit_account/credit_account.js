@@ -89,7 +89,8 @@ function create_deposit_invoice_dialog(frm) {
                     'description': values.override_item_name || '',
                     'company': frm.doc.company,
                     'customer': frm.doc.customer,
-                    'customer_order_number': ""
+                    'customer_order_number': "",
+                    'transmit_invoice': false
                 },
                 'freeze': true,
                 'freeze_message': __("Creating Deposit Invoice..."),

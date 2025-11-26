@@ -3883,7 +3883,7 @@ def get_default_shipping_address(webshop_address_id):
 
 
 @frappe.whitelist()
-def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False):
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False, transmit_invoice=True):
     """
     Create a Sales Invoice to deposit customer credits.
 
@@ -3957,7 +3957,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         invoice.insert(ignore_permissions=ignore_permissions)
         invoice.submit()
         # Transmit the Sales Invoice
-        transmit_sales_invoice(invoice.name)
+        if transmit_invoice:
+            transmit_sales_invoice(invoice.name)
         # Set has_transaction on the Credit Account
         account_doc = frappe.get_doc("Credit Account", account_id)
         if not account_doc.has_transactions:
