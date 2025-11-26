@@ -126,7 +126,13 @@ def allocate_credits(sales_invoice_doc):
         credit_account_ids = get_credit_accounts(sales_order_ids.pop())
 
     # get applicable customer credits
-    customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_account_ids)
+    raw_customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_account_ids)
+    # ensure to only alllocate Active Credit Accounts
+    customer_credits = [
+        credit
+        for credit in raw_customer_credits
+        if credit.get('credit_account_status') == 'Active'
+    ]
     # total_customer_credit is needed only for the print format --> refactor later
     total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
 

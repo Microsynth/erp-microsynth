@@ -130,6 +130,7 @@ def get_data(filters, short=False, add_print_format=True):
             `raw`.`po_no` AS `po_no`,
             `tabCustomer`.`territory` AS `territory`,
             `tabCredit Account`.`account_type` AS `account_type`,
+            `tabCredit Account`.`status` AS `credit_account_status`,
             IF(`webshop_service`.`customer_id` IS NOT NULL, 1, 0) AS `invoice_by_default_company`
         FROM (
             SELECT
