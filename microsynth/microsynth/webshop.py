@@ -3605,7 +3605,15 @@ def get_open_sales_orders(credit_account_id):
             `tabSales Order`.`name`,
             `tabSales Order`.`grand_total`,
             `tabSales Order`.`per_billed`,
-            `tabSales Order`.`grand_total` * (1 - `tabSales Order`.`per_billed` / 100) AS `unbilled_amount`
+            `tabSales Order`.`grand_total` * (1 - `tabSales Order`.`per_billed` / 100) AS `unbilled_amount`,
+            `tabSales Order`.`transaction_date`,
+            `tabSales Order`.`contact_display`,
+            `tabSales Order`.`status`,
+            `tabSales Order`.`web_order_id`,
+            `tabSales Order`.`currency`,
+            `tabSales Order`.`grand_total`,
+            `tabSales Order`.`product_type`,
+            `tabSales Order`.`po_no`
         FROM
             `tabSales Order`
         JOIN
@@ -3614,7 +3622,8 @@ def get_open_sales_orders(credit_account_id):
         WHERE
             `tabCredit Account Link`.`credit_account` = %s
             AND `tabSales Order`.`docstatus` = 1
-            AND `tabSales Order`.`per_billed` < 100;
+            AND `tabSales Order`.`per_billed` < 100
+        ORDER BY `tabSales Order`.`transaction_date`, `tabSales Order`.`creation`
         """
     sales_orders = frappe.db.sql(sql_query, (credit_account_id,), as_dict=True)
     return sales_orders
@@ -3979,6 +3988,30 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         }
 
 
+def get_reservations(account_id, current_balance):
+    open_sales_orders = get_open_sales_orders(account_id)
+    running_balance = current_balance
+    reservations = []
+    for i, order in enumerate(open_sales_orders):
+        net_amount = order.get('grand_total') or 0.0
+        running_balance += net_amount
+        reservations.append({
+            "date": order.get('transaction_date'),
+            "type": "Charge",
+            "reference": order.get('name'),
+            "contact_name": order.get('contact_display'),
+            "status": order.get('status'),
+            "web_order_id": order.get('web_order_id'),
+            "currency": order.get('currency'),
+            "amount": order.get('total'),
+            "balance": round(running_balance, 2),
+            "product_type": order.get('product_type'),
+            "po_no": order.get('po_no'),
+            "idx": i+1    # index for webshop api to maintain the order of transactions
+        })
+    return reservations
+
+
 @frappe.whitelist()
 def get_transactions(account_id):
     """
@@ -4002,12 +4035,14 @@ def get_transactions(account_id):
 
         # reverse to display the most recent transaction first
         transactions.reverse()
+        current_balance = transactions[0].get('balance') if len(transactions) > 0 else 0.0
 
         return {
             "success": True,
             "message": "OK",
             "credit_account": get_credit_account_dto(credit_account),
-            "transactions": transactions
+            "transactions": transactions,
+            "reservations": get_reservations(account_id, current_balance)
         }
     except Exception as err:
         msg = f"Error fetching Credit Account '{account_id}': {err}. Check ERP Error Log for details."
@@ -4015,7 +4050,9 @@ def get_transactions(account_id):
         return {
             "success": False,
             "message": msg,
-            "transactions": []
+            "credit_account": None,
+            "transactions": [],
+            "reservations": None
         }
 
 
