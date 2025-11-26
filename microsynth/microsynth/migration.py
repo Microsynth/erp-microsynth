@@ -3041,68 +3041,115 @@ def close_sales_order_of_delivery_note(delivery_note):
             so.update_status("Closed")
 
 
-def close_tagged_delivery_notes(status, tag):
+def close_tagged_delivery_notes(status: str, tag: str, dry_run: bool = False):
     """
-    run
-    bench execute microsynth.microsynth.migration.close_tagged_delivery_notes --kwargs "{'status': 'To Bill', 'tag':'invoiced'}"
-    """
-    import traceback
+    Close all Delivery Notes that contain the given user tag and match the given status.
 
-    query = f"""
+    bench execute microsynth.microsynth.migration.close_tagged_delivery_notes --kwargs "{'status': 'To Bill', 'tag': 'invoiced', 'dry_run': True}"
+    """
+    # Safe query using parameters
+    delivery_notes = frappe.db.sql(
+        """
         SELECT `name`, `docstatus`, `status`, `_user_tags`
         FROM `tabDelivery Note`
-        WHERE `_user_tags` like "%{tag}%"
-        and `status` = "{status}"
-    """
+        WHERE `_user_tags` LIKE %(tag)s
+          AND `status` = %(status)s
+        """,
+        {"tag": f"%{tag}%", "status": status},
+        as_dict=True,
+    )
+    total = len(delivery_notes)
+    print(f"Found {total} matching Delivery Notes")
 
-    delivery_notes = frappe.db.sql(query, as_dict=True)
+    for idx, dn in enumerate(delivery_notes, start=1):
+        progress = int(idx / total * 100) if total else 100
 
-    i = 0
-    length = len(delivery_notes)
-
-    for dn in delivery_notes:
+        print(f"[{progress:3d}%] Processing DN '{dn['name']}' "
+              f"(status={dn['status']}, tags={dn['_user_tags']!r})")
         try:
-            print(f"{int(100 * i / length)}% - process '{dn['name']}': {dn['status']}; Tags: '{dn['_user_tags']}'")
-            close_delivery_note(dn['name'])
+            if dry_run:
+                print(f"  → dry_run=True → skipping close_delivery_note({dn['name']})")
+            else:
+                close_delivery_note(dn["name"])
 
         except Exception as err:
-            msg = "Failed to close delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
+            msg = (
+                f"Failed to close Delivery Note {dn['name']}:\n"
+                f"{err}\n{traceback.format_exc()}"
+            )
             print(msg)
-            frappe.log_error(msg, "close_tagged_delivery_notes")
-        i += 1
-    print(f"Deliver Notes count: {length}")
+
+    print(f"Completed. Processed {total} Delivery Notes in total.")
+    return total
 
 
-def close_orders_of_closed_delivery_notes():
+def close_orders_of_closed_delivery_notes(product_type: str = None, from_date: str = None, to_date: str = None, dry_run: bool = False):
     """
-    run
-    bench execute microsynth.microsynth.migration.close_orders_of_closed_delivery_notes
-    """
-    import traceback
+    Close Sales Orders linked to Delivery Notes with status = 'Closed'.
 
-    query = """
-        SELECT `name`, `docstatus`, `status`
+    bench execute microsynth.microsynth.migration.close_orders_of_closed_delivery_notes --kwargs "{'product_type': 'Oligos', 'to_date': '2025-06-30', 'dry_run': True}"
+    """
+    conditions = ['`tabDelivery Note`.`status` = "Closed"']
+    params = {}
+
+    # optional product_type
+    if product_type:
+        conditions.append("`tabDelivery Note`.`product_type` = %(product_type)s")
+        params["product_type"] = product_type
+
+    # optional from_date
+    if from_date:
+        conditions.append("`tabDelivery Note`.`posting_date` >= %(from_date)s")
+        params["from_date"] = from_date
+
+    # optional to_date
+    if to_date:
+        conditions.append("`tabDelivery Note`.`posting_date` <= %(to_date)s")
+        params["to_date"] = to_date
+
+    where_clause = " AND ".join(conditions)
+
+    # Find all non-Closed Sales Orders linked to Closed Delivery Notes
+    so_query = f"""
+        SELECT DISTINCT `tabDelivery Note Item`.`against_sales_order`
         FROM `tabDelivery Note`
-        WHERE `status` = "Closed"
+        INNER JOIN `tabDelivery Note Item`
+            ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+        INNER JOIN `tabSales Order`
+            ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+        WHERE {where_clause}
+          AND `tabDelivery Note Item`.`against_sales_order` IS NOT NULL
+          AND `tabSales Order`.`status` != "Closed"
     """
+    result = frappe.db.sql(so_query, params, as_dict=True)
+    sales_orders = [row["against_sales_order"] for row in result if row["against_sales_order"]]
 
-    delivery_notes = frappe.db.sql(query, as_dict=True)
+    print(f"Found {len(sales_orders)} Sales Orders linked to closed Delivery Notes.")
 
-    i = 0
-    length = len(delivery_notes)
-    for dn in delivery_notes:
+    if not sales_orders:
+        print("No work to do.")
+        return 0
+
+    if dry_run:
+        print("dry_run=True → would close these Sales Orders:")
+        for so in sales_orders:
+            print(f"  - {so}")
+        return len(sales_orders)
+
+    # Close each SO with validation
+    for idx, so_name in enumerate(sales_orders, start=1):
+        progress = int(idx / len(sales_orders) * 100)
+        print(f"[{progress:3d}%] Closing Sales Order '{so_name}'")
+
         try:
-            print("{progress}% process '{dn}': {status}".format(dn = dn['name'], status = dn['status'], progress = int(100 * i / length)))
-            close_sales_order_of_delivery_note(dn['name'])
-            frappe.db.commit()
-
+            so = frappe.get_doc("Sales Order", so_name)
+            if so.status != "Closed":
+                so.update_status("Closed")
         except Exception as err:
-            msg = "Failed to close order of delivery note {0}:\n{1}\n{2}".format(dn, err, traceback.format_exc())
-            print(msg)
-            frappe.log_error(msg, "close_orders_of_closed_delivery_notes")
-        i += 1
-    print("processed delivery notes:")
-    print(len(delivery_notes))
+            print(f"Failed to close Sales Order {so_name}:\n{err}\n{traceback.format_exc()}")
+
+    print(f"Completed. Total Sales Orders processed: {len(sales_orders)}")
+    return len(sales_orders)
 
 
 def assess_income_account_matrix(from_date, to_date, auto_correct=0):
