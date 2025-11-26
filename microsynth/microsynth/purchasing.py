@@ -558,7 +558,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-19_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-24_DEV_supplier_item_mapping.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-24_supplier_mapping_DEV-ERP.txt', 'update_existing_items': True}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-26_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-26_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-26_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
     """
     # TODO: Refactor code
     known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
@@ -906,7 +906,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-20_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-24_supplier_mapping_DEV-ERP.txt'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-26_supplier_mapping_Seqlab_DEV-ERP.txt', 'our_company': 'Microsynth Seqlab GmbH'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
@@ -1113,12 +1113,16 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                     'pincode': pincode,
                     'city': city
                 })
-                new_address.insert()
-                new_address.append("links", {
-                    'link_doctype': 'Supplier',
-                    'link_name': new_supplier.name
-                })
-                new_address.save()
+                try:
+                    new_address.insert()
+                except Exception as err:
+                    print(f"ERROR: Unable to insert an Address for Supplier with Index {ext_creditor_number}, skipping: {err}")
+                else:
+                    new_address.append("links", {
+                        'link_doctype': 'Supplier',
+                        'link_name': new_supplier.name
+                    })
+                    new_address.save()
                 new_supplier.save()  # necessary to trigger set_default_payable_accounts (if country is Austria)
             elif city or pincode or address_line1 or post_box:
                 print(f"WARNING: Ort, PLZ, Strasse or Postfach given, but missing required information (Land and Ort and Strasse or Postfach) to create an address for Supplier with Index {ext_creditor_number}.")
@@ -1133,22 +1137,26 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
                     'last_name': last_name if first_name else None,
                     'salutation': salutation
                 })
-                new_contact.insert()
-                new_contact.append("links", {
-                    'link_doctype': 'Supplier',
-                    'link_name': new_supplier.name
-                })
-                if phone:
-                    new_contact.append("phone_nos", {
-                        'phone': phone,
-                        'is_primary_phone': 1
+                try:
+                    new_contact.insert()
+                except Exception as err:
+                    print(f"ERROR: Unable to insert a Contact for Supplier with Index {ext_creditor_number}, skipping: {err}")
+                else:
+                    new_contact.append("links", {
+                        'link_doctype': 'Supplier',
+                        'link_name': new_supplier.name
                     })
-                if email:
-                    new_contact.append("email_ids", {
-                        'email_id': email,
-                        'is_primary': 1
-                    })
-                new_contact.save()
+                    if phone:
+                        new_contact.append("phone_nos", {
+                            'phone': phone,
+                            'is_primary_phone': 1
+                        })
+                    if email:
+                        new_contact.append("email_ids", {
+                            'email_id': email,
+                            'is_primary': 1
+                        })
+                    new_contact.save()
 
             create_and_fill_contact(new_supplier.name, 1, contact_person_1, email_1, notes_1, ext_creditor_number)
             create_and_fill_contact(new_supplier.name, 2, contact_person_2, email_2, notes_2, ext_creditor_number)
