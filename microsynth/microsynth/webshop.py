@@ -3965,6 +3965,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         invoice.insert(ignore_permissions=ignore_permissions)
         invoice.submit()
         # Transmit the Sales Invoice
+        if isinstance(transmit_invoice, str):
+            transmit_invoice = transmit_invoice.strip().lower() in ("true", "1", "yes")
         if transmit_invoice:
             transmit_sales_invoice(invoice.name)
         # Set has_transaction on the Credit Account
