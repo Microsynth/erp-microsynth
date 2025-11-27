@@ -3623,7 +3623,7 @@ def get_open_sales_orders(credit_account_id):
             `tabCredit Account Link`.`credit_account` = %s
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`per_billed` < 100
-        ORDER BY `tabSales Order`.`transaction_date`, `tabSales Order`.`creation`
+        ORDER BY `tabSales Order`.`transaction_date` DESC, `tabSales Order`.`creation` DESC
         """
     sales_orders = frappe.db.sql(sql_query, (credit_account_id,), as_dict=True)
     return sales_orders
@@ -4007,7 +4007,7 @@ def get_reservations(account_id, current_balance):
             "balance": round(running_balance, 2),
             "product_type": order.get('product_type'),
             "po_no": order.get('po_no'),
-            "idx": i+1    # index for webshop api to maintain the order of transactions
+            "idx": i    # index for webshop api to maintain the order of transactions
         })
     return reservations
 
