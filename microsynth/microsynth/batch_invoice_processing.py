@@ -151,6 +151,12 @@ def create_invoice(file_name, invoice, settings):
     if not invoice.get('supplier'):
         invoice['supplier'] = settings.fallback_supplier
 
+    if 'supplier' in invoice and invoice['supplier']:
+        supplier_currency = frappe.get_value("Supplier", invoice['supplier'], "default_currency")
+        if supplier_currency and invoice['currency'] != supplier_currency:
+            frappe.log_error(f"INFO: Supplier {invoice['supplier']} has Billing Currency {supplier_currency}. Going to set currency of purchase invoice from {invoice['currency']} to {supplier_currency}.")
+            invoice['currency'] = supplier_currency
+
     # create purchase invoice
     pinv_doc = frappe.get_doc({
         'doctype': 'Purchase Invoice',
