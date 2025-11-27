@@ -257,10 +257,16 @@ def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_n
             purchase_invoice.supplier = purchase_order.supplier
         if purchase_invoice.supplier_name != purchase_order.supplier_name:
             purchase_invoice.supplier_name = purchase_order.supplier_name
+        if purchase_invoice.supplier_address != purchase_order.supplier_address:
+            purchase_invoice.supplier_address = purchase_order.supplier_address
         if purchase_invoice.taxes_and_charges != purchase_order.taxes_and_charges:
             purchase_invoice.taxes_and_charges = purchase_order.taxes_and_charges
         if purchase_invoice.payment_terms_template != purchase_order.payment_terms_template:
             purchase_invoice.payment_terms_template = purchase_order.payment_terms_template
+        if purchase_invoice.currency != purchase_order.currency:
+            purchase_invoice.currency = purchase_order.currency
+        if purchase_invoice.buying_price_list != purchase_order.buying_price_list:
+            purchase_invoice.buying_price_list = purchase_order.buying_price_list
         if purchase_invoice.net_total != purchase_order.net_total:
             purchase_invoice.net_total = purchase_order.net_total
         if purchase_invoice.total != purchase_order.total:
