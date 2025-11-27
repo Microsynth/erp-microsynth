@@ -595,7 +595,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
             unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
-            #supplier_quote = line[8].strip()
+            supplier_quote = line[8].strip()
             #list_price = line[9].strip()
             purchase_price = line[10].strip()
             #customer_discount = line[11].strip()
@@ -801,6 +801,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                                 'price_list': price_list_name,
                                 'price_list_rate': purchase_price,
                                 'currency': currency,
+                                'reference': supplier_quote,
                                 'buying': 1
                             })
                             try:
@@ -886,6 +887,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         'price_list': price_list_name,
                         'price_list_rate': purchase_price,
                         'currency': currency,
+                        'reference': supplier_quote,
                         'buying': 1
                     })
                     try:
