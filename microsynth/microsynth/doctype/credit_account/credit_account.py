@@ -6,17 +6,33 @@ import json
 import frappe
 from frappe.model.document import Document
 
+
 class CreditAccount(Document):
     def validate(self):
+        # Determine whether this is an existing doc
+        is_existing = frappe.db.exists("Credit Account", self.name)
+        original = frappe.get_doc("Credit Account", self.name) if is_existing else None
+
+        # Prevent creating a new Legacy account
+        if not is_existing:
+            if self.account_type == "Legacy":
+                frappe.throw("You cannot create a new Credit Account with Account Type Legacy.")
+
+        # Prevent setting account_type = Legacy on existing accounts
+        if is_existing and original.account_type != "Legacy" and self.account_type == "Legacy":
+            frappe.throw("Changing Account Type to Legacy is not allowed.")
+
         # Ensure that once there are transactions, certain fields cannot be changed
-        if self.has_transactions and frappe.db.exists("Credit Account", self.name):
-            original = frappe.get_doc("Credit Account", self.name)
+        if is_existing and (self.has_transactions or original.has_transactions):
             if self.customer != original.customer:
                 frappe.throw("Cannot change Customer of Credit Account with existing transactions.")
+
             if self.company != original.company:
                 frappe.throw("Cannot change Company of Credit Account with existing transactions.")
+
             if self.currency != original.currency:
                 frappe.throw("Cannot change Currency of Credit Account with existing transactions.")
+
             if self.account_type != original.account_type:
                 frappe.throw("Cannot change Account Type of Credit Account with existing transactions.")
 
