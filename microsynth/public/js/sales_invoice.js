@@ -18,6 +18,12 @@ frappe.ui.form.on('Sales Invoice', {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);  // common function
 
+        if (frm.doc.docstatus == 0 && frm.doc.items && frm.doc.items[0].item_code == '6100') {
+            cur_frm.set_df_property('credit_account', 'read_only', false);
+        } else {
+            cur_frm.set_df_property('credit_account', 'read_only', true);
+        }
+
         // remove Menu > Email
         var target ="span[data-label='" + __("Email") + "']";
         $(target).parent().parent().remove();
