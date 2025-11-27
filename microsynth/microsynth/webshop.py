@@ -3611,7 +3611,6 @@ def get_open_sales_orders(credit_account_id):
             `tabSales Order`.`status`,
             `tabSales Order`.`web_order_id`,
             `tabSales Order`.`currency`,
-            `tabSales Order`.`grand_total`,
             `tabSales Order`.`product_type`,
             `tabSales Order`.`po_no`
         FROM
@@ -3993,8 +3992,8 @@ def get_reservations(account_id, current_balance):
     running_balance = current_balance
     reservations = []
     for i, order in enumerate(open_sales_orders):
-        net_amount = order.get('grand_total') or 0.0
-        running_balance += net_amount
+        unbilled_amount = order.get('unbilled_amount') or 0.0
+        running_balance -= unbilled_amount
         reservations.append({
             "date": order.get('transaction_date'),
             "type": "Charge",
@@ -4003,7 +4002,7 @@ def get_reservations(account_id, current_balance):
             "status": order.get('status'),
             "web_order_id": order.get('web_order_id'),
             "currency": order.get('currency'),
-            "amount": order.get('total'),
+            "amount": unbilled_amount,
             "balance": round(running_balance, 2),
             "product_type": order.get('product_type'),
             "po_no": order.get('po_no'),
