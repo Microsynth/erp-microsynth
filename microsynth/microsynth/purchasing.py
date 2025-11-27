@@ -444,12 +444,18 @@ COMPANY_CITY_MAPPING = {
     'Microsynth France SAS': 'Lyon'
 }
 
-FLOOR_MAPPING = {
-    '10': 'Ground Floor',
-    '11': '1st Floor',
-    '12': '2nd Floor',
-    '13': '3rd Floor',
-    '14': '4th Floor'
+FLOOR_MAPPING_PER_COMPANY = {
+    'Microsynth AG': {
+        '10': 'Ground Floor',
+        '11': '1st Floor',
+        '12': '2nd Floor',
+        '13': '3rd Floor',
+        '14': '4th Floor'
+    },
+    'Microsynth Seqlab GmbH': {
+        '00': 'Ground Floor',
+        '01': 'First Floor'
+    }
 }
 
 
@@ -486,6 +492,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
     - Room lookup matches 'floor-room-*' exactly (e.g. '11-03-' for floor=11, room=03).
     - Creates missing DESTINATION or FRIDGE_RACK if necessary.
     """
+    FLOOR_MAPPING = FLOOR_MAPPING_PER_COMPANY[company]
     city = COMPANY_CITY_MAPPING.get(company)
     if not city:
         frappe.throw(f"Unknown company mapping for {company}")
@@ -517,7 +524,10 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
     if not (room_str.isdigit() and len(room_str) == 2) and room_str != '14c':
         frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
 
-    pattern = f"{floor_str}-{room_str}%"
+    if company == 'Microsynth Seqlab GmbH':
+        pattern = f"{floor_str}.{room_str}"
+    else:
+        pattern = f"{floor_str}-{room_str}%"
 
     room_doc = frappe.db.sql("""
         SELECT `name`
@@ -558,7 +568,11 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-26_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-26_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-26_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
+    Seqlab:
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-27_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
+
+    AG:
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-27_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_DEV-ERP.txt', 'company': 'Microsynth AG', 'update_existing_items': True}"
     """
     # TODO: Refactor code
     known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
@@ -595,7 +609,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
             unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
-            supplier_quote = line[8].strip()
+            #supplier_quote = line[8].strip()  # unclear where to import
             #list_price = line[9].strip()
             purchase_price = line[10].strip()
             #customer_discount = line[11].strip()
@@ -706,6 +720,10 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 except Exception as err:
                     print(f"ERROR: Item with Index {item_id} ('{item_name}'): Unable to convert {pack_size=} to a float ({err}). Going to continue with the next supplier item.")
                     continue
+            if pack_uom and not pack_size or pack_size and not pack_uom:
+                print(f"WARNING: Got Pack Size '{pack_size}' but Pack UOM '{pack_uom}' for Item with Index {item_id} ('{item_name}').")
+            if pack_uom and pack_size and pack_size != 1.0 and (pack_uom == stock_uom or pack_uom == purchase_uom):
+                print(f"WARNING: Pack UOM {pack_uom} equals stock UOM {stock_uom} or purchase UOM {purchase_uom}, but Pack Size is {pack_size} for Item with Index {item_id} ('{item_name}').")
             try:
                 location = get_or_create_location(floor, room, destination, fridge_rack, company=company)
             except Exception as err:
@@ -801,7 +819,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                                 'price_list': price_list_name,
                                 'price_list_rate': purchase_price,
                                 'currency': currency,
-                                'reference': supplier_quote,
+                                # 'reference': supplier_quote,       # gets deleted on insert
+                                # 'reference_name': supplier_quote,  # gets deleted on insert
                                 'buying': 1
                             })
                             try:
@@ -812,6 +831,9 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         existing_item_doc.save()
                     except Exception as err:
                         print(f"ERROR: Unable to update existing Item {item_code} for Item with Index {item_id} ('{item_name}') ({err}). Going to continue with the next supplier item.")
+                        continue
+                    if not currency:
+                        print(f"ERROR: Item with Index {item_id} ('{item_name}') has no currency. Unable to create an Item Price.")
                         continue
                     imported_counter += 1
                     print(f"INFO: Successfully updated existing Item '{existing_item_doc.item_name}' ({existing_item_doc.name}).")
@@ -887,7 +909,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         'price_list': price_list_name,
                         'price_list_rate': purchase_price,
                         'currency': currency,
-                        'reference': supplier_quote,
+                        # 'reference': supplier_quote,       # gets deleted on insert
+                        # 'reference_name': supplier_quote,  # gets deleted on insert
                         'buying': 1
                     })
                     try:
@@ -908,7 +931,11 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
 
 def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG', expected_line_length=41, update_countries=False, add_ext_creditor_id=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-26_supplier_mapping_Seqlab_DEV-ERP.txt', 'our_company': 'Microsynth Seqlab GmbH'}"
+    Seqlab:
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'our_company': 'Microsynth Seqlab GmbH'}"
+
+    AG:
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-20_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_supplier_mapping_DEV-ERP.txt', 'our_company': 'Microsynth AG'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
