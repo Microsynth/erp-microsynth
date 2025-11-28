@@ -6168,7 +6168,7 @@ def migrate_debtors(customer_id, company, currency, verbose=True):
             'doctype': 'Comment',
             'comment_type': 'Comment',
             'subject': 'Customer Renamed',
-            'content': "Inactivated due change of billing currency and migration of debtor accounts.",  # f"Customer renamed from {customer_id} to {renamed_customer_id} as part of debtor migration to create a new customer {customer_id} with billing currency {currency}.",
+            'content': "Inactivated due change of debtor accounts.",  # f"Customer renamed from {customer_id} to {renamed_customer_id} as part of debtor migration to create a new customer {customer_id} with billing currency {currency}.",
             'reference_doctype': 'Customer',
             'status': 'Linked',
             'reference_name': renamed_customer_doc.name,
