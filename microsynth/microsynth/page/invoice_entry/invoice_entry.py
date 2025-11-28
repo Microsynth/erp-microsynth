@@ -2,11 +2,12 @@
 # For license information, please see license.txt
 
 import frappe
-#from frappe import _
 import json
 from datetime import datetime
 from frappe.utils import flt, add_days
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 from microsynth.microsynth.purchasing import supplier_change_fetches
+
 
 FORMAT_MAPPER = {
     'dd.mm.yyyy': '%d.%m.%Y',
@@ -16,6 +17,7 @@ FORMAT_MAPPER = {
     'mm/dd/yyyy': '%m/%d/%Y',
     'mm-dd-yyyy': '%m-%d-%Y'
 }
+
 
 @frappe.whitelist()
 def get_purchase_invoice_drafts(purchase_invoice=None):
@@ -249,84 +251,82 @@ def delete_document(purchase_invoice_name):
 @frappe.whitelist()
 def update_pi_according_to_po(purchase_order_name, purchase_invoice_name, bill_no=None):
     try:
-        purchase_order = frappe.get_doc("Purchase Order", purchase_order_name)
-        purchase_invoice = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
+        po = frappe.get_doc("Purchase Order", purchase_order_name)
+        pi = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
 
-        # Update fields in Purchase Invoice based on Purchase Order only if values differ
-        if purchase_invoice.supplier != purchase_order.supplier:
-            purchase_invoice.supplier = purchase_order.supplier
-        if purchase_invoice.supplier_name != purchase_order.supplier_name:
-            purchase_invoice.supplier_name = purchase_order.supplier_name
-        if purchase_invoice.supplier_address != purchase_order.supplier_address:
-            purchase_invoice.supplier_address = purchase_order.supplier_address
-        if purchase_invoice.taxes_and_charges != purchase_order.taxes_and_charges:
-            purchase_invoice.taxes_and_charges = purchase_order.taxes_and_charges
-        if purchase_invoice.payment_terms_template != purchase_order.payment_terms_template:
-            purchase_invoice.payment_terms_template = purchase_order.payment_terms_template
-        if purchase_invoice.currency != purchase_order.currency:
-            purchase_invoice.currency = purchase_order.currency
-        if purchase_invoice.buying_price_list != purchase_order.buying_price_list:
-            purchase_invoice.buying_price_list = purchase_order.buying_price_list
-        if purchase_invoice.net_total != purchase_order.net_total:
-            purchase_invoice.net_total = purchase_order.net_total
-        if purchase_invoice.total != purchase_order.total:
-            purchase_invoice.total = purchase_order.total
-        if purchase_invoice.bill_no != bill_no:
-            purchase_invoice.bill_no = bill_no
-        if purchase_invoice.bill_date != purchase_invoice.posting_date:
-            purchase_invoice.bill_date = purchase_invoice.posting_date
+        # Copy all common fields from Purchase Order to Purchase Invoice
+        pi_meta = frappe.get_meta("Purchase Invoice")
+        po_meta = frappe.get_meta("Purchase Order")
 
-        # Update taxes only if they differ
-        current_taxes = [
-            {
-                "category": tax.category,
-                "add_deduct_tax": tax.add_deduct_tax,
-                "charge_type": tax.charge_type,
-                "account_head": tax.account_head,
-                "description": tax.description,
-                "cost_center": tax.cost_center,
-                "rate": tax.rate
-            }
-            for tax in purchase_invoice.taxes
-        ]
-        new_taxes = [
-            {
-                "category": tax.category,
-                "add_deduct_tax": tax.add_deduct_tax,
-                "charge_type": tax.charge_type,
-                "account_head": tax.account_head,
-                "description": tax.description,
-                "cost_center": tax.cost_center,
-                "rate": tax.rate
-            }
-            for tax in purchase_order.taxes
-        ]
-        if current_taxes != new_taxes:
-            purchase_invoice.taxes = []
-            for tax in purchase_order.taxes:
-                purchase_invoice.append("taxes", {
-                    "category": tax.category,
-                    "add_deduct_tax": tax.add_deduct_tax,
-                    "charge_type": tax.charge_type,
-                    "account_head": tax.account_head,
-                    "description": tax.description,
-                    "cost_center": tax.cost_center,
-                    "rate": tax.rate
-                })
+        # Sets of fieldnames
+        pi_fields = {df.fieldname for df in pi_meta.fields}
+        po_fields = {df.fieldname for df in po_meta.fields}
 
-        purchase_invoice.items = []
-        for item in purchase_order.items:
-            purchase_invoice.append("items", {
+        excluded_fields = {
+            "name",
+            "naming_series",
+            "owner",
+            "creation",
+            "modified",
+            "modified_by",
+            "docstatus",
+            "amended_from",
+            "status",
+            "title",
+            "company"  # TODO?
+        }
+        # Compute copyable common fields
+        common_fields = (pi_fields & po_fields) - excluded_fields
+
+        for fieldname in common_fields:
+            df = pi_meta.get_field(fieldname)
+            if not df:
+                continue
+
+            # Skip child tables (handled separately), Sections, Column Breaks
+            if df.fieldtype in ("Table", "Section Break", "Column Break"):
+                continue
+
+            po_val = po.get(fieldname)
+            pi_val = pi.get(fieldname)
+
+            if po_val and po_val != pi_val:
+                pi.set(fieldname, po_val)
+
+        if bill_no and pi.bill_no != bill_no:
+            pi.bill_no = bill_no
+
+        if pi.bill_date != pi.posting_date:
+            pi.bill_date = pi.posting_date
+
+        # Items (child table)
+        pi.set("items", [])
+        for item in po.items:
+            pi.append("items", {
                 "item_code": item.item_code,
                 "item_name": item.item_name,
                 "qty": item.qty,
                 "rate": item.rate,
                 "expense_account": item.expense_account,
                 "cost_center": item.cost_center,
-                "purchase_order": purchase_order_name
+                "purchase_order": po.name
             })
 
-        purchase_invoice.save()
+        # Ensure that taxes are set according to the template
+        if pi.taxes_and_charges:
+            # Load taxes from template
+            tax_rows = get_taxes_and_charges(
+                master_doctype="Purchase Taxes and Charges Template",
+                master_name=pi.taxes_and_charges
+            )
+            pi.set("taxes", [])
+            for row in tax_rows:
+                pi.append("taxes", row)
+
+            # Recalculate totals
+            pi.calculate_taxes_and_totals()
+
+        pi.save()
         frappe.db.commit()
 
         return {
