@@ -609,7 +609,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             item_name = remove_control_characters(line[5].strip().replace('\n', ' ').replace('  ', ' '))  # replace newlines and double spaces
             unit_size = line[6].strip()  # "Einheit besteht aus", e.g. 4 for Item "Oxidizer 4 x4.0 L"
             currency = line[7].strip()
-            #supplier_quote = line[8].strip()  # unclear where to import
+            supplier_quote = line[8].strip()
             #list_price = line[9].strip()
             purchase_price = line[10].strip()
             #customer_discount = line[11].strip()
@@ -794,6 +794,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                         existing_item_doc.safety_stock = safety_stock
                     if material_code and existing_item_doc.material_code != material_code:
                         existing_item_doc.material_code = material_code
+                    if supplier_quote and not existing_item_doc.internal_note:
+                        existing_item_doc.internal_note = f"Supplier Quotation ID: {supplier_quote}"
                     if location and location.name:
                         # Check if location.name is already in Table MultiSelect field existing_item_doc.storage_locations with Options "Location Link".
                         # If not, add it. DocType "Location Link" has a Link field "location".
@@ -856,7 +858,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                 'safety_stock': safety_stock or 0.0,
                 'is_purchase_item': 1,
                 'is_sales_item': 0,
-                'material_code': material_code or None
+                'material_code': material_code or None,
+                'internal_note': f"Supplier Quotation ID: {supplier_quote}" if supplier_quote else None
             })
             if location and location.name:
                 # Add Location location.name to Table MultiSelect storage_locations
