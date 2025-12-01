@@ -596,8 +596,9 @@ def make_collective_invoice(delivery_notes):
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
 
     # sales_invoice.set_advances()    # get advances (customer credit)
-    if sales_invoice.total > 0:
-        sales_invoice = allocate_credits(sales_invoice)  # check and allocate open customer credits
+    # Do not allocate credits for collective invoices
+    # if sales_invoice.total > 0:
+    #     sales_invoice = allocate_credits(sales_invoice)  # check and allocate open customer credits
 
     # force-set tax_id (intrastat!)
     if not sales_invoice.tax_id:
