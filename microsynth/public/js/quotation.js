@@ -25,6 +25,7 @@ frappe.ui.form.on('Quotation Item', {
     }
 });
 
+
 frappe.ui.form.on('Quotation', {
     refresh(frm){
         // remove Menu > Email if document is not valid
@@ -68,6 +69,22 @@ frappe.ui.form.on('Quotation', {
                     "document_id": frm.doc.name
                 });
             }, __("View"));
+        }
+
+        if (
+            frm.doc.docstatus === 1 &&
+            frm.doc.valid_till >= frappe.datetime.get_today() &&
+            frm.doc.status !== "Lost" &&
+            frm.doc.items.length === 1 &&
+            frm.doc.items[0].item_code === "6100"
+        ) {
+            frm.add_custom_button(
+                __("Deposit Invoice"),
+                () => {
+                    create_order_and_deposit_invoice(frm);
+                },
+                __("Create")
+            );
         }
 
         // replace button "Create > Sales Order" with a custom button
@@ -407,4 +424,112 @@ function follow_up(frm){
         },
         'frm': frm
     })
+}
+
+
+function create_order_and_deposit_invoice(frm) {
+    frappe.call({
+        'method': "microsynth.microsynth.credits.get_available_credit_accounts",
+        'args': {
+            'company': frm.doc.company,
+            'currency': frm.doc.currency,
+            'customer': frm.doc.party_name,
+            'product_types': frm.doc.product_type ? [frm.doc.product_type] : [],
+            'account_type': 'Standard'
+        },
+        'callback': function (r) {
+            if (r.exc) return;
+
+            const accounts = r.message || [];
+            if (accounts.length === 0) {
+                const contact_link = `<a href="/desk#Form/Contact/${encodeURIComponent(frm.doc.contact_person)}" target="_blank">
+                    ${frm.doc.contact_person}
+                </a>`;
+
+                frappe.msgprint({
+                    title: __("No Standard Credit Accounts"),
+                    indicator: "red",
+                    message: __(
+                        `No Standard Credit Accounts available for Customer ${frm.doc.party_name} in Currency ${frm.doc.currency}
+                        with Product Type ${frm.doc.product_type} for Company ${frm.doc.company}.<br>
+                        Please open Contact ${contact_link} and use the button <b>Create > Credit Account</b> to create one
+                        (only available if the Contact has a Webshop Account).<br>Then try again here.`
+                    )
+                });
+                return;
+            }
+            // Build table rows
+            const rows_html = accounts.map((a, i) => `
+                <tr data-index="${i}">
+                    <td><input type="checkbox" class="account-select"></td>
+                    <td>${a.name}</td>
+                    <td>${a.account_name || ''}</td>
+                    <td>${a.account_type || ''}</td>
+                    <td>${a.product_types || ''}</td>
+                </tr>
+            `).join("");
+
+            const dialog = new frappe.ui.Dialog({
+                'title': __("Select one Credit Account to create a deposit invoice for:"),
+                'primary_action_label': __("Select"),
+                'primary_action'() {
+                    const body = dialog.$wrapper.find(".credit-account-table");
+                    const selected = [];
+
+                    body.find("tr").each(function () {
+                        const chk = $(this).find(".account-select").is(":checked");
+                        if (chk) {
+                            const index = $(this).data("index");
+                            selected.push(accounts[index]);
+                        }
+                    });
+                    if (selected.length !== 1) {
+                        frappe.msgprint(__("Please select exactly one Credit Account."));
+                        return;
+                    }
+                    // create and submit a Sales Order to set the QTN to Ordered using the standard function from core
+                    // create, submit and open a Deposit Invoice linked to the selected Credit Account via Sales Invoice.credit_account and using the Item Name from this Quotation
+                    frappe.call({
+                        'method': "microsynth.microsynth.credits.create_so_and_deposit_invoice",
+                        'freeze': true,
+                        'freeze_message': __("Creating Sales Order and Deposit Invoice..."),
+                        'args': {
+                            'quotation_id': frm.doc.name,
+                            'credit_account': selected[0].name
+                        },
+                        'callback': function (r) {
+                            if (r.exc) return;
+
+                            if (!r.message || !r.message.sales_invoice) {
+                                frappe.msgprint(__("An unexpected error occurred."));
+                                return;
+                            }
+                            frappe.set_route("Form", "Sales Invoice", r.message.sales_invoice);
+                        }
+                    });
+                },
+                'secondary_action_label': __("Close"),
+                'secondary_action'() {
+                    return;
+                }
+            });
+            dialog.$body.append(`
+                <table class="table table-bordered credit-account-table">
+                    <thead>
+                        <tr>
+                            <th>${__("Select")}</th>
+                            <th>${__("Credit Account")}</th>
+                            <th>${__("Account Name")}</th>
+                            <th>${__("Account Type")}</th>
+                            <th>${__("Product Types")}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows_html}
+                    </tbody>
+                </table>
+            `);
+            dialog.show();
+        }
+    });
 }

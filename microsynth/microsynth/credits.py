@@ -783,7 +783,7 @@ def report_credit_balance_diff():
 
 
 @frappe.whitelist()
-def get_available_credit_accounts(company, currency, customer, product_types=None):
+def get_available_credit_accounts(company, currency, customer, product_types=None, account_type=None):
     """
     Returns active, non-expired Credit Accounts for the given company, currency, and customer.
     If product_types is provided, it filters by them.
@@ -812,6 +812,9 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
             "(`tabProduct Type Link`.`product_type` IN %(product_types)s "
             "OR `tabProduct Type Link`.`product_type` IS NULL)"
         )
+    if account_type:
+        conditions.append("`tabCredit Account`.`account_type` = %(account_type)s")
+
     where_clause = " AND ".join(conditions)
 
     query = f"""
@@ -850,6 +853,7 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
             "customer": customer,
             "today": today,
             "product_types": tuple(product_types) if product_types else None,
+            "account_type": account_type
         },
         as_dict=True,
     )
@@ -945,3 +949,39 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     new_si.save()
     frappe.db.commit()
     return new_si.name
+
+
+@frappe.whitelist()
+def create_so_and_deposit_invoice(quotation_id, credit_account):
+    """
+    Creates a Sales Order from a Quotation and then creates
+    a deposit Sales Invoice from that Sales Order.
+    Returns the created Sales Invoice ID.
+
+    bench execute microsynth.microsynth.credits.create_so_and_deposit_invoice --kwargs "{'quotation_id': 'QTN-25010001', 'credit_account': 'CA-000001'}"
+    """
+    from erpnext.selling.doctype.quotation.quotation import make_sales_order
+    from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+
+    try:
+        # 1. Create Sales Order from Quotation
+        so = make_sales_order(quotation_id)
+        so.transaction_date = today()
+        so.delivery_date = today()
+        so.flags.ignore_permissions = True
+        so.insert()
+        so.submit()
+
+        # 2. Create Sales Invoice from Sales Order
+        si = make_sales_invoice(so.name)
+        si.posting_date = today()
+        si.credit_account = credit_account
+        si.flags.ignore_permissions = True
+        si.insert()
+        si.submit()
+
+        return {"sales_invoice": si.name}
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "create_so_and_deposit_invoice")
+        raise e
