@@ -3087,7 +3087,7 @@ def close_orders_of_closed_delivery_notes(product_type: str = None, from_date: s
     """
     Close Sales Orders linked to Delivery Notes with status = 'Closed'.
 
-    bench execute microsynth.microsynth.migration.close_orders_of_closed_delivery_notes --kwargs "{'product_type': 'Oligos', 'to_date': '2025-06-30', 'dry_run': True}"
+    bench execute microsynth.microsynth.migration.close_orders_of_closed_delivery_notes --kwargs "{'product_type': 'Oligos', 'to_date': '2025-08-31', 'dry_run': False}"
     """
     conditions = ['`tabDelivery Note`.`status` = "Closed"']
     params = {}
@@ -3111,7 +3111,8 @@ def close_orders_of_closed_delivery_notes(product_type: str = None, from_date: s
 
     # Find all non-Closed Sales Orders linked to Closed Delivery Notes
     so_query = f"""
-        SELECT DISTINCT `tabDelivery Note Item`.`against_sales_order`
+        SELECT DISTINCT `tabDelivery Note Item`.`against_sales_order`,
+            `tabSales Order`.`status` AS `sales_order_status`
         FROM `tabDelivery Note`
         INNER JOIN `tabDelivery Note Item`
             ON `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
@@ -3119,10 +3120,10 @@ def close_orders_of_closed_delivery_notes(product_type: str = None, from_date: s
             ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
         WHERE {where_clause}
           AND `tabDelivery Note Item`.`against_sales_order` IS NOT NULL
-          AND `tabSales Order`.`status` != "Closed"
+          AND `tabSales Order`.`status` NOT IN ("Closed", "Completed");
     """
     result = frappe.db.sql(so_query, params, as_dict=True)
-    sales_orders = [row["against_sales_order"] for row in result if row["against_sales_order"]]
+    sales_orders = [(row["against_sales_order"], row["sales_order_status"]) for row in result if row["against_sales_order"]]
 
     print(f"Found {len(sales_orders)} Sales Orders linked to closed Delivery Notes.")
 
@@ -3137,9 +3138,10 @@ def close_orders_of_closed_delivery_notes(product_type: str = None, from_date: s
         return len(sales_orders)
 
     # Close each SO with validation
-    for idx, so_name in enumerate(sales_orders, start=1):
+    for idx, so_tuple in enumerate(sales_orders, start=1):
+        so_name, so_status = so_tuple
         progress = int(idx / len(sales_orders) * 100)
-        print(f"[{progress:3d}%] Closing Sales Order '{so_name}'")
+        print(f"[{progress:3d}%] Closing Sales Order '{so_name}', currently in status {so_status}")
 
         try:
             so = frappe.get_doc("Sales Order", so_name)
