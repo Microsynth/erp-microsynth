@@ -1552,7 +1552,7 @@ Your administration team<br><br>{footer}"
 
             po_nos = set()
             for dn_id in delivery_note_ids:
-                po_no = frappe.get_value("Delivery Note", dn_id, "po_no")
+                po_no = frappe.get_value("Delivery Note", dn_id, "po_no").strip()
                 if not po_no:
                     frappe.log_error(f"Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
                     continue
