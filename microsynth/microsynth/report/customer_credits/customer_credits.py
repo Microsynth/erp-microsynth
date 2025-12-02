@@ -380,7 +380,7 @@ def build_transactions_with_running_balance(filters, type_mapping={'Allocation':
     an opening_balance and optionally a type mapping dictionary.
     Returns transactions (list of dictionaries) containing the balance.
     """
-    customer_credits = get_data(filters)
+    customer_credits = get_data(filters, add_print_format=False)
 
     # Sort chronologically according to first the posting date and then the creation date to compute running balance beginning with oldest transaction.
     customer_credits.sort(key=lambda x: (x.get('date'), x.get('creation')))
@@ -388,11 +388,14 @@ def build_transactions_with_running_balance(filters, type_mapping={'Allocation':
     running_balance = 0.0
     transactions = []
     i = len(customer_credits) - 1
+    #frappe.log_error(customer_credits, "customer_credits for running balance")
 
     for row in customer_credits:
         net_amount = row.get('net_amount') or 0.0
         if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
             running_balance += net_amount
+        else:
+            continue    # skip unpaid transactions
         new_type = ""
         if row.get('type') == 'Allocation' and net_amount > 0:
             new_type = 'Return'
@@ -450,8 +453,7 @@ def get_balance_sheet_data(credit_account_id, from_date, to_date):
     except Exception as err:
         return {
             'success': False,
-            'message': f"Error fetching Credit Account: {err}",
-            'transactions': None
+            'message': f"Error fetching Credit Account: {err}"
         }
     filters = {
         'company': credit_account_doc.company,
@@ -464,8 +466,7 @@ def get_balance_sheet_data(credit_account_id, from_date, to_date):
     except Exception as err:
         return {
             'success': False,
-            'message': f"Error building transactions with running balance: {err}",
-            'transactions': None
+            'message': f"Error building transactions with running balance: {err}"
         }
     opening_balance = 0.0
     closing_balance = None
@@ -487,13 +488,63 @@ def get_balance_sheet_data(credit_account_id, from_date, to_date):
         filtered_transactions.append(transaction)   # inside range: keep transaction
         closing_balance = transaction["balance"]
 
-    if closing_balance is None:                     # no in-range tx: closing = opening
+    if closing_balance is None:                     # no in-range transaction: closing = opening
         closing_balance = opening_balance
 
     return {
         'success': True,
         'message': 'OK',
+        'doc': credit_account_doc,
         'opening_balance': round(opening_balance, 2),
         'closing_balance': round(closing_balance, 2),
         'transactions': filtered_transactions
     }
+
+
+@frappe.whitelist()
+def download_balance_sheet_pdf(credit_account_id, from_date, to_date):
+    from frappe.utils.pdf import get_pdf
+
+    # Fetch data
+    data = get_balance_sheet_data(credit_account_id, from_date, to_date)
+    if not data.get("success"):
+        frappe.throw(data.get("message"))
+
+    doc = frappe.get_doc("Credit Account", credit_account_id)
+
+    # Custom template context
+    context = {
+        "doc": doc,
+        "from_date": from_date,
+        "to_date": to_date,
+        "opening_balance": data.get("opening_balance"),
+        "closing_balance": data.get("closing_balance"),
+        "transactions": data.get("transactions")
+    }
+    #frappe.log_error(context, "Balance Sheet Context")
+
+    # Load print format definition
+    print_format_doc = frappe.get_doc("Print Format", "Credit Account Balance Sheet")
+    css = print_format_doc.css or ""
+    raw_html = print_format_doc.html or ""
+
+    # Build full HTML with CSS
+    css_html = f"<style>{css}</style>{raw_html}"
+
+    # Render with full context (doc + extra data)
+    rendered_html = frappe.render_template(css_html, context)
+
+    # Wrap in microsynth print container
+    content = frappe.render_template(
+        "microsynth/templates/pages/print.html",
+        {"html": rendered_html}
+    )
+
+    # Produce PDF
+    pdf = get_pdf(content, {"disable-smart-shrinking": ""})
+
+    filename = f"Credit_Account_Balance_Sheet_{credit_account_id}_{from_date}_to_{to_date}.pdf"
+
+    frappe.local.response.filename = filename
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "download"

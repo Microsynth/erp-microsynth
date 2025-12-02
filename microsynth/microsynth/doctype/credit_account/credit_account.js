@@ -43,6 +43,72 @@ frappe.ui.form.on('Credit Account', {
                 create_deposit_invoice_dialog(frm);
             }, __("Create"));
         }
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("Download Balance Sheet"), function() {
+
+                function get_first_of_last_month() {
+                    const today = frappe.datetime.str_to_obj(frappe.datetime.get_today());
+                    const first_day_this_month = new Date(today.getFullYear(), today.getMonth(), 1);
+                    // subtract 1 day -> last day of previous month
+                    const last_day_prev_month = frappe.datetime.add_days(
+                        frappe.datetime.obj_to_str(first_day_this_month), -1
+                    );
+                    const d = frappe.datetime.str_to_obj(last_day_prev_month);
+                    return frappe.datetime.obj_to_str(new Date(d.getFullYear(), d.getMonth(), 1));
+                }
+
+                function get_last_of_last_month() {
+                    const today = frappe.datetime.str_to_obj(frappe.datetime.get_today());
+                    const first_day_this_month = new Date(today.getFullYear(), today.getMonth(), 1);
+                    // subtract 1 day -> last day of previous month
+                    return frappe.datetime.add_days(
+                        frappe.datetime.obj_to_str(first_day_this_month), -1
+                    );
+                }
+
+                const default_from = get_first_of_last_month();
+                const default_to   = get_last_of_last_month();
+
+                const d = new frappe.ui.Dialog({
+                    'title': __("Download Balance Sheet"),
+                    'fields': [
+                        {
+                            'fieldname': "from_date",
+                            'label': __("From Date"),
+                            'fieldtype': "Date",
+                            'default': default_from,
+                            'reqd': 1
+                        },
+                        {
+                            'fieldname': "to_date",
+                            'label': __("To Date"),
+                            'fieldtype': "Date",
+                            'default': default_to,
+                            'reqd': 1
+                        }
+                    ],
+                    'primary_action_label': __("Download"),
+                    'primary_action'(values) {
+
+                        const url =
+                            "/api/method/microsynth.microsynth.report.customer_credits.customer_credits.download_balance_sheet_pdf"
+                            + "?credit_account_id=" + encodeURIComponent(frm.doc.name)
+                            + "&from_date=" + encodeURIComponent(values.from_date)
+                            + "&to_date=" + encodeURIComponent(values.to_date);
+
+                        const w = window.open(frappe.urllib.get_full_url(url), "_blank");
+
+                        if (!w) {
+                            frappe.msgprint(__("Please enable pop-ups"));
+                        }
+                        d.hide();
+                    },
+                    'secondary_action_label': __("Close")
+                });
+                d.show();
+            });
+        }
     }
 });
 
