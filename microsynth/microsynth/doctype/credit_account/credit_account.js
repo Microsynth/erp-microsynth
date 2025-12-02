@@ -35,7 +35,7 @@ frappe.ui.form.on('Credit Account', {
         // Show button to create deposit invoice only if:
         // - status == "Active"
         // - expiry_date is empty or in the future
-        if (
+        if (!frm.doc.__islocal &&
             frm.doc.status === "Active" &&
             (!frm.doc.expiry_date || frappe.datetime.get_diff(frm.doc.expiry_date, frappe.datetime.nowdate()) >= 0)
         ) {
