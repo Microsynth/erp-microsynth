@@ -21,8 +21,33 @@ frappe.ui.form.on('Purchase Order', {
 
         hide_in_words();
 
-        if (['Draft', 'On Hold', 'To Receive and Bill', 'To Receive'].includes(frm.doc.status)) {
+        if (!frm.doc.order_confirmation_no &&
+            ['Draft', 'On Hold', 'To Receive and Bill', 'To Receive'].includes(frm.doc.status) &&
+            frm.doc.items.length > 0
+        ) {
+            frm.add_custom_button(__('Send Order by Email'), function() {
+                open_mail_dialog(frm, supplier.order_contact, contact.email_id);
+            });
             show_order_method(frm);
+            // Display internal Item notes in a green banner if the Quotation is in Draft status
+            var dashboard_comment_color = 'green';
+            for (var i = 0; i < frm.doc.items.length; i++) {
+                if (frm.doc.items[i].item_code) {
+                    frappe.call({
+                        'method': "frappe.client.get",
+                        'args': {
+                            "doctype": "Item",
+                            "name": frm.doc.items[i].item_code
+                        },
+                        'callback': function(response) {
+                            var item = response.message;
+                            if (item.internal_note) {
+                                cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
+                            }
+                        }
+                    });
+                }
+            }
         }
     },
     onload(frm) {
@@ -245,10 +270,6 @@ function show_order_method(frm) {
             frappe.db.get_doc('Contact', supplier.order_contact).then(contact => {
                 if (contact.email_id) {
                     frm.dashboard.add_comment(__('Order by Email to {0}', [contact.email_id]), 'blue', true);
-
-                    frm.add_custom_button(__('Send Order by Email'), function() {
-                        open_mail_dialog(frm, supplier.order_contact, contact.email_id);
-                    });
                 } else {
                     frm.dashboard.add_comment(__('⚠️ Order Contact {0} of Supplier {1} has no email address.', [contact.name, supplier.name]), 'orange', true);
                 }

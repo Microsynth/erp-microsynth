@@ -572,7 +572,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
     bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-27_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
 
     AG:
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-27_Lieferantenartikel.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_DEV-ERP.txt', 'company': 'Microsynth AG', 'update_existing_items': True}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_Lieferantenartikel_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_item_mapping_Microsynth_AG.txt', 'supplier_mapping_file': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_mapping_Microsynth_AG.txt', 'company': 'Microsynth AG', 'update_existing_items': True}"
     """
     # TODO: Refactor code
     known_uoms = [uom['name'] for uom in frappe.get_all("UOM", fields=['name'])]
@@ -938,7 +938,7 @@ def import_suppliers(input_filepath, output_filepath, our_company='Microsynth AG
     bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/Supplier/20241105_Lieferantenexport_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'our_company': 'Microsynth Seqlab GmbH'}"
 
     AG:
-    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-20_Lieferanten_Adressen_Microsynth.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_supplier_mapping_DEV-ERP.txt', 'our_company': 'Microsynth AG'}"
+    bench execute microsynth.microsynth.purchasing.import_suppliers --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_Lieferanten_Adressen_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_mapping_Microsynth_AG.txt', 'our_company': 'Microsynth AG'}"
     """
     country_code_mapping = {'UK': 'United Kingdom'}
     payment_terms_mapping = {
