@@ -402,20 +402,20 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         'title': __('New Item Request'),
         'fields': [
             // Left column
-            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd:true, default: item_name || ''},
+            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
             {fieldtype:'Link', label: __('Supplier'), fieldname:'supplier', options: 'Supplier'},
-            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd:true, default:1, min: 0.0001},
+            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.0001},
             {fieldtype:'Currency', label: __('Rate'), fieldname:'rate'},
-            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd:true, default: frappe.defaults.get_default('company')},
+            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: frappe.defaults.get_default('company')},
 
             {fieldtype:'Column Break'},
 
             // Right column
             {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
-            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd:true, default: supplier_name || ''},
-            {fieldtype:'Link', label: __('UOM (unit of measure)'), fieldname:'uom', options: 'UOM', default: 'Pcs'},
+            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
+            {fieldtype:'Link', label: __('UOM (unit of measure)'), fieldname:'uom', options: 'UOM', reqd: 1},
             {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
-            {fieldtype:'Date', label: __('Required By'), fieldname:'schedule_date'},
+            {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date'},
 
             {fieldtype:'Section Break'},
 

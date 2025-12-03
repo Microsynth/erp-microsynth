@@ -254,7 +254,8 @@ function create_new_supplier_item(frm) {
                 label: 'Item Name',
                 fieldname: 'item_name',
                 fieldtype: 'Data',
-                reqd: 1
+                reqd: 1,
+                default: frm.doc.item_name || ''
             },
             { fieldtype: 'Section Break' },
             {
