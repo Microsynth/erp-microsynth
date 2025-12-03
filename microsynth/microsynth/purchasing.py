@@ -156,7 +156,7 @@ def create_po_from_open_mr(filters):
             schedule_date = today()
         po_doc.append('items', {
             'item_code': item.get('item_code'),
-            'schedule_date': item.get('schedule_date'),
+            'schedule_date': schedule_date,
             'qty': item.get('qty'),
             'rate': item.get('rate'),
             'item_name': item.get('item_name'),
