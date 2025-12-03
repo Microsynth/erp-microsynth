@@ -340,19 +340,21 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
-            { fieldtype: 'Int', label: __('Quantity'), fieldname: 'qty', reqd: true, default: 1, min: 1 },
+            { fieldtype: 'Int', label: __('Quantity regarding Purchase UOM'), fieldname: 'qty', reqd: true, default: 1, min: 1 },
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') },
             { fieldtype: 'Data', label: __('Purchase UOM'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
+            { fieldtype: 'Data', label: __('Stock UOM'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Microsynth Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
-            { fieldtype: 'Date', label: __('Required By'), fieldname: 'schedule_date', reqd: true, default: default_schedule_date },
+            { fieldtype: 'Date', label: __('Required by'), fieldname: 'schedule_date', reqd: true, default: default_schedule_date },
             ...(conversion_field ? [conversion_field] : []),
+            { fieldtype: 'Data', label: __('Pack Size and Pack UOM'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
 
             { fieldtype: 'Section Break' },
 
