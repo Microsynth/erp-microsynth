@@ -151,6 +151,9 @@ def create_po_from_open_mr(filters):
         'buying_price_list': supplier_doc.default_price_list
     })
     for item in items:
+        schedule_date = item.get('schedule_date') or today()
+        if schedule_date < today():
+            schedule_date = today()
         po_doc.append('items', {
             'item_code': item.get('item_code'),
             'schedule_date': item.get('schedule_date'),
