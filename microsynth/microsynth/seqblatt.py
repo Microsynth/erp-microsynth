@@ -562,18 +562,20 @@ def submit_seq_primer_dns():
         frappe.db.commit()
 
 
-def close_partly_delivered_paid_orders(dry_run=True):
+def close_partly_delivered_paid_orders(product_type='Sequencing', days=0, dry_run=True):
     """
-    Find Sequencing Sales Orders that are at least partly delivered, paid
-    and created more than :param days ago. Close and tag these Sales Orders.
+    Find Sales Orders that are at least partly delivered, paid,
+    and created more than :param days: days ago. Close and tag these Sales Orders.
     Should be run by a daily cronjob in the early morning:
     30 5 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.seqblatt.close_partly_delivered_paid_orders --kwargs "{'dry_run': False}"
 
-    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_paid_orders --kwargs "{'dry_run': False}"
+    bench execute microsynth.microsynth.seqblatt.close_partly_delivered_paid_orders --kwargs "{'product_type': 'Oligos', 'days': 60, 'dry_run': True}"
     """
     from frappe.desk.tags import add_tag
     counter = 0
-    sales_orders = frappe.db.sql(f"""
+    cutoff_date = frappe.utils.add_days(frappe.utils.today(), -days)
+
+    sales_orders = frappe.db.sql("""
         SELECT * FROM
             (SELECT `tabSales Order`.`name`,
                 `tabSales Order`.`transaction_date`,
@@ -587,29 +589,34 @@ def close_partly_delivered_paid_orders(dry_run=True):
                 `tabSales Order`.`owner`,
                 (SELECT COUNT(`tabSales Invoice Item`.`name`)
                     FROM `tabSales Invoice Item`
-                    LEFT JOIN `tabSales Invoice` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                    LEFT JOIN `tabSales Invoice`
+                        ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
                     WHERE `tabSales Invoice Item`.`docstatus` = 1
-                        AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
-                        AND `tabSales Invoice`.`status` = 'Paid'
+                      AND `tabSales Invoice Item`.`sales_order` = `tabSales Order`.`name`
+                      AND `tabSales Invoice`.`status` = 'Paid'
                 ) AS `paid_si_items`,
                 (SELECT COUNT(`tabDelivery Note Item`.`name`)
                     FROM `tabDelivery Note Item`
                     WHERE `tabDelivery Note Item`.`docstatus` = 1
-                        AND `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
+                      AND `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
                 ) AS `dn_items`
             FROM `tabSales Order`
-            WHERE   `tabSales Order`.`product_type` = 'Sequencing'
-                AND `tabSales Order`.`per_delivered` > 0
-                AND `tabSales Order`.`per_delivered` < 100
-                AND `tabSales Order`.`docstatus` = 1
-                AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
-                AND `tabSales Order`.`per_billed` > 0
-                AND `tabSales Order`.`billing_status` != 'Not Billed'
-            ) AS `raw`
-        WHERE `raw`.`paid_si_items` > 0
-            AND `raw`.`dn_items` > 0
-        ORDER BY `raw`.`transaction_date`
-        ;""", as_dict=True)
+            WHERE `tabSales Order`.`product_type` = %(product_type)s
+              AND `tabSales Order`.`transaction_date` <= %(cutoff_date)s
+              AND `tabSales Order`.`per_delivered` > 0
+              AND `tabSales Order`.`per_delivered` < 100
+              AND `tabSales Order`.`docstatus` = 1
+              AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+              AND `tabSales Order`.`per_billed` > 0
+              AND `tabSales Order`.`billing_status` != 'Not Billed'
+            ) AS raw
+        WHERE raw.paid_si_items > 0
+          AND raw.dn_items > 0
+        ORDER BY raw.transaction_date;
+    """, {
+        "product_type": product_type,
+        "cutoff_date": cutoff_date
+    }, as_dict=True)
 
     print(f"Going to process {len(sales_orders)} Sales Orders.")
 
