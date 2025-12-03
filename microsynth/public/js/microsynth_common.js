@@ -46,7 +46,7 @@ $(document).ready(function() {
             window.location.replace("/desk");
         }
     }
-    
+
     // disable stop_drop handler by default - i.e. on each access, potentially lingering stop_drops are disabled
     // window.removeEventListener("drop", stop_drop, true); // disabled because this trigger only works once and not on each document refresh
 });
@@ -55,7 +55,7 @@ function sleep(milliseconds) {
    return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-// Set the taxes from the tax template 
+// Set the taxes from the tax template
 /*function update_taxes(company, customer, address, category, date) {
     frappe.call({
         "method": "microsynth.microsynth.taxes.find_dated_tax_template",
@@ -64,12 +64,12 @@ function sleep(milliseconds) {
             "customer": customer,
             "shipping_address": address,
             "category": category,
-            "date": date 
+            "date": date
         },
         "async": false,
         "callback": function(response){
             var taxes = response.message;
-            
+
             cur_frm.set_value("taxes_and_charges", taxes);
 
             frappe.call({
@@ -84,7 +84,7 @@ function sleep(milliseconds) {
                     cur_frm.clear_table("taxes");
                     for (var t = 0; t < tax_template.taxes.length; t++) {
                         var child = cur_frm.add_child('taxes')
-                        
+
                         frappe.model.set_value(child.doctype, child.name, 'charge_type', tax_template.taxes[t].charge_type);
                         frappe.model.set_value(child.doctype, child.name, 'account_head', tax_template.taxes[t].account_head);
                         frappe.model.set_value(child.doctype, child.name, 'description', tax_template.taxes[t].description);
@@ -106,44 +106,44 @@ function hide_chart_buttons() {
     }, 500);
 }
 
-/* DEPRECATED, now in payment entry.js 
+/* DEPRECATED, now in payment entry.js
 /// Avis booking
 function allocate_avis(frm) {
     var d = new frappe.ui.Dialog({
         'fields': [
             {
-                'fieldname': 'camt_amount', 
-                'fieldtype': 'Float', 
-                'label': __('Amount'), 
+                'fieldname': 'camt_amount',
+                'fieldtype': 'Float',
+                'label': __('Amount'),
                 'default': frm.doc.camt_amount,
                 'precision': 2,
                 'read_only': 1
             },
             {
-                'fieldname': 'col_1', 
+                'fieldname': 'col_1',
                 'fieldtype': 'Column Break'
             },
             {
-                'fieldname': 'currency', 
-                'fieldtype': 'Data', 
-                'label': __('Currency'), 
+                'fieldname': 'currency',
+                'fieldtype': 'Data',
+                'label': __('Currency'),
                 'default': frm.doc.paid_to_account_currency,
                 'read_only': 1
             },
             {
-                'fieldname': 'sec_1', 
-                'fieldtype': 'Section Break', 
+                'fieldname': 'sec_1',
+                'fieldtype': 'Section Break',
                 'label': __('Allocation')
             },
             {
-                'fieldname': 'invoices', 
-                'fieldtype': 'Table', 
-                'label': __('Invoices'), 
+                'fieldname': 'invoices',
+                'fieldtype': 'Table',
+                'label': __('Invoices'),
                 'reqd': 1,
                 'fields' : [
                     {
-                        'fieldname': 'sales_invoice', 
-                        'fieldtype': 'Link', 
+                        'fieldname': 'sales_invoice',
+                        'fieldtype': 'Link',
                         'label': __('Sales Invoice'),
                         'options': "Sales Invoice",
                         'in_list_view': 1,
@@ -167,7 +167,7 @@ function allocate_avis(frm) {
                                         customer_name.set_value(sinv.customer_name);
                                         currency.set_value(sinv.currency);
                                         outstanding_amount.set_value(sinv.outstanding_amount);
-                                        
+
                                         recalc_allocation(d);
                                     }
                                 });
@@ -175,7 +175,7 @@ function allocate_avis(frm) {
                         },
                         get_query: function() {
                             return {
-                                'filters': [ 
+                                'filters': [
                                     ['company', '=', frm.doc.company],
                                     ['outstanding_amount', '>', 0],
                                     ['currency', '=', frm.doc.paid_to_account_currency]
@@ -184,29 +184,29 @@ function allocate_avis(frm) {
                         }
                     },
                     {
-                        'fieldname': 'customer', 
-                        'fieldtype': 'Data', 
+                        'fieldname': 'customer',
+                        'fieldtype': 'Data',
                         'label': __('Customer'),
                         'in_list_view': 1,
                         'read_only': 1
                     },
                     {
-                        'fieldname': 'customer_name', 
-                        'fieldtype': 'Data', 
+                        'fieldname': 'customer_name',
+                        'fieldtype': 'Data',
                         'label': __('Customer Name'),
                         'in_list_view': 1,
                         'read_only': 1
                     },
                     {
-                        'fieldname': 'currency', 
-                        'fieldtype': 'Data', 
+                        'fieldname': 'currency',
+                        'fieldtype': 'Data',
                         'label': __('Currency'),
                         'in_list_view': 1,
                         'read_only': 1
                     },
                     {
-                        'fieldname': 'outstanding_amount', 
-                        'fieldtype': 'Float', 
+                        'fieldname': 'outstanding_amount',
+                        'fieldtype': 'Float',
                         'precision': 2,
                         'label': __('Outstanding Amount'),
                         'in_list_view': 1,
@@ -219,13 +219,13 @@ function allocate_avis(frm) {
                 }
             },
             {
-                'fieldname': 'sec_1', 
-                'fieldtype': 'Section Break', 
+                'fieldname': 'sec_1',
+                'fieldtype': 'Section Break',
                 'label': __('Sum')
             },
             {
-                'fieldname': 'allocated', 
-                'fieldtype': 'Data', 
+                'fieldname': 'allocated',
+                'fieldtype': 'Data',
                 'label': __('Allocated'),
                 'default': 0,
                 'read_only': 1
@@ -279,7 +279,7 @@ function recalc_allocation(d) {
     console.log("color: " + color);
     return sum
 }
-*/ 
+*/
 
 function hide_in_words() {
     // remove in words (because customisation and setting both do not apply)

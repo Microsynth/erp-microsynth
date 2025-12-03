@@ -2037,3 +2037,96 @@ def add_location_to_item(item, location):
 
     doc.append("storage_locations", {"location": location})
     doc.save()
+
+
+@frappe.whitelist()
+def check_existing_supplier(supplier_name):
+    supplier = frappe.db.get_value("Supplier", {"supplier_name": supplier_name}, "name")
+    return {
+        "exists": bool(supplier),
+        "supplier": supplier
+    }
+
+
+@frappe.whitelist()
+def create_supplier(data):
+    # ensure JSON string is converted to dict
+    if isinstance(data, str):
+        data = json.loads(data)
+    data = frappe._dict(data)
+
+    # Duplicate check at creation time
+    existing = frappe.db.get_value("Supplier", {"supplier_name": data.supplier_name}, "name")
+    if existing:
+        frappe.throw(f"A Supplier with this name already exists: <b>{existing}</b>")
+
+    default_price_list = None
+    if frappe.db.exists("Price List", f"Standard Buying {data.billing_currency}"):
+        default_price_list = f"Standard Buying {data.billing_currency}"
+
+    supplier = frappe.get_doc({
+        "doctype": "Supplier",
+        "supplier_name": data.supplier_name,
+        "country": data.country,
+        "tax_id": data.get("tax_id"),
+        "default_currency": data.billing_currency,
+        "default_price_list": default_price_list
+    })
+    if data.get("webshop_url"):
+        supplier.append("supplier_shops", {
+            "company": data.get("webshop_company"),
+            "webshop_url": data.get("webshop_url")
+        })
+    supplier.insert()
+
+    address = frappe.get_doc({
+        "doctype": "Address",
+        "address_title": supplier.supplier_name,
+        "address_line1": data.address_line1,
+        "address_line2": data.get("address_line2"),
+        "city": data.city,
+        "pincode": data.get("postal_code"),
+        "country": data.country,
+        "is_primary_address": 1,
+        "links": [{
+            "link_doctype": "Supplier",
+            "link_name": supplier.name,
+            "link_title": supplier.supplier_name
+        }]
+    })
+    address.insert()
+
+    contact = frappe.get_doc({
+        "doctype": "Contact",
+        "first_name": data.first_name,
+        "last_name": data.get("last_name"),
+        "salutation": data.get("salutation"),
+        "designation": data.get("title"),
+        "address": address.name,
+        "is_primary_contact": 1,
+        "email_ids": [{
+            "email_id": data.email,
+            "is_primary": 1
+        }],
+        "phone_nos": [{
+            "phone": data.get("phone"),
+            "is_primary_phone": 1
+        }],
+        "links": [{
+            "link_doctype": "Supplier",
+            "link_name": supplier.name,
+            "link_title": supplier.supplier_name
+        }]
+    })
+    contact.insert()
+
+    if frappe.get_meta("Supplier").has_field("order_contact"):
+        frappe.db.set_value("Supplier", supplier.name, "order_contact", contact.name)
+
+    frappe.db.commit()
+
+    return {
+        "supplier": supplier.name,
+        "address": address.name,
+        "contact": contact.name
+    }
