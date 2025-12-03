@@ -3,12 +3,23 @@
 
 frappe.ui.form.on('Credit Account', {
     refresh: function(frm) {
+        frm.set_query("contact_person", function() {
+            return {
+                query: "frappe.contacts.doctype.contact.contact.contact_query",
+                filters: {
+                    'link_doctype': "Customer",
+                    'link_name': frm.doc.customer,
+                    'has_webshop_account': 1
+                }
+            };
+        });
+
         // Add Overview button to get to Customer Credits report
         frm.add_custom_button(__('Overview'), function() {
             frappe.set_route('query-report', 'Customer Credits', {
-                customer: frm.doc.customer,
-                company: frm.doc.company,
-                credit_account: frm.doc.name
+                'customer': frm.doc.customer,
+                'company': frm.doc.company,
+                'credit_account': frm.doc.name
             });
         });
 
@@ -109,6 +120,72 @@ frappe.ui.form.on('Credit Account', {
                 d.show();
             });
         }
+    },
+    validate(frm) {
+        // Check that the contact_person has the field has_webshop_account = 1
+        if (frm.doc.contact_person) {
+            frappe.call({
+                'method': "frappe.client.get_value",
+                'args': {
+                    'doctype': "Contact",
+                    'filters': {
+                        'name': frm.doc.contact_person
+                    },
+                    'fieldname': ['has_webshop_account']
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (r.message) {
+                        if (!r.message.has_webshop_account) {
+                            frappe.msgprint({
+                                'title': __("Invalid Contact"),
+                                'indicator': "red",
+                                'message': __("The selected Contact does not have a webshop account. Please select a different Contact with a webshop account.")
+                            });
+                            frappe.validated = false;
+                        }
+                    } else {
+                        frappe.msgprint({
+                            'title': __("Invalid Contact"),
+                            'indicator': "red",
+                            'message': __("The selected Contact does not exist. Please select a different Contact.")
+                        });
+                        frappe.validated = false;
+                    }
+                }
+            });
+        }
+        // Check that the contact_person is linked to the customer
+        if (frm.doc.contact_person && frm.doc.customer) {
+            frappe.call({
+                'method': "frappe.client.get_value",
+                'args': {
+                    'doctype': "Dynamic Link",
+                    'filters': {
+                        'parenttype': "Contact",
+                        'parent': frm.doc.contact_person,
+                        'link_doctype': "Customer",
+                        'link_name': frm.doc.customer
+                    },
+                    'fieldname': ['name']
+                },
+                'async': false,
+                'callback': function(r) {
+                    if (!r.message) {
+                        frappe.msgprint({
+                            'title': __("Contact Person Not Linked to Customer"),
+                            'indicator': "red",
+                            'message': __("The selected Contact is not linked to the selected Customer. Please link them or select a different Contact or Customer.")
+                        });
+                        frappe.validated = false;
+                    }
+                }
+            });
+        }
+    },
+    customer: function(frm) {
+        // Refresh query when customer changes
+        frm.trigger("refresh");
     }
 });
 
