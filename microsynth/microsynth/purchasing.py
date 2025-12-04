@@ -1735,7 +1735,7 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
             supplier = entry.supplier
             supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
             break
-    if not currency and supplier_currency:
+    if (not currency or not rate) and supplier_currency:
         currency = supplier_currency
     elif supplier and supplier_currency and currency and supplier_currency != currency:
         frappe.throw(f"Currency mismatch: Item {item_code} belongs to Supplier {supplier} with currency {supplier_currency} and cannot be purchased in currency {currency}.")
