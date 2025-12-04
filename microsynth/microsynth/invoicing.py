@@ -32,7 +32,12 @@ from microsynth.microsynth.utils import (
     get_sql_list,
     get_customer_from_company
 )
-from microsynth.microsynth.credits import allocate_credits, get_total_credit
+from microsynth.microsynth.credits import (
+    allocate_credits,
+    get_total_credit,
+    get_credit_accounts,
+    get_applicable_customer_credits
+)
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -229,28 +234,53 @@ def async_create_invoices(mode, company, customer):
                         transmit_sales_invoice(si)
                     continue
 
-                # check credit
-                if dn.get('product_type') == 'Project':
-                    credit = get_total_credit(dn.get('customer'), company, 'Project')
-                else:
-                    credit = get_total_credit(dn.get('customer'), company, 'Standard')
-                customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
-                if credit is not None and customer_credits == 'Credit Account':
-                    delivery_note =  dn.get('delivery_note')
-                    total = frappe.get_value("Delivery Note", delivery_note, "total")
-                    if total > credit:
-                        if send_credits_notifications:
-                            dn_customer = dn.get('customer')
-                            if not dn_customer in insufficient_credit_warnings:
-                                insufficient_credit_warnings[dn_customer] = {}
-                            dn_doc = frappe.get_doc("Delivery Note", delivery_note)  # necessary to get the language and web_order_id
-                            insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
-                                                                                    'currency': dn.get('currency'),
-                                                                                    'credit': round(credit, 2),
-                                                                                    'customer_name': dn.get('customer_name'),
-                                                                                    'web_order_id': dn_doc.web_order_id,
-                                                                                    'language': dn_doc.language}
-                        continue
+                customer_credits = frappe.get_value("Customer", dn.get('customer'), "customer_credits")
+
+                if customer_credits == 'Credit Account':
+                    # check credit
+                    credit = None
+                    # get list of applicable credit accounts
+                    sales_order_ids = set()
+                    for item in  dn.items:
+                        if item.sales_order:
+                            sales_order_ids.add(item.sales_order)
+
+                    if len(sales_order_ids) > 1:
+                        # TODO?
+                        pass
+                        #frappe.throw(f"Multiple Sales Orders found:\n{', '.join(list(sales_order_ids))}", "Create Invoices Error")
+                    elif len(sales_order_ids) == 1:
+                        credit_account_ids = get_credit_accounts(sales_order_ids.pop())
+
+                        if credit_account_ids:
+                            # get applicable customer credits
+                            raw_customer_credits = get_applicable_customer_credits(dn.customer, dn.company, credit_account_ids)
+                            # filter for Active Credit Accounts
+                            enabled_customer_credits = [
+                                credit
+                                for credit in raw_customer_credits
+                                if credit.get('credit_account_status') != 'Disabled'
+                            ]
+                            # TODO: Get balance of all enabled customer credits and store the sum in 'credit'
+
+                            # TODO: How to keep Project/Standard credits distinction?
+
+                    if credit is not None:
+                        delivery_note =  dn.get('delivery_note')
+                        total = frappe.get_value("Delivery Note", delivery_note, "total")
+                        if total > credit:
+                            if send_credits_notifications:
+                                dn_customer = dn.get('customer')
+                                if not dn_customer in insufficient_credit_warnings:
+                                    insufficient_credit_warnings[dn_customer] = {}
+                                dn_doc = frappe.get_doc("Delivery Note", delivery_note)  # necessary to get the language and web_order_id
+                                insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
+                                                                                        'currency': dn.get('currency'),
+                                                                                        'credit': round(credit, 2),
+                                                                                        'customer_name': dn.get('customer_name'),
+                                                                                        'web_order_id': dn_doc.web_order_id,
+                                                                                        'language': dn_doc.language}
+                            continue
 
                 # only process DN that are invoiced individually, not collective billing
                 if cint(dn.get('collective_billing')) == 0:
