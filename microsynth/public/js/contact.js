@@ -561,7 +561,7 @@ function create_promotion_credits(frm) {
                     { label: __("Account Title"), fieldname: "account_name", fieldtype: "Data", reqd: 1 },
                     { label: __("Company"), fieldname: "company", fieldtype: "Link", options: "Company", reqd: 1, default: default_company },
                     { fieldtype: "Table MultiSelect", fieldname: "product_types", label: __("Product Types"), reqd: 1, options: "Product Type Link" },
-                    { label: __("Amount"), fieldname: "amount", fieldtype: "Currency", reqd: 1 },
+                    { label: __("Net Amount"), fieldname: "amount", fieldtype: "Currency", reqd: 1, description: __("Enter a <b>positive</b> deposit <b>amount</b>. Taxes will be added to the deposit invoice on top.") },
                     { label: __("Currency"), fieldname: "currency", fieldtype: "Link", options: "Currency", reqd: 1, read_only: 1, default: default_currency },
                     { label: __("Expiry Date"), fieldname: "expiry_date", fieldtype: "Date", reqd: 1 },
                     { label: __("Override Item Name"), fieldname: "override_item_name", fieldtype: "Data" },

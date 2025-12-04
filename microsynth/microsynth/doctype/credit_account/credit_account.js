@@ -199,9 +199,9 @@ function create_deposit_invoice_dialog(frm) {
             {
                 fieldtype: "Currency",
                 fieldname: "amount",
-                label: __("Amount"),
+                label: __("Net Amount"),
                 reqd: 1,
-                description: __("Enter a positive deposit amount."),
+                description: __("Enter a <b>positive</b> deposit <b>amount</b>. Taxes will be added to the deposit invoice on top."),
             },
             {
                 fieldtype: "Read Only",
