@@ -2996,17 +2996,16 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
     intercompany_customers = frappe.get_all("Intercompany Settings Company", fields=['customer'])
     intercompany_customer_list = [entry['customer'] for entry in intercompany_customers]
 
-    _0672_to_0679 = set(['0672', '0673', '0674', '0677', '0678', '0679'])
-    _0830_to_0837 = set(['0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837'])
-    _0870_to_0890 = set(['0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890'])
+    si_rna_item_codes = set(['0672', '0673', '0674', '0677', '0678', '0679', '0830', '0831', '0832', '0833', '0834', '0835', '0836', '0837', '0458', '0459', '0740', '0741'])
+    aso_item_codes = set(['0456', '0457', '0728', '0729', '0730', '0731', '0732', '0733', '0734', '0735', '0736', '0737', '0738', '0739', '0820', '0821', '0870', '0871', '0872', '0873', '0876', '0877', '0878', '0879', '0882', '0883', '0884', '0885', '0888', '0889', '0890'])
 
     asos = []
     sirnas = []
     neither_counter = 0
 
-    currencies = ['CHF', 'EUR', 'USD', 'SEK']
-    sirna_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
-    aso_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0}
+    currencies = ['CHF', 'EUR', 'USD', 'SEK', 'PLN']
+    sirna_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0, 'PLN': 0}
+    aso_totals = {'CHF': 0, 'EUR': 0, 'USD': 0, 'SEK': 0, 'PLN': 0}
 
     yesterday = datetime.now() - timedelta(days=1)
     if not from_date:
@@ -3109,10 +3108,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         if ('0662' in items or '0663' in items) and ('0379' in items or '0372' in items or '0373' in items or '0374' in items):
             sirnas.append(si)
             continue
-        elif len(items.intersection(_0830_to_0837)) > 0:
-            sirnas.append(si)
-            continue
-        elif len(items.intersection(_0672_to_0679)) > 0:
+        elif len(items.intersection(si_rna_item_codes)) > 0:
             sirnas.append(si)
             continue
         # search for ASOs
@@ -3122,7 +3118,7 @@ def report_therapeutic_oligo_sales(from_date=None, to_date=None):
         elif '0820' in items or '0821' in items:
             asos.append(si)
             continue
-        elif len(items.intersection(_0870_to_0890)) > 0:
+        elif len(items.intersection(aso_item_codes)) > 0:
             asos.append(si)
             continue
         elif '0380' in items or '0381' in items or '0382' in items or '0383' in items:
