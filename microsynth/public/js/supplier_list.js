@@ -33,10 +33,7 @@ function add_simplified_supplier_button() {
         }
         // Bind click action
         document.getElementById("btn_new_simplified").onclick = function () {
-            document.getElementById("btn_new_simplified").onclick = function () {
-                // TODO: Why is it necessary to click twice the first time?
-                open_simplified_supplier_creation_dialog();
-            };
+            open_simplified_supplier_creation_dialog();
         };
     }
 }
