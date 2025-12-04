@@ -1181,70 +1181,112 @@ def escape_chars_for_xml(text):
     return text.replace("&", "&amp;")
 
 
-def adjust_si_to_dn(dn_doc, si_doc):
+def adjust_si_to_dn(dn_doc, si_doc, debug=False):
     """
-    Copies Oligos, Samples and Items from the given Delivery Note to the given Sales Invoice.
+    Adjust the items and quantities of the Sales Invoice to match the intercompany Delivery Note:
+    1. Clear all oligos, samples, items from the Sales Invoice
+    2. Copy all oligos, samples, items from the Delivery Note to the Sales Invoice
+    3. Recalculate totals
     """
+    default_cost_center = frappe.get_value("Company", si_doc.company, "cost_center")
+
+    if debug:
+        print(f"[adjust_si_to_dn] Start. DN={dn_doc.name}, SI={si_doc.name}")
+        print(f"[adjust_si_to_dn] Default cost center for SI company {si_doc.company}: {default_cost_center}")
+        print(f"[adjust_si_to_dn] DN totals before copy: {dn_doc.total}")
+        print(f"[adjust_si_to_dn] SI totals before copy: {si_doc.total}")
+
     if len(dn_doc.oligos) > 0:
+        if debug: print(f"[adjust_si_to_dn] Copying {len(dn_doc.oligos)} oligos ...")
         si_doc.oligos = []
         for dn_oligo in dn_doc.oligos:
             si_doc.append("oligos", {
                 'oligo': dn_oligo.oligo
             })
     if len(dn_doc.samples) > 0:
+        if debug: print(f"[adjust_si_to_dn] Copying {len(dn_doc.samples)} samples ...")
         si_doc.samples = []
         for dn_sample in dn_doc.samples:
             si_doc.append("samples", {
                 'sample': dn_sample.sample
             })
     if len(dn_doc.items) > 0:
+        so_id = dn_doc.po_no  # DN.po_no contains the SO ID
+        if debug: print(f"[adjust_si_to_dn] Copying {len(dn_doc.items)} items ...")
         si_doc.items = []
         for dn_item in dn_doc.items:
             si_doc.append("items", {
                 'item_code': dn_item.item_code,
                 'item_name': dn_item.item_name,
                 'qty': dn_item.qty,
-                'rate': dn_item.rate
+                'rate': dn_item.rate,
+                'sales_order': so_id,
+                'cost_center': default_cost_center
             })
+    # Recalculate totals after modification
+    si_doc.calculate_taxes_and_totals()
+    if debug:
+        print(f"[adjust_si_to_dn] SI totals after copy: {si_doc.total}")
     return si_doc
 
 
-def create_si_from_so(so_id):
+def create_si_from_so(so_id, debug=False):
     """
     In the dropshipment workflow: Create a Sales Invoice from a Sales Order for the end customer.
     Adjust the items and quantities of the Sales Invoice to match the intercompany Delivery Note specified by the PO NO matching the Sales Order.
     Applies the customer credits if available.
     Set the income accounts as well as the goodwill period for payment reminders.
 
-    run
-    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-LYO-25001531'}"
+    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-WIE-25001714', 'debug': True}"
     """
+    if debug:
+        print(f"[create_si_from_so] Starting for SO {so_id}")
     si_content = make_sales_invoice_from_so(so_id)
     end_customer_si = frappe.get_doc(si_content)
     end_customer_si.naming_series = get_naming_series("Sales Invoice", end_customer_si.company)
     dns = frappe.get_all("Delivery Note", filters={'po_no': so_id, 'docstatus': 1}, fields=['name'])
+    if debug:
+        print(f"[create_si_from_so] Found {len(dns)} matching DNs for PO={so_id}")
     if len(dns) != 1:
         frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
+        if debug: print("[create_si_from_so] ERROR: Wrong number of Delivery Notes")
         return None
     dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
-    # consider partial delivery: e.g. not all oligos were invoiced(=delivered)
-    # assume that there are not different Oligos, Samples or Items while the amount of them is identical
-    # all delivered Oligos should be invoiced, no need to check for cancelled Oligos on the Delivery Note
+
+    if debug:
+        print(f"[create_si_from_so] DN={dn_doc.name}, DN total={dn_doc.total}")
+        print(f"[create_si_from_so] Initial SI total={end_customer_si.total}")
+
+    # check item counts
     if (end_customer_si.get('oligos') and dn_doc.get('oligos') and len(end_customer_si.oligos) != len(dn_doc.oligos)) or \
         (end_customer_si.get('samples') and dn_doc.get('samples') and len(end_customer_si.samples) != len(dn_doc.samples)) or \
         (end_customer_si.get('items') and dn_doc.get('items') and len(end_customer_si.items) != len(dn_doc.items)):
-        end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si)  # should be call by reference but just for safety
+        if debug:
+            print("[create_si_from_so] Mismatch in row counts → adjusting SI to match DN")
+        end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si, debug=debug)
+
+    # safety check
+    if debug:
+        print(f"[create_si_from_so] After adjust SI total={end_customer_si.total}, DN total={dn_doc.total}")
     if end_customer_si.total > dn_doc.total:
-        frappe.log_error(f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).", "invoicing.transmit_sales_invoice")
+        frappe.log_error(
+            f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
+            "invoicing.transmit_sales_invoice"
+        )
+        if debug:
+            print("[create_si_from_so] ERROR: SI total exceeds DN total")
         return None
 
     if end_customer_si.total > 0:
-        end_customer_si = allocate_credits(end_customer_si)  # check and allocate open customer credits
+        if debug: print("[create_si_from_so] Allocating customer credits…")
+        end_customer_si = allocate_credits(end_customer_si)
 
     if not end_customer_si.tax_id:
         end_customer_si.tax_id = frappe.get_value("Customer", end_customer_si.customer, "tax_id")
 
-    end_customer_si.insert(ignore_permissions=True)    # TODO: why do we ignore the permissions here?
+    if debug:
+        print("[create_si_from_so] Inserting Sales Invoice (ignore_permissions=True)…")
+    end_customer_si.insert(ignore_permissions=True)
     set_income_accounts(end_customer_si)
 
     customer_invoicing_method = frappe.get_value("Customer", end_customer_si.customer, "invoicing_method")
@@ -1255,8 +1297,14 @@ def create_si_from_so(so_id):
     # for payment reminders: set goodwill period
     end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
 
-    end_customer_si.submit()
+    if debug:
+        print("[create_si_from_so] Final SI rows and their cost centers:")
+        for it in end_customer_si.items:
+            print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
 
+    end_customer_si.submit()
+    if debug:
+        print(f"[create_si_from_so] Successfully submitted SI {end_customer_si.name}")
     return end_customer_si.name
 
 
