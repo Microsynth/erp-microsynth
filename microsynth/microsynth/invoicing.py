@@ -241,14 +241,14 @@ def async_create_invoices(mode, company, customer):
                     credit = None
                     # get list of applicable credit accounts
                     sales_order_ids = set()
-                    for item in  dn.items:
+                    for item in dn.items:
                         if item.sales_order:
                             sales_order_ids.add(item.sales_order)
 
                     if len(sales_order_ids) > 1:
-                        # TODO?
-                        pass
-                        #frappe.throw(f"Multiple Sales Orders found:\n{', '.join(list(sales_order_ids))}", "Create Invoices Error")
+                        msg = f"Delivery Note '{dn.get('delivery_note')}': Multiple Sales Orders found: {', '.join(list(sales_order_ids))}"
+                        frappe.log_error(msg, "invoicing.async_create_invoices")
+                        continue
                     elif len(sales_order_ids) == 1:
                         credit_account_ids = get_credit_accounts(sales_order_ids.pop())
 
@@ -263,7 +263,9 @@ def async_create_invoices(mode, company, customer):
                             ]
                             # TODO: Get balance of all enabled customer credits and store the sum in 'credit'
 
-                            # TODO: How to keep Project/Standard credits distinction?
+                            # TODO: How to keep Project/Standard credits distinction:
+                            # does the DN.product_type match the credit account.product_types: for all credit accounts there must be an entry with the product type of the DN. otherwise log an error and skip invoicing
+                            # if DN.product_type == 'Project' and the customer has Project credits that are not on the SO, log an error and skip invoicing
 
                     if credit is not None:
                         delivery_note =  dn.get('delivery_note')
