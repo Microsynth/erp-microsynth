@@ -4004,7 +4004,7 @@ def get_reservations(account_id, current_balance):
             "status": order.get('status'),
             "web_order_id": order.get('web_order_id'),
             "currency": order.get('currency'),
-            "amount": unbilled_amount,
+            "amount": round((-1) * unbilled_amount, 2),
             "balance": round(running_balance, 2),
             "product_type": order.get('product_type'),
             "po_no": order.get('po_no'),
@@ -4018,7 +4018,7 @@ def get_transactions(account_id):
     """
     Get all transactions for the given Credit Account.
 
-    bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000002'}"
+    bench execute microsynth.microsynth.webshop.get_transactions --kwargs "{'account_id': 'CA-000020'}"
     """
     from microsynth.microsynth.report.customer_credits.customer_credits import build_transactions_with_running_balance
     type_mapping = {
