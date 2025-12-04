@@ -32,8 +32,8 @@ PRODUCT_TYPE_MAP = {
     "Library Prep and NGS": ["NGS"],
     "Ecogenics": ["Service"]
 }
-NGS_GROUPS = ["3.6 Library Prep", "3.7 NGS"]
-GENETIC_ANALSIS_GROUPS = ["3.3 Isolationen", "3.4 Genotyping", "3.5 PCR", "3.6 Library Prep", "3.7 NGS"]
+NGS_GROUPS = ["3.6 NGS", "3.7 Bioinformatics"]
+GENETIC_ANALSIS_GROUPS = ["3.3 Isolationen", "3.4 Genotyping", "3.5 PCR", "3.6 NGS", "3.7 Bioinformatics"]
 COLOURS = [
     "blue",
     "green",
