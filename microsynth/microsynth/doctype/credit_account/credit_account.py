@@ -5,6 +5,7 @@
 import json
 import frappe
 from frappe.model.document import Document
+from microsynth.microsynth.report.customer_credits.customer_credits import build_transactions_with_running_balance
 
 
 class CreditAccount(Document):
@@ -65,3 +66,20 @@ def create_credit_account(account_name, account_type, customer_id, company, curr
 
     credit_account.insert(ignore_permissions=ignore_permissions)
     return credit_account.name
+
+
+def get_balance(credit_account_id):
+    """
+    Get the current balance of the given Credit Account.
+    """
+    credit_account_doc = frappe.get_doc("Credit Account", credit_account_id)
+    filters = {
+        'credit_account': credit_account_id,
+        'company': credit_account_doc.company,
+        'customer': credit_account_doc.customer
+    }
+    transactions = build_transactions_with_running_balance(filters)
+
+    current_balance = transactions[-1].get('balance') if len(transactions) > 0 else 0.0
+
+    return round(current_balance, 2)
