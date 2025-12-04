@@ -38,6 +38,7 @@ from microsynth.microsynth.credits import (
     get_credit_accounts,
     get_applicable_customer_credits
 )
+from microsynth.microsynth.doctype.credit_account.credit_account import get_balance
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -256,12 +257,15 @@ def async_create_invoices(mode, company, customer):
                             # get applicable customer credits
                             raw_customer_credits = get_applicable_customer_credits(dn.customer, dn.company, credit_account_ids)
                             # filter for Active Credit Accounts
-                            enabled_customer_credits = [
+                            enabled_customer_credits = list(set([
                                 credit
                                 for credit in raw_customer_credits
                                 if credit.get('credit_account_status') != 'Disabled'
-                            ]
-                            # TODO: Get balance of all enabled customer credits and store the sum in 'credit'
+                            ]))
+                            credit = 0.0
+                            # Get balance of all enabled customer credits and store the sum in 'credit'
+                            for credit_account in enabled_customer_credits:
+                                credit += get_balance(credit_account.get('credit_account'))
 
                             # TODO: How to keep Project/Standard credits distinction:
                             # does the DN.product_type match the credit account.product_types: for all credit accounts there must be an entry with the product type of the DN. otherwise log an error and skip invoicing
