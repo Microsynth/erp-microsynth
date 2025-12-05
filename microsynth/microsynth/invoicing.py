@@ -257,19 +257,47 @@ def async_create_invoices(mode, company, customer):
                             # get applicable customer credits
                             raw_customer_credits = get_applicable_customer_credits(dn.customer, dn.company, credit_account_ids)
                             # filter for Active Credit Accounts
-                            enabled_customer_credits = list(set([
-                                credit
+                            enabled_credit_accounts = list(set([
+                                credit.get('credit_account')
                                 for credit in raw_customer_credits
                                 if credit.get('credit_account_status') != 'Disabled'
                             ]))
                             credit = 0.0
-                            # Get balance of all enabled customer credits and store the sum in 'credit'
-                            for credit_account in enabled_customer_credits:
-                                credit += get_balance(credit_account.get('credit_account'))
 
-                            # TODO: How to keep Project/Standard credits distinction:
-                            # does the DN.product_type match the credit account.product_types: for all credit accounts there must be an entry with the product type of the DN. otherwise log an error and skip invoicing
-                            # if DN.product_type == 'Project' and the customer has Project credits that are not on the SO, log an error and skip invoicing
+                            # If DN has Product Type Project, ensure there is no Active Project Credit Account for the Customer
+                            # that was omitted from the enabled_credit_accounts. If such exists, skip the whole DN.
+                            skip_dn = False
+                            if dn.get('product_type') == 'Project':
+                                customer_active_accounts = frappe.get_all("Credit Account", filters={
+                                    'customer': dn.get('customer'),
+                                    'status': 'Active'
+                                }, fields=['name'])
+
+                                for account in customer_active_accounts:
+                                    credit_account_doc = frappe.get_doc('Credit Account', account['name'])
+                                    acc_ptypes = [pt.product_type for pt in credit_account_doc.product_types if getattr(pt, 'product_type', None)]
+                                    if 'Project' in acc_ptypes and account['name'] not in enabled_credit_accounts:
+                                        msg = f"Delivery Note '{dn.get('delivery_note')}': Customer {dn.get('customer')} has an active Project Credit Account {account['name']} which is not included in the Sales Order credit accounts. Not going to invoice automatically."
+                                        frappe.log_error(msg, "invoicing.async_create_invoices")
+                                        skip_dn = True
+                                        break
+                            if skip_dn:
+                                # do not invoice this Delivery Note
+                                continue
+
+                            # Get balance of all enabled customer credits and store the sum in 'credit'
+                            # Skip credit accounts that do not apply to this Delivery Notes product type and log an error
+                            for credit_account_id in enabled_credit_accounts:
+                                credit_account_doc = frappe.get_doc("Credit Account", credit_account_id)
+                                ca_product_types = [pt.product_type for pt in credit_account_doc.product_types if getattr(pt, 'product_type', None)]
+
+                                if dn.get('product_type') and ca_product_types:
+                                    if dn.get('product_type') not in ca_product_types:
+                                        msg = f"Delivery Note '{dn.get('delivery_note')}': Credit Account '{credit_account_id}' is not applicable for product type '{dn.get('product_type')}'. Skipping this Credit Account for credit calculation."
+                                        frappe.log_error(msg, "invoicing.async_create_invoices")
+                                        continue
+
+                                credit += get_balance(credit_account_id)
 
                     if credit is not None:
                         delivery_note =  dn.get('delivery_note')
