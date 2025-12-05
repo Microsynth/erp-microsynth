@@ -78,12 +78,12 @@ def get_data(filters):
     # Handlers for traversal
 
     def handle_item_request(doc):
-        """IR → Material Request"""
+        # IR → MR
         if doc.material_request:
             safe_fetch("Material Request", doc.material_request)
 
     def handle_material_request(doc):
-        """MR → PO"""
+        # MR → PO
         po_items = frappe.get_all(
             "Purchase Order Item",
             filters={"material_request": doc.name},
@@ -92,7 +92,14 @@ def get_data(filters):
         for row in po_items:
             safe_fetch("Purchase Order", row.parent)
 
-        # backwards: PO → MR is covered by PO handler
+        # MR → IR (reverse lookup)
+        ir_list = frappe.get_all(
+            "Item Request",
+            filters={"material_request": doc.name},
+            fields=["name"]
+        )
+        for row in ir_list:
+            safe_fetch("Item Request", row.name)
 
     def handle_purchase_order(doc):
         """
