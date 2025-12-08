@@ -13,7 +13,7 @@ def get_columns(mode=None):
         {"label": _("Request"), "fieldname": "material_request", "fieldtype": "Dynamic Link", "options": "request_type", "width": 95},
         {"label": _("Request Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 95},
         {"label": _("Required By"), "fieldname": "schedule_date", "fieldtype": "Date", "width": 85},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 240},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 350},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
     ]
@@ -25,7 +25,7 @@ def get_columns(mode=None):
         ]
     columns += [
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
-        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 200},
+        {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 250},
         {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125},
         {"label": _("Requested By"), "fieldname": "requested_by", "fieldtype": "Link", "options": "User", "width": 150},
         {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 200, "align": "left"},
