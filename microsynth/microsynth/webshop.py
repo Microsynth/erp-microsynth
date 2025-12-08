@@ -3993,7 +3993,8 @@ def get_reservations(account_id, current_balance):
     open_sales_orders = get_open_sales_orders(account_id)
     running_balance = current_balance
     reservations = []
-    for i, order in enumerate(open_sales_orders):
+    i = len(open_sales_orders) - 1
+    for order in open_sales_orders:
         unbilled_amount = order.get('unbilled_amount') or 0.0
         running_balance -= unbilled_amount
         reservations.append({
@@ -4010,6 +4011,8 @@ def get_reservations(account_id, current_balance):
             "po_no": order.get('po_no'),
             "idx": i    # index for webshop api to maintain the order of transactions
         })
+        i -= 1
+    reservations.reverse()  # to have the oldest reservation first, using directly "return reservations.reverse()" does not work as reverse() returns None
     return reservations
 
 

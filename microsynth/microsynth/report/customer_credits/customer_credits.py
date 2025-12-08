@@ -393,6 +393,7 @@ def build_transactions_with_running_balance(filters, type_mapping={'Allocation':
 
     for row in paid_customer_credits:
         net_amount = row.get('net_amount') or 0.0
+        running_balance += net_amount
         new_type = ""
         if row.get('type') == 'Allocation' and net_amount > 0:
             new_type = 'Return'
