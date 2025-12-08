@@ -26,6 +26,18 @@ frappe.query_reports["Supplier Items"] = {
             "fieldname": "supplier_part_no",
             "label": __("Supplier Part Number"),
             "fieldtype": "Data"
+        },
+        {
+            "fieldname": "company",
+            "label": __("Company"),
+            "fieldtype": "Link",
+            "options": "Company"
+        },
+        {
+            "fieldname": "storage_location",
+            "label": __("Storage Location"),
+            "fieldtype": "Link",
+            "options": "Location"
         }
     ],
     "onload": (report) => {

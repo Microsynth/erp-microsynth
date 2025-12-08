@@ -47,6 +47,12 @@ def get_data(filters):
     if filters.get("supplier_part_no"):
         conditions += " AND `tabItem Supplier`.`supplier_part_no` LIKE %(supplier_part_no)s"
         values["supplier_part_no"] = "%" + filters["supplier_part_no"] + "%"
+    if filters.get("company"):
+        conditions += " AND `tabItem Default`.`company` = %(company)s"
+        values["company"] = filters["company"]
+    if filters.get("storage_location"):
+        conditions += " AND `tabLocation Link`.`location` = %(storage_location)s"
+        values["storage_location"] = filters["storage_location"]
 
     query = """
         SELECT
@@ -76,6 +82,11 @@ def get_data(filters):
             AND `tabUOM Conversion Detail`.`uom` = `tabItem`.`purchase_uom`
         LEFT JOIN `tabItem Supplier`
             ON `tabItem Supplier`.`parent` = `tabItem`.`name`
+        LEFT JOIN `tabItem Default`
+            ON `tabItem Default`.`parent` = `tabItem`.`name`
+        LEFT JOIN `tabLocation Link` ON
+            `tabLocation Link`.`parent` = `tabItem`.`name`
+            AND `tabLocation Link`.`parentfield` = 'storage_locations'
         LEFT JOIN `tabSupplier`
             ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
         LEFT JOIN `tabItem Price`
