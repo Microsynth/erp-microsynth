@@ -9,7 +9,16 @@ frappe.query_reports["Supplier Items"] = {
             "fieldname": "item_id",
             "label": __("Item ID"),
             "fieldtype": "Link",
-            "options": "Item"
+            "options": "Item",
+            "get_query": function() {
+                return {
+                    "filters": {
+                        "item_group": "Purchasing",
+                        "is_purchase_item": 1,
+                        "disabled": 0
+                    }
+                };
+            }
         },
         {
             "fieldname": "item_name",
@@ -20,7 +29,14 @@ frappe.query_reports["Supplier Items"] = {
             "fieldname": "supplier",
             "label": __("Supplier"),
             "fieldtype": "Link",
-            "options": "Supplier"
+            "options": "Supplier",
+            "get_query": function() {
+                return {
+                    "filters": {
+                        "disabled": 0
+                    }
+                };
+            }
         },
         {
             "fieldname": "supplier_part_no",
