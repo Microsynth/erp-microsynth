@@ -109,7 +109,7 @@
    "cancel": 1,
    "create": 1,
    "creation": "2013-05-21 16:16:39",
-   "delete": 1,
+   "delete": 0,
    "docstatus": 0,
    "email": 1,
    "export": 0,
@@ -129,7 +129,7 @@
    "report": 1,
    "role": "Purchase User",
    "set_user_permissions": 0,
-   "share": 1,
+   "share": 0,
    "submit": 1,
    "write": 1
   },
