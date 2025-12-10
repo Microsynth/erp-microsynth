@@ -340,7 +340,8 @@ function update_address_links(frm) {
  *   validate_fn(values) -> string|null   return error message or null
  *   submit_fn(values)               custom backend call
  */
-function show_credit_account_dialog(dialog_title, dialog_fields, validate_fn, submit_fn) {
+function show_credit_account_dialog(dialog_title, dialog_fields, validate_fn, submit_fn, defaults = {}) {
+    let dialog_instance = null;
     frappe.model.with_doctype("Product Type Link", function () {
         let d = new frappe.ui.Dialog({
             title: dialog_title,
@@ -359,9 +360,23 @@ function show_credit_account_dialog(dialog_title, dialog_fields, validate_fn, su
             secondary_action_label: __("Close"),
             secondary_action() { return; }
         });
-
+        // Set default values AFTER dialog is rendered
+        setTimeout(() => {
+            for (let f in defaults) {
+                if (d.fields_dict[f]) {
+                    let val = defaults[f];
+                    // special handling for Table MultiSelect
+                    if (Array.isArray(val) && f === 'product_types') {
+                        val = val.map(pt => (typeof pt === 'string' ? { product_type: pt } : pt));
+                    }
+                    d.set_value(f, val);
+                }
+            }
+        }, 50);
         d.show();
+        dialog_instance = d;
     });
+    return dialog_instance;
 }
 
 
@@ -430,7 +445,7 @@ function create_credit_account(frm) {
     load_customer_defaults(customer_id, function(default_company, default_currency) {
 
         // Build dialog using shared helper
-        show_credit_account_dialog(
+        let dialog = show_credit_account_dialog(
             __("Create Credit Account"),
             [
                 {   label: __("Account Title"),
@@ -525,6 +540,9 @@ function create_credit_account(frm) {
                         frappe.set_route("Form", "Credit Account", r.message);
                     }
                 });
+            },
+            {
+                product_types: ["Oligos", "Sequencing", "Labels", "Genetic Analysis", "FLA"] // defaults
             }
         );
     });
