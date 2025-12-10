@@ -4026,9 +4026,9 @@ def get_unpaid_deposit_invoices(account_id):
 
 
 def get_reservations(account_id, current_balance):
-    raw_reservations = get_open_sales_orders(account_id) + get_unpaid_deposit_invoices(account_id)
+    raw_reservations = get_open_sales_orders(account_id) # + get_unpaid_deposit_invoices(account_id) #TODO fix issue below and uncomment code
     running_balance = current_balance
-    raw_reservations.sort(key=lambda x: (x.get('transaction_date'), x.get('creation')))
+    raw_reservations.sort(key=lambda x: (x.get('transaction_date'), x.get('creation'))) #TODO: Sales Invoices does not have a field transaction_date.
     reservations = []
     i = len(raw_reservations) - 1
     for entry in raw_reservations:
