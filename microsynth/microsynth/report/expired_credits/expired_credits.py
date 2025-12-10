@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 from frappe.utils import today
 from microsynth.microsynth.credits import reverse_credit
+from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits
 
 
 def get_columns():
@@ -26,7 +27,7 @@ def get_columns():
 
 
 def get_data(filters):
-    expiry_date_before = filters.get("expiry_date_before") or today()
+    filters['expiry_date_before'] = filters.get("expiry_date_before") or today()
     company = filters.get("company")
     customer = filters.get("customer")
     contact_person = filters.get("contact_person")
@@ -92,8 +93,18 @@ def get_outstanding_credit(sales_invoice_doc):
     """
     Helper function to get the outstanding credit amount for a given deposit Sales Invoice.
     """
-    # TODO
-    return 0.0
+    if not sales_invoice_doc.credit_account:
+        frappe.throw("Sales Invoice does not have a linked Credit Account.")
+    filters = {
+        "credit_account": sales_invoice_doc.credit_account,
+        "company": sales_invoice_doc.company,
+        "customer": sales_invoice_doc.customer,
+    }
+    credit_data = get_customer_credits(filters)
+    for row in credit_data:
+        if row.get('reference_name') == sales_invoice_doc.name:
+            return row.get('outstanding_amount') or 0.0
+    frappe.throw(f"Outstanding credit amount for Sales Invoice {sales_invoice_doc.name} not found.")
 
 
 def cancel_internal_deposit_invoice(sales_invoice_id):
