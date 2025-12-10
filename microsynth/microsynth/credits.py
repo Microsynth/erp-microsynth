@@ -19,6 +19,7 @@ from microsynth.microsynth.report.customer_credits.customer_credits import (
     get_data as get_customer_credits
 )
 
+
 def get_available_credits(customer, company, credit_type):
     """
     Wrapper around get_customer_credits / customer_credits.get_data to return only available credits for a customer, company and credit_type. Excludes unpaid deposits.
@@ -42,6 +43,7 @@ def has_credits(customer, credit_type=None):
         if len(available_credits) > 0:
             return True
     return False
+
 
 #TODO: drop this function once the print format does not need total credit anymore
 def get_total_credit(customer, company, credit_type):
@@ -531,6 +533,7 @@ def get_linked_customer_credit_bookings(sales_invoice):
         return {'journal_entries': journal_entries, 'links': links, 'html': html}
     else:
         return None
+
 
 @frappe.whitelist()
 def close_invoice_against_expense(sales_invoice, account):

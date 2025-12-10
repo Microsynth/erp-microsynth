@@ -76,7 +76,8 @@ frappe.ui.form.on('Quotation', {
             frm.doc.valid_till >= frappe.datetime.get_today() &&
             frm.doc.status !== "Lost" &&
             frm.doc.items.length === 1 &&
-            frm.doc.items[0].item_code === "6100"
+            frm.doc.items[0].item_code === "6100" &&
+            frappe.user.has_role("Accounts User")
         ) {
             frm.add_custom_button(
                 __("Deposit Invoice"),

@@ -387,15 +387,13 @@ def build_transactions_with_running_balance(filters, type_mapping={'Allocation':
 
     running_balance = 0.0
     transactions = []
-    i = len(customer_credits) - 1
-    #frappe.log_error(customer_credits, "customer_credits for running balance")
+    # skip unpaid transactions
+    paid_customer_credits = [row for row in customer_credits if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']]
+    i = len(paid_customer_credits) - 1
 
-    for row in customer_credits:
+    for row in paid_customer_credits:
         net_amount = row.get('net_amount') or 0.0
-        if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
-            running_balance += net_amount
-        else:
-            continue    # skip unpaid transactions
+        running_balance += net_amount
         new_type = ""
         if row.get('type') == 'Allocation' and net_amount > 0:
             new_type = 'Return'

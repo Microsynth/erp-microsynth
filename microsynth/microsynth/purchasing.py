@@ -12,7 +12,7 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
-from frappe.utils import get_url_to_form, flt
+from frappe.utils import get_url_to_form, flt, getdate
 from frappe.utils.data import today
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
@@ -20,7 +20,9 @@ from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
 
+
 SUPPORTED_BUYING_CURRENCIES = ['CHF', 'EUR', 'USD', 'GBP']
+
 
 def create_pi_from_si(sales_invoice):
     """
@@ -151,9 +153,9 @@ def create_po_from_open_mr(filters):
         'buying_price_list': supplier_doc.default_price_list
     })
     for item in items:
-        schedule_date = item.get('schedule_date') or today()
-        if schedule_date < today():
-            schedule_date = today()
+        schedule_date = getdate(item.get('schedule_date') or today())
+        if schedule_date < getdate(today()):
+            schedule_date = getdate(today())
         po_doc.append('items', {
             'item_code': item.get('item_code'),
             'schedule_date': schedule_date,
@@ -163,6 +165,14 @@ def create_po_from_open_mr(filters):
             'material_request': item.get('material_request'),
             'material_request_item': item.get('material_request_item')
         })
+    # add inbound freight item
+    po_doc.append('items', {
+        'item_code': get_inbound_freight_item(),
+        'item_name': 'Inbound Freight',
+        'qty': 1,
+        'rate': 0.0,
+        'schedule_date': schedule_date,
+    })
     po_doc.insert()
     return po_doc.name
 

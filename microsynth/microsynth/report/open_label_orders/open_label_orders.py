@@ -27,12 +27,12 @@ def get_columns():
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 60},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 200},
+        {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 200, "align": "left"},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Integer", "width": 50},
         {"label": _("Additional Items"), "fieldname": "additional_items", "fieldtype": "Data", "width": 250},
         # {"label": _("Range"), "fieldname": "range", "fieldtype": "Data", "width": 80},
         # {"label": _("Prefix"), "fieldname": "prefix", "fieldtype": "Data", "width": 60},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 100}
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 350, "align": "left"},
     ]
 
 
@@ -75,6 +75,7 @@ def get_data(filters=None):
             AND `tabSales Order`.`company` = "{company}"
             AND `tabSales Order`.`transaction_date` > '2022-12-22'
             AND `tabSales Order`.`hold_order` <> 1
+            AND `tabSales Order Item`.`item_code` != '6100' -- exclude Sales Orders with Credit Item
             AND NOT EXISTS (SELECT *
                             FROM `tabDelivery Note Item`
                             WHERE `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`

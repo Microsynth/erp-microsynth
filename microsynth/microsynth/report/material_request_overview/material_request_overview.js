@@ -82,27 +82,86 @@ frappe.query_reports["Material Request Overview"] = {
 
 
 function create_purchase_order(filters, report) {
-    if (!filters.supplier) {
-        frappe.msgprint( __("Please set the Supplier filter"), __("Validation") );
-        return;
-    }
 	if (filters.mode !== "To Order") {
 		frappe.msgprint( __("Please set the Mode filter to 'To Order'"), __("Validation") );
 		return;
 	}
+    if (!filters.supplier) {
+        // Build unique list of suppliers from report data
+        const supplierMap = {};
+        (report.data || []).forEach(row => {
+            if (row && row.supplier) {
+                supplierMap[String(row.supplier)] = row.supplier_name || '';
+            }
+        });
+        const suppliers = Object.keys(supplierMap);
 
+        if (suppliers.length === 0) {
+            frappe.msgprint(__('No Supplier found in report data. Please set the Supplier filter or ensure the report contains suppliers.'), __('Validation'));
+            return;
+        }
+
+        // If exactly one supplier, preselect and continue
+        if (suppliers.length === 1) {
+            filters.supplier = suppliers[0];
+            // continue to create PO below
+        } else {
+            // Show dialog to choose one supplier
+            const rows = suppliers.map(s => {
+                return `
+                    <tr>
+                        <td style="vertical-align:middle"><input type="radio" name="choose_supplier" value="${frappe.utils.escape_html(s)}"></td>
+                        <td style="vertical-align:middle">${frappe.utils.escape_html(s)}</td>
+                        <td style="vertical-align:middle">${frappe.utils.escape_html(supplierMap[s] || '')}</td>
+                    </tr>`;
+            }).join('');
+
+            const html = `
+                <div class="help-block">${__('Which supplier would you like to order from?')}</div>
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr><th>${__('Select')}</th><th>${__('Supplier')}</th><th>${__('Supplier Name')}</th></tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>`;
+
+            const dlg = new frappe.ui.Dialog({
+                'title': __('Choose Supplier'),
+                'fields': [ {
+                    'fieldtype': 'HTML',
+                    'fieldname': 'suppliers_html'
+                } ],
+                'primary_action_label': __('Choose'),
+                'primary_action'(values) {
+                    const selected = dlg.$wrapper.find('input[name=choose_supplier]:checked').val();
+                    if (!selected) {
+                        frappe.msgprint(__('Please select a Supplier'));
+                        return;
+                    }
+                    dlg.hide();
+                    // set chosen supplier and retry PO creation
+                    filters.supplier = selected;
+                    create_purchase_order(filters, report);
+                }
+            });
+            dlg.show();
+            dlg.fields_dict.suppliers_html.$wrapper.html(html);
+            return;
+        }
+    }
     // Check for pending Item Requests in report data
     const pendingItemRequests = (report.data || []).filter(row =>
         row.request_type === "Item Request" &&
         row.supplier === filters.supplier
     );
-
     if (pendingItemRequests.length > 0) {
         frappe.msgprint(__("There are {0} pending Item Requests for this Supplier. Please treat them first.", [pendingItemRequests.length]), __("Warning"));
         return;
     }
 
-    // No pending Item Requests, proceed with PO creation
+    // Proceed with PO creation
     frappe.call({
         'method': "microsynth.microsynth.purchasing.create_po_from_open_mr",
         'args': {
