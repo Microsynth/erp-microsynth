@@ -2140,3 +2140,33 @@ def create_supplier(data):
         "address": address.name,
         "contact": contact.name
     }
+
+
+@frappe.whitelist()
+def link_items_symmetrically(item_a, item_b):
+    """
+    Create symmetric links:
+       A → B and B → A in child table Item.linked_items avoiding duplicates.
+    """
+    if item_a == item_b:
+        frappe.throw("Cannot link an item with itself.")
+
+    # Fetch both items
+    doc_a = frappe.get_doc("Item", item_a)
+    doc_b = frappe.get_doc("Item", item_b)
+
+    # Helper to add a link if missing
+    def add_link_if_missing(item_doc, other_item):
+        exists = any(row.item == other_item for row in item_doc.get("linked_items"))
+        if not exists:
+            new_row = item_doc.append("linked_items", {})
+            new_row.item = other_item
+            # item_name, pack_size, pack_uom auto-populate via fetch_from
+            item_doc.save()
+
+    # Add A → B and B → A
+    add_link_if_missing(doc_a, item_b)
+    add_link_if_missing(doc_b, item_a)
+
+    frappe.db.commit()
+    return True

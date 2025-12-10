@@ -4,7 +4,10 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "item"
+  "item",
+  "item_name",
+  "pack_size",
+  "pack_uom"
  ],
  "fields": [
   {
@@ -14,11 +17,38 @@
    "label": "Item",
    "options": "Item",
    "reqd": 1
+  },
+  {
+   "fetch_from": "item.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fetch_from": "item.pack_size",
+   "fieldname": "pack_size",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Pack Size",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fetch_from": "item.pack_uom",
+   "fieldname": "pack_uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Pack UOM",
+   "options": "UOM",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2025-12-09 16:20:09.584784",
- "modified_by": "Administrator",
+ "modified": "2025-12-10 16:18:34.761395",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Link",
  "owner": "Administrator",

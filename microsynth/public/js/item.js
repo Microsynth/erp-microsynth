@@ -47,6 +47,37 @@ frappe.ui.form.on('Item', {
                 frm.dashboard.add_comment(text, 'green', true);
             });
         }
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("Link with other Item"), function () {
+                frappe.prompt(
+                    [
+                        {
+                            label: "Item to link",
+                            fieldname: "item_to_link",
+                            fieldtype: "Link",
+                            options: "Item",
+                            reqd: 1
+                        }
+                    ],
+                    function (data) {
+                        frappe.call({
+                            'method': "microsynth.microsynth.purchasing.link_items_symmetrically",
+                            'args': {
+                                'item_a': frm.doc.name,
+                                'item_b': data.item_to_link
+                            },
+                            'callback': function (r) {
+                                frm.reload_doc();
+                                frappe.msgprint(__("Items linked successfully."));
+                            }
+                        });
+                    },
+                    __("Select Item to Link"),
+                    __("Link")
+                );
+            });
+        }
     }
 });
 
