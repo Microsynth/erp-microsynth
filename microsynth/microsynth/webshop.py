@@ -3989,26 +3989,64 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         }
 
 
+def get_unpaid_deposit_invoices(account_id):
+    """
+    Get all unpaid deposit Sales Invoices for the given Credit Account.
+
+    bench execute microsynth.microsynth.webshop.get_unpaid_deposit_invoices --kwargs "{'account_id': 'CA-000002'}"
+    """
+    credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    sql_query = """
+        SELECT
+            `tabSales Invoice`.`name`,
+            `tabSales Invoice`.`web_order_id`,
+            `tabSales Invoice`.`posting_date` AS `transaction_date`,
+            `tabSales Invoice`.`product_type`,
+            `tabSales Invoice`.`currency`,
+            `tabSales Invoice`.`outstanding_amount` AS `unbilled_amount`,
+            `tabSales Invoice`.`contact_display`,
+            `tabSales Invoice`.`status`,
+            `tabSales Invoice`.`currency`,
+            `tabSales Invoice`.`po_no`,
+            `tabSales Invoice`.`creation`,
+            'unpaid_deposit' AS `invoice_type`
+        FROM
+            `tabSales Invoice`
+        JOIN
+            `tabSales Invoice Item` ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+        WHERE
+            `tabSales Invoice`.`credit_account` = %s
+            AND `tabSales Invoice`.`docstatus` = 1
+            AND `tabSales Invoice`.`outstanding_amount` > 0
+            AND `tabSales Invoice Item`.`item_code` = %s
+        ORDER BY `tabSales Invoice`.`posting_date` ASC, `tabSales Invoice`.`creation` ASC
+        """
+    sales_invoices = frappe.db.sql(sql_query, (account_id, credit_item_code), as_dict=True)
+    return sales_invoices
+
+
 def get_reservations(account_id, current_balance):
-    open_sales_orders = get_open_sales_orders(account_id)
+    raw_reservations = get_open_sales_orders(account_id) + get_unpaid_deposit_invoices(account_id)
     running_balance = current_balance
+    raw_reservations.sort(key=lambda x: (x.get('transaction_date'), x.get('creation')))
     reservations = []
-    i = len(open_sales_orders) - 1
-    for order in open_sales_orders:
-        unbilled_amount = order.get('unbilled_amount') or 0.0
-        running_balance -= unbilled_amount
+    i = len(raw_reservations) - 1
+    for entry in raw_reservations:
+        unbilled_amount = entry.get('unbilled_amount') or 0.0
+        if entry.get('invoice_type') != 'unpaid_deposit':
+            running_balance -= unbilled_amount
         reservations.append({
-            "date": order.get('transaction_date'),
-            "type": "Charge",
-            "reference": order.get('name'),
-            "contact_name": order.get('contact_display'),
-            "status": order.get('status'),
-            "web_order_id": order.get('web_order_id'),
-            "currency": order.get('currency'),
+            "date": entry.get('transaction_date'),
+            "type": "Charge" if entry.get('invoice_type') != 'unpaid_deposit' else "Deposit",
+            "reference": entry.get('name'),
+            "contact_name": entry.get('contact_display'),
+            "status": entry.get('status'),
+            "web_order_id": entry.get('web_order_id'),
+            "currency": entry.get('currency'),
             "amount": round((-1) * unbilled_amount, 2),
             "balance": round(running_balance, 2),
-            "product_type": order.get('product_type'),
-            "po_no": order.get('po_no'),
+            "product_type": entry.get('product_type'),
+            "po_no": entry.get('po_no'),
             "idx": i    # index for webshop api to maintain the order of transactions
         })
         i -= 1
