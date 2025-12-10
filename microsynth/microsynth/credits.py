@@ -13,7 +13,7 @@ from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
                                          send_email_from_template)
-from microsynth.microsynth.doctype.credit_account.credit_account import create_credit_account, get_balance
+from microsynth.microsynth.doctype.credit_account.credit_account import create_credit_account
 from microsynth.microsynth.report.customer_credits.customer_credits import (
     build_transactions_with_running_balance,
     get_data as get_customer_credits
@@ -85,6 +85,24 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
                 standard_credits.append(credit)
 
     return enforced_credits + standard_credits
+
+
+def get_credit_account_balance(credit_account_id):
+    """
+    Get the current balance of the given Credit Account.
+    """
+    credit_account_doc = frappe.get_doc("Credit Account", credit_account_id)
+    filters = {
+        'credit_account': credit_account_id,
+        'company': credit_account_doc.company,
+        'customer': credit_account_doc.customer,
+        'exclude_unpaid_deposits': True
+    }
+    transactions = build_transactions_with_running_balance(filters)
+
+    current_balance = transactions[-1].get('balance') if len(transactions) > 0 else 0.0
+
+    return round(current_balance, 2)
 
 
 def get_credit_accounts(sales_order_id):
@@ -187,7 +205,7 @@ def allocate_credits(sales_invoice_doc):
             sales_invoice_doc.total_customer_credit = allocated_amount
 
         if len(credit_account_ids) == 1:
-            total_customer_credit = get_balance(credit_account_ids[0])
+            total_customer_credit = get_credit_account_balance(credit_account_ids[0])
             sales_invoice_doc.remaining_customer_credit = total_customer_credit - allocated_amount
         # TODO: change Print Format to handle null values of remaining_customer_credit
         # TODO: change Print Format to not show remaining customer credits anymore, because if multiple credit accounts are used, this value is not correct.

@@ -36,9 +36,9 @@ from microsynth.microsynth.credits import (
     allocate_credits,
     get_total_credit,
     get_credit_accounts,
-    get_applicable_customer_credits
+    get_applicable_customer_credits,
+    get_credit_account_balance
 )
-from microsynth.microsynth.doctype.credit_account.credit_account import get_balance
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -297,7 +297,7 @@ def async_create_invoices(mode, company, customer):
                                         frappe.log_error(msg, "invoicing.async_create_invoices")
                                         continue
 
-                                credit += get_balance(credit_account_id)
+                                    credit += get_credit_account_balance(credit_account_id)
 
                     if credit is not None:
                         delivery_note =  dn.get('delivery_note')
