@@ -165,6 +165,14 @@ def create_po_from_open_mr(filters):
             'material_request': item.get('material_request'),
             'material_request_item': item.get('material_request_item')
         })
+    # add inbound freight item
+    po_doc.append('items', {
+        'item_code': get_inbound_freight_item(),
+        'item_name': 'Inbound Freight',
+        'qty': 1,
+        'rate': 0.0,
+        'schedule_date': schedule_date,
+    })
     po_doc.insert()
     return po_doc.name
 
