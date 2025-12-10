@@ -971,6 +971,7 @@ def create_so_and_deposit_invoice(quotation_id, credit_account):
         so = make_sales_order(quotation_id)
         so.transaction_date = today()
         so.delivery_date = today()
+        so.product_type = "Service"
         so.flags.ignore_permissions = True
         so.insert()
         so.submit()
@@ -978,6 +979,7 @@ def create_so_and_deposit_invoice(quotation_id, credit_account):
         # 2. Create Sales Invoice from Sales Order
         si = make_sales_invoice(so.name)
         si.posting_date = today()
+        si.product_type = "Service"
         si.credit_account = credit_account
         si.flags.ignore_permissions = True
         si.insert()
