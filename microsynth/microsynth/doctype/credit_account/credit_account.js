@@ -55,6 +55,15 @@ frappe.ui.form.on('Credit Account', {
             }, __("Create"));
         }
 
+        // Check if product types table is empty
+        if (!frm.doc.product_types || frm.doc.product_types.length === 0) {
+            frm.dashboard.add_comment(
+                __("<b>No Product Types</b> set: This Credit Account can <b>not</b> be used on the Webshop"),
+                "red",
+                true  // add permanently (persists until refresh)
+            );
+        }
+
         if (!frm.doc.__islocal) {
             frm.add_custom_button(__("Download Balance Sheet"), function() {
 
