@@ -205,7 +205,7 @@ def get_data(filters, short=False, add_print_format=True):
             JOIN `tabWebshop Service` ON `tabWebshop Service Link`.`webshop_service` = `tabWebshop Service`.`name`
             WHERE `tabWebshop Service`.`service_name` = 'InvoiceByDefaultCompany'
         ) AS `webshop_service` ON `raw`.`customer` = `webshop_service`.`customer_id`
-        ORDER BY `raw`.`date` DESC, `raw`.`sales_invoice` DESC;
+        ORDER BY `raw`.`date` DESC, `raw`.`creation` DESC;
         """.format(credit_item=frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"),
             customer=filters.get('customer'),
             conditions=conditions,

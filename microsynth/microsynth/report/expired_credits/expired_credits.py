@@ -103,7 +103,7 @@ def get_outstanding_credit(sales_invoice_doc):
     credit_data = get_customer_credits(filters)
     for row in credit_data:
         if row.get('sales_invoice') == sales_invoice_doc.name:
-            return row.get('outstanding_amount') or 0.0
+            return row.get('outstanding') or 0.0
     frappe.throw(f"Outstanding credit amount for Sales Invoice {sales_invoice_doc.name} not found.")
 
 
