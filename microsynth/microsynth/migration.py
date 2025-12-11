@@ -6139,6 +6139,8 @@ def disable_contact(contact_id):
 
 def migrate_debtors(customer_id, company, currency, verbose=True):
     """
+    Migrate debtor accounts by renaming existing Customer to x<CustomerID> and creating a new Customer with the original ID and updated currency.
+
     bench execute microsynth.microsynth.migration.migrate_debtors --kwargs "{'customer_id': '801234', 'company': 'Microsynth Seqlab GmbH', 'currency': 'SEK'}"
     """
     try:
@@ -6156,7 +6158,7 @@ def migrate_debtors(customer_id, company, currency, verbose=True):
         # rename Customer (e.g. 801234 → x801234)
         renamed_customer_id = f"x{customer_id}"
         if verbose:
-            print(f"Renaming Customer {customer_id} to {renamed_customer_id} ...")
+            print(f"\nRenaming Customer {customer_id} to {renamed_customer_id} ...")
         old_customer_name = customer_doc.customer_name
         frappe.rename_doc(doctype="Customer", old=customer_id, new=renamed_customer_id, merge=False)
         renamed_customer_doc = frappe.get_doc("Customer", renamed_customer_id)
@@ -6221,9 +6223,14 @@ def migrate_debtors(customer_id, company, currency, verbose=True):
         traceback.print_exc()
 
 
-def migrate_multiple_debtors(customers, company, currency):
+def migrate_multiple_debtors(customers, company, currency, verbose=True):
+    """
+    Migrate debtor accounts by calling migrate_debtors for each customer in the given list.
+
+    bench execute microsynth.microsynth.migration.migrate_multiple_debtors --kwargs "{'customers': ['801234', '854321'], 'company': 'Microsynth Seqlab GmbH', 'currency': 'PLN'}"
+    """
     for customer in customers:
-        migrate_debtors(customer, company, currency)
+        migrate_debtors(customer, company, currency, verbose)
 
 
 def set_shipping_item_currency_from_parent(parent_doctype="Customer", dry_run=False, verbose=True):
