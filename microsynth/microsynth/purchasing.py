@@ -2170,3 +2170,24 @@ def link_items_symmetrically(item_a, item_b):
 
     frappe.db.commit()
     return True
+
+
+@frappe.whitelist()
+def get_items_using_supplier(supplier):
+    """
+    Returns list of enabled Items that have this supplier in the Item Supplier table.
+
+    bench execute microsynth.microsynth.purchasing.get_items_using_supplier --kwargs "{'supplier': 'S-00015'}"
+    """
+    return frappe.db.sql("""
+        SELECT
+            `tabItem`.`name`,
+            `tabItem`.`item_name`,
+            `tabItem`.`stock_uom`,
+            `tabItem Supplier`.`supplier_part_no`
+        FROM `tabItem Supplier`
+        LEFT JOIN `tabItem` ON `tabItem`.`name` = `tabItem Supplier`.`parent`
+        WHERE
+            `tabItem Supplier`.`supplier` = %(supplier)s
+            AND `tabItem`.`disabled` = 0
+    """, {"supplier": supplier}, as_dict=True)

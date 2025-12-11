@@ -38,6 +38,64 @@ frappe.ui.form.on('Supplier', {
                 );
             }).addClass("btn-primary");
         }
+    },
+    disabled: function(frm) {
+        if (!frm.doc.disabled) {
+            // User re-enabled the supplier → ok
+            return;
+        }
+        frappe.call({
+            'method': "microsynth.microsynth.purchasing.get_items_using_supplier",
+            'args': { supplier: frm.doc.name },
+            'callback': function(r) {
+                let items = r.message || [];
+
+                if (items.length === 0) {
+                    // No affected items → allow disabling
+                    return;
+                }
+                // Build HTML table listing the affected items
+                let html = `
+                    <p>Should the Supplier <b>remain enabled?</b><br><br>This <b>Supplier</b> is still <b>linked to enabled Items</b>:</p>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Item Name</th>
+                                <th>UOM</th>
+                                <th>Supplier Part No</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                items.forEach(it => {
+                    html += `
+                        <tr>
+                            <td>${it.name}</td>
+                            <td>${it.item_name}</td>
+                            <td>${it.stock_uom}</td>
+                            <td>${it.supplier_part_no || ""}</td>
+                        </tr>`;
+                });
+                html += "</tbody></table>";
+
+                // Confirmation dialog
+                frappe.confirm(
+                    html + "<br><i>(Yes = keep enabled, No = continue to disable anyway)</i>",
+
+                    function() {  // YES = keep enabled
+                        frappe.show_alert(__("Supplier kept enabled."));
+                        frm.set_value("disabled", 0);
+                        frm.refresh_field("disabled");
+                    },
+
+                    function() {  // NO = disable anyway
+                        frm.set_value("disabled", 1);
+                        frm.refresh_field("disabled");
+                    }
+                );
+            }
+        });
     }
 });
 
