@@ -212,20 +212,6 @@ def cancel_credit_account(credit_account_id):
         frappe.log_error(traceback.format_exc(), "expired_credits.cancel_credit_account:disable_ca_error")
         results['errors'].append(f"Failed to disable Credit Account: {e}")
 
-    # Show a user-friendly message for the UI if called from frontend
-    if frappe.local.request and getattr(frappe.local.request, 'method', None) == 'POST':
-        if results['errors']:
-            frappe.msgprint({
-                'title': _("Partial failure"),
-                'indicator': 'orange',
-                'message': _("Cancellation completed with errors. See logs for details.")
-            })
-        else:
-            frappe.msgprint({
-                'title': _("Success"),
-                'indicator': 'green',
-                'message': _("Credit Account {0} cancelled and disabled.").format(credit_account_id)
-            })
     return results
 
 
