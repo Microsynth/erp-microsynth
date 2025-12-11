@@ -1194,6 +1194,22 @@ def place_order(content, client="webshop"):
     # select naming series
     naming_series = get_naming_series("Sales Order", company)
 
+    phone = contact.phone
+    email_id = contact.email_id
+    full_name = contact.full_name
+
+    if 'shipping_contact' in content and content['shipping_contact']:
+        # fetch shipping contact
+        shipping_contact = frappe.get_doc("Contact", content['shipping_contact'])
+        if shipping_contact.status == "Disabled":
+            return {'success': False, 'message': f"Shipping contact '{content['shipping_contact']}' is disabled", 'reference': None}
+        if shipping_contact.phone:
+            phone = shipping_contact.phone
+        if shipping_contact.email_id:
+            email_id = shipping_contact.email_id
+        # if shipping_contact.full_name:
+        #     full_name = shipping_contact.full_name  # TODO?
+
     # create sales order
     transaction_date = date.today()
     delivery_date = transaction_date + timedelta(days=3)
@@ -1209,9 +1225,9 @@ def place_order(content, client="webshop"):
         'shipping_address_name': content['delivery_address'],
         'order_customer': order_customer.name if order_customer else None,
         'contact_person': contact.name,
-        'contact_display': contact.full_name,
-        'contact_phone': contact.phone,
-        'contact_email': contact.email_id,
+        'contact_display': full_name,
+        'contact_phone': phone,
+        'contact_email': email_id,
         'territory': order_customer.territory if order_customer else customer.territory,
         'customer_request': content['customer_request'] if 'customer_request' in content else None,
         'transaction_date': transaction_date,
