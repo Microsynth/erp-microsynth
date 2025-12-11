@@ -51,12 +51,15 @@ frappe.query_reports["Expired Credits"] = {
                         },
                         'callback': function(r) {
                             if (!r.exc) {
-                                frappe.msgprint({
-                                    'title': __("Success"),
-                                    'message': __("Credit Account {0} cancellation triggered.", [credit_account]),
-                                    'indicator': "green"
-                                });
-                                report.refresh();
+                                report.refresh().then(
+                                    function() {
+                                        frappe.msgprint({
+                                            'title': __("Success"),
+                                            'message': __("Cancelled Credit Account {0}.", [credit_account]),
+                                            'indicator': "green"
+                                        });
+                                    }
+                                );
                             }
                         }
                     });
