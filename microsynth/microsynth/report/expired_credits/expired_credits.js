@@ -47,7 +47,7 @@ frappe.query_reports["Expired Credits"] = {
                     frappe.call({
                         'method': "microsynth.microsynth.report.expired_credits.expired_credits.cancel_credit_account",
                         'args': {
-                            'credit_account': credit_account
+                            'credit_account_id': credit_account
                         },
                         'callback': function(r) {
                             if (!r.exc) {
