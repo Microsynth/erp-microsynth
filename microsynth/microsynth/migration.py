@@ -6871,3 +6871,51 @@ def disable_blocked_credit_accounts(dry_run=True):
         print(f"\nDONE: Updated {updated_count} Credit Accounts.")
     else:
         print("\nDRY RUN completed - no changes were written.")
+
+
+def link_credit_accounts_on_credit_notes(very_verbose=False):
+    """
+    Fetch a list of all submitted Sales Invoice returns (Credit Notes).
+    For each Credit Note, check if the original Sales Invoice (return_against) has a linked Credit Account.
+    If so, link the same Credit Account to the Credit Note.
+
+    bench execute microsynth.microsynth.migration.link_credit_accounts_on_credit_notes
+    """
+    credit_notes = frappe.get_all(
+        "Sales Invoice",
+        filters={
+            "docstatus": 1,
+            "is_return": 1,
+            "return_against": ["not in", (None, "")],
+            "credit_account": ["in", (None, "")]
+        },
+        fields=["name", "return_against"]
+    )
+    print(f"Found {len(credit_notes)} submitted Credit Notes to evaluate.")
+
+    linked_count = 0
+    for cn in credit_notes:
+        try:
+            original_si = cn["return_against"]
+            credit_account = frappe.get_value("Sales Invoice", original_si, "credit_account")
+            if not credit_account:
+                if very_verbose:
+                    print(f"INFO: Credit Note {cn['name']}: Original Sales Invoice {original_si} has no linked Credit Account. Skipping.")
+                continue
+
+            cn_doc = frappe.get_doc("Sales Invoice", cn["name"])
+            if cn_doc.credit_account == credit_account:
+                print(f"INFO: Credit Note {cn['name']}: Already linked to Credit Account {credit_account}. Skipping.")
+                continue
+            if cn_doc.credit_account and cn_doc.credit_account != credit_account:
+                print(f"WARNING: Credit Note {cn['name']}: Already linked to a different Credit Account {cn_doc.credit_account}. Skipping.")
+                continue
+
+            cn_doc.credit_account = credit_account
+            cn_doc.save()
+            linked_count += 1
+            print(f"INFO: Credit Note {cn['name']}: Linked to Credit Account {credit_account}.")
+        except Exception as err:
+            print(f"ERROR: Credit Note {cn['name']}: Failed to link Credit Account: {err}")
+
+    print(f"\nDONE: Linked {linked_count} Credit Notes to their respective Credit Accounts.")
