@@ -623,6 +623,9 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
+                # TODO: check parents (Sales Orders) of all Sample Links with parenttype Sales Order and exclude those Samples that are only on cancelled Sales Orders (Task #23020 KB ERP)
+                pass
+            if len(samples) > 1:
                 sample_details = ""
                 for s in samples:
                     sales_orders = frappe.get_all("Sample Link", filters=[["sample", "=", s['name']], ["parenttype", "=", "Sales Order"]], fields=['parent'])
