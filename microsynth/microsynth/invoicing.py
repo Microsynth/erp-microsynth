@@ -32,7 +32,13 @@ from microsynth.microsynth.utils import (
     get_sql_list,
     get_customer_from_company
 )
-from microsynth.microsynth.credits import allocate_credits, get_total_credit
+from microsynth.microsynth.credits import (
+    allocate_credits,
+    get_total_credit,
+    get_credit_accounts,
+    get_applicable_customer_credits,
+    get_credit_account_balance
+)
 from microsynth.microsynth.jinja import get_destination_classification
 import datetime
 from datetime import datetime, timedelta
@@ -179,14 +185,45 @@ def make_carlo_erba_invoices(company):
     return invoices
 
 
+def fetch_sales_order_credit_accounts(delivery_note_id):
+    dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)
+    sales_order_credit_accounts = []
+    # get list of applicable credit accounts
+    sales_order_ids = set()
+    for item in dn_doc.items:
+        if item.sales_order:
+            sales_order_ids.add(item.sales_order)
+
+    if len(sales_order_ids) > 1:
+        msg = f"Delivery Note '{delivery_note_id}': Multiple Sales Orders found: {', '.join(list(sales_order_ids))}"
+        frappe.log_error(msg, "invoicing.async_create_invoices")
+        frappe.throw(msg)
+    elif len(sales_order_ids) == 1:
+        so_id = next(iter(sales_order_ids))
+        credit_account_ids = get_credit_accounts(so_id)
+
+        if credit_account_ids:
+            # get applicable customer credits
+            raw_customer_credits = get_applicable_customer_credits(dn_doc.customer, dn_doc.company, credit_account_ids)
+            # filter for Active Credit Accounts avoiding duplicates
+            sales_order_credit_accounts = list({
+                entry.get('credit_account')
+                for entry in raw_customer_credits
+                if entry.get('credit_account_status') != 'Disabled'
+            })
+    else:
+        frappe.log_error(f"Delivery Note '{delivery_note_id}': No Sales Order found.", "invoicing.async_create_invoices")
+    return sales_order_credit_accounts
+
+
 def async_create_invoices(mode, company, customer):
     """
     TODO: Rename this function and all its calls since it is not asynchronous itself
     run
-    bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode':'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
+    bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode': 'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
-    import traceback
-    send_credits_notifications = datetime.today().weekday() == 1  # only on Tuesdays
+    credit_account_cache = {}
+    send_balance_warnings = datetime.today().weekday() == 1  # only on Tuesdays
     # # Not implemented exceptions to catch cases that are not yet developed
     # if company != "Microsynth AG":
     #     frappe.throw("Not implemented: async_create_invoices for company '{0}'".format(company))
@@ -215,54 +252,89 @@ def async_create_invoices(mode, company, customer):
                 # TODO: implement for other product types. Requires setting the income accounts.
                 # if dn.product_type not in ["Oligos", "Labels", "Sequencing"]:
                 #     continue
+                delivery_note_id = dn.get('delivery_note')
 
                 if cint(dn.get('is_punchout') == 1) and mode != "Electronic":  # should never be true anymore due to filtering out punchout Delivery Notes above
                     # All punchout invoices must be send electronically
-                    frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(dn.get('delivery_note')), "invoicing.async_create_invoices")
+                    frappe.log_error("Cannot invoice {0}: \nPunchout invoices must be send electronically".format(delivery_note_id), "invoicing.async_create_invoices")
                     continue
 
                 # process punchout orders separately
                 if cint(dn.get('is_punchout') == 1):
-
-                    si = make_punchout_invoice(dn.get('delivery_note'))
+                    si = make_punchout_invoice(delivery_note_id)
                     if si:
                         transmit_sales_invoice(si)
                     continue
 
-                # check credit
+                # If DN has Product Type Project, ensure there is no Active Project Credit Account for the Customer
+                # that was omitted from the enabled_credit_accounts. If such exists, skip the whole DN.
+                sales_order_credit_accounts = None
                 if dn.get('product_type') == 'Project':
-                    credit = get_total_credit(dn.get('customer'), company, 'Project')
-                else:
-                    credit = get_total_credit(dn.get('customer'), company, 'Standard')
-                customer_credits = frappe.get_value("Customer", dn.get('customer'),"customer_credits")
-                if credit is not None and customer_credits == 'Credit Account':
-                    delivery_note =  dn.get('delivery_note')
-                    total = frappe.get_value("Delivery Note", delivery_note, "total")
+                    skip_dn = False
+                    customer_active_accounts = frappe.get_all("Credit Account", filters={
+                        'customer': dn.get('customer'),
+                        'status': 'Active'
+                    }, fields=['name'])
+                    sales_order_credit_accounts = fetch_sales_order_credit_accounts(delivery_note_id)
+
+                    for account in customer_active_accounts:
+                        if account['name'] not in credit_account_cache:
+                            credit_account_cache[account['name']] = frappe.get_doc("Credit Account", account['name'])
+                        credit_account_doc = credit_account_cache[account['name']]
+                        acc_ptypes = [pt.product_type for pt in credit_account_doc.product_types if getattr(pt, 'product_type', None)]
+                        if 'Project' in acc_ptypes and account['name'] not in sales_order_credit_accounts:
+                            msg = f"Delivery Note '{delivery_note_id}': Customer {dn.get('customer')} has an active Project Credit Account {account['name']} which is not included in the Sales Order credit accounts. Not going to invoice automatically."
+                            frappe.log_error(msg, "invoicing.async_create_invoices")
+                            skip_dn = True
+                            break
+                    if skip_dn:
+                        # do not invoice this Delivery Note
+                        continue
+
+                requires_balance_warning = frappe.get_value("Customer", dn.get('customer'), "customer_credits") == 'Credit Account'
+                # Customers with customer_credits = "Credit Account" should receive an email if the credits are not sufficient to cover the invoice
+                if requires_balance_warning and send_balance_warnings:
+                    credit = 0.0
+                    if sales_order_credit_accounts is None:  # avoid fetching again
+                        sales_order_credit_accounts = fetch_sales_order_credit_accounts(delivery_note_id)
+                    # Get balance of all sales order credit accounts and store the sum in 'credit'
+                    # Skip credit accounts that do not apply to this Delivery Notes product type and log an error
+                    for credit_account_id in sales_order_credit_accounts:
+                        if credit_account_id not in credit_account_cache:
+                            credit_account_cache[credit_account_id] = frappe.get_doc("Credit Account", credit_account_id)
+                        credit_account_doc = credit_account_cache[credit_account_id]
+                        ca_product_types = [pt.product_type for pt in credit_account_doc.product_types if getattr(pt, 'product_type', None)]
+
+                        if dn.get('product_type') and ca_product_types:
+                            if dn.get('product_type') not in ca_product_types:
+                                msg = f"Delivery Note '{delivery_note_id}': Credit Account '{credit_account_id}' is not applicable for product type '{dn.get('product_type')}'. Skipping this Credit Account for credit calculation."
+                                frappe.log_error(msg, "invoicing.async_create_invoices")
+                                continue
+                            credit += get_credit_account_balance(credit_account_id)
+
+                    total = frappe.get_value("Delivery Note", delivery_note_id, "total")
                     if total > credit:
-                        if send_credits_notifications:
-                            dn_customer = dn.get('customer')
-                            if not dn_customer in insufficient_credit_warnings:
-                                insufficient_credit_warnings[dn_customer] = {}
-                            dn_doc = frappe.get_doc("Delivery Note", delivery_note)  # necessary to get the language and web_order_id
-                            insufficient_credit_warnings[dn_customer][delivery_note] = {'total': total,
-                                                                                    'currency': dn.get('currency'),
-                                                                                    'credit': round(credit, 2),
-                                                                                    'customer_name': dn.get('customer_name'),
-                                                                                    'web_order_id': dn_doc.web_order_id,
-                                                                                    'language': dn_doc.language}
+                        dn_customer = dn.get('customer')
+                        if not dn_customer in insufficient_credit_warnings:
+                            insufficient_credit_warnings[dn_customer] = {}
+                        dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)  # necessary to get the language and web_order_id
+                        insufficient_credit_warnings[dn_customer][delivery_note_id] = {'total': total,
+                                                                                'currency': dn.get('currency'),
+                                                                                'credit': round(credit, 2),
+                                                                                'customer_name': dn.get('customer_name'),
+                                                                                'web_order_id': dn_doc.web_order_id,
+                                                                                'language': dn_doc.language}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
                 if cint(dn.get('collective_billing')) == 0:
                     if mode == "Post":
                         if dn.get('invoicing_method') == "Post":
-                            si = make_invoice(dn.get('delivery_note'))
+                            si = make_invoice(delivery_note_id)
                             transmit_sales_invoice(si)
-
                             count += 1
                             # if count >= 20 and company != "Microsynth AG":
                             #     break
-
                     else:
                         # TODO process other invoicing methods
 
@@ -275,16 +347,15 @@ def async_create_invoices(mode, company, customer):
 
                         # TODO there seems to be an issue here: both branches ("Post"/ not "Post") do the same
                         if dn.get('invoicing_method') != "Post":
-                            si = make_invoice(dn.get('delivery_note'))
+                            si = make_invoice(delivery_note_id)
                             transmit_sales_invoice(si)
                             count += 1
-                            # if count >= 20 and company != "Microsynth AG":
-                            #     break
+
             except Exception as err:
                 message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}\n{traceback.format_exc()}"
                 frappe.log_error(message, "invoicing.async_create_invoices")
                 #print(message)
-        if send_credits_notifications:
+        if send_balance_warnings:
             for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
                 try:
                     if len(warnings) < 1:

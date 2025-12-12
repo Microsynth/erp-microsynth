@@ -5,6 +5,7 @@
 import json
 import frappe
 from frappe.model.document import Document
+from microsynth.microsynth.report.customer_credits.customer_credits import build_transactions_with_running_balance
 
 
 class CreditAccount(Document):

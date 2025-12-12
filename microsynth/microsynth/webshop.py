@@ -26,6 +26,7 @@ from microsynth.microsynth.utils import (
     send_email_from_template,
     get_sql_list
 )
+from microsynth.microsynth.credits import get_credit_account_balance
 from microsynth.microsynth.seqblatt import process_label_status_change
 from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
@@ -3565,31 +3566,6 @@ def get_price_list_doc(contact):
 
 
 # Credit Account API
-
-
-def get_credit_account_balance(account_id):
-    """
-    Fetch the current balance of the given Credit Account.
-    """
-    from microsynth.microsynth.report.customer_credits.customer_credits import get_data
-    try:
-        credit_account = frappe.get_doc('Credit Account', account_id)
-        filters = {
-            'credit_account': account_id,
-            'company': credit_account.company,
-            'customer': credit_account.customer,
-            'exclude_unpaid_deposits': True
-        }
-        customer_credits = get_data(filters)
-        balance = 0.0
-        for transaction in customer_credits:
-            if transaction.get('status') in ['Paid', 'Return', 'Credit Note Issued']:
-                balance += transaction.get('net_amount', 0.0)
-    except Exception as err:
-        msg = f"Error getting balance for Credit Account '{account_id}': {err}. Check ERP Error Log for details."
-        frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_account_balance")
-        frappe.throw(msg)
-    return balance
 
 
 def get_product_types(account_id):
