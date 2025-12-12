@@ -1695,6 +1695,8 @@ Your administration team<br><br>{footer}"
                     msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has docstatus {so_docstatus}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
                     frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
+                # TODO: Check if SO-LYO is Closed. If yes, do not create SI-LYO and send email to responsible person?
+                # TODO: Check if SO-LYO has hold_invoice set. If yes, do not create SI-LYO and send email to responsible person?
                 # create SI-LYO from SO-LYO
                 si_id = create_si_from_so(so_id)
                 if not si_id:
