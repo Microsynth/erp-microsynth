@@ -128,6 +128,7 @@ def get_data(filters):
             WHERE
                 `tabMaterial Request`.`material_request_type` = 'Purchase'
                 AND `tabMaterial Request`.`docstatus` = 1
+                AND `tabMaterial Request`.`status` != 'Stopped'
                 {conditions}
             ORDER BY `tabMaterial Request`.`transaction_date` ASC
         """, filters, as_dict=True)
@@ -185,6 +186,7 @@ def get_data(filters):
                 WHERE
                     `tabMaterial Request`.`material_request_type` = 'Purchase'
                     AND `tabMaterial Request`.`docstatus` = 1
+                    AND `tabMaterial Request`.`status` != 'Stopped'
                     {conditions}
             ) AS raw
             WHERE
