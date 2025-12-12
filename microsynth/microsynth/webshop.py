@@ -3995,7 +3995,15 @@ def get_unpaid_deposit_invoices(account_id):
             `tabSales Invoice`.`posting_date` AS `transaction_date`,
             `tabSales Invoice`.`product_type`,
             `tabSales Invoice`.`currency`,
-            `tabSales Invoice`.`outstanding_amount` AS `unbilled_amount`,
+            (
+                `tabSales Invoice`.`outstanding_amount`
+                *
+                (CASE
+                    WHEN `tabSales Invoice`.`grand_total` = 0
+                        THEN 0
+                    ELSE `tabSales Invoice`.`net_total` / `tabSales Invoice`.`grand_total`
+                END)
+            ) AS `unbilled_amount`,
             `tabSales Invoice`.`contact_display`,
             `tabSales Invoice`.`status`,
             `tabSales Invoice`.`currency`,
