@@ -122,15 +122,22 @@ function open_search_dialog(frm) {
             }
 
             let html = `
-            <table class="table table-bordered table-hover">
-                <thead>
-                <tr>
-                    <th>${__('Select')}</th><th>${__('Item')}</th><th>${__('Item Name')}</th>
-                    <th>${__('Material Code')}</th><th>${__('Supplier')}</th>
-                    <th>${__('Supplier Name')}</th><th>${__('Supplier Item Code')}</th>
-                </tr>
-                </thead>
-                <tbody>`;
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>${__('Select')}</th>
+                            <th>${__('Item')}</th>
+                            <th>${__('Item Name')}</th>
+                            <th>${__('Pack Size')}</th>
+                            <th>${__('Pack UOM')}</th>
+                            <th>${__('Material Code')}</th>
+                            <th>${__('Supplier')}</th>
+                            <th>${__('Supplier Name')}</th>
+                            <th>${__('Supplier Item Code')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                `;
             items.forEach(it => {
             html += `
                 <tr>
