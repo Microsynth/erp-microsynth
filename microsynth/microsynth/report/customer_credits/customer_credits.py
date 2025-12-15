@@ -8,8 +8,6 @@ import frappe
 from frappe import _
 from frappe.utils.pdf import get_pdf
 
-from microsynth.microsynth.utils import get_sql_list
-
 
 def execute(filters=None):
     columns = get_columns()
@@ -387,8 +385,8 @@ def build_transactions_with_running_balance(filters, type_mapping={'Allocation':
 
     running_balance = 0.0
     transactions = []
-    # skip unpaid transactions
-    paid_customer_credits = [row for row in customer_credits if row.get('status') in ['Paid', 'Return', 'Credit Note Issued']]
+    # skip unpaid deposit transactions
+    paid_customer_credits = [row for row in customer_credits if (row.get('status') in ['Paid', 'Return', 'Credit Note Issued'] or row.get('type') != 'Credit')]
     i = len(paid_customer_credits) - 1
 
     for row in paid_customer_credits:
