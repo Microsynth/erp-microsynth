@@ -293,7 +293,7 @@ def async_create_invoices(mode, company, customer):
 
                 requires_balance_warning = frappe.get_value("Customer", dn.get('customer'), "customer_credits") == 'Credit Account'
                 # Customers with customer_credits = "Credit Account" should receive an email if the credits are not sufficient to cover the invoice
-                if requires_balance_warning and send_balance_warnings:
+                if requires_balance_warning:
                     credit = 0.0
                     if sales_order_credit_accounts is None:  # avoid fetching again
                         sales_order_credit_accounts = fetch_sales_order_credit_accounts(delivery_note_id)
@@ -314,16 +314,17 @@ def async_create_invoices(mode, company, customer):
 
                     total = frappe.get_value("Delivery Note", delivery_note_id, "total")
                     if total > credit:
-                        dn_customer = dn.get('customer')
-                        if not dn_customer in insufficient_credit_warnings:
-                            insufficient_credit_warnings[dn_customer] = {}
-                        dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)  # necessary to get the language and web_order_id
-                        insufficient_credit_warnings[dn_customer][delivery_note_id] = {'total': total,
-                                                                                'currency': dn.get('currency'),
-                                                                                'credit': round(credit, 2),
-                                                                                'customer_name': dn.get('customer_name'),
-                                                                                'web_order_id': dn_doc.web_order_id,
-                                                                                'language': dn_doc.language}
+                        if send_balance_warnings:
+                            dn_customer = dn.get('customer')
+                            if not dn_customer in insufficient_credit_warnings:
+                                insufficient_credit_warnings[dn_customer] = {}
+                            dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)  # necessary to get the language and web_order_id
+                            insufficient_credit_warnings[dn_customer][delivery_note_id] = {'total': total,
+                                                                                    'currency': dn.get('currency'),
+                                                                                    'credit': round(credit, 2),
+                                                                                    'customer_name': dn.get('customer_name'),
+                                                                                    'web_order_id': dn_doc.web_order_id,
+                                                                                    'language': dn_doc.language}
                         continue
 
                 # only process DN that are invoiced individually, not collective billing
