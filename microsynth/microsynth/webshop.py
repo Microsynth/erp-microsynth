@@ -3614,6 +3614,7 @@ def get_open_sales_orders(credit_account_id):
             `tabCredit Account Link`.`credit_account` = %s
             AND `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`per_billed` < 100
+            AND `tabSales Order`.`status` != 'Closed'
         ORDER BY `tabSales Order`.`transaction_date` ASC, `tabSales Order`.`creation` ASC
         """
     sales_orders = frappe.db.sql(sql_query, (credit_account_id,), as_dict=True)
