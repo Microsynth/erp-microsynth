@@ -185,34 +185,49 @@ def make_carlo_erba_invoices(company):
     return invoices
 
 
-def fetch_sales_order_credit_accounts(delivery_note_id):
+def fetch_sales_order_id(delivery_note_id):
+    """
+    Fetch the Sales Order ID from the Delivery Note. Throws an error if multiple or no Sales Orders are found.
+
+    bench execute microsynth.microsynth.invoicing.fetch_sales_order --kwargs "{'delivery_note_id': 'DN-BAL-25001234'}"
+    """
     dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)
-    sales_order_credit_accounts = []
-    # get list of applicable credit accounts
     sales_order_ids = set()
     for item in dn_doc.items:
-        if item.sales_order:
-            sales_order_ids.add(item.sales_order)
+        if item.against_sales_order:
+            sales_order_ids.add(item.against_sales_order)
 
     if len(sales_order_ids) > 1:
         msg = f"Delivery Note '{delivery_note_id}': Multiple Sales Orders found: {', '.join(list(sales_order_ids))}"
-        frappe.log_error(msg, "invoicing.async_create_invoices")
+        frappe.log_error(msg, "invoicing.fetch_sales_orders")
         frappe.throw(msg)
     elif len(sales_order_ids) == 1:
         so_id = next(iter(sales_order_ids))
-        credit_account_ids = get_credit_accounts(so_id)
-
-        if credit_account_ids:
-            # get applicable customer credits
-            raw_customer_credits = get_applicable_customer_credits(dn_doc.customer, dn_doc.company, credit_account_ids)
-            # filter for Active Credit Accounts avoiding duplicates
-            sales_order_credit_accounts = list({
-                entry.get('credit_account')
-                for entry in raw_customer_credits
-                if entry.get('credit_account_status') != 'Disabled'
-            })
+        return so_id, dn_doc
     else:
-        frappe.log_error(f"Delivery Note '{delivery_note_id}': No Sales Order found.", "invoicing.async_create_invoices")
+        msg = f"Delivery Note '{delivery_note_id}': No Sales Order found.", "invoicing.async_create_invoices"
+        frappe.log_error(msg, "invoicing.fetch_sales_orders")
+        frappe.throw(msg)
+
+
+def fetch_sales_order_credit_accounts(delivery_note_id):
+    """
+    Fetch the Credit Accounts linked on the Sales Order of the given Delivery Note.
+    Throws an error if multiple or no Sales Orders are found.
+
+    bench execute microsynth.microsynth.invoicing.fetch_sales_order_credit_accounts --kwargs "{'delivery_note_id': 'DN-BAL-25001234'}
+    """
+    so_id, dn_doc = fetch_sales_order_id(delivery_note_id)
+    credit_account_ids = get_credit_accounts(so_id)
+    if credit_account_ids:
+        # get applicable customer credits
+        raw_customer_credits = get_applicable_customer_credits(dn_doc.customer, dn_doc.company, credit_account_ids)
+        # filter for Active Credit Accounts avoiding duplicates
+        sales_order_credit_accounts = list({
+            entry.get('credit_account')
+            for entry in raw_customer_credits
+            if entry.get('credit_account_status') != 'Disabled'
+        })
     return sales_order_credit_accounts
 
 
@@ -222,6 +237,7 @@ def async_create_invoices(mode, company, customer):
     run
     bench execute microsynth.microsynth.invoicing.async_create_invoices --kwargs "{ 'mode': 'Electronic', 'company': 'Microsynth AG', 'customer': '1234' }"
     """
+    # TODO: Refactor this function
     credit_account_cache = {}
     send_balance_warnings = datetime.today().weekday() == 1  # only on Tuesdays
     # # Not implemented exceptions to catch cases that are not yet developed
@@ -245,6 +261,39 @@ def async_create_invoices(mode, company, customer):
 
         for dn in all_invoiceable:
             try:
+                # Check if Sales Order is Closed.
+                opened_sales_order = None
+                so_id, dn_doc = fetch_sales_order_id(dn.get('delivery_note'))
+                so_status = frappe.get_value("Sales Order", so_id, "status")
+                if so_status == 'Closed':
+                    allowed_items = ['0969', '0975']
+                    # Check if Delivery Note contains Item 0969 or 0975 with a lower quantity than on the Sales Order,
+                    # open the Sales Order before invoicing and close it again afterwards.
+                    contains_allowed_item = False
+                    dn_qty_allowed_item = None
+                    for item in dn_doc.items:
+                        if item.item_code in allowed_items:
+                            contains_allowed_item = True
+                            dn_qty_allowed_item = item.qty
+                            break
+                    if contains_allowed_item:
+                        so_doc = frappe.get_doc("Sales Order", so_id)
+                        for so_item in so_doc.items:
+                            if so_item.item_code in allowed_items:
+                                if so_item.qty > dn_qty_allowed_item:
+                                    # reopen Sales Order
+                                    so_doc.update_status('To Bill')
+                                    opened_sales_order = so_doc.name
+                                    break
+                                else:
+                                    frappe.log_error(f"Either Delivery Note {dn_doc.name} contains more than one Item that allows to invoice despite Sales Order {so_id} is Closed "
+                                                     f"(Item {', '.join(allowed_items)} in another order than on the SO) or "
+                                                     f"the quantity of Item {so_item.item_code} was not decreased on {dn_doc.name} compared to {so_id}.")
+                    else:
+                        # log an error and skip invoicing
+                        frappe.log_error(f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)}. Going to skip invoicing.")
+                        continue
+
                 # # TODO: implement for other export categories
                 # if dn.region != "CH":
                 #     continue
@@ -318,7 +367,6 @@ def async_create_invoices(mode, company, customer):
                             dn_customer = dn.get('customer')
                             if not dn_customer in insufficient_credit_warnings:
                                 insufficient_credit_warnings[dn_customer] = {}
-                            dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)  # necessary to get the language and web_order_id
                             insufficient_credit_warnings[dn_customer][delivery_note_id] = {'total': total,
                                                                                     'currency': dn.get('currency'),
                                                                                     'credit': round(credit, 2),
@@ -356,6 +404,13 @@ def async_create_invoices(mode, company, customer):
                 message = f"Cannot invoice {dn.get('delivery_note')}: \n{err}\n{traceback.format_exc()}"
                 frappe.log_error(message, "invoicing.async_create_invoices")
                 #print(message)
+            finally:
+                if opened_sales_order:
+                    # Close previously opened Sales Order
+                    so_id, dn_doc = fetch_sales_order_id(dn.get('delivery_note'))
+                    so_doc = frappe.get_doc("Sales Order", so_id)
+                    so_doc.update_status('Close')
+
         if send_balance_warnings:
             for dn_customer, warnings in insufficient_credit_warnings.items():  # should contain always one customer
                 try:
