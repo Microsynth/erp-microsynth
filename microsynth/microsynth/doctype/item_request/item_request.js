@@ -340,7 +340,8 @@ function create_new_supplier_item(frm) {
                 get_query: function () {
                     return {
                         'filters': {
-                            'account_type': ['in', ['Expense Account', 'Cost of Goods Sold']],
+                            'disabled': 0,
+                            'root_type': 'Expense',
                             'is_group': 0,
                             'company': dialog.get_value('company') || 'Microsynth AG'
                         }
