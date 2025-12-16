@@ -3595,9 +3595,10 @@ def get_open_sales_orders(credit_account_id):
     sql_query = """
         SELECT
             `tabSales Order`.`name`,
+            `tabSales Order`.`net_total`,
             `tabSales Order`.`grand_total`,
             `tabSales Order`.`per_billed`,
-            `tabSales Order`.`grand_total` * (1 - `tabSales Order`.`per_billed` / 100) AS `unbilled_amount`,
+            `tabSales Order`.`net_total` * (1 - `tabSales Order`.`per_billed` / 100) AS `unbilled_amount`,
             `tabSales Order`.`transaction_date`,
             `tabSales Order`.`contact_display`,
             `tabSales Order`.`status`,
