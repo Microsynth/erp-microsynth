@@ -2309,7 +2309,7 @@ def overwrite_all_item_defaults():
     bench execute microsynth.microsynth.migration.overwrite_all_item_defaults
     """
     from microsynth.microsynth.utils import overwrite_item_defaults
-    items = frappe.db.get_all("Item", filters={'disabled': 0, 'is_shipping_item': 1}, fields=['name'])
+    items = frappe.db.get_all("Item", filters={'disabled': 0, 'is_sales_item': 1}, fields=['name'])
 
     for i, item in enumerate(items):
         print(f"{int(100 * i / len(items))} % Overwriting Item Defaults for Item '{item['name']}'")
