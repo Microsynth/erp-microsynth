@@ -120,6 +120,10 @@ frappe.ui.form.on('Delivery Note', {
         if (frm.doc.product_type === "NGS") {
             frappe.throw(__("Product Type NGS is deprecated. Please use Genetic Analysis instead."))
         }
+        // check that DN is linked to a Sales Order
+        if (!validate_items_linked_to_sales_order(frm)) {
+            frappe.validated = false;
+        }
     }
 });
 
@@ -129,6 +133,28 @@ frappe.ui.form.on('Delivery Note Item', {
         fetch_price_list_rate(frm, cdt, cdn);
     }
 });
+
+
+function validate_items_linked_to_sales_order(frm) {
+    if (!frm.doc.items || frm.doc.items.length === 0) {
+        return true; // nothing to validate
+    }
+    const has_sales_order = frm.doc.items.some(
+        item => item.against_sales_order
+    );
+    if (!has_sales_order) {
+        frappe.msgprint({
+            'title': __('Sales Order Required'),
+            'message': __(
+                'This Delivery Note cannot be saved because none of the items are linked to a Sales Order.<br><br>' +
+                'Please create any Delivery Note from a Sales Order and do <b>not</b> replace all Items.'
+            ),
+            'indicator': 'red'
+        });
+        return false;
+    }
+    return true;
+}
 
 
 function set_export_category(frm) {
