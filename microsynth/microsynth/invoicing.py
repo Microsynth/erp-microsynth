@@ -199,14 +199,14 @@ def fetch_sales_order_id(delivery_note_id):
 
     if len(sales_order_ids) > 1:
         msg = f"Delivery Note '{delivery_note_id}': Multiple Sales Orders found: {', '.join(list(sales_order_ids))}"
-        frappe.log_error(msg, "invoicing.fetch_sales_orders")
+        # frappe.log_error(msg, "invoicing.fetch_sales_orders")
         frappe.throw(msg)
     elif len(sales_order_ids) == 1:
         so_id = next(iter(sales_order_ids))
         return so_id, dn_doc
     else:
         msg = f"Delivery Note '{delivery_note_id}': No Sales Order found.", "invoicing.async_create_invoices"
-        frappe.log_error(msg, "invoicing.fetch_sales_orders")
+        # frappe.log_error(msg, "invoicing.fetch_sales_orders")
         frappe.throw(msg)
 
 
@@ -217,6 +217,7 @@ def fetch_sales_order_credit_accounts(delivery_note_id):
 
     bench execute microsynth.microsynth.invoicing.fetch_sales_order_credit_accounts --kwargs "{'delivery_note_id': 'DN-BAL-25001234'}
     """
+    sales_order_credit_accounts = []
     so_id, dn_doc = fetch_sales_order_id(delivery_note_id)
     credit_account_ids = get_credit_accounts(so_id)
     if credit_account_ids:
