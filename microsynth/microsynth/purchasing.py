@@ -1712,7 +1712,7 @@ def send_material_request_owner_emails(doc, event=None):
         message = f"<p>Dear {user.full_name or mr_owner},</p>"
         message += f"<p>The following items from your Item or Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"
         for i in items:
-            message += f"<li><b>{i.item_name}</b> ({i.description or ''}) - Qty: {i.qty}</li>"
+            message += f"<li><b>{i.item_name or '-'}</b> ({i.item_code or '-'}) - Quantity: {i.qty}</li>"
         message += "</ul><p>Best regards,<br>Your ERP System</p>"
 
         # Send email
