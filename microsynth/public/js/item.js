@@ -78,6 +78,70 @@ frappe.ui.form.on('Item', {
                 );
             });
         }
+    },
+    validate(frm) {
+        // Only when trying to disable an existing item
+        if (!frm.doc.__islocal && frm.doc.disabled && !frm.doc.__checked_open_docs) {
+            (async function () {
+                const item_code = frm.doc.name;
+
+                const getOpenDocsHtml = (docs) =>
+                    docs.map(doc =>
+                        `<li>${doc.doctype} <a href="${doc.url}" target="_blank">${doc.name}</a></li>`
+                    ).join("");
+
+                const result = await frappe.call({
+                    'method': "microsynth.microsynth.utils.get_open_documents_for_item",
+                    'args': { item_code },
+                    'freeze': true,
+                    'freeze_message': "Checking open documents ..."
+                });
+                const open_docs_by_type = result.message || {};
+                const open_docs = Object.entries(open_docs_by_type)
+                    .flatMap(([doctype, docs]) =>
+                        docs.map(doc => ({ ...doc, doctype }))
+                    );
+                if (open_docs.length > 0) {
+                    const openDocsHtml = getOpenDocsHtml(open_docs);
+                    const dialog = new frappe.ui.Dialog({
+                        'title': __("Open documents with Item") + " " + item_code,
+                        'indicator': "orange",
+                        'fields': [{
+                            'fieldtype': "HTML",
+                            'fieldname': "message",
+                            'options': `
+                                <div>
+                                    ${__("This Item is used in open sales documents and should <b>not</b> be <b>disabled</b>.")}
+                                    <br>
+                                    ${__("Please set the Item to Sales Status <b>Discontinued</b> instead.")}
+                                    <br><br>
+                                    ${__("Please check to complete or close the open sales documents:")}
+                                    <br><br>
+                                    <ul>${openDocsHtml}</ul>
+                                </div>
+                            `
+                        }],
+                        'primary_action_label': __("Set to Discontinued"),
+                        'secondary_action_label': __("Cancel")
+                    });
+                    dialog.set_primary_action(__("Set to Discontinued"), async function () {
+                        frm.set_value("sales_status", "Discontinued");
+                        frm.set_value("disabled", 0);
+                        frm.doc.__checked_open_docs = true;
+                        await frm.save();
+                        dialog.hide();
+                    });
+                    dialog.set_secondary_action(() => dialog.hide());
+                    dialog.show();
+                    frappe.validated = false;
+                    return;
+                }
+                // No open docs → allow disabling
+                frm.doc.__checked_open_docs = true;
+                frm.save();
+            })();
+            frappe.validated = false;
+        }
     }
 });
 

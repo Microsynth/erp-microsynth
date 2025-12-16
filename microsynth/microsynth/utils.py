@@ -7,7 +7,7 @@ import re
 import frappe
 import json
 from datetime import datetime, date, timedelta
-from frappe.utils import flt, rounded, get_url_to_form
+from frappe.utils import flt, rounded, get_url_to_form, nowdate
 from frappe.core.doctype.communication.email import make
 from erpnextswiss.scripts.crm_tools import get_primary_customer_contact
 
@@ -3313,6 +3313,119 @@ def get_sql_list(raw_list):
         return '""'
 
 
+def with_url(doctype, docs):
+    return [
+        {
+            **doc,
+            "url": get_url_to_form(doctype, doc["name"])
+        }
+        for doc in docs
+    ]
+
+
+@frappe.whitelist()
+def get_open_documents_for_item(item_code):
+    """
+    Returns open documents that reference the given Item.
+    """
+    result = {
+        "Quotation": [],
+        "Sales Order": [],
+        "Delivery Note": [],
+        "Sales Invoice": []
+    }
+
+    # Quotations (open & valid)
+    qt_items = frappe.get_all("Quotation Item",
+        filters={
+            "item_code": item_code,
+            "docstatus": 1,
+            "parenttype": "Quotation"
+        },
+        fields=["parent"],
+        distinct=True
+    )
+    if qt_items:
+        quotations = frappe.get_all("Quotation",
+            filters={
+                "name": ["in", [d.parent for d in qt_items]],
+                "status": "Open",
+                "valid_till": [">=", nowdate()],
+                "docstatus": 1
+            },
+            fields=["name", "transaction_date", "valid_till"]
+        )
+        result["Quotation"] = with_url("Quotation", quotations)
+
+    # Sales Orders (not closed / not fully delivered)
+    so_items = frappe.get_all("Sales Order Item",
+        filters={
+            "item_code": item_code,
+            "docstatus": 1,
+            "parenttype": "Sales Order"
+        },
+        fields=["parent"],
+        distinct=True
+    )
+    if so_items:
+        sales_orders = frappe.get_all("Sales Order",
+            filters={
+                "name": ["in", [d.parent for d in so_items]],
+                "status": ["!=", "Closed"],
+                "per_delivered": ["<", 100],
+                "docstatus": 1
+            },
+            fields=["name", "transaction_date"]
+        )
+        result["Sales Order"] = with_url("Sales Order", sales_orders)
+
+    # Delivery Notes (not fully billed)
+    dn_items = frappe.get_all("Delivery Note Item",
+        filters={
+            "item_code": item_code,
+            "docstatus": 1,
+            "parenttype": "Delivery Note"
+        },
+        fields=["parent"],
+        distinct=True
+    )
+    if dn_items:
+        delivery_notes = frappe.get_all("Delivery Note",
+            filters={
+                "name": ["in", [d.parent for d in dn_items]],
+                "status": ["!=", "Closed"],
+                "per_billed": ["<", 100],
+                "docstatus": 1
+            },
+            fields=["name", "posting_date"]
+        )
+        result["Delivery Note"] = with_url("Delivery Note", delivery_notes)
+
+    # Sales Invoices (with outstanding amount)
+    si_items = frappe.get_all("Sales Invoice Item",
+        filters={
+            "item_code": item_code,
+            "docstatus": 1,
+            "parenttype": "Sales Invoice"
+        },
+        fields=["parent"],
+        distinct=True
+    )
+
+    if si_items:
+        invoices = frappe.get_all("Sales Invoice",
+            filters={
+                "name": ["in", [d.parent for d in si_items]],
+                "outstanding_amount": [">", 0],
+                "docstatus": 1
+            },
+            fields=["name", "posting_date", "outstanding_amount"]
+        )
+        result["Sales Invoice"] = with_url("Sales Invoice", invoices)
+
+    return result
+
+
 @frappe.whitelist()
 def get_open_documents_for_customer(customer_id):
     """
@@ -3322,25 +3435,13 @@ def get_open_documents_for_customer(customer_id):
     Usage:
     bench execute microsynth.microsynth.utils.get_open_documents_for_customer --kwargs "{'customer_id': '37545653'}"
     """
-    from frappe.utils import get_url_to_form, nowdate
-
     result = {
         "Sales Invoice": [],
         "Delivery Note": [],
         "Sales Order": [],
         "Quotation": []
     }
-
-    def with_url(doctype, docs):
-        return [
-            {
-                **doc,
-                "url": get_url_to_form(doctype, doc["name"])
-            }
-            for doc in docs
-        ]
-
-    # 1. Sales Invoices with outstanding amount
+    # Sales Invoices with outstanding amount
     invoices = frappe.get_all("Sales Invoice",
         filters={
             "customer": customer_id,
@@ -3351,7 +3452,7 @@ def get_open_documents_for_customer(customer_id):
     )
     result["Sales Invoice"] = with_url("Sales Invoice", invoices)
 
-    # 2. Delivery Notes not fully billed
+    # Delivery Notes not fully billed
     delivery_notes = frappe.get_all("Delivery Note",
         filters={
             "customer": customer_id,
@@ -3363,19 +3464,19 @@ def get_open_documents_for_customer(customer_id):
     )
     result["Delivery Note"] = with_url("Delivery Note", delivery_notes)
 
-    # 3. Sales Orders not fully delivered
+    # Sales Orders not fully delivered
     sales_orders = frappe.get_all("Sales Order",
         filters={
             "customer": customer_id,
             "docstatus": 1,
             "status": ["!=", "Closed"],
-            "per_delivered": 0
+            "per_delivered": ["<", 100],
         },
         fields=["name", "transaction_date", "per_delivered"]
     )
     result["Sales Order"] = with_url("Sales Order", sales_orders)
 
-    # 4. Open and valid Quotations
+    # Open and valid Quotations
     quotations = frappe.get_all("Quotation",
         filters={
             "party_name": customer_id,
