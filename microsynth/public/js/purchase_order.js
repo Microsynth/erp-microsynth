@@ -23,11 +23,38 @@ frappe.ui.form.on('Purchase Order', {
 
         if (!frm.doc.order_confirmation_no &&
             ['Draft', 'On Hold', 'To Receive and Bill', 'To Receive'].includes(frm.doc.status) &&
-            frm.doc.items.length > 0
+            frm.doc.items.length > 0 &&
+            frm.doc.supplier
         ) {
-            frm.add_custom_button(__('Send Order by Email'), function() {
-                open_mail_dialog(frm, supplier.order_contact, contact.email_id);
+            frm.add_custom_button(__('Send Order by Email'), async function () {
+                // Get order_contact from Supplier
+                const supplier_res = await frappe.db.get_value(
+                    'Supplier',
+                    frm.doc.supplier,
+                    'order_contact'
+                );
+                const order_contact = supplier_res.message?.order_contact;
+
+                if (!order_contact) {
+                    frappe.msgprint(__('No Order Contact set on Supplier <b>{0}</b>.', [frm.doc.supplier]));
+                    return;
+                }
+                // Get email from Contact
+                const contact_res = await frappe.db.get_value(
+                    'Contact',
+                    order_contact,
+                    'email_id'
+                );
+                const email_id = contact_res.message?.email_id;
+
+                if (!email_id) {
+                    frappe.msgprint(__('Order Contact <b>{0}</b> has no email address.', [contact_id]));
+                    return;
+                }
+                // Open mail dialog
+                open_mail_dialog(frm, order_contact, email_id);
             });
+
             show_order_method(frm);
             // Display internal Item notes in a green banner if the Quotation is in Draft status
             var dashboard_comment_color = 'green';
