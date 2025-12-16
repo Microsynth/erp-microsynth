@@ -2624,13 +2624,10 @@ def apply_item_group_defaults(item_group):
         overwrite_item_defaults(item['name'])
 
 
-def overwrite_item_defaults(item):
+def update_item_defaults(item):
     """
-    Overwrite item.item_defaults with item_group_defaults from Item Group.
-
-    bench execute microsynth.microsynth.utils.overwrite_item_defaults --kwargs "{'item': '3100'}"
+    Update the item defaults of the Item object based on its Item Group defaults.
     """
-    item = frappe.get_doc("Item", item)
     item_group = frappe.get_doc("Item Group", item.item_group)
     for group_default in item_group.item_group_defaults:
         found_company = False
@@ -2656,11 +2653,21 @@ def overwrite_item_defaults(item):
                 'default_supplier': group_default.default_supplier,
                 'default_price_list': group_default.default_price_list
             })
+
+
+def overwrite_item_defaults(item):
+    """
+    Overwrite item.item_defaults of the item defined by its item name with item_group_defaults from Item Group.
+
+    bench execute microsynth.microsynth.utils.overwrite_item_defaults --kwargs "{'item': '3100'}"
+    """
+    item = frappe.get_doc("Item", item)
+    update_item_defaults(item)
     item.save()
 
 
-def item_after_insert(item, event):
-    overwrite_item_defaults(item.name)
+def item_before_save(item, event):
+    update_item_defaults(item)
 
 
 @frappe.whitelist()

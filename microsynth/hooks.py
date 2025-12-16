@@ -207,7 +207,7 @@ doc_events = {
         "after_insert": "microsynth.microsynth.purchasing.payment_proposal_after_insert"
     },
     "Item": {
-        "after_insert": "microsynth.microsynth.utils.item_after_insert"
+        "before_save": "microsynth.microsynth.utils.item_before_save",
     },
     "Purchase Receipt": {
         "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"
