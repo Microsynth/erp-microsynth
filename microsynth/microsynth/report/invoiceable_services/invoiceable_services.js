@@ -8,7 +8,14 @@ frappe.query_reports["Invoiceable Services"] = {
             "fieldname": "customer",
             "label": __("Customer"),
             "fieldtype": "Link",
-            "options": "Customer"
+            "options": "Customer",
+            get_query: function() {
+                return {
+                    filters: {
+                        "disabled": 0
+                    }
+                };
+            }
         },
         {
             "fieldname": "company",
