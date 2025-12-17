@@ -149,6 +149,7 @@ def create_po_from_open_mr(filters):
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': filters.get('supplier'),
+        'company': filters.get('company'),
         'currency': currency,
         'buying_price_list': supplier_doc.default_price_list
     })
@@ -173,6 +174,11 @@ def create_po_from_open_mr(filters):
         'rate': 0.0,
         'schedule_date': schedule_date,
     })
+    po_doc.taxes_and_charges = get_purchase_tax_template(po_doc.supplier, po_doc.company or 'Microsynth AG')
+    if po_doc.taxes_and_charges:
+        taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", po_doc.taxes_and_charges)
+        for t in taxes_template.taxes:
+            po_doc.append("taxes", t)
     po_doc.insert()
     return po_doc.name
 
@@ -1842,6 +1848,9 @@ def get_inbound_freight_item():
 
 @frappe.whitelist()
 def get_purchase_tax_template(supplier, company):
+    """
+    bench execute microsynth.microsynth.purchasing.get_purchase_tax_template --kwargs "{'supplier': 'S-01460', 'company': 'Microsynth AG'}"
+    """
     tax_templates = frappe.get_all("Party Account",
         filters={
             'parent': supplier,
