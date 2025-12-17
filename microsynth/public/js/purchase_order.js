@@ -93,7 +93,15 @@ frappe.ui.form.on('Purchase Order', {
         add_freight_item(frm);
     },
     before_submit: function(frm) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
+            // Try to auto-fetch missing data (only if missing)
+            await fetch_supplier_contact_and_address_if_missing(frm);
+
+            // Validate after auto-fetch
+            if (!validate_supplier_contact_and_address(frm)) {
+                return reject();
+            }
+            // Check prices
             frappe.call({
                 'method': "microsynth.microsynth.purchasing.check_po_item_prices",
                 'args': { 'purchase_order_name': frm.doc.name },
@@ -101,7 +109,7 @@ frappe.ui.form.on('Purchase Order', {
                     const data = r.message;
                     if (!data) return resolve();
 
-                    // --- Case 1: Missing or wrong Price List ---
+                    // Case 1: Missing or wrong Price List
                     if (data.status === "no_price_list" || data.status === "currency_mismatch") {
                         const msg = `<strong>Missing Price List</strong><br><br>Please set a <strong>Price List</strong> with Currency <strong>${
                             data.price_list_currency || frm.doc.currency
@@ -119,13 +127,11 @@ frappe.ui.form.on('Purchase Order', {
                         );
                         return;
                     }
-
-                    // --- Case 2: Nothing to add/update ---
+                    // Case 2: Nothing to add/update
                     if ((!data.adds || !data.adds.length) && (!data.updates || !data.updates.length)) {
                         return resolve();
                     }
-
-                    // --- Case 3: Items to add/update ---
+                    // Case 3: Items to add/update
                     let message = `Do you want to apply <strong>all</strong> changes below to the Price List <strong>${frm.doc.buying_price_list}</strong> now?<br><br>`;
 
                     if (data.adds && data.adds.length) {
@@ -143,7 +149,6 @@ frappe.ui.form.on('Purchase Order', {
                         });
                         message += "</ul>";
                     }
-
                     frappe.confirm(
                         message,
                         () => {
@@ -184,7 +189,70 @@ frappe.ui.form.on('Purchase Order', {
 });
 
 
-function check_prices(frm) {
+async function fetch_supplier_contact_and_address_if_missing(frm) {
+    let updated = false;
+
+    // Nothing to do if both fields are already set
+    if (frm.doc.supplier_address && frm.doc.contact_person) {
+        return false;
+    }
+    // Fetch order_contact from Supplier
+    const supplier_res = await frappe.db.get_value(
+        'Supplier',
+        frm.doc.supplier,
+        'order_contact'
+    );
+    const order_contact = supplier_res.message?.order_contact;
+
+    // --- Contact ---
+    if (!frm.doc.contact_person && order_contact) {
+        await frm.set_value('contact_person', order_contact);
+        updated = true;
+    }
+    // --- Address (from Contact.address) ---
+    if (!frm.doc.supplier_address && order_contact) {
+        const contact_res = await frappe.db.get_value(
+            'Contact',
+            order_contact,
+            'address'
+        );
+        const contact_address = contact_res.message?.address;
+
+        if (contact_address) {
+            await frm.set_value('supplier_address', contact_address);
+            updated = true;
+        }
+    }
+    return updated;
+}
+
+
+function validate_supplier_contact_and_address(frm) {
+    const missing = [];
+    if (!frm.doc.supplier_address) {
+        missing.push(__('Supplier Address'));
+    }
+    if (!frm.doc.contact_person) {
+        missing.push(__('Supplier Contact'));
+    }
+    if (missing.length > 0) {
+        const supplier_link = `<a href="/app/supplier/${encodeURIComponent(frm.doc.supplier)}" target="_blank">
+            ${frappe.utils.escape_html(frm.doc.supplier)}
+        </a>`;
+        frappe.msgprint({
+            'title': __('Missing Supplier Information'),
+            'message': __(
+                'This Purchase Order cannot be submitted because the following required information is missing:<br><br>' +
+                '<ul><li>' + missing.join('</li><li>') + '</li></ul>' +
+                '<br>' +
+                'Please ensure that Supplier {0} has an <b>Order Contact</b> with an Address.',
+                [supplier_link]
+            ),
+            'indicator': 'red'
+        });
+        return false;
+    }
+    return true;
 }
 
 
