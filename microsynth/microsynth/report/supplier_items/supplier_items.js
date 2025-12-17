@@ -153,7 +153,7 @@ function create_new_supplier_item() {
                     return {
                         'filters': {
                             'disabled': 0,
-                            'root_type': 'Expense',
+                            'report_type': 'Profit and Loss',
                             'is_group': 0,
                             'company': dialog.get_value('company') || 'Microsynth AG'
                         }
