@@ -31,6 +31,7 @@ frappe.query_reports["Expired Credits"] = {
         }
     ],
     onload: function(report) {
+        hide_chart_buttons();
         // Attach click handler after render
         report.page.wrapper.on('click', '.cancel-credit', function() {
             let credit_account = $(this).data("ca");
