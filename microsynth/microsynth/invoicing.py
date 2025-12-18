@@ -292,7 +292,7 @@ def async_create_invoices(mode, company, customer):
                                                      f"the quantity of Item {so_item.item_code} was not decreased on {dn_doc.name} compared to {so_id}.")
                     else:
                         # log an error and skip invoicing
-                        frappe.log_error(f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)}. Going to skip invoicing.")
+                        frappe.log_error(f"Sales Order {so_id} of Delivery Note {dn_doc.name} is Closed and the Delivery Note does not contain Item {' or '.join(allowed_items)}. Going to skip invoicing.", "invoicing.async_create_invoices")
                         continue
 
                 # # TODO: implement for other export categories
