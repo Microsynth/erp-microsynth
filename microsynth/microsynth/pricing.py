@@ -1284,3 +1284,70 @@ def change_customer_prices(items):
                 print(f"Changed rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
 
     print(f"\nSuccessfully changed {counter} Item Price rates.")
+
+
+def correct_reference_price_list_of_item_prices(dry_run=True, verbose=True):
+    """
+    Search all Item Prices whose field reference_price_list does not match
+    the field reference_price_list on the Price List entered in Item.price_list.
+
+    If verbose, print the differences.
+    If not dry_run, update Item Price.reference_price_list accordingly.
+
+    bench execute microsynth.microsynth.pricing.correct_reference_price_list_of_item_prices --kwargs "{'dry_run': True, 'verbose': True}"
+    """
+    print(f"Searching mismatches ...")
+    mismatches = frappe.db.sql(
+        """
+        SELECT
+            `tabItem Price`.`name`,
+            `tabItem Price`.`price_list`,
+            `tabItem Price`.`reference_price_list`,
+            `tabPrice List`.`reference_price_list`
+                AS `price_list_reference_price_list`
+        FROM
+            `tabItem Price`
+        INNER JOIN
+            `tabPrice List`
+            ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
+        WHERE
+            COALESCE(`tabItem Price`.`reference_price_list`, '')
+            !=
+            COALESCE(`tabPrice List`.`reference_price_list`, '')
+        """,
+        as_dict=True,
+    )
+    if not mismatches:
+        print("No mismatched Item Prices found.")
+        return 0
+
+    print(f"Found {len(mismatches)} mismatches.")
+
+    processed = 0
+
+    for row in mismatches:
+        if verbose:  # or 'Sales Prices ' in row.price_list:
+            print(
+                f"[Item Price: {row.name}] "
+                f"price_list={row.price_list} | "
+                f"reference_price_list: "
+                f"{row.reference_price_list!r} -> "
+                f"{row.price_list_reference_price_list!r}"
+            )
+        if dry_run:
+            processed += 1
+            continue
+
+        item_price_doc = frappe.get_doc("Item Price", row.name)
+
+        # Defensive re-check in case data changed since query
+        if item_price_doc.reference_price_list == row.price_list_reference_price_list:
+            continue
+
+        item_price_doc.reference_price_list = row.price_list_reference_price_list
+        item_price_doc.save()
+        processed += 1
+
+    mode = "DRY RUN" if dry_run else "UPDATED"
+    print(f"{mode}: {processed} Item Price record(s) processed.")
+    return processed
