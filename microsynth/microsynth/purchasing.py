@@ -2200,3 +2200,105 @@ def get_items_using_supplier(supplier):
             `tabItem Supplier`.`supplier` = %(supplier)s
             AND `tabItem`.`disabled` = 0
     """, {"supplier": supplier}, as_dict=True)
+
+
+@frappe.whitelist()
+def get_purchasing_price_context(item_code):
+    supplier_rows = frappe.db.sql(
+        """
+        SELECT
+            `tabItem Supplier`.`supplier`,
+            `tabSupplier`.`default_price_list`
+        FROM
+            `tabItem Supplier`
+        INNER JOIN
+            `tabSupplier`
+            ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        WHERE
+            `tabItem Supplier`.`parent` = %s
+            AND (
+                `tabItem Supplier`.`substitute_status` IS NULL
+                OR `tabItem Supplier`.`substitute_status` = ''
+                OR `tabItem Supplier`.`substitute_status` = 'Verified'
+            )
+            AND `tabSupplier`.`default_price_list` IS NOT NULL
+            AND `tabSupplier`.`default_price_list` != ''
+        """,
+        (item_code,),
+        as_dict=True,
+    )
+    contexts = {
+        (row.supplier, row.default_price_list)
+        for row in supplier_rows
+    }
+    if len(contexts) != 1:
+        return {
+            "price_list": None,
+            "supplier": None,
+            "existing_prices": [],
+            "currency": None,
+        }
+    supplier, price_list = contexts.pop()
+
+    currency = frappe.db.get_value(
+        "Price List",
+        price_list,
+        "currency"
+    )
+    existing_prices = frappe.db.sql(
+        """
+        SELECT
+            `tabItem Price`.`min_qty`,
+            `tabItem Price`.`price_list_rate`
+        FROM
+            `tabItem Price`
+        WHERE
+            `tabItem Price`.`item_code` = %s
+            AND `tabItem Price`.`price_list` = %s
+        ORDER BY
+            `tabItem Price`.`min_qty`
+        """,
+        (item_code, price_list),
+        as_dict=True,
+    )
+    return {
+        "price_list": price_list,
+        "supplier": supplier,
+        "currency": currency,
+        "existing_prices": existing_prices,
+    }
+
+
+@frappe.whitelist()
+def add_or_update_item_price(item_code, price_list, min_qty, price_list_rate):
+    """
+    Add or update an Item Price with:
+    - Explicit min_qty
+    - Explicit price_list_rate
+    - buying = 1 enforced
+    """
+    min_qty = int(min_qty)
+    price_list_rate = float(price_list_rate)
+
+    existing_name = frappe.db.get_value(
+        "Item Price",
+        {
+            "item_code": item_code,
+            "price_list": price_list,
+            "min_qty": min_qty
+        },
+        "name",
+    )
+    if existing_name:
+        doc = frappe.get_doc("Item Price", existing_name)
+    else:
+        doc = frappe.new_doc("Item Price")
+        doc.item_code = item_code
+        doc.price_list = price_list
+        doc.min_qty = min_qty
+
+    doc.price_list_rate = price_list_rate
+    doc.buying = 1
+    doc.flags.ignore_permissions = True
+    doc.save()
+    frappe.db.commit()

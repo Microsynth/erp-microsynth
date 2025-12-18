@@ -15,6 +15,12 @@ frappe.ui.form.on('Item', {
             frm.add_custom_button(__("Add Location"), function () {
                 show_add_location_dialog(frm);
             });
+
+            if (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User')) {
+                frm.add_custom_button(__("Add/Edit Price"), function () {
+                    add_edit_purchasing_price(frm);
+                });
+            }
         }
 
         if (frm.doc.storage_locations.length > 0) {
@@ -142,8 +148,147 @@ frappe.ui.form.on('Item', {
             })();
             frappe.validated = false;
         }
+        // TODO: Prevent pack_uom == stock_uom if pack_size != 1
     }
 });
+
+
+function add_edit_purchasing_price(frm) {
+    // TODO: Fetch default_price_list from Supplier from supplier_items table (expected exactly one with Item Supplier.substitute_status empty or Verified)
+    // TODO: Check if there are already any Item Prices for this Item on the fetched Price List with any minimum qty (show them)
+    // TODO: Ask to add or update an Item Price (default min_qty = 1)
+    // TODO: Call a backend function that does the operation with ignore_permission=True
+
+    if (!frm.doc.name) {
+        frappe.msgprint(__("Please save the Item first."));
+        return;
+    }
+    frappe.call({
+        'method': "microsynth.microsynth.purchasing.get_purchasing_price_context",
+        'args': {
+            'item_code': frm.doc.name
+        },
+        'freeze': true,
+        'callback': function (r) {
+            const price_context = r.message;
+            if (!price_context || !price_context.price_list) {
+                frappe.msgprint(
+                    __("Could not uniquely determine a Supplier Price List for this Item.")
+                );
+                return;
+            }
+            let existing_html = `
+                <div class="form-group">
+                    <label class="control-label">
+                        ${__("Existing Prices")}
+                    </label>
+            `;
+            if (price_context.existing_prices.length) {
+                existing_html += `
+                    <table class="table table-sm" style="margin-top: 4px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px; padding-left: 0;">
+                                    ${__("Min Qty")}
+                                </th>
+                                <th style="padding-left: 0;">
+                                    ${__("Rate")}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                price_context.existing_prices.forEach(row => {
+                    existing_html += `
+                        <tr>
+                            <td style="padding-left: 0;">
+                                ${frappe.format(row.min_qty, { fieldtype: "Float" })}
+                            </td>
+                            <td style="padding-left: 0;">
+                                <strong>
+                                    ${frappe.format(row.price_list_rate, {
+                                        fieldtype: "Currency",
+                                        options: price_context.currency
+                                    })}
+                                </strong>
+                            </td>
+                        </tr>
+                    `;
+                });
+                existing_html += `
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                existing_html += `
+                    <div class="text-muted small" style="margin-top: 4px;">
+                        ${__(
+                            "No existing Item Prices for Supplier <b>{0}</b> in Price List <b>{1}</b>.",
+                            [
+                                price_context.supplier,
+                                price_context.price_list
+                            ]
+                        )}
+                    </div>
+                `;
+            }
+            existing_html += `</div>`;
+
+            const dialog = new frappe.ui.Dialog({
+                'title': __("Add / Edit Purchasing Price"),
+                'fields': [
+                    {
+                        fieldname: "price_list",
+                        fieldtype: "Data",
+                        label: __("Price List"),
+                        read_only: 1,
+                        default: price_context.price_list
+                    },
+                    {
+                        fieldname: "existing_prices",
+                        fieldtype: "HTML",
+                        label: __("Existing Prices"),
+                        options: existing_html
+                    },
+                    {
+                        fieldname: "min_qty",
+                        fieldtype: "Int",
+                        label: __("Minimum Quantity"),
+                        reqd: 1,
+                        default: 1
+                    },
+                    {
+                        fieldname: "price_list_rate",
+                        fieldtype: "Currency",
+                        label: __("Price"),
+                        reqd: 1
+                    }
+                ],
+                'primary_action_label': __("Save"),
+                primary_action(values) {
+                    frappe.call({
+                        'method': "microsynth.microsynth.purchasing.add_or_update_item_price",
+                        'args': {
+                            'item_code': frm.doc.name,
+                            'price_list': price_context.price_list,
+                            'min_qty': values.min_qty,
+                            'price_list_rate': values.price_list_rate
+                        },
+                        'freeze': true,
+                        'callback': function () {
+                            dialog.hide();
+                            frappe.show_alert(
+                                __("Purchasing price saved successfully"),
+                                5
+                            );
+                        }
+                    });
+                }
+            });
+            dialog.show();
+        }
+    });
+}
 
 
 function show_add_location_dialog(frm) {
