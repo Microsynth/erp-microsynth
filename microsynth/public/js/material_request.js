@@ -127,7 +127,7 @@ function select_item(frm) {
 
         // If no filters are set, show a message and exit early
         if (!filters_set) {
-            f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter to see results.') + '</div>');
+            f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
             return;
         }
 
@@ -206,7 +206,7 @@ function select_item(frm) {
         });
 
         // Show placeholder message in results area
-        f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter to see results.') + '</div>');
+        f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
 
         // Reset selected item
         dialog.selected_item = null;

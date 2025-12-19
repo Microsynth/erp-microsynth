@@ -84,7 +84,7 @@ function open_search_dialog(frm) {
 
     f.clear_filters.$input.addClass('btn-secondary').on('click', () => {
         ['item_name_part','material_code','supplier_name','supplier_part_no'].forEach(fn => f[fn].set_value(''));
-        f.results.$wrapper.html(`<div class="text-muted">${__('Set at least one filter to see results.')}</div>`);
+        f.results.$wrapper.html(`<div class="text-muted">${__('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.')}</div>`);
         dialog.selected_item = null;
     });
 
@@ -92,7 +92,7 @@ function open_search_dialog(frm) {
         const filters_set = ['item_name_part','material_code','supplier_name','supplier_part_no']
         .some(fn => f[fn].get_value());
         if (!filters_set) {
-        f.results.$wrapper.html(`<div class="text-muted">${__('Set at least one filter to see results.')}</div>`);
+        f.results.$wrapper.html(`<div class="text-muted">${__('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.')}</div>`);
         return;
         }
         frappe.call({
