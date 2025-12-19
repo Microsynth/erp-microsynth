@@ -142,6 +142,7 @@ def get_data(filters):
         if not inferred_doctype:
             frappe.throw("Could not infer DocType from Document ID prefix.<br>Please enter a valid Document ID starting with QTN, SO, DN or SI followed by '-'.")
         filters["doctype"] = inferred_doctype
+        filters["web_order_id"] = frappe.get_value(inferred_doctype, filters["document_id"], "web_order_id")
         safe_get_and_traverse(inferred_doctype, filters["document_id"])
 
     # Starting point 2: Web Order ID
