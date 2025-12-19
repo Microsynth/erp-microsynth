@@ -534,13 +534,11 @@ function allocate_credits(frm) {
                                 .each(function() {
                                     selected_accounts.push($(this).val());
                                 });
-
                             if (values.manual_credit_account) {
                                 selected_accounts.push(values.manual_credit_account);
                             }
-
-                            if (selected_accounts.length != 1) {
-                                frappe.msgprint(__("Please select exactly one Credit Account."));
+                            if (selected_accounts.length == 0) {
+                                frappe.msgprint(__("Please select or enter at least one Credit Account."));
                                 return;
                             }
                             // Enter selected Credit account (only one) into Sales Invoice.override_credit_accounts
