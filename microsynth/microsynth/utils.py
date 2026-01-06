@@ -984,6 +984,10 @@ def set_distributor(customer, distributor, product_type):
     bench execute "microsynth.microsynth.utils.set_distributor" --kwargs "{'customer':8003, 'distributor':35914214, 'product_type':'Oligos'}"
     """
     # validate input
+    if customer == distributor:
+        frappe.log_error("The provided distributor '{0}' is the same as the customer. Cannot set distributor for Customer '{1}' and product type '{2}'.".format(distributor,customer,product_type),"utils.add_distributor")
+        return
+
     if not frappe.db.exists("Customer", distributor):
         frappe.log_error("The provided distributor '{0}' does not exist. Processing Customer '{1}'.".format(distributor,customer),"utils.add_distributor")
         return
@@ -1323,7 +1327,7 @@ def set_invoice_to(customer):
 def set_webshop_services(customer_id):
     """
     Set Webshop Service "EasyRun" for all Rest of Europe Territories.
-    Set Webshop Service "InvoiceByDefaultCompany" for all French Territories.
+    Set Webshop Service "InvoiceByDefaultCompany" for all French Territories, all German Territories and Austria.
     Set Webshop Service "EcoliNightSeq" if Default Company is NOT Microsynth Austria GmbH.
     """
     customer = frappe.get_doc('Customer', customer_id)
@@ -1790,6 +1794,8 @@ def set_sales_manager(customer):
 
     if country == "Italy":
         customer.account_manager = "servizioclienticer@dgroup.it"
+    # elif country == "Czech Republic" and customer.name not in ("37022785", "36993046"):
+    #     customer.account_manager = "allgene@allgene.cz"
     elif country == "Slovakia" and customer.name not in ("11007", "37332309"):
         customer.account_manager = "ktrade@ktrade.sk"
     # elif country == "Cyprus" and customer.name not in ("837936"):
@@ -1814,16 +1820,26 @@ def configure_sales_manager(customer_id):
         #print(f"Customer '{customer_id}' got assigned Sales Manager {customer.account_manager}.")
 
 
-def set_distributor_ktrade(customer_id):
+def set_distributor_all_product_types(customer_id, distributor):
     """
-    bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
+    Set the given distributor for all product types for the given customer.
+
+    run
+    bench execute microsynth.microsynth.utils.set_distributor_all_product_types --kwargs "{'customer_id': '836446', 'distributor': '840418'}"
     """
-    distributor = '11007'
     set_distributor(customer_id, distributor, 'Oligos')
     set_distributor(customer_id, distributor, 'Labels')
     set_distributor(customer_id, distributor, 'Sequencing')
     set_distributor(customer_id, distributor, 'FLA')
     set_distributor(customer_id, distributor, 'Genetic Analysis')
+
+
+def set_distributor_ktrade(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_ktrade --kwargs "{'customer_id': '838469'}"
+    """
+    distributor = '11007'
+    set_distributor_all_product_types(customer_id, distributor)
 
 
 def set_distributor_elincou(customer_id):
@@ -1831,11 +1847,23 @@ def set_distributor_elincou(customer_id):
     bench execute microsynth.microsynth.utils.set_distributor_elincou --kwargs "{'customer_id': '838469'}"
     """
     distributor = '837936'
-    set_distributor(customer_id, distributor, 'Oligos')
-    set_distributor(customer_id, distributor, 'Labels')
-    set_distributor(customer_id, distributor, 'Sequencing')
-    set_distributor(customer_id, distributor, 'FLA')
-    set_distributor(customer_id, distributor, 'Genetic Analysis')
+    set_distributor_all_product_types(customer_id, distributor)
+
+
+def set_distributor_elincou(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_elincou --kwargs "{'customer_id': '838469'}"
+    """
+    distributor = '837936'
+    set_distributor_all_product_types(customer_id, distributor)
+
+
+def set_distributor_allgene(customer_id):
+    """
+    bench execute microsynth.microsynth.utils.set_distributor_allgene --kwargs "{'customer_id': '836446'}"
+    """
+    distributor = '840418'
+    set_distributor_all_product_types(customer_id, distributor)
 
 
 def set_default_distributor(customer_id):
@@ -1868,6 +1896,28 @@ def set_default_distributor(customer_id):
 
     elif country == "Cyprus":
         set_distributor_elincou(customer_id)
+
+    elif country == "Czech Republic":
+        set_distributor_allgene(customer_id)
+
+
+def set_default_distributor_for_customers(customer_ids):
+    """
+    Set the default distributor for a list of customers.
+
+    run
+    bench execute microsynth.microsynth.utils.set_default_distributor_for_customers --kwargs "{'customer_ids': ['35277857', '35280995']}"
+    """
+    from microsynth.microsynth.credits import has_credits
+
+    customer_count = len(customer_ids)
+    for i, customer_id in customer_ids:
+        print(f"{int(100 * i / customer_count)} % - process Customer '{customer_id}'")
+
+        if not has_credits(customer_id):
+            set_default_distributor(customer_id)
+        else:
+            print(f"Customer '{customer_id}' has credits. Skip setting default distributor.")
 
 
 def check_default_companies():
