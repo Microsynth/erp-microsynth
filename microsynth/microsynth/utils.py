@@ -3541,6 +3541,71 @@ def get_open_documents_for_customer(customer_id):
     return result
 
 
+@frappe.whitelist()
+def get_open_documents_for_price_list(price_list_id):
+    """
+    Returns a dictionary of open documents linked directly to a Price List.
+
+    Usage:
+    bench execute microsynth.microsynth.utils.get_open_documents_for_price_list --kwargs "{'price_list_id': 'Standard Selling'}"
+    """
+    result = {
+        "Sales Order": [],
+        "Quotation": [],
+        "Delivery Note": [],
+        "Sales Invoice": []
+    }
+
+    # Open and valid Quotations
+    quotations = frappe.get_all("Quotation",
+        filters={
+            "selling_price_list": price_list_id,
+            "docstatus": 1,
+            "status": "Open",
+            "valid_till": [">=", nowdate()]
+        },
+        fields=["name", "transaction_date", "valid_till"]
+    )
+    result["Quotation"] = with_url("Quotation", quotations)
+
+    # Sales Orders not fully delivered
+    sales_orders = frappe.get_all("Sales Order",
+        filters={
+            "selling_price_list": price_list_id,
+            "docstatus": 1,
+            "status": ["!=", "Closed"],
+            "per_delivered": ["<", 100],
+        },
+        fields=["name", "transaction_date", "per_delivered"]
+    )
+    result["Sales Order"] = with_url("Sales Order", sales_orders)
+
+    # Delivery Notes not fully billed
+    delivery_notes = frappe.get_all("Delivery Note",
+        filters={
+            "selling_price_list": price_list_id,
+            "docstatus": 1,
+            "status": ["!=", "Closed"],
+            "per_billed": 0
+        },
+        fields=["name", "posting_date", "per_billed"]
+    )
+    result["Delivery Note"] = with_url("Delivery Note", delivery_notes)
+
+    # Sales Invoices with outstanding amount
+    invoices = frappe.get_all("Sales Invoice",
+        filters={
+            "selling_price_list": price_list_id,
+            "docstatus": 1,
+            "outstanding_amount": [">", 0]
+        },
+        fields=["name", "posting_date", "outstanding_amount"]
+    )
+    result["Sales Invoice"] = with_url("Sales Invoice", invoices)
+
+    return result
+
+
 def is_contact_safe_to_disable(contact_id):
     """
     bench execute microsynth.microsynth.utils.is_contact_safe_to_disable --kwargs "{'contact_id': '247270'}"
