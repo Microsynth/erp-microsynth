@@ -796,13 +796,13 @@ def report_credit_balance_diff():
             if alternative_account != account:
                 diff = get_total_credit_difference(company, currency, alternative_account, today())
                 if abs(diff) >= 0.01:
-                    diffs.append(f"{company}: Account {alternative_account}: {diff:.2f} {currency}<br>")
+                    diffs.append(f"{company}: Account {alternative_account}: {diff:.2f} {currency}<br/>")
 
     if len(diffs) > 0:
         email_template = frappe.get_doc("Email Template", "Credit Balance Difference")
         details = ""
         for diff in diffs:
-            details += diff
+            details += diff + "<br/>"
         rendered_content = frappe.render_template(email_template.response, {'details': details})
         send_email_from_template(email_template, rendered_content)
 
