@@ -1730,13 +1730,13 @@ Your administration team<br><br>{footer}"
             for dn_id in delivery_note_ids:
                 po_no = (frappe.get_value("Delivery Note", dn_id, "po_no") or "").strip()
                 if not po_no:
-                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
                     continue
                 if not po_no.startswith("SO-"):
-                    frappe.log_error(f"PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: PO of intercompany Delivery Note {dn_id} seems to not be a Sales Order ID.", "invoicing.transmit_sales_invoice")
                     continue
                 if not frappe.db.exists("Sales Order", po_no):
-                    frappe.log_error(f"Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
+                    frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has PO '{po_no}', but there is no Sales Order '{po_no}'.", "invoicing.transmit_sales_invoice")
                     continue
                 po_nos.add(po_no)
 
