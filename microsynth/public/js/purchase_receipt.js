@@ -19,6 +19,13 @@ frappe.ui.form.on('Purchase Receipt', {
             });
         }
 
+        // allow force cancel
+        if ((!frm.doc.__islocal) && (frm.doc.docstatus === 0) && (frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Purchase User'))) {
+            frm.add_custom_button(__("Force Cancel"), function() {
+                force_cancel(cur_frm.doc.doctype, cur_frm.doc.name);
+            });
+        }
+
         if (frm.doc.items || frm.doc.items.length > 0) {
             display_material_request_owners(frm);
         }
