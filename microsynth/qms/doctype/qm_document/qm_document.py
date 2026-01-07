@@ -185,6 +185,8 @@ def create_new_version(doc, user):
     new_doc.creation = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_doc.created_on = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_doc.created_by = user
+    new_doc.owner = None
+    new_doc.modified = None
     new_doc.reviewed_on = None
     new_doc.reviewed_by = None
     new_doc.released_on = None
