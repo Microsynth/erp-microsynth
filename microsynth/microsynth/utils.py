@@ -1911,7 +1911,7 @@ def set_default_distributor_for_customers(customer_ids):
     from microsynth.microsynth.credits import has_credits
 
     customer_count = len(customer_ids)
-    for i, customer_id in customer_ids:
+    for i, customer_id in enumerate(customer_ids):
         print(f"{int(100 * i / customer_count)} % - process Customer '{customer_id}'")
 
         if not has_credits(customer_id):
