@@ -2718,6 +2718,8 @@ def overwrite_item_defaults(item):
 
 def item_before_save(item, event):
     update_item_defaults(item)
+    if item.stock_uom == "Carton":
+        frappe.throw("Carton is not a valid stock UOM. Please consider using 'Box' instead.")
 
 
 @frappe.whitelist()
