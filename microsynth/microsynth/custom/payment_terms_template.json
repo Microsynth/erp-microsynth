@@ -547,12 +547,12 @@
    "_user_tags": null,
    "amend": 0,
    "cancel": 0,
-   "create": 1,
+   "create": 0,
    "creation": "2017-08-10 15:34:28.058054",
    "delete": 1,
    "docstatus": 0,
    "email": 1,
-   "export": 1,
+   "export": 0,
    "idx": 2,
    "if_owner": 0,
    "import": 0,
@@ -571,7 +571,7 @@
    "set_user_permissions": 0,
    "share": 0,
    "submit": 0,
-   "write": 1
+   "write": 0
   },
   {
    "_assign": null,
