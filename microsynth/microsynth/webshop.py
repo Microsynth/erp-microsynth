@@ -24,7 +24,8 @@ from microsynth.microsynth.utils import (
     to_bool,
     update_address_links_from_contact,
     send_email_from_template,
-    get_sql_list
+    get_sql_list,
+    get_alternative_account
 )
 from microsynth.microsynth.credits import get_credit_account_balance
 from microsynth.microsynth.seqblatt import process_label_status_change
@@ -3931,6 +3932,15 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             frappe.throw(f"Webshop Address '{webshop_account}' has no default shipping address. Unable to create deposit invoice.")
         tax_template = find_dated_tax_template(company, customer, shipping_address, "Service", datetime.now().date())
         customer_doc = frappe.get_doc("Customer", customer)
+
+        # define the income account for the credits
+        income_account = None
+        for d in credit_item.item_defaults:
+            if d.company == company:
+                income_account = get_alternative_account(d.income_account, currency)
+        if not income_account:
+            frappe.throw("Please define an income account for the credit item {0}".format(credit_item.name))
+
         # Create the Sales Invoice
         invoice = frappe.get_doc({
             "doctype": "Sales Invoice",
@@ -3949,7 +3959,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
                 "qty": 1,
                 "rate": amount,
                 "item_name": description if description else credit_item.item_name,
-                "cost_center": credit_item.get("selling_cost_center") or frappe.get_value("Company", company, "cost_center")
+                "cost_center": credit_item.get("selling_cost_center") or frappe.get_value("Company", company, "cost_center"),
+                "income_account": income_account
             }],
             "taxes_and_charges": tax_template,
             "credit_account": account_id,
