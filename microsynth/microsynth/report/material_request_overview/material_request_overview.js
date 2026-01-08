@@ -257,12 +257,23 @@ function open_search_dialog(report) {
                     f.results.$wrapper.html(`
                         <div class="alert alert-info">
                             ${__('No matching items found.')}
-                            <br><button class="btn btn-primary" id="request-item-btn">${__('Request Item')}</button>
+                            <br>
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    id="request-item-btn">
+                                ${__('Request Item')}
+                            </button>
                         </div>
                     `);
 
                     // Now attach the click listener AFTER the button exists
-                    f.results.$wrapper.find('#request-item-btn').off('click').on('click', () => {
+                    f.results.$wrapper
+                    .find('#request-item-btn')
+                    .off('click')
+                    .on('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
                         dialog.hide();
                         open_item_request_dialog(
                             report,
@@ -326,9 +337,10 @@ function open_search_dialog(report) {
         });
     }
 
-    ['item_name_part','material_code','supplier_name','supplier_part_no'].forEach(fn => {
-        f[fn].$input.on('change', update_list);
-    });
+    ['item_name_part','material_code','supplier_name','supplier_part_no']
+        .forEach(fn => {
+            f[fn].$input.on('input', frappe.utils.debounce(update_list, 300));
+        });
 
     update_list();
 }
@@ -463,23 +475,23 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             // Left column
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
             {fieldtype:'Link', label: __('Supplier'), fieldname:'supplier', options: 'Supplier'},
-            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.0001},
-            {fieldtype:'Currency', label: __('Rate'), fieldname:'rate'},
+            //{fieldtype:'Currency', label: __('Rate'), fieldname:'rate'},
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: frappe.defaults.get_default('company')},
+            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.0001},
 
             {fieldtype:'Column Break'},
 
             // Right column
             {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
-            {fieldtype:'Link', label: __('UOM (unit of measure)'), fieldname:'uom', options: 'UOM', reqd: 1},
-            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
+            //{fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date'},
+             {fieldtype:'Link', label: __('Stock UOM (unit of measure)'), fieldname:'uom', options: 'UOM', reqd: 1, description: 'Fixed warehouse unit used for stock movements'},
 
             {fieldtype:'Section Break'},
 
             // Full width comments
-            {fieldtype:'Text', label: __('Comments'), fieldname:'comment', colspan: 2}
+            {fieldtype:'Text', label: __('Comments'), fieldname:'comment', colspan: 2, description: 'URL to the supplier product page, price and currency, ...'}
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
