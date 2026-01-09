@@ -485,8 +485,8 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
             //{fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
-            {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date'},
-             {fieldtype:'Link', label: __('Stock UOM (unit of measure)'), fieldname:'uom', options: 'UOM', reqd: 1, description: 'Fixed warehouse unit used for stock movements'},
+            {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
+            {fieldtype:'Link', label: __('Stock UOM (unit of measure)'), fieldname:'uom', options: 'UOM', reqd: 1, description: 'Fixed warehouse unit used for stock movements'},
 
             {fieldtype:'Section Break'},
 
