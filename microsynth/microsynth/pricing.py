@@ -1223,12 +1223,21 @@ def find_price_lists_differing_from_reference(items):
     print(f"\nAffected Sales Managers: {'; '.join(sales_manager for sales_manager in affected_sales_managers)}")
 
 
-def change_customer_prices(items):
+def change_customer_prices(items, dry_run=True, verbose=True):
     """
-    bench execute microsynth.microsynth.pricing.change_customer_prices --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212']}"
+    Change Item Prices of the given Items on Customer Price Lists if their rate matches the old reference rate and differs from the current reference rate.
+
+    bench execute microsynth.microsynth.pricing.change_customer_prices --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212'], 'dry_run': True, 'verbose': False}"
     """
     counter = 0
-    price_lists_with_standing_quotations = set()
+    standing_quotation_items = frappe.db.sql("""
+        SELECT DISTINCT sq.price_list, sqi.item_code
+        FROM `tabStanding Quotation` sq
+        JOIN `tabStanding Quotation Item` sqi ON sqi.parent = sq.name
+        WHERE sq.docstatus = 1
+    """, as_dict=True)
+    sq_map = {(d.price_list, d.item_code) for d in standing_quotation_items}
+
     for item in items:
         if not item in old_reference_rates:
             print(f"Old reference rates for Item {item} are unknown, going to skip.")
@@ -1240,10 +1249,10 @@ def change_customer_prices(items):
             old_reference_rate = old_reference_rates[item][currency]
             reference_price_list = f"Sales Prices {currency}"
             reference_rate = get_rate_or_none(item, reference_price_list, 1)
-            if not reference_rate:
+            if reference_rate is None:
                 print(f"Got no reference rate for Item {item} with min_qty 1 on reference Price List '{reference_price_list}', going to skip.")
                 continue
-            sql_query = f"""
+            sql_query = """
                 SELECT
                     `tabItem Price`.`name`,
                     `tabItem Price`.`item_code`,
@@ -1253,35 +1262,37 @@ def change_customer_prices(items):
                     `tabItem Price`.`currency`,
                     `tabItem Price`.`price_list`
                 FROM `tabItem Price`
-                LEFT JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
-                LEFT JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
-                WHERE `tabItem Price`.`reference_price_list` = "{reference_price_list}"
-                    AND `tabItem Price`.`price_list_rate` != {reference_rate}
-                    AND `tabItem Price`.`price_list_rate` = {old_reference_rate}
-                    AND `tabItem Price`.`item_code` = "{item}"
-                    AND `tabItem Price`.`currency` = "{currency}"
+                JOIN `tabItem` ON `tabItem`.`item_code` = `tabItem Price`.`item_code`
+                JOIN `tabPrice List` ON `tabPrice List`.`name` = `tabItem Price`.`price_list`
+                WHERE `tabItem Price`.`price_list_rate` != %s
+                    AND ABS(`tabItem Price`.`price_list_rate` - %s) < 0.0001
+                    AND `tabItem Price`.`item_code` = %s
+                    AND `tabItem Price`.`currency` = %s
                     AND `tabItem`.`disabled` = 0
                     AND `tabPrice List`.`enabled` = 1
-                """
-            data = frappe.db.sql(sql_query, as_dict=True)
+                    AND `tabPrice List`.`reference_price_list` = %s
+            """
+            data = frappe.db.sql(
+                sql_query,
+                (reference_rate, old_reference_rate, item, currency, reference_price_list),
+                as_dict=True
+            )
             for d in data:
                 # check if there is a submitted Standing Quotation
-                if d['price_list'] in price_lists_with_standing_quotations:
-                    continue
-                sqs = frappe.get_all("Standing Quotation", filters=[['docstatus', '=', '1'], ['price_list', '=', d['price_list']]], fields=['name'])
-                if len(sqs) > 0:
-                    price_lists_with_standing_quotations.add(d['price_list'])
-                    print(f"There are {len(sqs)} submitted Standing Quotations for Price List '{d['price_list']}', going to skip.")
+                if (d['price_list'], item) in sq_map:
+                    print(f"There is a Standing Quotation Item with Item Code {item} for Price List '{d['price_list']}'. Not going to change the rate of Item Price {d['name']} from {d['rate']} {currency} to {reference_rate} {currency}.")
                     continue
                 # no Standing Quotation -> change rate
                 item_price_doc = frappe.get_doc("Item Price", d['name'])
                 if item_price_doc.min_qty != 1:
                     print(f"Unable to change rate of Item Price {d['name']} on Price List {d['price_list']} because it has min_qty {item_price_doc.min_qty}.")
                     continue
-                item_price_doc.rate = reference_rate
-                item_price_doc.save()
+                if not dry_run:
+                    item_price_doc.price_list_rate = reference_rate
+                    item_price_doc.save()
                 counter += 1
-                print(f"Changed rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
+                if verbose:
+                    print(f"{'Would have changed' if dry_run else 'Changed'} rate of Item Price {d['name']} on Price List {d['price_list']} from {d['rate']} {currency} to {reference_rate} {currency}.")
 
     print(f"\nSuccessfully changed {counter} Item Price rates.")
 
