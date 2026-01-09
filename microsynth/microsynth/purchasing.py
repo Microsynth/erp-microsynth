@@ -157,6 +157,7 @@ def create_po_from_open_mr(filters):
         schedule_date = getdate(item.get('schedule_date') or today())
         if schedule_date < getdate(today()):
             schedule_date = getdate(today())
+        # TODO: look up Supplier Quotation based on supplier and item code to set the rate and link the Supplier Quotation (Item)
         po_doc.append('items', {
             'item_code': item.get('item_code'),
             'schedule_date': schedule_date,
