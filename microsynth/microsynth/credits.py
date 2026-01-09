@@ -225,7 +225,7 @@ def allocate_credits_to_invoice(sales_invoice):
     sales_invoice.save()
 
 
-def book_credit(sales_invoice, credit_item, event=None):
+def book_credit(sales_invoice, credit_item=None, event=None):
     """
     Create Journal Entries for booking the credits of a sales invoice from the credit account to the income account.
 
@@ -235,9 +235,8 @@ def book_credit(sales_invoice, credit_item, event=None):
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice)
     if not sales_invoice or not sales_invoice.total_customer_credit or sales_invoice.total_customer_credit <= 0:  # if this invoice has no applied customer credit, skip
         return None
-
-    credit_item = frappe.get_doc("Item",
-        frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
+    if not credit_item:
+        credit_item = frappe.get_doc("Item", frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
     if sales_invoice.shipping_address_name:
         country = frappe.get_value("Address", sales_invoice.shipping_address_name, "country")
