@@ -146,6 +146,28 @@ def create_po_from_open_mr(filters):
     else:  # no currencies
         currency = supplier_doc.default_currency
 
+    # Check for matching Purchase Order Drafts to avoid duplicates
+    existing_po_drafts = frappe.get_all(
+        'Purchase Order',
+        filters={
+            'supplier': filters.get('supplier'),
+            'company': filters.get('company'),
+            'status': 'Draft'
+        },
+        fields=['name']
+    )
+    if existing_po_drafts:
+        links = [
+            f'<li><a href="{get_url_to_form("Purchase Order", po["name"])}" target="_blank">{po["name"]}</a></li>'
+            for po in existing_po_drafts
+        ]
+
+        frappe.throw(
+            f"There are the following existing Purchase Order Drafts for the Supplier "
+            f"{filters.get('supplier')} and Company {filters.get('company')}:"
+            f"<ul>{''.join(links)}</ul>"
+            f"Please review them before creating a new Purchase Order."
+        )
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': filters.get('supplier'),
