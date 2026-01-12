@@ -60,19 +60,23 @@ frappe.ui.form.on('Purchase Order', {
             var dashboard_comment_color = 'green';
             for (var i = 0; i < frm.doc.items.length; i++) {
                 if (frm.doc.items[i].item_code) {
-                    frappe.call({
-                        'method': "frappe.client.get",
-                        'args': {
-                            "doctype": "Item",
-                            "name": frm.doc.items[i].item_code
-                        },
-                        'callback': function(response) {
-                            var item = response.message;
-                            if (item.internal_note) {
-                                cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
+                    if (frm.doc.items[i].external_quotation_reference) {
+                        cur_frm.dashboard.add_comment("<b>" + frm.doc.items[i].item_code + "</b>: Supplier Quotation Reference: " + frm.doc.items[i].external_quotation_reference, dashboard_comment_color, true);
+                    } else {
+                        frappe.call({
+                            'method': "frappe.client.get",
+                            'args': {
+                                "doctype": "Item",
+                                "name": frm.doc.items[i].item_code
+                            },
+                            'callback': function(response) {
+                                var item = response.message;
+                                if (item.internal_note) {
+                                    cur_frm.dashboard.add_comment("<b>" + item.item_code + "</b>: " + item.internal_note, dashboard_comment_color, true);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }
