@@ -16,6 +16,7 @@ def get_columns(mode=None):
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 350},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
+        {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Data", "width": 50},
     ]
     if mode != "To Order":
         columns += [
@@ -86,6 +87,7 @@ def get_data(filters):
                 `tabMaterial Request Item`.`item_code`,
                 `tabMaterial Request Item`.`item_name`,
                 `tabMaterial Request Item`.`qty`,
+                `tabMaterial Request Item`.`uom`,
                 `tabMaterial Request Item`.`name` AS `material_request_item`,
                 (
                     SELECT IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0)
@@ -144,6 +146,7 @@ def get_data(filters):
                     `tabMaterial Request Item`.`item_code`,
                     `tabMaterial Request Item`.`item_name`,
                     `tabMaterial Request Item`.`qty`,
+                    `tabMaterial Request Item`.`uom`,
                     `tabMaterial Request Item`.`name` AS `material_request_item`,
                     (
                         SELECT IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0)
@@ -205,6 +208,7 @@ def get_data(filters):
                 `tabMaterial Request Item`.`item_code`,
                 `tabMaterial Request Item`.`item_name`,
                 (`tabMaterial Request Item`.`qty` - IFNULL(SUM(`tabPurchase Order Item`.`qty`), 0)) AS `qty`,
+                `tabMaterial Request Item`.`uom`,
                 `tabMaterial Request Item`.`name` AS `material_request_item`,
                 `tabMaterial Request Item`.`rate`,
                 `tabMaterial Request Item`.`item_request_currency` AS `currency`,
@@ -246,6 +250,7 @@ def get_data(filters):
                 '-' AS `item_code`,
                 `tabItem Request`.`item_name`,
                 `tabItem Request`.`qty`,
+                `tabItem Request`.`uom`,
                 NULL AS `material_request_item`,
                 `tabItem Request`.`rate`,
                 `tabItem Request`.`currency`,
