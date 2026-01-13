@@ -149,10 +149,11 @@ def create_purchasing_item(data):
     if frappe.db.exists("Item", {"item_name": item_name}):
         frappe.throw(_("An item with Item Name {0} already exists").format(item_name))
 
-    if material_code:
-        existing = frappe.db.exists("Item", {"material_code": material_code})
-        if existing:
-            frappe.throw(_("An item with Material Code {0} already exists: {1}").format(material_code, existing))
+    # FAx: "Bitte beachte, dass der Material Code bei der Artikelerstellung nicht eindeutig sein muss."
+    # if material_code:
+    #     existing = frappe.db.exists("Item", {"material_code": material_code})
+    #     if existing:
+    #         frappe.throw(_("An item with Material Code {0} already exists: {1}").format(material_code, existing))
 
     if float(data.get("shelf_life_in_years") or 0) <= 0:
         frappe.throw(_("Shelf Life in Years must be greater than 0."))
