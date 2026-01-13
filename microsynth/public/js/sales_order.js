@@ -254,6 +254,7 @@ frappe.ui.form.on('Sales Order', {
     },
     company(frm) {
         if (frm.doc.__islocal) {
+            cur_frm.set_value("amended_from", null);
             set_naming_series(frm);                 // common function
         }
     }
