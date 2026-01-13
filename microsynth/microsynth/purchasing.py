@@ -1840,6 +1840,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`stock_uom`,
             `tabItem`.`purchase_uom`,
             `tabItem`.`lead_time_days`,
+            `tabItem`.`last_purchase_rate`,
             CASE
                 WHEN `tabItem`.`stock_uom` IS NOT NULL
                     AND `tabItem`.`purchase_uom` IS NOT NULL

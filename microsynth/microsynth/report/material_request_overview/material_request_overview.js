@@ -297,8 +297,8 @@ function open_search_dialog(report) {
                                 <th>${__('Pack Size')}</th>
                                 <th>${__('Pack UOM')}</th>
                                 <th>${__('Material Code')}</th>
+                                <th>${__('Last Purchase Rate [CHF]')}</th>
                                 <th>${__('Supplier')}</th>
-                                <th>${__('Supplier Name')}</th>
                                 <th>${__('Supplier Item Code')}</th>
                             </tr>
                         </thead>
@@ -313,8 +313,8 @@ function open_search_dialog(report) {
                             <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
                             <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
                             <td>${frappe.utils.escape_html(it.material_code || '')}</td>
-                            <td>${frappe.utils.escape_html(it.supplier || '')}</td>
-                            <td>${frappe.utils.escape_html(it.supplier_name || '')}</td>
+                            <td>${frappe.utils.escape_html(it.last_purchase_rate || '')}</td>
+                            <td>${frappe.utils.escape_html(it.supplier || '')}: ${frappe.utils.escape_html(it.supplier_name || '')}</td>
                             <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
                         </tr>
                     `;
