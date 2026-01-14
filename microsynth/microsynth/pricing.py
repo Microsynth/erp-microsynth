@@ -1223,11 +1223,11 @@ def find_price_lists_differing_from_reference(items):
     print(f"\nAffected Sales Managers: {'; '.join(sales_manager for sales_manager in affected_sales_managers)}")
 
 
-def change_customer_prices(items, dry_run=True, verbose=True):
+def change_customer_prices(items, dry_run=True, verbose=True, price_lists_to_change_anyway=None):
     """
     Change Item Prices of the given Items on Customer Price Lists if their rate matches the old reference rate and differs from the current reference rate.
 
-    bench execute microsynth.microsynth.pricing.change_customer_prices --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212'], 'dry_run': True, 'verbose': False}"
+    bench execute microsynth.microsynth.pricing.change_customer_prices --kwargs "{'items': ['6200', '6202', '6210', '6211', '6212'], 'dry_run': True, 'verbose': False, 'price_lists_to_change_anyway': ['Ch_1234']}"
     """
     counter = 0
     standing_quotation_items = frappe.db.sql("""
@@ -1279,7 +1279,7 @@ def change_customer_prices(items, dry_run=True, verbose=True):
             )
             for d in data:
                 # check if there is a submitted Standing Quotation
-                if (d['price_list'], item) in sq_map:
+                if (d['price_list'], item) in sq_map and (d['price_list'] not in price_lists_to_change_anyway):
                     print(f"There is a Standing Quotation Item with Item Code {item} for Price List '{d['price_list']}'. Not going to change the rate of Item Price {d['name']} from {d['rate']} {currency} to {reference_rate} {currency}.")
                     continue
                 # no Standing Quotation -> change rate
