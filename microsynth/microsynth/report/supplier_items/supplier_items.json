@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-06-11 09:12:15.864754",
+ "modified": "2026-01-14 10:06:59.029734",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Supplier Items",
@@ -43,6 +43,9 @@
   },
   {
    "role": "Board Member"
+  },
+  {
+   "role": "Product Manager"
   }
  ]
 }
