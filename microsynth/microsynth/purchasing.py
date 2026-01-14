@@ -129,9 +129,229 @@ def create_pi_from_si(sales_invoice):
     return new_pi
 
 
+def _compute_total_quantity_by_item(material_request_rows):
+    """Compute total qty per item_code from the list of material-request rows."""
+    totals = {}
+    for row in material_request_rows:
+        key = row.get('item_code') or '-'
+        totals[key] = totals.get(key, 0.0) + flt(row.get('qty') or 0)
+    return totals
+
+
+def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company):
+    """Select cheapest valid Supplier Quotation Item or fallback to price list rate.
+
+    Returns a dict: {
+        'supplier_quotation': name or None,
+        'supplier_quotation_item': name or None,
+        'rate': float,
+        'external_reference': str or None,
+        'warnings': [str]
+    }
+    """
+    selection = {
+        'supplier_quotation': None,
+        'supplier_quotation_item': None,
+        'rate': original_rate,  # use original MR rate as default
+        'external_reference': None,
+        'warnings': []
+    }
+
+    # Query Supplier Quotation Items
+    supplier_quotation_rows = frappe.db.sql(
+        """
+        SELECT
+            `tabSupplier Quotation`.`name` AS `supplier_quotation`,
+            `tabSupplier Quotation`.`external_reference` AS `external_reference`,
+            `tabSupplier Quotation Item`.`name` AS `supplier_quotation_item`,
+            IFNULL(`tabSupplier Quotation Item`.`qty`, 0) AS `min_qty`,
+            IFNULL(`tabSupplier Quotation Item`.`rate`, 0) AS `rate`,
+            IFNULL(`tabSupplier Quotation`.`valid_from`, '1900-01-01') AS `valid_from`,
+            IFNULL(`tabSupplier Quotation`.`valid_till`, '9999-12-31') AS `valid_till`
+        FROM `tabSupplier Quotation Item`
+        JOIN `tabSupplier Quotation` ON `tabSupplier Quotation Item`.`parent` = `tabSupplier Quotation`.`name`
+        WHERE `tabSupplier Quotation`.`docstatus` = 1
+            AND `tabSupplier Quotation`.`supplier` = %s
+            AND `tabSupplier Quotation Item`.`item_code` = %s
+        ORDER BY `tabSupplier Quotation Item`.`rate` ASC
+        """,
+        (supplier_doc.name, item_code), as_dict=True
+    )
+
+    valid_supplier_quotations = []
+    expired_supplier_quotations = []
+    for sq_row in (supplier_quotation_rows or []):
+        try:
+            valid_from_date = getdate(sq_row.get('valid_from'))
+            valid_till_date = getdate(sq_row.get('valid_till'))
+        except Exception:
+            valid_from_date = None
+            valid_till_date = None
+        is_valid_now = True
+        if valid_from_date and valid_from_date > today_date:
+            is_valid_now = False
+        if valid_till_date and valid_till_date < today_date:
+            is_valid_now = False
+        if is_valid_now:
+            valid_supplier_quotations.append(sq_row)
+        else:
+            expired_supplier_quotations.append(sq_row)
+
+    if valid_supplier_quotations:
+        chosen = valid_supplier_quotations[0]
+        selection['rate'] = flt(chosen.get('rate') or selection['rate'])
+        selection['supplier_quotation'] = chosen.get('supplier_quotation')
+        selection['supplier_quotation_item'] = chosen.get('supplier_quotation_item')
+        selection['external_reference'] = chosen.get('external_reference')
+        if flt(chosen.get('min_qty') or 0) > consolidated_total_qty:
+            selection['warnings'].append(
+                f"Item {item_code}: chosen Supplier Quotation {chosen.get('supplier_quotation')} requires minimum quantity {chosen.get('min_qty')}, consolidated qty {consolidated_total_qty}."
+            )
+    else:
+        if expired_supplier_quotations:
+            selection['warnings'].append(
+                f"Item {item_code}: found Supplier Quotations but none are currently valid."
+            )
+        # Fallback: try to derive a rate from supplier's default price list
+        from erpnext.stock.get_item_details import get_item_details
+
+        conversion_rate = 1
+        if supplier_doc.default_currency != currency:
+            conversion_rate = frappe.get_value(
+                "Currency Exchange",
+                {"from_currency": supplier_doc.default_currency, "to_currency": currency},
+                "exchange_rate"
+            )
+        item_details = get_item_details({
+            "item_code": item_code,
+            "qty": consolidated_total_qty,
+            "price_list": supplier_doc.default_price_list,
+            "supplier": supplier_doc.name,
+            "company": company,
+            "buying": 1,
+            "currency": currency,
+            "conversion_rate": conversion_rate,
+            "doctype": "Purchase Order",
+        })
+        if item_details and item_details.get("rate") is not None:
+            selection['rate'] = flt(item_details.get("rate"))
+        else:
+            selection['warnings'].append(
+                f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
+            )
+
+    return selection
+
+
+def _create_po_document_for_items(material_request_rows, total_quantity_by_item_code, supplier_doc, filters, currency):
+    """Create a Purchase Order document and append PO items for each material request row.
+
+    Returns: (po_doc, used_supplier_quotations, purchase_warnings)
+    """
+    po_doc = frappe.get_doc({
+        'doctype': 'Purchase Order',
+        'supplier': filters.get('supplier'),
+        'company': filters.get('company'),
+        'currency': currency,
+        'buying_price_list': supplier_doc.default_price_list
+    })
+
+    today_date = getdate(today())
+    used_supplier_quotations = []
+    purchase_warnings = []
+    quotation_choice_cache = {}
+
+    # Ensure rows are sorted by item_code so identical items are consecutive
+    rows_sorted = sorted(material_request_rows, key=lambda r: (r.get('item_code') or ''))
+
+    for original_row in rows_sorted:
+        original_item_code = original_row.get('item_code')
+        item_code_key = original_item_code or '-'
+        consolidated_total_qty = flt(total_quantity_by_item_code.get(item_code_key, 0.0))
+        original_rate = flt(original_row.get('rate') or 0.0)
+
+        # reuse cached selection or compute it
+        if item_code_key in quotation_choice_cache:
+            selection = quotation_choice_cache[item_code_key]
+            if selection.get('external_reference'):
+                used_supplier_quotations.append(
+                    f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
+                )
+            if selection.get('warnings'):
+                purchase_warnings.extend(selection.get('warnings'))
+        else:
+            selection = _select_quotation_for_item(
+                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, filters.get('company')
+            )
+            quotation_choice_cache[item_code_key] = selection
+            if selection.get('external_reference'):
+                used_supplier_quotations.append(
+                    f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
+                )
+            if selection.get('warnings'):
+                purchase_warnings.extend(selection.get('warnings'))
+
+        # UOM & conversion checks
+        chosen_item_stock_uom = None
+        chosen_item_purchase_uom = None
+        chosen_item_conversion_factor = 1
+        if original_item_code and frappe.db.exists('Item', original_item_code):
+            try:
+                item_document = frappe.get_doc('Item', original_item_code)
+                chosen_item_stock_uom = item_document.get('stock_uom') or None
+                chosen_item_purchase_uom = item_document.get('purchase_uom') or chosen_item_stock_uom
+                if chosen_item_purchase_uom and chosen_item_stock_uom and chosen_item_purchase_uom != chosen_item_stock_uom:
+                    conv = frappe.db.get_value(
+                        'UOM Conversion Detail',
+                        {'parent': original_item_code, 'uom': chosen_item_purchase_uom},
+                        'conversion_factor'
+                    )
+                    if conv:
+                        chosen_item_conversion_factor = flt(conv)
+                    else:
+                        purchase_warnings.append(
+                            f"Item {item_code_key}: missing UOM conversion from {chosen_item_purchase_uom} to {chosen_item_stock_uom} on Item record. Please verify UOM conversions."
+                        )
+            except Exception as err:
+                purchase_warnings.append(f"Unable to fetch Item {original_item_code} for UOM checks: {err}")
+
+        # warn on conversion factor issues
+        if chosen_item_purchase_uom and chosen_item_stock_uom and chosen_item_purchase_uom != chosen_item_stock_uom:
+            if not chosen_item_conversion_factor or chosen_item_conversion_factor <= 0 or chosen_item_conversion_factor == 1:
+                purchase_warnings.append(
+                    f"Item {item_code_key}: invalid or missing conversion factor '{chosen_item_conversion_factor}' between purchase UOM '{chosen_item_purchase_uom}' and stock UOM '{chosen_item_stock_uom}'."
+                )
+
+        # build PO item row
+        po_item_row = {
+            'item_code': original_item_code,
+            'item_name': original_row.get('item_name'),
+            'schedule_date': getdate(original_row.get('schedule_date') or today_date),
+            'qty': flt(original_row.get('qty') or 0),
+            'rate': flt(selection.get('rate') or original_rate),
+            'uom': chosen_item_purchase_uom or original_row.get('uom') or chosen_item_stock_uom,
+            'stock_uom': chosen_item_stock_uom,
+            'conversion_factor': chosen_item_conversion_factor,
+            'material_request': original_row.get('material_request'),
+            'material_request_item': original_row.get('material_request_item'),
+            'external_quotation_reference': selection.get('external_reference')
+        }
+        # set supplier quotation link only once
+        already_used_sq_item = quotation_choice_cache[item_code_key].get('sq_item_used')
+        if not already_used_sq_item:
+            po_item_row.update({
+                'supplier_quotation': selection.get('supplier_quotation'),
+                'supplier_quotation_item': selection.get('supplier_quotation_item')
+            })
+            quotation_choice_cache[item_code_key]['sq_item_used'] = True
+
+        po_doc.append('items', po_item_row)
+
+    return po_doc, used_supplier_quotations, purchase_warnings
+
+
 @frappe.whitelist()
 def create_po_from_open_mr(filters):
-    # TODO: refactor
     from erpnext.stock.get_item_details import get_item_details
     from microsynth.microsynth.report.material_request_overview.material_request_overview import get_data as get_items
     if type(filters) == str:
@@ -140,15 +360,22 @@ def create_po_from_open_mr(filters):
     currencies = {item.get('currency') for item in items if item.get('currency') is not None}
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     if len(currencies) > 1:
-        frappe.throw(_("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(", ".join(currencies)))
+        frappe.throw(
+            _("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(
+                ", ".join(currencies)
+            )
+        )
     elif len(currencies) == 1:
-        currency = currencies.pop() or supplier_doc.default_currency  # getting a random element from the set does not matter because there is exactly one element in the set
+        currency = currencies.pop() or supplier_doc.default_currency
         if currency != supplier_doc.default_currency:
-            frappe.throw(f"The selected Supplier has default currency {supplier_doc.default_currency}, but the Material Requests are in {currency}. Unable to create Purchase Order.", "Currency Mismatch")
-    else:  # no currencies
+            frappe.throw(
+                f"The selected Supplier has default currency {supplier_doc.default_currency}, but the Material Requests are in {currency}. Unable to create Purchase Order.",
+                "Currency Mismatch"
+            )
+    else:
         currency = supplier_doc.default_currency
 
-    # Check for matching Purchase Order Drafts to avoid duplicates
+    # Check for existing Draft POs
     existing_po_drafts = frappe.get_all(
         'Purchase Order',
         filters={
@@ -163,213 +390,26 @@ def create_po_from_open_mr(filters):
             f'<li><a href="{get_url_to_form("Purchase Order", po["name"])}" target="_blank">{po["name"]}</a></li>'
             for po in existing_po_drafts
         ]
-
         frappe.throw(
             f"There are the following existing Purchase Order Drafts for the Supplier "
             f"{filters.get('supplier')} and Company {filters.get('company')}:"
             f"<ul>{''.join(links)}</ul>"
             f"Please review them before creating a new Purchase Order."
         )
-    # Consolidate quantities per item code to find lowest price rate but keep separate positions to link material requests
-    total_quantity_by_item_code = {}
-    for original_row in items:
-        item_code = original_row.get('item_code') or '-'
-        total_quantity_by_item_code[item_code] = total_quantity_by_item_code.get(item_code, 0.0) + flt(original_row.get('qty') or 0)
 
-    # Sort original rows by item_code so that identical items become consecutive in the PO
-    items_sorted_by_item_code = sorted(items, key=lambda r: (r.get('item_code') or ''))
+    # Consolidate totals and create PO
+    total_quantity_by_item_code = _compute_total_quantity_by_item(items)
+    po_doc, used_supplier_quotations, purchase_warnings = _create_po_document_for_items(
+        items, total_quantity_by_item_code, supplier_doc, filters, currency
+    )
 
-    # Prepare PO document
-    po_doc = frappe.get_doc({
-        'doctype': 'Purchase Order',
-        'supplier': filters.get('supplier'),
-        'company': filters.get('company'),
-        'currency': currency,
-        'buying_price_list': supplier_doc.default_price_list
-    })
-    today_date = getdate(today())
-    used_supplier_quotations = []
-    purchase_warnings = []
-
-    # Cache chosen quotation/rate per item code to avoid repeated DB calls
-    quotation_choice_cache = {}
-
-    for original_row in items_sorted_by_item_code:
-        original_item_code = original_row.get('item_code')
-        item_code = original_item_code or '-'
-
-        # Determine total consolidated qty for this item code to decide on quotations
-        consolidated_total_qty = flt(total_quantity_by_item_code.get(item_code, 0.0))
-
-        # Default values for this PO line
-        chosen_supplier_quotation = None
-        chosen_supplier_quotation_item = None
-        chosen_rate = flt(original_row.get('rate') or 0.0)
-
-        # If we already computed a quotation selection for this item code, reuse it
-        if item_code in quotation_choice_cache:
-            cached = quotation_choice_cache[item_code]
-            chosen_supplier_quotation = cached.get('supplier_quotation')
-            chosen_supplier_quotation_item = cached.get('supplier_quotation_item')
-            chosen_rate = cached.get('rate', chosen_rate)
-            if cached.get('external_reference'):
-                # keep list of used quotations for onload
-                used_supplier_quotations.append(f"{chosen_supplier_quotation} ({cached.get('external_reference')})")
-            if cached.get('warnings'):
-                purchase_warnings.extend(cached.get('warnings'))
-        else:
-            # Lookup supplier quotations for this supplier and item code
-            supplier_quotation_rows = frappe.db.sql(
-                """
-                SELECT
-                    `tabSupplier Quotation`.`name` AS `supplier_quotation`,
-                    `tabSupplier Quotation`.`external_reference` AS `external_reference`,
-                    `tabSupplier Quotation Item`.`name` AS `supplier_quotation_item`,
-                    IFNULL(`tabSupplier Quotation Item`.`qty`, 0) AS `min_qty`,
-                    IFNULL(`tabSupplier Quotation Item`.`rate`, 0) AS `rate`,
-                    IFNULL(`tabSupplier Quotation`.`valid_from`, '1900-01-01') AS `valid_from`,
-                    IFNULL(`tabSupplier Quotation`.`valid_till`, '9999-12-31') AS `valid_till`
-                FROM `tabSupplier Quotation Item`
-                JOIN `tabSupplier Quotation` ON `tabSupplier Quotation Item`.`parent` = `tabSupplier Quotation`.`name`
-                WHERE `tabSupplier Quotation`.`docstatus` = 1
-                    AND `tabSupplier Quotation`.`supplier` = %s
-                    AND `tabSupplier Quotation Item`.`item_code` = %s
-                ORDER BY `tabSupplier Quotation Item`.`rate` ASC
-                """,
-                (filters.get('supplier'), item_code), as_dict=True
-            )
-            valid_supplier_quotations = []
-            expired_supplier_quotations = []
-            for sq_row in (supplier_quotation_rows or []):
-                try:
-                    valid_from_date = getdate(sq_row.get('valid_from'))
-                    valid_till_date = getdate(sq_row.get('valid_till'))
-                except Exception:
-                    valid_from_date = None
-                    valid_till_date = None
-                is_valid_now = True
-                if valid_from_date and valid_from_date > today_date:
-                    is_valid_now = False
-                if valid_till_date and valid_till_date < today_date:
-                    is_valid_now = False
-                if is_valid_now:
-                    valid_supplier_quotations.append(sq_row)
-                else:
-                    expired_supplier_quotations.append(sq_row)
-
-            local_warnings = []
-            if valid_supplier_quotations:
-                # Choose cheapest valid quotation (rows ordered by rate asc)
-                chosen_row = valid_supplier_quotations[0]
-                chosen_rate = flt(chosen_row.get('rate') or chosen_rate)
-                chosen_supplier_quotation = chosen_row.get('supplier_quotation')
-                chosen_supplier_quotation_item = chosen_row.get('supplier_quotation_item')
-                if chosen_row.get('external_reference'):
-                    used_supplier_quotations.append(f"{chosen_supplier_quotation} ({chosen_row.get('external_reference')})")
-                # Check minimum quantity requirements against consolidated total
-                if flt(chosen_row.get('min_qty') or 0) > consolidated_total_qty:
-                    local_warnings.append(f"Item {item_code}: chosen Supplier Quotation {chosen_supplier_quotation} requires minimum quantity {chosen_row.get('min_qty')}, consolidated qty {consolidated_total_qty}.")
-            else:
-                if expired_supplier_quotations:
-                    local_warnings.append(f"Item {item_code}: found Supplier Quotations but none are currently valid.")
-                # Fallback to Item Price on Default Price List of the Supplier
-                conversion_rate = 1
-                if supplier_doc.default_currency != currency:
-                    conversion_rate = frappe.get_value(
-                        "Currency Exchange",
-                        {
-                            "from_currency": supplier_doc.default_currency,
-                            "to_currency": currency
-                        },
-                        "exchange_rate"
-                    )
-                item_details = get_item_details({
-                    "item_code": item_code,
-                    "qty": consolidated_total_qty,
-                    "price_list": supplier_doc.default_price_list,
-                    "supplier": filters.get("supplier"),
-                    "company": filters.get("company"),
-                    "buying": 1,
-                    "currency": currency,
-                    "conversion_rate": conversion_rate,
-                    "doctype": "Purchase Order",
-                })
-                if item_details and item_details.get("rate") is not None:
-                    chosen_rate = flt(item_details.get("rate"))
-                else:
-                    local_warnings.append(
-                        f"Item {item_code}: no valid Item Price found in price list {supplier_doc.default_price_list}."
-                    )
-
-            # Cache selection
-            quotation_choice_cache[item_code] = {
-                'supplier_quotation': chosen_supplier_quotation,
-                'supplier_quotation_item': chosen_supplier_quotation_item,
-                'rate': chosen_rate,
-                'external_reference': chosen_row.get('external_reference') if 'chosen_row' in locals() and chosen_row else None,
-                'warnings': local_warnings
-            }
-            if local_warnings:
-                purchase_warnings.extend(local_warnings)
-
-        # Compare and populate UOMs and conversion factors for this PO line
-        chosen_item_stock_uom = None
-        chosen_item_purchase_uom = None
-        chosen_item_conversion_factor = 1
-
-        if original_item_code and frappe.db.exists("Item", original_item_code):
-            try:
-                item_document = frappe.get_doc("Item", original_item_code)
-                chosen_item_stock_uom = item_document.get('stock_uom') or None
-                chosen_item_purchase_uom = item_document.get('purchase_uom') or chosen_item_stock_uom
-                # lookup conversion factor if purchase_uom differs from stock_uom
-                if chosen_item_purchase_uom and chosen_item_stock_uom and chosen_item_purchase_uom != chosen_item_stock_uom:
-                    conv = frappe.db.get_value("UOM Conversion Detail", {"parent": original_item_code, "uom": chosen_item_purchase_uom}, "conversion_factor")
-                    if conv:
-                        chosen_item_conversion_factor = flt(conv)
-                    else:
-                        # no conversion found -> warn
-                        purchase_warnings.append(f"Item {item_code}: missing UOM conversion from {chosen_item_purchase_uom} to {chosen_item_stock_uom} on Item record. Please verify UOM conversions.")
-            except Exception as exc:
-                # non-fatal: record warning and continue
-                purchase_warnings.append(f"Unable to fetch Item {original_item_code} for UOM checks: {exc}")
-
-        # If purchase_uom != stock_uom ensure conversion factor exists and is reasonable
-        if chosen_item_purchase_uom and chosen_item_stock_uom and chosen_item_purchase_uom != chosen_item_stock_uom:
-            if not chosen_item_conversion_factor or chosen_item_conversion_factor <= 0 or chosen_item_conversion_factor == 1:
-                purchase_warnings.append(f"Item {item_code}: invalid or missing conversion factor '{chosen_item_conversion_factor}' between purchase UOM '{chosen_item_purchase_uom}' and stock UOM '{chosen_item_stock_uom}'.")
-
-        # Now append separate PO line for this original material request row using chosen_rate and chosen quotation
-        already_used_sq_item = quotation_choice_cache[item_code].get('sq_item_used')
-        po_item_row = {
-            'item_code': original_item_code,
-            'item_name': original_row.get('item_name'),
-            'schedule_date': getdate(original_row.get('schedule_date') or today_date),
-            'qty': flt(original_row.get('qty') or 0),
-            'rate': flt(quotation_choice_cache.get(item_code, {}).get('rate', chosen_rate)),
-            'uom': chosen_item_purchase_uom or original_row.get('uom') or chosen_item_stock_uom,
-            'stock_uom': chosen_item_stock_uom,
-            'conversion_factor': chosen_item_conversion_factor,
-            'material_request': original_row.get('material_request'),
-            'material_request_item': original_row.get('material_request_item'),
-            'external_quotation_reference': quotation_choice_cache[item_code].get('external_reference')
-        }
-        # set supplier quotation link only once
-        if not already_used_sq_item:
-            po_item_row.update({
-                'supplier_quotation': quotation_choice_cache[item_code].get('supplier_quotation'),
-                'supplier_quotation_item': quotation_choice_cache[item_code].get('supplier_quotation_item')
-            })
-            quotation_choice_cache[item_code]['sq_item_used'] = True
-        po_doc.append('items', po_item_row)
-
-    # add inbound freight item (use last schedule_date if set)
-    last_schedule_date = today_date
+    # add inbound freight item
+    last_schedule_date = getdate(today())
     if po_doc.items:
         try:
-            last_schedule_date = getdate(po_doc.items[-1].schedule_date or today_date)
+            last_schedule_date = getdate(po_doc.items[-1].schedule_date or today())
         except Exception:
-            last_schedule_date = today_date
+            last_schedule_date = getdate(today())
     po_doc.append('items', {
         'item_code': get_inbound_freight_item(),
         'item_name': 'Inbound Freight',
@@ -802,7 +842,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
     Seqlab:
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-11-27_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-01-14_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
 
     AG:
     bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_Lieferantenartikel_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_item_mapping_Microsynth_AG.txt', 'supplier_mapping_file': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_mapping_Microsynth_AG.txt', 'company': 'Microsynth AG', 'update_existing_items': True}"
