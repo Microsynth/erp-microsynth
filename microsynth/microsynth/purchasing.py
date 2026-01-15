@@ -728,8 +728,9 @@ FLOOR_MAPPING_PER_COMPANY = {
         '14': '4th Floor'
     },
     'Microsynth Seqlab GmbH': {
-        '00': 'Ground Floor',
-        '01': 'First Floor'
+        '00': 'Ground Floor Seqlab',
+        '01': '1st Floor Seqlab',
+        '02': '2nd Floor Seqlab'
     }
 }
 
@@ -789,7 +790,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
     if not room:
         return frappe.get_doc("Location", floor_name)
 
-    # Room — exact structured match "{floor}-{room}-..."
+    # Room - exact structured match
     floor_str = str(floor).strip()
     room_str = str(room).strip()
 
@@ -800,7 +801,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
         frappe.throw(f"Invalid room '{room}': must be exactly two digits (e.g. '03', '20').")
 
     if company == 'Microsynth Seqlab GmbH':
-        pattern = f"{floor_str}.{room_str}"
+        pattern = f"{floor_str}.{room_str}%"
     else:
         pattern = f"{floor_str}-{room_str}%"
 
@@ -844,7 +845,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
 def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file, company='Microsynth AG', expected_line_length=43, update_existing_items=False):
     """
     Seqlab:
-    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-01-14_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-01-15_Lieferantenartikel_Seqlab.csv', 'output_filepath': '/mnt/erp_share/JPe/2025-11-27_DEV_supplier_item_mapping_Seqlab.txt', 'supplier_mapping_file': '/mnt/erp_share/JPe/2025-11-27_2_supplier_mapping_Seqlab_DEV-ERP.txt', 'company': 'Microsynth Seqlab GmbH', 'update_existing_items': False}"
 
     AG:
     bench execute microsynth.microsynth.purchasing.import_supplier_items --kwargs "{'input_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_Lieferantenartikel_Microsynth_AG.csv', 'output_filepath': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_item_mapping_Microsynth_AG.txt', 'supplier_mapping_file': '/mnt/erp_share/Migration/Purchasing/2025-12-01_supplier_mapping_Microsynth_AG.txt', 'company': 'Microsynth AG', 'update_existing_items': True}"
@@ -923,15 +924,15 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             if to_import == 'nein':
                 continue
             # check if item was ordered from 2021 to 2025
-            try:
-                ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0)])
-            except ValueError as err:
-                print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
-                continue
-            if ordered_2021_2025 == 0 and not line[33].strip() and not internal_code:
-                # do not import Items that were not ordered from 2021 to 2024 and have no "EAN"
-                print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024 and has no 'EAN'. Going to continue with the next supplier item.")
-                continue
+            # try:
+            #     ordered_2021_2025 = sum([int(line[29].strip() or 0), int(line[30].strip() or 0), int(line[31].strip() or 0), int(line[32].strip() or 0)])
+            # except ValueError as err:
+            #     print(f"ERROR: Item with Index {item_id} has the following non-integer order quantities: {line[29:33]} ({err}). Going to continue with the next supplier item.")
+            #     continue
+            # if ordered_2021_2025 == 0 and not line[33].strip() and not internal_code:
+            #     # do not import Items that were not ordered from 2021 to 2024 and have no "EAN"
+            #     print(f"INFO: Item with Index {item_id} was not ordered from 2021 to 2024 and has no 'EAN'. Going to continue with the next supplier item.")
+            #     continue
 
             if not item_name:
                 print(f"ERROR: Item with Index {item_id} has no Item name. Going to continue with the next supplier item.")
@@ -965,6 +966,8 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
             if stock_uom and stock_uom not in known_uoms:
                 print(f"ERROR: Item with Index {item_id} has unknown Stock UOM '{stock_uom}'. Going to continue with the next supplier item.")
                 continue
+            if pack_uom == 'Units':
+                pack_uom = 'Reaction Units'
             if pack_uom and pack_uom not in known_uoms:
                 print(f"ERROR: Item with Index {item_id} has unknown Pack UOM '{pack_uom}'. Going to continue with the next supplier item.")
                 continue
