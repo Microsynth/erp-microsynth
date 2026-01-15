@@ -212,7 +212,7 @@ function open_search_dialog(report) {
     setTimeout(() => {
         let modals = document.getElementsByClassName('modal-dialog');
         if (modals.length > 0) {
-            modals[modals.length - 1].style.width = '1200px';
+            modals[modals.length - 1].style.width = '1400px';
         }
     }, 300);
 
@@ -298,6 +298,7 @@ function open_search_dialog(report) {
                                 <th>${__('Pack UOM')}</th>
                                 <th>${__('Material Code')}</th>
                                 <th>${__('Last Purchase Rate [CHF]')}</th>
+                                <th>${__('Last Order Date')}</th>
                                 <th>${__('Supplier')}</th>
                                 <th>${__('Supplier Item Code')}</th>
                             </tr>
@@ -313,7 +314,12 @@ function open_search_dialog(report) {
                             <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
                             <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
                             <td>${frappe.utils.escape_html(it.material_code || '')}</td>
-                            <td>${frappe.utils.escape_html(it.last_purchase_rate || '')}</td>
+                            <td style="text-align: right;">${frappe.utils.escape_html(it.last_purchase_rate || '')}</td>
+                            <td>
+                                ${it.last_order_date
+                                    ? frappe.datetime.str_to_user(it.last_order_date)
+                                    : ''}
+                            </td>
                             <td>${frappe.utils.escape_html(it.supplier || '')}: ${frappe.utils.escape_html(it.supplier_name || '')}</td>
                             <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
                         </tr>
@@ -388,7 +394,6 @@ function open_confirmation_dialog(selected, report) {
                         line-height:1.42857143;
                         color:#495057;
                         background-color:#f4f5f6;
-                        border:1px solid #d1d8dd;
                         border-radius:4px;
                         font-size:13px;
                         white-space:nowrap;
@@ -412,20 +417,22 @@ function open_confirmation_dialog(selected, report) {
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
             { fieldtype: 'Int', label: __('Quantity regarding Purchase UOM'), fieldname: 'qty', reqd: true, default: 1, min: 1 },
+            { fieldtype: 'Data', label: __('Stock UOM'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
+
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') },
             { fieldtype: 'Data', label: __('Purchase UOM'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
-            { fieldtype: 'Data', label: __('Stock UOM'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
+            { fieldtype: 'Data', label: __('Pack Size and Pack UOM'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Microsynth Item Code'), fieldname: 'item_code', read_only: 1, default: selected.name },
             { fieldtype: 'Date', label: __('Required by'), fieldname: 'schedule_date', reqd: true, default: default_schedule_date },
             ...(conversion_field ? [conversion_field] : []),
-            { fieldtype: 'Data', label: __('Pack Size and Pack UOM'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
+            { fieldtype: 'HTML', fieldname: 'order_preview' },
 
             { fieldtype: 'Section Break' },
 
@@ -458,6 +465,39 @@ function open_confirmation_dialog(selected, report) {
         }
     });
     d.show();
+
+    function update_order_preview() {
+        const qty = cint(d.get_value('qty')) || 0;
+        const cf = selected.conversion_factor || 1;
+        const pack_size = selected.pack_size || 1;
+        const pack_uom = selected.pack_uom || selected.stock_uom || '';
+
+        const total = qty * cf * pack_size;
+
+        const text = __(
+            '<b>{0}</b> × <b>{1}</b> × <b>{2}</b> = <b>{3} {4}</b>',
+            [qty, cf, pack_size, total, pack_uom]
+        );
+
+        d.fields_dict.order_preview.$wrapper.html(`
+            <div class="frappe-control input-max-width" style="margin-top:6px;">
+                <label class="control-label" style="display:block; margin-bottom:4px;">
+                    ${__('You are going to order')}
+                </label>
+                <div class="control-value like-disabled-input" style="
+                    padding:6px 8px;
+                    background:#f4f5f6;
+                    border-radius:4px;
+                    font-size:13px;
+                ">
+                    ${text}
+                </div>
+            </div>
+        `);
+    }
+
+    d.fields_dict.qty.$input.on('input', update_order_preview);
+    update_order_preview();
     // Force wider dialog
     setTimeout(() => {
         let modals = document.getElementsByClassName('modal-dialog');

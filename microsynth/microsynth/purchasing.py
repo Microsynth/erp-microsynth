@@ -1885,7 +1885,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`stock_uom`,
             `tabItem`.`purchase_uom`,
             `tabItem`.`lead_time_days`,
-            `tabItem`.`last_purchase_rate`,
+            ROUND(`tabItem`.`last_purchase_rate`, 2) AS `last_purchase_rate`,
             CASE
                 WHEN `tabItem`.`stock_uom` IS NOT NULL
                     AND `tabItem`.`purchase_uom` IS NOT NULL
@@ -1903,10 +1903,22 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`material_code`,
             MIN(`tabItem Supplier`.`supplier`) AS `supplier`,
             MIN(`tabSupplier`.`supplier_name`) AS `supplier_name`,
-            MIN(`tabItem Supplier`.`supplier_part_no`) AS `supplier_part_no`
+            MIN(`tabItem Supplier`.`supplier_part_no`) AS `supplier_part_no`,
+            last_po.last_order_date AS last_order_date
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        LEFT JOIN (
+            SELECT
+                poi.item_code,
+                MAX(po.transaction_date) AS last_order_date
+            FROM `tabPurchase Order Item` poi
+            INNER JOIN `tabPurchase Order` po
+                ON po.name = poi.parent
+            WHERE po.docstatus = 1
+            GROUP BY poi.item_code
+        ) last_po
+            ON last_po.item_code = `tabItem`.`name`
         WHERE {where_clause}
         GROUP BY `tabItem`.`name`
         LIMIT 10
