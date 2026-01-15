@@ -248,7 +248,6 @@ def update_supplier_item(data):
     # If conversion_factor and purchase_uom are given, check if UOM Conversion entry exists, else create it
     if data.get("conversion_factor") and data.get("purchase_uom"):
         uom_conversion = [u for u in item.uoms if u.uom == data["purchase_uom"]]
-        frappe.log_error(f"UOM Conversion entries found: {uom_conversion}", "update_supplier_item_debug")
         if uom_conversion:
             uom_conversion[0].conversion_factor = data["conversion_factor"]
         else:
