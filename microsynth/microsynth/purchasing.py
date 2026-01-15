@@ -20,6 +20,7 @@ from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
 
+from microsynth.microsynth.report.material_request_overview.material_request_overview import get_data as get_requested_items
 
 SUPPORTED_BUYING_CURRENCIES = ['CHF', 'EUR', 'USD', 'GBP']
 
@@ -352,11 +353,12 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
 
 @frappe.whitelist()
 def create_po_from_open_mr(filters):
-    from erpnext.stock.get_item_details import get_item_details
-    from microsynth.microsynth.report.material_request_overview.material_request_overview import get_data as get_items
+    """
+    create_po_from_open_mr
+    """
     if type(filters) == str:
         filters = json.loads(filters)
-    items = get_items(filters)
+    items = get_requested_items(filters)
     currencies = {item.get('currency') for item in items if item.get('currency') is not None}
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
     if len(currencies) > 1:
@@ -375,13 +377,13 @@ def create_po_from_open_mr(filters):
     else:
         currency = supplier_doc.default_currency
 
-    # Check for existing Draft POs
+    # Check for existing Draft POs and exit if there are some drafts
     existing_po_drafts = frappe.get_all(
         'Purchase Order',
         filters={
             'supplier': filters.get('supplier'),
             'company': filters.get('company'),
-            'status': 'Draft'
+            'docstatus': 0
         },
         fields=['name']
     )
@@ -2106,6 +2108,12 @@ def get_purchase_tax_template(supplier, company):
     """
     bench execute microsynth.microsynth.purchasing.get_purchase_tax_template --kwargs "{'supplier': 'S-01460', 'company': 'Microsynth AG'}"
     """
+    # TODO implement fallback, see also batch_invoice_processing.create_invoice (settings --> Batch Invoice Process Settings)
+    # Algorithmus
+    # * Assumption: use for materials because it's in the long process with material requests
+    # * check first if there is a setting on the supplier
+    # * else use tax matrix
+    #    * Material/Service <- Item.is_stock_item (use first item, validate the item group?)
     tax_templates = frappe.get_all("Party Account",
         filters={
             'parent': supplier,
