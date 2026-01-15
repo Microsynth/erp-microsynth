@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import json
 import frappe
 from frappe import _
+from frappe.utils import flt
 from microsynth.microsynth.purchasing import get_location_path_string
 
 
@@ -199,4 +200,120 @@ def create_purchasing_item(data):
 
     item.insert(ignore_permissions=True)
     frappe.db.commit()
+    return item.name
+
+
+@frappe.whitelist()
+def update_supplier_item(data):
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except Exception:
+            frappe.throw(_("Invalid JSON input"))
+
+    item_code = data.get('item_code')
+    if not item_code:
+        frappe.throw(_("Missing item_code"))
+
+    # Check permissions
+    if not frappe.has_permission("Item", "write", item_code):
+        frappe.throw(_("Not permitted to edit this Item"))
+
+    # --- Numeric checks ---
+    numeric_fields = {
+        "pack_size": 0,
+        "conversion_factor": 0,
+        "shelf_life_in_years": 0,
+        "lead_time_days": 0,
+        "min_order_qty": 0,
+        "safety_stock": 0,
+        "price_list_rate": 0
+    }
+    for field, min_val in numeric_fields.items():
+        if field in data:
+            try:
+                val = flt(data[field])
+                if val < min_val:
+                    frappe.throw(_("{0} must be ≥ {1}").format(field.replace("_", " ").title(), min_val))
+            except Exception:
+                frappe.throw(_("Invalid value for {0}").format(field.replace("_", " ").title()))
+
+    item = frappe.get_doc("Item", item_code)
+
+    conversion_factor = flt(data.get("conversion_factor", 1))
+    if data.get("stock_uom") and data.get("purchase_uom") and data.get("stock_uom") != data.get("purchase_uom"):
+        if abs(conversion_factor) < 0.0001 or abs(conversion_factor - 1) < 0.0001:
+            frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase UOM differs from Stock UOM."))
+
+    # If conversion_factor and purchase_uom are given, check if UOM Conversion entry exists, else create it
+    if data.get("conversion_factor") and data.get("purchase_uom"):
+        uom_conversion = [u for u in item.uoms if u.uom == data["purchase_uom"]]
+        frappe.log_error(f"UOM Conversion entries found: {uom_conversion}", "update_supplier_item_debug")
+        if uom_conversion:
+            uom_conversion[0].conversion_factor = data["conversion_factor"]
+        else:
+            item.append("uoms", {
+                "uom": data["purchase_uom"],
+                "conversion_factor": data["conversion_factor"]
+            })
+
+    # Update allowed fields on Item
+    fields_to_update = [
+        "material_code", "pack_size", "pack_uom", "purchase_uom", "stock_uom",
+        "safety_stock", "lead_time_days", "min_order_qty"
+    ]
+
+    for field in fields_to_update:
+        if field in data:
+            setattr(item, field, data[field])
+
+    # Shelf life in years → shelf_life_in_days sync (if provided)
+    if "shelf_life_in_years" in data:
+        try:
+            shelf_years = flt(data.get("shelf_life_in_years", 0))
+            if shelf_years <= 0:
+                frappe.throw(_("Shelf Life in Years must be greater than 0"))
+            item.shelf_life_in_days = round(shelf_years * 365)
+        except Exception:
+            frappe.throw(_("Invalid value for Shelf Life in Years"))
+
+    # Update price_list_rate (Item Price) only if it changed
+    if "price_list_rate" in data:
+        price_doc = frappe.db.get_value("Item Price", {"item_code": item_code, "min_qty": 1}, "name")
+        if price_doc:
+            price = frappe.get_doc("Item Price", price_doc)
+            if abs(price.price_list_rate - data["price_list_rate"]) > 0.0001:
+                price.price_list_rate = data["price_list_rate"]
+                price.save()
+        else:
+            # Create price if none exists (optional)
+            price = frappe.new_doc("Item Price")
+            price.item_code = item_code
+            price.price_list = frappe.db.get_value("Supplier", data.get("supplier"), "default_price_list")
+            price.price_list_rate = data["price_list_rate"]
+            price.min_qty = 1
+            price.insert()
+
+    # Update Supplier Item child table entry
+    if data.get("supplier_part_no") or data.get("supplier"):
+        # Find the Supplier Item child row
+        supplier_item = None
+        for si in item.get("supplier_items"):
+            if si.supplier == data.get("supplier") or si.supplier_part_no == data.get("supplier_part_no"):
+                supplier_item = si
+                break
+
+        if not supplier_item and data.get("supplier") and data.get("supplier_part_no"):
+            # Create new supplier item child row if not found
+            supplier_item = item.append("supplier_items", {})
+
+        if supplier_item:
+            if "supplier_part_no" in data:
+                supplier_item.supplier_part_no = data["supplier_part_no"]
+            if "supplier" in data:
+                supplier_item.supplier = data["supplier"]
+            if "substitute_status" in data:
+                supplier_item.substitute_status = data["substitute_status"]
+
+    item.save()
     return item.name
