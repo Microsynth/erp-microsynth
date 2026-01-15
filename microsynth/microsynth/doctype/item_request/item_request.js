@@ -310,7 +310,14 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Link',
                 options: 'UOM',
                 reqd: 1,
-                default: frm.doc.uom
+                default: frm.doc.uom,
+                get_query: function () {
+                    return {
+                        'filters': [
+                            ['name', 'NOT IN', ['Carton', 'Reaction Units', 'L', 'kg', 'g', 'h', 'µmol', 'cm', 'm', 'µl', 'ml', 'ng', 'µg', 'mg']]
+                        ]
+                    }
+                }
             },
             {
                 label: 'Pack UOM',

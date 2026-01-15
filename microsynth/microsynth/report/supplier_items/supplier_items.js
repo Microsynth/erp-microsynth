@@ -122,7 +122,14 @@ function create_new_supplier_item() {
                 fieldname: 'stock_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
-                reqd: 1
+                reqd: 1,
+                get_query: function () {
+                    return {
+                        'filters': [
+                            ['name', 'NOT IN', ['Carton', 'Reaction Units', 'L', 'kg', 'g', 'h', 'µmol', 'cm', 'm', 'µl', 'ml', 'ng', 'µg', 'mg']]
+                        ]
+                    }
+                }
             },
             {
                 label: 'Pack UOM',
