@@ -29,6 +29,8 @@ def get_columns():
         {"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 100},
         {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
         {"label": _("Locations"), "fieldname": "locations", "fieldtype": "Data", "width": 500},
+        {"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 250},
+        #{"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 1},
     ]
 
 
@@ -219,7 +221,7 @@ def update_supplier_item(data):
     if not frappe.has_permission("Item", "write", item_code):
         frappe.throw(_("Not permitted to edit this Item"))
 
-    # --- Numeric checks ---
+    # Numeric checks
     numeric_fields = {
         "pack_size": 0,
         "conversion_factor": 0,
@@ -237,6 +239,8 @@ def update_supplier_item(data):
                     frappe.throw(_("{0} must be ≥ {1}").format(field.replace("_", " ").title(), min_val))
             except Exception:
                 frappe.throw(_("Invalid value for {0}").format(field.replace("_", " ").title()))
+
+    supplier = data.get("supplier").split(":")[0] if data.get("supplier") else None
 
     item = frappe.get_doc("Item", item_code)
 
@@ -258,15 +262,15 @@ def update_supplier_item(data):
 
     # Update allowed fields on Item
     fields_to_update = [
-        "material_code", "pack_size", "pack_uom", "purchase_uom", "stock_uom",
-        "safety_stock", "lead_time_days", "min_order_qty"
+        "item_name", "material_code", "pack_size", "pack_uom", "purchase_uom",
+        "stock_uom", "safety_stock", "lead_time_days", "min_order_qty"
     ]
 
     for field in fields_to_update:
         if field in data:
             setattr(item, field, data[field])
 
-    # Shelf life in years → shelf_life_in_days sync (if provided)
+    # Shelf life in years --> shelf_life_in_days (if provided)
     if "shelf_life_in_years" in data:
         try:
             shelf_years = flt(data.get("shelf_life_in_years", 0))
@@ -277,40 +281,46 @@ def update_supplier_item(data):
             frappe.throw(_("Invalid value for Shelf Life in Years"))
 
     # Update price_list_rate (Item Price) only if it changed
-    if "price_list_rate" in data:
-        price_doc = frappe.db.get_value("Item Price", {"item_code": item_code, "min_qty": 1}, "name")
-        if price_doc:
-            price = frappe.get_doc("Item Price", price_doc)
+    if "price_list_rate" in data and supplier and data.get("currency"):
+        price_list = frappe.db.get_value("Supplier", supplier, "default_price_list")
+        item_prices = frappe.db.get_all("Item Price", filters={"item_code": item_code, "min_qty": 1, "currency": data.get("currency"), "price_list": price_list}, fields=["name"])
+        if len(item_prices) == 1:
+            price = frappe.get_doc("Item Price", item_prices[0].get("name"))
             if abs(price.price_list_rate - data["price_list_rate"]) > 0.0001:
                 price.price_list_rate = data["price_list_rate"]
                 price.save()
+        elif len(item_prices) > 1:
+            # Should not happen
+            frappe.log_error(f"Multiple Item Price entries found for Item {item_code} with min_qty 1 in currency {data.get('currency')} on Price List {price_list}. Cannot update price.", "Supplier Items Report")
+            pass
         else:
             # Create price if none exists (optional)
             price = frappe.new_doc("Item Price")
             price.item_code = item_code
-            price.price_list = frappe.db.get_value("Supplier", data.get("supplier"), "default_price_list")
+            price.price_list = price_list
             price.price_list_rate = data["price_list_rate"]
+            price.currency = data.get("currency")
             price.min_qty = 1
             price.insert()
 
     # Update Supplier Item child table entry
-    if data.get("supplier_part_no") or data.get("supplier"):
+    if data.get("supplier_part_no") or supplier:
         # Find the Supplier Item child row
         supplier_item = None
         for si in item.get("supplier_items"):
-            if si.supplier == data.get("supplier") or si.supplier_part_no == data.get("supplier_part_no"):
+            if si.supplier == supplier or si.supplier_part_no == data.get("supplier_part_no"):
                 supplier_item = si
                 break
 
-        if not supplier_item and data.get("supplier") and data.get("supplier_part_no"):
+        if not supplier_item and supplier and data.get("supplier_part_no"):
             # Create new supplier item child row if not found
             supplier_item = item.append("supplier_items", {})
 
         if supplier_item:
             if "supplier_part_no" in data:
                 supplier_item.supplier_part_no = data["supplier_part_no"]
-            if "supplier" in data:
-                supplier_item.supplier = data["supplier"]
+            if supplier:
+                supplier_item.supplier = supplier
             if "substitute_status" in data:
                 supplier_item.substitute_status = data["substitute_status"]
 
