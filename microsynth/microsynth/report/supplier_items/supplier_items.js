@@ -153,7 +153,7 @@ function build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price,
     ];
 
     let dialog = new frappe.ui.Dialog({
-        title: __('Edit Supplier Item (Beta-Mode, check carefully)'),
+        title: __('Edit Supplier Item'),
         fields: dialog_fields,
         primary_action_label: __('Save'),
         primary_action(values) {

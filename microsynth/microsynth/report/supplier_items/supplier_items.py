@@ -58,7 +58,7 @@ def get_data(filters):
         values["storage_location"] = filters["storage_location"]
 
     query = """
-        SELECT
+        SELECT DISTINCT
             `tabItem`.`name` AS item_code,
             `tabItem`.`item_name`,
             `tabItem`.`pack_size`,
