@@ -1877,7 +1877,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
     # SQL query joins Item with Supplier and Item Supplier tables
     # Aggregates supplier data per item (MIN used to get the first entry per group)
     query = f"""
-        SELECT
+        SELECT DISTINCT
             `tabItem`.`name`,
             `tabItem`.`item_name`,
             `tabItem`.`pack_size`,
@@ -1901,9 +1901,10 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
                 ELSE 1
             END AS `conversion_factor`,
             `tabItem`.`material_code`,
-            MIN(`tabItem Supplier`.`supplier`) AS `supplier`,
-            MIN(`tabSupplier`.`supplier_name`) AS `supplier_name`,
-            MIN(`tabItem Supplier`.`supplier_part_no`) AS `supplier_part_no`,
+            `tabItem Supplier`.`supplier` AS `supplier`,
+            `tabSupplier`.`supplier_name` AS `supplier_name`,
+            `tabItem Supplier`.`supplier_part_no` AS `supplier_part_no`,
+            `tabItem Supplier`.`substitute_status` AS `substitute_status`,
             last_po.last_order_date AS last_order_date
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
@@ -1920,7 +1921,6 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         ) last_po
             ON last_po.item_code = `tabItem`.`name`
         WHERE {where_clause}
-        GROUP BY `tabItem`.`name`
         LIMIT 10
     """
     items = frappe.db.sql(query, values, as_dict=True)

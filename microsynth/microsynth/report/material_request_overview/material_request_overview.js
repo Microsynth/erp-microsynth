@@ -196,9 +196,34 @@ function open_search_dialog(report) {
             const selected = dialog.selected_item;
             if (!selected) {
                 if (document.activeElement.getAttribute('data-fieldtype') !== 'Data') {
-                    frappe.msgprint(__('Please select an Item'));
+                    frappe.msgprint(__('Please select one Item'));
                 }
                 update_list();
+                return;
+            }
+            // Check if the Supplier has either no substitute_status or substitute_status "Verified".
+            // If not, show an error that the purchasing department should be contacted.
+            if (
+                selected.substitute_status &&
+                selected.substitute_status !== 'Verified'
+            ) {
+                frappe.msgprint({
+                    'title': __('Material Request not allowed'),
+                    'indicator': 'red',
+                    'message': __(
+                        'The Supplier {0}: {1} has Substitute Status <b>{2}</b> for Item {3}: {4}.<br><br>' +
+                        'Material Requests are only allowed if the Supplier has substitute status ' +
+                        '"Verified" or no substitute status for the Item.<br><br>' +
+                        'Please select another combination of Item and Supplier or contact the Purchasing department.',
+                        [
+                            selected.supplier,
+                            selected.supplier_name,
+                            selected.substitute_status,
+                            selected.name,
+                            selected.item_name
+                        ]
+                    )
+                });
                 return;
             }
             dialog.hide();
@@ -239,7 +264,7 @@ function open_search_dialog(report) {
         // check if any filter set
         const filters_set = ['item_name_part','material_code','supplier_name','supplier_part_no'].some(fn => f[fn].get_value());
         if (!filters_set) {
-            f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
+            f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
             return;
         }
         frappe.call({
@@ -250,8 +275,14 @@ function open_search_dialog(report) {
                 'supplier_name': f.supplier_name.get_value(),
                 'supplier_part_no': f.supplier_part_no.get_value()
             },
-            callback: function(r) {
+            'callback': function(r) {
                 const items = r.message || [];
+                const variantMap = {};
+                items.forEach(it => {
+                    const key = `${it.name}::${it.supplier || ''}`;
+                    variantMap[key] = it;
+                });
+                dialog._variantMap = variantMap;
                 if (items.length === 0) {
                     // No results but filters set -> show "Request Item" button
                     f.results.$wrapper.html(`
@@ -306,24 +337,38 @@ function open_search_dialog(report) {
                         <tbody>
                 `;
                 items.forEach(it => {
-                    html += `
-                        <tr>
-                            <td><input type="radio" name="select_item" value="${it.name}"></td>
-                            <td>${frappe.utils.escape_html(it.name)}</td>
-                            <td>${frappe.utils.escape_html(it.item_name || '')}</td>
-                            <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
-                            <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
-                            <td>${frappe.utils.escape_html(it.material_code || '')}</td>
-                            <td style="text-align: right;">${frappe.utils.escape_html(it.last_purchase_rate || '')}</td>
-                            <td>
-                                ${it.last_order_date
-                                    ? frappe.datetime.str_to_user(it.last_order_date)
-                                    : ''}
-                            </td>
-                            <td>${frappe.utils.escape_html(it.supplier || '')}: ${frappe.utils.escape_html(it.supplier_name || '')}</td>
-                            <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
-                        </tr>
-                    `;
+                    const key = `${it.name}::${it.supplier || ''}`;
+
+                        html += `
+                            <tr>
+                                <td>
+                                    <input type="radio"
+                                        name="select_item"
+                                        value="${frappe.utils.escape_html(key)}">
+                                </td>
+                                <td>${frappe.utils.escape_html(it.name)}</td>
+                                <td>${frappe.utils.escape_html(it.item_name || '')}</td>
+                                <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
+                                <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
+                                <td>${frappe.utils.escape_html(it.material_code || '')}</td>
+                                <td style="text-align: right;">
+                                    ${frappe.utils.escape_html(it.last_purchase_rate || '')}
+                                </td>
+                                <td>
+                                    ${it.last_order_date
+                                        ? frappe.datetime.str_to_user(it.last_order_date)
+                                        : ''}
+                                </td>
+                                <td>
+                                    ${frappe.utils.escape_html(it.supplier || '')}:
+                                    ${frappe.utils.escape_html(it.supplier_name || '')}
+                                    ${it.substitute_status
+                                        ? ` (${frappe.utils.escape_html(it.substitute_status)})`
+                                        : ''}
+                                </td>
+                                <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
+                            </tr>
+                        `;
                 });
                 html += '</tbody></table>';
                 const max_display_rows = 10;
@@ -336,9 +381,12 @@ function open_search_dialog(report) {
                 }
                 f.results.$wrapper.html(html);
 
-                f.results.$wrapper.find('input[type=radio][name=select_item]').on('change', function() {
-                    dialog.selected_item = items.find(i => i.name === $(this).val());
-                });
+                f.results.$wrapper
+                    .find('input[type=radio][name=select_item]')
+                    .on('change', function () {
+                        const key = $(this).val();
+                        dialog.selected_item = dialog._variantMap[key];
+                    });
             }
         });
     }
@@ -475,7 +523,7 @@ function open_confirmation_dialog(selected, report) {
         const total = qty * cf * pack_size;
 
         const text = __(
-            '<b>{0}</b> × <b>{1}</b> × <b>{2}</b> = <b>{3} {4}</b>',
+            '<b>{0} × {1} × {2} = {3} {4}</b>',
             [qty, cf, pack_size, total, pack_uom]
         );
 
