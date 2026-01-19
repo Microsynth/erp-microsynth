@@ -1682,18 +1682,21 @@ def create_batches_and_assign(purchase_receipt, batch_data):
     purchase_receipt_doc.save()
 
 
-def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, create_new_items=False, supplier_id=None, dry_run=True):
+def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, create_new_items=False, supplier_id=None, dry_run=True, verbose=False):
     """
-    bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'PUR_Merck', 'currency': 'CHF', 'column_assignment': {'supplier_part_no': 0, 'item_name': 1, 'rate': 3}, 'input_filepath': '/mnt/erp_share/JPe/2025-06-04_PUR_Merck_prices.csv'}"
+    Import supplier prices from a CSV file into a specified price list.
+    Does assume min_qty = 1 for all prices.
+
+    bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'Standard Buying CHF', 'currency': 'CHF', 'column_assignment': {'supplier_part_no': 0, 'item_name': 1, 'rate': 7}, 'input_filepath': '/mnt/erp_share/Migration/Purchasing/BioConcept_Preisliste_2026_New_England_BioLabs.csv', 'expected_line_length': 8, 'create_new_items': False, 'supplier_id': 'S-00654', 'dry_run': True}"
     """
     if type(column_assignment) == str:
         column_assignment = json.loads(column_assignment)
     if not 'supplier_part_no' in column_assignment or not 'rate' in column_assignment:
-        print("Please provide the column index of supplier_part_no and rate in the column_assignment.")
+        print("ERROR: Please provide the column index of supplier_part_no and rate in the column_assignment.")
         return
     if not frappe.db.exists('Price List', price_list_name):
         if dry_run:
-            print(f"Would create enabled Buying Price List '{price_list_name}' with Currency {currency}.")
+            print(f"INFO: Would create enabled Buying Price List '{price_list_name}' with Currency {currency}.")
         else:
             price_list_doc = frappe.get_doc({
                 'doctype': 'Price List',
@@ -1703,7 +1706,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                 'enabled': 1,
                 'currency': currency
             }).insert()
-            print(f"Create enabled Buying Price List '{price_list_doc.name}' with Currency {currency}.")
+            print(f"INFO: Created enabled Buying Price List '{price_list_doc.name}' with Currency {currency}.")
     else:
         print(f"Price List '{price_list_name}' already exists. Going to extend it.")
     with open(input_filepath) as file:
@@ -1720,7 +1723,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
             # try to find Item according to Supplier Part Number
             item_codes = frappe.get_all(
                 "Item Supplier",
-                filters={"supplier_part_no": supplier_part_no},
+                filters={"supplier": supplier_id, "supplier_part_no": supplier_part_no} if supplier_id else {"supplier_part_no": supplier_part_no},
                 fields=["parent"],  # 'parent' is the Item code
                 distinct=True
             )
@@ -1748,32 +1751,59 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                             })
                         item.insert()
                         item_code = item.item_code
-                        print(f"Created the new Item {item_code} for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
+                        print(f"INFO: Created the new Item {item_code} for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
                     else:
-                        print(f"Would create a new Item for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
+                        print(f"INFO: Would create a new Item for the given Supplier Part Number '{supplier_part_no}' ({item_name[:140]})")
                 else:
-                    print(f"Found no Item for the given Supplier Part Number '{supplier_part_no}' and {create_new_items=}. Going to continue.")
+                    if verbose:
+                        print(f"ERROR: Found no Item for the given Supplier Part Number '{supplier_part_no}' and {create_new_items=}. Going to continue.")
                     continue
             elif len(item_code_list) > 1:
-                print(f"Found the following {len(item_code_list)} Items for the given Supplier Part Number '{supplier_part_no}': {item_code_list}. Going to continue.")
+                print(f"ERROR: Found the following {len(item_code_list)} Items for the given Supplier Part Number '{supplier_part_no}': {item_code_list}. Going to continue.")
                 continue
             elif len(item_code_list) == 1:
                 item_code = item_code_list[0]
-            if dry_run:
-                print(f"Would create an Item Price with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+            # check if Item Price already exists
+            existing_item_prices = frappe.get_all(
+                "Item Price",
+                filters={
+                    "item_code": item_code,
+                    "price_list": price_list_name,
+                    "min_qty": 1,
+                    "currency": currency
+                },
+                fields=["name", "price_list_rate"]
+            )
+            if len(existing_item_prices) == 0:
+                if dry_run:
+                    print(f"INFO: Would create an Item Price with the following properties for Supplier Part Number {supplier_part_no}: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+                else:
+                    item_price_doc = frappe.get_doc({
+                        'doctype': 'Item Price',
+                        'item_code': item_code,
+                        'min_qty': 1,
+                        'price_list': price_list_name,
+                        'buying': 0,
+                        'selling': 1,
+                        'currency': currency,
+                        'price_list_rate': rate
+                    })
+                    item_price_doc.insert()
+                    print(f"INFO: Created Item Price {item_price_doc.name} with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+            elif len(existing_item_prices) == 1 and abs(existing_item_prices[0]['price_list_rate'] - rate) > 0.01:
+                if dry_run:
+                    print(f"INFO: Would update existing Item Price {existing_item_prices[0]['name']} for {item_code} with Supplier Part Number {supplier_part_no} on Price List {price_list_name} from {existing_item_prices[0]['price_list_rate']} to new Rate {rate} {currency}.")
+                else:
+                    item_price_doc = frappe.get_doc("Item Price", existing_item_prices[0]['name'])
+                    item_price_doc.price_list_rate = rate
+                    item_price_doc.save()
+                    print(f"INFO: Updated existing Item Price {item_price_doc.name} for {item_code} with Supplier Part Number {supplier_part_no} on Price List {price_list_name} from {existing_item_prices[0]['price_list_rate']} to new Rate {rate} {currency}.")
+            elif len(existing_item_prices) == 1:
+                print(f"INFO: Item Price {existing_item_prices[0]['name']} for {item_code} with Supplier Part Number {supplier_part_no} on Price List {price_list_name} already has the correct Rate {rate} {currency}. Going to continue.")
             else:
-                item_price_doc = frappe.get_doc({
-                    'doctype': 'Item Price',
-                    'item_code': item_code,
-                    'min_qty': 1,
-                    'price_list': price_list_name,
-                    'buying': 0,
-                    'selling': 1,
-                    'currency': currency,
-                    'price_list_rate': rate
-                })
-                item_price_doc.insert()
-                print(f"Created Item Price {item_price_doc.name} with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+                print(f"ERROR: Found the following {len(existing_item_prices)} Item Prices for Item '{item_code}' with Supplier Part Number {supplier_part_no} in Price List '{price_list_name}': {', '.join(ip['name'] for ip in existing_item_prices)}. Going to continue.")
+                continue
+    print("INFO: Finished processing supplier prices.")
 
 
 def get_customer_id_from_supplier(supplier_id, company):
