@@ -1000,7 +1000,7 @@ def import_supplier_items(input_filepath, output_filepath, supplier_mapping_file
                     continue
             if pack_uom and not pack_size or pack_size and not pack_uom:
                 print(f"WARNING: Got Pack Size '{pack_size}' but Pack UOM '{pack_uom}' for Item with Index {item_id} ('{item_name}').")
-            if pack_uom and pack_size and pack_size != 1.0 and (pack_uom == stock_uom or pack_uom == purchase_uom):
+            if pack_uom and pack_size and pack_size != 1.0 and pack_uom in (stock_uom, purchase_uom):
                 print(f"WARNING: Pack UOM {pack_uom} equals stock UOM {stock_uom} or purchase UOM {purchase_uom}, but Pack Size is {pack_size} for Item with Index {item_id} ('{item_name}').")
             try:
                 location = get_or_create_location(floor, room, destination, fridge_rack, company=company)
@@ -2018,11 +2018,23 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     supplier = None
     supplier_currency = None
     item_doc = frappe.get_doc("Item", item_code)
-    for entry in item_doc.supplier_items:
-        if not entry.substitute_status or (entry.substitute_status and entry.substitute_status == "Verified"):
+    if len(item_doc.supplier_items) == 1:
+        entry = item_doc.supplier_items[0]
+        supplier = entry.supplier
+        supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+    elif len(item_doc.supplier_items) > 1:
+        for entry in item_doc.supplier_items:
+            if not entry.substitute_status or (entry.substitute_status and entry.substitute_status == "Verified"):
+                supplier = entry.supplier
+                supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+                break
+        if not supplier:
+            entry = item_doc.supplier_items[0]
             supplier = entry.supplier
             supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-            break
+            frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified'. Using first supplier {supplier}.", "purchasing.create_material_request")
+    else:
+        frappe.throw(f"Item {item_code} is not assigned to any Supplier, unable to create a Material Request. Please contact the purchasing department.")
     if (not currency or not rate) and supplier_currency:
         currency = supplier_currency
     elif supplier and supplier_currency and currency and supplier_currency != currency:
@@ -2482,6 +2494,17 @@ def get_items_using_supplier(supplier):
 
 @frappe.whitelist()
 def get_purchasing_price_context(item_code):
+    """
+    Returns the purchasing price context for the given Item Code.
+    If there is exactly one supplier with a default price list, returns:
+    - price_list
+    - supplier
+    - currency
+    - existing_prices (list of dicts with min_qty and price_list_rate)
+    Otherwise, returns None for price_list and supplier, and empty list for existing_prices.
+
+    bench execute microsynth.microsynth.purchasing.get_purchasing_price_context --kwargs "{'item_code': 'P007494'}"
+    """
     supplier_rows = frappe.db.sql(
         """
         SELECT
@@ -2494,11 +2517,6 @@ def get_purchasing_price_context(item_code):
             ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
         WHERE
             `tabItem Supplier`.`parent` = %s
-            AND (
-                `tabItem Supplier`.`substitute_status` IS NULL
-                OR `tabItem Supplier`.`substitute_status` = ''
-                OR `tabItem Supplier`.`substitute_status` = 'Verified'
-            )
             AND `tabSupplier`.`default_price_list` IS NOT NULL
             AND `tabSupplier`.`default_price_list` != ''
         """,

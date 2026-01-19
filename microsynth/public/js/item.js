@@ -173,7 +173,7 @@ function add_edit_purchasing_price(frm) {
             const price_context = r.message;
             if (!price_context || !price_context.price_list) {
                 frappe.msgprint(
-                    __("Could not uniquely determine a Supplier Price List for this Item.")
+                    __("Could not uniquely determine a Supplier Price List for this Item. Please check the Supplier Items table and the Price List of the linked Supplier(s).")
                 );
                 return;
             }
