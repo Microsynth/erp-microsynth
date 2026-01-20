@@ -342,7 +342,7 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
             'material_request_item': original_row.get('material_request_item'),
             'external_quotation_reference': selection.get('external_reference')
         }
-        # set supplier quotation link only once
+        # set supplier quotation link only once because the core validation checks that a purchase order does not have multiple items (same item code) linked against the same quotation.
         already_used_sq_item = quotation_choice_cache[item_code_key].get('sq_item_used')
         if not already_used_sq_item:
             po_item_row.update({
