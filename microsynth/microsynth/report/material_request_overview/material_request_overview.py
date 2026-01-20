@@ -76,6 +76,9 @@ def get_data(filters):
         conditions += " AND `tabMaterial Request`.`transaction_date` >= %(from_date)s"
     if filters and filters.get("to_date"):
         conditions += " AND `tabMaterial Request`.`transaction_date` <= %(to_date)s"
+    if filters and filters.get("company"):
+        conditions += " AND `tabMaterial Request`.`company` = %(company)s"
+        item_request_conditions += " AND `tabItem Request`.`company` = %(company)s"
 
     if mode == "All Material Requests":
         data = frappe.db.sql(f"""
