@@ -502,6 +502,7 @@ function open_confirmation_dialog(selected, report) {
                     'schedule_date': values.schedule_date,
                     'company': values.company,
                     'comment': values.comment || '',
+                    'supplier': values.supplier
                 },
                 callback(r) {
                     if (!r.exc && r.message) {

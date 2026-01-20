@@ -115,8 +115,8 @@ def get_data(filters):
                     ORDER BY `tabPurchase Order Item`.`creation` DESC
                     LIMIT 1
                 ) AS `purchase_order`,
-                `tabItem Supplier`.`supplier`,
-                `tabSupplier`.`supplier_name`,
+                IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
+                IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
                 IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
                 `tabMaterial Request`.`comment` AS `comment`
@@ -127,7 +127,17 @@ def get_data(filters):
             LEFT JOIN `tabItem Supplier`
                 ON `tabItem Supplier`.`parent` = `tabMaterial Request Item`.`item_code`
                 AND `tabItem Supplier`.`parenttype` = 'Item'
-                AND `tabItem Supplier`.`idx` = 1
+                AND (
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') = ''
+                            AND `tabItem Supplier`.`idx` = 1
+                        )
+                    OR
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') != ''
+                            AND `tabItem Supplier`.`supplier` = `tabMaterial Request Item`.`supplier`
+                        )
+                )
             LEFT JOIN `tabSupplier`
                 ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
             WHERE
@@ -174,8 +184,8 @@ def get_data(filters):
                         ORDER BY `tabPurchase Order Item`.`creation` DESC
                         LIMIT 1
                     ) AS `purchase_order`,
-                    `tabItem Supplier`.`supplier`,
-                    `tabSupplier`.`supplier_name`,
+                    IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
+                    IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                     `tabItem Supplier`.`supplier_part_no`,
                     IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
                     `tabMaterial Request`.`comment` AS `comment`
@@ -186,7 +196,17 @@ def get_data(filters):
                 LEFT JOIN `tabItem Supplier`
                     ON `tabItem Supplier`.`parent` = `tabMaterial Request Item`.`item_code`
                     AND `tabItem Supplier`.`parenttype` = 'Item'
-                    AND `tabItem Supplier`.`idx` = 1
+                    AND (
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') = ''
+                            AND `tabItem Supplier`.`idx` = 1
+                        )
+                    OR
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') != ''
+                            AND `tabItem Supplier`.`supplier` = `tabMaterial Request Item`.`supplier`
+                        )
+                )
                 LEFT JOIN `tabSupplier`
                     ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
                 WHERE
@@ -215,8 +235,8 @@ def get_data(filters):
                 `tabMaterial Request Item`.`name` AS `material_request_item`,
                 `tabMaterial Request Item`.`rate`,
                 `tabMaterial Request Item`.`item_request_currency` AS `currency`,
-                `tabItem Supplier`.`supplier`,
-                `tabSupplier`.`supplier_name`,
+                IFNULL(`tabMaterial Request Item`.`supplier`, `tabItem Supplier`.`supplier`) AS `supplier`,
+                IFNULL(`tabMaterial Request Item`.`supplier_name`, `tabSupplier`.`supplier_name`) AS `supplier_name`,
                 `tabItem Supplier`.`supplier_part_no`,
                 IFNULL(`tabMaterial Request`.`requested_by`, `tabMaterial Request`.`owner`) AS `requested_by`,
                 `tabMaterial Request`.`comment` AS `comment`
@@ -227,7 +247,17 @@ def get_data(filters):
             LEFT JOIN `tabItem Supplier`
                 ON `tabItem Supplier`.`parent` = `tabMaterial Request Item`.`item_code`
                 AND `tabItem Supplier`.`parenttype` = 'Item'
-                AND `tabItem Supplier`.`idx` = 1
+                AND (
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') = ''
+                            AND `tabItem Supplier`.`idx` = 1
+                        )
+                    OR
+                        (
+                            IFNULL(`tabMaterial Request Item`.`supplier`, '') != ''
+                            AND `tabItem Supplier`.`supplier` = `tabMaterial Request Item`.`supplier`
+                        )
+                )
             LEFT JOIN `tabSupplier`
                 ON `tabItem Supplier`.`supplier` = `tabSupplier`.`name`
             LEFT JOIN `tabPurchase Order Item`
