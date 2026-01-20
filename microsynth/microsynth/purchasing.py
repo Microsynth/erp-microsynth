@@ -244,15 +244,15 @@ def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, 
     return selection
 
 
-def _create_po_document_for_items(material_request_rows, total_quantity_by_item_code, supplier_doc, filters, currency):
+def _create_po_document_for_items(material_request_rows, total_quantity_by_item_code, supplier_doc, company, currency):
     """Create a Purchase Order document and append PO items for each material request row.
 
     Returns: (po_doc, used_supplier_quotations, purchase_warnings)
     """
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
-        'supplier': filters.get('supplier'),
-        'company': filters.get('company'),
+        'supplier': supplier_doc.name,
+        'company': company,
         'currency': currency,
         'buying_price_list': supplier_doc.default_price_list
     })
@@ -282,7 +282,7 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
                 purchase_warnings.extend(selection.get('warnings'))
         else:
             selection = _select_quotation_for_item(
-                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, filters.get('company')
+                item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company
             )
             quotation_choice_cache[item_code_key] = selection
             if selection.get('external_reference'):
@@ -361,6 +361,8 @@ def create_po_from_open_mr(filters):
     items = get_requested_items(filters)
     currencies = {item.get('currency') for item in items if item.get('currency') is not None}
     supplier_doc = frappe.get_doc('Supplier', filters.get('supplier'))
+    company = filters.get('company')
+
     if len(currencies) > 1:
         frappe.throw(
             _("The selected Material Requests contain items with different currencies ({0}). Please create separate Purchase Orders for each currency.").format(
@@ -381,8 +383,8 @@ def create_po_from_open_mr(filters):
     existing_po_drafts = frappe.get_all(
         'Purchase Order',
         filters={
-            'supplier': filters.get('supplier'),
-            'company': filters.get('company'),
+            'supplier': supplier_doc.name,
+            'company': company,
             'docstatus': 0
         },
         fields=['name']
@@ -394,7 +396,7 @@ def create_po_from_open_mr(filters):
         ]
         frappe.throw(
             f"There are the following existing Purchase Order Drafts for the Supplier "
-            f"{filters.get('supplier')} and Company {filters.get('company')}:"
+            f"{supplier_doc.name} and Company {company}:"
             f"<ul>{''.join(links)}</ul>"
             f"Please review them before creating a new Purchase Order."
         )
