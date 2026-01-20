@@ -289,6 +289,11 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
                 used_supplier_quotations.append(
                     f"{selection.get('supplier_quotation')} ({selection.get('external_reference')})"
                 )
+            elif selection.get('supplier_quotation'):
+                purchase_warnings.append(
+                    f"Found supplier quotation {selection.get('supplier_quotation')} that does not have an external reference."
+                )
+
             if selection.get('warnings'):
                 purchase_warnings.extend(selection.get('warnings'))
 
@@ -300,7 +305,7 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
             try:
                 item_document = frappe.get_doc('Item', original_item_code)
                 chosen_item_stock_uom = item_document.get('stock_uom') or None
-                chosen_item_purchase_uom = item_document.get('purchase_uom') or chosen_item_stock_uom
+                chosen_item_purchase_uom = original_row.get('uom') or chosen_item_stock_uom       # Material Request has Item.purchase_uom as default value
                 if chosen_item_purchase_uom and chosen_item_stock_uom and chosen_item_purchase_uom != chosen_item_stock_uom:
                     conv = frappe.db.get_value(
                         'UOM Conversion Detail',
@@ -330,7 +335,7 @@ def _create_po_document_for_items(material_request_rows, total_quantity_by_item_
             'schedule_date': getdate(original_row.get('schedule_date') or today_date),
             'qty': flt(original_row.get('qty') or 0),
             'rate': flt(selection.get('rate') or original_rate),
-            'uom': chosen_item_purchase_uom or original_row.get('uom') or chosen_item_stock_uom,
+            'uom': chosen_item_purchase_uom or original_row.get('uom'),
             'stock_uom': chosen_item_stock_uom,
             'conversion_factor': chosen_item_conversion_factor,
             'material_request': original_row.get('material_request'),
