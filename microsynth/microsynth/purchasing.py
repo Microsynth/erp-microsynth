@@ -16,6 +16,8 @@ from frappe.utils import get_url_to_form, flt, getdate
 from frappe.utils.data import today
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
+from erpnext.stock.get_item_details import get_item_details
+from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
@@ -179,8 +181,8 @@ def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, 
         (supplier_doc.name, item_code), as_dict=True
     )
 
-    valid_supplier_quotations = []
-    expired_supplier_quotations = []
+    valid_quotation_items = []
+    expired_quotation_items = []
     for sq_row in (supplier_quotation_rows or []):
         try:
             valid_from_date = getdate(sq_row.get('valid_from'))
@@ -194,35 +196,33 @@ def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, 
         if valid_till_date and valid_till_date < today_date:
             is_valid_now = False
         if is_valid_now:
-            valid_supplier_quotations.append(sq_row)
+            valid_quotation_items.append(sq_row)
         else:
-            expired_supplier_quotations.append(sq_row)
+            expired_quotation_items.append(sq_row)
 
-    if valid_supplier_quotations:
-        chosen = valid_supplier_quotations[0]
-        selection['rate'] = flt(chosen.get('rate') or selection['rate'])
-        selection['supplier_quotation'] = chosen.get('supplier_quotation')
-        selection['supplier_quotation_item'] = chosen.get('supplier_quotation_item')
-        selection['external_reference'] = chosen.get('external_reference')
-        if flt(chosen.get('min_qty') or 0) > consolidated_total_qty:
-            selection['warnings'].append(
-                f"Item {item_code}: chosen Supplier Quotation {chosen.get('supplier_quotation')} requires minimum quantity {chosen.get('min_qty')}, consolidated qty {consolidated_total_qty}."
-            )
+    if valid_quotation_items:
+        for item in valid_quotation_items:
+            selection['rate'] = flt(item.get('rate') or selection['rate'])
+            selection['supplier_quotation'] = item.get('supplier_quotation')
+            selection['supplier_quotation_item'] = item.get('supplier_quotation_item')
+            selection['external_reference'] = item.get('external_reference')
+            if flt(item.get('min_qty') or 0) > consolidated_total_qty:
+                selection['warnings'].append(
+                    f"Item {item_code}: chosen Supplier Quotation {item.get('supplier_quotation')} requires minimum quantity {item.get('min_qty')}, consolidated qty {consolidated_total_qty}."
+                )
+            else:
+                break
     else:
-        if expired_supplier_quotations:
+        if expired_quotation_items:
             selection['warnings'].append(
                 f"Item {item_code}: found Supplier Quotations but none are currently valid."
             )
         # Fallback: try to derive a rate from supplier's default price list
-        from erpnext.stock.get_item_details import get_item_details
-
-        conversion_rate = 1
         if supplier_doc.default_currency != currency:
-            conversion_rate = frappe.get_value(
-                "Currency Exchange",
-                {"from_currency": supplier_doc.default_currency, "to_currency": currency},
-                "exchange_rate"
-            )
+            conversion_rate = get_exchange_rate(from_currency=supplier_doc.default_currency, to_currency=currency, company=company, date=today_date)
+        else:
+            conversion_rate = 1
+
         item_details = get_item_details({
             "item_code": item_code,
             "qty": consolidated_total_qty,
