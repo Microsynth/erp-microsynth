@@ -175,10 +175,11 @@ def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, 
         JOIN `tabSupplier Quotation` ON `tabSupplier Quotation Item`.`parent` = `tabSupplier Quotation`.`name`
         WHERE `tabSupplier Quotation`.`docstatus` = 1
             AND `tabSupplier Quotation`.`supplier` = %s
+            AND `tabSupplier Quotation`.`company` = %s
             AND `tabSupplier Quotation Item`.`item_code` = %s
         ORDER BY `tabSupplier Quotation Item`.`rate` ASC
         """,
-        (supplier_doc.name, item_code), as_dict=True
+        (supplier_doc.name, company, item_code), as_dict=True
     )
 
     valid_quotation_items = []
@@ -409,7 +410,7 @@ def create_po_from_open_mr(filters):
     # Consolidate totals and create PO
     total_quantity_by_item_code = _compute_total_quantity_by_item(items)
     po_doc, used_supplier_quotations, purchase_warnings = _create_po_document_for_items(
-        items, total_quantity_by_item_code, supplier_doc, filters, currency
+        items, total_quantity_by_item_code, supplier_doc, company, currency
     )
 
     # add inbound freight item
@@ -427,12 +428,12 @@ def create_po_from_open_mr(filters):
         'schedule_date': last_schedule_date,
     })
     # taxes
-    po_doc.taxes_and_charges = get_purchase_tax_template(po_doc.supplier, po_doc.company or 'Microsynth AG')
+    po_doc.taxes_and_charges = get_purchase_tax_template(po_doc.supplier, company or 'Microsynth AG')
     if po_doc.taxes_and_charges:
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", po_doc.taxes_and_charges)
         for tax_row in taxes_template.taxes:
             po_doc.append("taxes", tax_row)
-
+    #frappe.log_error(f"{po_doc.as_dict()}", "purchasing.create_po_from_open_mr")
     po_doc.insert()
 
     # Deduplicate lists
@@ -442,7 +443,7 @@ def create_po_from_open_mr(filters):
     if unique_purchase_warnings:
         # TODO: How to best show warnings to user on the UI side?
         frappe.log_error(f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}. Warnings: {unique_purchase_warnings}", "purchasing.create_po_from_open_mr")
-
+    frappe.log_error(f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}.", "purchasing.create_po_from_open_mr")
     return po_doc.name
 
 

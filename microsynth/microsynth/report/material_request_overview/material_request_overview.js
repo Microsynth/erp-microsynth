@@ -167,6 +167,8 @@ function create_purchase_order(filters, report) {
         'args': {
             'filters': filters
         },
+        'freeze': true,
+        'freeze_message': 'Creating Purchase Order, please be patient.',
         'callback': function(r) {
             if (r.message) {
                 frappe.set_route("Form", "Purchase Order", r.message);
