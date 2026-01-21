@@ -70,7 +70,15 @@ frappe.query_reports["Label Manager"] = {
             "fieldname": "item_code",
             "label": __("Item Code"),
             "fieldtype": "Link",
-            "options": "Item"
+            "options": "Item",
+            get_query: function () {
+                return {
+                    'filters': {
+                        'is_sales_item': 1
+                        // TODO: only show Items that have a Label Range associated
+                    }
+                };
+            }
         },
         {
             "fieldname": "registered",
@@ -254,4 +262,3 @@ function hide_column_filters() {
         container[i].appendChild(hide_column_filter_style);
     }
 }
-
