@@ -16,5 +16,10 @@ frappe.listview_settings['Material Request'] = {
         //     }
         //     frappe.new_doc('Material Request');
         // });
+    },
+    refresh: function(listview) {
+        if (frappe.user.has_role('System Manager')) return;
+        // Hide the New button
+        listview.page.btn_primary && listview.page.btn_primary.hide();
     }
 };
