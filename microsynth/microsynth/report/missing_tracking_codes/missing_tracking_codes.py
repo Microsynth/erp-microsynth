@@ -12,7 +12,7 @@ def get_columns(filters):
     return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
         {"label": _("Order Status"), "fieldname": "so_status", "fieldtype": "Data", "width": 110 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90 },
         {"label": _("Date"), "fieldname": "transaction_date", "fieldtype": "Date", "width": 80 },
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 225 },
@@ -46,6 +46,18 @@ def get_data(filters):
             `tabSales Order`.`name` AS `sales_order`,
             `tabSales Order`.`status` AS `so_status`,
             `tabSales Order`.`web_order_id`,
+            CASE
+                WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                    AND `tabSales Order`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabSales Order`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabSales Order`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             `tabSales Order`.`transaction_date`,
             `tabSales Order`.`customer`,
             `tabSales Order`.`customer_name`,
@@ -58,7 +70,17 @@ def get_data(filters):
             `tabDelivery Note`.`name` AS `delivery_note`,
             `tabDelivery Note`.`status` AS `dn_status`
         FROM `tabSales Order`
-        LEFT JOIN `tabSales Order Item`
+
+        INNER JOIN (
+            SELECT
+                `tabSales Order Item`.`parent`,
+                `tabSales Order Item`.`item_code`,
+                `tabSales Order Item`.`item_name`
+            FROM `tabSales Order Item`
+            WHERE
+                `tabSales Order Item`.`item_code` IN ({placeholders})
+                AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
+        ) AS `tabSales Order Item`
             ON `tabSales Order Item`.`parent` = `tabSales Order`.`name`
         LEFT JOIN `tabTracking Code`
             ON `tabTracking Code`.`sales_order` = `tabSales Order`.`name`
@@ -70,8 +92,6 @@ def get_data(filters):
             `tabSales Order`.`docstatus` = 1
             AND `tabSales Order`.`status` != 'Closed'
             AND `tabSales Order`.`transaction_date` >= DATE(%(from_date)s)
-            AND `tabSales Order Item`.`item_code` IN ({placeholders})
-            AND `tabSales Order Item`.`item_code` NOT IN ('1105', '1140')
             AND (
                 `tabSales Order Item`.`item_code` NOT IN ('1106', '1115')
                 OR `tabSales Order`.`transaction_date` > DATE('2025-08-27')
