@@ -60,6 +60,15 @@ frappe.ui.form.on('QM Change', {
                 setTimeout(function () {
                     add_restart_wizard_button();}, 300);
             } else {
+                // TODO: Show a custom button "Short" that sets cc_type to "short", risk_classification to "minor" and hides the wizard
+                cur_frm.add_custom_button(__('Short'), function() {
+                    cur_frm.set_value('cc_type', 'short');
+                    cur_frm.set_value('risk_classification', 'minor');
+                    load_wizard(false);
+                    setTimeout(function () {
+                        add_restart_wizard_button();
+                    }, 300);
+                });
                 var visible = true;
                 load_wizard(visible);
             }
