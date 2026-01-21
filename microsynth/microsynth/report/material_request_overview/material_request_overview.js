@@ -184,12 +184,12 @@ function open_search_dialog(report) {
     let dialog = new frappe.ui.Dialog({
         'title': __('Select Purchasing Item'),
         'fields': [
-            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
-            {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code'},
-            {fieldtype:'Button', label: __('Clear Filters'), fieldname:'clear_filters'},
-            {fieldtype:'Column Break'},
+            {fieldtype:'Data', label: __('Supplier Item Code / Part Number'), fieldname:'supplier_part_no'},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name'},
-            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no'},
+            {fieldtype:'Button', label: __('Clear All Filters'), fieldname:'clear_filters'},
+            {fieldtype:'Column Break'},
+            {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
+            {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type'},
             {fieldtype:'Section Break'},
             {fieldtype:'HTML', fieldname:'results'}
         ],
@@ -252,13 +252,14 @@ function open_search_dialog(report) {
         dialog.hide();
     });
 
+    const hints_html = '<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). If you don\'t know the item code, start with a broad search and refine it if necessary.') + '</div>';
     // Clear filters button
     f.clear_filters.$input.addClass('btn-secondary');
     f.clear_filters.$input.on('click', () => {
         ['item_name_part','material_code','supplier_name','supplier_part_no'].forEach(fn => {
             f[fn].set_value('');
         });
-        f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
+        f.results.$wrapper.html(hints_html);
         dialog.selected_item = null;
     });
 
@@ -266,7 +267,7 @@ function open_search_dialog(report) {
         // check if any filter set
         const filters_set = ['item_name_part','material_code','supplier_name','supplier_part_no'].some(fn => f[fn].get_value());
         if (!filters_set) {
-            f.results.$wrapper.html('<div class="text-muted">' + __('Set at least one filter to see results. All filters are applied together (AND-linked). Start with a broad search and refine it if necessary.') + '</div>');
+            f.results.$wrapper.html(hints_html);
             return;
         }
         frappe.call({
@@ -286,7 +287,7 @@ function open_search_dialog(report) {
                 });
                 dialog._variantMap = variantMap;
                 if (items.length === 0) {
-                    // No results but filters set -> show "Request Item" button
+                    // No results but filters set -> show "Request New Item" button
                     f.results.$wrapper.html(`
                         <div class="alert alert-info">
                             ${__('No matching items found.')}
@@ -294,7 +295,7 @@ function open_search_dialog(report) {
                             <button type="button"
                                     class="btn btn-primary"
                                     id="request-item-btn">
-                                ${__('Request Item')}
+                                ${__('Request New Item')}
                             </button>
                         </div>
                     `);
