@@ -225,16 +225,27 @@ frappe.ui.form.on('QM Nonconformity', {
         }
 
         // Add buttons to request Correction or Corrective Action
-        if (["Planning"].includes(frm.doc.status)
-            && !["OOS", "Track & Trend"].includes(frm.doc.nc_type)
-            && (frappe.user.has_role('QAU') || frappe.session.user === frm.doc.created_by)) {
-            frm.add_custom_button(__("Request Correction"), function() {
+        if (!["OOS", "Track & Trend"].includes(frm.doc.nc_type) &&
+            (
+                (
+                    frm.doc.status === "Planning" &&
+                    (frappe.user.has_role("QAU") || frappe.session.user === frm.doc.created_by)
+                ) ||
+                (
+                    frm.doc.status === "Implementation" &&
+                    frappe.user.has_role("QAU")
+                )
+            )
+        ) {
+            frm.add_custom_button(__("Request Correction"), function () {
                 request_qm_action("Correction");
             }).addClass("btn-primary");
-            frm.add_custom_button(__("Request Corrective Action"), function() {
+
+            frm.add_custom_button(__("Request Corrective Action"), function () {
                 request_qm_action("Corrective Action");
             }).addClass("btn-primary");
         }
+
 
         // Add button to create a Change Request
         if (["Completed"].includes(frm.doc.status)
