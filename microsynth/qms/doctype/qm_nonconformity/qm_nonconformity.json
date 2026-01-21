@@ -231,6 +231,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nCreated\nInvestigation\nPlanning\nPlan Approval\nImplementation\nCompleted\nClosed\nCancelled",
    "read_only": 1
@@ -310,6 +311,7 @@
   {
    "fieldname": "created_by",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Created by",
    "options": "User",
    "read_only": 1
@@ -460,7 +462,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2025-08-08 08:12:18.694303",
+ "modified": "2026-01-21 13:58:00.846392",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
