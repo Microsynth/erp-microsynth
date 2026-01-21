@@ -68,7 +68,8 @@ def update_status(action, status):
     # validate status transitions
     if ((action.status == 'Draft' and status == 'Created') or
         (action.status == 'Created' and status == 'Work in Progress') or
-        (action.status == 'Work in Progress' and status == 'Completed')
+        (action.status == 'Work in Progress' and status == 'Completed') or
+        (action.status == 'Completed' and status == 'Work in Progress')
        ):
         if status == 'Completed':
             action.completion_date = today()

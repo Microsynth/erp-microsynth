@@ -67,6 +67,17 @@ frappe.ui.form.on('QM Action', {
             }).addClass("btn-danger");
         }
 
+        // Add a button for QAU in status Completed to set back to Work in Progress
+        if (frm.doc.status == 'Completed' && frappe.user.has_role('QAU')) {
+            // add set back to work in progress button
+            cur_frm.page.set_primary_action(
+                __("Reopen"),
+                function() {
+                    set_status('Work in Progress');
+                }
+            );
+        }
+
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.type
