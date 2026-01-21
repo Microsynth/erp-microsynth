@@ -24,7 +24,9 @@
 #T1.2#J9.4#YN101//42///{{ row.item_code }}
 {%- endif %}
 
-{% if row.batch_no %}
+{% if row.batch_no and row.serial_no %}
+#T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}:{{ row.serial_no }}
+{% elif row.batch_no %}
 #T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}
 {% else %}
 #T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}

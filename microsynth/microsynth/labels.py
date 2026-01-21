@@ -375,7 +375,8 @@ def print_purchasing_labels(label_table):
                     purchase_label_template,
                     {"row": row}
                 )
-                #frappe.log_error(content, "content")
+                # frappe.log_error(content, "content")
+                # return
                 print_raw(label_printer_ip, label_printer_port, content)
     except Exception as err:
         frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")

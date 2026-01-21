@@ -310,7 +310,8 @@ async function print_labels(frm) {
             'shelf_life_date': shelf_life_date,
             'material_code': item.material_code,
             'internal_code': internal_code,
-            'batch_no': pr_item.batch_no || ''
+            'batch_no': pr_item.batch_no || '',
+            'serial_no': pr_item.serial_no || ''
         });
     }
 
@@ -378,6 +379,14 @@ async function print_labels(frm) {
                         'fieldname': 'batch_no',
                         'fieldtype': 'Data',
                         'label': __('Batch No'),
+                        'read_only': 1,
+                        'in_list_view': 1,
+                        'columns': 1
+                    },
+                    {
+                        'fieldname': 'serial_no',
+                        'fieldtype': 'Data',
+                        'label': __('Serial No'),
                         'read_only': 1,
                         'in_list_view': 1,
                         'columns': 1
