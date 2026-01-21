@@ -379,7 +379,7 @@ frappe.ui.form.on('QM Change', {
                     } else {
                         continue_checks = true;
                     }
-                    if (continue_checks) {
+                    if (continue_checks && !frm.doc.cc_type.includes('short', 'procurement')) {
                         // Check that there is at least one QM Impact Assessment
                         frappe.call({
                             'method': 'microsynth.qms.doctype.qm_change.qm_change.has_assessments',
@@ -417,6 +417,18 @@ frappe.ui.form.on('QM Change', {
                                 }
                             }
                         });
+                    }
+                    if (continue_checks && (frm.doc.cc_type.includes('short', 'procurement'))) {
+                        if (frm.doc.impact_description) {
+                            cur_frm.page.set_primary_action(
+                                __("Confirm Classification"),
+                                function() {
+                                    set_status('Planning');
+                                }
+                            );
+                        } else {
+                            frm.dashboard.add_comment( __("Please enter the Impact Assessment Summary to proceed."), 'red', true);
+                        }
                     }
                 } else {
                     frm.dashboard.clear_comment();
