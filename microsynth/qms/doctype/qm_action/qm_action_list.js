@@ -12,5 +12,8 @@ frappe.listview_settings['QM Action'] = {
             "Cancelled": "red"
         };
         return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];
+    },
+    refresh: function(listview) {
+        listview.page.btn_primary && listview.page.btn_primary.hide();
     }
 };
