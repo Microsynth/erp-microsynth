@@ -201,7 +201,7 @@
   {
    "allow_on_submit": 1,
    "fieldname": "summary_test_trial_results",
-   "fieldtype": "Text",
+   "fieldtype": "Text Editor",
    "label": "Summary of Test & Trial Results"
   },
   {
@@ -316,7 +316,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-01-07 12:40:08.229904",
+ "modified": "2026-01-21 14:49:22.106722",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
