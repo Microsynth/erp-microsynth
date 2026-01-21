@@ -231,18 +231,21 @@ frappe.ui.form.on('QM Change', {
             }).addClass("btn-danger");
         }
 
-        // allow the creator or QAU to change the creator (transfer document) in status "Created"
-        if ((!frm.doc.__islocal)
-            && (["Draft", "Created"].includes(frm.doc.status))
-            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
-            ) {
-            // add change creator button
-            cur_frm.add_custom_button(
-                __("Change Creator"),
-                function() {
-                    change_creator();
-                }
-            );
+        // allow the creator to change the creator (transfer document) in status "Draft" or "Created"
+        // allow QAU to change the creator in status "Draft", "Created", "Assessment & Classification" and "Planning"
+        if (!frm.doc.__islocal && (
+                (
+                    frappe.session.user === frm.doc.created_by &&
+                    ["Draft", "Created"].includes(frm.doc.status)
+                ) ||
+                (
+                    frappe.user.has_role("QAU") &&
+                    ["Draft", "Created", "Assessment & Classification", "Planning"]
+                        .includes(frm.doc.status)
+                )
+            )
+        ) {
+            cur_frm.add_custom_button(__("Change Creator"), change_creator);
         }
 
         // add button to request an Impact Assessment
@@ -379,7 +382,7 @@ frappe.ui.form.on('QM Change', {
                     } else {
                         continue_checks = true;
                     }
-                    if (continue_checks && !frm.doc.cc_type.includes('short', 'procurement')) {
+                    if (continue_checks && !['short', 'procurement'].includes(frm.doc.cc_type)) {
                         // Check that there is at least one QM Impact Assessment
                         frappe.call({
                             'method': 'microsynth.qms.doctype.qm_change.qm_change.has_assessments',
@@ -418,7 +421,7 @@ frappe.ui.form.on('QM Change', {
                             }
                         });
                     }
-                    if (continue_checks && (frm.doc.cc_type.includes('short', 'procurement'))) {
+                    if (continue_checks && (!['short', 'procurement'].includes(frm.doc.cc_type))) {
                         if (frm.doc.impact_description) {
                             cur_frm.page.set_primary_action(
                                 __("Confirm Classification"),
