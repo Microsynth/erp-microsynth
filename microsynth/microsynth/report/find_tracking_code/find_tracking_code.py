@@ -14,7 +14,7 @@ def get_columns(filters):
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75 },
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200 },
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 120 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90 },
         {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 125 },
         {"label": _("Tracking Code"), "fieldname": "tracking_code", "fieldtype": "Data", "width": 175 },
         {"label": _("Tracking URL"), "fieldname": "tracking_url", "fieldtype": "HTML", "width": 500 },
@@ -56,6 +56,18 @@ def get_data(filters):
                     `tabCustomer`.`customer_name` AS `customer_name`,
                     `tabSales Order`.`name` AS `sales_order`,
                     `tabSales Order`.`web_order_id` AS `web_order_id`,
+                    CASE
+                        WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                            AND `tabSales Order`.`web_order_id` != ''
+                        THEN CONCAT(
+                            '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                            `tabSales Order`.`web_order_id`,
+                            '" target="_blank">',
+                            `tabSales Order`.`web_order_id`,
+                            '</a>'
+                        )
+                        ELSE ''
+                    END AS `web_order_id_html`,
                     `tabDelivery Note Item`.`parent` AS `delivery_note`,
                     `tabTracking Code`.`tracking_code` AS `tracking_code`,
                     CONCAT('<a href="', `tabTracking Code`.`tracking_url`, '">', `tabTracking Code`.`tracking_url`, '</a>') AS `tracking_url`

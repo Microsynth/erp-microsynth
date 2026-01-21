@@ -17,7 +17,7 @@ def get_columns(filters):
         {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 175 },
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 70 },
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125 },
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95 },
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 95 },
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 250 },
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200 },  # not necessary, gets automatically pulled into Item Code
         {"label": _("Registered"), "fieldname": "registered", "fieldtype": "Check", "width": 80 },
@@ -89,6 +89,18 @@ def get_data(filters):
             `tabSequencing Label`.`customer_name`,
             `tabSequencing Label`.`sales_order`,
             `tabSales Order`.`web_order_id`,
+            CASE
+                WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                    AND `tabSales Order`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabSales Order`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabSales Order`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             `tabSequencing Label`.`contact`,
             `tabSequencing Label`.`registered_to`,
             `tabSequencing Label`.`creation`

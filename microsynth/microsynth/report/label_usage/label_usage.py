@@ -15,7 +15,7 @@ def get_columns():
         {"label": _("Contact"), "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 70},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 95},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 95},
         {"label": _("Sample count"), "fieldname": "sample_count", "fieldtype": "Integer", "width": 100},
         # control fields:
         {"label": _("Total"), "fieldname": "total", "fieldtype": "Currency", "options": "currency", "width": 95},
@@ -69,6 +69,18 @@ def get_data(filters):
             `tabSales Order`.`customer`,
             `tabSales Order`.`customer_name`,
             `tabSales Order`.`web_order_id`,
+            CASE
+                WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                    AND `tabSales Order`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabSales Order`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabSales Order`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             `tabSales Order`.`status`,
             `tabSales Order`.`product_type`,
             (SELECT COUNT(`tabSample Link`.`name`)

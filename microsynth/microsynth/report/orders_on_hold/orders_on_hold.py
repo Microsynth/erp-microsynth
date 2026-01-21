@@ -13,7 +13,7 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Sales Order"), "fieldname": "sales_order", "fieldtype": "Link", "options": "Sales Order", "width": 125},
-        {"label": _("Web Order ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 90},
+        {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
@@ -30,6 +30,18 @@ def get_data(filters=None):
         SELECT
             `tabSales Order`.`name` AS `sales_order`,
             `tabSales Order`.`web_order_id` AS `web_order_id`,
+            CASE
+                WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                    AND `tabSales Order`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabSales Order`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabSales Order`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
             `tabSales Order`.`customer` AS `customer`,
             `tabSales Order`.`customer_name` AS `customer_name`,

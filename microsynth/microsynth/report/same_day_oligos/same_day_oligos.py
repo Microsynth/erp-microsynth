@@ -11,7 +11,7 @@ def get_columns():
     return [
         {"label": _("Sales Order"), "fieldname": "name", "fieldtype": "Link", "options": "Sales Order", "width": 125},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 120},
-        {"label": _("Web ID"), "fieldname": "web_order_id", "fieldtype": "Data", "width": 70},
+        {"label": _("Web ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 70},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250},
         {"label": _("Order created"), "fieldname": "creation", "fieldtype": "Date", "width": 130},
@@ -84,6 +84,18 @@ def get_data(filters=None):
             `tabSales Order`.`name`,
             `tabSales Order`.`status`,
             `tabSales Order`.`web_order_id`,
+            CASE
+                WHEN `tabSales Order`.`web_order_id` IS NOT NULL
+                    AND `tabSales Order`.`web_order_id` != ''
+                THEN CONCAT(
+                    '<a href="/desk#query-report/Sales Document Overview?web_order_id=',
+                    `tabSales Order`.`web_order_id`,
+                    '" target="_blank">',
+                    `tabSales Order`.`web_order_id`,
+                    '</a>'
+                )
+                ELSE ''
+            END AS `web_order_id_html`,
             `tabSales Order`.`customer`,
             `tabSales Order`.`customer_name`,
             `tabSales Order`.`creation`,
