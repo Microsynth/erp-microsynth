@@ -12,6 +12,14 @@ frappe.ui.form.on('QM Change', {
             frappe.validated = false;
         }
     },
+    cc_type: function(frm) {
+        // Hide Current State field if cc_type is "short" or "procurement"
+        if (frm.doc.cc_type == "short" || frm.doc.cc_type == "procurement") {
+            frm.set_df_property('current_state', 'hidden', true);
+        } else {
+            frm.set_df_property('current_state', 'hidden', false);
+        }
+    },
     qm_process: function(frm) {
         // clear affected hierarchy 1 field when process has changed to prevent invalid values
         cur_frm.set_value("hierarchy_1", null);
@@ -64,6 +72,7 @@ frappe.ui.form.on('QM Change', {
                 cur_frm.add_custom_button(__('Short'), function() {
                     cur_frm.set_value('cc_type', 'short');
                     cur_frm.set_value('risk_classification', 'minor');
+                    cur_frm.set_value('regulatory_classification', 'non-GMP (ISO)');
                     load_wizard(false);
                     setTimeout(function () {
                         add_restart_wizard_button();
@@ -205,6 +214,13 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
+        // Hide Current State field if cc_type is "short" or "procurement"
+        if (frm.doc.cc_type == "short" || frm.doc.cc_type == "procurement") {
+            frm.set_df_property('current_state', 'hidden', true);
+        } else {
+            frm.set_df_property('current_state', 'hidden', false);
+        }
+
 
         // BUTTONS
 
@@ -266,7 +282,8 @@ frappe.ui.form.on('QM Change', {
                 && frm.doc.title
                 && frm.doc.company
                 && frm.doc.description && frm.doc.description != "<div><br></div>"
-                && frm.doc.current_state && frm.doc.current_state != "<div><br></div>") {
+                && ((frm.doc.cc_type == 'short' || frm.doc.cc_type == 'procurement')
+                    || (frm.doc.current_state && frm.doc.current_state != "<div><br></div>"))) {
                 if ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
                     || frappe.user.has_role('QAU')) {
                     // add submit button
@@ -311,8 +328,8 @@ frappe.ui.form.on('QM Change', {
                 }
             } else {
                 frm.dashboard.clear_comment();
-                if (frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short') {
-                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to proceed."), 'red', true);
+                if (frappe.session.user === frm.doc.created_by && (frm.doc.cc_type == 'short' || frm.doc.cc_type == 'procurement')) {
+                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company and Description Change to proceed."), 'red', true);
                 } else {
                     frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to submit this QM Change to QAU."), 'red', true);
                 }
