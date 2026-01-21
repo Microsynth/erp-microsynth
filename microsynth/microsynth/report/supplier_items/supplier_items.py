@@ -152,6 +152,11 @@ def create_purchasing_item(data):
     if frappe.db.exists("Item", {"item_name": item_name}):
         frappe.throw(_("An item with Item Name {0} already exists").format(item_name))
 
+    # mandatory_fields = ['item_name', 'item_code', 'shelf_life_in_years', 'stock_uom', 'pack_size', 'pack_uom', 'company', 'expense_account', 'default_supplier', 'supplier', 'supplier_part_no']
+    # for field in mandatory_fields:
+    #     if not data.get(field):
+    #         frappe.throw(f"Required parameter missing: {field}")
+
     # FAx: "Bitte beachte, dass der Material Code bei der Artikelerstellung nicht eindeutig sein muss."
     # if material_code:
     #     existing = frappe.db.exists("Item", {"material_code": material_code})
@@ -176,6 +181,11 @@ def create_purchasing_item(data):
     item.is_sales_item = 0
     item.is_stock_item = 1
     item.has_batch_no = 1
+
+    # item.append("uoms", {
+    #     "uom": data.get("stock_uom"),
+    #     "conversion_factor": 1
+    # })
 
     # --- UOM Conversion (single entry) ---
     if data.get("purchase_uom"):

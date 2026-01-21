@@ -566,22 +566,39 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         'fields': [
             // Left column
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
-            {fieldtype:'Link', label: __('Supplier'), fieldname:'supplier', options: 'Supplier'},
-            //{fieldtype:'Currency', label: __('Rate'), fieldname:'rate'},
+            {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: frappe.defaults.get_default('company')},
-            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.0001},
+            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
+                description: 'How many purchase units are requested?'},
+            {fieldtype:'Currency', label: __('Rate regarding Purchase UOM'), fieldname:'rate', precision: 2},
+            {fieldtype:'Float', label: __('Conv. Factor from Purchase to Stock UOM'), fieldname:'conversion_factor', min: 1, precision: 2,
+                description: 'How many stock units are in one purchase unit?'},  // TODO: required if purchase_uom != stock_uom
+            {fieldtype:'Float', label: __('Pack Size regarding Stock UOM'), fieldname:'pack_size', min: 0.01, precision: 2,
+                description: 'How much does one stock unit contain?'},  // TODO: required if pack_uom is set
 
             {fieldtype:'Column Break'},
 
             // Right column
             {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
-            //{fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
+
+            {fieldtype:'Link', label: __('Purchase UOM (unit of measure)'), fieldname:'purchase_uom', options: 'UOM',
+                description: 'Unit to order from supplier',
+                get_query: function () {
+                    return {
+                        'filters': [
+                            ['name', 'NOT IN', ['Reaction Units', 'L', 'kg', 'g', 'h', 'µmol', 'cm', 'm', 'µl', 'ml', 'ng', 'µg', 'mg']]
+                        ]
+                    }
+                }
+            },  // TODO: required if conversion_factor is set
+
+            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},  // TODO: required if rate is set
 
             {   fieldtype:'Link',
                 label: __('Stock UOM (unit of measure)'),
-                fieldname:'uom',
+                fieldname:'stock_uom',
                 options: 'UOM',
                 reqd: 1,
                 description: 'Fixed warehouse unit used for stock movements',
@@ -593,11 +610,20 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     }
                 }
             },
+            {fieldtype:'Link', label: __('Pack UOM'), fieldname:'pack_uom', options: 'UOM',
+                get_query: function () {
+                    return {
+                        'filters': [
+                            ['name', 'NOT IN', ['Carton']]
+                        ]
+                    }
+                }
+            },  // TODO: required if pack_size is set
 
             {fieldtype:'Section Break'},
 
             // Full width comments
-            {fieldtype:'Text', label: __('Comments'), fieldname:'comment', colspan: 2, description: 'URL to the supplier product page, price and currency, ...'}
+            {fieldtype:'Small Text', label: __('Comments'), fieldname:'comment', colspan: 2, description: 'e.g. URL to the supplier product page'}
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
@@ -624,18 +650,45 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         }
     });
     d.show();
-    // Fetch Supplier Name if Supplier is set but not Supplier Name
-    d.fields_dict.supplier.df.onchange = function() {
-        const supplier = d.get_value('supplier');
-        const current_name = d.get_value('supplier_name');
 
-        if (supplier && !current_name) {
-            frappe.db.get_value('Supplier', supplier, 'supplier_name')
-                .then(r => {
-                    if (r && r.message && r.message.supplier_name) {
-                        d.set_value('supplier_name', r.message.supplier_name);
-                    }
-                });
+    // Fetch Supplier Name if Supplier is set but not Supplier Name
+    d.fields_dict.supplier.df.onchange = function () {
+        const supplier = d.get_value('supplier');
+        const current_supplier_name = d.get_value('supplier_name');
+
+        if (!supplier) {
+            d.set_df_property('currency', 'read_only', 0);
+            d.refresh_field('currency');
+            return;
+        }
+        frappe.db.get_value(
+            'Supplier',
+            supplier,
+            ['supplier_name', 'default_currency']
+        ).then(r => {
+            if (!r || !r.message) {
+                return;
+            }
+            if (!current_supplier_name && r.message.supplier_name) {
+                d.set_value('supplier_name', r.message.supplier_name);
+            }
+            // If supplier is set, fetch its default_currency to field "currency" and set it read-only
+            if (r.message.default_currency) {
+                d.set_value('currency', r.message.default_currency);
+                d.set_df_property('currency', 'read_only', 1);
+            } else {
+                d.set_df_property('currency', 'read_only', 0);
+            }
+            d.refresh_field('currency');
+        });
+    };
+
+    // Fetch Purchase UOM from Stock UOM if Stock UOM is set but not Purchase UOM
+    d.fields_dict.stock_uom.df.onchange = function() {
+        const stock_uom = d.get_value('stock_uom');
+        const current_purchase_uom = d.get_value('purchase_uom');
+        if (stock_uom && !current_purchase_uom) {
+            d.set_value('purchase_uom', stock_uom);
         }
     };
 }

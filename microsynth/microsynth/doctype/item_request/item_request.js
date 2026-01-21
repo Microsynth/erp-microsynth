@@ -170,6 +170,7 @@ function open_search_dialog(frm) {
 
 
 function open_material_request_dialog(selected, frm) {
+    // TODO: Rework according to material_request_overview.js and reduce code duplication
     const today = frappe.datetime.nowdate();
 
     let d = new frappe.ui.Dialog({
@@ -294,14 +295,17 @@ function create_new_supplier_item(frm) {
                 label: 'Shelf Life in Years',
                 fieldname: 'shelf_life_in_years',
                 fieldtype: 'Float',
-                reqd: 1
+                reqd: 1,
+                min: 0.0001
             },
             {
                 label: 'Pack Size of one stock unit',
                 fieldname: 'pack_size',
                 fieldtype: 'Float',
                 //description: 'How much does a stock unit contain?',
-                reqd: 1
+                reqd: 1,
+                default: frm.doc.pack_size,
+                min: 0.0001
             },
             { fieldtype: 'Column Break' },
             {
@@ -310,7 +314,7 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Link',
                 options: 'UOM',
                 reqd: 1,
-                default: frm.doc.uom,
+                default: frm.doc.stock_uom,
                 get_query: function () {
                     return {
                         'filters': [
@@ -324,7 +328,8 @@ function create_new_supplier_item(frm) {
                 fieldname: 'pack_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
-                reqd: 1
+                reqd: 1,
+                default: frm.doc.pack_uom
             },
             // --- One Item Default ---
             { fieldtype: 'Section Break' },
@@ -333,7 +338,7 @@ function create_new_supplier_item(frm) {
                 fieldname: 'company',
                 fieldtype: 'Link',
                 options: 'Company',
-                default: 'Microsynth AG',
+                default: frm.doc.company || 'Microsynth AG',
                 reqd: 1
             },
             { fieldtype: 'Column Break' },
@@ -407,14 +412,24 @@ function create_new_supplier_item(frm) {
                 fieldname: 'purchase_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
-                description: 'Default Purchase Unit of Measure'
+                description: 'Default Purchase Unit of Measure',
+                default: frm.doc.uom || frm.doc.stock_uom,
+                // get_query: function () {
+                //     return {
+                //         'filters': [
+                //             ['name', 'NOT IN', ['Reaction Units', 'L', 'kg', 'g', 'h', 'µmol', 'cm', 'm', 'µl', 'ml', 'ng', 'µg', 'mg']]
+                //         ]
+                //     }
+                // }
             },
             { fieldtype: 'Column Break' },
             {
                 label: 'Conversion Factor',
                 fieldname: 'conversion_factor',
                 fieldtype: 'Float',
-                description: 'Factor to convert from purchase to stock UOM'
+                description: 'Factor to convert from purchase to stock UOM',
+                default: frm.doc.conversion_factor,
+                min: 1
             }
         ],
         'primary_action_label': 'Create',

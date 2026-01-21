@@ -324,7 +324,7 @@ def create_item_request(data):
     # data is JSON string, parse it
     data = json.loads(data)
 
-    required_fields = ['item_name', 'qty', 'company']
+    required_fields = ['item_name', 'supplier_name', 'company', 'qty', 'stock_uom']
     for field in required_fields:
         if not data.get(field):
             frappe.throw(f"Required parameter missing: {field}")
@@ -335,9 +335,13 @@ def create_item_request(data):
     ir.supplier_part_no = data.get('supplier_part_no')
     ir.supplier = data.get('supplier')
     ir.supplier_name = data.get('supplier_name')
-    ir.uom = data.get('uom') or "Pcs"
+    ir.uom = data.get('purchase_uom') or data.get('stock_uom')
     ir.rate = data.get('rate')
     ir.currency = data.get('currency')  # TODO: How to avoid that it is set to CHF by default if it is not in data?
+    ir.conversion_factor = data.get('conversion_factor')
+    ir.stock_uom = data.get('stock_uom')
+    ir.pack_size = data.get('pack_size')
+    ir.pack_uom = data.get('pack_uom')
     ir.company = data.get('company')
     ir.schedule_date = data.get('schedule_date')
     ir.comment = data.get('comment')

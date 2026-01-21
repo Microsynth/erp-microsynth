@@ -8,6 +8,8 @@
   "item_name",
   "qty",
   "rate",
+  "conversion_factor",
+  "pack_size",
   "supplier",
   "supplier_part_no",
   "company",
@@ -15,6 +17,8 @@
   "status",
   "uom",
   "currency",
+  "stock_uom",
+  "pack_uom",
   "supplier_name",
   "schedule_date",
   "section_break_13",
@@ -42,10 +46,9 @@
    "options": "currency"
   },
   {
-   "description": "Link to existing Supplier (optional)",
    "fieldname": "supplier",
    "fieldtype": "Link",
-   "label": "Supplier",
+   "label": "Existing Supplier",
    "options": "Supplier"
   },
   {
@@ -73,7 +76,7 @@
    "default": "Pcs",
    "fieldname": "uom",
    "fieldtype": "Link",
-   "label": "UOM (unit of measurement)",
+   "label": "Purchase UOM (unit of measurement)",
    "options": "UOM"
   },
   {
@@ -163,10 +166,33 @@
   {
    "fieldname": "column_break_19",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "Conversion Factor"
+  },
+  {
+   "fieldname": "pack_size",
+   "fieldtype": "Float",
+   "label": "Pack Size"
+  },
+  {
+   "fieldname": "stock_uom",
+   "fieldtype": "Link",
+   "label": "Stock UOM",
+   "options": "UOM",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pack_uom",
+   "fieldtype": "Link",
+   "label": "Pack UOM",
+   "options": "UOM"
   }
  ],
  "is_submittable": 1,
- "modified": "2025-12-18 14:04:49.281720",
+ "modified": "2026-01-21 11:47:08.895059",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
