@@ -38,7 +38,7 @@ def create_action(title, responsible_person, dt, dn, qm_process, due_date, actio
 
     # do not create assignment to user by default, will be assigned when dn enters status "Implementation"
     if notify:
-        assign(action.name, responsible_person)
+        assign_and_notify(action.name, responsible_person)
 
     return action.name
 

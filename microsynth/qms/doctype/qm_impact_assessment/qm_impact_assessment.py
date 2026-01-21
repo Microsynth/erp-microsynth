@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe.desk.form.assign_to import add
 from frappe.utils.data import today
 from frappe.model.document import Document
 
@@ -37,6 +38,12 @@ def create_impact_assessment(dt, dn, title, qm_process, creator, due_date):
         })
     assessment.save(ignore_permissions = True)
     frappe.db.commit()
+    add({
+        'doctype': "QM Impact Assessment",
+        'name': assessment.name,
+        'assign_to': creator,
+        'notify': True
+    })
     return assessment.name
 
 
