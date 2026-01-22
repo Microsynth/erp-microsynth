@@ -2169,16 +2169,20 @@ def get_inbound_freight_item():
 
 
 @frappe.whitelist()
-def get_purchase_tax_template(supplier, company):
+def get_purchase_tax_template(supplier, company, category="Material"):
     """
+    Get the purchase tax template for a specific supplier and company.
+
+    Fallback Algorithm:
+    * Assumption: use for materials because it's in the long process with material requests
+    * check first if there is a setting on the supplier
+    * else use tax matrix
+       * Material/Service <- Item.is_stock_item (use first item, validate the item group?)
+
+    TODO: see also batch_invoice_processing.create_invoice (settings --> Batch Invoice Process Settings)
+
     bench execute microsynth.microsynth.purchasing.get_purchase_tax_template --kwargs "{'supplier': 'S-01460', 'company': 'Microsynth AG'}"
     """
-    # TODO implement fallback, see also batch_invoice_processing.create_invoice (settings --> Batch Invoice Process Settings)
-    # Algorithmus
-    # * Assumption: use for materials because it's in the long process with material requests
-    # * check first if there is a setting on the supplier
-    # * else use tax matrix
-    #    * Material/Service <- Item.is_stock_item (use first item, validate the item group?)
     tax_templates = frappe.get_all("Party Account",
         filters={
             'parent': supplier,
@@ -2187,11 +2191,27 @@ def get_purchase_tax_template(supplier, company):
         },
         fields=['name', 'default_tax_template']
     )
-    if len(tax_templates) > 0:
+    if len(tax_templates) > 0 and tax_templates[0]['default_tax_template']:
         return tax_templates[0]['default_tax_template']
     else:
-        return None
-
+        # get the country of the supplier
+        supplier_country = frappe.get_value("Supplier", supplier, "country")
+        if frappe.get_value("Country", supplier_country, "eu"):
+            eu_pattern = """ OR `country` = "EU" """
+        else:
+            eu_pattern = ""
+        tax_matrix_entries = frappe.db.sql("""SELECT `purchase_taxes_templates`
+            FROM `tabTax Matrix Entry`
+            WHERE `company` = "{company}"
+                AND (`country` = "{country}" OR `country` = "%" {eu_pattern})
+                AND `category` = "{category}"
+            ORDER BY `idx` ASC;""".format(
+            company=company, country=supplier_country, category=category, eu_pattern=eu_pattern),
+            as_dict=True)
+        if len(tax_matrix_entries) > 0:
+            return tax_matrix_entries[0]['purchase_taxes_templates']
+        # print(f"DEBUG: No purchase tax template found for Supplier {supplier} in Country {supplier_country}: {eu_pattern=}, {tax_matrix_entries=}, {category=}.")
+    return None
 
 @frappe.whitelist()
 def check_po_item_prices(purchase_order_name):

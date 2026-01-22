@@ -179,6 +179,7 @@ def create_invoice(file_name, invoice, settings):
 
     # find taxes and charges
     # prio 1: supplier default tax
+    # TODO: consider to use purchasing.get_purchase_tax_template
     supplier_default_taxes = frappe.db.sql("""
         SELECT `default_tax_template`
         FROM `tabParty Account`
