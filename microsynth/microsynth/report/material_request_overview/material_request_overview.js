@@ -252,7 +252,7 @@ function open_search_dialog(report) {
         dialog.hide();
     });
 
-    const hints_html = '<div class="text-muted">' + __('Set at least one filter and press Enter to see results. All filters are applied together (AND-linked). If you don\'t know the item code, start with a broad search and refine it if necessary.') + '</div>';
+    const hints_html = '<div class="text-muted">' + __('Set at least one filter to see results. All filters are applied together (AND-linked). If you don\'t know the item code, start with a broad search and refine it if necessary.') + '</div>';
     // Clear filters button
     f.clear_filters.$input.addClass('btn-secondary');
     f.clear_filters.$input.on('click', () => {
@@ -467,7 +467,7 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
-            { fieldtype: 'Int', label: __('Quantity regarding Purchase UOM'), fieldname: 'qty', reqd: true, default: 1, min: 1 },
+            { fieldtype: 'Int', label: __('Quantity regarding Purchase UOM'), fieldname: 'qty', reqd: true, min: 0.01 },
             { fieldtype: 'Data', label: __('Stock UOM'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
 
 
@@ -669,7 +669,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             if (!r || !r.message) {
                 return;
             }
-            if (!current_supplier_name && r.message.supplier_name) {
+            if (current_supplier_name != r.message.supplier_name) {
                 d.set_value('supplier_name', r.message.supplier_name);
             }
             // If supplier is set, fetch its default_currency to field "currency" and set it read-only
