@@ -79,6 +79,23 @@ frappe.ui.form.on('Purchase Order', {
                     }
                 }
             }
+
+            // Show content of supplier.supplier_details in dashboard comment
+            if (frm.doc.supplier) {
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: {
+                        doctype: "Supplier",
+                        name: frm.doc.supplier
+                    },
+                    callback: function(response) {
+                        var supplier = response.message;
+                        if (supplier && supplier.supplier_details) {
+                            cur_frm.dashboard.add_comment("<b>Supplier Details</b>: " + supplier.supplier_details, dashboard_comment_color, true);
+                        }
+                    }
+                });
+            }
         }
     },
     onload(frm) {
