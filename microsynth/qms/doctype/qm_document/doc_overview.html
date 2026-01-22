@@ -3,7 +3,7 @@
         <h6>{{ _("Documents") }}</h6>
         {% if files %}
             {% for f in files %}
-                <a href="{{ f.file_url }}">
+                <a href="{{ f.file_url }}" target="_blank">
                     {% if f.file_name[-3:] in ["pdf", "PDF"] %}
                         <i class="fa fa-file-pdf-o"></i>
                     {% else %}
@@ -14,7 +14,7 @@
             {% endfor %}
         {% endif %}
     </div>
-    
+
     <div class="col-xs-6">
         {% if docs_linking_to_this %}
             <h6>{{ _("Valid documents that link here") }}</h6>
@@ -26,7 +26,7 @@
             {% endfor %}
         {% endif %}
     </div>
-    
+
     <div class="col-xs-6">
         {% if relating_docs %}
             <h6>{{ _("Related documents") }}</h6>
@@ -38,7 +38,7 @@
             {% endfor %}
         {% endif %}
     </div>
-    
+
     <div class="col-xs-6">
         {% if trained %}
             <h6>{{ _("Trained") }}</h6>
