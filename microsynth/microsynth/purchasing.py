@@ -443,7 +443,6 @@ def create_po_from_open_mr(filters):
     if unique_purchase_warnings:
         # TODO: How to best show warnings to user on the UI side?
         frappe.log_error(f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}. Warnings: {unique_purchase_warnings}", "purchasing.create_po_from_open_mr")
-    frappe.log_error(f"Created Purchase Order {po_doc.name} from Material Requests. Used Supplier Quotations: {unique_used_supplier_quotations}.", "purchasing.create_po_from_open_mr")
     return po_doc.name
 
 
