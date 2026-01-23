@@ -282,3 +282,6 @@ after_migrate = [
     'microsynth.microsynth.updater.cleanup_languages',
     'microsynth.microsynth.updater.disable_hot_config_in_dev'
 ]
+
+# Fixtures: import customisations that are not normally customisable
+fixtures = ["Custom Field"]
