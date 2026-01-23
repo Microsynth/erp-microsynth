@@ -27,7 +27,7 @@ frappe.ui.form.on('Purchase Receipt', {
         }
 
         if (frm.doc.items || frm.doc.items.length > 0) {
-            display_material_request_owners(frm);
+            display_mr_owners_and_storage_locations(frm);
         }
     },
     before_save(frm) {
@@ -424,9 +424,10 @@ async function print_labels(frm) {
 }
 
 
-function display_material_request_owners(frm) {
+function display_mr_owners_and_storage_locations(frm) {
     // Collect info grouped by material_request.owner
     let owner_map = {};
+    let item_codes = [];
 
     // Fetch linked Material Requests and their owners
     let material_requests = [];
@@ -434,9 +435,13 @@ function display_material_request_owners(frm) {
         if (item.material_request) {
             material_requests.push(item.material_request);
         }
+        if (item.item_code) {
+            item_codes.push(item.item_code);
+        }
     });
     // Remove duplicates
     material_requests = [...new Set(material_requests)];
+    item_codes = [...new Set(item_codes)];
 
     if (material_requests.length === 0) return;
 
@@ -454,35 +459,95 @@ function display_material_request_owners(frm) {
                 r.message.forEach(mr => {
                     mr_owner_map[mr.name] = mr.requested_by || mr.owner || 'Unknown';
                 });
-                // Group items by owner
-                frm.doc.items.forEach(item => {
-                    if (!item.material_request) return;
-                    let owner = mr_owner_map[item.material_request];
-                    if (!owner) {
-                        owner = 'Unknown';
+                // Fetch all Item docs with storage_locations child table
+                frappe.call({
+                    method: 'frappe.client.get_list',
+                    args: {
+                        doctype: 'Item',
+                        filters: { name: ['in', item_codes] },
+                        fields: ['name', 'item_name'],
+                        limit_page_length: 1000
+                    },
+                    callback: function(itemres) {
+                        let item_map = {};
+                        let item_promises = [];
+                        (itemres.message || []).forEach(item => {
+                            // For each item, fetch full doc to get storage_locations child table
+                            item_promises.push(
+                                frappe.call({
+                                    method: 'frappe.client.get',
+                                    args: {
+                                        doctype: 'Item',
+                                        name: item.name
+                                    }
+                                }).then(r => {
+                                    item_map[item.name] = r.message;
+                                })
+                            );
+                        });
+                        Promise.all(item_promises).then(() => {
+                            // For all unique locations, fetch their full path (as in item.js)
+                            let all_locations = new Set();
+                            Object.values(item_map).forEach(itemdoc => {
+                                (itemdoc.storage_locations || []).forEach(row => all_locations.add(row.location));
+                            });
+                            all_locations = Array.from(all_locations);
+                            let location_path_promises = all_locations.map(loc =>
+                                frappe.call({
+                                    method: "microsynth.microsynth.purchasing.get_location_path_string",
+                                    args: { location_name: loc },
+                                }).then(r => [loc, r.message])
+                            );
+                            Promise.all(location_path_promises).then(location_path_pairs => {
+                                let location_path_map = {};
+                                location_path_pairs.forEach(([loc, path]) => {
+                                    location_path_map[loc] = path;
+                                });
+                                // Group items by owner
+                                frm.doc.items.forEach(item => {
+                                    if (!item.material_request) return;
+                                    let owner = mr_owner_map[item.material_request];
+                                    if (!owner) {
+                                        owner = 'Unknown';
+                                    }
+                                    if (!owner_map[owner]) {
+                                        owner_map[owner] = [];
+                                    }
+                                    // Build location paths for this item
+                                    let itemdoc = item_map[item.item_code];
+                                    let locs = (itemdoc && itemdoc.storage_locations) ? itemdoc.storage_locations.map(row => row.location) : [];
+                                    let loc_paths = locs.map(loc => location_path_map[loc]).filter(Boolean);
+                                    owner_map[owner].push({
+                                        'item_name': item.item_name,
+                                        'item_code': item.item_code,
+                                        'qty': item.qty,
+                                        'location_paths': loc_paths
+                                    });
+                                });
+                                // Build comment text
+                                let comment_html = '<div><b>Material Request Owners and Items:</b><br>';
+                                for (let owner in owner_map) {
+                                    comment_html += `<br><b>${owner}</b>:<ul>`;
+                                    owner_map[owner].forEach(i => {
+                                        comment_html += `<li>${i.item_code} (${i.item_name}) - Qty: ${i.qty}`;
+                                        if (i.location_paths && i.location_paths.length) {
+                                            comment_html += `  |  <b>Storage Location</b>(s): <span class='text-muted'>` +
+                                                i.location_paths.map(p => frappe.utils.escape_html(p)).join('; ') +
+                                                `</span>`;
+                                        } else {
+                                            comment_html += `  |  <b>No Storage Location set on this Item</b>`;
+                                        }
+                                        comment_html += `</li>`;
+                                    });
+                                    comment_html += '</ul>';
+                                }
+                                comment_html += '</div>';
+                                // Add dashboard comment/banner
+                                frm.dashboard.add_comment(comment_html, 'blue', true);
+                            });
+                        });
                     }
-                    if (!owner_map[owner]) {
-                        owner_map[owner] = [];
-                    }
-                    owner_map[owner].push({
-                        'item_name': item.item_name,
-                        'item_code': item.item_code,
-                        'qty': item.qty
-                    });
                 });
-                // Build comment text
-                let comment_html = '<div><b>Material Request Owners and Items:</b><br>';
-                for (let owner in owner_map) {
-                    comment_html += `<br><b>${owner}</b>:<ul>`;
-                    owner_map[owner].forEach(i => {
-                        comment_html += `<li>${i.item_code} (${i.item_name}) - Qty: ${i.qty}</li>`;
-                    });
-                    comment_html += '</ul>';
-                }
-                comment_html += '</div>';
-
-                // Add dashboard comment/banner
-                frm.dashboard.add_comment(comment_html, 'blue', true);
             }
         }
     });
