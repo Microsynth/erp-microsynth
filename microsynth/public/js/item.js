@@ -154,11 +154,10 @@ frappe.ui.form.on('Item', {
 
 
 function add_edit_purchasing_price(frm) {
-    // TODO: Fetch default_price_list from Supplier from supplier_items table (expected exactly one with Item Supplier.substitute_status empty or Verified)
-    // TODO: Check if there are already any Item Prices for this Item on the fetched Price List with any minimum qty (show them)
-    // TODO: Ask to add or update an Item Price (default min_qty = 1)
-    // TODO: Call a backend function that does the operation with ignore_permission=True
-
+    // Fetches default_price_list from Supplier from supplier_items table (expected exactly one with Item Supplier.substitute_status empty or Verified)
+    // Checks if there are already any Item Prices for this Item on the fetched Price List with any minimum qty (show them)
+    // Asks to add or update an Item Price (default min_qty = 1)
+    // Calls a backend function that does the operation with ignore_permission=True
     if (!frm.doc.name) {
         frappe.msgprint(__("Please save the Item first."));
         return;
@@ -184,15 +183,19 @@ function add_edit_purchasing_price(frm) {
                     </label>
             `;
             if (price_context.existing_prices.length) {
+                // Right align all headers and data in table
                 existing_html += `
                     <table class="table table-sm" style="margin-top: 4px;">
                         <thead>
                             <tr>
-                                <th style="width: 120px; padding-left: 0;">
+                                <th style="width: 120px; padding-left: 0; text-align: right;">
                                     ${__("Min Qty")}
                                 </th>
-                                <th style="padding-left: 0;">
+                                <th style="padding-left: 0; text-align: right;">
                                     ${__("Rate")}
+                                </th>
+                                <th style="padding-left: 0; text-align: right;">
+                                    ${__("Currency")}
                                 </th>
                             </tr>
                         </thead>
@@ -201,16 +204,18 @@ function add_edit_purchasing_price(frm) {
                 price_context.existing_prices.forEach(row => {
                     existing_html += `
                         <tr>
-                            <td style="padding-left: 0;">
+                            <td style="padding-left: 0; text-align: right;">
                                 ${frappe.format(row.min_qty, { fieldtype: "Float" })}
                             </td>
-                            <td style="padding-left: 0;">
+                            <td style="padding-left: 0; text-align: right;">
                                 <strong>
                                     ${frappe.format(row.price_list_rate, {
-                                        fieldtype: "Currency",
-                                        options: price_context.currency
+                                        fieldtype: "Float"
                                     })}
                                 </strong>
+                            </td>
+                            <td style="padding-left: 0; text-align: right;">
+                                ${price_context.currency}
                             </td>
                         </tr>
                     `;
