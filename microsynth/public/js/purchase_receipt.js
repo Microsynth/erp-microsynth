@@ -78,12 +78,22 @@ function enter_batches(frm) {
     document.head.appendChild(styleSheet);
 
     frappe.call({
-        'method': "microsynth.microsynth.purchasing.get_batch_items",
+        'method': "microsynth.microsynth.purchasing.get_set_batch_items",
         'args': { 'purchase_receipt': frm.doc.name },
         'callback': function(r) {
-            if (!r.message || !r.message.length) {
-                frappe.msgprint("No Item requires a Batch.");
+            // r.message is [batch_items, warnings]
+            const batch_items = r.message && r.message[0] ? r.message[0] : [];
+            const warnings = r.message && r.message[1] ? r.message[1] : [];
+            if (!batch_items.length) {
+                frappe.msgprint("No Item requires a Batch and it is not possible anymore to activate batching for these Items.");
                 return;
+            }
+            // Show warnings using frappe.show_alert()
+            if (warnings && warnings.length) {
+                frappe.show_alert({
+                    message: __(warnings.join("<br>")),
+                    indicator: 'orange'
+                });
             }
 
             const d = new frappe.ui.Dialog({
@@ -96,8 +106,8 @@ function enter_batches(frm) {
                         label: __('Batch Entries'),
                         cannot_add_rows: true,
                         reqd: 1,
-                        data: r.message,
-                        get_data: () => r.message,
+                        data: batch_items,
+                        get_data: () => batch_items,
                         fields: [
                             {
                                 fieldname: 'idx',

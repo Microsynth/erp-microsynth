@@ -1647,13 +1647,23 @@ def mark_purchase_invoices_of_payment_propsals_as_proposed(payment_proposal_ids)
 
 
 @frappe.whitelist()
-def get_batch_items(purchase_receipt):
+def get_set_batch_items(purchase_receipt):
     purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
     batch_items = []
-
+    warnings = []
     for item in purchase_receipt_doc.items:
+        if item.item_code == "P020000":  # skip inbound freight item
+            continue
         item_doc = frappe.get_doc("Item", item.item_code)
-        if item_doc.has_batch_no:
+        success = True
+        if not item_doc.has_batch_no:
+            try:
+                item_doc.has_batch_no = 1
+                item_doc.save()
+            except Exception as err:
+                warnings.append(f"Unable to set 'Has Batch No' on Item {item.item_code}: {err}")
+                success = False
+        if success:
             batch_items.append({
                 "idx": item.idx,
                 "item_code": item.item_code,
@@ -1663,7 +1673,7 @@ def get_batch_items(purchase_receipt):
                 "new_batch_id": "",
                 "new_batch_expiry": ""
             })
-    return batch_items
+    return batch_items, warnings
 
 
 @frappe.whitelist()
