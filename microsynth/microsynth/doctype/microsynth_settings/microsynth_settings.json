@@ -25,6 +25,8 @@
   "credit_item",
   "purchasing_section",
   "inbound_freight_item",
+  "hr_sec",
+  "website_applications_path",
   "abacus_export_section",
   "abacus_export_path",
   "sec_datev",
@@ -196,10 +198,20 @@
    "fieldname": "at_vat_export_path",
    "fieldtype": "Data",
    "label": "AT VAT Export Path"
+  },
+  {
+   "fieldname": "hr_sec",
+   "fieldtype": "Section Break",
+   "label": "Human Resource"
+  },
+  {
+   "fieldname": "website_applications_path",
+   "fieldtype": "Data",
+   "label": "Website Applications Path"
   }
  ],
  "issingle": 1,
- "modified": "2025-09-26 15:41:43.316848",
+ "modified": "2026-01-23 15:09:26.465386",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Microsynth Settings",
