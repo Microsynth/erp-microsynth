@@ -168,6 +168,32 @@ def validate_item_sales_status(doc, event=None):
         frappe.throw(html, title="Invalid Items")
 
 
+def validate_default_company(doc, event=None):
+    if not doc.customer or not doc.company:
+        frappe.throw("Customer and Company must be set.")
+
+    customer = frappe.get_doc("Customer", doc.customer)
+
+    if not customer.default_company:
+        frappe.throw(f"Customer {doc.customer} has no Default Company set.")
+
+    has_invoice_by_default_company = any(
+        row.webshop_service == "InvoiceByDefaultCompany"
+        for row in customer.webshop_service or []
+    )
+    if has_invoice_by_default_company:
+        if doc.company != customer.default_company:
+            frappe.throw(f"Customer {doc.customer} requires Quotations to be issued by its Default Company {customer.default_company}.")
+
+
+def validate_quotation(doc, event=None):
+    """
+    Validate Quotation before saving.
+    """
+    validate_item_sales_status(doc, event)
+    validate_default_company(doc, event)
+
+
 @frappe.whitelist()
 def get_sales_orders_linked_to_quotation(quotation_name):
     return frappe.db.sql("""

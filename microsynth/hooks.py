@@ -178,7 +178,7 @@ doc_events = {
     },
     "Quotation": {
         "before_save": "microsynth.microsynth.taxes.quotation_before_save",
-        "validate": "microsynth.microsynth.quotation.validate_item_sales_status"
+        "validate": "microsynth.microsynth.quotation.validate_quotation"
     },
     "Sales Order": {
         "before_save": "microsynth.microsynth.taxes.sales_order_before_save",
