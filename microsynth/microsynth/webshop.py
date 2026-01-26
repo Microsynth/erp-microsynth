@@ -400,7 +400,7 @@ def register_user(user_data, client="webshop"):
     # validate input data
     error = validate_registration_data(user_data)
     if error:
-        return {'success': False, 'message': error}
+        return {'success': False, 'internal_message': error, 'message': "Failed to register user"}
 
     # country locator
     country = None
@@ -492,9 +492,9 @@ def register_user(user_data, client="webshop"):
     initialize_webshop_address_doc(contact_name, contact_name, invoice_contact_name)
 
     if not error:
-        return {'success': True, 'message': "OK"}
+        return {'success': True, 'message': "OK", 'internal_message': "OK"}
     else:
-        return {'success': False, 'message': error}
+        return {'success': False, 'message': 'Failed to register user', 'internal_message': error}
 
 
 # @frappe.whitelist()
@@ -510,9 +510,9 @@ def create_update_customer(customer_data, client="webshop"):
         customer_data = json.loads(customer_data)
     error = migration_update_customer(customer_data)
     if not error:
-        return {'success': True, 'message': "OK"}
+        return {'success': True, 'message': "OK", 'internal_message': "OK"}
     else:
-        return {'success': False, 'message': error}
+        return {'success': False, 'message': 'Failed to update customer', 'internal_message': error}
 
 
 @frappe.whitelist()
@@ -522,20 +522,20 @@ def update_customer(customer, client="webshop"):
     """
 
     if not customer:
-        return {'success': False, 'message': "Customer missing"}
+        return {'success': False, 'internal_message': "Customer missing", 'message': "Failed to update customer"}
     if not 'customer_id' in customer:
-        return {'success': False, 'message': "Customer ID missing"}
+        return {'success': False, 'internal_message': "Customer ID missing", 'message': "Failed to update customer"}
 
     if not frappe.db.exists("Customer", customer['customer_id']):
-        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' not found."}
+        return {'success': False, 'internal_message': f"Customer '{ customer['customer_id'] }' not found.", 'message': "Failed to update customer"}
 
     doc = frappe.get_doc("Customer", customer['customer_id'])
 
     if doc.disabled:
-        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' is disabled."}
+        return {'success': False, 'internal_message': f"Customer '{ customer['customer_id'] }' is disabled.", 'message': "Failed to update customer"}
 
     if doc.webshop_address_readonly:
-        return {'success': False, 'message': f"Customer '{ customer['customer_id'] }' is readonly."}
+        return {'success': False, 'internal_message': f"Customer '{ customer['customer_id'] }' is readonly.", 'message': "Failed to update customer"}
 
     if 'customer_name' in customer:
         doc.customer_name = customer['customer_name']
@@ -551,7 +551,7 @@ def update_customer(customer, client="webshop"):
 
     doc.save()
 
-    return {'success': True, 'message': f"Updated customer '{ customer['customer_id'] }'" }
+    return {'success': True, 'message': f"Updated customer '{ customer['customer_id'] }'", 'internal_message': f"Updated customer '{ customer['customer_id'] }'" }
 
 
 @frappe.whitelist()
@@ -560,13 +560,13 @@ def create_update_contact(contact):
     This function will create or update a contact
     """
     if not contact:
-        return {'success': False, 'message': "Contact missing"}
+        return {'success': False, 'internal_message': "Contact missing", 'message': "Failed to create or update contact"}
     if type(contact) == str:
         contact = json.loads(contact)
     if not 'person_id' in contact:
-        return {'success': False, 'message': "Person ID missing"}
+        return {'success': False, 'internal_message': "Person ID missing", 'message': "Failed to create or update contact"}
     if not 'first_name' in contact:
-        return{'success': False, 'message': "First Name missing"}
+        return {'success': False, 'internal_message': "First Name missing", 'message': "Failed to create or update contact"}
     contact_name = create_update_contact_doc(contact)
     lock_contact_by_name(contact_name)
 
@@ -577,9 +577,9 @@ def create_update_contact(contact):
         initialize_webshop_address_doc(contact_name, contact_name, billing_contact)
 
     if contact_name:
-        return {'success': True, 'message': "OK"}
+        return {'success': True, 'message': "OK", 'internal_message': "OK"}
     else:
-        return {'success': False, 'message': "An error occured while creating/updating the contact record"}
+        return {'success': False, 'message': "Failed to create or update contact", 'internal_message': "An error occured while creating/updating the contact record"}
 
 
 @frappe.whitelist()
@@ -588,27 +588,27 @@ def create_update_address(address=None, client="webshop"):
     This function will create or update an address
     """
     if not address:
-        return {'success': False, 'message': "Address missing"}
+        return {'success': False, 'internal_message': "Address missing", 'message': "Failed to create or update address"}
     if type(address) == str:
         address = json.loads(address)
     if not 'person_id' in address and not 'name' in address:
-        return {'success': False, 'message': "Person ID or Address ID is missing"}
+        return {'success': False, 'internal_message': "Person ID or Address ID is missing", 'message': "Failed to create or update address"}
     if not 'address_line1' in address:
-        return {'success': False, 'message': "Address line 1 missing"}
+        return {'success': False, 'internal_message': "Address line 1 missing", 'message': "Failed to create or update address"}
     if not 'city' in address:
-        return {'success': False, 'message': "City missing"}
+        return {'success': False, 'internal_message': "City missing", 'message': "Failed to create or update address"}
 
     if 'person_id' in address:
         if 'name' in address and address.get('name') is not None:
             if address.get('name') != address.get('person_id'):
-                return {'success': False, 'message': f"{address.get('name')=} does not match {address.get('person_id')=}"}
+                return {'success': False, 'internal_message': f"{address.get('name')=} does not match {address.get('person_id')=}", 'message': "Failed to create or update address"}
         address['name'] = address.get('person_id')
 
     address_id = create_update_address_doc(address)
     if address_id:
-        return {'success': True, 'message': "OK"}
+        return {'success': True, 'message': "OK", 'internal_message': "OK"}
     else:
-        return {'success': False, 'message': "An error occured while creating/updating the address record"}
+        return {'success': False, 'message': "Failed to create or update address", 'internal_message': "An error occured while creating/updating the address record"}
 
 
 @frappe.whitelist()
@@ -619,9 +619,9 @@ def get_user_details(person_id, client="webshop"):
     # get contact
     contact = frappe.get_doc("Contact", person_id)
     if not contact:
-        return {'success': False, 'message': "Person not found"}
+        return {'success': False, 'internal_message': "Person not found", 'message': "Failed to retrieve user details"}
     if contact.status == "Disabled":
-        return {'success': False, 'message': "Contact '{}' is disabled".format(contact.name)}
+        return {'success': False, 'internal_message': "Contact '{}' is disabled".format(contact.name), 'message': "Failed to retrieve user details"}
     # fetch customer
     # TODO: replace by utils.get_customer to get the customer_id
     customer_id = None
@@ -629,10 +629,10 @@ def get_user_details(person_id, client="webshop"):
         if l.link_doctype == "Customer":
             customer_id = l.link_name
     if not customer_id:
-        return {'success': False, 'message': "No customer linked"}
+        return {'success': False, 'internal_message': "No customer linked", 'message': "Failed to retrieve user details"}
     customer = frappe.get_doc("Customer", customer_id)
     if customer.disabled == 1:
-        return {'success': False, 'message': 'Customer disabled'}
+        return {'success': False, 'internal_message': "Customer disabled", 'message': 'Failed to retrieve user details'}
 
     if customer.invoice_to:
         invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
@@ -669,6 +669,7 @@ def get_user_details(person_id, client="webshop"):
     return {
         'success': True,
         'message': "OK",
+        'internal_message': "OK",
         'details': {
             'contact': contact,
             'customer': customer,
@@ -686,7 +687,7 @@ def get_customer_details(customer_id, client="webshop"):
     # fetch customer
     customer = frappe.get_doc("Customer", customer_id)
     if customer.disabled == 1:
-        return {'success': False, 'message': 'Customer disabled'}
+        return {'success': False, 'internal_message': "Customer disabled", 'message': 'Failed to retrieve customer details'}
     # fetch invoice contact
     invoice_contact = frappe.get_doc("Contact", customer.invoice_to)
     # fetch addresses
@@ -716,6 +717,7 @@ def get_customer_details(customer_id, client="webshop"):
     return {
         'success': True,
         'message': "OK",
+        'internal_message': "OK",
         'details': {
             'customer': customer,
             'invoice_contact': invoice_contact,
@@ -777,9 +779,9 @@ def contact_exists(contact, client="webshop"):
     contacts = frappe.db.sql(sql_query, params, as_dict=True)
 
     if len(contacts) > 0:
-        return {'success': True, 'message': "OK", 'contacts': contacts}
+        return {'success': True, 'message': "OK", 'internal_message': None, 'contacts': contacts}
     else:
-        return {'success': False, 'message': "Contact not found"}
+        return {'success': False, 'message': "Failed to retrieve contacts", 'internal_message': "Contact not found"}
 
 
 @frappe.whitelist()
@@ -833,9 +835,9 @@ def address_exists(address):
     addresses = frappe.db.sql(sql_query, params, as_dict=True)
 
     if len(addresses) > 0:
-        return {'success': True, 'message': "OK", 'addresses': addresses}
+        return {'success': True, 'message': "OK", 'internal_message': None, 'addresses': addresses}
     else:
-        return {'success': False, 'message': "Address not found or disabled."}
+        return {'success': False, 'message': "Failed to retrieve addresses", 'internal_message': "Address not found or disabled."}
 
 
 @frappe.whitelist(allow_guest=False)
@@ -850,28 +852,29 @@ def request_quote(content, client="webshop"):
     required_keys = ['customer', 'delivery_address', 'invoice_address', 'contact']
     missing = [k for k in required_keys if not content.get(k)]
     if missing:
-        return {'success': False, 'message': f"Missing required fields: {', '.join(missing)}"}
+        return {'success': False, 'message': "Failed to create quotation", 'internal_message': f"Missing required fields: {', '.join(missing)}"}
 
     if not frappe.db.exists("Customer", content['customer']):
-        return {'success': False, 'message': "Customer not found", 'reference': None}
+        return {'success': False, 'message': "Failed to create quotation", 'internal_message': "Customer not found", 'reference': None}
     customer_doc = frappe.get_doc("Customer", content['customer'])
 
     if "company" in content:
         if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
             if not customer_doc.default_company:
-                return {'success': False, 'message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
+                return {'success': False, 'message': "Failed to create quotation", 'internal_message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
             if content["company"] != customer_doc.default_company:
-                return {'success': False, 'message': f"The given company {content['company']} does not match the determined company {customer_doc.default_company}.", 'reference': None}
+                return {'success': False, 'message': "Failed to create quotation", 'internal_message': f"The given company {content['company']} does not match the determined company {customer_doc.default_company}.", 'reference': None}
         else:
             if content['company'] != 'Microsynth AG':
                 return {'success': False,
-                        'message': f"The provided customer {content['customer']} has not InvoiceByDefaultCompany but the provided company {content['company']} differs from 'Microsynth AG'.",
+                        'message': 'Failed to create quotation',
+                        'internal_message': f"The provided customer {content['customer']} has not InvoiceByDefaultCompany but the provided company {content['company']} differs from 'Microsynth AG'.",
                         'reference': None}
         company = content['company']
     else:
         if has_webshop_service(content['customer'], "InvoiceByDefaultCompany"):
             if not customer_doc.default_company:
-                return {'success': False, 'message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
+                return {'success': False, 'message': 'Failed to create quotation', 'internal_message': f"The provided customer {content['customer']} has InvoiceByDefaultCompany but no default_company.", 'reference': None}
             company = customer_doc.default_company
         else:
             company = "Microsynth AG"
@@ -905,7 +908,7 @@ def request_quote(content, client="webshop"):
         # insert positions
         for i in o['items']:
             if not frappe.db.exists("Item", i['item_code']):
-                return {'success': False, 'message': "invalid item: {0}".format(i['item_code']),
+                return {'success': False, 'message': 'Failed to create quotation', 'internal_message': "invalid item: {0}".format(i['item_code']),
                     'reference': None}
             if not i['item_code'] in oligo_items_consolidated:
                 oligo_items_consolidated[i['item_code']] = i['qty']
@@ -923,7 +926,7 @@ def request_quote(content, client="webshop"):
         })
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
-            return {'success': False, 'message': "invalid item: {0}".format(i['item_code']),
+            return {'success': False, 'message': 'Failed to create quotation', 'internal_message': "invalid item: {0}".format(i['item_code']),
                 'reference': None}
         qtn_doc.append('items', {
             'item_code': i['item_code'],
@@ -983,12 +986,11 @@ def request_quote(content, client="webshop"):
             })
             new_comment.insert(ignore_permissions=True)
         # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
-        return {'success': True, 'message': 'Quotation created',
-            'reference': qtn_doc.name}
+        return {'success': True, 'message': 'Quotation created', 'internal_message': 'OK', 'reference': qtn_doc.name}
     except Exception as err:
         msg = f"Failed to create quotation for account {content['contact']}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.request_quote")
-        return {'success': False, 'message': msg, 'reference': None}
+        return {'success': False, 'internal_message': 'Failed to create quotation', 'message': msg, 'reference': None}
 
 
 @frappe.whitelist()
@@ -1002,9 +1004,9 @@ def get_quotations(customer, client="webshop"):
             filters={'party_name': customer, 'docstatus': 1},
             fields=['name', 'quotation_type', 'currency', 'net_total', 'transaction_date', 'customer_request']
         )
-        return {'success': True, 'message': "OK", 'quotations': qtns}
+        return {'success': True, 'message': "OK", 'internal_message': 'OK', 'quotations': qtns}
     else:
-        return {'success': False, 'message': 'Customer not found', 'quotation': None}
+        return {'success': False, 'message': 'Failed to get customer quotations', 'internal_message': 'Customer not found', 'quotation': None}
 
 
 @frappe.whitelist()
@@ -1038,9 +1040,9 @@ def get_contact_quotations(contact, client="webshop"):
             ORDER BY `tabQuotation`.`name` DESC, `tabQuotation Item`.`idx` ASC;"""
         qtns = frappe.db.sql(query, (contact, customer_name), as_dict=True)
 
-        return {'success': True, 'message': "OK", 'quotations': qtns}
+        return {'success': True, 'message': "OK", 'internal_message': 'OK', 'quotations': qtns}
     else:
-        return {'success': False, 'message': 'Customer not found', 'quotation': None}
+        return {'success': False, 'message': 'Failed to get contact quotations', 'internal_message': 'Customer not found', 'quotation': None}
 
 
 @frappe.whitelist()
@@ -1051,9 +1053,9 @@ def get_quotation_detail(reference, client="webshop"):
     if frappe.db.exists("Quotation", reference):
         # get quotation
         qtn = frappe.get_doc("Quotation", reference)
-        return {'success': True, 'message': "OK", 'quotation': qtn.as_dict()}
+        return {'success': True, 'message': "OK", 'internal_message': 'OK', 'quotation': qtn.as_dict()}
     else:
-        return {'success': False, 'message': 'Quotation not found', 'quotation': None}
+        return {'success': False, 'internal_message': 'Quotation not found', 'message': 'Failed to get quotation details', 'quotation': None}
 
 
 @frappe.whitelist()
@@ -1065,9 +1067,9 @@ def get_item_prices(content, client="webshop"):
     if type(content) == str:
         content = json.loads(content)
     if not 'customer' in content:
-        return {'success': False, 'message': 'Customer parameter missing', 'quotation': None}
+        return {'success': False, 'internal_message': 'Customer parameter missing', 'message': 'Failed to get item prices', 'quotation': None}
     if not 'items' in content:
-        return {'success': False, 'message': 'Items missing', 'quotation': None}
+        return {'success': False, 'internal_message': 'Items missing', 'message': 'Failed to get item prices', 'quotation': None}
     if frappe.db.exists("Customer", content['customer']):
         if not 'currency' in content:
             content['currency'] = frappe.get_value("Customer", content['customer'], "default_currency")
@@ -1090,7 +1092,7 @@ def get_item_prices(content, client="webshop"):
                     'qty': i['qty']
                 })
             else:
-                return {'success': False, 'message': 'Item {0} not found'.format(i['item_code']), 'quotation': None}
+                return {'success': False, 'internal_message': 'Item {0} not found'.format(i['item_code']), 'message': 'Failed to get item prices', 'quotation': None}
         # extend values
         so.company = frappe.get_value("Customer", content['customer'], 'default_company') or frappe.defaults.get_global_default('company')
         try:
@@ -1099,7 +1101,7 @@ def get_item_prices(content, client="webshop"):
         except Exception as err:
             msg = f"Error getting item prices for customer {content['customer']}: {err}. Check ERP Error Log for details."
             frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_item_prices")
-            return {'success': False, 'message': msg, 'quotation': None}
+            return {'success': False, 'message': 'Failed to get item prices', 'internal_message': msg, 'quotation': None}
         # pick prices
         item_prices = []
         for i in so.items:
@@ -1109,9 +1111,9 @@ def get_item_prices(content, client="webshop"):
                 'rate': i.rate,
                 'description': i.item_name
             })
-        return {'success': True, 'message': "OK", 'item_prices': item_prices, 'meta': meta }
+        return {'success': True, 'message': "OK", 'internal_message': 'OK', 'item_prices': item_prices, 'meta': meta }
     else:
-        return {'success': False, 'message': 'Customer not found', 'quotation': None}
+        return {'success': False, 'message': 'Failed to get item prices', 'internal_message': 'Customer not found', 'quotation': None}
 
 
 def apply_discount(quotation, sales_order):
@@ -1137,19 +1139,19 @@ def place_order(content, client="webshop"):
     is_drop_shipment = False
     # validate input
     if not frappe.db.exists("Customer", content['customer']):
-        return {'success': False, 'message': f"Customer '{content['customer']}' not found", 'reference': None}
+        return {'success': False, 'internal_message': f"Customer '{content['customer']}' not found", 'message': 'Failed to create Sales Order', 'reference': None}
     if not frappe.db.exists("Address", content['delivery_address']):
-        return {'success': False, 'message': f"Delivery address '{content['delivery_address']}' not found", 'reference': None}
+        return {'success': False, 'internal_message': f"Delivery address '{content['delivery_address']}' not found", 'message': 'Failed to create Sales Order', 'reference': None}
     if not frappe.db.exists("Address", content['invoice_address']):
-        return {'success': False, 'message': f"Invoice address '{content['invoice_address']}' not found", 'reference': None}
+        return {'success': False, 'internal_message': f"Invoice address '{content['invoice_address']}' not found", 'message': 'Failed to create Sales Order', 'reference': None}
     if not frappe.db.exists("Contact", content['contact']):
-        return {'success': False, 'message': f"Contact '{content['contact']}' not found", 'reference': None}
+        return {'success': False, 'internal_message': f"Contact '{content['contact']}' not found", 'message': 'Failed to create Sales Order', 'reference': None}
     company = None
     if "company" in content:
         if frappe.db.exists("Company", content['company']):
             company = content['company']
         else:
-            return {'success': False, 'message': f"Invalid company '{content['company']}'", 'reference': None}
+            return {'success': False, 'internal_message': f"Invalid company '{content['company']}'", 'message': 'Failed to create Sales Order', 'reference': None}
     else:
         company = frappe.get_value("Customer", content['customer'], 'default_company')
     if not company:
@@ -1162,7 +1164,7 @@ def place_order(content, client="webshop"):
     order_customer = None
 
     if not 'product_type' in content or not content['product_type']:
-        return {'success': False, 'message': "Product Type is mandatory but not given.", 'reference': None}
+        return {'success': False, 'internal_message': "Product Type is mandatory but not given.", 'message': 'Failed to create Sales Order', 'reference': None}
 
     if has_webshop_service(customer.name, "InvoiceByDefaultCompany"):
         # identify dropshipment/intracompany order
@@ -1183,7 +1185,7 @@ def place_order(content, client="webshop"):
                 if is_drop_shipment:
                     err = "Not implemented: dropshipment conflicts with distributor workflow"
                     frappe.log_error(err, "webshop.place_order")
-                    return {'success': False, 'message': err, 'reference': None}
+                    return {'success': False, 'internal_message': err, 'message': 'Failed to create Sales Order', 'reference': None}
                 order_customer = customer
                 customer = frappe.get_doc("Customer", distributor.distributor)
 
@@ -1204,7 +1206,7 @@ def place_order(content, client="webshop"):
         # fetch shipping contact
         shipping_contact = frappe.get_doc("Contact", content['shipping_contact'])
         if shipping_contact.status == "Disabled":
-            return {'success': False, 'message': f"Shipping contact '{content['shipping_contact']}' is disabled", 'reference': None}
+            return {'success': False, 'internal_message': f"Shipping contact '{content['shipping_contact']}' is disabled", 'message': 'Failed to create Sales Order', 'reference': None}
         if shipping_contact.phone:
             phone = shipping_contact.phone
         if shipping_contact.email_id:
@@ -1252,9 +1254,9 @@ def place_order(content, client="webshop"):
         for ca in content['credit_accounts']:
             ca_doc = frappe.get_doc("Credit Account", ca)
             if ca_doc.expiry_date and ca_doc.expiry_date < date.today():
-                return {'success': False, 'message': f"Credit Account '{ca_doc.name}' is expired.", 'reference': None}
+                return {'success': False, 'internal_message': f"Credit Account '{ca_doc.name}' is expired.", 'message': 'Failed to create Sales Order', 'reference': None}
             if ca_doc.status != "Active":
-                return {'success': False, 'message': f"Credit Account '{ca_doc.name}' is not Active.", 'reference': None}
+                return {'success': False, 'internal_message': f"Credit Account '{ca_doc.name}' is not Active.", 'message': 'Failed to create Sales Order', 'reference': None}
             so_doc.append('credit_accounts', {
                 'credit_account': ca_doc.name
             })
@@ -1325,7 +1327,7 @@ def place_order(content, client="webshop"):
         consolidated_item_qtys = {}
         for o in content['oligos']:
             if not 'web_id' in o:
-                return {'success': False, 'message': "web_id missing: {0}".format(o), 'reference': None}
+                return {'success': False, 'internal_message': "web_id missing: {0}".format(o), 'message': 'Failed to create Sales Order', 'reference': None}
             # create or update oligo
             oligo_name = create_oligo(o)
             so_doc.append('oligos', {
@@ -1334,8 +1336,8 @@ def place_order(content, client="webshop"):
             # insert positions (add to consolidated)
             for i in o['items']:
                 if not frappe.db.exists("Item", i['item_code']):
-                    return {'success': False, 'message': "invalid item: {0}".format(i['item_code']),
-                        'reference': None}
+                    return {'success': False, 'internal_message': "invalid item: {0}".format(i['item_code']),
+                        'message': 'Failed to create Sales Order', 'reference': None}
                 if i['item_code'] in consolidated_item_qtys:
                     consolidated_item_qtys[i['item_code']] = consolidated_item_qtys[i['item_code']] + i['qty']
                 else:
@@ -1363,8 +1365,8 @@ def place_order(content, client="webshop"):
             # insert positions (add to consolidated)
             for i in s['items']:
                 if not frappe.db.exists("Item", i['item_code']):
-                    return {'success': False, 'message': "invalid item: {0}".format(i['item_code']),
-                        'reference': None}
+                    return {'success': False, 'internal_message': "invalid item: {0}".format(i['item_code']),
+                        'message': 'Failed to create Sales Order', 'reference': None}
                 if i['item_code'] in consolidated_item_qtys:
                     consolidated_item_qtys[i['item_code']] += i['qty']
                 else:
@@ -1382,7 +1384,7 @@ def place_order(content, client="webshop"):
     # append items
     for i in content['items']:
         if not frappe.db.exists("Item", i['item_code']):
-            return {'success': False, 'message': "invalid item: {0}".format(i['item_code']),
+            return {'success': False, 'message': 'Failed to create place order', 'internal_message': "invalid item: {0}".format(i['item_code']),
                 'reference': None}
         item_detail = {
             'item_code': i['item_code'],
@@ -1413,7 +1415,7 @@ def place_order(content, client="webshop"):
         supplier = intercompany_supplier['supplier']
         if not supplier:
             err = f"No supplier found for {so_doc.product_type}."
-            return {'success': False, 'message': err, 'reference': None}
+            return {'success': False, 'internal_message': err, 'message': 'Failed to create Sales Order', 'reference': None}
         for i in so_doc.items:
             i.delivered_by_supplier = 1
             i.supplier = supplier
@@ -1425,7 +1427,7 @@ def place_order(content, client="webshop"):
     except Exception as err:
         msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
-        return {'success': False, 'message': msg, 'reference': None}
+        return {'success': False, 'message': 'Failed to place order', 'internal_message': msg, 'reference': None}
 
     # set shipping item for oligo orders to express shipping if the order total exceeds the threshold
     shipping_address = frappe.get_doc("Address", content['delivery_address'])
@@ -1480,6 +1482,7 @@ def place_order(content, client="webshop"):
         return {
             'success': True,
             'message': 'Sales Order created',
+            'internal_message': 'Sales Order created',
             'reference': so_doc.name,
             'currency': so_doc.currency,
             'net_amount': so_doc.net_total,
@@ -1489,7 +1492,7 @@ def place_order(content, client="webshop"):
     except Exception as err:
         msg = f"Error placing order {content['web_order_id'] if 'web_order_id' in content else None} for account {contact.name}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.place_order")
-        return {'success': False, 'message': msg, 'reference': None}
+        return {'success': False, 'message': 'Failed to place order', 'internal_message': msg, 'reference': None}
 
 
 def place_dropship_order(sales_order, intercompany_customer_name, supplier_company):
@@ -1604,10 +1607,10 @@ def order_quote(quotation_id, client="webshop"):
     """
     from erpnext.selling.doctype.quotation.quotation import make_sales_order
     if not quotation_id or not frappe.db.exists("Quotation", quotation_id):
-        return {'success': False, 'message': f"There is no Quotation with ID '{quotation_id}' in the ERP.", 'reference': None}
+        return {'success': False, 'message': 'Failed to create Sales Order', 'internal_message': f"There is no Quotation with ID '{quotation_id}' in the ERP.", 'reference': None}
     quotation = frappe.get_doc("Quotation", quotation_id)
     if quotation.has_sales_order():
-        return {'success': False, 'message': f"There is already a submitted Sales Order against {quotation_id}.", 'reference': None}
+        return {'success': False, 'message': 'Failed to create Sales Order', 'internal_message': f"There is already a submitted Sales Order against {quotation_id}.", 'reference': None}
     try:
         quotation = frappe.get_doc("Quotation", quotation_id)
         sales_order = make_sales_order(quotation_id)
@@ -1620,9 +1623,9 @@ def order_quote(quotation_id, client="webshop"):
     except Exception as err:
         msg = f"Error creating Sales Order for Quotation {quotation_id}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.order_quote")
-        return {'success': False, 'message': msg, 'reference': None}
+        return {'success': False, 'message': 'Failed to create Sales Order', 'internal_message': msg, 'reference': None}
     else:
-        return {'success': True, 'message': None, 'reference': sales_order.name}
+        return {'success': True, 'message': None, 'internal_message': None, 'reference': sales_order.name}
 
 
 @frappe.whitelist()
@@ -1654,7 +1657,7 @@ def get_countries(client="webshop"):
     for i, c in enumerate(countries):
         c['sort_order'] = i + 1
 
-    return {'success': True, 'message': None, 'countries': countries}
+    return {'success': True, 'message': None, 'internal_message': None, 'countries': countries}
 
 
 @frappe.whitelist()
@@ -1663,7 +1666,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
     Return all available shipping items for a customer or country
     """
     if not customer_id and not country:
-        return {'success': False, 'message': 'Either customer_id or country is required', 'shipping_items': []}
+        return {'success': False, 'message': 'Failed to retrieve shipping items', 'internal_message': 'Either customer_id or country is required', 'shipping_items': []}
     if customer_id:
         # find by customer id
         shipping_items = frappe.db.sql("""
@@ -1681,14 +1684,14 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
                 AND `tabItem`.`disabled` = 0
             ORDER BY `tabShipping Item`.`idx` ASC;""", (str(customer_id),), as_dict=True)
         if len(shipping_items) > 0:
-            return {'success': True, 'message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
+            return {'success': True, 'message': "OK", 'internal_message': "OK", 'currency': frappe.get_value("Customer", customer_id, 'default_currency'), 'shipping_items': shipping_items}
         else:
             # find country for fallback
             primary_address = get_primary_customer_address(str(customer_id))
             if primary_address:
                 country = frappe.get_value("Address", primary_address.get('name'), "country")
             else:
-                return {'success': False, 'message': 'No data found', 'shipping_items': []}
+                return {'success': False, 'message': 'Failed to retrieve shipping items', 'internal_message': 'No data found', 'shipping_items': []}
 
     # find by country (this is also the fallback from the customer)
     if not country:
@@ -1710,7 +1713,7 @@ def get_shipping_items(customer_id=None, country=None, client="webshop"):
             AND `tabItem`.`disabled` = 0
         ORDER BY `tabShipping Item`.`idx` ASC;""", (country,), as_dict=True)
 
-    return {'success': True, 'message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
+    return {'success': True, 'message': "OK", 'internal_message': "OK", 'currency': frappe.get_value("Country", country, 'default_currency'), 'shipping_items': shipping_items}
 
 
 @frappe.whitelist()
@@ -1721,7 +1724,7 @@ def get_contact_shipping_items(contact, client="webshop"):
     bench execute "microsynth.microsynth.webshop.get_contact_shipping_items" --kwargs "{'contact': 243079}"
     """
     if not contact or not frappe.db.exists("Contact", contact):
-        return {'success': False, 'message': 'A valid and existing contact is required', 'shipping_items': []}
+        return {'success': False, 'message': 'Failed to retrieve shipping items', 'internal_message': 'A valid and existing contact is required', 'shipping_items': []}
     customer_id = get_customer(contact)
     customer_currency = frappe.get_value("Customer", customer_id, 'default_currency')
     # find by customer id
@@ -1741,7 +1744,7 @@ def get_contact_shipping_items(contact, client="webshop"):
                 AND `tabItem`.`disabled` = 0
             ORDER BY `tabShipping Item`.`idx` ASC;""", (customer_id,), as_dict=True)
         if len(shipping_items) > 0:
-            return {'success': True, 'message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
+            return {'success': True, 'message': "OK", 'internal_message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
         else:
             country = None
             # check if customer has a punchout_shop
@@ -1756,7 +1759,7 @@ def get_contact_shipping_items(contact, client="webshop"):
                 if address:
                     country = frappe.get_value("Address", address, "country")
                 else:
-                    return {'success': False, 'message': f'Contact {contact} has no address', 'shipping_items': []}
+                    return {'success': False, 'message': 'Failed to retrieve shipping items', 'internal_message': f'Contact {contact} has no address', 'shipping_items': []}
 
     # find by country (fallback from the customer)
     if not country:
@@ -1778,9 +1781,9 @@ def get_contact_shipping_items(contact, client="webshop"):
                 AND (`tabShipping Item`.`currency` = %s OR `tabShipping Item`.`currency` IS NULL)
             ORDER BY `tabShipping Item`.`idx` ASC;""", (country, customer_currency), as_dict=True)
     if len(shipping_items) > 0:
-        return {'success': True, 'message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
+        return {'success': True, 'message': "OK", 'internal_message': "OK", 'currency': customer_currency, 'shipping_items': shipping_items}
     else:
-        return {'success': False, 'message': 'No data', 'shipping_items': []}
+        return {'success': False, 'message': 'Failed to retrieve shipping items', 'internal_message': 'No data found for the given criteria', 'shipping_items': []}
 
 
 @frappe.whitelist()
@@ -1793,13 +1796,13 @@ def update_newsletter_state(person_id, newsletter_state, client="webshop"):
         contact.receive_newsletter = newsletter_state
         try:
             contact.save(ignore_permissions=True)
-            return {'success': True, 'message': None}
+            return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating newsletter state for {person_id}: {err}. Check ERP Error Log for details."
             frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_newsletter_state")
-            return {'success': False, 'message': msg}
+            return {'success': False, 'message': 'Failed to update newsletter state', 'internal_message': msg}
     else:
-        return {'success': False, 'message': "Person ID not found"}
+        return {'success': False, 'message': "Failed to update newsletter state", 'internal_message': "Person ID not found"}
 
 
 @frappe.whitelist()
@@ -1815,7 +1818,7 @@ def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_i
             if l.link_doctype == "Customer":
                 customer_id = l.link_name
         if not customer_id:
-            return {'success': False, 'message': "No customer linked"}
+            return {'success': False, 'message': "Failed to update punchout details", 'internal_message': "No customer linked"}
         customer = frappe.get_doc("Customer", customer_id)
         customer.punchout_shop = punchout_shop
         customer.punchout_buyer = punchout_buyer
@@ -1823,13 +1826,13 @@ def update_punchout_details(person_id, punchout_shop, punchout_buyer, punchout_i
         try:
             customer.save(ignore_permissions=True)
             contact.save(ignore_permissions=True)
-            return {'success': True, 'message': None}
+            return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating punchout details for {person_id}: {err}. Check ERP Error Log for details."
             frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_punchout_details")
-            return {'success': False, 'message': msg}
+            return {'success': False, 'message': 'Failed to update punchout details', 'internal_message': msg}
     else:
-        return {'success': False, 'message': "Person ID not found"}
+        return {'success': False, 'message': "Failed to update punchout details", 'internal_message': "Person ID not found"}
 
 
 @frappe.whitelist()
@@ -1843,13 +1846,13 @@ def update_address_gps(person_id, gps_lat, gps_long, client="webshop"):
         address.geo_long = float(gps_long)
         try:
             address.save(ignore_permissions=True)
-            return {'success': True, 'message': None}
+            return {'success': True, 'message': None, 'internal_message': None}
         except Exception as err:
             msg = f"Error updating GPS data for {person_id}: {err}. Check ERP Error Log for details."
             frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_address_gps")
-            return {'success': False, 'message': msg}
+            return {'success': False, 'message': 'Failed to update GPS data', 'internal_message': msg}
     else:
-        return {'success': False, 'message': "Person ID not found"}
+        return {'success': False, 'message': "Failed to update GPS data", 'internal_message': "Person ID not found"}
 
 
 def notify_customer_change(customer):
@@ -1874,7 +1877,7 @@ def get_companies(client="webshop"):
         else:
             c['default'] = 0
 
-    return {'success': True, 'message': "OK", 'companies': companies}
+    return {'success': True, 'message': "OK", 'internal_message': "OK", 'companies': companies}
 
 
 @frappe.whitelist()
@@ -1888,11 +1891,11 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
 
     # check configuration
     if not frappe.db.exists("Mode of Payment", "stripe"):
-        return {'success': False, 'message': "Mode of Payment stripe missing. Please correct ERP configuration."}
+        return {'success': False, 'internal_message': "Mode of Payment stripe missing. Please correct ERP configuration.", 'message': "Configuration error"}
 
     # fetch sales order
     if not frappe.db.exists("Sales Order", sales_order):
-        return {'success': False, 'message': "Sales Order not found"}
+        return {'success': False, 'internal_message': "Sales Order not found", 'message': "Failed to create payment"}
     so_doc = frappe.get_doc("Sales Order", sales_order)
 
     # create sales invoice
@@ -1909,7 +1912,7 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     except Exception as err:
         msg = f"Error creating Sales Invoice for Sales Order {sales_order}: {err}. Check ERP Error Log."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
-        return {'success': False, 'message': msg}
+        return {'success': False, 'message': 'Failed to create sales invoice', 'internal_message': msg}
     frappe.db.commit()
 
     # create the payment record
@@ -1931,7 +1934,7 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     except Exception as err:
         msg = f"Error creating Payment Entry for Sales Invoice {sinv.name} of Sales Order {sales_order}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
-        return {'success': False, 'message': msg}
+        return {'success': False, 'message': "Failed to create payment", 'internal_message': msg}
     frappe.db.commit()
 
     # remove hold flag
@@ -1942,10 +1945,10 @@ def create_payment(sales_order, stripe_reference, client="webshop"):
     except Exception as err:
         msg = f"Error updating Sales Order {sales_order} after payment: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_payment")
-        return {'success': False, 'message': msg}
+        return {'success': False, 'message': msg, 'internal_message': 'Failed to update Sales Order.'}
     frappe.db.commit()
 
-    return {'success': True, 'message': "OK", 'reference': sinv.name}
+    return {'success': True, 'message': "OK", 'internal_message': "OK", 'reference': sinv.name}
 
 
 ### Label API
@@ -1967,15 +1970,15 @@ def get_unused_labels(contacts, items):
     """
     # Check parameters
     if not contacts or len(contacts) == 0:
-        return {'success': False, 'message': "Please provide at least one Contact", 'labels': None}
+        return {'success': False, 'message': "Failed to get unused labels", 'internal_message': "Please provide at least one Contact", 'labels': None}
     if not items or len(items) == 0:
-        return {'success': False, 'message': "Please provide at least one Item", 'labels': None}
+        return {'success': False, 'message': "Failed to get unused labels", 'internal_message': "Please provide at least one Item", 'labels': None}
     for contact in contacts:
         if not frappe.db.exists("Contact", contact):
-            return {'success': False, 'message': f"The given Contact '{contact}' does not exist in the ERP.", 'labels': None}
+            return {'success': False, 'message': "Failed to get unused labels", 'internal_message': f"The given Contact '{contact}' does not exist in the ERP.", 'labels': None}
     for item in items:
         if not frappe.db.exists("Item", item):
-            return {'success': False, 'message': f"The given Item '{item}' does not exist in the ERP.", 'labels': None}
+            return {'success': False, 'message': "Failed to get unused labels", 'internal_message': f"The given Item '{item}' does not exist in the ERP.", 'labels': None}
     try:
         sql_query = """
             SELECT `item`,
@@ -1990,11 +1993,11 @@ def get_unused_labels(contacts, items):
                 AND `registered_to` IN ({})
             ;""".format(','.join(['%s'] * len(items)), ','.join(['%s'] * len(contacts)))
         labels = frappe.db.sql(sql_query, items + contacts, as_dict=True)
-        return {'success': True, 'message': 'OK', 'labels': labels}
+        return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'labels': labels}
     except Exception as err:
         msg = f"Error fetching unused labels for contacts {contacts} and items {items}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_unused_labels")
-        return {'success': False, 'message': msg, 'labels': None}
+        return {'success': False, 'message': "Failed to get unused labels", 'internal_message': msg, 'labels': None}
 
 
 @frappe.whitelist()
@@ -2014,14 +2017,16 @@ def get_label_status(labels):
                 messages_to_return.append({
                     'query': label,
                     'label': None,
-                    'message': f"Label '{label['barcode']}' does not exist."  # Item and Barcode are both mandatory.
+                    'message': "Failed to get label status",
+                    'internal_message': f"Label '{label['barcode']}' does not exist."  # Item and Barcode are both mandatory.
                 })
                 continue
             if not frappe.db.exists("Item", label['item']):
                 messages_to_return.append({
                     'query': label,
                     'label': None,
-                    'message': f"Label '{label['barcode']}' does not exist."  # f"The given Item '{label['item']}' does not exist in the ERP."
+                    'message': "Failed to get label status",
+                    'internal_message': f"Label '{label['barcode']}' does not exist."  # f"The given Item '{label['item']}' does not exist in the ERP."
                 })
                 continue
             item_condition = f"AND `item` = {label['item']}"
@@ -2043,6 +2048,7 @@ def get_label_status(labels):
                 messages_to_return.append({
                     'query': label,
                     'label': None,
+                    'internal_message': f"Found {len(sequencing_labels)} labels for the given barcode {label['barcode']}{item_string}.",
                     'message': f"Label '{label['barcode']}' is not valid. Please contact the Microsynth support."
                 })
                 continue
@@ -2051,20 +2057,21 @@ def get_label_status(labels):
                 messages_to_return.append({
                     'query': label,
                     'label': None,
-                    'message': f"Label '{label['barcode']}' does not exist."
+                    'internal_message': f"Label '{label['barcode']}' does not exist.",
+                    'message': "Error getting label status"
                 })
                 continue
             else:
                 messages_to_return.append({
                     'query': label,
                     'label': sequencing_labels[0],
-                    'message': "OK"
+                    'message': "OK",
+                    'internal_message': "OK"
                 })
         return {'success': True, 'messages': messages_to_return}
     except Exception as err:
         frappe.log_error(f"{labels=}\n{err}", "webshop.get_label_status")
         return {'success': False, 'messages': [{'query': None, 'label': None, 'message': err}]}
-        #return {'success': False, 'message': err, 'labels': None}
 
 
 @frappe.whitelist()
@@ -2092,8 +2099,8 @@ def get_label_ranges():
     except Exception as err:
         msg = f"Error fetching label ranges: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_label_ranges")
-        return {'success': False, 'message': msg, 'ranges': None}
-    return {'success': True, 'message': 'OK', 'ranges': ranges_to_return}
+        return {'success': False, 'message': "Failed to get label ranges.", 'internal_message': msg, 'ranges': None}
+    return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'ranges': ranges_to_return}
 
 
 def is_next_barcode(first_barcode, second_barcode):
@@ -2164,10 +2171,10 @@ def get_registered_label_ranges(contacts):
     """
     # Check parameter
     if not contacts or len(contacts) == 0:
-        return {'success': False, 'message': "Please provide at least one Contact", 'ranges': None}
+        return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': "Please provide at least one Contact", 'ranges': None}
     for contact in contacts:
         if not frappe.db.exists("Contact", contact):
-            return {'success': False, 'message': f"The given Contact '{contact}' does not exist in the ERP.", 'ranges': None}
+            return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': f"The given Contact '{contact}' does not exist in the ERP.", 'ranges': None}
     try:
         sql_query = """
             SELECT `item`,
@@ -2180,13 +2187,13 @@ def get_registered_label_ranges(contacts):
             ;""".format(','.join(['%s'] * len(contacts)))
         sequencing_labels = frappe.db.sql(sql_query, contacts, as_dict=True)
         if len(sequencing_labels) == 0:
-            return {'success': True, 'message': 'OK', 'ranges': []}
+            return {'success': True, 'message': 'OK', 'internal_message': 'No sequencing labels found.', 'ranges': []}
         ranges = partition_into_ranges(sequencing_labels)
-        return {'success': True, 'message': 'OK', 'ranges': ranges}
+        return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'ranges': ranges}
     except Exception as err:
         msg = f"Error fetching registered label ranges for contacts {contacts}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_registered_label_ranges")
-        return {'success': False, 'message': msg, 'ranges': None}
+        return {'success': False, 'message': "Failed to get registered label ranges.", 'internal_message': msg, 'ranges': None}
 
 
 def check_label_range(item, prefix, first_int, second_int):
@@ -2255,10 +2262,10 @@ def check_and_get_sequencing_labels(registered_to, item, barcode_start_range, ba
     bench execute microsynth.microsynth.webshop.check_and_get_sequencing_labels --kwargs "{'registered_to': '215856', 'item': '3000', 'barcode_start_range': '96858440', 'barcode_end_range': '96858444'}"
     """
     if not (registered_to and barcode_start_range and barcode_end_range):
-        return {'success': False, 'message': "registered_to, barcode_start_range and barcode_end_range are mandatory parameters. Please provide all of them.", 'ranges': None}
+        return {'success': False, 'message': "Failed to get sequencing labels.", 'internal_message': "registered_to, barcode_start_range and barcode_end_range are mandatory parameters. Please provide all of them.", 'ranges': None}
     if item:
         if not frappe.db.exists("Item", item):
-            return {'success': False, 'message': f"The given Item '{item}' does not exist in the ERP.", 'ranges': None}
+            return {'success': False, 'message': "Failed to get sequencing labels.", 'internal_message': f"The given Item '{item}' does not exist in the ERP.", 'ranges': None}
         item_condition = f"AND `item` = %s"
     else:
         item_condition = ""
@@ -2313,13 +2320,13 @@ def register_labels(registered_to, item, barcode_start_range, barcode_end_range)
             label['registered_to'] = registered_to
             registered_labels.append(label)
         if len(registered_labels) > 0:
-            return {'success': True, 'message': messages if messages else 'OK', 'ranges': partition_into_ranges(registered_labels)}
+            return {'success': True, 'message': 'OK', 'internal_message': messages if messages else 'OK', 'ranges': partition_into_ranges(registered_labels)}
         else:
-            return {'success': False, 'message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
+            return {'success': False, 'message': "Failed to register labels.", 'internal_message': 'Unable to register any labels. ' + messages, 'ranges': partition_into_ranges(registered_labels)}
     except Exception as err:
         msg = f"Error registering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.register_labels")
-        return {'success': False, 'message': msg, 'ranges': None}
+        return {'success': False, 'message': "Failed to register labels.", 'internal_message': msg, 'ranges': None}
 
 
 @frappe.whitelist()
@@ -2334,18 +2341,18 @@ def unregister_labels(registered_to, item, barcode_start_range, barcode_end_rang
         for label in sequencing_labels:
             # check label
             if label['registered_to'] != registered_to:
-                return {'success': False, 'message': f"Barcode {label['barcode']} is not registered to {registered_to}. Did not unregister any labels."}
+                return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': f"Barcode {label['barcode']} is not registered to {registered_to}. Did not unregister any labels."}
         for label in sequencing_labels:
             # unregister label
             seq_label = frappe.get_doc("Sequencing Label", label['name'])
             seq_label.registered = 0
             seq_label.registered_to = None
             seq_label.save()
-        return {'success': True, 'message': 'OK'}
+        return {'success': True, 'message': 'OK', 'internal_message': 'OK'}
     except Exception as err:
         msg = f"Error unregistering labels for registered_to {registered_to}, item {item}, barcode_start_range {barcode_start_range}, barcode_end_range {barcode_end_range}: {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.unregister_labels")
-        return {'success': False, 'message': msg}
+        return {'success': False, 'message': "Failed to unregister labels.", 'internal_message': msg}
 
 
 @frappe.whitelist()
@@ -2393,7 +2400,8 @@ def cancel_order(sales_order, web_order_id):
             if len(sales_orders) == 0:
                 return {
                     'success': False,
-                    'message': 'Found no valid Sales Order with the given Sales Order ID or Web Order ID in the ERP.',
+                    'message': 'Sales Order not found.',
+                    'internal_message': 'Found no valid Sales Order with the given Sales Order ID or Web Order ID in the ERP.',
                     "sales_order": None,
                     "web_order_id": None,
                     'labels': None
@@ -2401,7 +2409,8 @@ def cancel_order(sales_order, web_order_id):
             if len(sales_orders) > 1:
                 return {
                     'success': False,
-                    'message': 'Found no valid Sales Order with the given Sales Order ID and multiple valid Sales Orders with the given Web Order ID in the ERP.',
+                    'message': 'Sales Order not unique found.',
+                    'internal_message': 'Found multiple valid Sales Orders with the given Web Order ID in the ERP.',
                     "sales_order": None,
                     "web_order_id": None,
                     'labels': None
@@ -2412,7 +2421,8 @@ def cancel_order(sales_order, web_order_id):
         elif sales_order_doc.web_order_id != web_order_id:
             return {
                 'success': False,
-                'message': f"The given Sales Order '{sales_order}' has not the given Web Order ID '{web_order_id}'.",
+                'message': "Failed to validate Sales Order.",
+                'internal_message': f"The given Sales Order '{sales_order}' has not the given Web Order ID '{web_order_id}'.",
                 "sales_order": None,
                 "web_order_id": None,
                 'labels': None
@@ -2423,7 +2433,8 @@ def cancel_order(sales_order, web_order_id):
             if not sequencing_label:
                 return {
                     'success': False,
-                    'message': f"Sample {sample.sample} has no Barcode Label.",
+                    'message': "Sample has no Barcode Label.",
+                    'internal_message': f"Sample {sample.sample} has no Barcode Label.",
                     "sales_order": sales_order_doc.name,
                     "web_order_id": sales_order_doc.web_order_id,
                     'labels': None
@@ -2433,7 +2444,8 @@ def cancel_order(sales_order, web_order_id):
             if label_doc.status != "submitted":
                 return {
                     'success': False,
-                    'message': f"Sample {sample.sample} has the Barcode Label {label_doc.name} with status {label_doc.status} (not status 'submitted').",
+                    'message': "Sample Barcode Label not in status 'submitted'.",
+                    'internal_message': f"Sample {sample.sample} has the Barcode Label {label_doc.name} with status {label_doc.status} (not status 'submitted').",
                     "sales_order": sales_order_doc.name,
                     "web_order_id": sales_order_doc.web_order_id,
                     'labels': None
@@ -2461,6 +2473,7 @@ def cancel_order(sales_order, web_order_id):
         return {
             'success': True,
             'message': 'OK',
+            'internal_message': 'OK',
             "sales_order": sales_order_doc.name,
             "web_order_id": sales_order_doc.web_order_id,
             'labels': labels
@@ -2470,7 +2483,8 @@ def cancel_order(sales_order, web_order_id):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.cancel_order")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to cancel Sales Order.",
+            'internal_message': msg,
             "sales_order": None,
             "web_order_id": None,
             'labels': None
@@ -2486,15 +2500,15 @@ def get_quotation_pdf(quotation_id):
     """
     from erpnextswiss.erpnextswiss.attach_pdf import get_pdf_data
     if not frappe.db.exists("Quotation", quotation_id):
-        return {'success': False, 'message': f"Quotation '{quotation_id}' not found.", 'base64string': None}
+        return {'success': False, 'message': "Failed to get quotation.", 'internal_message': f"Quotation '{quotation_id}' not found.", 'base64string': None}
     try:
         pdf = get_pdf_data(doctype='Quotation', name=quotation_id, print_format='Quotation')
         encoded_string = base64.b64encode(pdf)
-        return {'success': True, 'message': 'OK', 'base64string': encoded_string}
+        return {'success': True, 'message': 'OK', 'internal_message': 'OK', 'base64string': encoded_string}
     except Exception as err:
         msg = f"Error creating PDF for Quotation '{quotation_id}': {err}. Check ERP Error Log for details."
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_quotation_pdf")
-        return {'success': False, 'message': msg, 'base64string': None}
+        return {'success': False, 'message': "Failed to create PDF.", 'internal_message': msg, 'base64string': None}
 
 
 def get_customer_dto(customer):
@@ -2609,6 +2623,7 @@ def get_webshop_addresses(webshop_account):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': f"Fetched webshop addresses for webshop_account '{webshop_account}'.",
             'webshop_account': webshop_address_doc.name,
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
@@ -2617,7 +2632,8 @@ def get_webshop_addresses(webshop_account):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_webshop_addresses")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to get webshop addresses.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -2761,6 +2777,7 @@ def create_webshop_address(webshop_account, webshop_address):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': "OK",
             'webshop_account': webshop_address_doc.name,
             'webshop_addresses': webshop_address_dtos,
         }
@@ -2769,7 +2786,8 @@ def create_webshop_address(webshop_account, webshop_address):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.create_webshop_address")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to create webshop address.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -3094,6 +3112,7 @@ def update_webshop_address(webshop_account, webshop_address):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': "OK",
             'webshop_account': webshop_address_doc.name,
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
@@ -3102,7 +3121,8 @@ def update_webshop_address(webshop_account, webshop_address):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.update_webshop_address")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to update webshop address.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': []
         }
@@ -3159,6 +3179,7 @@ def delete_webshop_address(webshop_account, contact_id):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': f"Deleted webshop address with contact_id '{contact_id}' for webshop_account '{webshop_account}'.",
             'webshop_account': webshop_address_doc.name,
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc),
         }
@@ -3167,7 +3188,8 @@ def delete_webshop_address(webshop_account, contact_id):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.delete_webshop_address")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to delete webshop address.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -3202,6 +3224,7 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': f"Set default webshop address for webshop_account '{webshop_account}' with contact_id '{contact_id}'.",
             'webshop_account': webshop_address_doc.name,
             'webshop_addresses': get_webshop_address_dtos_from_doc(webshop_address_doc)
         }
@@ -3210,7 +3233,8 @@ def set_default_webshop_address(webshop_account, address_type, contact_id):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.set_default_webshop_address")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to set default webshop address.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'webshop_addresses': [],
         }
@@ -3249,7 +3273,8 @@ def get_account_details(webshop_account):
             msg = f"The Contact {main_contact.get('contact').get('name')} of the webshop account '{webshop_account}' is disabled."
             return {
                 'success': False,
-                'message': msg,
+                'message': "Failed to fetch account details.",
+                'internal_message': msg,
                 'webshop_account': webshop_account,
                 'currency': None,
                 'shipping_items': [],
@@ -3260,7 +3285,8 @@ def get_account_details(webshop_account):
             msg = f"The Customer {main_contact.get('customer').get('name')} of the webshop account '{webshop_account}' is disabled."
             return {
                 'success': False,
-                'message': msg,
+                'message': "Failed to fetch account details.",
+                'internal_message': msg,
                 'webshop_account': webshop_account,
                 'currency': None,
                 'shipping_items': [],
@@ -3298,6 +3324,7 @@ def get_account_details(webshop_account):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': f"Fetched account details for webshop_account '{webshop_account}'.",
             'webshop_account': webshop_address_doc.get('name'),
             'account_settings': get_account_settings_dto(main_contact),
             'currency': main_contact.get('customer').default_currency,
@@ -3310,7 +3337,8 @@ def get_account_details(webshop_account):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_account_details")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to get account details.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'currency': None,
             'shipping_items': [],
@@ -3359,6 +3387,7 @@ def update_account_settings(webshop_account, account_settings):
         return {
             'success': True,
             'message': "OK",
+            'internal_message': f"Updated account settings for webshop_account '{webshop_account}'.",
             'webshop_account': contact_doc.name,
             'account_settings': {
                 'group_leader': contact_doc.group_leader,
@@ -3371,7 +3400,8 @@ def update_account_settings(webshop_account, account_settings):
         frappe.log_error(f"Unable to update account details for webshop_account '{webshop_account}'\n\n{traceback.format_exc()}", "webshop.update_account_settings")
         return {
             'success': False,
-            'message': msg,
+            'message': "Failed to update account details.",
+            'internal_message': msg,
             'webshop_account': webshop_account,
             'account_settings': account_settings
         }
@@ -3555,14 +3585,16 @@ def get_price_list_doc(contact):
                 "content_base64": encoded_pdf,
                 "mime_type": "application/pdf"
             },
-            "message": "OK"
+            "message": "OK",
+            "internal_message": f"Fetched Price List for Contact '{contact}'."
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "webshop.get_price_list_doc")
         return {
             "success": False,
             "file": None,
-            "message": f"Failed to generate PDF: {str(e)}"
+            "message": f"Error generating PDF",
+            "internal_message": f"Failed to generate PDF: {str(e)}"
         }
 
 
@@ -3723,7 +3755,8 @@ def get_credit_accounts(webshop_account, workgroup_members):
         if not credit_accounts:
             return {
                 "success": True,
-                "message": f"No Credit Account found for Contact '{webshop_account}'",
+                "message": f"No Credit Account found.",
+                "internal_message": f"No Credit Account found for Contact '{webshop_account}'",
                 "credit_accounts": []
             }
         # Build DTO list
@@ -3733,6 +3766,7 @@ def get_credit_accounts(webshop_account, workgroup_members):
         return {
             "success": True,
             "message": "OK",
+            "internal_message": f"Fetched {len(credit_accounts)} Credit Accounts for webshop_account '{webshop_account}'.",
             "credit_accounts": credit_accounts_to_return
         }
     except Exception as err:
@@ -3740,7 +3774,8 @@ def get_credit_accounts(webshop_account, workgroup_members):
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.get_credit_accounts")
         return {
             "success": False,
-            "message": msg,
+            "message": "Failed to get Credit Accounts.",
+            "internal_message": msg,
             "credit_accounts": []
         }
 
@@ -3777,6 +3812,7 @@ def create_credit_account(webshop_account, name, description, company, product_t
         return {
             "success": True,
             "message": "OK",
+            "internal_message": f"Created Credit Account '{credit_account.name}' for webshop_account '{webshop_account}'.",
             "credit_account": get_credit_account_dto(credit_account)
         }
     except Exception as err:
@@ -3784,7 +3820,8 @@ def create_credit_account(webshop_account, name, description, company, product_t
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_credit_account")
         return {
             "success": False,
-            "message": msg,
+            "message": "Failed to create Credit Account.",
+            "internal_message": msg,
             "credit_accounts": []
         }
 
@@ -3860,6 +3897,7 @@ def update_credit_account(credit_account):
         return {
             "success": True,
             "message": "OK",
+            "internal_message": f"Updated Credit Account '{credit_account.get('account_id')}'.",
             "credit_account": get_credit_account_dto(credit_account_doc)
         }
     except Exception as err:
@@ -3867,7 +3905,8 @@ def update_credit_account(credit_account):
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.update_credit_account")
         return {
             "success": False,
-            "message": msg,
+            "message": "Error updating Credit Account",
+            "internal_message": msg,
             "credit_accounts": []
         }
 
@@ -3982,6 +4021,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         return {
             "success": True,
             "message": "OK",
+            "internal_message": f"Deposit invoice '{invoice.name}' created successfully for Credit Account '{account_id}'.",
             "reference": invoice.name
         }
     except Exception as err:
@@ -3989,7 +4029,8 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
         return {
             "success": False,
-            "message": msg,
+            "message": "Failed to create deposit invoice.",
+            "internal_message": msg,
             "reference": None
         }
 
@@ -4100,6 +4141,7 @@ def get_transactions(account_id):
         return {
             "success": True,
             "message": "OK",
+            "internal_message": f"Fetched {len(transactions)} transactions for Credit Account '{account_id}'.",
             "credit_account": get_credit_account_dto(credit_account),
             "transactions": transactions,
             "reservations": get_reservations(account_id, current_balance)
@@ -4109,7 +4151,8 @@ def get_transactions(account_id):
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_transactions")
         return {
             "success": False,
-            "message": msg,
+            "message": "Failed to fetch Credit Account data.",
+            "internal_message": msg,
             "credit_account": None,
             "transactions": [],
             "reservations": None
@@ -4135,12 +4178,14 @@ def get_balance_sheet_pdf(account_id):
                 "content_base64": encoded_pdf,
                 "mime_type": "application/pdf"
             },
-            "message": "Print Format will be changed"
+            "internal_message": f"Generated balance sheet PDF for Credit Account '{account_id}'.",
+            "message": "OK"
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
         return {
             "success": False,
             "file": None,
-            "message": f"Failed to generate PDF: {str(e)}"
+            "internal_message": f"Failed to generate PDF: {str(e)}",
+            "message": "Failed to generate PDF"
         }
