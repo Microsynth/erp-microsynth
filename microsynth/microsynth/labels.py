@@ -363,21 +363,21 @@ def print_purchasing_labels(label_table):
     if isinstance(label_table, str):
         label_table = json.loads(label_table)
     try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((label_printer_ip, label_printer_port))
         for row in label_table:
             row['username'] = username
             labels_to_print = int(row.get("labels_to_print") or 0)
             if labels_to_print <= 0:
                 continue
-
             for _ in range(labels_to_print):
                 # Render the label
                 content = frappe.render_template(
                     purchase_label_template,
                     {"row": row}
                 )
-                # frappe.log_error(content, "content")
-                # return
-                print_raw(label_printer_ip, label_printer_port, content)
+                s.send(content.encode())
+        s.close()
     except Exception as err:
         frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")
         frappe.throw(f"Error printing labels: {err}")
