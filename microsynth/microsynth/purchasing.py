@@ -12,10 +12,11 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add, clear
 from frappe.core.doctype.communication.email import make
-from frappe.utils import get_url_to_form, flt, getdate, nowdate, nowtime, now_datetime
+from frappe.utils import get_url_to_form, flt, getdate, now_datetime
 from frappe.utils.data import today
 from frappe.utils.password import get_decrypted_password
 from frappe.core.doctype.user.user import test_password_strength
+from erpnext.stock.doctype.batch.batch import get_batches
 from erpnext.stock.get_item_details import get_item_details
 from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from microsynth.microsynth.utils import user_has_role
@@ -2735,93 +2736,37 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
 
         # 2. Collect stock data
         stock_rows = []
-        batch_map = {}  # old_batch -> new_batch
 
-        if item.has_batch_no:
-            # Batch-aware logic (SLE based)
-            sle_rows = frappe.db.sql("""
-                SELECT
-                    warehouse,
-                    batch_no,
-                    SUM(actual_qty) AS qty,
-                    valuation_rate
-                FROM `tabStock Ledger Entry`
-                WHERE
-                    item_code = %s
-                    AND is_cancelled = 0
-                GROUP BY warehouse, batch_no
-                HAVING qty > 0
-            """, item_code, as_dict=True)
+        bins = frappe.get_all("Bin", filters=[['actual_qty', '>', 0], ['item_code', '=', item_code]], fields=['name', 'item_code', 'warehouse', 'actual_qty', 'valuation_rate'])
 
-            if not sle_rows:
-                log("No stock exists (batch item). Safe direct UOM change.")
-                if not dry_run:
-                    item.stock_uom = new_uom
-                    item.save()
-                    frappe.db.commit()
-                return
+        for b in bins:
+            batches = get_batches(item_code=b['item_code'], warehouse=b['warehouse'], qty=b['actual_qty'], throw=False)
+            if not batches:
+                # insert item record without batch reference
+                stock_rows.append({
+                    "warehouse": b['warehouse'],
+                    "batch_no": None,
+                    "qty": b['actual_qty'],
+                    "valuation_rate": b['valuation_rate']
+                })
+            else:
+                for bat in batches:
+                    if bat['qty'] > 0:
+                        # insert item with bat['qty'], bat['batch_id']
+                        stock_rows.append({
+                            "warehouse": b['warehouse'],
+                            "batch_no": bat['batch_id'],
+                            "qty": bat['qty'],
+                            "valuation_rate": b['valuation_rate']
+                        })
 
-            for r in sle_rows:
-                stock_rows.append(r)
-            for r in stock_rows:
-                old_batch = r["batch_no"]
-                if old_batch in batch_map:
-                    continue
-                if not frappe.db.exists("Batch", {
-                    "batch_id": old_batch,
-                    "item": item_code
-                }):
-                    frappe.throw(f"Batch {old_batch} not found for item {item_code}")
-
-                # Create new batch for new item
-                if not dry_run:
-                    new_batch_name = f"{old_batch}::{item_code}"
-                    # reuse if already created
-                    if frappe.db.exists("Batch", new_batch_name):
-                        batch_map[old_batch] = new_batch_name
-                    else:
-                        new_batch = frappe.new_doc("Batch")
-                        # disable ERPNext v12 batch autonaming
-                        new_batch.flags.ignore_autoname = True
-                        # Explicit unique primary key
-                        new_batch.name = new_batch_name  # TODO: Why does this not work and I still get DuplicateEntryError: ('Batch', 'HMBJ4324-HMBK0734', IntegrityError(1062, "Duplicate entry 'HMBJ4324-HMBK0734' for key 'PRIMARY'"))?
-                        # Business fields
-                        new_batch.batch_id = old_batch
-                        new_batch.item = item_code
-                        new_batch.insert(ignore_permissions=True)
-                        batch_map[old_batch] = new_batch_name
-                else:
-                    batch_map[old_batch] = f"(new){old_batch}"
-
-        else:
-            # Non-batch logic (Bin based)
-            bins = frappe.get_all(
-                "Bin",
-                filters={"item_code": item_code},
-                fields=["warehouse", "actual_qty", "valuation_rate", "reserved_qty"]
-            )
-            for b in bins:
-                if b.actual_qty < 0:
-                    frappe.throw(f"Negative stock in {b.warehouse}")
-
-                if b.reserved_qty and b.reserved_qty > 0:
-                    frappe.throw(f"Reserved stock exists in {b.warehouse}")
-
-                if b.actual_qty > 0:
-                    stock_rows.append({
-                        "warehouse": b.warehouse,
-                        "batch_no": None,
-                        "qty": b.actual_qty,
-                        "valuation_rate": b.valuation_rate
-                    })
-
-            if not stock_rows:
-                log("No stock exists. Safe direct UOM change.")
-                if not dry_run:
-                    item.stock_uom = new_uom
-                    item.save()
-                    frappe.db.commit()
-                return
+        if not stock_rows:
+            log("No stock exists. Safe direct UOM change.")
+            if not dry_run:
+                item.stock_uom = new_uom
+                item.save()
+                frappe.db.commit()
+            return
 
         log(f"Collected {len(stock_rows)} stock rows")
 
@@ -2920,14 +2865,14 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
                     "item_code": old_item_code,
                     "qty": r["qty"],
                     "t_warehouse": r["warehouse"],
-                    "batch_no": batch_map[r["batch_no"]] if r["batch_no"] else None,
+                    "batch_no": r["batch_no"],
                     "uom": new_uom,
                     "conversion_factor": 1,
                     "valuation_rate": r["valuation_rate"],
                     "allow_zero_valuation_rate": 1
                 })
             receipt.insert()
-            receipt.submit()
+            receipt.submit()  # TODO: How to avoid "frappe.exceptions.ValidationError: HMBJ4324-HMBK0734 is not a valid Batch Number for Item P007440"?
 
         if not dry_run:
             frappe.db.commit()
@@ -2938,74 +2883,3 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
         if not dry_run:
             frappe.db.rollback()
         raise
-
-
-# def change_item_uom(item_code, new_uom):
-#     """
-#     Deprecated first implementation
-#     """
-    # item = frappe.get_doc("Item", item_code)
-    # bins = frappe.get_all("Bin",
-    #     filters={"item_code": item_code},
-    #     fields=["warehouse", "actual_qty"]
-    # )
-    # if not bins:
-    #     # No Bin entries, safe to change UOM directly
-    #     item.stock_uom = new_uom
-    #     item.save()
-    #     return
-    # # There are Bin entries, need to handle stock transfer
-    # warehouse_quantities = {}
-    # for b in bins:
-    #     if b.actual_qty < 0:
-    #         frappe.throw(f"Cannot change UOM for Item {item_code} because Warehouse {b.warehouse} has negative stock ({b.actual_qty}). Please resolve negative stock first.")
-    #     warehouse_quantities[b.warehouse] = b.actual_qty
-    # # Material Issue for old item
-    # for warehouse, qty in warehouse_quantities.items():
-    #     if qty <= 0:
-    #         continue
-    #     se = frappe.new_doc("Stock Entry")
-    #     se.stock_entry_type = "Material Issue"
-    #     se.posting_date = nowdate()
-    #     se.posting_time = nowtime()
-    #     se.append("items", {
-    #         "item_code": item_code,
-    #         "qty": qty,
-    #         "s_warehouse": warehouse,
-    #         "t_warehouse": "",
-    #         "uom": item.stock_uom,
-    #         "conversion_factor": 1.0,
-    #     })
-    #     se.insert()
-    #     se.submit()
-    # # Rename old item
-    # old_item_name = item.name
-    # temp_item_name = f"x{old_item_name}"
-    # frappe.rename_doc("Item", old_item_name, temp_item_name, merge=False)
-    # # Disable old item
-    # old_item = frappe.get_doc("Item", temp_item_name)
-    # old_item.disabled = 1
-    # old_item.save()
-    # # Create new item with original item code
-    # new_item = frappe.copy_doc(old_item)
-    # new_item.name = old_item_name
-    # new_item.stock_uom = new_uom
-    # new_item.insert()
-    # # Material Receipt for new item
-    # for warehouse, qty in warehouse_quantities.items():
-    #     if qty <= 0:
-    #         continue
-    #     se = frappe.new_doc("Stock Entry")
-    #     se.stock_entry_type = "Material Receipt"
-    #     se.posting_date = nowdate()
-    #     se.posting_time = nowtime()
-    #     se.append("items", {
-    #         "item_code": new_item.name,
-    #         "qty": qty,
-    #         "s_warehouse": "",
-    #         "t_warehouse": warehouse,
-    #         "uom": new_item.stock_uom,
-    #         "conversion_factor": 1.0,
-    #     })
-    #     se.insert()
-    #     se.submit()
