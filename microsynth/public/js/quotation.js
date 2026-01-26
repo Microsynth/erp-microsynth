@@ -233,6 +233,11 @@ frappe.ui.form.on('Quotation', {
                 message: __("Please enter a Valid Till date that is in the future.")
             });
         }
+        //set_company_read_only(frm);
+    },
+
+    onload(frm) {
+        set_company_read_only(frm);
     },
 
     before_save(frm) {
@@ -315,6 +320,10 @@ frappe.ui.form.on('Quotation', {
         }
     },
 
+    customer(frm) {
+        set_company_read_only(frm);
+    },
+
     customer_name(frm) {
         // set title to customer name
         if (frm.doc.customer_name && frm.doc.customer_name != frm.doc.title) {
@@ -347,6 +356,41 @@ frappe.ui.form.on('Quotation', {
         });
     }
 });
+
+function set_company_read_only(frm) {
+    if (!frm.doc.party_name) {
+        frm.set_df_property('company', 'read_only', 0);
+        return;
+    }
+    frappe.call({
+        'method': 'frappe.client.get',
+        'args': {
+            'doctype': 'Customer',
+            'name': frm.doc.party_name
+        },
+        'callback': function (r) {
+            if (!r.message) {
+                frm.set_df_property('company', 'read_only', 0);
+                frm.refresh_field('company');
+                return;
+            }
+            const customer = r.message;
+            const webshop_services = customer.webshop_service || [];
+            const has_invoice_by_default_company = webshop_services.some(
+                row => row.webshop_service === "InvoiceByDefaultCompany"
+            );
+            if (has_invoice_by_default_company) {
+                frm.set_df_property('company', 'read_only', 1);
+                if (customer.default_company && frm.doc.company !== customer.default_company) {
+                    frm.set_value('company', customer.default_company);
+                }
+            } else {
+                frm.set_df_property('company', 'read_only', 0);
+            }
+            frm.refresh_field('company');
+        }
+    });
+}
 
 /* this function will pull
  * territory, currency and selling_price_list
