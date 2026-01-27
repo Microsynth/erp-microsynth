@@ -1493,8 +1493,8 @@ def transmit_sales_invoice(sales_invoice_id):
         if sales_invoice.total == 0:
             return
 
-        # TODO: this does not work for the dropshipment case since the customer is Microsynth France SAS and not the end customer
         # Do not send single customer credit invoices for collective billing customers
+        # this does not affect the dropshipment case since the customer is Microsynth France SAS (which has collective billing anyway) and not the end customer
         if cint(customer.collective_billing) and sales_invoice.net_total == 0:
             return
 
