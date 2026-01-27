@@ -2669,12 +2669,12 @@ def add_or_update_item_price(item_code, price_list, min_qty, price_list_rate):
     frappe.db.commit()
 
 
-def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
+def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
     """
     One-time migration script to change Item.stock_uom
 
     * Check if there are transactions (tabBin)
-        --> no Bin entries --> change Item.stock_uom to new_uom and return
+        --> no Bin entries --> change Item.stock_uom to new_stock_uom and return
 
     * determine the actual_qty
         * tabBin ist mutierbar
@@ -2692,21 +2692,22 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
 
     * rename item: frappe.rename_doc --> "xP1234", merge=false
     * disable old item
-    * create new item with new_uom
+    * create new item with new_stock_uom
         * frappe.copy_doc
         * New item must have the same Item Code as the old item before renameing "P1234"
-    * Set new Item.stock_uom = new_uom
+    * Set new Item.stock_uom = new_stock_uom
 
     * loop through warehouses
     * Create Stock Entry for new item
         * remember quantity in stock
     * stock_entry_type = Material Receipt
+    * move Item Price entries from old item to new item
 
-    bench execute microsynth.microsynth.purchasing.change_item_uom --kwargs "{'item_code': 'P007440', 'new_uom': 'Bottle', 'dry_run': False, 'verbose': True}"
+    bench execute microsynth.microsynth.purchasing.change_item_uom --kwargs "{'item_code': 'P001034', 'new_stock_uom': 'Bottle', 'dry_run': False, 'verbose': True}"
     """
     def log(msg):
         if verbose:
-            frappe.msgprint(msg)
+            print(msg)
 
     frappe.only_for("System Manager")
 
@@ -2724,11 +2725,11 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
         if item.disabled:
             frappe.throw("Item is disabled.")
 
-        if item.stock_uom == new_uom:
+        if item.stock_uom == new_stock_uom:
             frappe.throw("Item already uses the target Stock UOM.")
 
-        if not frappe.db.exists("UOM", new_uom):
-            frappe.throw(f"UOM {new_uom} does not exist.")
+        if not frappe.db.exists("UOM", new_stock_uom):
+            frappe.throw(f"UOM {new_stock_uom} does not exist.")
 
         if item.has_serial_no:
             frappe.throw("Serial-numbered items are NOT supported by this migration script.")
@@ -2736,6 +2737,7 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
 
         # 2. Collect stock data
         stock_rows = []
+        affected_batches = set()
 
         bins = frappe.get_all("Bin", filters=[['actual_qty', '>', 0], ['item_code', '=', item_code]], fields=['name', 'item_code', 'warehouse', 'actual_qty', 'valuation_rate'])
 
@@ -2750,6 +2752,7 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
                     "valuation_rate": b['valuation_rate']
                 })
             else:
+                affected_batches.update({bat['batch_id'] for bat in batches})
                 for bat in batches:
                     if bat['qty'] > 0:
                         # insert item with bat['qty'], bat['batch_id']
@@ -2763,7 +2766,7 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
         if not stock_rows:
             log("No stock exists. Safe direct UOM change.")
             if not dry_run:
-                item.stock_uom = new_uom
+                item.stock_uom = new_stock_uom
                 item.save()
                 frappe.db.commit()
             return
@@ -2828,9 +2831,13 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
             old_item.disabled = 1
             old_item.add_comment(
                 "Comment",
-                f"Deprecated due to Stock UOM migration to {new_uom}"
+                f"Disabled due to Stock UOM migration from {item.stock_uom} to {new_stock_uom}, see new Item {old_item_code}"
             )
             old_item.save()
+            for batch_id in affected_batches:
+                log(f"Updating Batch {batch_id} to point to renamed Item {old_item_code}")
+                frappe.db.set_value("Batch", batch_id, "item", old_item_code)
+            frappe.db.commit()  # necessary according to Lars
 
         # 6. Create new item with new Stock UOM
         log("Creating new Item with new Stock UOM")
@@ -2839,15 +2846,16 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
             new_item = frappe.copy_doc(old_item)
             new_item.name = old_item_code
             new_item.item_code = old_item_code
-            new_item.stock_uom = new_uom
+            new_item.stock_uom = new_stock_uom
             new_item.disabled = 0
             new_item.end_of_life = None
             new_item.barcode = []
             new_item.uoms = []
-            new_item.append("uoms", {
-                "uom": old_item.stock_uom,
-                "conversion_factor": 1
-            })
+            for uom_row in old_item.get("uoms"):
+                new_item.append("uoms", {
+                    "uom": uom_row.uom if uom_row.uom != old_item.stock_uom else new_stock_uom,
+                    "conversion_factor": uom_row.conversion_factor
+                })
             new_item.insert(ignore_permissions=True)
 
         # 7. Material Receipt (restore stock)
@@ -2866,13 +2874,27 @@ def change_item_uom(item_code, new_uom, dry_run=False, verbose=False):
                     "qty": r["qty"],
                     "t_warehouse": r["warehouse"],
                     "batch_no": r["batch_no"],
-                    "uom": new_uom,
+                    "uom": new_stock_uom,
                     "conversion_factor": 1,
                     "valuation_rate": r["valuation_rate"],
                     "allow_zero_valuation_rate": 1
                 })
             receipt.insert()
-            receipt.submit()  # TODO: How to avoid "frappe.exceptions.ValidationError: HMBJ4324-HMBK0734 is not a valid Batch Number for Item P007440"?
+            receipt.submit()
+
+        # 8. Move Item Prices from old to new item
+        log("Move Item Prices from old to new item")
+        item_prices = frappe.get_all(
+            "Item Price",
+            filters={"item_code": temp_item_code},
+            fields=["*"]
+        )
+        for ip in item_prices:
+            log(f" - Moving Item Price {ip.name} for Price List {ip.price_list}, min_qty {ip.min_qty} from {temp_item_code} to {old_item_code}")
+            if not dry_run:
+                ip_doc = frappe.get_doc("Item Price", ip.name)
+                ip_doc.item_code = old_item_code
+                ip_doc.save()
 
         if not dry_run:
             frappe.db.commit()
