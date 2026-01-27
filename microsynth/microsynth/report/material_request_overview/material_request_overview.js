@@ -276,7 +276,7 @@ function open_search_dialog(report) {
                 'item_name_part': f.item_name_part.get_value(),
                 'material_code': f.material_code.get_value(),
                 'supplier_name': f.supplier_name.get_value(),
-                'supplier_part_no': f.supplier_part_no.get_value()
+                'supplier_part_no': f.supplier_part_no.get_value().trim()
             },
             'callback': function(r) {
                 const items = r.message || [];

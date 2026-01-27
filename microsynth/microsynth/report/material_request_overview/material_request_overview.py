@@ -330,11 +330,11 @@ def create_item_request(data):
             frappe.throw(f"Required parameter missing: {field}")
 
     ir = frappe.new_doc("Item Request")
-    ir.item_name = data.get('item_name')
+    ir.item_name = data.get('item_name').strip()
     ir.qty = data.get('qty') or 1
-    ir.supplier_part_no = data.get('supplier_part_no')
-    ir.supplier = data.get('supplier')
-    ir.supplier_name = data.get('supplier_name')
+    ir.supplier_part_no = data.get('supplier_part_no').strip() if data.get('supplier_part_no') else None
+    ir.supplier = data.get('supplier').strip() if data.get('supplier') else None
+    ir.supplier_name = data.get('supplier_name').strip()
     ir.uom = data.get('purchase_uom') or data.get('stock_uom')
     ir.rate = data.get('rate')
     ir.currency = data.get('currency')  # TODO: How to avoid that it is set to CHF by default if it is not in data?

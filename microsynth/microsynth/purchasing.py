@@ -1912,6 +1912,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
 
     # Filter: partial match on supplier_part_no
     if supplier_part_no:
+        supplier_part_no = supplier_part_no.strip()
         filters.append('`tabItem Supplier`.`supplier_part_no` LIKE %(supplier_part_no)s')
         values['supplier_part_no'] = f'%{supplier_part_no}%'
 
