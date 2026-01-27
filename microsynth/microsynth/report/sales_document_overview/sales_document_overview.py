@@ -52,6 +52,7 @@ def get_data(filters):
 
     collected_docs = []
     seen_keys = set()  # Track (doctype, name)
+    expand_sales_invoice = False  # only expand Sales Invoice if given by filter to avoid seeing too many documents when searching for an intercompany SO/DN.
 
     def add_doc(doc_dict):
         if doc_dict not in collected_docs:
@@ -111,6 +112,10 @@ def get_data(filters):
                 safe_get_and_traverse("Sales Invoice", item.parent)
 
     def handle_sales_invoice(doc):
+        # Expand Sales Invoice only if Sales Invoice ID is given by filter
+        # to avoid seeing too many documents when searching for an intercompany SO/DN.
+        if not expand_sales_invoice:
+            return
         si_items = frappe.get_all(
             "Sales Invoice Item",
             filters={"parent": doc.name},
@@ -141,6 +146,8 @@ def get_data(filters):
         inferred_doctype = prefix_to_doctype.get(prefix)
         if not inferred_doctype:
             frappe.throw("Could not infer DocType from Document ID prefix.<br>Please enter a valid Document ID starting with QTN, SO, DN or SI followed by '-'.")
+        if inferred_doctype == "Sales Invoice":
+            expand_sales_invoice = True
         filters["doctype"] = inferred_doctype
         filters["web_order_id"] = frappe.get_value(inferred_doctype, filters["document_id"], "web_order_id")
         safe_get_and_traverse(inferred_doctype, filters["document_id"])
