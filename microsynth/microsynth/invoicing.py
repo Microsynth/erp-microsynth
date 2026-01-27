@@ -1493,6 +1493,7 @@ def transmit_sales_invoice(sales_invoice_id):
         if sales_invoice.total == 0:
             return
 
+        # TODO: this does not work for the dropshipment case since the customer is Microsynth France SAS and not the end customer
         # Do not send single customer credit invoices for collective billing customers
         if cint(customer.collective_billing) and sales_invoice.net_total == 0:
             return
@@ -1726,6 +1727,7 @@ Your administration team<br><br>{footer}"
             for item in sales_invoice.items:
                 delivery_note_ids.add(item.delivery_note)
 
+            # the po_nos are the purchase orders numbers of the original order placed by the end customer
             po_nos = set()
             for dn_id in delivery_note_ids:
                 po_no = (frappe.get_value("Delivery Note", dn_id, "po_no") or "").strip()
@@ -1740,6 +1742,7 @@ Your administration team<br><br>{footer}"
                     continue
                 po_nos.add(po_no)
 
+            # iterate over the Sales Orders placed by the end customers
             for so_id in po_nos:
                 # check if the Sales Order with so_id has docstatus 1
                 so_docstatus = frappe.get_value("Sales Order", so_id, "docstatus")
@@ -1755,6 +1758,12 @@ Your administration team<br><br>{footer}"
                 # TODO: Check if SO-LYO is Closed. If yes, do not create SI-LYO and send email to responsible person?
                 # TODO: Check if SO-LYO has hold_invoice set. If yes, do not create SI-LYO and send email to responsible person?
                 # create SI-LYO from SO-LYO
+
+                # do not invoice sales orders of collective billing customers
+                so_customer = frappe.get_value("Sales Order", so_id, "customer")
+                if cint(frappe.get_value("Customer", so_customer, "collective_billing")):
+                    continue
+
                 si_id = create_si_from_so(so_id)
                 if not si_id:
                     continue
