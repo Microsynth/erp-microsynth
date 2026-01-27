@@ -392,22 +392,12 @@ async function print_labels(frm) {
                         'read_only': 1,
                         'in_list_view': 1,
                         'columns': 1
-                    },
-                    {
-                        'fieldname': 'serial_no',
-                        'fieldtype': 'Data',
-                        'label': __('Serial No'),
-                        'read_only': 1,
-                        'in_list_view': 1,
-                        'columns': 1
                     }
                 ]
             }
         ],
         'primary_action_label': __('Print'),
         primary_action(values) {
-            //console.log("Labels to print:", values.label_table);
-            // call to print
             frappe.call({
                 'method': "microsynth.microsynth.labels.print_purchasing_labels",
                 'args': {
@@ -417,7 +407,6 @@ async function print_labels(frm) {
                     frappe.msgprint(__('Labels sent to printer.'));
                 }
             });
-            //frappe.show_alert("Printing is not yet implemented.");
             d.hide();
         }
     });

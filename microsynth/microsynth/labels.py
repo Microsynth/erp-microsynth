@@ -371,6 +371,8 @@ def print_purchasing_labels(label_table):
             if labels_to_print <= 0:
                 continue
             for _ in range(labels_to_print):
+                # add an individual timestamp to each label including milliseconds
+                row['timestamp'] = datetime.now().strftime("%y%m%d%H%M%S%f")[:-3]
                 # Render the label
                 content = frappe.render_template(
                     purchase_label_template,

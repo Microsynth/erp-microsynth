@@ -24,13 +24,15 @@
 #T1.2#J9.4#YN101//42///{{ row.item_code }}
 {%- endif %}
 
-{% if row.batch_no and row.serial_no %}
-#T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}:{{ row.serial_no }}
+{% if row.batch_no and row.timestamp %}
+#T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}:{{ row.timestamp }}
 {% elif row.batch_no %}
 #T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}
+{% elif row.timestamp %}
+#T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}::{{ row.timestamp }}
 {% else %}
 #T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}
-{%- endif %}
+{% endif %}
 
 {# Line 4: Opening date / initials: #}
 #T1.2#J6.7#YN101//28///Opening date / initials:#G
