@@ -2034,7 +2034,6 @@ def send_material_request_owner_emails(doc, event=None):
             continue
         user = frappe.get_doc("User", mr_owner)
         email = user.email or mr_owner
-        # TODO: Create Email Template later
         subject = f"Items Received for Your Request(s) - Purchase Receipt {doc.name}"
         message = f"<p>Dear {user.full_name or mr_owner},</p>"
         message += f"<p>The following items from your Item or Material Request(s) have been received in Purchase Receipt <a href='{get_url_to_form('Purchase Receipt', doc.name)}'>{doc.name}</a>:</p><ul>"

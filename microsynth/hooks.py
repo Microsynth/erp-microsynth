@@ -210,9 +210,9 @@ doc_events = {
     "Item": {
         "before_save": "microsynth.microsynth.utils.item_before_save",
     },
-    "Purchase Receipt": {
-        "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"
-    },
+    # "Purchase Receipt": {
+    #     "on_submit": "microsynth.microsynth.purchasing.send_material_request_owner_emails"  # Use custom Notification "Microsynth Material Request Receipt Notification" instead of manual email sending
+    # },
     "Job Opening": {
         "autoname": "microsynth.microsynth.hr.hr_autoname"
     },
