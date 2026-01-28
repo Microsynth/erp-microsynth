@@ -295,8 +295,7 @@ function create_new_supplier_item(frm) {
                 label: 'Shelf Life in Years',
                 fieldname: 'shelf_life_in_years',
                 fieldtype: 'Float',
-                reqd: 1,
-                min: 0.0001
+                min: 0.0
             },
             {
                 label: 'Pack Size of one stock unit',

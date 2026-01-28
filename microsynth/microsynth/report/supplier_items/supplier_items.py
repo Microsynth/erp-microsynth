@@ -163,8 +163,8 @@ def create_purchasing_item(data):
     #     if existing:
     #         frappe.throw(_("An item with Material Code {0} already exists: {1}").format(material_code, existing))
 
-    if float(data.get("shelf_life_in_years") or 0) <= 0:
-        frappe.throw(_("Shelf Life in Years must be greater than 0."))
+    if float(data.get("shelf_life_in_years") or 0) < 0:
+        frappe.throw(_("Shelf Life in Years is not allowed to be negative."))
 
     # --- Create Item ---
     item = frappe.new_doc("Item")
@@ -284,8 +284,8 @@ def update_supplier_item(data):
     if "shelf_life_in_years" in data:
         try:
             shelf_years = flt(data.get("shelf_life_in_years", 0))
-            if shelf_years <= 0:
-                frappe.throw(_("Shelf Life in Years must be greater than 0"))
+            if shelf_years < 0:
+                frappe.throw(_("Shelf Life in Years is not allowed to be negative."))
             item.shelf_life_in_days = round(shelf_years * 365)
         except Exception:
             frappe.throw(_("Invalid value for Shelf Life in Years"))

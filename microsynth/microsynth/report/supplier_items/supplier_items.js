@@ -247,8 +247,7 @@ function create_new_supplier_item() {
             {
                 label: 'Shelf Life in Years',
                 fieldname: 'shelf_life_in_years',
-                fieldtype: 'Float',
-                reqd: 1
+                fieldtype: 'Float'
             },
             {
                 label: 'Pack Size of one stock unit',
@@ -313,7 +312,6 @@ function create_new_supplier_item() {
                 label: 'Default Supplier',
                 fieldname: 'default_supplier',
                 fieldtype: 'Link',
-                reqd: 1,
                 options: 'Supplier',
                 onchange: function () {
                     if (!dialog.get_value('supplier')) {
