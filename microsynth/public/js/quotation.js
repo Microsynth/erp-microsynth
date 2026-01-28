@@ -233,7 +233,9 @@ frappe.ui.form.on('Quotation', {
                 message: __("Please enter a Valid Till date that is in the future.")
             });
         }
-        //set_company_read_only(frm);
+        if (frm.doc.__islocal) {
+            set_company_read_only(frm);
+        }
     },
 
     onload(frm) {
