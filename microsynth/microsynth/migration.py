@@ -6919,3 +6919,41 @@ def link_credit_accounts_on_credit_notes(very_verbose=False):
             print(f"ERROR: Credit Note {cn['name']}: Failed to link Credit Account: {err}")
 
     print(f"\nDONE: Linked {linked_count} Credit Notes to their respective Credit Accounts.")
+
+
+def change_purchase_uom_box():
+    """
+    Fetch all Items with Item Group 'Purchasing', stock_uom != 'Box' and purchase_uom == 'Box'.
+    Set purchase_uom to 'Carton' and change conversion factor accordingly.
+    If there is no conversion factor defined for 'Box', print a warning and skip the item.
+
+    bench execute microsynth.microsynth.migration.change_purchase_uom_box
+    """
+    items = frappe.get_all(
+        "Item",
+        filters={
+            "item_group": "Purchasing",
+            "stock_uom": ["!=", "Box"],
+            "purchase_uom": "Box"
+        },
+        fields=["name", "stock_uom"]
+    )
+    print(f"Found {len(items)} Items to update.")
+
+    updated_count = 0
+    for item in items:
+        item_doc = frappe.get_doc("Item", item["name"])
+        conversion_factor_updated = False
+        for uom in item_doc.uoms:
+            if uom.uom == "Box":
+                uom.uom = "Carton"
+                conversion_factor_updated = True
+
+        if not conversion_factor_updated:
+            print(f"WARNING: Item {item['name']}: No conversion factor found for 'Box'. Skipping.")
+            continue
+
+        item_doc.save()
+        updated_count += 1
+
+    print(f"\nDONE: Updated {updated_count} Items.")
