@@ -13,7 +13,9 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120},
+        {"label": _("DocType"), "fieldname": "doctype", "fieldtype": "Data", "width": 110},
+        {"label": _("Document Name"), "fieldname": "docname", "fieldtype": "Dynamic Link", "options": "doctype", "width": 120},
+        {"label": _("Delivery Note"), "fieldname": "delivery_note", "fieldtype": "Link", "options": "Delivery Note", "width": 120, "hidden": 1},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 70},
         {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Method"), "fieldname": "invoicing_method", "fieldtype": "Data", "width": 70},
@@ -23,7 +25,6 @@ def get_columns():
         {"label": _("PO number"), "fieldname": "po_no", "fieldtype": "Data", "width": 120},
         {"label": _("Region"), "fieldname": "region", "fieldtype": "Data", "width": 60},
         {"label": _("Tax ID"), "fieldname": "tax_id", "fieldtype": "Data", "width": 130},
-        # {"label": _("Shipment type"), "fieldname": "shipment_type", "fieldtype": "Data", "width": 80},
         {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Currency", "options": "currency", "width": 95},
         # {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
         {"label": _("Remaining credit amount"), "fieldname": "remaining_credits", "fieldtype": "Currency", "options": "currency", "width": 120},
@@ -109,6 +110,9 @@ def get_data(filters=None):
                 AND `tabDelivery Note`.`status` != "Closed"
                 AND `tabCustomer`.`invoicing_method` NOT LIKE "%%Prepayment%%"
                 {conditions}
+
+            -- TODO: UNION SELECT Sales Orders whose intercompany Delivery Note is already invoiced
+
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
           AND `raw`.`hold_invoice` = 0

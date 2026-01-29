@@ -75,19 +75,19 @@ def print_invoices():
         async_create_invoices('Post', company['name'], None)
 
 
-def get_tax_templates(delivery_notes):
+def get_tax_templates(invoiceable_objects):
     taxes = []
-    for dn in delivery_notes:
-        t = frappe.db.get_value("Delivery Note", dn, "taxes_and_charges")
+    for document in invoiceable_objects:
+        t = frappe.db.get_value("Delivery Note", document.get('docname'), "taxes_and_charges")
         if t not in taxes:
             taxes.append(t)
     return taxes
 
 
-def get_product_types(delivery_notes):
+def get_product_types(invoiceable_objects):
     product_types = set()
-    for dn in delivery_notes:
-        product_type = frappe.db.get_value('Delivery Note', dn, 'product_type')
+    for document in invoiceable_objects:
+        product_type = frappe.db.get_value('Delivery Note', document.get('docname'), 'product_type')
         if product_type == 'Project':
             product_types.add(product_type)
         else:
@@ -95,73 +95,81 @@ def get_product_types(delivery_notes):
     return product_types
 
 
-def make_collective_invoices(delivery_notes):
+def make_collective_invoices(invoiceable_objects):
     """
     Make collective invoices from the given Delivery Notes. All documents must
     be for a single customer and from the same company.
     Considers customer credits if available.
 
-    bench execute microsynth.microsynth.invoicing.make_collective_invoices --kwargs "{'delivery_notes': ['DN-BAL-23034973', 'DN-BAL-23114748'] }"
+    bench execute microsynth.microsynth.invoicing.make_collective_invoices --kwargs "{'invoiceable_objects': [{'doctype': 'Delivery Note', 'docname': 'DN-BAL-25001234'}, {'doctype': 'Delivery Note', 'docname': 'DN-BAL-25001235'}]}"
     """
     invoices = []
 
-    if len(delivery_notes) > 0:
+    if not invoiceable_objects or len(invoiceable_objects) == 0:
+        return invoices
 
-        customers = []
-        companies = []
-        for d in delivery_notes:
-            cust = frappe.db.get_value("Delivery Note", d, "customer")
-            if cust not in customers:
-                customers.append(cust)
-            comp = frappe.db.get_value("Delivery Note", d, "company")
-            if comp not in companies:
-                companies.append(comp)
+    customers = []
+    companies = []
+    for row in invoiceable_objects:
+        if row.get('doctype') == 'Delivery Note':
+            doc = frappe.get_doc("Delivery Note", row.get('docname'))
+        elif row.get('doctype') == 'Sales Order':
+            doc = frappe.get_doc("Sales Order", row.get('docname'))
+        else:
+            frappe.log_error(f"Unsupported document type '{row.get('doctype')}' for collective invoicing.", "invocing.make_collective_invoices")
+            continue
+        cust = doc.customer
+        if cust not in customers:
+            customers.append(cust)
+        comp = doc.company
+        if comp not in companies:
+            companies.append(comp)
 
-        # validation:
-        if len(set(customers)) != 1:
-            frappe.log_error("The provided Delivery Notes do not have a single customer.\nDelivery Notes: {0}\nCustomers: {1}".format(delivery_notes, customers), "invocing.make_collective_invoices")
-            return invoices
-        if len(set(companies)) != 1:
-            frappe.log_error("The provided Delivery Notes are not from a single company.\nDelivery Notes: {0}\nCompanies: {1}".format(delivery_notes, companies), "invocing.make_collective_invoices")
-            return invoices
+    # validation:
+    if len(set(customers)) != 1:
+        frappe.log_error(f"The provided documents do not have a single customer.\nDocuments: {[o.get('docname') for o in invoiceable_objects]}\nCustomers: {customers}", "invocing.make_collective_invoices")
+        return invoices
+    if len(set(companies)) != 1:
+        frappe.log_error(f"The provided documents are not from a single company.\nDocuments: {[o.get('docname') for o in invoiceable_objects]}\nCompanies: {companies}", "invocing.make_collective_invoices")
+        return invoices
 
-        customer = customers[0]
-        company = companies[0]
+    customer = customers[0]
+    company = companies[0]
 
-        # check if there are multiple tax templates
-        taxes = get_tax_templates(delivery_notes)
-        product_types = get_product_types(delivery_notes)
+    # check if there are multiple tax templates
+    taxes = get_tax_templates(invoiceable_objects)
+    product_types = get_product_types(invoiceable_objects)
 
-        # create one invoice per tax template
-        for tax in taxes:
-            for product_type in product_types:
-                filtered_dns = []
-                for d in delivery_notes:
-                    taxes_and_charges = frappe.db.get_value("Delivery Note", d, "taxes_and_charges")
-                    d_product_type = frappe.db.get_value("Delivery Note", d, "product_type")
-                    prod_type_fit = d_product_type == product_type or (d_product_type != 'Project' and product_type == '')
-                    if taxes_and_charges == tax and prod_type_fit:
-                        total = frappe.get_value("Delivery Note", d, "total")
-                        if product_type == 'Project':
-                            credit = get_total_credit(customer, company, 'Project')
+    # create one invoice per tax template
+    for tax in taxes:
+        for product_type in product_types:
+            filtered_docs = []
+            for document in invoiceable_objects:
+                taxes_and_charges = frappe.db.get_value(document.get('doctype'), document.get('docname'), "taxes_and_charges")
+                d_product_type = frappe.db.get_value(document.get('doctype'), document.get('docname'), "product_type")
+                prod_type_fit = d_product_type == product_type or (d_product_type != 'Project' and product_type == '')
+                if taxes_and_charges == tax and prod_type_fit:
+                    total = frappe.get_value(document.get('doctype'), document.get('docname'), "total")
+                    if product_type == 'Project':
+                        credit = get_total_credit(customer, company, 'Project')
+                    else:
+                        credit = get_total_credit(customer, company, 'Standard')
+                    customer_credits = frappe.get_value("Customer", customer, "customer_credits")
+                    if credit is not None and customer_credits == 'Credit Account':
+                        # there is some credit - check if it is sufficient
+                        if total <= credit:
+                            filtered_docs.append(document.get('docname'))
+                            credit = credit - total
                         else:
-                            credit = get_total_credit(customer, company, 'Standard')
-                        customer_credits = frappe.get_value("Customer", customer, "customer_credits")
-                        if credit is not None and customer_credits == 'Credit Account':
-                            # there is some credit - check if it is sufficient
-                            if total <= credit:
-                                filtered_dns.append(d)
-                                credit = credit - total
-                            else:
-                                frappe.log_error("Delivery Note '{0}': \nInsufficient credit for customer {1}".format(d, customer), "invocing.async_create_invoices")
-                        else:
-                            # there is no credit account
-                            filtered_dns.append(d)
+                            frappe.log_error(f"Cannot include {document.get('doctype')} '{document.get('docname')}' in collective invoice for Customer '{customer}': Insufficient customer credit ({credit} {frappe.get_value(document.get('doctype'), document.get('docname'), 'currency')}) to cover total amount of {total} {frappe.get_value(document.get('doctype'), document.get('docname'), 'currency')}.", "invocing.make_collective_invoices")
+                    else:
+                        # there is no credit account
+                        filtered_docs.append(document.get('docname'))
 
-                if len(filtered_dns) > 0:
-                    si = make_collective_invoice(filtered_dns)
-                    if si:
-                        invoices.append(si)
+            if len(filtered_docs) > 0:
+                si = make_collective_invoice(filtered_docs)
+                if si:
+                    invoices.append(si)
 
     return invoices
 
@@ -478,7 +486,7 @@ def async_create_invoices(mode, company, customer):
                     if (cint(dn.get('collective_billing')) == 1 and
                         (cint(dn.get('is_punchout')) != 1 or c in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
                         dn.get('customer') == c):
-                        dns.append(dn.get('delivery_note'))
+                        dns.append(dn)
 
                 invoices = make_collective_invoices(dns)
                 for invoice in invoices:
@@ -685,18 +693,16 @@ def make_punchout_invoices(delivery_notes):
 
 def make_collective_invoice(delivery_notes):
     """
+    TODO: Rework to take a list of invoiceable objects instead of only delivery notes IDs.
 
-    run
     bench execute microsynth.microsynth.invoicing.make_collective_invoice --kwargs "{'delivery_notes': ['DN-BAL-23106590', 'DN-BAL-23113391', 'DN-BAL-23114506', 'DN-BAL-23115682']}"
     """
-
     query = f"""
         SELECT DISTINCT `parent`
         FROM `tabDelivery Note Item`
         WHERE `parent` in ({get_sql_list(delivery_notes)})
         AND `item_code` = "1008"
         """
-
     manual_intercompany_delivery_notes = [ x['parent'] for x in frappe.db.sql(query, as_dict=True) ]
 
     cleaned_delivery_notes = []
@@ -770,7 +776,7 @@ def make_monthly_collective_invoice(company, customer, month):
             and cint(dn.get('collective_billing')) == 1
             and cint(dn.get('is_punchout')) != 1
             and dn.get('customer') == str(customer) ):
-                dns.append(dn.get('delivery_note'))
+                dns.append(dn)
 
     invoices = make_collective_invoices(dns)
 
