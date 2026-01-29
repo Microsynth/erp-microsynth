@@ -239,7 +239,9 @@ frappe.ui.form.on('Quotation', {
     },
 
     onload(frm) {
-        set_company_read_only(frm);
+        if (frm.doc.docstatus == 0) {
+            set_company_read_only(frm);
+        }
     },
 
     before_save(frm) {
@@ -323,7 +325,10 @@ frappe.ui.form.on('Quotation', {
     },
 
     customer(frm) {
-        set_company_read_only(frm);
+        if (!frm.doc.customer) return;
+        if (frm.doc.docstatus == 0) {
+            set_company_read_only(frm);
+        }
     },
 
     customer_name(frm) {
