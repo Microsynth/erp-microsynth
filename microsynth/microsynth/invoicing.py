@@ -691,42 +691,74 @@ def make_punchout_invoices(delivery_notes):
     return sales_invoices
 
 
-def make_collective_invoice(delivery_notes):
+def make_collective_invoice(invoiceable_objects):
     """
-    TODO: Rework to take a list of invoiceable objects instead of only delivery notes IDs.
+    Takes a list of invoiceable objects (List of Dicts with 'doctype' and 'docname' keys) and creates a collective invoice.
+    Returns the sales invoice ID.
 
-    bench execute microsynth.microsynth.invoicing.make_collective_invoice --kwargs "{'delivery_notes': ['DN-BAL-23106590', 'DN-BAL-23113391', 'DN-BAL-23114506', 'DN-BAL-23115682']}"
+    bench execute microsynth.microsynth.invoicing.make_collective_invoice --kwargs "{'invoiceable_objects': [{'doctype': 'Delivery Note', 'docname': 'DN-BAL-25001234'}, {'doctype': 'Delivery Note', 'docname': 'DN-BAL-25001235'}]}"
     """
-    query = f"""
-        SELECT DISTINCT `parent`
-        FROM `tabDelivery Note Item`
-        WHERE `parent` in ({get_sql_list(delivery_notes)})
-        AND `item_code` = "1008"
-        """
-    manual_intercompany_delivery_notes = [ x['parent'] for x in frappe.db.sql(query, as_dict=True) ]
+    dn_names = [o["docname"] for o in invoiceable_objects if o.get("doctype") == "Delivery Note"]
+    so_names = [o["docname"] for o in invoiceable_objects if o.get("doctype") == "Sales Order"]
+    queries = []
 
-    cleaned_delivery_notes = []
-    for dn in delivery_notes:
-        if dn not in  manual_intercompany_delivery_notes:
-            cleaned_delivery_notes.append(dn)
+    if dn_names:
+        queries.append(f"""
+            SELECT DISTINCT `parent`
+            FROM `tabDelivery Note Item`
+            WHERE `parent` IN ({get_sql_list(dn_names)})
+            AND `item_code` = "1008"
+        """)
+    if so_names:
+        queries.append(f"""
+            SELECT DISTINCT `parent`
+            FROM `tabSales Order Item`
+            WHERE `parent` IN ({get_sql_list(so_names)})
+            AND `item_code` = "1008"
+        """)
+    manual_intercompany_documents = []
+    if queries:
+        query = " UNION ".join(queries)
+        manual_intercompany_documents = [
+            x["parent"] for x in frappe.db.sql(query, as_dict=True)
+        ]
 
-    if len(cleaned_delivery_notes) == 0:
-        # frappe.log_error(f"No delivery note to invoice found:\n{delivery_notes}", "invoicing.make_collective_invoice")
+    cleaned_documents = []
+    for document in invoiceable_objects:
+        if document["docname"] not in manual_intercompany_documents:
+            cleaned_documents.append(document)
+
+    if not cleaned_documents:
         return None
 
-    # create invoice from first delivery note
-    sales_invoice_content = make_sales_invoice(cleaned_delivery_notes[0])
-    if len(cleaned_delivery_notes) > 1:
-        for i in range(1, len(cleaned_delivery_notes)):
-            # append items from other delivery notes
-            sales_invoice_content = make_sales_invoice(source_name=cleaned_delivery_notes[i], target_doc=sales_invoice_content)
+    # create invoice from first document
+    first = cleaned_documents[0]
+    if first["doctype"] == "Delivery Note":
+        sales_invoice_content = make_sales_invoice(first["docname"])
+    elif first["doctype"] == "Sales Order":
+        sales_invoice_content = make_sales_invoice_from_so(first["docname"])
+    else:
+        frappe.throw(f"Unsupported doctype: {first['doctype']}")
 
+    # append remaining documents
+    for document in cleaned_documents[1:]:
+        if document["doctype"] == "Delivery Note":
+            sales_invoice_content = make_sales_invoice(
+                source_name=document["docname"],
+                target_doc=sales_invoice_content
+            )
+        elif document["doctype"] == "Sales Order":
+            sales_invoice_content = make_sales_invoice_from_so(
+                document["docname"],
+                target_doc=sales_invoice_content
+            )
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+
     if not sales_invoice.invoice_to:
         sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to") # replace contact with customer's invoice_to contact
 
-    company = frappe.get_value("Delivery Note", cleaned_delivery_notes[0], "company")
+    company = frappe.get_value(first["doctype"], first["docname"], "company")
     sales_invoice.naming_series = get_naming_series("Sales Invoice", company)
 
     # sales_invoice.set_advances()    # get advances (customer credit)
@@ -740,23 +772,27 @@ def make_collective_invoice(delivery_notes):
 
     sales_invoice.insert()
     # get time-true conversion rate (not from predecessor)
-    sales_invoice.conversion_rate = get_exchange_rate(from_currency=sales_invoice.currency, company=sales_invoice.company, date=sales_invoice.posting_date)
-    # set income accounts
+    sales_invoice.conversion_rate = get_exchange_rate(
+        from_currency=sales_invoice.currency,
+        company=sales_invoice.company,
+        date=sales_invoice.posting_date
+    )
     set_income_accounts(sales_invoice)
+
     customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
-    if customer_invoicing_method == "Chorus":
-        goodwill_days = 20
-    else:
-        goodwill_days = 5
+    goodwill_days = 20 if customer_invoicing_method == "Chorus" else 5
     # for payment reminders: set goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
-
+    sales_invoice.exclude_from_payment_reminder_until = (datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days))
     sales_invoice.submit()
-
     # in case of customer credit, this will be covered by the sales_invoice:on_submit hook
 
-    frappe.db.commit()
+    # close sales orders
+    for document in cleaned_documents:
+        if document["doctype"] == "Sales Order":
+            so_doc = frappe.get_doc("Sales Order", document["docname"])
+            so_doc.update_status("Close")
 
+    frappe.db.commit()
     return sales_invoice.name
 
 
