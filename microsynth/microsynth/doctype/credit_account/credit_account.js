@@ -134,13 +134,11 @@ frappe.ui.form.on('Credit Account', {
         // Check that the contact_person has the field has_webshop_account = 1
         if (frm.doc.contact_person) {
             frappe.call({
-                'method': "frappe.client.get_value",
+                'method': "frappe.client.get",
                 'args': {
                     'doctype': "Contact",
-                    'filters': {
-                        'name': frm.doc.contact_person
-                    },
-                    'fieldname': ['has_webshop_account']
+                    'name': frm.doc.contact_person
+
                 },
                 'async': false,
                 'callback': function(r) {
@@ -167,7 +165,7 @@ frappe.ui.form.on('Credit Account', {
         // Check that the contact_person is linked to the customer
         if (frm.doc.contact_person && frm.doc.customer) {
             frappe.call({
-                'method': "frappe.client.get_value",
+                'method': "frappe.client.get_list",
                 'args': {
                     'doctype': "Dynamic Link",
                     'filters': {
@@ -176,7 +174,8 @@ frappe.ui.form.on('Credit Account', {
                         'link_doctype': "Customer",
                         'link_name': frm.doc.customer
                     },
-                    'fieldname': ['name']
+                    'fields': ['name'],
+                    'parent': 'Contact'
                 },
                 'async': false,
                 'callback': function(r) {
