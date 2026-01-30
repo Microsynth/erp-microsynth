@@ -97,6 +97,7 @@ def get_data(filters):
             AND `tabItem Price`.`price_list` = `tabSupplier`.`default_price_list`
             AND `tabItem Price`.`min_qty` = 1
         WHERE `tabItem`.`item_group` = 'Purchasing'
+            AND `tabItem`.`disabled` = 0
         {conditions}
     """.format(conditions=conditions)
 
