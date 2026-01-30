@@ -731,12 +731,120 @@ function preview_address(frm, customer) {
 }
 
 
-function create_quotation(frm){
-    frappe.model.open_mapped_doc({
-        method: "microsynth.microsynth.quotation.make_quotation",
-        args: {contact_name: frm.doc.name},
-        frm: frm
-    })
+function create_quotation(frm) {
+    // Step 1: Get linked customer
+    const customer_id = get_customer_id_from_contact(frm);
+    if (!customer_id) {
+        frappe.msgprint(__("This Contact is not linked to any Customer. Unable to create a Quotation."));
+        return;
+    }
+
+    // Step 2: Fetch Customer Distributors
+    frappe.call({
+        'method': "frappe.client.get",
+        'args': {
+            'doctype': "Customer",
+            'name': customer_id
+        },
+        'callback': function(r) {
+            if (r.exc || !r.message) {
+                frappe.msgprint(__("Could not load Customer data."));
+                return;
+            }
+            const customer = r.message;
+            const distributors = (customer.distributors || []);
+            if (!distributors.length) {
+                // No distributor, open mapped doc directly
+                frappe.model.open_mapped_doc({
+                    'method': "microsynth.microsynth.quotation.make_quotation",
+                    'args': {'contact_name': frm.doc.name},
+                    'frm': frm
+                });
+                return;
+            }
+
+            // Step 3: Ask for Product Type and workflow
+            let product_type_options = distributors.map(d => d.product_type).filter((v, i, a) => v && a.indexOf(v) === i);
+            if (!product_type_options.length) {
+                // fallback to all types
+                product_type_options = ["Oligos", "Labels", "Sequencing", "Genetic Analysis", "NGS", "FLA", "Project", "Material", "Service"];
+            }
+            const dialog = new frappe.ui.Dialog({
+                'title': __("Create Quotation"),
+                'fields': [
+                    {
+                        label: __("Use Distributor Workflow?"),
+                        fieldname: "use_distributor",
+                        fieldtype: "Check",
+                        default: 1
+                    },
+                    {
+                        label: __("Product Type"),
+                        fieldname: "product_type",
+                        fieldtype: "Select",
+                        options: product_type_options.join("\n")
+                    }
+                ],
+                'primary_action_label': __("Create Quotation"),
+                'primary_action': function(values) {
+                    dialog.hide();
+                    if (!values.use_distributor) {
+                        // User chose not to use distributor workflow
+                        frappe.model.open_mapped_doc({
+                            'method': "microsynth.microsynth.quotation.make_quotation",
+                            'args': {'contact_name': frm.doc.name},
+                            'frm': frm
+                        });
+                        return;
+                    }
+                    if (!values.product_type) {
+                        frappe.msgprint(__("Please select a Product Type."));
+                        return;
+                    }
+                    // Step 4: Check if distributor exists for selected product type
+                    const distributor_entry = distributors.find(d => d.product_type === values.product_type);
+                    if (!distributor_entry || !distributor_entry.distributor) {
+                        frappe.msgprint(__("No Distributor assigned for this Product Type. Please assign a Distributor or proceed without the Distributor workflow."));
+                        return;
+                    }
+                    // Step 5: Create Quotation with distributor and product type
+                    frappe.model.open_mapped_doc({
+                        'method': "microsynth.microsynth.quotation.make_quotation",
+                        'args': { 'contact_name': frm.doc.name },
+                        'frm': frm
+                    });
+                    frappe.ui.form.on("Quotation", {
+                        onload_post_render(frm) {
+                            if (frm.doc.__from_contact === undefined) {
+                                frm.set_value("party_name", distributor_entry.distributor);
+                                frm.set_value("product_type", values.product_type);
+                                frm.set_value("order_customer", customer_id);
+                                frm.set_value("order_customer_display", customer.customer_name);
+                                frm.set_value("order_tax_id", customer.tax_id);
+                                frm.doc.__from_contact = 1;  // prevent reruns
+                            }
+                        }
+                    });
+                }
+            });
+            dialog.show();
+
+            const toggle_product_type = () => {
+                const use_dist = dialog.get_value("use_distributor");
+
+                dialog.set_df_property("product_type", "hidden", !use_dist);
+                dialog.set_df_property("product_type", "reqd", use_dist ? 1 : 0);
+
+                if (!use_dist) {
+                    dialog.set_value("product_type", null);
+                }
+            };
+            // initial state
+            toggle_product_type();
+            // react to checkbox changes
+            dialog.fields_dict.use_distributor.$input.on("change", toggle_product_type);
+        }
+    });
 }
 
 
