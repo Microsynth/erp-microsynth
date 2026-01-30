@@ -2116,6 +2116,7 @@ def check_invoice_sent_on(days=0):
         SELECT `name`, `title`, `posting_date`, `grand_total`, `currency`
         FROM `tabSales Invoice`
         WHERE `status` IN ("Unpaid", "Overdue")
+            AND `docstatus` = 1
             AND (`invoice_sent_on` IS NULL OR `invoice_sent_on` = "")
             {f"AND `posting_date` < DATE_ADD(NOW(), INTERVAL -{days} DAY)" if days > 0 else ""}
         """
