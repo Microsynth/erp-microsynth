@@ -289,6 +289,12 @@ def get_data():
                     },
                     {
                         "type": "doctype",
+                        "name": "Supplier Quotation",
+                        "label": _("Supplier Quotation"),
+                        "description": _("Supplier Quotation")
+                    },
+                    {
+                        "type": "doctype",
                         "name": "Purchase Order",
                         "label": _("Purchase Order"),
                         "description": _("Purchase Order")
