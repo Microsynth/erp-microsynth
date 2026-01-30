@@ -2720,6 +2720,17 @@ def item_before_save(item, event):
     update_item_defaults(item)
     if item.stock_uom == "Carton":
         frappe.throw("Carton is not a valid stock UOM. Please consider using 'Box' instead.")
+    # For each row in item.item_defaults, check if default_supplier is in the supplier_items table. If not, throw an error.
+    # This is to ensure data integrity between item.item_defaults and supplier_items.
+    for item_default in item.item_defaults:
+        if item_default.default_supplier:
+            supplier_item_exists = False
+            for item_supplier in item.supplier_items:
+                if item_default.default_supplier == item_supplier.supplier:
+                    supplier_item_exists = True
+                    break
+            if not supplier_item_exists:
+                frappe.throw(f"Default Supplier {item_default.default_supplier} in Item Defaults of Company {item_default.company} is not present in Supplier Items table.")
 
 
 @frappe.whitelist()
