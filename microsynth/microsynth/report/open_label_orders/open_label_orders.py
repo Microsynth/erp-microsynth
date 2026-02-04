@@ -203,7 +203,8 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
             'customer_name': customer_name,
             'status': "unused",
             'contact': contact,
-            'registered_to': contact if register_labels else None
+            'registered_to': contact if register_labels else None,
+            'registered': register_labels
         }).insert()
     frappe.db.commit()
 
