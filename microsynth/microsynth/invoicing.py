@@ -1061,7 +1061,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
         billing_contact = frappe.get_doc("Contact", sales_invoice.invoice_to)
 
     # define shipping costs on header/item level
-    if mode == "ARIBA" or mode == "GEP":
+    if mode in ["ARIBA", "GEP"]:
         # shipping for Ariba (standard) is listed on header level, shipping for GEP is listed on item level
         if sales_invoice.is_punchout:
             shipping_as_item = punchout_shop.cxml_shipping_as_item
@@ -1114,8 +1114,7 @@ def create_dict_of_invoice_info_for_cxml(sales_invoice, mode):
 
     # Fiscal representation
     if (sales_invoice.company == "Microsynth AG" and
-            (sales_invoice.product_type == "Oligos" or
-             sales_invoice.product_type == "Material")):
+            (sales_invoice.product_type in ["Oligos", "Material"])):
         from microsynth.microsynth.jinja import get_destination_classification
         destination = get_destination_classification(si=sales_invoice.name)
 
@@ -1534,7 +1533,7 @@ def transmit_sales_invoice(sales_invoice_id):
 
         print("Transmission mode for Sales Invoice '{0}': {1}".format(sales_invoice.name, mode))
 
-        if mode == "Email" or mode == "EmailAdministration":
+        if mode in ["Email", "EmailAdministration"]:
             # send by mail
             # TODO check sales_invoice.invoice_to --> if it has a e-mail --> this is target-email
 
@@ -1879,6 +1878,31 @@ def pdf_export_delivery_notes(delivery_notes, path):
             file.write(content_pdf)
 
 
+def get_address_data(address_type, customer_name, contact, address, order_reference, sales_invoice_name):
+    """
+    get address line for Carlo Erba invoicing
+    """
+    data = [
+        address_type,                                                               # record_type(8)
+        order_reference,                                                            # sales_order_number(8)
+        sales_invoice_name,                                                         # invoice_number(8)
+        contact.name,                                                               # customer_number(8)
+        contact.designation if contact.designation else "",                         # titel(8)
+        get_name(contact),                                                          # name(60)
+        address.overwrite_company if address.overwrite_company else customer_name,  # adress1(60)
+        contact.department if contact.department else "",                           # adress2(60)
+        address.address_line1 if address.address_line1 else "",                     # adress3(51)
+        (frappe.get_value("Country", address.country, "code")).upper(),             # country_code(2)
+        address.pincode if address.pincode else "",                                 # postal_code(10)
+        address.city if address.city else "",                                       # city(20)
+        get_name(contact),                                                          # contact_person(24)
+        contact.email_id if contact.email_id else "",                               # email(40)
+        contact.phone if contact.phone else "",                                     # phone_number(20)
+        "",                                                                         # fax_number(20)
+    ]
+    return data
+
+
 def transmit_carlo_erba_invoices(sales_invoices):
     """
     run
@@ -1964,47 +1988,32 @@ def transmit_carlo_erba_invoices(sales_invoices):
         lines.append(header)
 
         # Addresses
-        def get_address_data(address_type, customer_name, contact, address):
-            data = [
-                address_type,                                                               # record_type(8)
-                si.web_order_id or order_name,                                              # sales_order_number(8)
-                si.name,                                                                    # invoice_number(8)
-                contact.name,                                                               # customer_number(8)
-                contact.designation if contact.designation else "",                         # titel(8)
-                get_name(contact),                                                          # name(60)
-                address.overwrite_company if address.overwrite_company else customer_name,  # adress1(60)
-                contact.department if contact.department else "",                           # adress2(60)
-                address.address_line1 if address.address_line1 else "",                     # adress3(51)
-                (frappe.get_value("Country", address.country, "code")).upper(),             # country_code(2)
-                address.pincode if address.pincode else "",                                 # postal_code(10)
-                address.city if address.city else "",                                       # city(20)
-                get_name(contact),                                                          # contact_person(24)
-                contact.email_id if contact.email_id else "",                               # email(40)
-                contact.phone if contact.phone else "",                                     # phone_number(20)
-                "",                                                                         # fax_number(20)
-            ]
-            return data
-
         # Sold-to-party
         client = get_address_data(
             address_type = "Cliente",
             customer_name = order_customer,
             contact = order_contact,
-            address = order_address)
+            address = order_address,
+            order_reference = si.web_order_id or order_name,
+            sales_invoice_name = si.name)
 
         # Ship-to-party
         shipping = get_address_data(
             address_type = "Acquiren",
             customer_name = shipping_customer,
             contact = shipping_contact,
-            address = shipping_address)
+            address = shipping_address,
+            order_reference = si.web_order_id or order_name,
+            sales_invoice_name = si.name)
 
         # bill-to-party
         billing = get_address_data(
             address_type = "Billing",
             customer_name = billing_customer,
             contact = billing_contact,
-            address = billing_address)
+            address = billing_address,
+            order_reference = si.web_order_id or order_name,
+            sales_invoice_name = si.name)
 
         lines.append(client)
         lines.append(shipping)

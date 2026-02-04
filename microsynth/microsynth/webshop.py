@@ -24,7 +24,6 @@ from microsynth.microsynth.utils import (
     to_bool,
     update_address_links_from_contact,
     send_email_from_template,
-    get_sql_list,
     get_alternative_account
 )
 from microsynth.microsynth.credits import get_credit_account_balance
@@ -988,7 +987,7 @@ def request_quote(content, client="webshop"):
         # qtn_doc.submit()          # do not submit - leave on draft for easy edit, sales will process this
         return {'success': True, 'message': 'Quotation created', 'internal_message': 'OK', 'reference': qtn_doc.name}
     except Exception as err:
-        msg = f"Failed to create quotation for account {content['contact']}: {err}. Check ERP Error Log for details."
+        msg = f"Failed to create quotation for account {content['contact']}: {err}"
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.request_quote")
         return {'success': False, 'internal_message': 'Failed to create quotation', 'message': msg, 'reference': None}
 
@@ -1398,7 +1397,7 @@ def place_order(content, client="webshop"):
         so_doc.append('items', item_detail)
 
     # append taxes
-    if so_doc.product_type == "Oligos" or so_doc.product_type == "Material":
+    if so_doc.product_type in ["Oligos", "Material"]:
         category = "Material"
     else:
         category = "Service"
@@ -1572,7 +1571,7 @@ def place_dropship_order(sales_order, intercompany_customer_name, supplier_compa
     # ToDo: plates
 
     # append taxes
-    if dropship_order.product_type == "Oligos" or dropship_order.product_type == "Material":
+    if dropship_order.product_type in ["Oligos", "Material"]:
         category = "Material"
     else:
         category = "Service"
@@ -4024,7 +4023,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "reference": invoice.name
         }
     except Exception as err:
-        msg = f"Error creating deposit invoice for Credit Account '{account_id}'. Details have been recorded."
+        msg = f"Error creating deposit invoice for Credit Account '{account_id}':\r\n{err}"
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", "webshop.create_deposit_invoice")
         return {
             "success": False,
@@ -4146,7 +4145,7 @@ def get_transactions(account_id):
             "reservations": get_reservations(account_id, current_balance)
         }
     except Exception as err:
-        msg = f"Error fetching Credit Account '{account_id}': {err}. Check ERP Error Log for details."
+        msg = f"Error fetching Credit Account '{account_id}': {err}"
         frappe.log_error(f"{msg}\n\n\n{traceback.format_exc()}", "webshop.get_transactions")
         return {
             "success": False,
@@ -4180,11 +4179,11 @@ def get_balance_sheet_pdf(account_id):
             "internal_message": f"Generated balance sheet PDF for Credit Account '{account_id}'.",
             "message": "OK"
         }
-    except Exception as e:
+    except Exception as err:
         frappe.log_error(frappe.get_traceback(), "webshop.get_balance_sheet_pdf")
         return {
             "success": False,
             "file": None,
-            "internal_message": f"Failed to generate PDF: {str(e)}",
+            "internal_message": f"Failed to generate PDF: {str(err)}",
             "message": "Failed to generate PDF"
         }
