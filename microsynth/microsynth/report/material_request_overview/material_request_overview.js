@@ -190,6 +190,7 @@ function open_search_dialog(report) {
             {fieldtype:'Column Break'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
             {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type'},
+            {fieldtype:'HTML', fieldname:'note'},
             {fieldtype:'Section Break'},
             {fieldtype:'HTML', fieldname:'results'}
         ],
@@ -252,6 +253,14 @@ function open_search_dialog(report) {
         dialog.hide();
     });
 
+    // Add note if company filter is set
+    let notes_html = '';
+    const company = report.get_filter_value && report.get_filter_value('company');
+    if (company) {
+        notes_html = `<div class="text-muted">${__('Light blue rows indicate the default Item Supplier for the selected Company {0}.', [company])}</div>`;
+    }
+    f.note.$wrapper.html(notes_html);
+
     const hints_html = '<div class="text-muted">' + __('Set at least one filter to see results. All filters are applied together (AND-linked). If you don\'t know the item code, start with a broad search and refine it if necessary.') + '</div>';
     // Clear filters button
     f.clear_filters.$input.addClass('btn-secondary');
@@ -276,7 +285,8 @@ function open_search_dialog(report) {
                 'item_name_part': f.item_name_part.get_value(),
                 'material_code': f.material_code.get_value(),
                 'supplier_name': f.supplier_name.get_value(),
-                'supplier_part_no': f.supplier_part_no.get_value().trim()
+                'supplier_part_no': f.supplier_part_no.get_value().trim(),
+                'company': report.get_filter_value('company')
             },
             'callback': function(r) {
                 const items = r.message || [];
@@ -341,37 +351,37 @@ function open_search_dialog(report) {
                 `;
                 items.forEach(it => {
                     const key = `${it.name}::${it.supplier || ''}`;
-
-                        html += `
-                            <tr>
-                                <td>
-                                    <input type="radio"
-                                        name="select_item"
-                                        value="${frappe.utils.escape_html(key)}">
-                                </td>
-                                <td>${frappe.utils.escape_html(it.name)}</td>
-                                <td>${frappe.utils.escape_html(it.item_name || '')}</td>
-                                <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
-                                <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
-                                <td>${frappe.utils.escape_html(it.material_code || '')}</td>
-                                <td style="text-align: right;">
-                                    ${frappe.utils.escape_html(it.last_purchase_rate || '')}
-                                </td>
-                                <td>
-                                    ${it.last_order_date
-                                        ? frappe.datetime.str_to_user(it.last_order_date)
-                                        : ''}
-                                </td>
-                                <td>
-                                    ${frappe.utils.escape_html(it.supplier || '')}:
-                                    ${frappe.utils.escape_html(it.supplier_name || '')}
-                                    ${it.substitute_status
-                                        ? ` (${frappe.utils.escape_html(it.substitute_status)})`
-                                        : ''}
-                                </td>
-                                <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
-                            </tr>
-                        `;
+                    const highlight = it.is_default_supplier_for_company == 1 ? ' style="background-color: #e6f2ff;"' : '';
+                    html += `
+                        <tr${highlight}>
+                            <td>
+                                <input type="radio"
+                                    name="select_item"
+                                    value="${frappe.utils.escape_html(key)}">
+                            </td>
+                            <td>${frappe.utils.escape_html(it.name)}</td>
+                            <td>${frappe.utils.escape_html(it.item_name || '')}</td>
+                            <td>${frappe.utils.escape_html(it.pack_size || 1)}</td>
+                            <td>${frappe.utils.escape_html(it.pack_uom || it.stock_uom)}</td>
+                            <td>${frappe.utils.escape_html(it.material_code || '')}</td>
+                            <td style="text-align: right;">
+                                ${frappe.utils.escape_html(it.last_purchase_rate || '')}
+                            </td>
+                            <td>
+                                ${it.last_order_date
+                                    ? frappe.datetime.str_to_user(it.last_order_date)
+                                    : ''}
+                            </td>
+                            <td>
+                                ${frappe.utils.escape_html(it.supplier || '')}:
+                                ${frappe.utils.escape_html(it.supplier_name || '')}
+                                ${it.substitute_status
+                                    ? ` (${frappe.utils.escape_html(it.substitute_status)})`
+                                    : ''}
+                            </td>
+                            <td>${frappe.utils.escape_html(it.supplier_part_no || '')}</td>
+                        </tr>
+                    `;
                 });
                 html += '</tbody></table>';
                 const max_display_rows = 10;

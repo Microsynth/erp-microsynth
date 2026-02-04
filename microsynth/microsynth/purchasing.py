@@ -1890,7 +1890,7 @@ def has_available_advances(purchase_invoice_id):
 
 
 @frappe.whitelist()
-def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=None, supplier_part_no=None):
+def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=None, supplier_part_no=None, company=None):
     # List to build WHERE clause conditions
     filters = []
     values = {}
@@ -1915,6 +1915,19 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         supplier_part_no = supplier_part_no.strip()
         filters.append('`tabItem Supplier`.`supplier_part_no` LIKE %(supplier_part_no)s')
         values['supplier_part_no'] = f'%{supplier_part_no}%'
+
+    if company:
+        values['company'] = company
+        is_default_supplier_case = """
+            CASE
+                WHEN `tabItem Default`.`default_supplier` = `tabItem Supplier`.`supplier`
+                AND (`tabItem Default`.`company` = %(company)s OR `tabItem Default`.`company` IS NULL)
+                THEN 1
+                ELSE 0
+            END
+        """
+    else:
+        is_default_supplier_case = "0"
 
     # Only include active items from 'Purchasing' item group
     filters.append('`tabItem`.`item_group` = "Purchasing"')
@@ -1952,12 +1965,14 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`material_code`,
             `tabItem Supplier`.`supplier` AS `supplier`,
             `tabSupplier`.`supplier_name` AS `supplier_name`,
+            {is_default_supplier_case} AS `is_default_supplier_for_company`,
             `tabItem Supplier`.`supplier_part_no` AS `supplier_part_no`,
             `tabItem Supplier`.`substitute_status` AS `substitute_status`,
             last_po.last_order_date AS last_order_date
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        LEFT JOIN `tabItem Default` ON `tabItem Default`.`parent` = `tabItem`.`name`
         LEFT JOIN (
             SELECT
                 poi.item_code,
