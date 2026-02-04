@@ -3989,7 +3989,6 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             "contact_display": frappe.get_value("Contact", webshop_account, "full_name"),
             "po_no": customer_order_number,
             "product_type": "Service",
-            "contact_person": webshop_account,
             "territory": customer_doc.territory or "All Territories",
             "currency": currency,
             "selling_price_list": customer_doc.default_price_list or f"Sales Prices {currency}",
