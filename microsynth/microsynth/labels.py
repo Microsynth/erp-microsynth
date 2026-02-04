@@ -111,7 +111,7 @@ def get_label_data(sales_order):
     """
     Returns the data for printing a shipping label from a sales order.
     run
-    bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order': 'SO-BAL-25025120'}"
+    bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order': 'SO-BAL-26003620'}"
     """
     if type(sales_order) == str:
         sales_order = frappe.get_doc('Sales Order', sales_order)
@@ -143,12 +143,18 @@ def get_label_data(sales_order):
             plate_aliquot_hint = "(Aliquots)"
             break
 
+    po_no = sales_order.po_no
+    if sales_order.is_intercompany and sales_order.po_no and "SO-" in sales_order.po_no:
+        original_so = frappe.get_doc("Sales Order", sales_order.po_no)
+        if original_so.po_no:
+            po_no = original_so.po_no
+
     data = {
         'lines': create_receiver_address_lines(customer_name = sales_order.order_customer_display or sales_order.customer_name, contact = contact_id, address = address_id),
         'sender_header': get_sender_address_line(sales_order, destination_country),
         'destination_country': shipping_address.country,
         'shipping_service': get_shipping_service(shipping_item, shipping_address, sales_order.customer),
-        'po_no': sales_order.po_no,
+        'po_no': po_no,
         'web_id': sales_order.web_order_id,
         'cstm_id': sales_order.customer,
         'oligo_count': len(sales_order.oligos),
