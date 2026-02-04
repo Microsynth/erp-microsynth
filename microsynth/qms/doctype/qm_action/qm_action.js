@@ -17,16 +17,27 @@ frappe.ui.form.on('QM Action', {
             cur_frm.set_df_property('type', 'read_only', true);
             cur_frm.set_df_property('qm_process', 'read_only', true);
             cur_frm.set_df_property('initiation_date', 'read_only', true);
-            cur_frm.set_df_property('due_date', 'read_only', true);
             cur_frm.set_df_property('description', 'read_only', true);
         } else {
             cur_frm.set_df_property('title', 'read_only', false);
             cur_frm.set_df_property('type', 'read_only', false);
             cur_frm.set_df_property('qm_process', 'read_only', false);
             cur_frm.set_df_property('initiation_date', 'read_only', false);
-            cur_frm.set_df_property('due_date', 'read_only', false);
             cur_frm.set_df_property('description', 'read_only', false);
         }
+
+        // Creator can edit due_date in Draft status, QAU can edit it except in Completed status
+        const can_edit_due_date =
+            frm.doc.status !== "Completed" &&
+            (
+                frappe.user.has_role("QAU") ||
+                (
+                    frm.doc.status === "Draft" &&
+                    frappe.session.user === frm.doc.created_by
+                )
+            );
+        cur_frm.set_df_property("due_date", "read_only", !can_edit_due_date);
+
 
         // allow the responsible person or QAU to change the responsible person in Draft status (transfer document)
         if ((!frm.doc.__islocal)
@@ -56,6 +67,17 @@ frappe.ui.form.on('QM Action', {
             }).addClass("btn-danger");
         }
 
+        // Add a button for QAU in status Completed to set back to Work in Progress
+        if (frm.doc.status == 'Completed' && frappe.user.has_role('QAU')) {
+            // add set back to work in progress button
+            cur_frm.page.set_primary_action(
+                __("Reopen"),
+                function() {
+                    set_status('Work in Progress');
+                }
+            );
+        }
+
         if (frm.doc.status == 'Draft' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             if (frm.doc.title
                 && frm.doc.type
@@ -75,7 +97,7 @@ frappe.ui.form.on('QM Action', {
                 frm.dashboard.clear_comment();
                 frm.dashboard.add_comment( __("Please set and save Title, Type, Process, Initiation date, Due Date and Description to submit this QM Action."), 'red', true);
             }
-        }        
+        }
 
         if (frm.doc.status == 'Created' && (frappe.session.user === frm.doc.responsible_person || frappe.user.has_role('QAU'))) {
             frappe.db.get_value(frm.doc.document_type, frm.doc.document_name, ["status"], function(value) {
@@ -134,7 +156,7 @@ frappe.ui.form.on('QM Action', {
 function change_responsible_person() {
     frappe.prompt(
         [
-            {'fieldname': 'new_responsible_person', 
+            {'fieldname': 'new_responsible_person',
              'fieldtype': 'Link',
              'label': __('New Responsible Person'),
              'reqd': 1,

@@ -12,6 +12,14 @@ frappe.ui.form.on('QM Change', {
             frappe.validated = false;
         }
     },
+    cc_type: function(frm) {
+        // Hide Current State field if cc_type is "short" or "procurement"
+        if (frm.doc.cc_type == "short" || frm.doc.cc_type == "procurement") {
+            frm.set_df_property('current_state', 'hidden', true);
+        } else {
+            frm.set_df_property('current_state', 'hidden', false);
+        }
+    },
     qm_process: function(frm) {
         // clear affected hierarchy 1 field when process has changed to prevent invalid values
         cur_frm.set_value("hierarchy_1", null);
@@ -60,6 +68,16 @@ frappe.ui.form.on('QM Change', {
                 setTimeout(function () {
                     add_restart_wizard_button();}, 300);
             } else {
+                // TODO: Show a custom button "Short" that sets cc_type to "short", risk_classification to "minor" and hides the wizard
+                cur_frm.add_custom_button(__('Short'), function() {
+                    cur_frm.set_value('cc_type', 'short');
+                    cur_frm.set_value('risk_classification', 'minor');
+                    cur_frm.set_value('regulatory_classification', 'non-GMP (ISO)');
+                    load_wizard(false);
+                    setTimeout(function () {
+                        add_restart_wizard_button();
+                    }, 300);
+                });
                 var visible = true;
                 load_wizard(visible);
             }
@@ -196,6 +214,13 @@ frappe.ui.form.on('QM Change', {
             cur_frm.set_df_property('closure_comments', 'read_only', true);
         }
 
+        // Hide Current State field if cc_type is "short" or "procurement"
+        if (frm.doc.cc_type == "short" || frm.doc.cc_type == "procurement") {
+            frm.set_df_property('current_state', 'hidden', true);
+        } else {
+            frm.set_df_property('current_state', 'hidden', false);
+        }
+
 
         // BUTTONS
 
@@ -206,18 +231,21 @@ frappe.ui.form.on('QM Change', {
             }).addClass("btn-danger");
         }
 
-        // allow the creator or QAU to change the creator (transfer document) in status "Created"
-        if ((!frm.doc.__islocal)
-            && (["Draft", "Created"].includes(frm.doc.status))
-            && ((frappe.session.user === frm.doc.created_by) || (frappe.user.has_role('QAU')))
-            ) {
-            // add change creator button
-            cur_frm.add_custom_button(
-                __("Change Creator"),
-                function() {
-                    change_creator();
-                }
-            );
+        // allow the creator to change the creator (transfer document) in status "Draft" or "Created"
+        // allow QAU to change the creator in status "Draft", "Created", "Assessment & Classification" and "Planning"
+        if (!frm.doc.__islocal && (
+                (
+                    frappe.session.user === frm.doc.created_by &&
+                    ["Draft", "Created"].includes(frm.doc.status)
+                ) ||
+                (
+                    frappe.user.has_role("QAU") &&
+                    ["Draft", "Created", "Assessment & Classification", "Planning"]
+                        .includes(frm.doc.status)
+                )
+            )
+        ) {
+            cur_frm.add_custom_button(__("Change Creator"), change_creator);
         }
 
         // add button to request an Impact Assessment
@@ -257,7 +285,8 @@ frappe.ui.form.on('QM Change', {
                 && frm.doc.title
                 && frm.doc.company
                 && frm.doc.description && frm.doc.description != "<div><br></div>"
-                && frm.doc.current_state && frm.doc.current_state != "<div><br></div>") {
+                && ((frm.doc.cc_type == 'short' || frm.doc.cc_type == 'procurement')
+                    || (frm.doc.current_state && frm.doc.current_state != "<div><br></div>"))) {
                 if ((frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short')
                     || frappe.user.has_role('QAU')) {
                     // add submit button
@@ -302,8 +331,8 @@ frappe.ui.form.on('QM Change', {
                 }
             } else {
                 frm.dashboard.clear_comment();
-                if (frappe.session.user === frm.doc.created_by && frm.doc.cc_type == 'short') {
-                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to proceed."), 'red', true);
+                if (frappe.session.user === frm.doc.created_by && (frm.doc.cc_type == 'short' || frm.doc.cc_type == 'procurement')) {
+                    frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company and Description Change to proceed."), 'red', true);
                 } else {
                     frm.dashboard.add_comment( __("Please set and save CC Type, Process, Title, Company, Current State and Description Change to submit this QM Change to QAU."), 'red', true);
                 }
@@ -353,7 +382,7 @@ frappe.ui.form.on('QM Change', {
                     } else {
                         continue_checks = true;
                     }
-                    if (continue_checks) {
+                    if (continue_checks && !['short', 'procurement'].includes(frm.doc.cc_type)) {
                         // Check that there is at least one QM Impact Assessment
                         frappe.call({
                             'method': 'microsynth.qms.doctype.qm_change.qm_change.has_assessments',
@@ -391,6 +420,18 @@ frappe.ui.form.on('QM Change', {
                                 }
                             }
                         });
+                    }
+                    if (continue_checks && (!['short', 'procurement'].includes(frm.doc.cc_type))) {
+                        if (frm.doc.impact_description) {
+                            cur_frm.page.set_primary_action(
+                                __("Confirm Classification"),
+                                function() {
+                                    set_status('Planning');
+                                }
+                            );
+                        } else {
+                            frm.dashboard.add_comment( __("Please enter the Impact Assessment Summary to proceed."), 'red', true);
+                        }
                     }
                 } else {
                     frm.dashboard.clear_comment();

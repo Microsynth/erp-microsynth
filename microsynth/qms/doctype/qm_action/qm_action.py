@@ -38,7 +38,7 @@ def create_action(title, responsible_person, dt, dn, qm_process, due_date, actio
 
     # do not create assignment to user by default, will be assigned when dn enters status "Implementation"
     if notify:
-        assign(action.name, responsible_person)
+        assign_and_notify(action.name, responsible_person)
 
     return action.name
 
@@ -68,7 +68,8 @@ def update_status(action, status):
     # validate status transitions
     if ((action.status == 'Draft' and status == 'Created') or
         (action.status == 'Created' and status == 'Work in Progress') or
-        (action.status == 'Work in Progress' and status == 'Completed')
+        (action.status == 'Work in Progress' and status == 'Completed') or
+        (action.status == 'Completed' and status == 'Work in Progress')
        ):
         if status == 'Completed':
             action.completion_date = today()
