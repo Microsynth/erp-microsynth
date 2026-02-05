@@ -2920,3 +2920,143 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
         if not dry_run:
             frappe.db.rollback()
         raise
+
+
+def merge_duplicate_purchasing_items(dry_run=True):
+    """
+    Find and merge duplicate purchasing Items based on:
+    supplier_part_no + supplier + supplier_name
+
+    Newer Item is merged into older Item.
+    Items with more than one Item Supplier are skipped.
+
+    bench execute microsynth.microsynth.purchasing.merge_duplicate_purchasing_items --kwargs "{'dry_run': True}"
+    """
+    duplicates = frappe.db.sql("""
+        SELECT
+            `tabItem`.`name` AS `item_code`,
+            `tabItem`.`creation` AS `creation`,
+            `tabItem Supplier`.`supplier` AS `supplier`,
+            `tabSupplier`.`supplier_name` AS `supplier_name`,
+            `tabItem Supplier`.`supplier_part_no` AS `supplier_part_no`,
+            `tabItem`.`stock_uom` AS `stock_uom`,
+            `tabItem`.`is_stock_item` AS `is_stock_item`,
+            `tabItem`.`has_serial_no` AS `has_serial_no`,
+            `tabItem`.`has_batch_no` AS `has_batch_no`
+        FROM `tabItem Supplier`
+        INNER JOIN `tabItem`
+            ON `tabItem`.`name` = `tabItem Supplier`.`parent`
+        INNER JOIN `tabSupplier`
+            ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+        WHERE
+            `tabItem`.`disabled` = 0
+            AND `tabItem Supplier`.`supplier_part_no` IS NOT NULL
+            AND `tabItem Supplier`.`supplier_part_no` != ''
+            AND (
+                `tabItem Supplier`.`supplier`,
+                `tabSupplier`.`supplier_name`,
+                `tabItem Supplier`.`supplier_part_no`
+            ) IN (
+                SELECT
+                    `tabItem Supplier`.`supplier`,
+                    `tabSupplier`.`supplier_name`,
+                    `tabItem Supplier`.`supplier_part_no`
+                FROM `tabItem Supplier`
+                INNER JOIN `tabSupplier`
+                    ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
+                WHERE
+                    `tabItem Supplier`.`supplier_part_no` IS NOT NULL
+                    AND `tabItem Supplier`.`supplier_part_no` != ''
+                GROUP BY
+                    `tabItem Supplier`.`supplier`,
+                    `tabSupplier`.`supplier_name`,
+                    `tabItem Supplier`.`supplier_part_no`
+                HAVING
+                    COUNT(DISTINCT `tabItem Supplier`.`parent`) >= 2
+            )
+        ORDER BY
+            `tabItem Supplier`.`supplier_part_no`,
+            `tabSupplier`.`supplier_name`,
+            `tabItem`.`creation` ASC
+    """, as_dict=True)
+
+    if not duplicates:
+        print("No duplicate purchasing items found.")
+        return
+
+    # Group by (supplier, supplier_name, supplier_part_no)
+    groups = {}
+    for row in duplicates:
+        key = (
+            row["supplier"],
+            row["supplier_name"],
+            row["supplier_part_no"],
+        )
+        groups.setdefault(key, []).append(row)
+
+    for key, items in groups.items():
+        supplier, supplier_name, supplier_part_no = key
+
+        # Sort by creation (oldest first)
+        items = sorted(items, key=lambda x: x["creation"])
+
+        # Safety check: max 1 Item Supplier per Item
+        skip_group = False
+        for item in items:
+            supplier_count = frappe.db.count(
+                "Item Supplier",
+                filters={"parent": item["item_code"]}
+            )
+            if supplier_count > 1:
+                print(f"ERROR: Item '{item['item_code']}' has {supplier_count} Item Suppliers. "
+                    f"Skipping merge for supplier_part_no='{supplier_part_no}' "
+                    f"(Supplier='{supplier_name}')")
+                skip_group = True
+                break
+
+        if skip_group:
+            continue
+        target_item = items[0]["item_code"]
+
+        for row in items[1:]:
+            source_item = row["item_code"]
+
+            # Validate compatibility
+            target_row = items[0]
+            mismatch_fields = []
+            for field in (
+                "stock_uom",
+                "is_stock_item",
+                "has_serial_no",
+                "has_batch_no",
+            ):
+                if row[field] != target_row[field]:
+                    mismatch_fields.append(
+                        f"{field}: '{row[field]}' != '{target_row[field]}'"
+                    )
+            if mismatch_fields:
+                print(
+                    f"ERROR: Cannot merge Item '{source_item}' INTO '{target_item}'. "
+                    f"Incompatible fields: {', '.join(mismatch_fields)}"
+                )
+                continue
+
+            message = (
+                f"Merging Item '{source_item}' INTO '{target_item}' "
+                f"(Supplier: {supplier_name}, Part No: {supplier_part_no})"
+            )
+            if dry_run:
+                print("[DRY RUN] " + message)
+            else:
+                print(message)
+                frappe.rename_doc(
+                    "Item",
+                    source_item,
+                    target_item,
+                    merge=True,
+                    force=True
+                )
+    if dry_run:
+        print("Dry run completed. No Items were merged.")
+    else:
+        print("Duplicate purchasing item merge completed.")
