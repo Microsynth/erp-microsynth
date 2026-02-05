@@ -421,7 +421,7 @@ frappe.ui.form.on('QM Change', {
                             }
                         });
                     }
-                    if (continue_checks && (!['short', 'procurement'].includes(frm.doc.cc_type))) {
+                    if (continue_checks && (['short', 'procurement'].includes(frm.doc.cc_type))) {
                         if (frm.doc.impact_description) {
                             cur_frm.page.set_primary_action(
                                 __("Confirm Classification"),
