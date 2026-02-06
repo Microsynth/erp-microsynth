@@ -497,7 +497,7 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Section Break' },
 
-            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment' }
+            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment', description: 'If the Stock UOM could be improved, please contact the Purchasing department before creating and submitting the Material Request. For all other comments, please enter them here.' }
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
