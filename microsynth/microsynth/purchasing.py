@@ -3060,3 +3060,101 @@ def merge_duplicate_purchasing_items(dry_run=True):
         print("Dry run completed. No Items were merged.")
     else:
         print("Duplicate purchasing item merge completed.")
+
+
+def fix_item_default_warehouses(dry_run=True):
+    """
+    Fix Item Default.default_warehouse where the warehouse company
+    does not match Item Default.company.
+
+    Warehouse chosen: "Stores - {Company.abbr}"
+
+    :param dry_run: If True, only print intended changes
+
+    bench execute microsynth.microsynth.purchasing.fix_item_default_warehouses --kwargs "{'dry_run': True}"
+    """
+    print("Starting Item Default warehouse check")
+    print("Dry run:", dry_run)
+    print("-" * 60)
+
+    # Fetch company abbreviations once
+    companies = frappe.get_all(
+        "Company",
+        fields=["name", "abbr"]
+    )
+    company_abbr_map = {c.name: c.abbr for c in companies}
+
+    # Fetch enabled Purchasing items
+    raw_items = frappe.get_all(
+        "Item",
+        filters={
+            "disabled": 0,
+            "item_group": "Purchasing"
+        },
+        fields=["name"]
+    )
+    items = [i["name"] for i in raw_items]
+    print(f"Found {len(items)} enabled Purchasing items")
+
+    if not items:
+        print("Nothing to do")
+        return
+
+    # Fetch all relevant Item Defaults
+    item_defaults = frappe.get_all(
+        "Item Default",
+        filters={
+            "parent": ["in", items]
+        },
+        fields=["name", "parent", "company", "default_warehouse"]
+    )
+    print(f"Found {len(item_defaults)} Item Default records")
+    print("-" * 60)
+    fixes = 0
+
+    for d in item_defaults:
+        if not d.default_warehouse:
+            continue
+        # Get warehouse company
+        wh_company = frappe.db.get_value(
+            "Warehouse",
+            d.default_warehouse,
+            "company"
+        )
+        if not wh_company:
+            raise Exception(
+                f"Warehouse '{d.default_warehouse}' has no company set"
+            )
+        # Compare companies
+        if wh_company == d.company:
+            continue
+
+        # Determine correct warehouse
+        abbr = company_abbr_map.get(d.company)
+        if not abbr:
+            raise Exception(
+                f"No abbreviation found for company '{d.company}'"
+            )
+        target_warehouse = f"Stores - {abbr}"
+
+        if not frappe.db.exists("Warehouse", target_warehouse):
+            raise Exception(f"Expected warehouse '{target_warehouse}' does not exist")
+
+        print(
+            f"Item: {d.parent} | "
+            f"Item Default: {d.name} | "
+            f"Company: {d.company} | "
+            f"Warehouse: {d.default_warehouse} -> {target_warehouse}"
+        )
+        if not dry_run:
+            frappe.db.set_value(
+                "Item Default",
+                d.name,
+                "default_warehouse",
+                target_warehouse
+            )
+        fixes += 1
+
+    print("-" * 60)
+    print(f"Total Item Defaults {'to be fixed' if dry_run else 'fixed'}: {fixes}")
+    print("Done.")
