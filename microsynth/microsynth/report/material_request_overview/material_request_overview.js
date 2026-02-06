@@ -501,8 +501,9 @@ function open_confirmation_dialog(selected, report) {
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
-            if (values.schedule_date < today) {
-                frappe.msgprint(__('Required By date must be today or later'));
+            // Required By date must be at least 7 days in the future
+            if (values.schedule_date < frappe.datetime.add_days(today, 7)) {
+                frappe.msgprint(__('Required By date must be at least 7 days in the future. If you need it earlier, please enter a comment and contact the Purchasing department.'));
                 return;
             }
             frappe.call({
@@ -639,6 +640,10 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         primary_action(values) {
             if (!values.qty || values.qty <= 0) {
                 frappe.msgprint(__('Quantity must be greater than zero.'));
+                return;
+            }
+            if (values.schedule_date < frappe.datetime.add_days(frappe.datetime.nowdate(), 7)) {
+                frappe.msgprint(__('Required By date must be at least 7 days in the future. If you need it earlier, please enter a comment and contact the Purchasing department.'));
                 return;
             }
             frappe.call({
