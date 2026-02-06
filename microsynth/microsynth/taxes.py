@@ -164,9 +164,9 @@ def sales_order_before_save(doc, event):
     return
 
 
-def quotation_before_save(doc, event):
+def quotation_before_validate(doc, event):
     """
-    This is a wrapper function for the hooked Quotation:before save trigger
+    This is a wrapper function for the hooked Quotation:before validate trigger
     """
     update_taxes(doc, event)
     set_alternative_tax_template(doc, event)

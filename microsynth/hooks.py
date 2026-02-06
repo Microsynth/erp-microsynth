@@ -177,7 +177,7 @@ doc_events = {
         "validate": "microsynth.microsynth.shipping.validate_standing_qtn_shipping_currencies"
     },
     "Quotation": {
-        "before_save": "microsynth.microsynth.taxes.quotation_before_save",
+        "before_validate": "microsynth.microsynth.taxes.quotation_before_validate",
         "validate": "microsynth.microsynth.quotation.validate_quotation"
     },
     "Sales Order": {
