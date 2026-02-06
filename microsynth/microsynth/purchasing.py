@@ -1703,9 +1703,11 @@ def create_batches_and_assign(purchase_receipt, batch_data):
 def import_supplier_prices(price_list_name, currency, column_assignment, input_filepath, expected_line_length=4, create_new_items=False, supplier_id=None, dry_run=True, verbose=False):
     """
     Import supplier prices from a CSV file into a specified price list.
-    Does assume min_qty = 1 for all prices.
+    min_qty is optional and defaults to 1 if not provided.
+    If create_new_items is set to True, new Items will be created for supplier part numbers that do not exist yet in the ERP.
+    The column_assignment parameter expects a JSON string with the column index for supplier_part_no, item_name, rate and optionally min_qty.
 
-    bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'Standard Buying CHF', 'currency': 'CHF', 'column_assignment': {'supplier_part_no': 0, 'item_name': 1, 'rate': 7}, 'input_filepath': '/mnt/erp_share/Migration/Purchasing/BioConcept_Preisliste_2026_New_England_BioLabs.csv', 'expected_line_length': 8, 'create_new_items': False, 'supplier_id': 'S-00654', 'dry_run': True}"
+    bench execute microsynth.microsynth.purchasing.import_supplier_prices --kwargs "{'price_list_name': 'Standard Buying EUR', 'currency': 'EUR', 'column_assignment': {'supplier_part_no': 1, 'item_name': 1, 'rate': 4, 'min_qty': 3}, 'input_filepath': '/mnt/erp_share/JPe/2026-02-01_Azenta_Sonderpreise.csv', 'expected_line_length': 5, 'create_new_items': False, 'supplier_id': 'S-01502', 'dry_run': True}"
     """
     if type(column_assignment) == str:
         column_assignment = json.loads(column_assignment)
@@ -1738,6 +1740,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
             supplier_part_no = line[int(column_assignment.get('supplier_part_no'))].strip()
             item_name = line[int(column_assignment.get('item_name'))].strip()
             rate = float(line[int(column_assignment.get('rate'))].strip().replace('’', ''))
+            min_qty = int(line[int(column_assignment.get('min_qty'))].strip()) if 'min_qty' in column_assignment else 1
             # try to find Item according to Supplier Part Number
             item_codes = frappe.get_all(
                 "Item Supplier",
@@ -1787,19 +1790,19 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                 filters={
                     "item_code": item_code,
                     "price_list": price_list_name,
-                    "min_qty": 1,
+                    "min_qty": min_qty,
                     "currency": currency
                 },
                 fields=["name", "price_list_rate"]
             )
             if len(existing_item_prices) == 0:
                 if dry_run:
-                    print(f"INFO: Would create an Item Price with the following properties for Supplier Part Number {supplier_part_no}: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+                    print(f"INFO: Would create an Item Price with the following properties for Supplier Part Number {supplier_part_no}: {item_code=}, {price_list_name=}, {min_qty=}, {rate=}, {currency=}")
                 else:
                     item_price_doc = frappe.get_doc({
                         'doctype': 'Item Price',
                         'item_code': item_code,
-                        'min_qty': 1,
+                        'min_qty': min_qty,
                         'price_list': price_list_name,
                         'buying': 0,
                         'selling': 1,
@@ -1807,7 +1810,7 @@ def import_supplier_prices(price_list_name, currency, column_assignment, input_f
                         'price_list_rate': rate
                     })
                     item_price_doc.insert()
-                    print(f"INFO: Created Item Price {item_price_doc.name} with the following properties: {item_code=}, {price_list_name=}, min_qty=1, {rate=}, {currency=}")
+                    print(f"INFO: Created Item Price {item_price_doc.name} with the following properties: {item_code=}, {price_list_name=}, {min_qty=}, {rate=}, {currency=}")
             elif len(existing_item_prices) == 1 and abs(existing_item_prices[0]['price_list_rate'] - rate) > 0.01:
                 if dry_run:
                     print(f"INFO: Would update existing Item Price {existing_item_prices[0]['name']} for {item_code} with Supplier Part Number {supplier_part_no} on Price List {price_list_name} from {existing_item_prices[0]['price_list_rate']} to new Rate {rate} {currency}.")
