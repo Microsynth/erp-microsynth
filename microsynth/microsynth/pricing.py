@@ -179,7 +179,7 @@ def change_single_customer_rates_from_csv(csv_file):
                                 'price_list': price_list_name,
                                 'min_qty': min_qty
                                 },
-                                fields=['name', 'rate'])
+                                fields=['name', 'price_list_rate'])
             if len(item_prices) == 0:
                 print(f"No Item Price found for {item_code=}, {price_list_name=}, {min_qty=}. Going to continue.")
                 error = True
@@ -192,7 +192,7 @@ def change_single_customer_rates_from_csv(csv_file):
                 print(f"Item Price ID '{item_price_id}' does not match found Item Price ID '{item_prices[0]['name']}' for {item_code=}, {price_list_name=}, {min_qty=}.")
                 error = True
 
-            current_erp_rate = item_prices[0]['rate']
+            current_erp_rate = item_prices[0]['price_list_rate']
 
             if current_erp_rate is None:
                 print(f"No reference rate found for {item_code=}, {price_list_name=}, {min_qty=}.")
