@@ -245,18 +245,12 @@ function create_new_supplier_item() {
             },
             { fieldtype: 'Section Break' },
             {
-                label: 'Shelf Life in Years',
-                fieldname: 'shelf_life_in_years',
-                fieldtype: 'Float'
+                label: 'Purchase UOM',
+                fieldname: 'purchase_uom',
+                fieldtype: 'Link',
+                options: 'UOM',
+                description: 'Default Purchase Unit of Measure'
             },
-            {
-                label: 'Pack Size of one stock unit',
-                fieldname: 'pack_size',
-                fieldtype: 'Float',
-                //description: 'How much does a stock unit contain?',
-                reqd: 1
-            },
-            { fieldtype: 'Column Break' },
             {
                 label: 'Stock Unit of Measure (UOM)',
                 fieldname: 'stock_uom',
@@ -270,6 +264,25 @@ function create_new_supplier_item() {
                         ]
                     }
                 }
+            },
+            {
+                label: 'Pack Size of one stock unit',
+                fieldname: 'pack_size',
+                fieldtype: 'Float',
+                //description: 'How much does a stock unit contain?',
+                reqd: 1
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Conversion Factor',
+                fieldname: 'conversion_factor',
+                fieldtype: 'Float',
+                description: 'Factor to convert from purchase to stock UOM'
+            },
+            {
+                label: 'Shelf Life in Years',
+                fieldname: 'shelf_life_in_years',
+                fieldtype: 'Float'
             },
             {
                 label: 'Pack UOM',
@@ -313,6 +326,7 @@ function create_new_supplier_item() {
                 fieldname: 'default_supplier',
                 fieldtype: 'Link',
                 options: 'Supplier',
+                reqd: 1,
                 onchange: function () {
                     if (!dialog.get_value('supplier')) {
                         dialog.set_value('supplier', dialog.get_value('default_supplier'));
@@ -347,22 +361,6 @@ function create_new_supplier_item() {
                 fieldtype: 'Select',
                 description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
                 options: '\nPotential\nVerified\nDiscontinued\nBlocked'
-            },
-            // --- One UOM Conversion ---
-            { fieldtype: 'Section Break' },
-            {
-                label: 'Purchase UOM',
-                fieldname: 'purchase_uom',
-                fieldtype: 'Link',
-                options: 'UOM',
-                description: 'Default Purchase Unit of Measure'
-            },
-            { fieldtype: 'Column Break' },
-            {
-                label: 'Conversion Factor',
-                fieldname: 'conversion_factor',
-                fieldtype: 'Float',
-                description: 'Factor to convert from purchase to stock UOM'
             }
         ],
         'primary_action_label': 'Create',

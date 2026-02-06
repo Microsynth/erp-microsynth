@@ -292,21 +292,13 @@ function create_new_supplier_item(frm) {
             },
             { fieldtype: 'Section Break' },
             {
-                label: 'Shelf Life in Years',
-                fieldname: 'shelf_life_in_years',
-                fieldtype: 'Float',
-                min: 0.0
+                label: 'Purchase UOM',
+                fieldname: 'purchase_uom',
+                fieldtype: 'Link',
+                options: 'UOM',
+                description: 'Default Purchase Unit of Measure',
+                default: frm.doc.uom || frm.doc.stock_uom,
             },
-            {
-                label: 'Pack Size of one stock unit',
-                fieldname: 'pack_size',
-                fieldtype: 'Float',
-                //description: 'How much does a stock unit contain?',
-                reqd: 1,
-                default: frm.doc.pack_size,
-                min: 0.0001
-            },
-            { fieldtype: 'Column Break' },
             {
                 label: 'Stock Unit of Measure (UOM)',
                 fieldname: 'stock_uom',
@@ -321,6 +313,29 @@ function create_new_supplier_item(frm) {
                         ]
                     }
                 }
+            },
+            {
+                label: 'Pack Size of one stock unit',
+                fieldname: 'pack_size',
+                fieldtype: 'Float',
+                //description: 'How much does a stock unit contain?',
+                reqd: 1,
+                default: frm.doc.pack_size,
+                min: 0.0001
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Conversion Factor',
+                fieldname: 'conversion_factor',
+                fieldtype: 'Float',
+                description: 'Factor to convert from purchase to stock UOM',
+                default: frm.doc.conversion_factor,
+                min: 1
+            },
+            {
+                label: 'Shelf Life in Years',
+                fieldname: 'shelf_life_in_years',
+                fieldtype: 'Float'
             },
             {
                 label: 'Pack UOM',
@@ -403,32 +418,6 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Select',
                 description: 'blocked = not allowed to use; discontinued = no longer available from the Supplier',
                 options: '\nPotential\nVerified\nDiscontinued\nBlocked'
-            },
-            // --- One UOM Conversion ---
-            { fieldtype: 'Section Break' },
-            {
-                label: 'Purchase UOM',
-                fieldname: 'purchase_uom',
-                fieldtype: 'Link',
-                options: 'UOM',
-                description: 'Default Purchase Unit of Measure',
-                default: frm.doc.uom || frm.doc.stock_uom,
-                // get_query: function () {
-                //     return {
-                //         'filters': [
-                //             ['name', 'NOT IN', ['Reaction Units', 'L', 'kg', 'g', 'h', 'µmol', 'cm', 'm', 'µl', 'ml', 'ng', 'µg', 'mg']]
-                //         ]
-                //     }
-                // }
-            },
-            { fieldtype: 'Column Break' },
-            {
-                label: 'Conversion Factor',
-                fieldname: 'conversion_factor',
-                fieldtype: 'Float',
-                description: 'Factor to convert from purchase to stock UOM',
-                default: frm.doc.conversion_factor,
-                min: 1
             }
         ],
         'primary_action_label': 'Create',
