@@ -30,7 +30,7 @@
    "options": "QM Classification Hierarchy Link"
   }
  ],
- "modified": "2025-04-11 17:10:13.753105",
+ "modified": "2026-02-09 12:29:28.298256",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Classification Hierarchy",
@@ -56,6 +56,10 @@
    "print": 1,
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "NGS Lab User"
   }
  ],
  "search_fields": "title",

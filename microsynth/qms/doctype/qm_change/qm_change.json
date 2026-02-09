@@ -316,7 +316,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-01-21 14:49:22.106722",
+ "modified": "2026-02-09 12:31:12.777122",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
@@ -363,6 +363,10 @@
    "print": 1,
    "read": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "role": "NGS Lab User"
   }
  ],
  "sort_field": "modified",
