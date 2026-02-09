@@ -583,9 +583,9 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Currency', label: __('Rate regarding Purchase UOM'), fieldname:'rate', precision: 2},
             {fieldtype:'Float', label: __('Conv. Factor from Purchase to Stock UOM'), fieldname:'conversion_factor', min: 1, precision: 2,
-                description: 'How many stock units are in one purchase unit?'},  // TODO: required if purchase_uom != stock_uom
-            {fieldtype:'Float', label: __('Pack Size regarding Stock UOM'), fieldname:'pack_size', min: 0.01, precision: 2,
-                description: 'How much does one stock unit contain?'},  // TODO: required if pack_uom is set
+                description: 'How many stock units are in one purchase unit?'},
+            {fieldtype:'Float', label: __('Pack Size regarding Stock UOM'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1,
+                description: 'How much does one stock unit contain?'},
 
             {fieldtype:'Column Break'},
 
@@ -594,7 +594,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
 
-            {fieldtype:'Link', label: __('Purchase UOM (unit of measure)'), fieldname:'purchase_uom', options: 'UOM',
+            {fieldtype:'Link', label: __('Purchase UOM (unit of measure)'), fieldname:'purchase_uom', options: 'UOM', reqd: 1,
                 description: 'Unit to order from supplier',
                 get_query: function () {
                     return {
@@ -603,9 +603,9 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                         ]
                     }
                 }
-            },  // TODO: required if conversion_factor is set
+            },
 
-            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},  // TODO: required if rate is set
+            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
 
             {   fieldtype:'Link',
                 label: __('Stock UOM (unit of measure)'),
@@ -621,7 +621,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     }
                 }
             },
-            {fieldtype:'Link', label: __('Pack UOM'), fieldname:'pack_uom', options: 'UOM',
+            {fieldtype:'Link', label: __('Pack UOM'), fieldname:'pack_uom', options: 'UOM', reqd: 1,
                 get_query: function () {
                     return {
                         'filters': [
@@ -629,7 +629,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                         ]
                     }
                 }
-            },  // TODO: required if pack_size is set
+            },
 
             {fieldtype:'Section Break'},
 
@@ -644,6 +644,16 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             }
             if (values.schedule_date < frappe.datetime.add_days(frappe.datetime.nowdate(), 7)) {
                 frappe.msgprint(__('Required By date must be at least 7 days in the future. If you need it earlier, please enter a comment and contact the Purchasing department.'));
+                return;
+            }
+            // conversion_factor required if purchase_uom != stock_uom
+            if (values.purchase_uom && values.stock_uom && values.purchase_uom !== values.stock_uom && (!values.conversion_factor || values.conversion_factor < 1)) {
+                frappe.msgprint(__('Conversion Factor is required and must be at least 1 when Purchase UOM differs from Stock UOM.'));
+                return;
+            }
+            // currency required if rate is set
+            if (values.rate && (!values.currency || values.currency.trim() === '')) {
+                frappe.msgprint(__('Currency is required if Rate is set.'));
                 return;
             }
             frappe.call({
