@@ -502,45 +502,54 @@ function display_mr_owners_and_storage_locations(frm) {
                                 location_path_pairs.forEach(([loc, path]) => {
                                     location_path_map[loc] = path;
                                 });
-                                // Group items by owner
-                                frm.doc.items.forEach(item => {
-                                    if (!item.material_request) return;
-                                    let owner = mr_owner_map[item.material_request];
+                                // Reworked: show a table with columns Requester | Supplier Item Code | Item Code | Item Name | Qty | UOM | Storage Locations
+                                let comment_html = `<div style="overflow-x:auto;"><table class="table table-bordered" style="margin-bottom: 8px; min-width: 900px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Requested by</th>
+                                            <th>Supplier Item Code</th>
+                                            <th>Item Name</th>
+                                            <th>Qty</th>
+                                            <th>UOM</th>
+                                            <th>Batch No</th>
+                                            <th>Storage Location(s)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                                frm.doc.items.forEach(i => {
+                                    if (!i.material_request) return;
+                                    let owner = mr_owner_map[i.material_request];
                                     if (!owner) {
                                         owner = 'Unknown';
                                     }
-                                    if (!owner_map[owner]) {
-                                        owner_map[owner] = [];
+                                    // Find the item row in frm.doc.items to get more info
+                                    let item_row = (frm.doc.items || []).find(row => row.item_code === i.item_code && row.item_name === i.item_name && row.qty === i.qty);
+                                    let supplier_item_code = '';
+                                    let uom = '';
+                                    let batch_no = '';
+                                    if (item_row) {
+                                        supplier_item_code = item_row.supplier_part_no || '';
+                                        uom = item_row.uom || '';
+                                        batch_no = item_row.batch_no || '';
                                     }
-                                    // Build location paths for this item
-                                    let itemdoc = item_map[item.item_code];
+                                    let itemdoc = item_map[i.item_code];
                                     let locs = (itemdoc && itemdoc.storage_locations) ? itemdoc.storage_locations.map(row => row.location) : [];
-                                    let loc_paths = locs.map(loc => location_path_map[loc]).filter(Boolean);
-                                    owner_map[owner].push({
-                                        'item_name': item.item_name,
-                                        'item_code': item.item_code,
-                                        'qty': item.qty,
-                                        'location_paths': loc_paths
-                                    });
+                                    let location_paths = locs.map(loc => location_path_map[loc]).filter(Boolean);
+                                    comment_html += `<tr>`;
+                                    comment_html += `<td>${owner}</td>`;
+                                    comment_html += `<td>${frappe.utils.escape_html(supplier_item_code)}</td>`;
+                                    comment_html += `<td>${frappe.utils.escape_html(i.item_name)}</td>`;
+                                    comment_html += `<td>${i.qty}</td>`;
+                                    comment_html += `<td>${frappe.utils.escape_html(uom)}</td>`;
+                                    comment_html += `<td>${frappe.utils.escape_html(batch_no)}</td>`;
+                                    if (location_paths && location_paths.length) {
+                                        comment_html += `<td><span class='text-muted'>${location_paths.map(p => frappe.utils.escape_html(p)).join('; ')}</span></td>`;
+                                    } else {
+                                        comment_html += `<td><b>No Storage Location set on this Item</b></td>`;
+                                    }
+                                    comment_html += `</tr>`;
                                 });
-                                // Build comment text
-                                let comment_html = '<div><b>Material Request Owners and Items:</b><br>';
-                                for (let owner in owner_map) {
-                                    comment_html += `<br><b>${owner}</b>:<ul>`;
-                                    owner_map[owner].forEach(i => {
-                                        comment_html += `<li>${i.item_code} (${i.item_name}) - Qty: ${i.qty}`;
-                                        if (i.location_paths && i.location_paths.length) {
-                                            comment_html += `  |  <b>Storage Location</b>(s): <span class='text-muted'>` +
-                                                i.location_paths.map(p => frappe.utils.escape_html(p)).join('; ') +
-                                                `</span>`;
-                                        } else {
-                                            comment_html += `  |  <b>No Storage Location set on this Item</b>`;
-                                        }
-                                        comment_html += `</li>`;
-                                    });
-                                    comment_html += '</ul>';
-                                }
-                                comment_html += '</div>';
+                                comment_html += `</tbody></table></div>`;
                                 // Add dashboard comment/banner
                                 frm.dashboard.add_comment(comment_html, 'blue', true);
                             });
