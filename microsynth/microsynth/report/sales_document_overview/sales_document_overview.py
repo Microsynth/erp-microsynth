@@ -149,7 +149,7 @@ def get_data(filters):
         if inferred_doctype == "Sales Invoice":
             expand_sales_invoice = True
         filters["doctype"] = inferred_doctype
-        filters["web_order_id"] = frappe.get_value(inferred_doctype, filters["document_id"], "web_order_id")
+        filters["web_order_id"] = frappe.get_value(inferred_doctype, filters["document_id"], "web_order_id") if inferred_doctype != "Quotation" else ""
         safe_get_and_traverse(inferred_doctype, filters["document_id"])
 
     # Starting point 2: Web Order ID
