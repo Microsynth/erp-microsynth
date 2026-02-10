@@ -179,7 +179,8 @@ function first_barcode_dialog() {
                 }
                 locals.label_queue[0].from_barcode = from_barcode;
 
-                //process_queue(); // check availability, the proceed
+                //process_queue(); // check availability, then proceed
+                // TODO: How to handle prefix in availability check?
                 are_labels_available(locals.label_queue[0].item_code, Number(from_barcode), to_barcode);
             },
             __("Pick first label"),
@@ -280,7 +281,6 @@ function second_barcode_dialog() {
                         }
                     });
                 }
-
                 process_queue();
             },
             __("Pick last label"),
@@ -312,7 +312,7 @@ function are_labels_available(item_code, from_barcode, to_barcode) {
             'from_barcode': Number(from_barcode),
             'to_barcode': to_barcode
         },
-        'asyc': false,
+        'async': false,
         'callback': function(r) {
             if (r.message == 1) {
                 // labels available, proceed
