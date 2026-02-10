@@ -89,10 +89,16 @@ frappe.ui.form.on('Contact', {
         original_customer_link = get_customer_link_from_links(frm.doc.links);
     },
     refresh(frm) {
-        const link = frm.doc.links?.[0];
-        const link_name = link?.link_name;
-        const is_customer = link.link_doctype === "Customer";
-        const is_supplier = link.link_doctype === "Supplier";
+        if (frm.doc.links && frm.doc.links.length) {
+            var link = frm.doc.links?.[0];
+            var link_name = link?.link_name;
+            var is_customer = link.link_doctype === "Customer";
+            var is_supplier = link.link_doctype === "Supplier";
+        } else {
+            var link_name = null;
+            var is_customer = false;
+            var is_supplier = false;
+        }
 
         frm.dashboard.clear_comment();
 
@@ -103,10 +109,26 @@ frappe.ui.form.on('Contact', {
         }
 
         // lock Links table of webshop account contacts
-        if (!frm.doc.__islocal && frm.doc.has_webshop_account) {
-            cur_frm.set_df_property('links', 'read_only', true);
-            cur_frm.get_field("links").grid.fields_map['link_doctype'].read_only = 1;
-            cur_frm.get_field("links").grid.fields_map['link_name'].read_only = 1;
+        if (
+            !frm.doc.__islocal &&
+            frm.doc.has_webshop_account
+        ) {
+            const linksField = cur_frm.get_field("links");
+            if (linksField && linksField.grid) {
+                const grid = linksField.grid;
+                const fieldsMap = grid.fields_map || {};
+                // lock entire child table
+                cur_frm.set_df_property('links', 'read_only', 1);
+                // lock individual columns only if they exist
+                if (fieldsMap.link_doctype) {
+                    cur_frm.get_field("links").grid.fields_map['link_doctype'].read_only = 1;
+                }
+                if (fieldsMap.link_name) {
+                    cur_frm.get_field("links").grid.fields_map['link_name'].read_only = 1;
+                }
+                // refresh grid so changes take effect visually
+                grid.refresh();
+            }
         }
 
         // remove Menu > Email
@@ -864,6 +886,9 @@ function open_mail_dialog(frm){
 
 // Helper function to extract customer link name from links table
 function get_customer_link_from_links(links) {
-    const customer_link = (links || []).find(link => link.link_doctype === 'Customer');
-    return customer_link ? customer_link.link_name : null;
+    if (cur_frm.doc.links && cur_frm.doc.links.length) {
+        const customer_link = (links || []).find(link => link.link_doctype === 'Customer');
+        return customer_link ? customer_link.link_name : null;
+    }
+    return null;
 }
