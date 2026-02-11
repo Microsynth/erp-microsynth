@@ -95,7 +95,13 @@ def get_data():
             "label": _("Oligo"),
             "icon": "fa fa-tools",
             "items": [
-                   {
+                    {
+                       "type": "doctype",
+                       "name": "Oligo",
+                       "label": _("Oligo"),
+                       "description": _("Oligo")
+                    },
+                    {
                         "type": "report",
                         "name": "Oligo Orders Export",
                         "label": _("Oligo Orders Export"),
@@ -179,24 +185,6 @@ def get_data():
             ]
         },
         {
-            "label": _("Master Data"),
-            "icon": "octicon octicon-file-submodule",
-            "items": [
-                   {
-                       "type": "doctype",
-                       "name": "Item",
-                       "label": _("Item"),
-                       "description": _("Item")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Oligo",
-                       "label": _("Oligo"),
-                       "description": _("Oligo")
-                    },
-            ]
-        },
-        {
             "label": _("Administration"),
             "icon": "fa fa-money",
             "items": [
@@ -242,29 +230,22 @@ def get_data():
                         "is_query_report": True
                     },
                     {
-                        "type": "page",
-                        "name": "tracking_codes",
-                        "label": _("Tracking Code Registration"),
-                        "description": _("Tracking Codes")
+                        "type": "doctype",
+                        "name": "VAT Declaration",
+                        "label": _("VAT Declaration"),
+                        "description": _("VAT Declaration")
                     },
                     {
                         "type": "report",
-                        "name": "Missing Tracking Codes",
-                        "label": _("Missing Tracking Codes"),
-                        "doctype": "Sales Order",
+                        "name": "Kontrolle MwSt",
+                        "label": _("Kontrolle MwSt"),
+                        "doctype": "Sales Invoice",
                         "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Find Tracking Code",
-                        "label": _("Find Tracking Code"),
-                        "doctype": "Sales Order",
-                        "is_query_report": True
-                    },
+                    }
             ]
         },
         {
-            "label": _("Purchasing"),
+            "label": _("Procurement"),
             "icon": "fa fa-money",
             "items": [
                     {
@@ -273,6 +254,12 @@ def get_data():
                         "label": _("Material Request Overview"),
                         "doctype": "Material Request",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Item Request",
+                        "label": _("Item Request"),
+                        "description": _("Item Request")
                     },
                     {
                         "type": "doctype",
@@ -306,6 +293,26 @@ def get_data():
                         "description": _("Purchase Receipt")
                     },
                     {
+                        "type": "report",
+                        "name": "Purchase Document Overview",
+                        "label": _("Purchase Document Overview"),
+                        "doctype": "Purchase Order",
+                        "is_query_report": True
+                    }
+            ]
+        },
+        {
+            "label": _("Creditor Accounting"),
+            "icon": "fa fa-money",
+            "items": [
+                    {
+                        "type": "report",
+                        "name": "Item Accounting",
+                        "label": _("Item Accounting"),
+                        "doctype": "Item",
+                        "is_query_report": True
+                    },
+                    {
                         "type": "doctype",
                         "name": "Purchase Invoice",
                         "label": _("Purchase Invoice"),
@@ -328,6 +335,12 @@ def get_data():
                         "name": "Payment Proposal",
                         "label": _("Payment Proposal"),
                         "description": _("Payment Proposal")
+                    },
+                    {
+                        "type": "doctype",
+                        "name": "Payment Entry",
+                        "label": _("Payment Entry"),
+                        "description": _("Payment Entry")
                     }
             ]
         },
@@ -347,12 +360,6 @@ def get_data():
                        "label": _("Unallocated Payments"),
                        "doctype": _("Payment Entry"),
                        "is_query_report": True
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Payment Proposal",
-                       "label": _("Payment Proposal"),
-                       "description": _("Payment Proposal")
                    },
                    {
                        "type": "doctype",
@@ -398,25 +405,6 @@ def get_data():
             ]
         },
         {
-            "label": _("Taxes"),
-            "icon": "fa fa-bank",
-            "items": [
-                   {
-                       "type": "doctype",
-                       "name": "VAT Declaration",
-                       "label": _("VAT Declaration"),
-                       "description": _("VAT Declaration")
-                   },
-                   {
-                        "type": "report",
-                        "name": "Kontrolle MwSt",
-                        "label": _("Kontrolle MwSt"),
-                        "doctype": "Sales Invoice",
-                        "is_query_report": True
-                    }
-            ]
-        },
-        {
             "label": _("Settings"),
             "icon": "fa fa-users",
             "items": [
@@ -425,6 +413,12 @@ def get_data():
                        "name": "Microsynth Settings",
                        "label": _("Microsynth Settings"),
                        "description": _("Microsynth Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Intercompany Settings",
+                       "label": _("Intercompany Settings"),
+                       "description": _("Intercompany Settings")
                    },
                    {
                        "type": "doctype",
@@ -461,12 +455,45 @@ def get_data():
                        "name": "Batch Invoice Processing Settings",
                        "label": _("Batch Invoice Processing Settings"),
                        "description": _("Batch Invoice Processing Settings")
-                   },
-                   {
+                   }
+            ]
+        },
+        {
+            "label": _("Shipping"),
+            "icon": "octicon octicon-file-submodule",
+            "items": [
+                    {
+                        "type": "page",
+                        "name": "tracking_codes",
+                        "label": _("Tracking Code Registration"),
+                        "description": _("Tracking Codes")
+                    },
+                    {
                         "type": "report",
-                        "name": "Item Accounting",
-                        "label": _("Item Accounting"),
-                        "doctype": "Item",
+                        "name": "Missing Tracking Codes",
+                        "label": _("Missing Tracking Codes"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Find Tracking Code",
+                        "label": _("Find Tracking Code"),
+                        "doctype": "Sales Order",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Shipping Times",
+                        "label": _("Shipping Times"),
+                        "doctype": "Tracking Code",
+                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Shipping Item Usage",
+                        "label": _("Shipping Item Usage"),
+                        "doctype": "Delivery Note",
                         "is_query_report": True
                     }
             ]
@@ -571,27 +598,19 @@ def get_data():
                         "label": _("Label Accounting"),
                         "doctype": "Sales Order",
                         "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Shipping Times",
-                        "label": _("Shipping Times"),
-                        "doctype": "Tracking Code",
-                        "is_query_report": True
-                    },
-                    {
-                        "type": "report",
-                        "name": "Shipping Item Usage",
-                        "label": _("Shipping Item Usage"),
-                        "doctype": "Delivery Note",
-                        "is_query_report": True
                     }
             ]
         },
-                {
+        {
             "label": _("Product Management"),
             "icon": "fa fa-users",
             "items": [
+                    {
+                        "type": "doctype",
+                        "name": "Item",
+                        "label": _("Item"),
+                        "description": _("Item")
+                    },
                     {
                         "type": "report",
                         "name": "Benchmarking Information",
