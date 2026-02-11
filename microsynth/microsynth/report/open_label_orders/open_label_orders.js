@@ -180,8 +180,7 @@ function first_barcode_dialog() {
                 locals.label_queue[0].from_barcode = from_barcode;
 
                 //process_queue(); // check availability, then proceed
-                // TODO: How to handle prefix in availability check?
-                are_labels_available(locals.label_queue[0].item_code, Number(from_barcode), to_barcode);
+                are_labels_available(locals.label_queue[0].item_code, Number(from_barcode), to_barcode, prefix, from_barcode.length);
             },
             __("Pick first label"),
             __("OK")
@@ -304,13 +303,15 @@ function is_in_range(ranges, value) {
     return false;
 }
 
-function are_labels_available(item_code, from_barcode, to_barcode) {
+function are_labels_available(item_code, from_barcode, to_barcode, prefix, numeric_length) {
     frappe.call({
         'method': "microsynth.microsynth.report.open_label_orders.open_label_orders.are_labels_available",
         'args': {
             'item_code': item_code,
             'from_barcode': Number(from_barcode),
-            'to_barcode': to_barcode
+            'to_barcode': to_barcode,
+            'prefix': prefix,
+            'numeric_length': numeric_length
         },
         'async': false,
         'callback': function(r) {

@@ -186,12 +186,13 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
         prefix = prefixes[0]['prefix'] or ''
     else:
         prefix = ''
-    company = frappe.get_value("Sales Order", sales_order, "company")
-    customer = frappe.get_value("Sales Order", sales_order, "customer")
-    customer_name = frappe.get_value("Sales Order", sales_order, "customer_name")
-    contact = frappe.get_value("Sales Order", sales_order, "contact_person")
-    web_order_id = frappe.get_value("Sales Order", sales_order, "web_order_id")
-    register_labels = frappe.get_value("Sales Order", sales_order, "register_labels")
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+    company = sales_order_doc.company
+    customer = sales_order_doc.customer
+    customer_name = sales_order_doc.customer_name
+    contact = sales_order_doc.contact_person
+    web_order_id = sales_order_doc.web_order_id
+    register_labels = sales_order_doc.register_labels
     for i in range(int(from_barcode), (int(to_barcode) + 1)):
         # create label
         frappe.get_doc({
@@ -242,14 +243,29 @@ def pick_labels(sales_order, from_barcode, to_barcode, number_length):
 
 
 @frappe.whitelist()
-def are_labels_available(item_code, from_barcode, to_barcode):
-    conflicts = frappe.db.sql("""
-        SELECT `name`
-        FROM `tabSequencing Label`
-        WHERE `item` = "{item_code}"
-          AND `label_id` BETWEEN "{from_barcode}" AND "{to_barcode}"
-          AND LENGTH(`label_id`) = "{length}";
-    """.format(item_code=item_code, from_barcode=from_barcode, to_barcode=to_barcode, length=len(from_barcode)), as_dict=True)
+def are_labels_available(item_code, from_barcode, to_barcode, prefix, numeric_length):
+    """
+    Check if there are any Sequencing Labels with the same item code and a label id in the given range (taking into account the prefix if given).
+    If there are no such labels, return 1, otherwise return 0.
+    from_barcode and to_barcode are expected to be numbers.
+    numeric_length is the full length of the numeric part of a single label barcode including leading zeros, needed to correctly check for availability if a prefix is used.
+    """
+    if prefix:
+        barcode_list = ','.join(f'"{prefix}{i:0{numeric_length}d}"' for i in range(int(from_barcode), int(to_barcode) + 1))
+        conflicts = frappe.db.sql(f"""
+            SELECT `name`
+            FROM `tabSequencing Label`
+            WHERE `item` = "{item_code}"
+            AND `label_id` IN ({barcode_list});
+        """, as_dict=True)
+    else:
+        conflicts = frappe.db.sql("""
+            SELECT `name`
+            FROM `tabSequencing Label`
+            WHERE `item` = "{item_code}"
+            AND `label_id` BETWEEN "{from_barcode}" AND "{to_barcode}"
+            AND LENGTH(`label_id`) = "{length}";
+        """.format(item_code=item_code, from_barcode=from_barcode, to_barcode=to_barcode, length=len(from_barcode)), as_dict=True)
 
     if len(conflicts) == 0:
         return 1
