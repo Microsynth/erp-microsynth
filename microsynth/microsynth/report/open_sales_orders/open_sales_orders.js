@@ -30,18 +30,25 @@ frappe.query_reports["Open Sales Orders"] = {
             "options": "\nOligos\nLabels\nSequencing\nGenetic Analysis\nNGS\nFLA\nProject\nMaterial\nService"
         },
         {
-            "fieldname":"include_zero",
+            "fieldname": "item_codes",
+            "label": __("Item Codes"),
+            "fieldtype": "Data",
+            "description": __("Comma-separated list of item codes to filter by")
+        },
+        {
+            "fieldname": "include_zero",
             "label": __("Include zero-sum orders"),
             "fieldtype": "Check"
         },
         {
-            "fieldname":"include_drafts",
+            "fieldname": "include_drafts",
             "label": __("Include Sales Order Drafts"),
             "fieldtype": "Check",
-            "default": 1
+            "default": 1,
+            "hidden": 1
         },
         {
-            "fieldname":"include_orders_on_hold",
+            "fieldname": "include_orders_on_hold",
             "label": __("Include Orders on hold"),
             "fieldtype": "Check",
             "hidden": 1,

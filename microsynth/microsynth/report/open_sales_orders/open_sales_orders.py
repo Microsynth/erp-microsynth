@@ -32,29 +32,57 @@ def get_columns():
 
 @frappe.whitelist()
 def get_data(filters=None):
+    filters = filters or {}
     outer_conditions = inner_conditions = ''
+    values = []
 
     if not filters.get('include_zero'):
         outer_conditions += " AND `raw`.`total` > 0"
     if not filters.get('include_orders_on_hold'):
         inner_conditions += " AND `tabSales Order`.`hold_order` != 1"
     if filters.get('company'):
-        inner_conditions += f" AND `tabSales Order`.`company` = '{filters.get('company')}'"
+        inner_conditions += " AND `tabSales Order`.`company` = %s"
+        values.append(filters.get('company'))
+
     if filters.get('product_type'):
-        inner_conditions += f" AND `tabSales Order`.`product_type` = '{filters.get('product_type')}'"
+        inner_conditions += " AND `tabSales Order`.`product_type` = %s"
+        values.append(filters.get('product_type'))
+
     if filters.get('include_drafts'):
         inner_conditions += " AND `tabSales Order`.`docstatus` < 2"
     else:
         inner_conditions += " AND `tabSales Order`.`docstatus` = 1"
 
     if filters.get('to_date'):
-        inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND '{filters.get('to_date')}'"
+        inner_conditions += """
+            AND `tabSales Order`.`transaction_date`
+            BETWEEN %s AND %s
+        """
+        values.append(filters.get('from_date'))
+        values.append(filters.get('to_date'))
     else:
         # used for Auto Email Reports
         if filters.get('product_type') == 'NGS':
-            inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -30 DAY)"
+            inner_conditions += """
+                AND `tabSales Order`.`transaction_date`
+                BETWEEN %s AND DATE_ADD(NOW(), INTERVAL -30 DAY)
+            """
+            values.append(filters.get('from_date'))
         else:  # if filters.get('product_type') == 'Sequencing'
-            inner_conditions += f" AND `tabSales Order`.`transaction_date` BETWEEN '{filters.get('from_date')}' AND DATE_ADD(NOW(), INTERVAL -14 DAY)"
+            inner_conditions += """
+                AND `tabSales Order`.`transaction_date`
+                BETWEEN %s AND DATE_ADD(NOW(), INTERVAL -14 DAY)
+            """
+            values.append(filters.get('from_date'))
+
+    if filters.get('item_codes'):
+        item_codes = [code.strip() for code in filters.get('item_codes').split(',') if code.strip()]
+        if item_codes:
+            placeholders = ', '.join(['%s'] * len(item_codes))
+            inner_conditions += f"""
+                AND `tabSales Order Item`.`item_code` IN ({placeholders})
+            """
+            values.extend(item_codes)
 
     data = frappe.db.sql(f"""
         SELECT * FROM (
@@ -119,7 +147,7 @@ def get_data(filters=None):
         WHERE `raw`.`has_sales_invoice` = 0
         {outer_conditions}
         ORDER BY `raw`.`date`
-    """, as_dict=True)
+    """, tuple(values), as_dict=True)
 
     # Batch delivery notes (by web_order_id)
     web_order_ids = [so["web_order_id"] for so in data if so["web_order_id"]]
