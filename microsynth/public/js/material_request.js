@@ -12,6 +12,14 @@ frappe.ui.form.on('Material Request', {
             prepare_naming_series(frm);             // common function
         }
 
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Purchase Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
+        }
+
         setTimeout(function () {
             cur_frm.fields_dict.items.grid.get_field('item_code').get_query =
                 function(frm, dt, dn) {

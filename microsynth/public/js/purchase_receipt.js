@@ -26,7 +26,15 @@ frappe.ui.form.on('Purchase Receipt', {
             });
         }
 
-        if (frm.doc.items || frm.doc.items.length > 0) {
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Purchase Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
+        }
+
+        if (frm.doc.items && frm.doc.items.length > 0) {
             display_mr_owners_and_storage_locations(frm);
         }
     },

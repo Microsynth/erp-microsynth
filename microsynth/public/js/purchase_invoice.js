@@ -47,6 +47,14 @@ frappe.ui.form.on('Purchase Invoice', {
             });
         }
 
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Purchase Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
+        }
+
         if (frm.doc.in_approval) {
             cur_frm.set_df_property('approver', 'read_only', true);
         } else {

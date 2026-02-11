@@ -36,9 +36,18 @@ frappe.ui.form.on('Item Request', {
                 }).addClass('btn-danger');
             }
         }
+
         frm.add_custom_button(__('Material Request Overview'), function() {
             frappe.set_route('query-report', 'Material Request Overview', { reload: new Date().getTime() });
         });
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button("Related Documents", function () {
+                frappe.set_route("query-report", "Purchase Document Overview", {
+                    "document_id": frm.doc.name
+                });
+            }, __("View"));
+        }
     }
 });
 
