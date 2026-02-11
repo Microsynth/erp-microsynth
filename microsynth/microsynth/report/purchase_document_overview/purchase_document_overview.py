@@ -90,12 +90,14 @@ def get_data(filters):
         if handler:
             handler(doc)
 
+
     # Handlers for traversal
 
     def handle_item_request(doc):
         # IR → MR
         if doc.material_request:
             safe_fetch("Material Request", doc.material_request)
+
 
     def handle_material_request(doc):
         # MR → PO
@@ -116,9 +118,10 @@ def get_data(filters):
         for row in ir_list:
             safe_fetch("Item Request", row.name)
 
+
     def handle_purchase_order(doc):
         """
-        Traverse from Purchase Order → Material Request / Purchase Receipt / Purchase Invoice
+        Traverse from Purchase Order → Material Request / Supplier Quotation / Purchase Receipt / Purchase Invoice
         """
         # PO → Material Request
         mr_items = frappe.get_all(
@@ -129,6 +132,16 @@ def get_data(filters):
         for item in mr_items:
             if item.material_request:
                 safe_fetch("Material Request", item.material_request)
+
+        # PO → Supplier Quotation
+        sq_items = frappe.get_all(
+            "Purchase Order Item",
+            filters={"parent": doc.name},
+            fields=["supplier_quotation"]
+        )
+        for item in sq_items:
+            if item.supplier_quotation:
+                safe_fetch("Supplier Quotation", item.supplier_quotation)
 
         # PO → Purchase Receipt
         pr_items = frappe.get_all(
@@ -147,6 +160,7 @@ def get_data(filters):
         )
         for item in pi_items:
             safe_fetch("Purchase Invoice", item.parent)
+
 
     def handle_purchase_receipt(doc):
         """PR → PO + PI"""
@@ -168,6 +182,7 @@ def get_data(filters):
         for row in pi_items:
             safe_fetch("Purchase Invoice", row.parent)
 
+
     def handle_purchase_invoice(doc):
         """PI → PO + PR"""
         pi_items = frappe.get_all(
@@ -181,13 +196,26 @@ def get_data(filters):
             if row.purchase_receipt:
                 safe_fetch("Purchase Receipt", row.purchase_receipt)
 
+
+    def handle_supplier_quotation(doc):
+        """SQ → PO"""
+        po_items = frappe.get_all(
+            "Purchase Order Item",
+            filters={"supplier_quotation": doc.name},
+            fields=["parent"]
+        )
+        for row in po_items:
+            safe_fetch("Purchase Order", row.parent)
+
+
     # Master handler map
     handlers = {
         "Item Request": handle_item_request,
         "Material Request": handle_material_request,
         "Purchase Order": handle_purchase_order,
         "Purchase Receipt": handle_purchase_receipt,
-        "Purchase Invoice": handle_purchase_invoice
+        "Purchase Invoice": handle_purchase_invoice,
+        "Supplier Quotation": handle_supplier_quotation
     }
     # Starting Point: Document ID
     prefix = filters["document_id"].split("-")[0]
@@ -195,6 +223,7 @@ def get_data(filters):
     prefix_map = {
         "IR": "Item Request",
         "MR": "Material Request",
+        "PQTN": "Supplier Quotation",
         "PO": "Purchase Order",
         "PR": "Purchase Receipt",
         "PI": "Purchase Invoice"
@@ -202,7 +231,7 @@ def get_data(filters):
 
     doctype = prefix_map.get(prefix)
     if not doctype:
-        frappe.throw("Invalid Document ID prefix. Must start with IR-, MR-, PO-, PR-, PI-.")
+        frappe.throw("Invalid Document ID prefix. Must start with IR-, MR-, PO-, PR-, PI- or PQTN-.")
 
     safe_fetch(doctype, filters["document_id"])
 
