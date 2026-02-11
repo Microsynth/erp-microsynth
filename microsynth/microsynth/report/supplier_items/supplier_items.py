@@ -104,24 +104,34 @@ def get_data(filters):
     data = frappe.db.sql(query, values, as_dict=True)
 
     # --- Enrich with Locations ---
-    for row in data:
-        item_code = row["item_code"]
+    item_codes = [row["item_code"] for row in data]
+    location_map = {}
 
-        # Get child table entries from Table MultiSelect
+    if item_codes:
         links = frappe.get_all(
             "Location Link",
-            filters={"parent": item_code, "parentfield": "storage_locations"},
-            fields=["location"]
+            filters={
+                "parent": ["in", item_codes],
+                "parentfield": "storage_locations"
+            },
+            fields=["parent", "location"]
         )
-        if not links:
+        # Group by parent item
+        for link in links:
+            location_map.setdefault(link["parent"], []).append(link["location"])
+
+    for row in data:
+        item_code = row["item_code"]
+        locations = location_map.get(item_code, [])
+
+        if not locations:
             row["locations"] = ""
             continue
 
-        # Convert each location into "BAL / F1 / R101 / Freezer / Rack 4"
         path_strings = [
-            get_location_path_string(link["location"])
-            for link in links
-            if link.get("location")
+            get_location_path_string(location)
+            for location in locations
+            if location
         ]
         row["locations"] = "  |  ".join(path_strings)
 
