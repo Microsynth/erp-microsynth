@@ -245,7 +245,7 @@ def get_data():
             ]
         },
         {
-            "label": _("Procurement"),
+            "label": _("Purchasing"),
             "icon": "fa fa-money",
             "items": [
                     {
@@ -405,56 +405,53 @@ def get_data():
             ]
         },
         {
-            "label": _("Settings"),
+            "label": _("Human Resources"),
             "icon": "fa fa-users",
             "items": [
                    {
                        "type": "doctype",
-                       "name": "Microsynth Settings",
-                       "label": _("Microsynth Settings"),
-                       "description": _("Microsynth Settings")
+                       "name": "Job Opening",
+                       "label": _("Job Opening"),
+                       "description": _("Job Opening")
                    },
                    {
                        "type": "doctype",
-                       "name": "Intercompany Settings",
-                       "label": _("Intercompany Settings"),
-                       "description": _("Intercompany Settings")
+                       "name": "Job Applicant",
+                       "label": _("Job Applicant"),
+                       "description": _("Job Applicant")
+                   },
+                   {
+                       "type": "report",
+                       "name": "Job Applicant Overview",
+                       "label": _("Job Applicant Overview"),
+                       "doctype": "Job Applicant",
+                       "is_query_report": True
                    },
                    {
                        "type": "doctype",
-                       "name": "SLIMS Settings",
-                       "label": _("SLIMS Settings"),
-                       "description": _("SLIMS Settings")
+                       "name": "Job Offer",
+                       "label": _("Job Offer"),
+                       "description": _("Job Offer")
                    },
                    {
                        "type": "doctype",
-                       "name": "Label Range",
-                       "label": _("Label Range"),
-                       "description": _("Label Range")
+                       "name": "Employee",
+                       "label": _("Employee"),
+                       "description": _("Employee")
                    },
                    {
-                       "type": "doctype",
-                       "name": "Flushbox Settings",
-                       "label": _("Flushbox Settings"),
-                       "description": _("Flushbox Settings")
+                        "type": "report",
+                        "name": "Worktime Overview",
+                        "label": _("Worktime Overview"),
+                        "doctype": "Timesheet",
+                        "is_query_report": True
                    },
                    {
-                       "type": "doctype",
-                       "name": "Tax Matrix",
-                       "label": _("Tax Matrix"),
-                       "description": _("Tax Matrix")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Accounts Settings",
-                       "label": _("Accounts Settings"),
-                       "description": _("Accounts Settings")
-                   },
-                   {
-                       "type": "doctype",
-                       "name": "Batch Invoice Processing Settings",
-                       "label": _("Batch Invoice Processing Settings"),
-                       "description": _("Batch Invoice Processing Settings")
+                        "type": "report",
+                        "name": "Monthly Worktime",
+                        "label": _("Monthly Worktime"),
+                        "doctype": "Timesheet",
+                        "is_query_report": True
                    }
             ]
         },
@@ -628,54 +625,57 @@ def get_data():
             ]
         },
         {
-            "label": _("Human Resources"),
+            "label": _("Settings"),
             "icon": "fa fa-users",
             "items": [
                    {
                        "type": "doctype",
-                       "name": "Job Opening",
-                       "label": _("Job Opening"),
-                       "description": _("Job Opening")
+                       "name": "Microsynth Settings",
+                       "label": _("Microsynth Settings"),
+                       "description": _("Microsynth Settings")
                    },
                    {
                        "type": "doctype",
-                       "name": "Job Applicant",
-                       "label": _("Job Applicant"),
-                       "description": _("Job Applicant")
-                   },
-                   {
-                       "type": "report",
-                       "name": "Job Applicant Overview",
-                       "label": _("Job Applicant Overview"),
-                       "doctype": "Job Applicant",
-                       "is_query_report": True
+                       "name": "Intercompany Settings",
+                       "label": _("Intercompany Settings"),
+                       "description": _("Intercompany Settings")
                    },
                    {
                        "type": "doctype",
-                       "name": "Job Offer",
-                       "label": _("Job Offer"),
-                       "description": _("Job Offer")
+                       "name": "SLIMS Settings",
+                       "label": _("SLIMS Settings"),
+                       "description": _("SLIMS Settings")
                    },
                    {
                        "type": "doctype",
-                       "name": "Employee",
-                       "label": _("Employee"),
-                       "description": _("Employee")
+                       "name": "Label Range",
+                       "label": _("Label Range"),
+                       "description": _("Label Range")
                    },
                    {
-                        "type": "report",
-                        "name": "Worktime Overview",
-                        "label": _("Worktime Overview"),
-                        "doctype": "Timesheet",
-                        "is_query_report": True
+                       "type": "doctype",
+                       "name": "Flushbox Settings",
+                       "label": _("Flushbox Settings"),
+                       "description": _("Flushbox Settings")
                    },
                    {
-                        "type": "report",
-                        "name": "Monthly Worktime",
-                        "label": _("Monthly Worktime"),
-                        "doctype": "Timesheet",
-                        "is_query_report": True
+                       "type": "doctype",
+                       "name": "Tax Matrix",
+                       "label": _("Tax Matrix"),
+                       "description": _("Tax Matrix")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Accounts Settings",
+                       "label": _("Accounts Settings"),
+                       "description": _("Accounts Settings")
+                   },
+                   {
+                       "type": "doctype",
+                       "name": "Batch Invoice Processing Settings",
+                       "label": _("Batch Invoice Processing Settings"),
+                       "description": _("Batch Invoice Processing Settings")
                    }
             ]
-        }
+        },
     ]
