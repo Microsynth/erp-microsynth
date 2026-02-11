@@ -23,14 +23,29 @@ def get_columns():
 
 
 def extract_doc_data(doc):
-    """Uniform representation of all purchase docs."""
+    """
+    Uniform representation of all purchase docs.
+    """
+    if doc.doctype == "Item Request" and doc.rate is not None and doc.qty:
+        doc.grand_total = doc.rate * doc.qty
+    if doc.doctype == "Material Request":
+        # get Supplier info from first Material Request Item if available
+        mr_item = doc.items[0] if doc.items else None
+        if mr_item and mr_item.supplier:
+            doc.supplier = mr_item.supplier
+        if mr_item and mr_item.supplier_name:
+            doc.supplier_name = mr_item.supplier_name
+        if mr_item and mr_item.item_request_currency:
+            doc.currency = mr_item.item_request_currency
+        if mr_item and mr_item.rate is not None and mr_item.qty:
+            doc.grand_total = mr_item.rate * mr_item.qty
     return {
         "doctype": doc.doctype,
         "name": doc.name,
         "status": doc.get("status"),
         "company": doc.get("company"),
 
-        # supplier fields (not present on Item Request)
+        # supplier fields
         "supplier": doc.get("supplier"),
         "supplier_name": doc.get("supplier_name"),
 
