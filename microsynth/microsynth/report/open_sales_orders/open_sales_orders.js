@@ -41,13 +41,6 @@ frappe.query_reports["Open Sales Orders"] = {
             "fieldtype": "Check"
         },
         {
-            "fieldname": "include_drafts",
-            "label": __("Include Sales Order Drafts"),
-            "fieldtype": "Check",
-            "default": 1,
-            "hidden": 1
-        },
-        {
             "fieldname": "include_orders_on_hold",
             "label": __("Include Orders on hold"),
             "fieldtype": "Check",

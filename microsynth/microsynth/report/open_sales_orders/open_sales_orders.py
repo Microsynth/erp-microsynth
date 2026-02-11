@@ -48,11 +48,6 @@ def get_data(filters=None):
         inner_conditions += " AND `tabSales Order`.`product_type` = %s"
         values.append(filters.get('product_type'))
 
-    if filters.get('include_drafts'):
-        inner_conditions += " AND `tabSales Order`.`docstatus` < 2"
-    else:
-        inner_conditions += " AND `tabSales Order`.`docstatus` = 1"
-
     if filters.get('to_date'):
         inner_conditions += """
             AND `tabSales Order`.`transaction_date`
@@ -136,12 +131,13 @@ def get_data(filters=None):
                 GROUP BY `sales_order`
             ) AS `sii` ON `sii`.`sales_order` = `tabSales Order`.`name`
             WHERE `tabSales Order`.`per_delivered` < 0.01
-              AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
-              AND NOT (
+                AND `tabSales Order`.`status` NOT IN ('Closed', 'Completed')
+                AND NOT (
                 `tabCustomer`.`invoicing_method` = 'Stripe Prepayment'
                 AND `tabSales Order`.`hold_order` = 1
-              )
-              {inner_conditions}
+                )
+                AND `tabSales Order`.`docstatus` < 2
+                {inner_conditions}
             GROUP BY `tabSales Order`.`name`
         ) AS `raw`
         WHERE `raw`.`has_sales_invoice` = 0
