@@ -3161,3 +3161,15 @@ def fix_item_default_warehouses(dry_run=True):
     print("-" * 60)
     print(f"Total Item Defaults {'to be fixed' if dry_run else 'fixed'}: {fixes}")
     print("Done.")
+
+
+def purchase_order_before_save(doc, event):
+    has_material_request = False
+
+    for item in doc.items:
+        if item.material_request:
+            has_material_request = True
+            break
+
+    if not has_material_request:
+        frappe.throw("This Purchase Order is <b>not</b> linked to any Material Request. Please go to the <b>Material Request Overview</b> and ensure to create the Purchase Order from there using the <b>Create Purchase Order</b> button.")

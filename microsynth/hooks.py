@@ -188,6 +188,9 @@ doc_events = {
     "Delivery Note": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
     },
+    "Purchase Order": {
+        "before_save": "microsynth.microsynth.purchasing.purchase_order_before_save"
+    },
     "Sales Invoice": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template",
         "on_submit": "microsynth.microsynth.credits.sales_invoice_on_submit",
