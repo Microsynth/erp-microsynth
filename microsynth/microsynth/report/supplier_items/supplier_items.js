@@ -197,7 +197,36 @@ function save_supplier_item(original_row, values, dialog, report, currency) {
             if (!r.exc) {
                 frappe.show_alert({message: __('Supplier Item updated'), indicator: 'green'});
                 dialog.hide();
-                report.refresh();
+                // Instead of refreshing the whole report, just update the changed row in the frontend for better performance and user experience
+                // Update only the modified row locally
+                // Update report.data
+                let row_index = report.data.findIndex(d => d.item_code === original_row.item_code);
+
+                if (row_index !== -1) {
+                    Object.assign(report.data[row_index], {
+                        item_name: values.item_name,
+                        material_code: values.material_code,
+                        pack_size: values.pack_size,
+                        pack_uom: values.pack_uom,
+                        purchase_uom: values.purchase_uom,
+                        conversion_factor: values.conversion_factor,
+                        stock_uom: values.stock_uom,
+                        safety_stock: values.safety_stock,
+                        lead_time_days: values.lead_time_days,
+                        shelf_life_in_years: values.shelf_life_in_years,
+                        shelf_life_in_days: values.shelf_life_in_days,
+                        min_order_qty: values.min_order_qty,
+                        substitute_status: values.substitute_status,
+                        price_list_rate: values.price_list_rate,
+                        currency: currency,
+                        supplier: values.supplier,
+                        supplier_part_no: values.supplier_part_no
+                    });
+                    // Refresh datatable UI only (no backend call)
+                    if (report.datatable) {
+                        report.datatable.refresh(report.data);
+                    }
+                }
             } else {
                 frappe.msgprint({message: __('Failed to update Supplier Item'), indicator: 'red'});
                 dialog.enable_primary_action();
