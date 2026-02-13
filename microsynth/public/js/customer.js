@@ -213,6 +213,25 @@ frappe.ui.form.on('Customer', {
         }
 
     },
+    before_save(frm) {
+        // If Customer has not default_currency and default_price_list, throw an error message
+        if (!frm.doc.default_currency) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please set a Default Currency before saving.<br>Changes are <strong>not saved</strong>.")
+            });
+            frappe.validated=false;
+        }
+        if (!frm.doc.default_price_list) {
+            frappe.msgprint({
+                title: __('Validation'),
+                indicator: 'red',
+                message: __("Please set a Default Price List before saving.<br>Changes are <strong>not saved</strong>.")
+            });
+            frappe.validated=false;
+        }
+    },
     after_save(frm) {
         if (!frm.doc.disabled) {
             frappe.call({
