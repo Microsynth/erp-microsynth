@@ -623,34 +623,44 @@ def check_submit_mycoplasma_delivery_note(delivery_note, verbose=False):
             barcode_label = frappe.get_value("Sample", sample.sample, "sequencing_label")
             samples = frappe.get_all("Sample", filters=[["sequencing_label", "=", barcode_label]], fields=['name', 'web_id', 'creation'])
             if len(samples) > 1:
-                # TODO: check parents (Sales Orders) of all Sample Links with parenttype Sales Order and exclude those Samples that are only on cancelled Sales Orders (Task #23020 KB ERP)
-                pass
-            if len(samples) > 1:
-                sample_details = ""
+                filtered_samples = []
+                # Exclude samples that are only linked to cancelled Sales Orders
                 for s in samples:
                     sales_orders = frappe.get_all("Sample Link", filters=[["sample", "=", s['name']], ["parenttype", "=", "Sales Order"]], fields=['parent'])
-                    sales_order_links = ", ".join([f"<a href={get_url_to_form('Sales Order', so['parent'])}>{so['parent']}</a>" for so in sales_orders])
-                    url = get_url_to_form("Sample", s['name'])
-                    sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']} on Sales Order(s) {sales_order_links}<br>"
-                msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(samples)} different Samples:\n{sample_details}\n\nGoing to send an automatic email."
-                #frappe.log_error(msg, "lab_reporting.check_submit_mycoplasma_delivery_note")
-                if verbose:
-                    print(msg)
-                email_template = frappe.get_doc("Email Template", "Mycoplasma barcode label used multiple times")
-                dn_url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
-                values_to_render = {
-                    'dn_url_string': dn_url_string,
-                    'barcode_label': barcode_label,
-                    'len_samples': len(samples),
-                    'sample_details': sample_details
-                }
-                rendered_content = frappe.render_template(email_template.response, values_to_render)
-                rendered_subject = frappe.render_template(email_template.subject, {'barcode_label': barcode_label})
-                if verbose:
-                    non_html_message = rendered_content.replace("<br>","\n")
-                    print(non_html_message)
-                send_email_from_template(email_template, rendered_content, rendered_subject)
-                return
+                    # Check if all linked Sales Orders are cancelled
+                    all_cancelled = True
+                    for so in sales_orders:
+                        so_status = frappe.get_value("Sales Order", so['parent'], "status")
+                        if so_status != "Cancelled":
+                            all_cancelled = False
+                            break
+                    if not all_cancelled:
+                        filtered_samples.append(s)
+                if len(filtered_samples) > 1:
+                    sample_details = ""
+                    for s in filtered_samples:
+                        sales_orders = frappe.get_all("Sample Link", filters=[["sample", "=", s['name']], ["parenttype", "=", "Sales Order"]], fields=['parent'])
+                        sales_order_links = ", ".join([f"<a href={get_url_to_form('Sales Order', so['parent'])}>{so['parent']}</a>" for so in sales_orders])
+                        url = get_url_to_form("Sample", s['name'])
+                        sample_details += f"Sample <a href={url}>{s['name']}</a> with Web ID '{s['web_id']}', created {s['creation']} on Sales Order(s) {sales_order_links}<br>"
+                    msg = f"Delivery Note '{delivery_note.name}' won't be submitted automatically in the ERP, because it contains a Sample with Barcode Label '{barcode_label}' that is used for {len(filtered_samples)} different Samples:\n{sample_details}\n\nGoing to send an automatic email."
+                    if verbose:
+                        print(msg)
+                    email_template = frappe.get_doc("Email Template", "Mycoplasma barcode label used multiple times")
+                    dn_url_string = f"<a href={get_url_to_form('Delivery Note', delivery_note.name)}>{delivery_note.name}</a>"
+                    values_to_render = {
+                        'dn_url_string': dn_url_string,
+                        'barcode_label': barcode_label,
+                        'len_samples': len(filtered_samples),
+                        'sample_details': sample_details
+                    }
+                    rendered_content = frappe.render_template(email_template.response, values_to_render)
+                    rendered_subject = frappe.render_template(email_template.subject, {'barcode_label': barcode_label})
+                    if verbose:
+                        non_html_message = rendered_content.replace("<br>","\n")
+                        print(non_html_message)
+                    send_email_from_template(email_template, rendered_content, rendered_subject)
+                    return
 
         delivery_note.submit()
         if verbose:
@@ -682,7 +692,7 @@ def submit_mycoplasma_delivery_notes(verbose=False):
         GROUP BY `tabDelivery Note`.`name`
     ;""", as_dict=True)
     if verbose:
-        print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts.")
+        print(f"Found {len(delivery_notes)} Mycoplasma Delivery Note Drafts: {[dn['name'] for dn in delivery_notes]}")
 
     for dn in delivery_notes:
         check_submit_mycoplasma_delivery_note(dn.get('name'), verbose)
