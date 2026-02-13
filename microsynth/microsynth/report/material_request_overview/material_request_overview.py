@@ -324,7 +324,7 @@ def create_item_request(data):
     # data is JSON string, parse it
     data = json.loads(data)
 
-    required_fields = ['item_name', 'supplier_name', 'company', 'qty', 'stock_uom']
+    required_fields = ['item_name', 'supplier_name', 'company', 'qty', 'stock_uom', 'expense_account']
     for field in required_fields:
         if not data.get(field):
             frappe.throw(f"Required parameter missing: {field}")
@@ -343,6 +343,7 @@ def create_item_request(data):
     ir.pack_size = data.get('pack_size')
     ir.pack_uom = data.get('pack_uom')
     ir.company = data.get('company')
+    ir.expense_account = data.get('expense_account')
     ir.schedule_date = data.get('schedule_date')
     ir.comment = data.get('comment')
     ir.status = "Pending"

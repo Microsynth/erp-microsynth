@@ -484,7 +484,7 @@ function open_confirmation_dialog(selected, report) {
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
-            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: frappe.defaults.get_default('company') },
+            { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: report.get_filter_value('company') || frappe.defaults.get_default('company') },
             { fieldtype: 'Data', label: __('Purchase UOM'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
             { fieldtype: 'Data', label: __('Pack Size and Pack UOM'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
 
@@ -572,13 +572,14 @@ function open_confirmation_dialog(selected, report) {
 
 
 function open_item_request_dialog(report, item_name, supplier_name, supplier_part_no) {
+    // TODO: Get the first QM Process from the User Settings of the active User (tabQM User Process Assignment) and set the according expense_account as default
     let d = new frappe.ui.Dialog({
         'title': __('New Item Request'),
         'fields': [
             // Left column
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
             {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
-            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: frappe.defaults.get_default('company')},
+            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company')},
             {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Currency', label: __('Rate regarding Purchase UOM'), fieldname:'rate', precision: 2},
@@ -586,6 +587,24 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 description: 'How many stock units are in one purchase unit?'},
             {fieldtype:'Float', label: __('Pack Size regarding Stock UOM'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1,
                 description: 'How much does one stock unit contain?'},
+            {
+                label: 'Default Expense Account',
+                fieldname: 'expense_account',
+                fieldtype: 'Link',
+                reqd: 1,
+                options: 'Account',
+                description: '"Kostenstelle"',
+                get_query: function () {
+                    return {
+                        'filters': {
+                            'disabled': 0,
+                            'root_type': 'Expense',
+                            'is_group': 0,
+                            'company': report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'
+                        }
+                    };
+                }
+            },
 
             {fieldtype:'Column Break'},
 

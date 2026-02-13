@@ -21,6 +21,7 @@
   "pack_uom",
   "supplier_name",
   "schedule_date",
+  "expense_account",
   "section_break_13",
   "comment",
   "reject_message",
@@ -189,10 +190,17 @@
    "fieldtype": "Link",
    "label": "Pack UOM",
    "options": "UOM"
+  },
+  {
+   "description": "\"Kostenstelle\"",
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "label": "Default Expense Account",
+   "options": "Account"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-01-21 11:47:08.895059",
+ "modified": "2026-02-13 11:55:24.954843",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",

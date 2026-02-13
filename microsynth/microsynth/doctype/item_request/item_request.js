@@ -371,6 +371,7 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Link',
                 reqd: 1,
                 options: 'Account',
+                default: frm.doc.expense_account,
                 description: '"Kostenstelle"',
                 get_query: function () {
                     return {
