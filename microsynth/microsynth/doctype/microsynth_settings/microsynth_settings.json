@@ -36,7 +36,9 @@
   "at_vat_export_section",
   "at_vat_export_path",
   "alternative_accounts_section",
-  "alternative_accounts"
+  "alternative_accounts",
+  "default_expense_accounts_section",
+  "default_expense_accounts"
  ],
  "fields": [
   {
@@ -208,11 +210,22 @@
    "fieldname": "website_applications_path",
    "fieldtype": "Data",
    "label": "Website Applications Path"
+  },
+  {
+   "fieldname": "default_expense_accounts_section",
+   "fieldtype": "Section Break",
+   "label": "Default Expense Accounts"
+  },
+  {
+   "fieldname": "default_expense_accounts",
+   "fieldtype": "Table",
+   "label": "Default Expense Accounts",
+   "options": "Default Expense Account"
   }
  ],
  "issingle": 1,
- "modified": "2026-01-23 15:09:26.465386",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-02-16 14:36:13.519034",
+ "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",
  "owner": "Administrator",
