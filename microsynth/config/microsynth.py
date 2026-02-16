@@ -595,6 +595,13 @@ def get_data():
                         "label": _("Label Accounting"),
                         "doctype": "Sales Order",
                         "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Analysis Report Monitoring",
+                        "label": _("Analysis Report Monitoring"),
+                        "doctype": "Analysis Report",
+                        "is_query_report": True
                     }
             ]
         },
