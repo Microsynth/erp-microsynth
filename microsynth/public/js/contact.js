@@ -843,6 +843,20 @@ function create_quotation(frm) {
                                 frm.set_value("order_customer", customer_id);
                                 frm.set_value("order_customer_display", customer.customer_name);
                                 frm.set_value("order_tax_id", customer.tax_id);
+                                // Fetch Territory according to Customer and set sales manager from the Territory
+                                frappe.call({
+                                    'method': "frappe.client.get_value",
+                                    'args': {
+                                        'doctype': "Territory",
+                                        'filters': { 'name': customer.territory },
+                                        'fieldname': "sales_manager"
+                                    },
+                                    'callback': function(r) {
+                                        if (r.message) {
+                                            frm.set_value("sales_manager", r.message.sales_manager);
+                                        }
+                                    }
+                                });
                                 frm.doc.__from_contact = 1;  // prevent reruns
                             }
                         }
