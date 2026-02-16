@@ -29,18 +29,6 @@ class QMNonconformity(Document):
         return html
 
 
-    def get_advanced_dashboard(self):
-        html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/advanced_dashboard.html",
-            {
-                'doc': self,
-                'corrections': get_corrections(self.name),
-                'corrective_actions': get_corrective_actions(self.name),
-                'changes': get_qm_changes(self.name),
-                'effectiveness_checks': get_effectiveness_checks(self.name)
-            })
-        return html
-
-
     def set_in_approval(self, in_approval):
         self.in_approval = in_approval
         self.save()
@@ -75,6 +63,23 @@ class QMNonconformity(Document):
             )
             if len(allowed_hierarchy_2s) == 0:
                 frappe.throw( _("Invalid value in 'Hierarchy 2'. Please select from the available values."), _("Validation") )
+
+
+@frappe.whitelist()
+def get_advanced_dashboard(docname):
+    """
+    bench execute microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_advanced_dashboard --kwargs "{'docname': 'NC-240011'}"
+    """
+    nc = frappe.get_doc("QM Nonconformity", docname)
+    html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/advanced_dashboard.html",
+        {
+            'doc': nc,
+            'corrections': get_corrections(nc.name),
+            'corrective_actions': get_corrective_actions(nc.name),
+            'changes': get_qm_changes(nc.name),
+            'effectiveness_checks': get_effectiveness_checks(nc.name)
+        })
+    return html
 
 
 @frappe.whitelist()
@@ -276,7 +281,7 @@ def get_effectiveness_checks(qm_nc):
     """
     TODO: Combine functions get_corrections, get_corrective_actions and get_effectiveness_checks
     to function "get_actions" that takes an additional parameter "type",
-    change in function get_advanced_dashboard, hooks.py and QM Nonconformity print format (already inserted in ERP-Test)
+    change in function get_advanced_dashboard, hooks.py and QM Nonconformity print format
     """
     effectiveness_checks = frappe.db.sql(f"""
         SELECT

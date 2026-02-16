@@ -64,8 +64,8 @@ frappe.ui.form.on('QM Nonconformity', {
         } else {
             // use the classification_wizard HTML field to display an advanced dashboard
             frappe.call({
-                'method': 'get_advanced_dashboard',
-                'doc': frm.doc,
+                'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.get_advanced_dashboard',
+                'args': {'docname': frm.doc.name},
                 'callback': function (r) {
                     cur_frm.set_df_property('classification_wizard', 'options', r.message);
                 }
