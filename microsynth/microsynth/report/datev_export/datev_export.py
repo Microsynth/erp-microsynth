@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2023-2026, Microsynth, libracore and contributors and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -7,10 +7,11 @@ from datetime import datetime
 import frappe
 from frappe import _
 import json
-from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
+#from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
+from microsynth.microsynth.invoicing import get_microsynth_zugferd_xml as create_zugferd_xml
 import re
 import html
-
+from 
 DATEV_CHARACTER_PATTERNS = {
     'p10040': "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$%*+-",        # dropped & to prevent xml encing issues
     'p10027': "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.",
@@ -145,18 +146,26 @@ def pdf_export(filters):
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
     for d in data:
+        # performance improvement 2026-02-17: use attached pdf instead of creating a new one
+        download_pdf(path=settings.pdf_export_path,
+            dt=d.get("document_type"),
+            dn=d.get("document")
+        )
+        """
         if d.get("document_type") == "Sales Invoice":
             create_pdf(path=settings.pdf_export_path,
                 dt=d.get("document_type"),
                 dn=d.get("document"),
                 print_format=settings.pdf_print_format
             )
+            
 
         elif d.get("document_type") == "Purchase Invoice":
             download_pdf(path=settings.pdf_export_path,
                 dt=d.get("document_type"),
                 dn=d.get("document")
             )
+        """
 
     return
 

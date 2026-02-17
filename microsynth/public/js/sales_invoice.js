@@ -668,7 +668,7 @@ function transmit_invoice(frm) {
 
 // call zugferd to create and download xml
 function download_zugferd_xml(frm) {
-    var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"
+    var url = "/api/method/microsynth.microsynth.invoicing.download_microsynth_zugferd_xml"
         + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name);
     var w = window.open( frappe.urllib.get_full_url(url) );
     if (!w) {
