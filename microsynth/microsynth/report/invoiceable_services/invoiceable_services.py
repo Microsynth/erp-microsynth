@@ -27,7 +27,10 @@ def get_columns():
         {"label": _("Base amount"), "fieldname": "base_net_total", "fieldtype": "Currency", "options": "currency", "width": 95},
         # {"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 80},
         {"label": _("Remaining credit amount"), "fieldname": "remaining_credits", "fieldtype": "Currency", "options": "currency", "width": 120},
-        {"label": _("Product"), "fieldname": "product_type", "fieldtype": "Data", "width": 80}
+        {"label": _("Product"), "fieldname": "product_type", "fieldtype": "Data", "width": 80},
+        #{"label": _("Hold Invoice"), "fieldname": "hold_invoice", "fieldtype": "Check", "width": 65},
+        #{"label": _("Order Customer"), "fieldname": "order_customer", "fieldtype": "Link", "options": "Customer", "width": 70},
+        #{"label": _("Order Customer Collective Billing"), "fieldname": "order_customer_collective_billing", "fieldtype": "Check", "width": 65}
     ]
 
 def get_data(filters=None):
@@ -94,7 +97,9 @@ def get_data(filters=None):
                  LEFT JOIN `tabDelivery Note Item` ON
                     (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
                  WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-                ) AS `hold_invoice`
+                ) AS `hold_invoice`,
+                `tabDelivery Note`.`order_customer` AS `order_customer`,
+                `tabOrderCustomer`.`collective_billing` AS `order_customer_collective_billing`
             FROM `tabDelivery Note`
             LEFT JOIN `tabCustomer` ON
                 (`tabDelivery Note`.`customer` = `tabCustomer`.`name`)
@@ -102,6 +107,8 @@ def get_data(filters=None):
                 (`tabDelivery Note`.`shipping_address_name` = `tabAddress`.`name`)
             LEFT JOIN `tabCountry` ON
                 (`tabCountry`.`name` = `tabAddress`.`country`)
+            LEFT JOIN `tabCustomer` AS `tabOrderCustomer` ON
+                (`tabDelivery Note`.`order_customer` = `tabOrderCustomer`.`name`)
             WHERE
                 `tabDelivery Note`.`docstatus` = 1
                 AND `tabDelivery Note`.`company` = %(company)s
