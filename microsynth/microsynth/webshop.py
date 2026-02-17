@@ -24,7 +24,8 @@ from microsynth.microsynth.utils import (
     to_bool,
     update_address_links_from_contact,
     send_email_from_template,
-    get_alternative_account
+    get_alternative_account,
+    get_print_address
 )
 from microsynth.microsynth.credits import get_credit_account_balance
 from microsynth.microsynth.seqblatt import process_label_status_change
@@ -32,6 +33,7 @@ from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.marketing import lock_contact_by_name
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.invoicing import set_income_accounts, transmit_sales_invoice
+from microsynth.microsynth.shipping import create_receiver_address_lines
 from datetime import date, datetime, timedelta
 from erpnextswiss.scripts.crm_tools import get_primary_customer_address
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
@@ -1044,6 +1046,111 @@ def get_contact_quotations(contact, client="webshop"):
         return {'success': False, 'message': 'Failed to get contact quotations', 'internal_message': 'Customer not found', 'quotation': None}
 
 
+def get_oligo_dto(oligo):
+    oligo_dto = {
+        'name': oligo.name,
+        'web_id': oligo.web_id,
+        'status': oligo.status,
+        'substance_type': oligo.substance_type,
+        'sequence': oligo.sequence,
+        'scale': oligo.scale,
+        'purification': oligo.purification,
+        'physical_state': oligo.phys_cond,
+        'data_sheet': oligo.data_sheet,
+        'aliquots': oligo.aliquots,
+        'items': []
+    }
+    for item in oligo.items:
+        oligo_dto['items'].append({
+            'item_code': item.item_code,
+            'item_name': item.item_name,
+            'qty': item.qty
+        })
+    return oligo_dto
+
+
+def get_sample_dto(sample):
+    sample_dto = {
+        'name': sample.sample_name,
+        'web_id': sample.web_id,
+        'items': []
+    }
+    for item in sample.items:
+        get_sample_dto['items'].append({
+            'item_code': item.item_code,
+            'item_name': item.item_name,
+            'qty': item.qty
+        })
+    return sample_dto
+
+
+
+
+def get_quotation_dto(quotation):
+    oligo_dtos = []
+    sample_dtos = []
+
+    for oligo_link in quotation.oligos:
+        oligo_doc = frappe.get_doc("Oligo", oligo_link.oligo)
+        oligo_dto = get_oligo_dto(oligo_doc)
+        oligo_dtos.append(oligo_dto)
+
+    for sample_link in quotation.samples:
+        sample_doc = frappe.get_doc("Sample", sample_link.sample)
+        sample_dto = get_sample_dto(sample_doc)
+        sample_dtos.append(sample_dto)
+
+    quotation_items = []
+    for item in quotation.items:
+        quotation_items.append({
+            'item_code': item.item_code,
+            'item_name': item.item_name,
+            'qty': item.qty,
+            'rate': item.rate
+        })
+
+    shipping_contact = quotation.shipping_contact or quotation.contact_person
+    billing_contact = getattr(quotation, "invoice_to", frappe.get_value("Customer", quotation.party_name, "invoice_to"))
+
+    # TODO: resolve differences between get_print_address and create_receiver_address_lines and unify the logic if possible. Note that create_receiver_address_lines returns the address lines as a list which is more convenient for the frontend, while get_print_address returns a single formatted string.
+    # shipping_address_formatted = get_print_address(customer_name=quotation.customer_name, contact=shipping_contact, address =quotation.shipping_address_name)
+    shipping_address_lines = create_receiver_address_lines(customer_name=quotation.customer_name, contact=shipping_contact, address =quotation.shipping_address_name)
+    # billing_address_formatted = get_print_address(customer_name=quotation.customer_name, contact=billing_contact, address =quotation.customer_address)
+    billing_address_lines = create_receiver_address_lines(customer_name=quotation.customer_name, contact=billing_contact, address =quotation.customer_address)
+
+    quotation_dto = {
+        'name': quotation.name,
+        'customer': quotation.party_name,
+        'contact': quotation.contact_person,
+        'shipping_contact': shipping_contact,
+        'shipping_address': quotation.shipping_address_name,
+        'shipping_address_lines': shipping_address_lines,
+        'billing_contact': billing_contact,
+        'billing_address': quotation.customer_address,
+        'billing_address_lines': billing_address_lines,
+        'oligos': oligo_dtos,
+        'samples': sample_dtos,
+        'items': quotation_items,
+        'currency': quotation.currency,
+        'net_total': quotation.net_total,
+    }
+    return quotation_dto
+
+
+@frappe.whitelist()
+def get_quotation_details(quotation_id):
+    """
+    Returns the details of a quotation, including the oligos, samples and their items
+    """
+    if frappe.db.exists("Quotation", quotation_id):
+        qtn = frappe.get_doc("Quotation", quotation_id)
+        return {'success': True, 'message': "OK", 'internal_message': 'OK', 'quotation': get_quotation_dto(qtn)}
+    else:
+        return {'success': False, 'internal_message': 'Quotation not found', 'message': 'Failed to get quotation details', 'quotation': None}
+
+
+# TODO: deprecate this method and replace by get_quotation_details which also returns the items of the oligo/sample details including their items.
+# This method is currently used by the webshop but will be removed in favor of get_quotation_details in Task #22542 and #22541
 @frappe.whitelist()
 def get_quotation_detail(reference, client="webshop"):
     """
