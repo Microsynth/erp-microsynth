@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2023-2026, Microsynth, libracore and contributors and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -9,6 +9,7 @@ from frappe import _
 import json
 from frappe.utils.pdf import get_pdf
 from PyPDF2 import PdfFileMerger
+from microsynth.microsynth.invoicing import get_microsynth_zugferd_pdf
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -188,11 +189,12 @@ def package_export(filters):
     return
 
 def create_pdf(path, dt, dn, print_format):
-    content_pdf = frappe.get_print(
-        dt,
-        dn,
-        print_format=print_format,
-        as_pdf=True)
+    #content_pdf = frappe.get_print(
+    #    dt,
+    #    dn,
+    #    print_format=print_format,
+    #    as_pdf=True)
+    content_pdf = get_microsynth_zugferd_pdf(sales_invoice, format=print_format)
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
     with open(content_file_name, mode='wb') as file:

@@ -1862,11 +1862,12 @@ def get_delivery_notes(sales_invoice):
 
 def pdf_export(sales_invoices, path):
     for sales_invoice in sales_invoices:
-        content_pdf = frappe.get_print(
-            "Sales Invoice",
-            sales_invoice,
-            print_format="Sales Invoice",
-            as_pdf=True)
+        #content_pdf = frappe.get_print(
+        #    "Sales Invoice",
+        #    sales_invoice,
+        #    print_format="Sales Invoice",
+        #    as_pdf=True)
+        content_pdf = get_microsynth_zugferd_pdf(sales_invoice, format="Sales Invoice")
         file_name = "{0}/{1}.pdf".format(path, sales_invoice)
         with open(file_name, mode='wb') as file:
             file.write(content_pdf)
