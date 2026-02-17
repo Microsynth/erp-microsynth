@@ -49,11 +49,12 @@ from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 
 
 @frappe.whitelist()
-def create_invoices(mode, company, customer):
+def create_invoices(mode, company, customer, is_monthly_collective_run=False):
     kwargs={
         'mode': mode,
         'company': company,
-        'customer': customer
+        'customer': customer,
+        'is_monthly_collective_run': is_monthly_collective_run
     }
 
     enqueue("microsynth.microsynth.invoicing.async_create_invoices",
@@ -232,7 +233,7 @@ def fetch_sales_order_credit_accounts(delivery_note_id):
     return sales_order_credit_accounts
 
 
-def async_create_invoices(mode, company, customer):
+def async_create_invoices(mode, company, customer, is_monthly_collective_run=False):
     """
     TODO: Rename this function and all its calls since it is not asynchronous itself
     run
@@ -247,6 +248,9 @@ def async_create_invoices(mode, company, customer):
     #     return
     if mode not in ["Post", "Electronic", "Collective", "CarloErba"]:
         frappe.throw("Not implemented: async_create_invoices for mode '{0}'".format(mode))
+        return
+    if is_monthly_collective_run and mode != "Collective":
+        frappe.throw(f"async_create_invoices with is_monthly_collective_run=True can only be executed in mode 'Collective', not in mode '{mode}'")
         return
 
     # Standard processing
@@ -478,6 +482,9 @@ def async_create_invoices(mode, company, customer):
                     if (cint(dn.get('collective_billing')) == 1 and
                         (cint(dn.get('is_punchout')) != 1 or c in ['57022', '57023'] ) and  # allow collective billing for IMP / IMBA despite punchout
                         dn.get('customer') == c):
+                        if not is_monthly_collective_run and dn.get('order_customer_collective_billing') == 1:
+                            # if this is not the monthly collective run, only include DNs that are not marked for order customer collective billing
+                            continue
                         dns.append(dn.get('delivery_note'))
 
                 invoices = make_collective_invoices(dns)
@@ -2084,7 +2091,7 @@ def process_daily_invoices():
             async_create_invoices(mode, company['name'], None)
 
 
-def process_collective_invoices_monthly():
+def process_collective_invoices_monthly(is_monthly_collective_run=True):
     """
     Executed by a cronjob at 16:35 on day 28-31 of each month to transmit collective sales invoices.
 
@@ -2098,7 +2105,7 @@ def process_collective_invoices_monthly():
     if is_last_day_of_month(datetime.now()):
         companies = frappe.get_all("Company", fields=['name'])
         for company in companies:
-            create_invoices("Collective", company['name'], None)
+            create_invoices("Collective", company['name'], None, is_monthly_collective_run=is_monthly_collective_run)
 
 
 def process_collective_intercompany_invoices():
@@ -2110,7 +2117,7 @@ def process_collective_intercompany_invoices():
     for company in companies:
         for customer in customers:
             # print(f"{company['name']} {customer['customer']}")
-            create_invoices("Collective", company['name'], customer['customer'])
+            create_invoices("Collective", company['name'], customer['customer'], is_monthly_collective_run=False)
 
 
 def check_invoice_sent_on(days=0):
