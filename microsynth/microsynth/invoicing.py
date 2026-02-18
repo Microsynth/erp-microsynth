@@ -1364,14 +1364,14 @@ def adjust_si_to_dn(dn_doc, si_doc, debug=False):
     return si_doc
 
 
-def create_si_from_so(so_id, debug=False):
+def create_si_content_from_so(so_id, debug=False):
     """
-    In the dropshipment workflow: Create a Sales Invoice from a Sales Order for the end customer.
+    Create a Sales Invoice content from a Sales Order for the end customer.
     Adjust the items and quantities of the Sales Invoice to match the intercompany Delivery Note specified by the PO NO matching the Sales Order.
-    Applies the customer credits if available.
-    Set the income accounts as well as the goodwill period for payment reminders.
 
-    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-WIE-25001714', 'debug': True}"
+    This function is derived from [create_si_from_so] and resembles the function [make_sales_invoice_from_so], but does not insert or submit the document, only prepares the content.
+
+    bench execute microsynth.microsynth.invoicing.create_si_content_from_so --kwargs "{'so_id': 'SO-WIE-26000732', 'debug': True}"
     """
     if debug:
         print(f"[create_si_from_so] Starting for SO {so_id}")
@@ -1417,6 +1417,56 @@ def create_si_from_so(so_id, debug=False):
 
     if not end_customer_si.tax_id:
         end_customer_si.tax_id = frappe.get_value("Customer", end_customer_si.customer, "tax_id")
+    return end_customer_si
+
+
+def create_si_from_sos_and_dns(sales_order_ids, customer, default_company):
+    """
+    Create a collective invoice from all given SOs and append (sequencing/Label) Delivery Notes placed on the Customer.default_company
+    create_si_from_sos_and_dns is derived from [create_si_from_so] and resembles the function [make_collective_invoice].
+
+    bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000732', 'SO-WIE-26000736'], 'customer': '36958807', 'default_company': 'Microsynth Austria GmbH'}"
+    """
+    if not sales_order_ids or len(sales_order_ids) == 0:
+        frappe.throw("No sales order IDs provided.")
+
+    dns = get_invoiceable_services(filters={'customer': customer, 'company': default_company})
+
+    # create invoice from first sales order
+    sales_invoice_content = create_si_content_from_so(sales_order_ids[0])
+    if len(sales_order_ids) > 1:
+        for i in range(1, len(sales_order_ids)):
+            # append items from other sales orders
+            # TODO: Use create_si_content_from_so and map its returned content to the existing sales_invoice_content, but how?
+            sales_invoice_content = make_sales_invoice_from_so(source_name=sales_order_ids[i], target_doc=sales_invoice_content)
+
+    for dn in dns:
+        # append items from delivery notes
+        sales_invoice_content = make_sales_invoice(source_name=dn, target_doc=sales_invoice_content)
+
+    # compile document
+    sales_invoice = frappe.get_doc(sales_invoice_content)
+    if not sales_invoice.invoice_to:
+        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to")  # replace invoice to contact with customer's invoice_to contact
+
+    sales_invoice.naming_series = get_naming_series("Sales Invoice", default_company)
+
+    # force-set tax_id (intrastat!)
+    if not sales_invoice.tax_id:
+        sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+    return sales_invoice.name
+
+
+def create_si_from_so(so_id, debug=False):
+    """
+    In the dropshipment workflow: Create a Sales Invoice from a Sales Order for the end customer.
+    Adjust the items and quantities of the Sales Invoice to match the intercompany Delivery Note specified by the PO NO matching the Sales Order.
+    Applies the customer credits if available.
+    Set the income accounts as well as the goodwill period for payment reminders.
+
+    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-WIE-25001714', 'debug': True}"
+    """
+    end_customer_si = create_si_content_from_so(so_id, debug=debug)
 
     if debug:
         print("[create_si_from_so] Inserting Sales Invoice (ignore_permissions=True)…")
@@ -1731,12 +1781,24 @@ Your administration team<br><br>{footer}"
             # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
             delivery_note_ids = set()
             for item in sales_invoice.items:
-                delivery_note_ids.add(item.delivery_note)
+                if item.delivery_note:
+                    delivery_note_ids.add(item.delivery_note)
+
+            # batch fetch Delivery Notes to avoid N+1 queries
+            delivery_notes = {}
+            if delivery_note_ids:
+                dn_rows = frappe.get_all(
+                    "Delivery Note",
+                    filters={"name": ["in", list(delivery_note_ids)]},
+                    fields=["name", "po_no"]
+                )
+                delivery_notes = {dn["name"]: dn for dn in dn_rows}
 
             # the po_nos are the purchase orders numbers of the original order placed by the end customer
             po_nos = set()
             for dn_id in delivery_note_ids:
-                po_no = (frappe.get_value("Delivery Note", dn_id, "po_no") or "").strip()
+                dn = delivery_notes.get(dn_id)
+                po_no = ((dn.get("po_no") if dn else "") or "").strip()
                 if not po_no:
                     frappe.log_error(f"Sales Invoice {sales_invoice_id}: Intercompany Delivery Note {dn_id} has no PO.", "invoicing.transmit_sales_invoice")
                     continue
@@ -1748,36 +1810,90 @@ Your administration team<br><br>{footer}"
                     continue
                 po_nos.add(po_no)
 
-            # iterate over the Sales Orders placed by the end customers
+            # batch fetch Sales Orders to avoid N+1 get_doc()
+            sales_orders = {}
+            if po_nos:
+                so_rows = frappe.get_all(
+                    "Sales Order",
+                    filters={"name": ["in", list(po_nos)]},
+                    fields=["name", "docstatus", "status", "hold_invoice", "customer"]
+                )
+                sales_orders = {so["name"]: so for so in so_rows}
+
+            # collect customers for batch fetch
+            customers = {so["customer"] for so in sales_orders.values()}
+
+            # batch fetch Customers (collective_billing + default_company)
+            customer_data = {}
+            if customers:
+                customer_rows = frappe.get_all(
+                    "Customer",
+                    filters={"name": ["in", list(customers)]},
+                    fields=["name", "collective_billing", "default_company"]
+                )
+                customer_data = {c["name"]: c for c in customer_rows}
+
+            # If end customer has collective billing, group po_nos by customer and create one SI per customer with multiple SOs if there are multiple po_nos for the same customer
+            # Otherwise, create one SI per SO
+            customer_so_ids = {}
+            customer_collective_billing = {}
+            single_invoicing_so_ids = set()
+            skipped_so_ids = set()
+
             for so_id in po_nos:
-                # check if the Sales Order with so_id has docstatus 1
-                so_docstatus = frappe.get_value("Sales Order", so_id, "docstatus")
-                if so_docstatus != 1:
+                so_data = sales_orders.get(so_id)
+                if not so_data:
+                    skipped_so_ids.add(so_id)
+                    continue
+                # check if the Sales Order with so_id has docstatus 1, is not closed and does not have hold_invoice set.
+                # Otherwise log error and send email to responsible person, and skip creation of SI-LYO for this SO-LYO
+                if so_data["docstatus"] != 1 or so_data["status"] == "Closed" or so_data["hold_invoice"]:
+                    skipped_so_ids.add(so_id)
                     # TODO: Search valid version and use it instead?
                     email_template = frappe.get_doc("Email Template", "Unable to invoice Sales Order")
-                    rendered_subject = frappe.render_template(email_template.subject, {'sales_order_id': sales_invoice.name})
+                    rendered_subject = frappe.render_template(email_template.subject, {'sales_order_id': so_id})
                     rendered_content = frappe.render_template(email_template.response, {'sales_invoice_id': sales_invoice.name, 'sales_order_id': so_id})
                     send_email_from_template(email_template, rendered_content, rendered_subject)
-                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has docstatus {so_docstatus}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
+                    msg = f"Intercompany Sales Invoice {sales_invoice.name}: Sales Order {so_id} has status {so_data['status']}, docstatus {so_data['docstatus']} and hold_invoice = {so_data['hold_invoice']}. Unable to create a Sales Invoice.\n\nSend an email to {email_template.recipients}."
                     frappe.log_error(msg, "invoicing.transmit_sales_invoice")
                     continue
-                # TODO: Check if SO-LYO is Closed. If yes, do not create SI-LYO and send email to responsible person?
-                # TODO: Check if SO-LYO has hold_invoice set. If yes, do not create SI-LYO and send email to responsible person?
-                # create SI-LYO from SO-LYO
+                # Check if end customer of SO-LYO has collective billing.
+                # If yes, group by customer and create one SI-LYO per customer with multiple SO-LYOs if there are multiple SO-LYOs for the same customer
+                customer = so_data["customer"]
 
-                # do not invoice sales orders of collective billing customers
-                so_customer = frappe.get_value("Sales Order", so_id, "customer")
-                if cint(frappe.get_value("Customer", so_customer, "collective_billing")):
-                    continue
+                if customer not in customer_collective_billing:
+                    customer_collective_billing[customer] = customer_data.get(customer, {}).get("collective_billing")
+                has_collective_billing = customer_collective_billing.get(customer)
+                if has_collective_billing:
+                    if customer not in customer_so_ids:
+                        customer_so_ids[customer] = []
+                    customer_so_ids[customer].append(so_id)
+                else:
+                    single_invoicing_so_ids.add(so_id)
 
-                si_id = create_si_from_so(so_id)
+            for customer, so_ids in customer_so_ids.items():
+                default_company = customer_data.get(customer, {}).get("default_company")
+                si_id = create_si_from_sos_and_dns(so_ids, customer, default_company)
                 if not si_id:
+                    skipped_so_ids.update(so_ids)
                     continue
-
                 # transmit SI-LYO
                 transmit_sales_invoice(si_id)
 
-                # close SO-LYO (there will be no delviery note)
+            # iterate over the Sales Orders placed by the end customers without collective billing and create and transmit one SI-LYO per SO-LYO
+            for so_id in single_invoicing_so_ids:
+                # create SI-LYO from SO-LYO
+                si_id = create_si_from_so(so_id)
+                if not si_id:
+                    skipped_so_ids.add(so_id)
+                    continue
+                # transmit SI-LYO
+                transmit_sales_invoice(si_id)
+
+            for so_id in po_nos:
+                if so_id in skipped_so_ids:
+                    continue
+                # close SO-LYO (there will be no Delivery Note)
                 so_doc = frappe.get_doc("Sales Order", so_id)
                 so_doc.update_status("Closed")
         else:
