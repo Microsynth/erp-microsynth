@@ -1138,12 +1138,12 @@ def get_quotation_dto(quotation):
 
 
 @frappe.whitelist()
-def get_quotation_details(quotation_id):
+def get_quotation_details(quotation):
     """
     Returns the details of a quotation, including the oligos, samples and their items
     """
-    if frappe.db.exists("Quotation", quotation_id):
-        qtn = frappe.get_doc("Quotation", quotation_id)
+    if frappe.db.exists("Quotation", quotation):
+        qtn = frappe.get_doc("Quotation", quotation)
         return {'success': True, 'message': "OK", 'internal_message': 'OK', 'quotation': get_quotation_dto(qtn)}
     else:
         return {'success': False, 'internal_message': 'Quotation not found', 'message': 'Failed to get quotation details', 'quotation': None}
