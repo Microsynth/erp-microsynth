@@ -33,6 +33,7 @@ def get_columns():
         #{"label": _("Order Customer Collective Billing"), "fieldname": "order_customer_collective_billing", "fieldtype": "Check", "width": 65}
     ]
 
+
 def get_data(filters=None):
     company = filters.get("company")
     conditions = ""
@@ -49,91 +50,92 @@ def get_data(filters=None):
         conditions += " AND `tabCustomer`.`collective_billing` = 1"
 
     invoiceable_services = frappe.db.sql("""
-        SELECT *
-        FROM (
-            SELECT
-                `tabDelivery Note`.`posting_date` AS `date`,
-                `tabDelivery Note`.`name` AS `delivery_note`,
-                `tabDelivery Note`.`customer` AS `customer`,
-                `tabDelivery Note`.`customer_name` AS `customer_name`,
-                `tabDelivery Note`.`base_net_total` AS `base_net_total`,
-                `tabDelivery Note`.`currency` AS `currency`,
-                `tabCustomer`.`invoicing_method` AS `invoicing_method`,
-                `tabCustomer`.`customer_credits` AS `customer_credits`,
-                CASE
-                    WHEN (
-                        SELECT
-                            COUNT(`tabCredit Account Link`.`name`)
-                        FROM `tabSales Order`
-                        LEFT JOIN `tabDelivery Note Item`
-                            ON `tabDelivery Note Item`.`against_sales_order` = `tabSales Order`.`name`
-                        LEFT JOIN `tabCredit Account Link`
-                            ON `tabCredit Account Link`.`parent` = `tabSales Order`.`name`
-                            AND `tabCredit Account Link`.`parenttype` = 'Sales Order'
-                            AND `tabCredit Account Link`.`parentfield` = 'credit_accounts'
-                        WHERE
-                            `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-                    ) > 0
-                    THEN 0
-                    ELSE `tabCustomer`.`collective_billing`
-                END AS `collective_billing`,
+        SELECT
+            `tabDelivery Note`.`posting_date` AS `date`,
+            `tabDelivery Note`.`name` AS `delivery_note`,
+            `tabDelivery Note`.`customer` AS `customer`,
+            `tabDelivery Note`.`customer_name` AS `customer_name`,
+            `tabDelivery Note`.`base_net_total` AS `base_net_total`,
+            `tabDelivery Note`.`currency` AS `currency`,
+            `tabCustomer`.`invoicing_method` AS `invoicing_method`,
+            `tabCustomer`.`customer_credits` AS `customer_credits`,
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM `tabDelivery Note Item`
+                    INNER JOIN `tabSales Order`
+                        ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+                    INNER JOIN `tabCredit Account Link`
+                        ON `tabCredit Account Link`.`parent` = `tabSales Order`.`name`
+                        AND `tabCredit Account Link`.`parenttype` = 'Sales Order'
+                        AND `tabCredit Account Link`.`parentfield` = 'credit_accounts'
+                    WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                )
+                THEN 0
+                ELSE `tabCustomer`.`collective_billing`
+            END AS `collective_billing`,
 
-                `tabDelivery Note`.`is_punchout` AS `is_punchout`,
-                `tabDelivery Note`.`po_no` AS `po_no`,
-                `tabCountry`.`export_code` AS `region`,
-                `tabCustomer`.`tax_id` AS `tax_id`,
-                `tabDelivery Note`.`shipment_type` AS `shipment_type`,
-                `tabDelivery Note`.`product_type` AS `product_type`,
-                (SELECT COUNT(`tabSales Invoice Item`.`name`)
-                 FROM `tabSales Invoice Item`
-                 WHERE
+            `tabDelivery Note`.`is_punchout` AS `is_punchout`,
+            `tabDelivery Note`.`po_no` AS `po_no`,
+            `tabCountry`.`export_code` AS `region`,
+            `tabCustomer`.`tax_id` AS `tax_id`,
+            `tabDelivery Note`.`shipment_type` AS `shipment_type`,
+            `tabDelivery Note`.`product_type` AS `product_type`,
+            `tabDelivery Note`.`order_customer` AS `order_customer`,
+            `tabOrderCustomer`.`collective_billing` AS `order_customer_collective_billing`
+        FROM `tabDelivery Note`
+        LEFT JOIN `tabCustomer`
+            ON `tabDelivery Note`.`customer` = `tabCustomer`.`name`
+        LEFT JOIN `tabCustomer` AS `tabOrderCustomer`
+            ON `tabDelivery Note`.`order_customer` = `tabOrderCustomer`.`name`
+        LEFT JOIN `tabAddress`
+            ON `tabDelivery Note`.`shipping_address_name` = `tabAddress`.`name`
+        LEFT JOIN `tabCountry`
+            ON `tabCountry`.`name` = `tabAddress`.`country`
+
+        WHERE
+            `tabDelivery Note`.`docstatus` = 1
+            AND `tabDelivery Note`.`company` = %(company)s
+            AND `tabDelivery Note`.`creation` > '2022-12-31'
+            AND `tabDelivery Note`.`status` != "Closed"
+            AND `tabCustomer`.`invoicing_method` NOT LIKE "%%Prepayment%%"
+
+            /* --- no Sales Invoice exists --- */
+            AND NOT EXISTS (
+                SELECT 1
+                FROM `tabSales Invoice Item`
+                WHERE
                     `tabSales Invoice Item`.`docstatus` = 1
                     AND `tabSales Invoice Item`.`delivery_note` = `tabDelivery Note`.`name`
-                ) AS `has_sales_invoice`,
-                (SELECT
-                    IF(`tabSales Order`.`per_billed` = 100, 1,          /* ignore billed sales orders */
-                       IFNULL(MAX(`tabSales Order`.`hold_invoice`), 0)) /* or if hold_invoice is set */
-                 FROM `tabSales Order`
-                 LEFT JOIN `tabDelivery Note Item` ON
-                    (`tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`)
-                 WHERE `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
-                ) AS `hold_invoice`,
-                `tabDelivery Note`.`order_customer` AS `order_customer`,
-                `tabOrderCustomer`.`collective_billing` AS `order_customer_collective_billing`
-            FROM `tabDelivery Note`
-            LEFT JOIN `tabCustomer` ON
-                (`tabDelivery Note`.`customer` = `tabCustomer`.`name`)
-            LEFT JOIN `tabAddress` ON
-                (`tabDelivery Note`.`shipping_address_name` = `tabAddress`.`name`)
-            LEFT JOIN `tabCountry` ON
-                (`tabCountry`.`name` = `tabAddress`.`country`)
-            LEFT JOIN `tabCustomer` AS `tabOrderCustomer` ON
-                (`tabDelivery Note`.`order_customer` = `tabOrderCustomer`.`name`)
-            WHERE
-                `tabDelivery Note`.`docstatus` = 1
-                AND `tabDelivery Note`.`company` = %(company)s
-                AND `tabDelivery Note`.`creation` > '2022-12-31'
-                AND `tabDelivery Note`.`status` != "Closed"
-                AND `tabCustomer`.`invoicing_method` NOT LIKE "%%Prepayment%%"
-                {conditions}
-        ) AS `raw`
-        WHERE `raw`.`has_sales_invoice` = 0
-          AND `raw`.`hold_invoice` = 0
-        ORDER BY `raw`.`region`, `raw`.`customer` ASC;
+            )
+            /* --- no hold_invoice condition --- */
+            AND NOT EXISTS (
+                SELECT 1
+                FROM `tabDelivery Note Item`
+                LEFT JOIN `tabSales Order`
+                    ON `tabSales Order`.`name` = `tabDelivery Note Item`.`against_sales_order`
+                WHERE
+                    `tabDelivery Note Item`.`parent` = `tabDelivery Note`.`name`
+                    AND (
+                        `tabSales Order`.`per_billed` = 100
+                        OR IFNULL(`tabSales Order`.`hold_invoice`, 0) = 1
+                    )
+            )
+            {conditions}
+        ORDER BY
+            `tabCountry`.`export_code`,
+            `tabDelivery Note`.`customer` ASC
     """.format(conditions=conditions), params, as_dict=True)
 
     if filters.get("show_remaining_credits"):
         from microsynth.microsynth.credits import get_total_credit
-        # store remaining credits in a dictionary because there might be Delivery Notes
-        # with the same combination of Customer, Company and credit_type
         remaining_credits = {}
         for dn in invoiceable_services:
-            credit_type = 'Project' if 'product_type' in dn and dn['product_type'] == 'Project' else 'Standard'
-            if (dn['customer'], company, credit_type) in remaining_credits:
-                dn['remaining_credits'] = remaining_credits[(dn['customer'], company, credit_type)]
-            else:
-                total_credits = get_total_credit(dn['customer'], company, credit_type)
-                dn['remaining_credits'] = total_credits
-                remaining_credits[(dn['customer'], company, credit_type)] = total_credits
+            credit_type = 'Project' if dn.get('product_type') == 'Project' else 'Standard'
+            key = (dn['customer'], company, credit_type)
+
+            if key not in remaining_credits:
+                remaining_credits[key] = get_total_credit(*key)
+            dn['remaining_credits'] = remaining_credits[key]
 
     return invoiceable_services
