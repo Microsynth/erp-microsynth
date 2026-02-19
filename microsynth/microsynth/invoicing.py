@@ -1382,8 +1382,9 @@ def create_si_content_from_so(so_id, debug=False):
     if debug:
         print(f"[create_si_from_so] Found {len(dns)} matching DNs for PO={so_id}")
     if len(dns) != 1:
-        frappe.log_error(f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one.", "invoicing.transmit_sales_invoice")
-        if debug: print("[create_si_from_so] ERROR: Wrong number of Delivery Notes")
+        msg = f"There are {len(dns)} submitted Delivery Notes with PO {so_id}, but expected exactly one."
+        frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+        if debug: print(f"[create_si_from_so] ERROR: {msg}")
         return None
     dn_doc = frappe.get_doc("Delivery Note", dns[0]['name'])
 
@@ -1420,12 +1421,55 @@ def create_si_content_from_so(so_id, debug=False):
     return end_customer_si
 
 
-def create_si_from_sos_and_dns(sales_order_ids, customer, default_company):
+def merge_si_contents(source_si_content, target_si_content):
+    """
+    Merge the content of two Sales Invoices.
+    The merging is done by appending the oligos, samples and items of the source SI content to the target SI content. The totals are then recalculated.
+    This function does not insert or submit any document, only merges the content.
+    """
+    # load documents from content to be able to work with the child tables
+    if isinstance(source_si_content, dict):
+        source_si_doc = frappe.get_doc(source_si_content)
+    else:
+        source_si_doc = source_si_content
+
+    if isinstance(target_si_content, dict):
+        target_si_doc = frappe.get_doc(target_si_content)
+    else:
+        target_si_doc = target_si_content
+
+    # append Oligos
+    for oligo in source_si_doc.oligos:
+        target_si_doc.append("oligos", {
+            'oligo': oligo.oligo
+        })
+    # append Samples
+    for sample in source_si_doc.samples:
+        target_si_doc.append("samples", {
+            'sample': sample.sample
+        })
+    # append Items
+    for item in source_si_doc.items:
+        target_si_doc.append("items", {
+            'item_code': item.item_code,
+            'item_name': item.item_name,
+            'qty': item.qty,
+            'rate': item.rate,
+            'sales_order': item.sales_order,
+            'cost_center': item.cost_center
+        })
+    # Recalculate totals after modification
+    target_si_doc.calculate_taxes_and_totals()
+
+    return target_si_doc.as_dict()
+
+
+def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug=False):
     """
     Create a collective invoice from all given SOs and append (sequencing/Label) Delivery Notes placed on the Customer.default_company
     create_si_from_sos_and_dns is derived from [create_si_from_so] and resembles the function [make_collective_invoice].
 
-    bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000732', 'SO-WIE-26000736'], 'customer': '36958807', 'default_company': 'Microsynth Austria GmbH'}"
+    bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000732', 'SO-WIE-26000736'], 'customer': '36958807', 'default_company': 'Microsynth Austria GmbH', 'debug': True}"
     """
     if not sales_order_ids or len(sales_order_ids) == 0:
         frappe.throw("No sales order IDs provided.")
@@ -1433,19 +1477,24 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company):
     dns = get_invoiceable_services(filters={'customer': customer, 'company': default_company})
 
     # create invoice from first sales order
-    sales_invoice_content = create_si_content_from_so(sales_order_ids[0])
+    sales_invoice_content = create_si_content_from_so(sales_order_ids[0], debug=debug)
     if len(sales_order_ids) > 1:
         for i in range(1, len(sales_order_ids)):
             # append items from other sales orders
-            # TODO: Use create_si_content_from_so and map its returned content to the existing sales_invoice_content, but how?
-            sales_invoice_content = make_sales_invoice_from_so(source_name=sales_order_ids[i], target_doc=sales_invoice_content)
+            new_sales_invoice_content = create_si_content_from_so(sales_order_ids[i], debug=debug)
+            if new_sales_invoice_content:
+                sales_invoice_content = merge_si_contents(new_sales_invoice_content, sales_invoice_content)
 
     for dn in dns:
         # append items from delivery notes
         sales_invoice_content = make_sales_invoice(source_name=dn, target_doc=sales_invoice_content)
 
+    if not sales_invoice_content:
+        frappe.throw("Could not create sales invoice content from given sales orders and delivery notes.")
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
+    if not sales_invoice:
+        frappe.throw("Could not create sales invoice from content.")
     if not sales_invoice.invoice_to:
         sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to")  # replace invoice to contact with customer's invoice_to contact
 
@@ -1454,6 +1503,8 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company):
     # force-set tax_id (intrastat!)
     if not sales_invoice.tax_id:
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+    if debug:
+        print(f"Created Sales Invoice from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.name for dn in dns]}: {sales_invoice.as_dict()=}")
     return sales_invoice.name
 
 
