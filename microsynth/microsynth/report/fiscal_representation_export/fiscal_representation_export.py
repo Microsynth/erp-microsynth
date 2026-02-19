@@ -194,7 +194,7 @@ def create_pdf(path, dt, dn, print_format):
     #    dn,
     #    print_format=print_format,
     #    as_pdf=True)
-    content_pdf = get_microsynth_zugferd_pdf(sales_invoice, format=print_format)
+    content_pdf = get_microsynth_zugferd_pdf(dn, format=print_format)
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
     with open(content_file_name, mode='wb') as file:
