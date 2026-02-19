@@ -165,6 +165,8 @@ def import_job_applicants(verbose=False):
 
     def _attach_file(doc, file_path):
         """Attach a file to a document."""
+        if verbose:
+            print(f"Attaching file: {file_path} to doc: {doc.doctype} / {doc.name}")
         with open(file_path, "rb") as f:
             frappe.get_doc({
                 "doctype": "File",
@@ -174,6 +176,8 @@ def import_job_applicants(verbose=False):
                 "content": f.read(),
                 "is_private": 1,
             }).insert(ignore_permissions=True)
+        if verbose:
+            print(f"Successfully attached {file_path}")
 
     def _move_to_error_folder(xml_filename, error_message):
         base_name = os.path.splitext(xml_filename)[0]
@@ -200,8 +204,12 @@ def import_job_applicants(verbose=False):
         if not fname.lower().endswith(".xml"):
             continue
         xml_path = _safe_join(BASE_PATH, fname)
+        if verbose:
+            print(f"\nProcessing XML: {fname}")
         try:
             raw_data = _parse_xml_fields(xml_path)
+            if verbose:
+                print(f"Parsed XML fields: {raw_data}")
             data = {}
             missing_field = False
             msg = ""
@@ -212,12 +220,16 @@ def import_job_applicants(verbose=False):
                 data[field] = raw_data.get(key, "")
 
             if missing_field:
+                if verbose:
+                    print(f"Missing mandatory fields in {fname}: {msg}")
                 _move_to_error_folder(fname, msg)
                 frappe.log_error(msg, "Job Applicant Import")
                 continue
 
             if not frappe.db.exists("Job Opening", data.get("job_id")):
                 msg = f"Job Opening {data.get('job_id')} not found for {fname}"
+                if verbose:
+                    print(msg)
                 frappe.log_error(msg, "Job Applicant Import")
                 _move_to_error_folder(fname, msg)
                 continue
@@ -228,11 +240,15 @@ def import_job_applicants(verbose=False):
                 {"email_id": data.get("email"), "job_opening": data.get("job_id")},
             ):
                 msg = f"Duplicate application skipped: {data.get('email')} / {data.get('job_id')}"
+                if verbose:
+                    print(msg)
                 frappe.log_error(msg, "Job Applicant Import")
                 _move_to_error_folder(fname, msg)
                 continue
 
             # Create Job Applicant
+            if verbose:
+                print(f"Creating Job Applicant for: {data.get('first_name')} {data.get('last_name')}, Job: {data.get('job_id')}")
             applicant = frappe.get_doc({
                 "doctype": "Job Applicant",
                 "applicant_name": f"{data.get('first_name').strip()} {data.get('last_name').strip()}",
@@ -248,18 +264,28 @@ def import_job_applicants(verbose=False):
             })
             applicant.address = f"{data.get('address').strip()}\n{data.get('postal_code').strip()} {data.get('city').strip()}"
             applicant.insert()
+            if verbose:
+                print(f"Inserted Job Applicant: {applicant.name}")
 
             # Attach PDFs
             for fieldname in PDF_FIELDS:
                 pdf_name = data.get(fieldname)
+                if verbose:
+                    print(f"Checking PDF field '{fieldname}': '{pdf_name}'")
                 if not pdf_name:
+                    if verbose:
+                        print(f"No PDF specified for field '{fieldname}' in {fname}")
                     continue
                 pdf_path = _safe_join(BASE_PATH, pdf_name)
                 if not os.path.isfile(pdf_path):
                     msg = f"Missing PDF {pdf_name} for {fname}"
+                    if verbose:
+                        print(f"{msg} (expected at: {pdf_path})")
                     frappe.log_error(msg, "Job Applicant Import")
                     _move_to_error_folder(fname, msg)
                     continue
+                if verbose:
+                    print(f"Attaching PDF: {pdf_path}")
                 _attach_file(applicant, pdf_path)
 
             # Archive processed files
@@ -288,6 +314,10 @@ def import_job_applicants(verbose=False):
                 print(f"Imported applicant from {fname}")
 
         except Exception:
+            if verbose:
+                print(f"Exception occurred while processing {fname}:")
+                import traceback
+                traceback.print_exc()
             frappe.log_error(
                 frappe.get_traceback(),
                 f"Failed to process {fname}",
