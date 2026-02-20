@@ -147,7 +147,7 @@ def get_data(filters):
                 {conditions}
             ORDER BY `tabMaterial Request`.`transaction_date` ASC
         """, filters, as_dict=True)
-    elif mode == "Unreceived Material Requests":
+    elif mode == "To Receive":
         data = frappe.db.sql(f"""
             SELECT *
             FROM (
