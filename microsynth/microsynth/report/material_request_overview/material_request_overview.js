@@ -577,16 +577,15 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         'title': __('New Item Request'),
         'fields': [
             // Left column
+            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, read_only: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'},
+            {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},  // TODO: Ensure that the cursor focuses on this field.
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
-            {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
-            {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company')},
-            {fieldtype:'Float', label: __('Quantity'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
+            {fieldtype:'Currency', label: __('Rate regarding Purchase unit'), fieldname:'rate', precision: 2},
+            {fieldtype:'Float', label: __('Quantity of Purchase units to order'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
                 description: 'How many purchase units are requested?'},
-            {fieldtype:'Currency', label: __('Rate regarding Purchase UOM'), fieldname:'rate', precision: 2},
-            {fieldtype:'Float', label: __('Conv. Factor from Purchase to Stock UOM'), fieldname:'conversion_factor', min: 1, precision: 2,
+            {fieldtype:'Float', label: __('Quantity of Stock units per Purchase unit'), fieldname:'conversion_factor', min: 1, precision: 2,
                 description: 'How many stock units are in one purchase unit?'},
-            {fieldtype:'Float', label: __('Pack Size regarding Stock UOM'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1,
-                description: 'How much does one stock unit contain?'},
+            {fieldtype:'Float', label: __('Pack Size of a Stock unit'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1 },
             {
                 label: 'Default Expense Account',
                 fieldname: 'expense_account',
@@ -609,11 +608,12 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Column Break'},
 
             // Right column
-            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
-            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', default: supplier_name || ''},
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
+            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', default: supplier_name || ''},
+            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
+            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
 
-            {fieldtype:'Link', label: __('Purchase UOM (unit of measure)'), fieldname:'purchase_uom', options: 'UOM', reqd: 1,
+            {fieldtype:'Link', label: __('Purchase unit'), fieldname:'purchase_uom', options: 'UOM', reqd: 1,
                 description: 'Unit to order from supplier',
                 get_query: function () {
                     return {
@@ -624,10 +624,8 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 }
             },
 
-            {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
-
             {   fieldtype:'Link',
-                label: __('Stock UOM (unit of measure)'),
+                label: __('Stock unit'),
                 fieldname:'stock_uom',
                 options: 'UOM',
                 reqd: 1,
@@ -640,7 +638,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     }
                 }
             },
-            {fieldtype:'Link', label: __('Pack UOM'), fieldname:'pack_uom', options: 'UOM', reqd: 1,
+            {fieldtype:'Link', label: __('Pack unit'), fieldname:'pack_uom', options: 'UOM', reqd: 1,
                 get_query: function () {
                     return {
                         'filters': [
