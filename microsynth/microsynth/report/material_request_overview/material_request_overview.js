@@ -666,8 +666,8 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 return;
             }
             // conversion_factor required if purchase_uom != stock_uom
-            if (values.purchase_uom && values.stock_uom && values.purchase_uom !== values.stock_uom && (!values.conversion_factor || values.conversion_factor < 1)) {
-                frappe.msgprint(__('Conversion Factor is required and must be at least 1 when Purchase UOM differs from Stock UOM.'));
+            if (values.purchase_uom && values.stock_uom && values.purchase_uom !== values.stock_uom && (!values.conversion_factor || values.conversion_factor < 1.01)) {
+                frappe.msgprint(__('Conversion Factor is required and must be larger than 1 when Purchase UOM differs from Stock UOM. If you choose Conversion Factor 1, consider to use the same UOM for both Purchase and Stock.'));
                 return;
             }
             // currency required if rate is set
