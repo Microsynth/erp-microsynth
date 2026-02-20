@@ -12,7 +12,7 @@ from frappe import _
 from frappe.utils.pdf import get_pdf
 from frappe.utils.background_jobs import enqueue
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
-from frappe.utils import cint, get_url_to_form
+from frappe.utils import cint, get_url_to_form, flt
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
 from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
 from microsynth.microsynth.purchasing import create_pi_from_si
@@ -1376,7 +1376,13 @@ def create_si_content_from_so(so_id, debug=False):
     if debug:
         print(f"[create_si_from_so] Starting for SO {so_id}")
     si_content = make_sales_invoice_from_so(so_id)
-    end_customer_si = frappe.get_doc(si_content)
+    if isinstance(si_content, dict):
+        if debug: print(f"[create_si_from_so] Sales Invoice content created as dict for SO {so_id}")
+        end_customer_si = frappe.get_doc(si_content)
+    else:
+        if debug: print(f"[create_si_from_so] Sales Invoice content created as document for SO {so_id}")
+        end_customer_si = si_content
+
     end_customer_si.naming_series = get_naming_series("Sales Invoice", end_customer_si.company)
     dns = frappe.get_all("Delivery Note", filters={'po_no': so_id, 'docstatus': 1}, fields=['name'])
     if debug:
@@ -1403,7 +1409,7 @@ def create_si_content_from_so(so_id, debug=False):
     # safety check
     if debug:
         print(f"[create_si_from_so] SI total={end_customer_si.total}, DN total={dn_doc.total}")
-    if end_customer_si.total > dn_doc.total:
+    if flt(end_customer_si.total, 2) > flt(dn_doc.total, 2):
         frappe.log_error(
             f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
             "invoicing.transmit_sales_invoice"
@@ -1412,7 +1418,7 @@ def create_si_content_from_so(so_id, debug=False):
             print("[create_si_from_so] ERROR: SI total exceeds DN total")
         return None
 
-    if end_customer_si.total > 0:
+    if flt(end_customer_si.total, 2) > 0:
         if debug: print("[create_si_from_so] Allocating customer credits…")
         end_customer_si = allocate_credits(end_customer_si)
 
@@ -1475,9 +1481,15 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
         frappe.throw("No sales order IDs provided.")
 
     dns = get_invoiceable_services(filters={'customer': customer, 'company': default_company})
+    # TODO: If there are different Product Types on the SOs and DNs, the Product Type on the SI is set according to the last processed document (SO/DN)?
 
     # create invoice from first sales order
     sales_invoice_content = create_si_content_from_so(sales_order_ids[0], debug=debug)
+    if not sales_invoice_content:
+        msg = f"Could not create sales invoice content from first Sales Order {sales_order_ids[0]}."
+        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+        if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+        return None
     if len(sales_order_ids) > 1:
         for i in range(1, len(sales_order_ids)):
             # append items from other sales orders
@@ -1495,7 +1507,12 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
         if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
         return None
     # compile document
-    sales_invoice = frappe.get_doc(sales_invoice_content)
+    if isinstance(sales_invoice_content, dict):
+        if debug: print(f"[create_si_from_sos_and_dns] Compiling sales invoice content from dict for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
+        sales_invoice = frappe.get_doc(sales_invoice_content)
+    else:
+        if debug: print(f"[create_si_from_sos_and_dns] Sales invoice content already a document for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
+        sales_invoice = sales_invoice_content
     if not sales_invoice:
         msg = f"Could not create sales invoice document from content {sales_invoice_content.as_dict()} for Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
         frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
@@ -1525,6 +1542,11 @@ def create_si_from_so(so_id, debug=False):
     bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-WIE-25001714', 'debug': True}"
     """
     end_customer_si = create_si_content_from_so(so_id, debug=debug)
+    if not end_customer_si:
+        msg = f"Failed to create SI content from SO {so_id}."
+        if debug: print(f"[create_si_from_so] ERROR: {msg}")
+        frappe.log_error(msg, "invoicing.create_si_from_so")
+        return None
 
     if debug:
         print("[create_si_from_so] Inserting Sales Invoice (ignore_permissions=True)…")
