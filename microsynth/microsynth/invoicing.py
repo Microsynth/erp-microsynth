@@ -1402,7 +1402,7 @@ def create_si_content_from_so(so_id, debug=False):
 
     # safety check
     if debug:
-        print(f"[create_si_from_so] After adjust SI total={end_customer_si.total}, DN total={dn_doc.total}")
+        print(f"[create_si_from_so] SI total={end_customer_si.total}, DN total={dn_doc.total}")
     if end_customer_si.total > dn_doc.total:
         frappe.log_error(
             f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
@@ -1461,7 +1461,7 @@ def merge_si_contents(source_si_content, target_si_content):
     # Recalculate totals after modification
     target_si_doc.calculate_taxes_and_totals()
 
-    return target_si_doc.as_dict()
+    return target_si_doc
 
 
 def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug=False):
@@ -1469,7 +1469,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
     Create a collective invoice from all given SOs and append (sequencing/Label) Delivery Notes placed on the Customer.default_company
     create_si_from_sos_and_dns is derived from [create_si_from_so] and resembles the function [make_collective_invoice].
 
-    bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000732', 'SO-WIE-26000736'], 'customer': '36958807', 'default_company': 'Microsynth Austria GmbH', 'debug': True}"
+    bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000974', 'SO-WIE-26000927'], 'customer': '39976', 'default_company': 'Microsynth Austria GmbH', 'debug': True}"
     """
     if not sales_order_ids or len(sales_order_ids) == 0:
         frappe.throw("No sales order IDs provided.")
@@ -1487,14 +1487,20 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
 
     for dn in dns:
         # append items from delivery notes
-        sales_invoice_content = make_sales_invoice(source_name=dn, target_doc=sales_invoice_content)
+        sales_invoice_content = make_sales_invoice(source_name=dn.delivery_note, target_doc=sales_invoice_content)
 
     if not sales_invoice_content:
-        frappe.throw("Could not create sales invoice content from given sales orders and delivery notes.")
+        msg = f"Could not create sales invoice content from given Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
+        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+        if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+        return None
     # compile document
     sales_invoice = frappe.get_doc(sales_invoice_content)
     if not sales_invoice:
-        frappe.throw("Could not create sales invoice from content.")
+        msg = f"Could not create sales invoice document from content {sales_invoice_content.as_dict()} for Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
+        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+        if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+        return None
     if not sales_invoice.invoice_to:
         sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to")  # replace invoice to contact with customer's invoice_to contact
 
@@ -1503,8 +1509,9 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
     # force-set tax_id (intrastat!)
     if not sales_invoice.tax_id:
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+    sales_invoice.insert()
     if debug:
-        print(f"Created Sales Invoice from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.name for dn in dns]}: {sales_invoice.as_dict()=}")
+        print(f"Created Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
     return sales_invoice.name
 
 
