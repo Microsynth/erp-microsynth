@@ -217,7 +217,7 @@ def get_data(filters):
             ) AS raw
             WHERE
                 raw.received_qty < raw.qty
-                -- AND raw.ordered_qty > 0
+                AND raw.ordered_qty > 0
             ORDER BY
                 raw.transaction_date ASC;
             """, filters, as_dict=True)
