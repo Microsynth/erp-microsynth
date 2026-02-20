@@ -610,7 +610,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
 
             // Right column
             {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
-            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', reqd: 1, default: supplier_name || ''},
+            {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', default: supplier_name || ''},
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
 
             {fieldtype:'Link', label: __('Purchase UOM (unit of measure)'), fieldname:'purchase_uom', options: 'UOM', reqd: 1,
@@ -659,6 +659,10 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         primary_action(values) {
             if (!values.qty || values.qty <= 0) {
                 frappe.msgprint(__('Quantity must be greater than zero.'));
+                return;
+            }
+            if (!values.supplier_name || values.supplier_name.trim() === '') {
+                frappe.msgprint(__('Supplier Name is required. Please enter an Existing Supplier or the name of a new supplier.'));
                 return;
             }
             if (values.schedule_date < frappe.datetime.add_days(frappe.datetime.nowdate(), 7)) {
