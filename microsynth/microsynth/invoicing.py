@@ -6,6 +6,7 @@
 #
 
 import os
+import subprocess
 import traceback
 import frappe
 from frappe import _
@@ -50,6 +51,9 @@ from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 
 @frappe.whitelist()
 def create_invoices(mode, company, customer, is_monthly_collective_run=False):
+    """
+    bench execute microsynth.microsynth.invoicing.create_invoices --kwargs "{ 'mode': 'Collective', 'company': 'Microsynth AG', 'customer': '40309', 'is_monthly_collective_run': True }"
+    """
     kwargs={
         'mode': mode,
         'company': company,
@@ -1528,7 +1532,22 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
         sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
     sales_invoice.insert()
     if debug:
-        print(f"Created Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
+        print(f"[create_si_from_sos_and_dns] Inserted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
+    set_income_accounts(sales_invoice)
+    customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+    if customer_invoicing_method == "Chorus":
+        goodwill_days = 20
+    else:
+        goodwill_days = 5
+    # for payment reminders: set goodwill period
+    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+    if debug:
+        print("[create_si_from_sos_and_dns] Final SI rows and their cost centers:")
+        for it in sales_invoice.items:
+            print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
+    sales_invoice.submit()
+    if debug:
+        print(f"[create_si_from_sos_and_dns] Created and submitted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
     return sales_invoice.name
 
 
@@ -1589,20 +1608,22 @@ def transmit_sales_invoice(sales_invoice_id):
     Check the invoicing method of the customer and punchout shop and transmit the invoice accordingly.
 
     run
-    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_id':'SI-BAL-23001808'}"
+    bench execute microsynth.microsynth.invoicing.transmit_sales_invoice --kwargs "{'sales_invoice_id': 'SI-BAL-23001808'}"
     """
-
     try:
         sales_invoice = frappe.get_doc("Sales Invoice", sales_invoice_id)
-        customer = frappe.get_doc("Customer", sales_invoice.customer)
-        settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
         if not sales_invoice:
             frappe.log_error(f"Sales Invoice '{sales_invoice_id}' not found", "invoicing.transmit_sales_invoice")
             return
+
+        customer = frappe.get_doc("Customer", sales_invoice.customer)
+
         if not customer:
             frappe.log_error(f"Customer '{sales_invoice.customer}' not found", "invoicing.transmit_sales_invoice")
             return
+
+        settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
 
         if sales_invoice.is_punchout:
             punchout_billing_contact_id = frappe.get_value("Punchout Shop", sales_invoice.punchout_shop, "billing_contact")
@@ -1751,17 +1772,27 @@ Your administration team<br><br>{footer}"
             create_pdf_attachment(sales_invoice.name)
 
             attachments = get_attachments("Sales Invoice", sales_invoice.name)
+            if not attachments or len(attachments) == 0:
+                msg = f"No attachment found for Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
+                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.throw(msg)
             fid = None
             for a in attachments:
                 fid = a['name']
+            if not fid:
+                msg = f"No attachment found for Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
+                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.throw(msg)
             frappe.db.commit()
 
             # print the pdf with cups
             path = get_physical_path(fid)
+            if not path:
+                msg = f"Could not get physical path for attachment with file ID '{fid}' of Sales Invoice '{sales_invoice.name}'. Cannot print invoice."
+                frappe.log_error(msg, "invoicing.transmit_sales_invoice")
+                frappe.throw(msg)
             PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
-            import subprocess
             subprocess.run(["lp", path, "-d", PRINTER])
-
             pass
 
         elif mode == "ARIBA":
