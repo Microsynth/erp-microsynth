@@ -1,11 +1,14 @@
 # Copyright (c) 2023, Microsynth
 # For license information, please see license.txt
 
-import frappe
-from frappe.utils import get_url_to_form
+import json
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from microsynth.microsynth.utils import get_customer, send_email_from_template
+
+import frappe
+from frappe.utils import get_url_to_form, nowdate
+
+from microsynth.microsynth.utils import get_customer, send_email_from_template, configure_new_customer
 
 
 def update_marketing_classification(contact_id):
@@ -406,3 +409,121 @@ def notify_new_webshop_registrations(sales_managers, previous_days=7):
             email_template = frappe.get_doc("Email Template", "New Webshop Registrations")
             rendered_content = frappe.render_template(email_template.response, {'first_name': first_name, 'contacts_list_str': contacts_list_str})
             send_email_from_template(email_template, rendered_content, recipients=sales_manager)
+
+
+@frappe.whitelist()
+def create_lead_with_contact_address_note(data):
+    """
+    Create a new Customer (if not existing), Contact, Address, and Contact Note (if note is filled), linking them properly.
+    Args:
+        data (dict): Dialog input values
+    Returns:
+        dict: {"customer": customer_name}
+    """
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    # 1. Customer
+    customer_name = data.get("existing_customer")
+    fields_to_sync = [
+        "customer_name",
+        "account_manager",
+        "territory",
+        "default_currency",
+        "default_price_list",
+        "language",
+    ]
+    defaults = {
+        "language": "en"
+    }
+    if not customer_name:
+        customer_doc = frappe.get_doc({
+            "doctype": "Customer",
+            "customer_name": data["customer_name"],
+            "default_company": data["company"],
+            "account_manager": data.get("account_manager"),
+            "territory": data.get("territory"),
+            "default_currency": data.get("default_currency"),
+            "default_price_list": data.get("default_price_list"),
+            "language": data.get("language", "en"),
+        })
+        customer_doc.insert(ignore_permissions=True)
+        customer_name = customer_doc.name
+    else:
+        customer_doc = frappe.get_doc("Customer", customer_name)
+        updated = False
+        for field in fields_to_sync:
+            new_value = data.get(field, defaults.get(field))
+            if getattr(customer_doc, field) != new_value:
+                setattr(customer_doc, field, new_value)
+                updated = True
+        if updated:
+            customer_doc.save(ignore_permissions=True)
+
+    # 2. Address
+    address_doc = frappe.get_doc({
+        "doctype": "Address",
+        "address_title": customer_name,
+        "address_line1": data["address_line1"],
+        "address_line2": data.get("address_line2"),
+        "city": data["city"],
+        "state": data.get("state"),
+        "pincode": data["postal_code"],
+        "country": data["country"],
+        "links": [{
+            "link_doctype": "Customer",
+            "link_name": customer_name,
+            "link_title": customer_doc.customer_name
+        }]
+    })
+    address_doc.insert()
+
+    # 3. Contact
+    contact_doc = frappe.get_doc({
+        "doctype": "Contact",
+        "first_name": data["first_name"],
+        "last_name": data.get("last_name"),
+        "salutation": data.get("salutation"),
+        "designation": data.get("title"),
+        "email_id": data.get("email"),
+        "phone": data.get("phone"),
+        "status": "Lead",
+        "address": address_doc.name,
+        "links": [{
+            "link_doctype": "Customer",
+            "link_name": customer_name,
+            "link_title": customer_doc.customer_name
+        }]
+    })
+    if data.get("email"):
+        contact_doc.append("email_ids", {
+            "email_id": contact_doc.email_id,
+            "is_primary": 1
+        })
+    if data.get("phone"):
+        contact_doc.append("phone_nos", {
+            "phone": contact_doc.phone,
+            "is_primary_phone": 1
+        })
+    contact_doc.insert()
+
+    # 4. Contact Note (optional)
+    if data.get("note"):
+        note_doc = frappe.get_doc({
+            "doctype": "Contact Note",
+            "contact_person": contact_doc.name,
+            "first_name": contact_doc.first_name,
+            "last_name": contact_doc.last_name,
+            "date": data.get("note_date") or nowdate(),
+            "contact_note_type": data.get("contact_note_type"),
+            "notes": data["note"],
+        })
+        note_doc.insert()
+
+    if not customer_doc.invoice_to:
+        customer_doc.invoice_to = contact_doc.name
+        customer_doc.save()
+    if not data.get("existing_customer"):
+        configure_new_customer(customer_name)
+
+    return {"customer": customer_name}
