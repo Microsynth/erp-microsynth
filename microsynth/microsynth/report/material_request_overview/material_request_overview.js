@@ -585,7 +585,8 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Float', label: __('Quantity of Stock units per Purchase unit'), fieldname:'conversion_factor', min: 1, precision: 2,
                 description: 'How many stock units are in one purchase unit?'},
-            {fieldtype:'Float', label: __('Pack Size of a Stock unit'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1 },
+            {fieldtype:'Float', label: __('Pack Size of a Stock unit'), fieldname:'pack_size', min: 0.01, precision: 2, reqd: 1,
+                description: 'How much does one stock unit contain?'},
             {
                 label: 'Default Expense Account',
                 fieldname: 'expense_account',
