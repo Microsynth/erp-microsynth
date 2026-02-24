@@ -162,13 +162,39 @@ function open_new_lead_dialog() {
         'fields': [
             // Section 1: Customer
             { fieldtype: "Section Break" },
-            { fieldtype: "Link", fieldname: "existing_customer", label: __("Existing Customer"), options: "Customer", change: function() { fetch_customer_fields(d); } },
+            { fieldtype: "Link", fieldname: "existing_customer", label: __("Existing Customer"), options: "Customer",
+                get_query: function() {
+                    return {
+                        'filters': {
+                            'disabled': ["!=", 1],
+                            'is_internal_customer': 0
+                        }
+                    };
+                },
+                change: function() { fetch_customer_fields(d); } },
             { fieldtype: "Link", fieldname: "account_manager", label: __("Sales Manager"), options: "User", reqd: 1 },
             { fieldtype: "Link", fieldname: "default_currency", label: __("Billing Currency"), options: "Currency", reqd: 1 },
             { fieldtype: "Column Break" },
             { fieldtype: "Data", fieldname: "customer_name", label: __("Full Customer Name"), reqd: 1 },
-            { fieldtype: "Link", fieldname: "territory", label: __("Territory"), options: "Territory", reqd: 1 },
-            { fieldtype: "Link", fieldname: "default_price_list", label: __("Default Price List"), options: "Price List", reqd: 1 },
+            { fieldtype: "Link", fieldname: "territory", label: __("Territory"), options: "Territory", reqd: 1,
+                get_query: function() {
+                    return {
+                        'filters': {
+                            'is_group': 0,
+                            'name': ["not in", ["All Territories", "Rest of the World", "Rest of Europe"]]
+                        }
+                    };
+                }
+             },
+            { fieldtype: "Link", fieldname: "default_price_list", label: __("Default Price List"), options: "Price List", reqd: 1,
+                get_query: function() {
+                    return {
+                        'filters': {
+                            'enabled': 1,
+                        }
+                    };
+                }
+             },
             { fieldtype: "Column Break" },
             { fieldtype: "Link", fieldname: "company", label: __("Default Company"), options: "Company", reqd: 1 },
             { fieldtype: "Select", fieldname: "language", label: __("Print Language"), options: "en\nde\nfr", reqd: 1, default: "en" },
