@@ -59,6 +59,66 @@ frappe.query_reports["Material Request Overview"] = {
                 create_purchase_order(frappe.query_report.get_filter_values(), frappe.query_report);
             }).addClass("btn-primary");
         }
+
+        // Add double-click handler for 'Comment' column cells
+        if (!locals.comment_double_click_handler) {
+            locals.comment_double_click_handler = true;
+            console.log("66: Material Request Overview loaded, double click handler set:", locals.comment_double_click_handler);
+            cur_page.container.addEventListener("dblclick", function(event) {
+                console.log("Double click event:", event);
+                let target = event.delegatedTarget;
+                if (!target) return;
+                let row = target.getAttribute("data-row-index");
+                let column = target.getAttribute("data-col-index");
+                if (row == null || column == null) return;
+                console.log("74: Double click on row:", row, "column:", column);
+                if (parseInt(column) === 11) {
+                    let rowData = frappe.query_report.data[row];
+                    console.log("77: Row data for double-clicked cell:", rowData);
+                    if (!rowData || !rowData.material_request) return;
+                    if (rowData.request_type === "Item Request") {
+                        frappe.msgprint(__('Comments cannot be edited for Item Requests.'), __('Info'));
+                        return;
+                    }
+                    let currentComment = rowData.comment || '';
+
+                    let d = new frappe.ui.Dialog({
+                        'title': __('Edit Comment'),
+                        'fields': [
+                            {
+                                'fieldtype': 'Small Text',
+                                'fieldname': 'comment',
+                                'label': __('Comment'),
+                                'default': currentComment
+                            }
+                        ],
+                        'primary_action_label': __('Save'),
+                        'primary_action': function(values) {
+                            frappe.call({
+                                'method': 'frappe.client.set_value',
+                                'args': {
+                                    'doctype': 'Material Request',
+                                    'name': rowData.material_request,
+                                    'fieldname': 'comment',
+                                    'value': values.comment
+                                },
+                                'callback': function(r) {
+                                    if (!r.exc) {
+                                        frappe.show_alert({
+                                            'message': __('Comment updated'),
+                                            'indicator': 'green'
+                                        });
+                                        d.hide();
+                                        frappe.query_report.refresh();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    d.show();
+                }
+            });
+        }
     },
     'formatter': function(value, row, column, data, default_formatter) {
         // For Item Request rows, show item_name as plain text (no link)
@@ -578,7 +638,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
         'fields': [
             // Left column
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, read_only: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'},
-            {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},  // TODO: Ensure that the cursor focuses on this field.
+            {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
             {fieldtype:'Currency', label: __('Rate regarding Purchase unit'), fieldname:'rate', precision: 2},
             {fieldtype:'Float', label: __('Quantity of Purchase units to order'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,

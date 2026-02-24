@@ -30,7 +30,7 @@
    "insert_after": "transaction_date",
    "label": "Comment",
    "length": 0,
-   "modified": "2025-10-13 12:07:14.567044",
+   "modified": "2026-02-24 14:20:15.678042",
    "modified_by": "jens.petermann@microsynth.ch",
    "name": "Material Request-comment",
    "no_copy": 0,
