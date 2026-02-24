@@ -399,7 +399,7 @@ function open_search_dialog(report) {
                                 <th>${__('Item')}</th>
                                 <th>${__('Item Name')}</th>
                                 <th>${__('Pack Size')}</th>
-                                <th>${__('Pack UOM')}</th>
+                                <th>${__('Pack unit')}</th>
                                 <th>${__('Material Code')}</th>
                                 <th>${__('Last Purchase Rate [CHF]')}</th>
                                 <th>${__('Last Order Date')}</th>
@@ -537,16 +537,16 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Data', label: __('Supplier'), fieldname: 'supplier', read_only: 1, default: selected.supplier },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
-            { fieldtype: 'Int', label: __('Quantity regarding Purchase UOM'), fieldname: 'qty', reqd: true, min: 0.01 },
-            { fieldtype: 'Data', label: __('Stock UOM'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
+            { fieldtype: 'Int', label: __('Quantity regarding Purchase unit'), fieldname: 'qty', reqd: true, min: 0.01 },
+            { fieldtype: 'Data', label: __('Stock unit'), fieldname: 'stock_uom', read_only: 1, default: selected.stock_uom },
 
 
             { fieldtype: 'Column Break' },
 
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: true, options: 'Company', default: report.get_filter_value('company') || frappe.defaults.get_default('company') },
-            { fieldtype: 'Data', label: __('Purchase UOM'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
-            { fieldtype: 'Data', label: __('Pack Size and Pack UOM'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
+            { fieldtype: 'Data', label: __('Purchase unit'), fieldname: 'purchase_uom', read_only: 1, default: selected.purchase_uom || selected.stock_uom },
+            { fieldtype: 'Data', label: __('Pack size and pack unit'), fieldname: 'pack_size_uom', read_only: 1, description: 'How much does 1 stock unit contain?', default: (selected.pack_size || 1) + " " + (selected.pack_uom || selected.stock_uom) },
 
             { fieldtype: 'Column Break' },
 
@@ -557,7 +557,7 @@ function open_confirmation_dialog(selected, report) {
 
             { fieldtype: 'Section Break' },
 
-            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment', description: 'If the Stock UOM could be improved, please contact the Purchasing department before creating and submitting the Material Request. For all other comments, please enter them here.' }
+            { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment', description: 'If the Stock unit could be improved, please contact the Purchasing department before creating and submitting the Material Request. For all other comments, please enter them here.' }
         ],
         'primary_action_label': __('Create & Submit'),
         primary_action(values) {
@@ -731,7 +731,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             }
             // conversion_factor required if purchase_uom != stock_uom
             if (values.purchase_uom && values.stock_uom && values.purchase_uom !== values.stock_uom && (!values.conversion_factor || values.conversion_factor < 1.01)) {
-                frappe.msgprint(__('Conversion Factor is required and must be larger than 1 when Purchase UOM differs from Stock UOM. If you choose Conversion Factor 1, consider to use the same UOM for both Purchase and Stock.'));
+                frappe.msgprint(__('Conversion Factor is required and must be larger than 1 when Purchase unit differs from Stock unit. If you choose Conversion Factor 1, consider to use the same unit for both Purchase and Stock.'));
                 return;
             }
             // currency required if rate is set
