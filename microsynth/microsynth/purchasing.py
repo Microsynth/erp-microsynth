@@ -133,7 +133,7 @@ def create_pi_from_si(sales_invoice):
     return new_pi
 
 
-def _compute_total_quantity_by_item(material_request_rows):
+def compute_total_quantity_by_item(material_request_rows):
     """Compute total qty per item_code from the list of material-request rows."""
     totals = {}
     for row in material_request_rows:
@@ -142,7 +142,7 @@ def _compute_total_quantity_by_item(material_request_rows):
     return totals
 
 
-def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company):
+def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company):
     """Select cheapest valid Supplier Quotation Item or fallback to price list rate.
 
     Returns a dict: {
@@ -283,7 +283,7 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
             if selection.get('warnings'):
                 purchase_warnings.extend(selection.get('warnings'))
         else:
-            selection = _select_quotation_for_item(
+            selection = select_quotation_for_item(
                 item_code_key, consolidated_total_qty, supplier_doc, currency, today_date, original_rate, company
             )
             quotation_choice_cache[item_code_key] = selection
@@ -409,7 +409,7 @@ def create_po_from_open_mr(filters):
         )
 
     # Consolidate totals and create PO
-    total_quantity_by_item_code = _compute_total_quantity_by_item(items)
+    total_quantity_by_item_code = compute_total_quantity_by_item(items)
     po_doc, used_supplier_quotations, purchase_warnings = create_po_document_for_items(
         items, total_quantity_by_item_code, supplier_doc, company, currency
     )
@@ -743,7 +743,7 @@ FLOOR_MAPPING_PER_COMPANY = {
 }
 
 
-def _get_or_create_single_location(location_name, parent_location, is_group=True):
+def get_or_create_single_location(location_name, parent_location, is_group=True):
     """
     Helper: Get or create a single Location under the given parent.
     Returns the Location name.
@@ -840,7 +840,7 @@ def get_or_create_location(floor, room, destination, fridge_rack, company='Micro
             parent_doc.is_group = 1
             parent_doc.save()
         # create or fetch the child
-        parent_location = _get_or_create_single_location(
+        parent_location = get_or_create_single_location(
             level_name,
             parent_location,
             is_group=not is_last
