@@ -246,7 +246,7 @@ def _select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, 
     return selection
 
 
-def _create_po_document_for_items(material_request_rows, total_quantity_by_item_code, supplier_doc, company, currency):
+def create_po_document_for_items(material_request_rows, total_quantity_by_item_code, supplier_doc, company, currency):
     """Create a Purchase Order document and append PO items for each material request row.
 
     Returns: (po_doc, used_supplier_quotations, purchase_warnings)
@@ -410,7 +410,7 @@ def create_po_from_open_mr(filters):
 
     # Consolidate totals and create PO
     total_quantity_by_item_code = _compute_total_quantity_by_item(items)
-    po_doc, used_supplier_quotations, purchase_warnings = _create_po_document_for_items(
+    po_doc, used_supplier_quotations, purchase_warnings = create_po_document_for_items(
         items, total_quantity_by_item_code, supplier_doc, company, currency
     )
 
