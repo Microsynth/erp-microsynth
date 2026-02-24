@@ -22,7 +22,7 @@ from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.taxes import find_purchase_tax_template
 from microsynth.microsynth.naming_series import get_next_purchasing_item_id
-
+from microsynth.microsynth.utils import send_email_from_template
 from microsynth.microsynth.report.material_request_overview.material_request_overview import get_data as get_requested_items
 
 SUPPORTED_BUYING_CURRENCIES = ['CHF', 'EUR', 'USD', 'GBP']
@@ -3173,3 +3173,23 @@ def purchase_order_before_save(doc, event):
 
     if not has_material_request:
         frappe.throw("This Purchase Order is <b>not</b> linked to any Material Request. Please go to the <b>Material Request Overview</b> and ensure to create the Purchase Order from there using the <b>Create Purchase Order</b> button.")
+
+
+def report_purchase_receipt_drafts(company="Microsynth AG"):
+    """
+    Check if there is at least one Purchase Receipt in Draft status.
+    If yes, report all Purchase Receipts in Draft Status to the Purchasing department.
+    This function should be executed by a cronjob each monday at 5:40 am.
+
+    bench execute microsynth.microsynth.purchasing.report_purchase_receipt_drafts --kwargs "{'company': 'Microsynth AG'}"
+    """
+    purchase_receipt_drafts = frappe.get_all("Purchase Receipt", filters=[['docstatus', '=', '0'], ['company', '=', company]], fields=['name', 'title', 'owner'])
+    if len(purchase_receipt_drafts):
+        pr_draft_details = ""
+        for pr in purchase_receipt_drafts:
+            url = f"https://erp.microsynth.local/desk#Form/Purchase%20Receipt/{pr['name']}"
+            pr_draft_details += f"<br><a href={url}>{pr['name']}</a>: {pr['title']}, created by {pr['owner']}"
+
+        email_template = frappe.get_doc("Email Template", "Purchase Receipt Drafts to be submitted")
+        rendered_content = frappe.render_template(email_template.response, {'pr_draft_details': pr_draft_details})
+        send_email_from_template(email_template, rendered_content)
