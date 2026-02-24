@@ -648,6 +648,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     }
                 }
             },
+            {fieldtype: 'HTML', fieldname: 'order_preview'},
 
             {fieldtype:'Section Break'},
 
@@ -738,4 +739,50 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             d.set_value('purchase_uom', stock_uom);
         }
     };
+
+    d.fields_dict.qty.$input.on('input', update_order_preview);
+    d.fields_dict.purchase_uom.$input.on('input', update_order_preview);
+    d.fields_dict.conversion_factor.$input.on('input', update_order_preview);
+    d.fields_dict.stock_uom.$input.on('input', update_order_preview);
+    d.fields_dict.pack_size.$input.on('input', update_order_preview);
+    d.fields_dict.pack_uom.$input.on('input', update_order_preview);
+    update_order_preview();
+
+    function update_order_preview() {
+        if ((!d.get_value('purchase_uom') && !d.get_value('stock_uom'))
+            || !d.get_value('qty')
+            || !d.get_value('pack_size')
+            || !d.get_value('pack_uom')
+        ) {
+            d.fields_dict.order_preview.$wrapper.html('');
+            return;
+        }
+        const qty = cint(d.get_value('qty')) || 0;
+        const cf = cint(d.get_value('conversion_factor')) || 1;
+        const pack_size = cint(d.get_value('pack_size')) || 1;
+        const pack_uom = d.get_value('pack_uom') || d.get_value('stock_uom') || '';
+
+        const total = qty * cf * pack_size;
+
+        const text = __(
+            '<b>{0} × {1} × {2} = {3} {4}</b>',
+            [qty, cf, pack_size, total, pack_uom]
+        );
+
+        d.fields_dict.order_preview.$wrapper.html(`
+            <div class="frappe-control input-max-width" style="margin-top:36px;">
+                <label class="control-label" style="display:block; margin-bottom:4px;">
+                    ${__('You are going to order')}
+                </label>
+                <div class="control-value like-disabled-input" style="
+                    padding: 6px 8px;
+                    background: #f4f5f6;
+                    border-radius: 4px;
+                    font-size: 13px;
+                ">
+                    ${text}
+                </div>
+            </div>
+        `);
+    }
 }
