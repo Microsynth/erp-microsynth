@@ -269,7 +269,7 @@ def import_job_applicants(verbose=False):
 
             # Attach PDFs
             for fieldname in PDF_FIELDS:
-                pdf_name = data.get(fieldname)
+                pdf_name = raw_data.get(fieldname)
                 if verbose:
                     print(f"Checking PDF field '{fieldname}': '{pdf_name}'")
                 if not pdf_name:
@@ -299,7 +299,7 @@ def import_job_applicants(verbose=False):
             shutil.move(xml_path, _safe_join(archive_dir, fname))
 
             for fieldname in PDF_FIELDS:
-                pdf_name = data.get(fieldname, "").strip()
+                pdf_name = raw_data.get(fieldname, "").strip()
                 if not pdf_name:
                     continue
                 pdf_path = _safe_join(BASE_PATH, pdf_name)
