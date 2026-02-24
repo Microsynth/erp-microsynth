@@ -1589,6 +1589,7 @@ def place_order(content, client="webshop"):
             'success': True,
             'message': 'Sales Order created',
             'internal_message': 'Sales Order created',
+            'web_order_id': so_doc.web_order_id,
             'reference': so_doc.name,
             'currency': so_doc.currency,
             'net_amount': so_doc.net_total,
