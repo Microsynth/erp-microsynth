@@ -464,6 +464,9 @@ def create_lead_with_contact_address_note(data):
     address_doc = frappe.get_doc({
         "doctype": "Address",
         "address_title": customer_name,
+        "address_type": "Shipping",
+        "is_primary_address": 1,
+        "is_shipping_address": 1,
         "address_line1": data["address_line1"],
         "address_line2": data.get("address_line2"),
         "city": data["city"],
