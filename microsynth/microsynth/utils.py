@@ -3793,3 +3793,27 @@ def disable_linked_contacts_addresses(links):
         doc.save(ignore_permissions=True)
 
     frappe.db.commit()
+
+
+@frappe.whitelist()
+def fetch_intercompany_dns_for_sos(sales_order_ids):
+    """
+    Fetches the submitted intercompany Delivery Notes that are linking to the given original end-customer Sales Orders via the field Delivery Note.po_no.
+    Return a dictionary with Sales Order IDs as keys and a submitted intercompany Delivery Note IDs as values.
+
+    bench execute microsynth.microsynth.utils.fetch_intercompany_dns_for_sos --kwargs "{'sales_order_ids': ['SO-GOE-26002942', 'SO-GOE-26002907']}"
+    """
+    query = f"""
+        SELECT
+            `tabDelivery Note`.`name` AS `dn_name`,
+            `tabDelivery Note`.`po_no` AS `so_name`
+        FROM `tabDelivery Note`
+        WHERE
+            `tabDelivery Note`.`po_no` IN ({get_sql_list(sales_order_ids)})
+            AND `tabDelivery Note`.`docstatus` = 1
+    """
+    dns = frappe.db.sql(query, as_dict=True)
+    result = {}
+    for dn in dns:
+        result[dn['so_name']] = dn['dn_name']
+    return result

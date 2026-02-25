@@ -103,7 +103,8 @@ jenv = {
         "get_customer_id_from_supplier:microsynth.microsynth.purchasing.get_customer_id_from_supplier",
         "get_all_outstanding_invoices:microsynth.microsynth.payment_reminder.get_all_outstanding_invoices",
         "get_webshop_services:microsynth.microsynth.utils.get_webshop_services",
-        "get_transactions:microsynth.microsynth.webshop.get_transactions"
+        "get_transactions:microsynth.microsynth.webshop.get_transactions",
+        "fetch_intercompany_dns_for_sos:microsynth.microsynth.utils.fetch_intercompany_dns_for_sos"
     ]
 }
 
