@@ -790,7 +790,6 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             d.refresh_field('currency');
         });
     };
-
     // Fetch Purchase UOM from Stock UOM if Stock UOM is set but not Purchase UOM
     d.fields_dict.stock_uom.df.onchange = function() {
         const stock_uom = d.get_value('stock_uom');
@@ -799,7 +798,6 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             d.set_value('purchase_uom', stock_uom);
         }
     };
-
     d.fields_dict.qty.$input.on('input', update_order_preview);
     d.fields_dict.purchase_uom.$input.on('input', update_order_preview);
     d.fields_dict.conversion_factor.$input.on('input', update_order_preview);
@@ -807,6 +805,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
     d.fields_dict.pack_size.$input.on('input', update_order_preview);
     d.fields_dict.pack_uom.$input.on('input', update_order_preview);
     update_order_preview();
+
 
     function update_order_preview() {
         if ((!d.get_value('purchase_uom') && !d.get_value('stock_uom'))
@@ -817,18 +816,34 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             d.fields_dict.order_preview.$wrapper.html('');
             return;
         }
-        const qty = cint(d.get_value('qty')) || 0;
-        const cf = cint(d.get_value('conversion_factor')) || 1;
-        const pack_size = cint(d.get_value('pack_size')) || 1;
+        const qty = parseFloat(d.get_value('qty')) || 0;
+        const cf = parseFloat(d.get_value('conversion_factor')) || 1;
+        const pack_size = parseFloat(d.get_value('pack_size')) || 1.0;
         const pack_uom = d.get_value('pack_uom') || d.get_value('stock_uom') || '';
-
         const total = qty * cf * pack_size;
 
+        // Format number: max 2 decimals, no decimals if whole number
+        const format_number = (value) => {
+            if (value === null || value === undefined || isNaN(value)) {
+                return 0;
+            }
+            // round to 2 decimals safely
+            const rounded = Math.round(value * 100) / 100;
+            // remove trailing zeros if integer
+            return Number.isInteger(rounded)
+                ? rounded.toString()
+                : rounded.toFixed(2).replace(/\.?0+$/, '');
+        };
         const text = __(
             '<b>{0} × {1} × {2} = {3} {4}</b>',
-            [qty, cf, pack_size, total, pack_uom]
+            [
+                format_number(qty),
+                format_number(cf),
+                format_number(pack_size),
+                format_number(total),
+                pack_uom
+            ]
         );
-
         d.fields_dict.order_preview.$wrapper.html(`
             <div class="frappe-control input-max-width" style="margin-top:36px;">
                 <label class="control-label" style="display:block; margin-bottom:4px;">
