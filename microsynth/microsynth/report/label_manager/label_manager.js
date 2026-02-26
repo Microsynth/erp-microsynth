@@ -53,7 +53,7 @@ frappe.query_reports["Label Manager"] = {
             "fieldname": "label_status",
             "label": __("Label Status"),
             "fieldtype": "Select",
-            "options": "unknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
+            "options": "\nunknown\nunused\nsubmitted\nreceived\nprocessed\nlocked"
         },
         {
             "fieldname": "sales_order",
@@ -75,7 +75,7 @@ frappe.query_reports["Label Manager"] = {
                 return {
                     'filters': {
                         'is_sales_item': 1
-                        // TODO: only show Items that have a Label Range associated
+                        // TODO: only show Items that have a Label Range associated (Task #24037)
                     }
                 };
             }
