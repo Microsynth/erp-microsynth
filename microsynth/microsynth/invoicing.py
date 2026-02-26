@@ -1629,10 +1629,12 @@ Your administration team<br><br>{footer}"
             # print the pdf with cups
             path = get_physical_path(fid)
             PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
-            import subprocess
-            subprocess.run(["lp", path, "-d", PRINTER])
-
-            pass
+            command = ["lp", path, "-d" ] + PRINTER.split(" ")
+            try:
+                import subprocess
+                subprocess.run(command)
+            except subprocess.CalledProcessError as e:
+                frappe.log_error(f"Printing {sales_invoice_id} failed: {str(e)}", "invoicing.transmit_sales_invoice")
 
         elif mode == "ARIBA":
             cxml_data = create_dict_of_invoice_info_for_cxml(sales_invoice, mode)

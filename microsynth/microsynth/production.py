@@ -315,9 +315,10 @@ def print_at_administration(doc):
         frappe.log_error(f"File not found at path: {path}", "print_at_administration")
         return
     try:
-        subprocess.run(["lp", path, "-d", PRINTER], check=True)
+        command = ["lp", path, "-d" ] + PRINTER.split(" ")
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
-        frappe.log_error(f"Printing failed: {str(e)}", "print_at_administration")
+        frappe.log_error(f"Printing {doc.name} failed: {str(e)}", "production.print_at_administration")
 
 
 @frappe.whitelist()

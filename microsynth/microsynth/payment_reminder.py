@@ -173,8 +173,12 @@ def print_payment_reminder(prm):
     # print the pdf with cups
     path = get_physical_path(fid)
     PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
-    import subprocess
-    subprocess.run(["lp", path, "-d", PRINTER, "-o", "sides=two-sided-long-edge"])
+    command = ["lp", path, "-d" ] + PRINTER.split(" ") + ["-o", "sides=two-sided-long-edge"]
+    try:
+        import subprocess
+        subprocess.run(command)
+    except subprocess.CalledProcessError as e:
+        frappe.log_error(f"Printing of {prm.name} failed: {str(e)}", "payment_reminder.print_payment_reminder")
 
 
 @frappe.whitelist()
