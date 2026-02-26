@@ -3803,6 +3803,8 @@ def fetch_intercompany_dns_for_sos(sales_order_ids):
 
     bench execute microsynth.microsynth.utils.fetch_intercompany_dns_for_sos --kwargs "{'sales_order_ids': ['SO-GOE-26002942', 'SO-GOE-26002907']}"
     """
+    if not sales_order_ids:
+        return {}
     query = f"""
         SELECT
             `tabDelivery Note`.`name` AS `dn_name`,
