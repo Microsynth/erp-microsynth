@@ -171,7 +171,7 @@ def cancel(change):
         force_cancel("QM Change", change_doc.name)
     else:
         try:
-            change_doc.status = 'Cancelled'
+            change_doc.status = 'Cancelled'  # TODO: Create status 'Cancelled' and adjust allowed transitions
             change_doc.save()
             change_doc.cancel()
             frappe.db.commit()

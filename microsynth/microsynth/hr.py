@@ -119,6 +119,7 @@ def import_job_applicants(verbose=False):
     named after the XML file (without extension) and a txt file containing the error message is added to that folder.
 
     Should be run by an hourly cron job:
+    # import job applicants hourly at xx:32 from 5am to 6pm
     32 4-18 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.hr.import_job_applicants
 
     bench execute microsynth.microsynth.hr.import_job_applicants --kwargs '{"verbose": True}'
@@ -312,6 +313,7 @@ def import_job_applicants(verbose=False):
                     )
             if verbose:
                 print(f"Imported applicant from {fname}")
+            # TODO: Send Email to applicant confirming receipt of application?
 
         except Exception:
             if verbose:

@@ -3179,7 +3179,10 @@ def report_purchase_receipt_drafts(company="Microsynth AG"):
     """
     Check if there is at least one Purchase Receipt in Draft status.
     If yes, report all Purchase Receipts in Draft Status to the Purchasing department.
-    This function should be executed by a cronjob each monday at 5:40 am.
+    This function is executed by a cronjob each friday at 5:42 am.
+
+    # Notify Purchasing department about Purchase Receipt Drafts
+    42 5 * * 5 cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.purchasing.report_purchase_receipt_drafts --kwargs "{'company': 'Microsynth AG'}"
 
     bench execute microsynth.microsynth.purchasing.report_purchase_receipt_drafts --kwargs "{'company': 'Microsynth AG'}"
     """
