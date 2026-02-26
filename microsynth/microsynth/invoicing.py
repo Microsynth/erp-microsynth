@@ -1794,7 +1794,6 @@ Your administration team<br><br>{footer}"
             PRINTER = frappe.get_value("Microsynth Settings", "Microsynth Settings", "invoice_printer")
             command = ["lp", path, "-d" ] + PRINTER.split(" ")
             try:
-                import subprocess
                 subprocess.run(command)
             except subprocess.CalledProcessError as e:
                 frappe.log_error(f"Printing {sales_invoice_id} failed: {str(e)}", "invoicing.transmit_sales_invoice")
