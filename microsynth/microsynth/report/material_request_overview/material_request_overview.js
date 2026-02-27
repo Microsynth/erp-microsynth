@@ -640,7 +640,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, read_only: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'},
             {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
-            {fieldtype:'Currency', label: __('Rate regarding Purchase unit'), fieldname:'rate', precision: 2},
+            {fieldtype:'Currency', label: __('Rate regarding one Purchase unit'), fieldname:'rate', precision: 2},
             {fieldtype:'Float', label: __('Quantity of Purchase units to order'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Float', label: __('Quantity of Stock units per Purchase unit'), fieldname:'conversion_factor', min: 1, precision: 2,
@@ -671,7 +671,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             // Right column
             {fieldtype:'Date', label: __('Required by'), fieldname:'schedule_date', default: frappe.datetime.add_days(frappe.datetime.nowdate(), 30)},
             {fieldtype:'Data', label: __('Supplier Name'), fieldname:'supplier_name', default: supplier_name || ''},
-            {fieldtype:'Data', label: __('Supplier Item Code'), fieldname:'supplier_part_no', default: supplier_part_no || ''},
+            {fieldtype:'Data', label: __('Supplier Item Code (can be N/A)'), fieldname:'supplier_part_no', default: supplier_part_no || '', reqd: 1},
             {fieldtype:'Link', label: __('Currency'), fieldname:'currency', options: 'Currency'},
 
             {fieldtype:'Link', label: __('Purchase unit'), fieldname:'purchase_uom', options: 'UOM', reqd: 1,
@@ -700,6 +700,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                 }
             },
             {fieldtype:'Link', label: __('Pack unit'), fieldname:'pack_uom', options: 'UOM', reqd: 1,
+                description: 'Unit for pack size: ml, g, Reaction Units, Pcs, etc.',
                 get_query: function () {
                     return {
                         'filters': [
