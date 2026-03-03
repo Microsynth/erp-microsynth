@@ -1633,11 +1633,17 @@ def create_si_from_so(so_id, debug=False):
     Applies the customer credits if available.
     Set the income accounts as well as the goodwill period for payment reminders.
 
-    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-WIE-25001714', 'debug': True}"
+    bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-GOE-26001675', 'debug': True}"
     """
     end_customer_si = create_si_content_from_so(so_id, debug=debug)
     if not end_customer_si:
         msg = f"Failed to create SI content from SO {so_id}."
+        if debug: print(f"[create_si_from_so] ERROR: {msg}")
+        frappe.log_error(msg, "invoicing.create_si_from_so")
+        return None
+
+    if not end_customer_si.items:
+        msg = f"Cannot create Sales Invoice from Sales Order {so_id} because there are no items to invoice."
         if debug: print(f"[create_si_from_so] ERROR: {msg}")
         frappe.log_error(msg, "invoicing.create_si_from_so")
         return None
