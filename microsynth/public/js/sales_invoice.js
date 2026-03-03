@@ -56,8 +56,9 @@ frappe.ui.form.on('Sales Invoice', {
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Download"), function() {
                 var w = window.open(
-                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_invoice_pdf"
-                            + "?si=" + encodeURIComponent(frm.doc.name))
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_microsynth_zugferd_pdf"
+                            + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name)
+                            + "&format=Sales Invoice")
                 );
                 if (!w) {
                     frappe.msgprint(__("Please enable pop-ups")); return;
@@ -668,7 +669,7 @@ function transmit_invoice(frm) {
 
 // call zugferd to create and download xml
 function download_zugferd_xml(frm) {
-    var url = "/api/method/erpnextswiss.erpnextswiss.zugferd.zugferd.download_zugferd_xml"
+    var url = "/api/method/microsynth.microsynth.invoicing.download_microsynth_zugferd_xml"
         + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name);
     var w = window.open( frappe.urllib.get_full_url(url) );
     if (!w) {
