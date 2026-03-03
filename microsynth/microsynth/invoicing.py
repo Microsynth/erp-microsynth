@@ -50,7 +50,7 @@ from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import prepare_data as prepar
 from facturx import generate_from_binary
 try:            # factur-x v3.0 onwards
     from facturx import xml_check_xsd
-except:         # factur-x before v3.0 
+except:         # factur-x before v3.0
     from facturx import check_facturx_xsd as xml_check_xsd
 
 @frappe.whitelist()
@@ -796,6 +796,75 @@ def make_monthly_collective_invoices(company, customers, months):
     return sales_invoices
 
 
+def get_microsynth_zugferd_xml(sales_invoice, verify=True):
+    """
+    Override functions for ZUGFeRD content (fiscal representation, item rewrite)
+
+    With the override, tax_id/address or item positions can be replaced.
+    """
+    try:
+        data = prepare_zugferd_data(sales_invoice)
+
+        # conditionally replace contents
+        sinv = frappe.get_doc("Sales Invoice", sales_invoice)
+        destination = get_destination_classification(si=sales_invoice)
+
+        if sinv.company == "Microsynth AG" and destination == "EU" and sinv.product_type in ['Oligos', 'Material']:
+            # override for fiscal representation corresponding to sales invoice print format
+            data['tax_id'] = "ATU57564157"
+            data['company_address'] = {
+                'address_line1': "Postfach 56",
+                'address_line2': "",
+                'pincode': "6961",
+                'city': "Wolfurt",
+                'country_code': "AT"
+            }
+
+        # TODO: include an option to replace oligo items (refer to create_dict_of_invoice_info_for_cxml
+
+        xml = frappe.render_template('erpnextswiss/erpnextswiss/zugferd/en16931.html', data)
+
+        # verify the generated xml
+        if verify:
+            try:
+                if not xml_check_xsd(xml=xml.encode('utf-8')):
+                    frappe.log_error( _("XML validation failed for {0}").format(sales_invoice), "Microsynth ZUGFeRD")
+                    return None
+            except Exception as err:
+                frappe.log_error("XML validation error ({2}): {0}\n{1}".format(err, xml, sales_invoice), "Microsynth ZUGFeRD XSD validation")
+        return xml
+    except Exception as err:
+        frappe.log_error("Failure during XML generation for {1}: {0}".format(err, sales_invoice), "Microsynth ZUGFeRD")
+        return None
+
+
+def get_microsynth_zugferd_pdf(docname, verify=True, format=None, doc=None, doctype="Sales Invoice", no_letterhead=0):
+    """
+    Function to get ZUGFeRD PDF with Microsynth value override
+    """
+    xml = None
+    try:
+        html = frappe.get_print(doctype, docname, format, doc=doc, no_letterhead=no_letterhead)
+        try:
+            pdf = get_pdf(html, print_format=format)
+        except:
+            # this is a fallback to Frappe ERPNext that does not support dynamic print format options (such as smart shrinking)
+            pdf = get_pdf(html)
+
+        xml = get_microsynth_zugferd_xml(docname)
+
+        if xml:
+            facturx_pdf = generate_from_binary(pdf, xml.encode('utf-8'))  ## Unicode strings with encoding declaration are not supported. Please use bytes input or XML fragments without declaration.
+            return facturx_pdf
+        else:
+            # failed to generate xml, fallback
+            return get_pdf(html)
+    except Exception as err:
+        frappe.log_error("Unable to create zugferdPDF for {2}: {0}\n{1}".format(err, xml, docname), "Microsynth ZUGFeRD")
+        # fallback to normal pdf
+        return get_pdf(html)
+
+
 def create_pdf_attachment(sales_invoice):
     """
     Creates the PDF file for a given Sales Invoice name and attaches the file to the record in the ERP.
@@ -821,7 +890,7 @@ def create_pdf_attachment(sales_invoice):
 
     #filecontent = frappe.get_print(doctype, name, printformat, doc=doc, as_pdf = True, no_letterhead=no_letterhead)
     filecontent = get_microsynth_zugferd_pdf(sales_invoice, format=printformat, no_letterhead=no_letterhead)
-    
+
     save_and_attach(
         content = filecontent,
         to_doctype = doctype,
@@ -2275,74 +2344,6 @@ def download_invoice_pdf(si):
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "download"
 
-
-"""
-Override functions for ZUGFeRD content (fiscal representation, item rewrite)
-
-With the override, tax_id/address or item positions can be replaced.
-"""
-
-def get_microsynth_zugferd_xml(sales_invoice, verify=True):
-    try:
-        data = prepare_zugferd_data(sales_invoice)
-
-        # conditionally replace contents
-        sinv = frappe.get_doc("Sales Invoice", sales_invoice)
-        destination = get_destination_classification(si=sales_invoice)
-        
-        if sinv.company == "Microsynth AG" and destination == "EU" and sinv.product_type in ['Oligos', 'Material']:
-            # override for fiscal representation corresponding to sales invoice print format
-            data['tax_id'] = "ATU57564157"
-            data['company_address'] = {
-                'address_line1': "Postfach 56",
-                'address_line2': "",
-                'pincode': "6961",
-                'city': "Wolfurt",
-                'country_code': "AT"
-            }
-            
-        # FUTURE: include an option to replace oligo items (refer to create_dict_of_invoice_info_for_cxml
-        
-        xml = frappe.render_template('erpnextswiss/erpnextswiss/zugferd/en16931.html', data)
-        
-        # verify the generated xml
-        if verify:
-            try:
-                if not xml_check_xsd(xml=xml.encode('utf-8')):
-                    frappe.log_error( _("XML validation failed for {0}").format(sales_invoice), "Microsynth ZUGFeRD")
-                    return None
-            except Exception as err:
-                frappe.log_error("XML validation error ({2}): {0}\n{1}".format(err, xml, sales_invoice), "Microsynth ZUGFeRD XSD validation")
-        return xml
-    except Exception as err:
-        frappe.log_error("Failure during XML generation for {1}: {0}".format(err, sales_invoice), "Microsynth ZUGFeRD")
-        return None
-
-"""
-Function to get ZUGFeRD PDF with Microsynth value override
-"""
-def get_microsynth_zugferd_pdf(docname, verify=True, format=None, doc=None, doctype="Sales Invoice", no_letterhead=0):
-    xml = None
-    try:
-        html = frappe.get_print(doctype, docname, format, doc=doc, no_letterhead=no_letterhead)
-        try:
-            pdf = get_pdf(html, print_format=format)
-        except:
-            # this is a fallback to Frappe ERPNext that does not support dynamic print format options (such as smart shrinking)
-            pdf = get_pdf(html)
-            
-        xml = get_microsynth_zugferd_xml(docname)
-        
-        if xml: 
-            facturx_pdf = generate_from_binary(pdf, xml.encode('utf-8'))  ## Unicode strings with encoding declaration are not supported. Please use bytes input or XML fragments without declaration.
-            return facturx_pdf
-        else:
-            # failed to generate xml, fallback
-            return get_pdf(html)
-    except Exception as err:
-        frappe.log_error("Unable to create zugferdPDF for {2}: {0}\n{1}".format(err, xml, docname), "Microsynth ZUGFeRD")
-        # fallback to normal pdf
-        return get_pdf(html)
 
 @frappe.whitelist()
 def download_microsynth_zugferd_pdf(sales_invoice_name, format=None, doc=None, no_letterhead=0, verify=True):
