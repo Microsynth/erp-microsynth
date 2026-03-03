@@ -56,8 +56,9 @@ frappe.ui.form.on('Sales Invoice', {
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             frm.add_custom_button(__("Download"), function() {
                 var w = window.open(
-                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_invoice_pdf"
-                            + "?si=" + encodeURIComponent(frm.doc.name))
+                    frappe.urllib.get_full_url("/api/method/microsynth.microsynth.invoicing.download_microsynth_zugferd_pdf"
+                            + "?sales_invoice_name=" + encodeURIComponent(frm.doc.name)
+                            + "&format=Sales Invoice")
                 );
                 if (!w) {
                     frappe.msgprint(__("Please enable pop-ups")); return;

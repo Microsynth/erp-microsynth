@@ -2326,6 +2326,7 @@ def create_intercompany_booking(invoice):
 
 @frappe.whitelist()
 def download_invoice_pdf(si):
+    frappe.log_error(f"Downloading PDF for Sales Invoice {si} - this function should be deprecated", "invoicing.download_invoice_pdf")
     si_doc = frappe.get_doc("Sales Invoice", si)
     css = frappe.get_value('Print Format', 'Sales Invoice', 'css')
     raw_html = frappe.get_value('Print Format', 'Sales Invoice', 'html')
