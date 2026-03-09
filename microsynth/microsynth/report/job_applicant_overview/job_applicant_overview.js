@@ -74,10 +74,18 @@ frappe.query_reports["Job Applicant Overview"] = {
                                         const content = r.message && r.message.response;
                                         if (content) {
                                             d.set_value('email_message', content);
+                                            d.set_value('email_subject', r.message.subject || 'Your Application');
                                         }
                                     }
                                 });
                             }
+                        },
+                        get_query: function () {
+                            return {
+                                filters: [
+                                    ['Email Template', 'name', 'like', '%Absage%']
+                                ]
+                            };
                         }
                     },
                     {

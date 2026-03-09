@@ -10,15 +10,16 @@ import json
 def get_columns(filters):
     return [
         {"label": _("Job Opening"), "fieldname": "job_opening", "fieldtype": "Link", "options": "Job Opening", "width": 90},
-        {"label": _("Job Title"), "fieldname": "job_title", "fieldtype": "Data", "width": 170},
+        {"label": _("Job Title"), "fieldname": "job_title", "fieldtype": "Data", "width": 175},
         # {"label": _("Job Subtitle"), "fieldname": "job_subtitle", "fieldtype": "Data", "width": 180},
-        {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 160},
-        {"label": _("Job Applicant"), "fieldname": "job_applicant", "fieldtype": "Link", "options": "Job Applicant", "width": 210},
+        {"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 165},
+        {"label": _("Job Applicant"), "fieldname": "job_applicant", "fieldtype": "Link", "options": "Job Applicant", "width": 100},
         {"label": _("Creation"), "fieldname": "creation", "fieldtype": "Date", "width": 125},
-        {"label": _("Salutation"), "fieldname": "salutation", "fieldtype": "Link", "options": "Salutation", "width": 1},
+        #{"label": _("Salutation"), "fieldname": "salutation", "fieldtype": "Link", "options": "Salutation", "width": 1},
         {"label": _("Applicant Name"), "fieldname": "applicant_name", "fieldtype": "Data", "width": 160},
         {"label": _("Applicant Status"), "fieldname": "status", "fieldtype": "Data", "width": 110},
         {"label": _("Requirements Fit Assessments"), "fieldname": "assessments", "fieldtype": "Data", "width": 600, "align": "left"},
+        {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Data", "width": 200},
     ]
 
 
@@ -78,7 +79,8 @@ def get_data(filters):
             `tabJob Applicant`.`status`,
             GROUP_CONCAT(CONCAT_WS(': ', `tabJob Applicant Assessment`.`assessor`, `tabJob Applicant Assessment`.`requirements_fit`) SEPARATOR ', ') AS `assessments`,
             `tabJob Applicant`.`email_id`,
-            `tabJob Applicant`.`name` AS `job_applicant_name`
+            `tabJob Applicant`.`name` AS `job_applicant_name`,
+            `tabJob Applicant`.`comments`
         FROM `tabJob Applicant`
         JOIN `tabJob Opening` ON `tabJob Applicant`.`job_title` = `tabJob Opening`.`name`
         LEFT JOIN `tabJob Applicant Assessment` ON `tabJob Applicant Assessment`.`parent` = `tabJob Applicant`.`name`
@@ -104,7 +106,6 @@ def send_rejection_emails(template, subject, bcc, applicants):
     for row in applicants:
         try:
             context = {
-                "salutation": row.get("salutation", ""),
                 "applicant_name": row.get("applicant_name", "")
             }
             rendered_message = frappe.render_template(template, context)
