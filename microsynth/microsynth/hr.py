@@ -119,12 +119,14 @@ def import_job_applicants(verbose=False):
     named after the XML file (without extension) and a txt file containing the error message is added to that folder.
 
     Should be run by an hourly cron job:
-    # import job applicants hourly at xx:32 from 5am to 6pm
-    32 4-18 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local microsynth.microsynth.hr.import_job_applicants
+    # import job applicants hourly at xx:32 from 4am to 6pm
+    32 4-18 * * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.hr.import_job_applicants
 
     bench execute microsynth.microsynth.hr.import_job_applicants --kwargs '{"verbose": True}'
     """
     BASE_PATH = frappe.get_value("Microsynth Settings", "Microsynth Settings", "website_applications_path")
+    if not BASE_PATH:
+        frappe.throw("Microsynth Settings: website_applications_path is not set")
     ARCHIVE_FOLDER = "Archive"
     ERROR_FOLDER = "Errors"
     MANDATORY_FIELDS_MAP = {
@@ -144,13 +146,14 @@ def import_job_applicants(verbose=False):
 
     def _safe_join(base, *paths):
         """Prevent path traversal."""
+        base = os.path.abspath(base)
         final_path = os.path.abspath(os.path.join(base, *paths))
-        if not final_path.startswith(os.path.abspath(base)):
+        if os.path.commonpath([base, final_path]) != base:
             raise frappe.PermissionError("Invalid file path detected")
         return final_path
 
     def _parse_xml_fields(xml_path):
-        """Parse XML into a dict(name -> value)."""
+        """Parse XML into a dict(name -> value or list of values if multiple <value> tags)."""
         tree = ET.parse(xml_path)
         root = tree.getroot()
         data = {}
@@ -158,10 +161,15 @@ def import_job_applicants(verbose=False):
             name_el = field.find("name")
             if name_el is None or not name_el.text:
                 continue
-            value_el = field.find("value")
-            data[name_el.text.strip()] = (
-                value_el.text.strip() if value_el is not None and value_el.text else ""
-            )
+            name = name_el.text.strip()
+            value_els = field.findall("value")
+            if not value_els:
+                data[name] = ""
+            elif len(value_els) == 1:
+                data[name] = value_els[0].text.strip() if value_els[0].text else ""
+            else:
+                # Multiple <value> tags: store as list of non-empty strings
+                data[name] = [v.text.strip() for v in value_els if v.text and v.text.strip()]
         return data
 
     def _attach_file(doc, file_path):
@@ -201,7 +209,7 @@ def import_job_applicants(verbose=False):
     if not os.path.isdir(BASE_PATH):
         frappe.throw(f"Base path does not exist: {BASE_PATH}")
 
-    for fname in os.listdir(BASE_PATH):
+    for fname in sorted(os.listdir(BASE_PATH)):
         if not fname.lower().endswith(".xml"):
             continue
         xml_path = _safe_join(BASE_PATH, fname)
@@ -218,7 +226,10 @@ def import_job_applicants(verbose=False):
                 if not raw_data.get(key):
                     msg += f"Missing required field '{key}' in {fname}\n"
                     missing_field = True
-                data[field] = raw_data.get(key, "")
+                val = raw_data.get(key, "")
+                if isinstance(val, list):
+                    val = val[0]
+                data[field] = val
 
             if missing_field:
                 if verbose:
@@ -252,7 +263,7 @@ def import_job_applicants(verbose=False):
                 print(f"Creating Job Applicant for: {data.get('first_name')} {data.get('last_name')}, Job: {data.get('job_id')}")
             applicant = frappe.get_doc({
                 "doctype": "Job Applicant",
-                "applicant_name": f"{data.get('first_name').strip()} {data.get('last_name').strip()}",
+                "applicant_name": " ".join(filter(None, [data.get("first_name"), data.get("last_name")])),
                 "job_title": data.get("job_id"),
                 "company": frappe.db.get_value("Job Opening", data.get("job_id"), "company"),
                 "first_name": data.get("first_name"),
@@ -270,24 +281,29 @@ def import_job_applicants(verbose=False):
 
             # Attach PDFs
             for fieldname in PDF_FIELDS:
-                pdf_name = raw_data.get(fieldname)
+                pdf_data = raw_data.get(fieldname)
                 if verbose:
-                    print(f"Checking PDF field '{fieldname}': '{pdf_name}'")
-                if not pdf_name:
+                    print(f"Checking PDF field '{fieldname}': '{pdf_data}'")
+                if not pdf_data:
                     if verbose:
                         print(f"No PDF specified for field '{fieldname}' in {fname}")
                     continue
-                pdf_path = _safe_join(BASE_PATH, pdf_name)
-                if not os.path.isfile(pdf_path):
-                    msg = f"Missing PDF {pdf_name} for {fname}"
+                if fieldname == "Dateiupload_Andere" and isinstance(pdf_data, list):
+                    pdf_list = pdf_data
+                else:
+                    pdf_list = [pdf_data.strip()] if isinstance(pdf_data, str) and pdf_data.strip() else []
+                for pdf_name in pdf_list:
+                    pdf_path = _safe_join(BASE_PATH, pdf_name)
+                    if not os.path.isfile(pdf_path):
+                        msg = f"Missing PDF {pdf_name} for {fname}"
+                        if verbose:
+                            print(f"{msg} (expected at: {pdf_path})")
+                        frappe.log_error(msg, "Job Applicant Import")
+                        _move_to_error_folder(fname, msg)
+                        break
                     if verbose:
-                        print(f"{msg} (expected at: {pdf_path})")
-                    frappe.log_error(msg, "Job Applicant Import")
-                    _move_to_error_folder(fname, msg)
-                    continue
-                if verbose:
-                    print(f"Attaching PDF: {pdf_path}")
-                _attach_file(applicant, pdf_path)
+                        print(f"Attaching PDF: {pdf_path}")
+                    _attach_file(applicant, pdf_path)
 
             # Archive processed files
             archive_root = _safe_join(BASE_PATH, ARCHIVE_FOLDER)
@@ -300,20 +316,24 @@ def import_job_applicants(verbose=False):
             shutil.move(xml_path, _safe_join(archive_dir, fname))
 
             for fieldname in PDF_FIELDS:
-                pdf_name = raw_data.get(fieldname, "").strip()
-                if not pdf_name:
+                pdf_data = raw_data.get(fieldname, "")
+                if not pdf_data:
                     continue
-                pdf_path = _safe_join(BASE_PATH, pdf_name)
-                if verbose:
-                    print(f"PDF check: '{pdf_name}' → {os.path.exists(pdf_path)}")
-                if os.path.isfile(pdf_path):
-                    shutil.move(
-                        pdf_path,
-                        _safe_join(archive_dir, pdf_name),
-                    )
+                if fieldname == "Dateiupload_Andere" and isinstance(pdf_data, list):
+                    pdf_list = pdf_data
+                else:
+                    pdf_list = [pdf_data.strip()] if isinstance(pdf_data, str) and pdf_data.strip() else []
+                for pdf_name in pdf_list:
+                    pdf_path = _safe_join(BASE_PATH, pdf_name)
+                    if verbose:
+                        print(f"PDF check: '{pdf_name}' → {os.path.exists(pdf_path)}")
+                    if os.path.isfile(pdf_path):
+                        shutil.move(
+                            pdf_path,
+                            _safe_join(archive_dir, pdf_name),
+                        )
             if verbose:
                 print(f"Imported applicant from {fname}")
-            # TODO: Send Email to applicant confirming receipt of application?
 
         except Exception:
             if verbose:
@@ -324,3 +344,4 @@ def import_job_applicants(verbose=False):
                 frappe.get_traceback(),
                 f"Failed to process {fname}",
             )
+            _move_to_error_folder(fname, frappe.get_traceback())
