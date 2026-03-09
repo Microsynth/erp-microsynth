@@ -1556,74 +1556,80 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
 
     bench execute microsynth.microsynth.invoicing.create_si_from_sos_and_dns --kwargs "{'sales_order_ids': ['SO-WIE-26000974', 'SO-WIE-26000927'], 'customer': '39976', 'default_company': 'Microsynth Austria GmbH', 'debug': True}"
     """
-    if not sales_order_ids or len(sales_order_ids) == 0:
-        frappe.throw("No sales order IDs provided.")
+    try:
+        if not sales_order_ids or len(sales_order_ids) == 0:
+            frappe.throw("No sales order IDs provided.")
 
-    dns = get_invoiceable_services(filters={'customer': customer, 'company': default_company})
-    # TODO: If there are different Product Types on the SOs and DNs, the Product Type on the SI is set according to the last processed document (SO/DN)?
+        dns = get_invoiceable_services(filters={'customer': customer, 'company': default_company})
+        # TODO: If there are different Product Types on the SOs and DNs, the Product Type on the SI is set according to the last processed document (SO/DN)?
 
-    # create invoice from first sales order
-    sales_invoice_content = create_si_content_from_so(sales_order_ids[0], debug=debug)
-    if not sales_invoice_content:
-        msg = f"Could not create sales invoice content from first Sales Order {sales_order_ids[0]}."
-        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+        # create invoice from first sales order
+        sales_invoice_content = create_si_content_from_so(sales_order_ids[0], debug=debug)
+        if not sales_invoice_content:
+            msg = f"Could not create sales invoice content from first Sales Order {sales_order_ids[0]}."
+            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+            return None
+        if len(sales_order_ids) > 1:
+            for i in range(1, len(sales_order_ids)):
+                # append items from other sales orders
+                new_sales_invoice_content = create_si_content_from_so(sales_order_ids[i], debug=debug)
+                if new_sales_invoice_content:
+                    sales_invoice_content = merge_si_contents(new_sales_invoice_content, sales_invoice_content)
+
+        for dn in dns:
+            # append items from delivery notes
+            sales_invoice_content = make_sales_invoice(source_name=dn.delivery_note, target_doc=sales_invoice_content)
+
+        if not sales_invoice_content:
+            msg = f"Could not create sales invoice content from given Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
+            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+            return None
+        # compile document
+        if isinstance(sales_invoice_content, dict):
+            if debug: print(f"[create_si_from_sos_and_dns] Compiling sales invoice content from dict for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
+            sales_invoice = frappe.get_doc(sales_invoice_content)
+        else:
+            if debug: print(f"[create_si_from_sos_and_dns] Sales invoice content already a document for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
+            sales_invoice = sales_invoice_content
+        if not sales_invoice:
+            msg = f"Could not create sales invoice document from content {sales_invoice_content.as_dict()} for Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
+            frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
+            if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
+            return None
+        if not sales_invoice.invoice_to:
+            sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to")  # replace invoice to contact with customer's invoice_to contact
+
+        sales_invoice.naming_series = get_naming_series("Sales Invoice", default_company)
+
+        # force-set tax_id (intrastat!)
+        if not sales_invoice.tax_id:
+            sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
+        sales_invoice.insert()
+        if debug:
+            print(f"[create_si_from_sos_and_dns] Inserted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
+        set_income_accounts(sales_invoice)
+        customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
+        if customer_invoicing_method == "Chorus":
+            goodwill_days = 20
+        else:
+            goodwill_days = 5
+        # for payment reminders: set goodwill period
+        sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+        if debug:
+            print("[create_si_from_sos_and_dns] Final SI rows and their cost centers:")
+            for it in sales_invoice.items:
+                print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
+        sales_invoice.submit()
+        if debug:
+            print(f"[create_si_from_sos_and_dns] Created and submitted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
+        return sales_invoice.name
+    except Exception as e:
+        msg = f"An error occurred while creating SI from SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}: {traceback.format_exc()}"
         if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
-        return None
-    if len(sales_order_ids) > 1:
-        for i in range(1, len(sales_order_ids)):
-            # append items from other sales orders
-            new_sales_invoice_content = create_si_content_from_so(sales_order_ids[i], debug=debug)
-            if new_sales_invoice_content:
-                sales_invoice_content = merge_si_contents(new_sales_invoice_content, sales_invoice_content)
-
-    for dn in dns:
-        # append items from delivery notes
-        sales_invoice_content = make_sales_invoice(source_name=dn.delivery_note, target_doc=sales_invoice_content)
-
-    if not sales_invoice_content:
-        msg = f"Could not create sales invoice content from given Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
         frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
-        if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
         return None
-    # compile document
-    if isinstance(sales_invoice_content, dict):
-        if debug: print(f"[create_si_from_sos_and_dns] Compiling sales invoice content from dict for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
-        sales_invoice = frappe.get_doc(sales_invoice_content)
-    else:
-        if debug: print(f"[create_si_from_sos_and_dns] Sales invoice content already a document for SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}")
-        sales_invoice = sales_invoice_content
-    if not sales_invoice:
-        msg = f"Could not create sales invoice document from content {sales_invoice_content.as_dict()} for Sales Orders {sales_order_ids} and Delivery Notes {[dn.delivery_note for dn in dns]}."
-        frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
-        if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
-        return None
-    if not sales_invoice.invoice_to:
-        sales_invoice.invoice_to = frappe.get_value("Customer", sales_invoice.customer, "invoice_to")  # replace invoice to contact with customer's invoice_to contact
-
-    sales_invoice.naming_series = get_naming_series("Sales Invoice", default_company)
-
-    # force-set tax_id (intrastat!)
-    if not sales_invoice.tax_id:
-        sales_invoice.tax_id = frappe.get_value("Customer", sales_invoice.customer, "tax_id")
-    sales_invoice.insert()
-    if debug:
-        print(f"[create_si_from_sos_and_dns] Inserted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
-    set_income_accounts(sales_invoice)
-    customer_invoicing_method = frappe.get_value("Customer", sales_invoice.customer, "invoicing_method")
-    if customer_invoicing_method == "Chorus":
-        goodwill_days = 20
-    else:
-        goodwill_days = 5
-    # for payment reminders: set goodwill period
-    sales_invoice.exclude_from_payment_reminder_until = datetime.strptime(sales_invoice.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
-    if debug:
-        print("[create_si_from_sos_and_dns] Final SI rows and their cost centers:")
-        for it in sales_invoice.items:
-            print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
-    sales_invoice.submit()
-    if debug:
-        print(f"[create_si_from_sos_and_dns] Created and submitted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
-    return sales_invoice.name
 
 
 def create_si_from_so(so_id, debug=False):
@@ -1635,41 +1641,47 @@ def create_si_from_so(so_id, debug=False):
 
     bench execute microsynth.microsynth.invoicing.create_si_from_so --kwargs "{'so_id': 'SO-GOE-26001675', 'debug': True}"
     """
-    end_customer_si = create_si_content_from_so(so_id, debug=debug)
-    if not end_customer_si:
-        msg = f"Failed to create SI content from SO {so_id}."
+    try:
+        end_customer_si = create_si_content_from_so(so_id, debug=debug)
+        if not end_customer_si:
+            msg = f"Failed to create SI content from SO {so_id}."
+            if debug: print(f"[create_si_from_so] ERROR: {msg}")
+            frappe.log_error(msg, "invoicing.create_si_from_so")
+            return None
+
+        if not end_customer_si.items:
+            msg = f"Cannot create Sales Invoice from Sales Order {so_id} because there are no items to invoice."
+            if debug: print(f"[create_si_from_so] ERROR: {msg}")
+            frappe.log_error(msg, "invoicing.create_si_from_so")
+            return None
+
+        if debug:
+            print("[create_si_from_so] Inserting Sales Invoice (ignore_permissions=True)…")
+        end_customer_si.insert(ignore_permissions=True)
+        set_income_accounts(end_customer_si)
+
+        customer_invoicing_method = frappe.get_value("Customer", end_customer_si.customer, "invoicing_method")
+        if customer_invoicing_method == "Chorus":
+            goodwill_days = 20
+        else:
+            goodwill_days = 5
+        # for payment reminders: set goodwill period
+        end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
+
+        if debug:
+            print("[create_si_from_so] Final SI rows and their cost centers:")
+            for it in end_customer_si.items:
+                print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
+
+        end_customer_si.submit()
+        if debug:
+            print(f"[create_si_from_so] Successfully submitted SI {end_customer_si.name}")
+        return end_customer_si.name
+    except Exception as e:
+        msg = f"An error occurred while creating SI from SO {so_id}: {traceback.format_exc()}"
         if debug: print(f"[create_si_from_so] ERROR: {msg}")
         frappe.log_error(msg, "invoicing.create_si_from_so")
         return None
-
-    if not end_customer_si.items:
-        msg = f"Cannot create Sales Invoice from Sales Order {so_id} because there are no items to invoice."
-        if debug: print(f"[create_si_from_so] ERROR: {msg}")
-        frappe.log_error(msg, "invoicing.create_si_from_so")
-        return None
-
-    if debug:
-        print("[create_si_from_so] Inserting Sales Invoice (ignore_permissions=True)…")
-    end_customer_si.insert(ignore_permissions=True)
-    set_income_accounts(end_customer_si)
-
-    customer_invoicing_method = frappe.get_value("Customer", end_customer_si.customer, "invoicing_method")
-    if customer_invoicing_method == "Chorus":
-        goodwill_days = 20
-    else:
-        goodwill_days = 5
-    # for payment reminders: set goodwill period
-    end_customer_si.exclude_from_payment_reminder_until = datetime.strptime(end_customer_si.due_date, "%Y-%m-%d") + timedelta(days=goodwill_days)
-
-    if debug:
-        print("[create_si_from_so] Final SI rows and their cost centers:")
-        for it in end_customer_si.items:
-            print(f"  - {it.item_code}: qty={it.qty}, rate={it.rate}, cost_center={it.cost_center}")
-
-    end_customer_si.submit()
-    if debug:
-        print(f"[create_si_from_so] Successfully submitted SI {end_customer_si.name}")
-    return end_customer_si.name
 
 
 def create_invoices_from_orders(so_ids):
