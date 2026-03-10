@@ -27,6 +27,7 @@ def get_columns():
         {"label": _("Shelf Life Years"), "fieldname": "shelf_life_in_years", "fieldtype": "Float", "precision": 2, "width": 115},
         {"label": _("Shelf Life Days"), "fieldname": "shelf_life_in_days", "fieldtype": "Int", "width": 105, "align": "left"},
         {"label": _("Min Order Qty"), "fieldname": "min_order_qty", "fieldtype": "Float", "width": 100},
+        {"label": _("Has Batch No"), "fieldname": "has_batch_no", "fieldtype": "Check", "width": 95},
         {"label": _("Substitute Status"), "fieldname": "substitute_status", "fieldtype": "Data", "width": 125},
         {"label": _("Locations"), "fieldname": "locations", "fieldtype": "Data", "width": 500},
         {"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 250},
@@ -74,6 +75,7 @@ def get_data(filters):
             `tabItem`.`stock_uom`,
             `tabItem Price`.`price_list_rate`,
             `tabItem`.`min_order_qty`,
+            `tabItem`.`has_batch_no`,
             `tabItem`.`safety_stock`,
             `tabItem`.`lead_time_days`,
             `tabItem`.`shelf_life_in_days`,
@@ -160,6 +162,7 @@ def create_purchasing_item(data):
     if frappe.db.exists("Item", item_code):
         frappe.throw(_("An item with Item Code {0} already exists").format(item_code))
 
+    # TODO: Decide if we want to enforce unique item names or not.
     if frappe.db.exists("Item", {"item_name": item_name}):
         frappe.throw(_("An item with Item Name {0} already exists").format(item_name))
 
