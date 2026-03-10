@@ -2614,3 +2614,154 @@ def download_microsynth_zugferd_xml(sales_invoice_name):
     frappe.local.response.filecontent = get_microsynth_zugferd_xml(sales_invoice_name)
     frappe.local.response.type = "download"
     return
+
+
+def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
+    """
+    Finds all Oligos linked on a submitted Sales Invoice with Invoicing Method 'Intercompany',
+    but not linked on another submitted Sales Invoice with another Customer and any Invoicing Method.
+    For those Oligos, finds the Sales Order with Company != 'Microsynth AG' on which they are linked
+    and prints:
+      1) Oligo.name
+      2) Intercompany Sales Invoice.name
+      3) Intercompany Sales Invoice.status
+      4) Sales Order.name
+      5) Sales Order.status
+    Avoids db queries in loops by prefetching all relevant links and grouping in Python.
+
+    bench execute microsynth.microsynth.invoicing.invoice_intercompany_oligos_without_other_invoice --kwargs "{'dry_run': True}"
+    """
+    # Step 1: Get all Oligo/SI pairs for submitted Intercompany SIs
+    oligo_si_rows = frappe.db.sql('''
+        SELECT
+            `tabOligo Link`.`oligo` AS `oligo_name`,
+            `tabSales Invoice`.`name` AS `si_name`,
+            `tabSales Invoice`.`customer` AS `si_customer`,
+            `tabSales Invoice`.`status` AS `si_status`
+        FROM `tabOligo Link`
+        INNER JOIN `tabSales Invoice` ON `tabOligo Link`.`parent` = `tabSales Invoice`.`name`
+        WHERE `tabOligo Link`.`parenttype` = 'Sales Invoice'
+          AND `tabSales Invoice`.`docstatus` = 1
+          AND `tabSales Invoice`.`invoicing_method` = 'Intercompany'
+    ''', as_dict=True)
+    if not oligo_si_rows:
+        print("No submitted Intercompany Sales Invoices found.")
+        return
+    print(f"Found {len(oligo_si_rows)} Oligo/Sales Invoice links for submitted Intercompany Sales Invoices.")
+
+    # Step 2: Get all Oligo/SI links for all submitted SIs (to check for other customers)
+    all_oligo_si_links = frappe.db.sql('''
+        SELECT
+            `tabOligo Link`.`oligo` AS `oligo_name`,
+            `tabSales Invoice`.`name` AS `si_name`,
+            `tabSales Invoice`.`customer` AS `si_customer`,
+            `tabSales Invoice`.`status` AS `si_status`
+        FROM `tabOligo Link`
+        INNER JOIN `tabSales Invoice` ON `tabOligo Link`.`parent` = `tabSales Invoice`.`name`
+        WHERE `tabOligo Link`.`parenttype` = 'Sales Invoice'
+          AND `tabSales Invoice`.`docstatus` = 1
+    ''', as_dict=True)
+    print(f"Found {len(all_oligo_si_links)} Oligo/Sales Invoice links for all submitted Sales Invoices.")
+    # Build a mapping: oligo_name -> set of (si_name, si_customer, si_status)
+    oligo_to_si_customers = {}
+    for row in all_oligo_si_links:
+        oligo = row['oligo_name']
+        si_name = row['si_name']
+        si_customer = row['si_customer']
+        si_status = row['si_status']
+        oligo_to_si_customers.setdefault(oligo, set()).add((si_name, si_customer, si_status))
+
+    # Step 3: Get all Oligo/SO links for SOs with Company != 'Microsynth AG'
+    oligo_so_rows = frappe.db.sql('''
+        SELECT
+            `tabOligo Link`.`oligo` AS `oligo_name`,
+            `tabSales Order`.`name` AS `so_name`,
+            `tabSales Order`.`company` AS `so_company`,
+            `tabSales Order`.`status` AS `so_status`,
+            `tabSales Order`.`customer` AS `so_customer`
+        FROM `tabOligo Link`
+        INNER JOIN `tabSales Order` ON `tabOligo Link`.`parent` = `tabSales Order`.`name`
+        WHERE `tabOligo Link`.`parenttype` = 'Sales Order'
+          AND `tabSales Order`.`company` != 'Microsynth AG'
+          AND `tabSales Order`.`docstatus` = 1
+          AND `tabSales Order`.`status` != 'Closed'
+    ''', as_dict=True)
+    print(f"Found {len(oligo_so_rows)} Oligo/Sales Order links for Sales Orders with Company != 'Microsynth AG'.")
+    # Build a mapping: oligo_name -> list of so_name
+    oligo_to_so = {}
+    for row in oligo_so_rows:
+        oligo = row['oligo_name']
+        so_name = row['so_name']
+        so_status = row['so_status']
+        so_customer = row['so_customer']
+        oligo_to_so.setdefault(oligo, []).append((so_name, so_status, so_customer))
+
+    # Step 4: For each Intercompany SI Oligo, check if it is not on another SI with another customer
+    so_customers_to_sos = {}
+    print("Oligo;Intercompany Invoice;SI Status;Sales Order;SO Status;SO Customer")
+    for row in oligo_si_rows:
+        oligo = row['oligo_name']
+        si_name = row['si_name']
+        si_customer = row['si_customer']
+        si_status = row['si_status']
+        # Check if there is any other SI with a different customer for this oligo
+        other_customer = False
+        for (other_si, other_customer_name, other_si_status) in oligo_to_si_customers.get(oligo, set()):
+            if other_si != si_name and other_customer_name != si_customer:
+                other_customer = True
+                break
+        if other_customer:
+            continue
+        # Print for each SO with Company != 'Microsynth AG'
+        for so_name, so_status, so_customer in oligo_to_so.get(oligo, []):
+            print(f"{oligo};{si_name};{si_status};{so_name};{so_status};{so_customer}")
+            so_customers_to_sos.setdefault(so_customer, set()).add(so_name)
+
+    # Step 5: Bulk check if Customer has collective billing enabled. If yes, create one collective invoice per Customer using create_si_from_sos_and_dns. If no, use create_si_from_so.
+    if not so_customers_to_sos:
+        return
+    # Bulk fetch collective_billing and default_company for all customers
+    customer_list = list(so_customers_to_sos.keys())
+    if not customer_list:
+        return
+    customer_fields = frappe.db.get_all(
+        "Customer",
+        filters={"name": ["in", customer_list]},
+        fields=["name", "collective_billing", "default_company"],
+    )
+    customer_info = {row['name']: row for row in customer_fields}
+    print("\n-----\nCreating invoices:\n")
+    for customer, so_ids in so_customers_to_sos.items():
+        so_ids = list(so_ids)
+        info = customer_info.get(customer)
+        if not info:
+            print(f"Customer {customer} not found in Customer table.")
+            continue
+        if info.get('collective_billing') and len(so_ids) > 1:
+            print(f"Creating collective invoice for Customer {customer} and the following Sales Orders: {so_ids}")
+            try:
+                if not dry_run:
+                    si_id = create_si_from_sos_and_dns(so_ids, customer, info.get('default_company'))
+                    if not si_id:
+                        continue
+                    transmit_sales_invoice(si_id)
+                    for so_id in so_ids:
+                        # close Sales Order (there will be no Delivery Note)
+                        so_doc = frappe.get_doc("Sales Order", so_id)
+                        so_doc.update_status("Closed")
+            except Exception as e:
+                print(f"Error creating collective invoice for {customer}: {traceback.format_exc()}\n{e}")
+        else:
+            for so_id in so_ids:
+                print(f"Creating single invoice for Customer {customer} and Sales Order {so_id}")
+                try:
+                    if not dry_run:
+                        si_id = create_si_from_so(so_id)
+                        if not si_id:
+                            continue
+                        transmit_sales_invoice(si_id)
+                        # close Sales Order (there will be no Delivery Note)
+                        so_doc = frappe.get_doc("Sales Order", so_id)
+                        so_doc.update_status("Closed")
+                except Exception as e:
+                    print(f"Error creating invoice for {customer}, Sales Order {so_id}: {traceback.format_exc()}\n{e}")
