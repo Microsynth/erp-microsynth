@@ -2642,7 +2642,10 @@ def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
         INNER JOIN `tabSales Invoice` ON `tabOligo Link`.`parent` = `tabSales Invoice`.`name`
         WHERE `tabOligo Link`.`parenttype` = 'Sales Invoice'
           AND `tabSales Invoice`.`docstatus` = 1
-          AND `tabSales Invoice`.`invoicing_method` = 'Intercompany'
+          AND (`tabSales Invoice`.`invoicing_method` = 'Intercompany'
+                OR (`tabSales Invoice`.`company` = 'Microsynth AG'
+                    AND `tabSales Invoice`.`customer` IN (SELECT `customer` FROM `tabIntercompany Settings Company`))
+              )
     ''', as_dict=True)
     if not oligo_si_rows:
         print("No submitted Intercompany Sales Invoices found.")
