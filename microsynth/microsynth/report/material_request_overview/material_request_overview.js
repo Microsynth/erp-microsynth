@@ -665,6 +665,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     };
                 }
             },
+            {fieldtype:'Check', label: __('Has Batch Number'), fieldname:'has_batch_no', default: 1},
 
             {fieldtype:'Column Break'},
 

@@ -276,15 +276,6 @@ function create_new_supplier_item(frm) {
             },
             { fieldtype: 'Section Break' },
             {
-                label: 'Internal Code',
-                fieldname: 'internal_code',
-                fieldtype: 'Data',
-                reqd: 0,
-                description: 'Optional 4-digit "EAN" code',
-                maxlength: 4
-            },
-            { fieldtype: 'Column Break' },
-            {
                 label: 'Item Code',
                 fieldname: 'item_code',
                 fieldtype: 'Data',
@@ -299,9 +290,16 @@ function create_new_supplier_item(frm) {
                 reqd: 0,
                 description: 'Oligo Modification Code / Slims Content Type',
             },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Has Batch Number',
+                fieldname: 'has_batch_no',
+                fieldtype: 'Check',
+                default: frm.doc.has_batch_no
+            },
             { fieldtype: 'Section Break' },
             {
-                label: 'Purchase UOM',
+                label: 'Purchase unit',
                 fieldname: 'purchase_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
@@ -309,7 +307,7 @@ function create_new_supplier_item(frm) {
                 default: frm.doc.uom || frm.doc.stock_uom,
             },
             {
-                label: 'Stock Unit of Measure (UOM)',
+                label: 'Stock unit',
                 fieldname: 'stock_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
@@ -347,7 +345,7 @@ function create_new_supplier_item(frm) {
                 fieldtype: 'Float'
             },
             {
-                label: 'Pack UOM',
+                label: 'Pack unit',
                 fieldname: 'pack_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
@@ -474,22 +472,6 @@ function create_new_supplier_item(frm) {
             });
         }
     });
-
-    // Get next item code
-    dialog.fields_dict.internal_code.$input.on('change', function () {
-        const code = dialog.get_value('internal_code');
-        if (code && code.match(/^\d{4}$/)) {
-            dialog.set_value('item_code', 'P00' + code);
-        } else {
-            frappe.call({
-                'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
-                'callback': function (r) {
-                    dialog.set_value('item_code', r.message);
-                }
-            });
-        }
-    });
-
     dialog.show();
 
     // Trigger auto-fill on open

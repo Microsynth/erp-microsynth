@@ -345,6 +345,7 @@ def create_item_request(data):
     ir.company = data.get('company')
     ir.expense_account = data.get('expense_account')
     ir.schedule_date = data.get('schedule_date')
+    ir.has_batch_no = data.get('has_batch_no', 0)
     ir.comment = data.get('comment')
     ir.status = "Pending"
     ir.insert()

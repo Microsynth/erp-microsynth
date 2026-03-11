@@ -40,7 +40,7 @@ frappe.query_reports["Supplier Items"] = {
         },
         {
             "fieldname": "supplier_part_no",
-            "label": __("Supplier Part Number"),
+            "label": __("Supplier Item Code"),
             "fieldtype": "Data"
         },
         {
@@ -249,15 +249,6 @@ function create_new_supplier_item() {
             },
             { fieldtype: 'Section Break' },
             {
-                label: 'Internal Code',
-                fieldname: 'internal_code',
-                fieldtype: 'Data',
-                reqd: 0,
-                description: 'Optional 4-digit "EAN" code',
-                maxlength: 4
-            },
-            { fieldtype: 'Column Break' },
-            {
                 label: 'Item Code',
                 fieldname: 'item_code',
                 fieldtype: 'Data',
@@ -272,16 +263,23 @@ function create_new_supplier_item() {
                 reqd: 0,
                 description: 'Oligo Modification Code / Slims Content Type',
             },
+            { fieldtype: 'Column Break' },
+            {
+                label: 'Has Batch Number',
+                fieldname: 'has_batch_no',
+                fieldtype: 'Check',
+                default: 1
+            },
             { fieldtype: 'Section Break' },
             {
-                label: 'Purchase UOM',
+                label: 'Purchase unit',
                 fieldname: 'purchase_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
                 description: 'Default Purchase Unit of Measure'
             },
             {
-                label: 'Stock Unit of Measure (UOM)',
+                label: 'Stock unit',
                 fieldname: 'stock_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
@@ -306,7 +304,7 @@ function create_new_supplier_item() {
                 label: 'Conversion Factor',
                 fieldname: 'conversion_factor',
                 fieldtype: 'Float',
-                description: 'Factor to convert from purchase to stock UOM'
+                description: 'Factor to convert from purchase to stock unit'
             },
             {
                 label: 'Shelf Life in Years',
@@ -314,7 +312,7 @@ function create_new_supplier_item() {
                 fieldtype: 'Float'
             },
             {
-                label: 'Pack UOM',
+                label: 'Pack unit',
                 fieldname: 'pack_uom',
                 fieldtype: 'Link',
                 options: 'UOM',
@@ -378,7 +376,7 @@ function create_new_supplier_item() {
             },
             { fieldtype: 'Column Break' },
             {
-                label: 'Supplier Part Number',
+                label: 'Supplier Item Code',
                 fieldname: 'supplier_part_no',
                 fieldtype: 'Data',
                 reqd: 1

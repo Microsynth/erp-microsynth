@@ -13,6 +13,7 @@
   "supplier",
   "supplier_part_no",
   "company",
+  "has_batch_no",
   "column_break_7",
   "status",
   "uom",
@@ -70,6 +71,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
+   "no_copy": 1,
    "options": "Pending\nDone\nRejected",
    "read_only": 1
   },
@@ -123,6 +125,7 @@
    "fieldname": "reject_message",
    "fieldtype": "Text",
    "label": "Reject Message",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -149,6 +152,7 @@
    "fieldname": "material_request",
    "fieldtype": "Link",
    "label": "Material Request",
+   "no_copy": 1,
    "options": "Material Request",
    "read_only": 1
   },
@@ -157,6 +161,7 @@
    "fieldname": "material_request_item",
    "fieldtype": "Link",
    "label": "Material Request Item",
+   "no_copy": 1,
    "options": "Item",
    "read_only": 1
   },
@@ -197,10 +202,16 @@
    "fieldtype": "Link",
    "label": "Default Expense Account",
    "options": "Account"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_batch_no",
+   "fieldtype": "Check",
+   "label": "Has Batch No"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-02-13 11:55:24.954843",
+ "modified": "2026-03-11 09:12:37.348621",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
