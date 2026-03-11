@@ -412,21 +412,6 @@ function create_new_supplier_item() {
         }
     });
 
-    // Handle internal_code -> item_code auto-fill
-    dialog.fields_dict.internal_code.$input.on('change', function () {
-        const code = dialog.get_value('internal_code');
-        if (code && code.match(/^\d{4}$/)) {
-            dialog.set_value('item_code', 'P00' + code);
-        } else {
-            frappe.call({
-                'method': 'microsynth.microsynth.naming_series.get_next_purchasing_item_id',
-                'callback': function (r) {
-                    dialog.set_value('item_code', r.message);
-                }
-            });
-        }
-    });
-
     dialog.show();
 
     // Trigger auto-fill on open
