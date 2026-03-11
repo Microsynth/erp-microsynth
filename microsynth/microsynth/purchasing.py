@@ -178,9 +178,10 @@ def select_quotation_for_item(item_code, consolidated_total_qty, supplier_doc, c
             AND `tabSupplier Quotation`.`supplier` = %s
             AND `tabSupplier Quotation`.`company` = %s
             AND `tabSupplier Quotation Item`.`item_code` = %s
+            AND `tabSupplier Quotation`.`currency` = %s
         ORDER BY `tabSupplier Quotation Item`.`rate` ASC
         """,
-        (supplier_doc.name, company, item_code), as_dict=True
+        (supplier_doc.name, company, item_code, currency), as_dict=True
     )
 
     valid_quotation_items = []
