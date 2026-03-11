@@ -11,17 +11,17 @@ from microsynth.microsynth.purchasing import get_location_path_string
 
 def get_columns():
     return [
-        {"label": _("Supplier Part Nr."), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 120, "align": "left"},
+        {"label": _("Supplier Item Code"), "fieldname": "supplier_part_no", "fieldtype": "Data", "width": 125, "align": "left"},
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 315, "align": "left"},
         {"label": _("Pack Size"), "fieldname": "pack_size", "fieldtype": "Float", "precision": 2, "width": 75},
-        {"label": _("Pack UOM"), "fieldname": "pack_uom", "fieldtype": "Data", "width": 80},
+        {"label": _("Pack unit"), "fieldname": "pack_uom", "fieldtype": "Data", "width": 75},
         {"label": _("Material Code"), "fieldname": "material_code", "fieldtype": "Data", "width": 95},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 65},
         {"label": _("Supplier Name"), "fieldname": "supplier_name", "fieldtype": "Data", "width": 210},
         {"label": _("Price"), "fieldname": "price_list_rate", "fieldtype": "Currency", "options": "currency", "width": 95},
-        {"label": _("Purchase UOM"), "fieldname": "purchase_uom", "fieldtype": "Data", "width": 100},
+        {"label": _("Purchase unit"), "fieldname": "purchase_uom", "fieldtype": "Data", "width": 100},
         {"label": _("Conv. Factor"), "fieldname": "conversion_factor", "fieldtype": "Float", "precision": 2, "width": 80},
-        {"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 80},
+        {"label": _("Stock unit"), "fieldname": "stock_uom", "fieldtype": "Data", "width": 80},
         {"label": _("Safety Stock"), "fieldname": "safety_stock", "fieldtype": "Float", "precision": 2, "width": 90},
         {"label": _("Lead Time Days"), "fieldname": "lead_time_days", "fieldtype": "Int", "width": 110},
         {"label": _("Shelf Life Years"), "fieldname": "shelf_life_in_years", "fieldtype": "Float", "precision": 2, "width": 115},
@@ -261,7 +261,7 @@ def update_supplier_item(data):
     conversion_factor = flt(data.get("conversion_factor", 1))
     if data.get("stock_uom") and data.get("purchase_uom") and data.get("stock_uom") != data.get("purchase_uom"):
         if abs(conversion_factor) < 0.0001 or abs(conversion_factor - 1) < 0.0001:
-            frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase UOM differs from Stock UOM."))
+            frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase unit differs from Stock unit."))
 
     # If conversion_factor and purchase_uom are given, check if UOM Conversion entry exists, else create it
     if data.get("conversion_factor") and data.get("purchase_uom"):

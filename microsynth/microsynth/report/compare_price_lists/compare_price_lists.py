@@ -16,7 +16,7 @@ def get_columns(filters):
             {"label": _("Item name"), "fieldname": "item_name", "fieldtype": "Data", "width": 370},
             {"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 150},
             {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 60},
-            {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 50},
+            {"label": _("Unit"), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 60},
             {"label": "{0} [{1}]".format(_("Rate 1"), reference_currency), "fieldname": "reference_rate", "fieldtype": "Float", "precision": 2, "width": 90},
             {"label": "{0} [{1}]".format(_("Rate 2"), price_list_currency), "fieldname": "price_list_rate", "fieldtype": "Float", "precision": 2, "width": 90},
             {"label": _("Difference"), "fieldname": "discount", "fieldtype": "Percent", "precision": 2, "width": 80}

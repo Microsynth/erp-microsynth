@@ -16,7 +16,7 @@ def get_columns(mode=None):
         {"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 350},
         #{"label": _("Item Name"), "fieldname": "item_name", "fieldtype": "Data", "width": 200},
         {"label": _("Qty"), "fieldname": "qty", "fieldtype": "Int", "width": 45},
-        {"label": _("UOM"), "fieldname": "uom", "fieldtype": "Data", "width": 50},
+        {"label": _("Unit"), "fieldname": "uom", "fieldtype": "Data", "width": 60},
     ]
     if mode != "To Order":
         columns += [

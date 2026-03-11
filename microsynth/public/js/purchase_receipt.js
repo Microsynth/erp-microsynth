@@ -510,7 +510,7 @@ function display_mr_owners_and_storage_locations(frm) {
                                 location_path_pairs.forEach(([loc, path]) => {
                                     location_path_map[loc] = path;
                                 });
-                                // Reworked: show a table with columns Requester | Supplier Item Code | Item Code | Item Name | Qty | UOM | Storage Locations
+                                // Reworked: show a table with columns Requester | Supplier Item Code | Item Code | Item Name | Qty | Unit | Storage Locations
                                 let comment_html = `<div style="overflow-x:auto;"><table class="table table-bordered" style="margin-bottom: 8px; min-width: 900px;">
                                     <thead>
                                         <tr>
@@ -518,7 +518,7 @@ function display_mr_owners_and_storage_locations(frm) {
                                             <th>Supplier Item Code</th>
                                             <th>Item Name</th>
                                             <th>Qty</th>
-                                            <th>UOM</th>
+                                            <th>Unit</th>
                                             <th>Batch No</th>
                                             <th>Storage Location(s)</th>
                                         </tr>

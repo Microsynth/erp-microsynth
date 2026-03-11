@@ -119,10 +119,10 @@ function build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price,
 
         { fieldtype: 'Section Break' },
 
-        { label: __('Supplier Part Nr.'), fieldname: 'supplier_part_no', fieldtype: 'Data', default: row_data.supplier_part_no, read_only: !can_edit_item },
+        { label: __('Supplier Item Code'), fieldname: 'supplier_part_no', fieldtype: 'Data', default: row_data.supplier_part_no, read_only: !can_edit_item },
         //{ label: __('Supplier'), fieldname: 'supplier', fieldtype: 'Link', options: 'Supplier', default: row_data.supplier, read_only: true },
-        { label: __('Purchase Unit of Measure (UOM)'), fieldname: 'purchase_uom', fieldtype: 'Link', options: 'UOM', default: row_data.purchase_uom, read_only: !can_edit_item },
-        { label: __('Stock UOM'), fieldname: 'stock_uom', fieldtype: 'Link', options: 'UOM', default: row_data.stock_uom, read_only: !can_edit_item, reqd: true,
+        { label: __('Purchase unit'), fieldname: 'purchase_uom', fieldtype: 'Link', options: 'UOM', default: row_data.purchase_uom, read_only: !can_edit_item },
+        { label: __('Stock unit'), fieldname: 'stock_uom', fieldtype: 'Link', options: 'UOM', default: row_data.stock_uom, read_only: !can_edit_item, reqd: true,
             get_query: function () {
                 return {
                     'filters': [
@@ -140,10 +140,10 @@ function build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price,
 
         { label: __('Microsynth Item Code'), fieldname: 'item_code', fieldtype: 'Link', options: 'Item', default: row_data.item_code, read_only: true, reqd: true },
         //{ label: __('Supplier Name'), fieldname: 'supplier_name', fieldtype: 'Data', default: row_data.supplier_name, read_only: true },
-        { label: __('Conversion Factor to Stock UOM'), fieldname: 'conversion_factor', fieldtype: 'Float', default: row_data.conversion_factor, read_only: !can_edit_item },
+        { label: __('Conversion Factor to Stock unit'), fieldname: 'conversion_factor', fieldtype: 'Float', default: row_data.conversion_factor, read_only: !can_edit_item },
         { label: __('Safety Stock'), fieldname: 'safety_stock', fieldtype: 'Float', default: row_data.safety_stock, read_only: !can_edit_item },
         { label: __('Minimum Order Quantity'), fieldname: 'min_order_qty', fieldtype: 'Float', default: row_data.min_order_qty, read_only: !can_edit_item },
-        { label: __('Pack UOM'), fieldname: 'pack_uom', fieldtype: 'Link', options: 'UOM', default: row_data.pack_uom, read_only: !can_edit_item },
+        { label: __('Pack unit'), fieldname: 'pack_uom', fieldtype: 'Link', options: 'UOM', default: row_data.pack_uom, read_only: !can_edit_item },
         { label: __('Shelf Life in Years'), fieldname: 'shelf_life_in_years', fieldtype: 'Float', default: row_data.shelf_life_in_years, read_only: !can_edit_item },
         { label: __('Substitute Status'), fieldname: 'substitute_status', fieldtype: 'Select', options: '\nPotential\nVerified\nDiscontinued\nBlocked', default: row_data.substitute_status, read_only: !can_edit_item, description: 'blocked = not allowed to use; discontinued = no longer available from the supplier' },
 

@@ -2719,7 +2719,7 @@ def overwrite_item_defaults(item):
 def item_before_save(item, event):
     update_item_defaults(item)
     if item.stock_uom == "Carton":
-        frappe.throw("Carton is not a valid stock UOM. Please consider using 'Box' instead.")
+        frappe.throw("Carton is not a valid stock unit. Please consider using 'Box' instead.")
     # For each row in item.item_defaults, check if default_supplier is in the supplier_items table. If not, throw an error.
     # This is to ensure data integrity between item.item_defaults and supplier_items.
     for item_default in item.item_defaults:

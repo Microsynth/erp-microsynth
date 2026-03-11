@@ -62,8 +62,8 @@ frappe.ui.form.on('Supplier', {
                             <tr>
                                 <th>Item Code</th>
                                 <th>Item Name</th>
-                                <th>UOM</th>
-                                <th>Supplier Part No</th>
+                                <th>unit</th>
+                                <th>Supplier Item Code</th>
                             </tr>
                         </thead>
                         <tbody>

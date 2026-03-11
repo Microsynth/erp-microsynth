@@ -79,7 +79,7 @@
    "default": "Pcs",
    "fieldname": "uom",
    "fieldtype": "Link",
-   "label": "Purchase UOM (unit of measurement)",
+   "label": "Purchase unit",
    "options": "UOM"
   },
   {
@@ -186,14 +186,14 @@
   {
    "fieldname": "stock_uom",
    "fieldtype": "Link",
-   "label": "Stock UOM",
+   "label": "Stock unit",
    "options": "UOM",
    "reqd": 1
   },
   {
    "fieldname": "pack_uom",
    "fieldtype": "Link",
-   "label": "Pack UOM",
+   "label": "Pack unit",
    "options": "UOM"
   },
   {
@@ -211,7 +211,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-11 09:12:37.348621",
+ "modified": "2026-03-11 14:32:35.238517",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
