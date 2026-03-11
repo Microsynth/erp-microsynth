@@ -458,7 +458,25 @@ function open_search_dialog(report) {
                     .find('input[type=radio][name=select_item]')
                     .on('change', function () {
                         const key = $(this).val();
-                        dialog.selected_item = dialog._variantMap[key];
+                        const selected = dialog._variantMap[key];
+                        dialog.selected_item = selected;
+                        // Show a warning if not default supplier for company
+                        if (selected && selected.is_default_supplier_for_company != 1) {
+                            const company = report.get_filter_value && report.get_filter_value('company');
+                            frappe.msgprint({
+                                title: __('Non-Default Supplier selected'),
+                                indicator: 'orange',
+                                message: __(
+                                    'The selected Supplier <b>{0}: {1}</b> is <b>not</b> the default Supplier for Company <b>{2}</b> and Item <b>{3}: {4}</b>.<br>' +
+                                    'Please check if this is intentional or contact your Purchasing department.',
+                                    [frappe.utils.escape_html(selected.supplier || ''),
+                                     frappe.utils.escape_html(selected.supplier_name || ''),
+                                     frappe.utils.escape_html(company || ''),
+                                     frappe.utils.escape_html(selected.name || ''),
+                                     frappe.utils.escape_html(selected.item_name || '')]
+                                )
+                            });
+                        }
                     });
             }
         });
