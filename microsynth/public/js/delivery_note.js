@@ -124,6 +124,17 @@ frappe.ui.form.on('Delivery Note', {
         if (!validate_items_linked_to_sales_order(frm)) {
             frappe.validated = false;
         }
+        // check that if is_intercompany is checked, then a po_no is set and that there is a Sales Order with docstatus 1 with Sales Order.name = Delivery Note.po_no
+        if (frm.doc.is_intercompany) {
+            if (!frm.doc.po_no) {
+                frappe.throw(__("For intercompany Delivery Notes, a Purchase Order Number referring to a submitted Sales Order is required."));
+            } else {
+                var so = frappe.db.get_value("Sales Order", {"name": frm.doc.po_no, "docstatus": 1}, "name");
+                if (!so) {
+                    frappe.throw(__("Intercompany Delivery Note: No submitted Sales Order found with name {0}. Please check the Purchase Order Number.", [frm.doc.po_no]));
+                }
+            }
+        }
     }
 });
 
