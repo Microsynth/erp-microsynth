@@ -2688,16 +2688,13 @@ def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
           AND `tabSales Order`.`company` != 'Microsynth AG'
           AND `tabSales Order`.`docstatus` = 1
           AND `tabSales Order`.`status` != 'Closed'
+          AND `tabSales Order`.`hold_invoice` = 0
     ''', as_dict=True)
     print(f"Found {len(oligo_so_rows)} Oligo/Sales Order links for Sales Orders with Company != 'Microsynth AG'.")
     # Build a mapping: oligo_name -> list of so_name
     oligo_to_so = {}
     for row in oligo_so_rows:
-        oligo = row['oligo_name']
-        so_name = row['so_name']
-        so_status = row['so_status']
-        so_customer = row['so_customer']
-        oligo_to_so.setdefault(oligo, []).append((so_name, so_status, so_customer))
+        oligo_to_so.setdefault(row['oligo_name'], []).append((row['so_name'], row['so_status'], row['so_customer']))
 
     # Step 4: For each Intercompany SI Oligo, check if it is not on another SI with another customer
     so_customers_to_sos = {}
