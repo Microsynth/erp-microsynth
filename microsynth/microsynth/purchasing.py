@@ -1684,19 +1684,30 @@ def create_batches_and_assign(purchase_receipt, batch_data):
     purchase_receipt_doc = frappe.get_doc("Purchase Receipt", purchase_receipt)
 
     for row in batch_data:
-        batch_no = row.get('existing_batch')
-        if not batch_no and row.get('new_batch_id'):
+        batch_no = row.get('batch_id')
+        item_code = row['item_code']
+        # Check if Batch with batch_no already exists for item_code, if yes use it, if not create and use it
+        existing_batch_nos = frappe.db.get_all(
+                "Batch",
+                filters={"batch_id": batch_no, "item": item_code},
+                fields=["name"]
+            )
+        if len(existing_batch_nos) > 1:
+            frappe.throw(f"Found {len(existing_batch_nos)} Batches with batch ID '{batch_no}' for Item '{item_code}'. Batch IDs must be unique per Item. Please check your data and try again.")
+        existing_batch_no = existing_batch_nos[0]['name'] if len(existing_batch_nos) == 1 else None
+
+        if batch_no and not existing_batch_no:
             batch = frappe.new_doc("Batch")
-            batch.batch_id = row['new_batch_id']
-            batch.item = row['item_code']
-            if row.get('new_batch_expiry'):
-                batch.expiry_date = row['new_batch_expiry']
+            batch.batch_id = batch_no
+            batch.item = item_code
+            if row.get('batch_expiry'):
+                batch.expiry_date = row['batch_expiry']
             batch.insert()
-            batch_no = batch.name
+            existing_batch_no = batch.name
 
         for item in purchase_receipt_doc.items:
             if str(item.idx) == str(row['idx']):
-                item.batch_no = batch_no
+                item.batch_no = existing_batch_no
 
     purchase_receipt_doc.save()
 

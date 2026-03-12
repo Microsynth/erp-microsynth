@@ -147,30 +147,14 @@ function enter_batches(frm) {
                                 columns: 1
                             },
                             {
-                                fieldname: 'existing_batch',
-                                fieldtype: 'Link',
-                                label: __('Existing Batch'),
-                                options: 'Batch',
-                                in_list_view: 1,
-                                columns: 2,
-                                // Restrict the batch link options to the same Item
-                                get_query: function(row) {
-                                    return {
-                                        filters: {
-                                            'item': row.item_code || ''
-                                        }
-                                    };
-                                }
-                            },
-                            {
-                                fieldname: 'new_batch_id',
+                                fieldname: 'batch_id',
                                 fieldtype: 'Data',
-                                label: __('New Batch ID'),
+                                label: __('Batch ID'),
                                 in_list_view: 1,
                                 columns: 2
                             },
                             {
-                                fieldname: 'new_batch_expiry',
+                                fieldname: 'batch_expiry',
                                 fieldtype: 'Date',
                                 label: __('Expiry Date'),
                                 in_list_view: 1,
@@ -185,23 +169,11 @@ function enter_batches(frm) {
 
                     // validate input
                     const invalid = data.find(row => {
-                        const has_existing = !!row.existing_batch;
-                        const has_new = !!row.new_batch_id;
-                        const has_expiry = !!row.new_batch_expiry;
-
-                        // Must have either existing or new (not both, not neither)
-                        if ((has_existing && has_new) || (!has_existing && !has_new)) {
-                            return true;
-                        }
-
-                        // If existing batch is selected, new batch fields must be empty
-                        if (has_existing && (has_new || has_expiry)) {
-                            return true;
-                        }
+                        const has_expiry = !!row.batch_expiry;
 
                         // Colon is not allowed in new_batch_id
-                        if (has_new && row.new_batch_id.includes(':')) {
-                            frappe.msgprint(__('Colon (:) is not allowed in New Batch ID: "' + row.new_batch_id + '". Please replace by another character.'));
+                        if (row.batch_id && row.batch_id.includes(':')) {
+                            frappe.msgprint(__('Colon (:) is not allowed in New Batch ID: "' + row.batch_id + '". Please replace by another character.'));
                             return true;
                         }
 
@@ -210,60 +182,24 @@ function enter_batches(frm) {
                     });
 
                     if (invalid) {
-                        frappe.msgprint(__('Each row must have either an existing Batch OR a new Batch ID (not both), and Expiry Date is only allowed together with a New Batch ID.'));
+                        frappe.msgprint(__('Each row must have one Batch ID.'));
                         return;
                     }
+                    // Clean up style on success
+                    try { document.head.removeChild(styleSheet); } catch {}
 
-                    // Check if existing batches belong to correct Item
-                    const existing_batches = data
-                        .filter(row => row.existing_batch)
-                        .map(row => row.existing_batch);
-
-                    if (existing_batches.length > 0) {
-                        frappe.db.get_list('Batch', {
-                            fields: ['name', 'item'],
-                            filters: [['name', 'in', existing_batches]]
-                        }).then(batch_list => {
-                            const batch_map = {};
-                            (batch_list || []).forEach(b => batch_map[b.name] = b.item);
-
-                            const wrong = data.filter(row =>
-                                row.existing_batch && batch_map[row.existing_batch] !== row.item_code
-                            );
-
-                            if (wrong.length > 0) {
-                                const bad = wrong.map(r => `${r.existing_batch} (Item: ${batch_map[r.existing_batch]}, Expected: ${r.item_code})`).join('<br>');
-                                frappe.msgprint({
-                                    title: __('Invalid Batch Assignments'),
-                                    message: __('The following existing batches belong to different items:<br>') + bad,
-                                    indicator: 'red'
-                                });
-                                return;
-                            }
-                            // Proceed only if all good
-                            finalize_batches();
-                        });
-                    } else {
-                        finalize_batches();
-                    }
-
-                    function finalize_batches() {
-                        // Clean up style on success
-                        try { document.head.removeChild(styleSheet); } catch {}
-
-                        frappe.call({
-                            'method': "microsynth.microsynth.purchasing.create_batches_and_assign",
-                            'args': {
-                                'purchase_receipt': frm.doc.name,
-                                'batch_data': data
-                            },
-                            'callback': function() {
-                                frappe.show_alert({message: __('Batches processed successfully.'), indicator: 'green'});
-                                frm.reload_doc();
-                                d.hide();
-                            }
-                        });
-                    }
+                    frappe.call({
+                        'method': "microsynth.microsynth.purchasing.create_batches_and_assign",
+                        'args': {
+                            'purchase_receipt': frm.doc.name,
+                            'batch_data': data
+                        },
+                        'callback': function() {
+                            frappe.show_alert({message: __('Batches processed successfully.'), indicator: 'green'});
+                            frm.reload_doc();
+                            d.hide();
+                        }
+                    });
                 },
                 secondary_action: function() {
                     try { document.head.removeChild(styleSheet); } catch {}
