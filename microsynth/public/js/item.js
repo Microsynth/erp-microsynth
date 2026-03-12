@@ -148,7 +148,11 @@ frappe.ui.form.on('Item', {
             })();
             frappe.validated = false;
         }
-        // TODO: Prevent pack_uom == stock_uom if pack_size != 1
+        // Prevent pack_uom == stock_uom if pack_size != 1
+        if (frm.doc.pack_uom && frm.doc.stock_uom && frm.doc.pack_uom === frm.doc.stock_uom && frm.doc.pack_size != 1) {
+            frappe.msgprint(__("Pack UOM cannot be the same as Stock UOM if Pack Size is not 1."));
+            frappe.validated = false;
+        }
     }
 });
 
