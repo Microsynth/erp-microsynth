@@ -153,6 +153,18 @@ frappe.ui.form.on('Item', {
             frappe.msgprint(__("Pack UOM cannot be the same as Stock UOM if Pack Size is not 1."));
             frappe.validated = false;
         }
+        // Prevent multiple lines for the same supplier in Item Supplier table
+        if (frm.doc.supplier_items) {
+            const seenSuppliers = new Set();
+            for (const row of frm.doc.supplier_items) {
+                if (seenSuppliers.has(row.supplier)) {
+                    frappe.msgprint(__("Supplier {0} is listed multiple times in the Supplier Items table. Please keep only one entry per supplier.", [row.supplier]));
+                    frappe.validated = false;
+                    break;
+                }
+                seenSuppliers.add(row.supplier);
+            }
+        }
     }
 });
 
