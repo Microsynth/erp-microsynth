@@ -254,12 +254,14 @@ def update_supplier_item(data):
             except Exception:
                 frappe.throw(_("Invalid value for {0}").format(field.replace("_", " ").title()))
 
-    supplier = data.get("supplier").split(":")[0] if data.get("supplier") else None
+    supplier = (data.get("supplier") or "").split(":")[0] or None
 
     item = frappe.get_doc("Item", item_code)
 
     conversion_factor = flt(data.get("conversion_factor", 1))
-    if data.get("stock_uom") and data.get("purchase_uom") and data.get("stock_uom") != data.get("purchase_uom"):
+    stock_uom = data.get("stock_uom") or item.stock_uom
+    purchase_uom = data.get("purchase_uom") or item.purchase_uom
+    if stock_uom and purchase_uom and stock_uom != purchase_uom:
         if abs(conversion_factor) < 0.0001 or abs(conversion_factor - 1) < 0.0001:
             frappe.throw(_("Conversion Factor must not be 0 or 1 when Purchase unit differs from Stock unit."))
 
@@ -321,22 +323,24 @@ def update_supplier_item(data):
     if data.get("supplier_part_no") or supplier:
         # Find the Supplier Item child row
         supplier_item = None
-        for si in item.get("supplier_items"):
-            if si.supplier == supplier or si.supplier_part_no == data.get("supplier_part_no"):
-                supplier_item = si
-                break
-
-        if not supplier_item and supplier and data.get("supplier_part_no"):
-            # Create new supplier item child row if not found
+        # Find existing supplier row
+        if supplier:
+            for si in item.get("supplier_items"):
+                if si.supplier == supplier:
+                    supplier_item = si
+                    break
+        # Create new row if none exists
+        if not supplier_item:
             supplier_item = item.append("supplier_items", {})
-
-        if supplier_item:
-            if "supplier_part_no" in data:
-                supplier_item.supplier_part_no = data["supplier_part_no"]
             if supplier:
                 supplier_item.supplier = supplier
-            if "substitute_status" in data:
-                supplier_item.substitute_status = data["substitute_status"]
+        # Update fields
+        if "supplier_part_no" in data:
+            supplier_item.supplier_part_no = data["supplier_part_no"]
+        if supplier:
+            supplier_item.supplier = supplier
+        if "substitute_status" in data:
+            supplier_item.substitute_status = data["substitute_status"]
 
     item.save()
     return item.name
