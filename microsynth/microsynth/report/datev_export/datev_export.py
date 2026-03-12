@@ -9,6 +9,7 @@ from frappe import _
 import json
 #from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import create_zugferd_xml
 from microsynth.microsynth.invoicing import get_microsynth_zugferd_xml as create_zugferd_xml
+from microsynth.microsynth.invoicing import create_pdf_attachment
 import re
 import html
 
@@ -235,7 +236,7 @@ def create_pdf(path, dt, dn, print_format):
     return file_name
 
 
-def download_pdf(path, dt, dn):
+def download_pdf(path, dt, dn, allow_attachment_repair=True):
     file_name = "{0}.pdf".format(dn)
     content_file_name = "{0}/{1}".format(path, file_name)
     # find attachment and copy to output
@@ -250,7 +251,14 @@ def download_pdf(path, dt, dn):
         if "\"" in source_file:
             frappe.log_error(f"This file name is less than suboptimal: {dt} {dn}: {source_file}", "datev_export.download_pdf file issue")
         os.system("""cp "{0}" "{1}" """.format(source_file, content_file_name))
-
+    else:
+        # no attachment found - in case of a sales invoice, this can be created and then iterated (if allowed - prevent loop)
+        if dt == "Sales Invoice" and allow_attachment_repair:
+            # create the attachment
+            create_pdf_attachment(sales_invoice=dn)
+            # iterate this function and prevent loop
+            download_pdf(path, dt, dn, allow_attachment_repair=False)
+        
     return file_name
 
 
