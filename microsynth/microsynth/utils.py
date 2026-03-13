@@ -3819,3 +3819,27 @@ def fetch_intercompany_dns_for_sos(sales_order_ids):
     for dn in dns:
         result[dn['so_name']] = dn['dn_name']
     return result
+
+
+def sales_order_before_cancel(sales_order, event):
+    """
+    Prevent cancellation of a Sales Order if there is a linked intercompany Delivery Note that is already submitted.
+    The link between the original Sales Order and the intercompany Delivery Note is established via the field Delivery Note.po_no = Sales Order.name
+    """
+    if sales_order.po_no:
+        so = frappe.db.exists({
+            "doctype": "Sales Order",
+            "name": sales_order.po_no,
+            "docstatus": 1
+        })
+        if so:
+            frappe.throw(f"Cancellation not allowed: This Sales Order is linked to Sales Order {sales_order.po_no}.")
+        dn = frappe.db.get_all("Delivery Note",
+                    filters={
+                        "po_no": sales_order.name,
+                        "docstatus": 1
+                    },
+                    fields=["name"]
+                )
+        if dn:
+            frappe.throw(f"Cancellation not allowed: There is a submitted Delivery Note {dn[0]['name']} linked to this Sales Order.")

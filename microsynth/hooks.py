@@ -184,7 +184,8 @@ doc_events = {
     "Sales Order": {
         "before_save": "microsynth.microsynth.taxes.sales_order_before_save",
         "validate": "microsynth.microsynth.utils.validate_sales_order_items",
-        "on_submit": "microsynth.microsynth.utils.check_sales_order"
+        "on_submit": "microsynth.microsynth.utils.check_sales_order",
+        "before_cancel": "microsynth.microsynth.utils.sales_order_before_cancel"
     },
     "Delivery Note": {
         "before_save": "microsynth.microsynth.taxes.set_alternative_tax_template"
