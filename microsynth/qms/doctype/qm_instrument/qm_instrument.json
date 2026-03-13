@@ -5,11 +5,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "device_name",
+  "instrument_name",
   "status",
   "location",
   "category",
-  "device_manager",
+  "instrument_manager",
   "column_break_2",
   "qm_process",
   "site",
@@ -27,13 +27,6 @@
   "naming_series"
  ],
  "fields": [
-  {
-   "fieldname": "device_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Name",
-   "reqd": 1
-  },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
@@ -136,20 +129,27 @@
    "read_only": 1
   },
   {
-   "fieldname": "device_manager",
-   "fieldtype": "Link",
-   "label": "Device Manager",
-   "options": "User"
-  },
-  {
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
    "label": "Regulatory Classification",
    "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
+  },
+  {
+   "fieldname": "instrument_manager",
+   "fieldtype": "Link",
+   "label": "Instrument Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "instrument_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1
   }
  ],
- "modified": "2026-03-13 16:28:40.992064",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-03-13 16:35:45.573758",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Instrument",
  "owner": "Administrator",
