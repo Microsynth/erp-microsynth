@@ -252,9 +252,14 @@ def create_po_document_for_items(material_request_rows, total_quantity_by_item_c
 
     Returns: (po_doc, used_supplier_quotations, purchase_warnings)
     """
+    if supplier_doc.order_contact:
+        order_contact_doc = frappe.get_doc('Contact', supplier_doc.order_contact)
     po_doc = frappe.get_doc({
         'doctype': 'Purchase Order',
         'supplier': supplier_doc.name,
+        'contact_person': supplier_doc.order_contact,
+        'contact_display': order_contact_doc.get('full_name') if supplier_doc.order_contact else None,
+        'contact_email': order_contact_doc.get('email_id') if supplier_doc.order_contact else None,
         'company': company,
         'currency': currency,
         'buying_price_list': supplier_doc.default_price_list
