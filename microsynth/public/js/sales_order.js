@@ -28,6 +28,12 @@ frappe.ui.form.on('Sales Order', {
             frappe.msgprint( __("Please set a Product Type"), __("Validation") );
         }
 
+        // lock po_no if intercompany order
+        if (frm.doc.is_intercompany) {
+            cur_frm.set_df_property('po_no', 'read_only', 1);
+            cur_frm.set_df_property('po_date', 'read_only', 1);
+        }
+
         // link intercompany order
         if (!frm.doc.__islocal && frm.doc.docstatus == 1) {
             has_intercompany_order(frm).then(response => {
