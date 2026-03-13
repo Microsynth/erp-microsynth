@@ -151,7 +151,7 @@
  "modified": "2026-03-13 16:28:40.992064",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
- "name": "QM Device",
+ "name": "QM Instrument",
  "owner": "Administrator",
  "permissions": [
   {

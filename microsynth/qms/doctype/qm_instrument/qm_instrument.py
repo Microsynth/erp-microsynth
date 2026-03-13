@@ -8,7 +8,7 @@ from frappe.model.document import Document
 import csv
 
 
-class QMDevice(Document):
+class QMInstrument(Document):
     pass
 
 
@@ -45,9 +45,9 @@ def convert_price_fields(price_chf, price_eur, price_usd):
     return next(iter(prices.items()))
 
 
-def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_length=18):
+def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line_length=18):
     """
-    bench execute microsynth.qms.doctype.qm_device.qm_device.import_qm_devices --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-09-09_Geraeteliste.csv'}"
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-09-09_Geraeteliste.csv'}"
     """
     group_mapping = {
         '3.1 DNA/RNA Synthese': '3.1 DNA/RNA Synthesis',
@@ -136,12 +136,12 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                     supplier = suppliers[0].get('name')
 
             name = f"QMDE-{int(device_id):0{5}d}"
-            if frappe.db.exists("QM Device", name):
-                print(f"ERROR: QM Device {name} already exists, going to skip the following line: {line}")
+            if frappe.db.exists("QM Instrument", name):
+                print(f"ERROR: QM Instrument {name} already exists, going to skip the following line: {line}")
                 continue
 
-            qm_device = frappe.get_doc({
-                'doctype': "QM Device",
+            qm_instrument = frappe.get_doc({
+                'doctype': "QM Instrument",
                 'device_name': device_name,
                 'category': category_mapping[device_classification],
                 'status': 'Unapproved',  # TODO: mandatory, but how to determine?
@@ -152,10 +152,10 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                 'manufacturer': manufacturer,
                 'supplier': supplier
             })
-            qm_device.name = name
+            qm_instrument.name = name
             # disable automatic name generation
-            qm_device.flags.name_set = True
-            qm_device.insert()
+            qm_instrument.flags.name_set = True
+            qm_instrument.insert()
 
             currency, price = convert_price_fields(price_chf, price_eur, price_usd)
 
@@ -165,13 +165,13 @@ def import_qm_devices(input_filepath, company='Microsynth AG', expected_line_len
                 new_comment = frappe.get_doc({
                     'doctype': 'Comment',
                     'comment_type': "Comment",
-                    'subject': qm_device.name,
+                    'subject': qm_instrument.name,
                     'content': f"This device was purchased{acq_str}{price_str}",
-                    'reference_doctype': "QM Device",
+                    'reference_doctype': "QM Instrument",
                     'status': "Linked",
-                    'reference_name': qm_device.name
+                    'reference_name': qm_instrument.name
                 })
                 new_comment.insert(ignore_permissions=True)
             imported_counter += 1
 
-    print(f"Successfully imported {imported_counter} QM Devices.")
+    print(f"Successfully imported {imported_counter} QM Instruments.")
