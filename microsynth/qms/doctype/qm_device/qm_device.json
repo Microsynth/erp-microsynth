@@ -9,10 +9,11 @@
   "status",
   "location",
   "category",
+  "device_manager",
   "column_break_2",
   "qm_process",
   "site",
-  "device_manager",
+  "regulatory_classification",
   "section_break_4",
   "serial_no",
   "service_instructions",
@@ -139,9 +140,15 @@
    "fieldtype": "Link",
    "label": "Device Manager",
    "options": "User"
+  },
+  {
+   "fieldname": "regulatory_classification",
+   "fieldtype": "Select",
+   "label": "Regulatory Classification",
+   "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
   }
  ],
- "modified": "2025-12-18 14:09:57.926287",
+ "modified": "2026-03-13 16:28:40.992064",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Device",
