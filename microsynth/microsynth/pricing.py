@@ -1362,3 +1362,83 @@ def correct_reference_price_list_of_item_prices(dry_run=True, verbose=True):
     mode = "DRY RUN" if dry_run else "UPDATED"
     print(f"{mode}: {processed} Item Price record(s) processed.")
     return processed
+
+
+def create_new_reference_prices(csv_file, mapping, dry_run=True, verbose=True):
+    """
+    Create new Item Prices from a CSV file and a mapping of columns.
+    Args:
+        csv_file (str): Path to the CSV file.
+        mapping (dict): Mapping of field names to column indices, e.g.:
+            {
+                'item_code': 0,
+                'min_qty': 1,  # optional, default 1 if not present
+                'CHF': 2,
+                'EUR': 3,
+                'USD': 4,
+                'SEK': 5,
+                'PLN': 6
+            }
+        dry_run (bool): If True, do not actually create Item Prices, just print what would be done.
+        verbose (bool): If True, print details.
+    """
+    currencies = [key for key in mapping.keys() if key not in ['item_code', 'min_qty']]
+    created_counter = 0
+    with open(csv_file, 'r', newline='') as file:
+        reader = csv.reader(file, delimiter=';')
+        header = next(reader, None)
+        # Validate that all mapping indices exist in the header
+        max_index = len(header) - 1 if header else -1
+        for key, idx in mapping.items():
+            if not isinstance(idx, int) or idx < 0 or idx > max_index:
+                raise ValueError(f"Mapping for '{key}' points to invalid column index {idx} (header has {max_index+1} columns)")
+        # Validate that all currency columns in mapping are valid currency codes
+        valid_currencies = {'CHF', 'EUR', 'USD', 'SEK', 'PLN'}
+        for currency in currencies:
+            if currency not in valid_currencies:
+                raise ValueError(f"Currency column '{currency}' in mapping is not a valid currency. Allowed: {valid_currencies}")
+
+        # Use start=2 in enumerate to match the actual line number in the CSV file (including header as line 1)
+        # This makes error messages easier to trace back to the original file.
+        for row_num, row in enumerate(reader, start=2):
+            try:
+                item_code = row[mapping['item_code']].strip()
+                min_qty = int(row[mapping['min_qty']].strip()) if 'min_qty' in mapping else 1
+            except Exception as e:
+                print(f"[Row {row_num}] Error reading item_code or min_qty: {e}. Skipping row.")
+                continue
+            for currency in currencies:
+                if currency in mapping:
+                    col_idx = mapping[currency]
+                    try:
+                        rate_str = row[col_idx].strip()
+                        if not rate_str:
+                            if verbose:
+                                print(f"[Row {row_num}] No rate provided for {currency}, skipping.")
+                            continue  # skip empty cells
+                        rate = float(rate_str)
+                    except Exception as e:
+                        print(f"[Row {row_num}] Error reading rate for {currency}: {e}. Skipping.")
+                        continue
+                    price_list = f"Sales Prices {currency}"
+                    if verbose:
+                        print(f"[Row {row_num}] Would create Item Price: item_code={item_code}, min_qty={min_qty}, price_list={price_list}, rate={rate}")
+                    if not dry_run:
+                        try:
+                            item_price_doc = frappe.get_doc({
+                                'doctype': 'Item Price',
+                                'item_code': item_code,
+                                'min_qty': min_qty,
+                                'price_list': price_list,
+                                'price_list_rate': rate,
+                                'currency': currency
+                            })
+                            item_price_doc.insert()
+                            created_counter += 1
+                        except Exception as e:
+                            print(f"[Row {row_num}] Error creating Item Price for {item_code} ({currency}): {e}")
+                        else:
+                            if verbose:
+                                print(f"[Row {row_num}] Created Item Price for {item_code} ({currency})")
+    if verbose:
+        print(f"{'Would create' if dry_run else 'Created'} {created_counter} Item Prices in total.")
