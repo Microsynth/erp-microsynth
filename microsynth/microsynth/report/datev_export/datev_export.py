@@ -58,7 +58,8 @@ def get_columns(filters):
             {"label": _("betrag"), "fieldname": "gross_amount", "fieldtype": "Float", "width": 100, "precision": 2},
             {"label": _("steuer"), "fieldname": "vat_amount", "fieldtype": "float", "width": 100, "precision": 2},
             {"label": _("text"), "fieldname": "description", "fieldtype": "Data", "width": 120},
-            {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 120}
+            {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Data", "width": 120},
+            {"label": _("Customer Name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 250}
         ]
     return columns
 
@@ -85,6 +86,7 @@ def get_data(filters, short=False):
                     (-1) * `tabSales Invoice`.`total_taxes_and_charges` AS `vat_amount`,
                     "Rechnung" AS `description`,
                     `tabSales Invoice`.`customer` AS `customer`,
+                    `tabSales Invoice`.`customer_name` AS `customer_name`,
                     `tabCustomer`.`ext_debitor_number` AS `ext_debitor_number`
                 FROM `tabSales Invoice`
                 LEFT JOIN `tabCustomer` ON `tabCustomer`.`name` = `tabSales Invoice`.`customer`
@@ -118,6 +120,7 @@ def get_data(filters, short=False):
                     (-1) * `tabPurchase Invoice`.`total_taxes_and_charges` AS `vat_amount`,
                     "Rechnung" AS `description`,
                     `tabPurchase Invoice`.`supplier` AS `customer`,
+                    `tabPurchase Invoice`.`supplier_name` AS `customer_name`,
                     `tabSupplier`.`ext_creditor_id` AS `ext_debitor_number`
                 FROM `tabPurchase Invoice`
                 LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabPurchase Invoice`.`supplier`
@@ -258,7 +261,7 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
             create_pdf_attachment(sales_invoice=dn)
             # iterate this function and prevent loop
             download_pdf(path, dt, dn, allow_attachment_repair=False)
-        
+
     return file_name
 
 
