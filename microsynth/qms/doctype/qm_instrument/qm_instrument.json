@@ -86,7 +86,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Naming Series",
-   "options": "QMDE-.#####"
+   "options": "QMI-.#####"
   },
   {
    "fieldname": "service_instructions",
@@ -179,7 +179,7 @@
    "label": "Software Version"
   }
  ],
- "modified": "2026-03-16 14:58:10.805711",
+ "modified": "2026-03-16 15:07:51.609576",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
