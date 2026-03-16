@@ -134,16 +134,16 @@ def get_data(filters, short=False):
                 from_date=filters.get("from_date"),
                 to_date=filters.get("to_date"))
     data = frappe.db.sql(sql_query, as_dict=True)
-
     return data
+
 
 @frappe.whitelist()
 def async_pdf_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=pdf_export, queue='long', timeout=90, is_async=True, filters=filters)
-    return
+    frappe.enqueue(method=pdf_export, queue='long', timeout=600, is_async=True, filters=filters)
+
 
 def pdf_export(filters):
     data = get_data(filters)
@@ -171,22 +171,20 @@ def pdf_export(filters):
             )
         """
 
-    return
 
 @frappe.whitelist()
 def async_xml_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=xml_export, queue='long', timeout=90, is_async=True, filters=filters)
-    return
+    frappe.enqueue(method=xml_export, queue='long', timeout=600, is_async=True, filters=filters)
+
 
 def xml_export(filters):
     """
     run
     $ bench execute microsynth.microsynth.report.datev_export.datev_export.xml_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
     """
-
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     path = settings.pdf_export_path + "/" + datetime.now().strftime("%Y-%m-%d__%H-%M")
@@ -216,15 +214,14 @@ def xml_export(filters):
             #with open(file_path, mode='w') as file:
             #    file.write(content_xml)
 
-    return
 
 @frappe.whitelist()
 def async_package_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
 
-    frappe.enqueue(method=package_export, queue='long', timeout=120, is_async=True, filters=filters)
-    return
+    frappe.enqueue(method=package_export, queue='long', timeout=600, is_async=True, filters=filters)
+
 
 def create_pdf(path, dt, dn, print_format):
     content_pdf = frappe.get_print(
@@ -261,7 +258,6 @@ def download_pdf(path, dt, dn, allow_attachment_repair=True):
             create_pdf_attachment(sales_invoice=dn)
             # iterate this function and prevent loop
             download_pdf(path, dt, dn, allow_attachment_repair=False)
-
     return file_name
 
 
@@ -303,15 +299,13 @@ def create_datev_summary_xml(path, document):
         file.write(datev_summary_xml)
     return file_name
 
-"""
-Export the complete sales invoice package with pdf, xml and document overview
-"""
+
 def package_export(filters):
     """
+    Export the complete sales invoice package with pdf, xml and document overview
     run
     $ bench execute microsynth.microsynth.report.datev_export.datev_export.package_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
     """
-
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
@@ -362,7 +356,6 @@ def package_export(filters):
 
     create_datev_summary_xml(path, document)
 
-    return
 
 def escape_and_safe_truncate(input_string, max_length=50):
     # Escape the HTML string
