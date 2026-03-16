@@ -10,14 +10,18 @@
   "location",
   "category",
   "instrument_manager",
+  "has_service_contract",
   "column_break_2",
   "qm_process",
   "site",
   "regulatory_classification",
+  "deputy_instrument_manager",
+  "aquisition_date",
   "section_break_4",
   "serial_no",
   "service_instructions",
   "manufacturer",
+  "software_version",
   "column_break_8",
   "supplier",
   "supplier_name",
@@ -132,13 +136,15 @@
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
    "label": "Regulatory Classification",
-   "options": "\nGMP\nISO 13485\nISO 17025\nISO 9001"
+   "options": "\nGMP\nnon-GMP",
+   "reqd": 1
   },
   {
    "fieldname": "instrument_manager",
    "fieldtype": "Link",
    "label": "Instrument Manager",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "instrument_name",
@@ -146,10 +152,35 @@
    "in_list_view": 1,
    "label": "Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "deputy_instrument_manager",
+   "fieldtype": "Link",
+   "label": "Deputy Instrument Manager",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "has_service_contract",
+   "fieldtype": "Select",
+   "label": "Has Service Contract",
+   "options": "\nNo\nYes",
+   "reqd": 1
+  },
+  {
+   "fieldname": "aquisition_date",
+   "fieldtype": "Date",
+   "label": "Aquisition Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "software_version",
+   "fieldtype": "Data",
+   "label": "Software Version"
   }
  ],
- "modified": "2026-03-13 16:35:45.573758",
- "modified_by": "Administrator",
+ "modified": "2026-03-16 14:58:10.805711",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
  "owner": "Administrator",
