@@ -141,31 +141,40 @@ def get_data(filters, short=False):
 def async_pdf_export(filters):
     if type(filters) == str:
         filters = json.loads(filters)
-
     frappe.enqueue(method=pdf_export, queue='long', timeout=600, is_async=True, filters=filters)
 
 
 def pdf_export(filters):
+    """
+    run
+    bench execute microsynth.microsynth.report.datev_export.datev_export.pdf_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Austria GmbH', 'from_date':'2026-02-01', 'to_date':'2026-02-02', 'transactions': 'Debtors' }}"
+    """
+    #frappe.log_error(f"Starting PDF export with filters: {filters}", "datev_export.pdf_export")
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
+    # Create subfolder PDF_Export_[datetime.now]/[filters.company]/[filters.transactions] and store pdfs there
+    base_path = settings.pdf_export_path
+    now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    path = "{0}/{1}_{2}_{3}".format(base_path, now_str, filters.get("company"), filters.get("transactions"))
+    frappe.log_error(f"Exporting PDFs to {path}", "datev_export.pdf_export")
+    if not os.path.exists(path):
+        os.mkdir(path)
 
     for d in data:
         # performance improvement 2026-02-17: use attached pdf instead of creating a new one
-        download_pdf(path=settings.pdf_export_path,
+        download_pdf(path=path,
             dt=d.get("document_type"),
             dn=d.get("document")
         )
         """
         if d.get("document_type") == "Sales Invoice":
-            create_pdf(path=settings.pdf_export_path,
+            create_pdf(path=path,
                 dt=d.get("document_type"),
                 dn=d.get("document"),
                 print_format=settings.pdf_print_format
             )
-
-
         elif d.get("document_type") == "Purchase Invoice":
-            download_pdf(path=settings.pdf_export_path,
+            download_pdf(path=path,
                 dt=d.get("document_type"),
                 dn=d.get("document")
             )
@@ -291,6 +300,7 @@ def create_datev_xml(path, dt, dn):
         file.write(datev_xml)
     return file_name
 
+
 def create_datev_summary_xml(path, document):
     datev_summary_xml = frappe.render_template("microsynth/microsynth/report/datev_export/document.html", document)
     file_name = "document.xml"
@@ -330,13 +340,11 @@ def package_export(filters):
                 dt=d.get("document_type"),
                 dn=d.get("document")
             )
-
             document['documents'].append({
                 'xml_filename': xml_file,
                 'pdf_filename': pdf_file,
                 'document_type': d.get("document_type")
             })
-
         elif d.get("document_type") == "Purchase Invoice" and d.get("gross_amount") != 0:
             # create pdf
             pdf_file = download_pdf(path=path,
@@ -347,13 +355,11 @@ def package_export(filters):
                 dt=d.get("document_type"),
                 dn=d.get("document")
             )
-
             document['documents'].append({
                 'xml_filename': xml_file,
                 'pdf_filename': pdf_file,
                 'document_type': d.get("document_type")
             })
-
     create_datev_summary_xml(path, document)
 
 
