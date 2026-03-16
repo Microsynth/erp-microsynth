@@ -1454,6 +1454,11 @@ def create_si_content_from_so(so_id, debug=False):
     """
     if debug:
         print(f"[create_si_from_so] Starting for SO {so_id}")
+    discount_amount = frappe.db.get_value("Sales Order", so_id, "discount_amount") or 0
+    if discount_amount > 0:
+        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount}. "
+                         f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
+                         f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
     si_content = make_sales_invoice_from_so(so_id)
     if isinstance(si_content, dict):
         if debug: print(f"[create_si_from_so] Sales Invoice content created as dict for SO {so_id}")
