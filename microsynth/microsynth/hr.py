@@ -177,16 +177,30 @@ def import_job_applicants(verbose=False):
         if verbose:
             print(f"Attaching file: {file_path} to doc: {doc.doctype} / {doc.name}")
         with open(file_path, "rb") as f:
-            frappe.get_doc({
-                "doctype": "File",
-                "file_name": os.path.basename(file_path),
-                "attached_to_doctype": doc.doctype,
-                "attached_to_name": doc.name,
-                "content": f.read(),
-                "is_private": 1,
-            }).insert(ignore_permissions=True)
-        if verbose:
-            print(f"Successfully attached {file_path}")
+            try:
+                frappe.get_doc({
+                    "doctype": "File",
+                    "file_name": os.path.basename(file_path),
+                    "attached_to_doctype": doc.doctype,
+                    "attached_to_name": doc.name,
+                    "content": f.read(),
+                    "is_private": 1,
+                }).insert(ignore_permissions=True)
+            except Exception as e:
+                msg = f"Failed to attach file {file_path} to {doc.doctype} {doc.name}: {str(e)}"
+                frappe.log_error(msg, "Job Applicant Import")
+                frappe.get_doc({
+                    'doctype': 'Comment',
+                    'comment_type': 'Comment',
+                    'reference_doctype': doc.doctype,
+                    'reference_name': doc.name,
+                    'subject': f"Failed to attach file: {os.path.basename(file_path)}",
+                    'content': msg,
+                    'status': 'Linked'
+                }).insert(ignore_permissions=True)
+            else:
+                if verbose:
+                    print(f"Successfully attached {file_path}")
 
     def _move_to_error_folder(xml_filename, error_message):
         base_name = os.path.splitext(xml_filename)[0]
@@ -341,7 +355,7 @@ def import_job_applicants(verbose=False):
                 import traceback
                 traceback.print_exc()
             frappe.log_error(
-                frappe.get_traceback(),
-                f"Failed to process {fname}",
+                f"Failed to process {fname}:\n" + frappe.get_traceback(),
+                "Job Applicant Import"
             )
             _move_to_error_folder(fname, frappe.get_traceback())
