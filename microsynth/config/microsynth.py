@@ -257,12 +257,6 @@ def get_data():
                     },
                     {
                         "type": "doctype",
-                        "name": "Item Request",
-                        "label": _("Item Request"),
-                        "description": _("Item Request")
-                    },
-                    {
-                        "type": "doctype",
                         "name": "Supplier",
                         "label": _("Supplier"),
                         "description": _("Supplier")
