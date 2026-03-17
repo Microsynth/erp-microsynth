@@ -3015,7 +3015,7 @@ def merge_duplicate_purchasing_items(dry_run=True):
         groups.setdefault(key, []).append(row)
 
     for key, items in groups.items():
-        supplier, supplier_name, supplier_part_no = key
+        _, supplier_name, supplier_part_no = key
 
         # Sort by creation (oldest first)
         items = sorted(items, key=lambda x: x["creation"])

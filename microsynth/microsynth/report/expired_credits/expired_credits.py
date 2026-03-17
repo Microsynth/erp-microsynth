@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import json
 import traceback
 import frappe
-from frappe import _
 from frappe.utils import today
 from microsynth.microsynth.credits import reverse_credit
 from microsynth.microsynth.report.customer_credits.customer_credits import get_data as get_customer_credits

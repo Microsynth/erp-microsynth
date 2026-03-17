@@ -8,17 +8,33 @@
 import os
 import subprocess
 import traceback
+import json
+import random
+import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from facturx import generate_from_binary
+try:            # factur-x v3.0 onwards
+    from facturx import xml_check_xsd
+except:         # factur-x before v3.0
+    from facturx import check_facturx_xsd as xml_check_xsd
+
 import frappe
 from frappe import _
 from frappe.utils.pdf import get_pdf
 from frappe.utils.background_jobs import enqueue
-from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
 from frappe.utils import cint, get_url_to_form, flt
-from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
-from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
-from microsynth.microsynth.purchasing import create_pi_from_si
 from frappe.core.doctype.communication.email import make
 from frappe.desk.form.load import get_attachments
+
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice as make_sales_invoice_from_so
+from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_invoice
+
+from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
+from erpnextswiss.erpnextswiss.finance import get_exchange_rate
+from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import prepare_data as prepare_zugferd_data
+
+from microsynth.microsynth.purchasing import create_pi_from_si
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (
     get_physical_path,
@@ -41,18 +57,8 @@ from microsynth.microsynth.credits import (
     get_credit_account_balance
 )
 from microsynth.microsynth.jinja import get_destination_classification
-import datetime
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-import json
-import random
-from erpnextswiss.erpnextswiss.finance import get_exchange_rate
-from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import prepare_data as prepare_zugferd_data
-from facturx import generate_from_binary
-try:            # factur-x v3.0 onwards
-    from facturx import xml_check_xsd
-except:         # factur-x before v3.0
-    from facturx import check_facturx_xsd as xml_check_xsd
+from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
+
 
 @frappe.whitelist()
 def create_invoices(mode, company, customer, is_monthly_collective_run=False):
@@ -172,7 +178,6 @@ def make_collective_invoices(delivery_notes):
                     si = make_collective_invoice(filtered_dns)
                     if si:
                         invoices.append(si)
-
     return invoices
 
 
@@ -883,16 +888,12 @@ def create_pdf_attachment(sales_invoice):
     run
     bench execute microsynth.microsynth.invoicing.create_pdf_attachment --kwargs "{'sales_invoice': 'SI-BAL-23002642-1'}"
     """
-
     doctype = "Sales Invoice"
     printformat = "Sales Invoice"
     name = sales_invoice
-    doc = None
     no_letterhead = False
 
     frappe.local.lang = frappe.db.get_value("Sales Invoice", sales_invoice, "language")
-
-    from erpnextswiss.erpnextswiss.attach_pdf import save_and_attach, create_folder
 
     title = frappe.db.get_value(doctype, name, "title")
 
@@ -908,9 +909,8 @@ def create_pdf_attachment(sales_invoice):
         to_name = name,
         folder = title_folder,
         hashname = None,
-        is_private = True )
-
-    return
+        is_private = True
+    )
 
 
 def get_sales_order_list_and_delivery_note_list(sales_invoice):
@@ -1631,7 +1631,7 @@ def create_si_from_sos_and_dns(sales_order_ids, customer, default_company, debug
             print(f"[create_si_from_sos_and_dns] Created and submitted Sales Invoice {sales_invoice.name} from SOs {[so_id for so_id in sales_order_ids]} and DNs {[dn.delivery_note for dn in dns]}: {sales_invoice.as_dict()=}")
         return sales_invoice.name
     except Exception as e:
-        msg = f"An error occurred while creating SI from SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}: {traceback.format_exc()}"
+        msg = f"An error occurred while creating SI from SOs {sales_order_ids} and DNs {[dn.delivery_note for dn in dns]}: {str(e)}\n{traceback.format_exc()}"
         if debug: print(f"[create_si_from_sos_and_dns] ERROR: {msg}")
         frappe.log_error(msg, "invoicing.create_si_from_sos_and_dns")
         return None
@@ -1683,7 +1683,7 @@ def create_si_from_so(so_id, debug=False):
             print(f"[create_si_from_so] Successfully submitted SI {end_customer_si.name}")
         return end_customer_si.name
     except Exception as e:
-        msg = f"An error occurred while creating SI from SO {so_id}: {traceback.format_exc()}"
+        msg = f"An error occurred while creating SI from SO {so_id}: {str(e)}\n{traceback.format_exc()}"
         if debug: print(f"[create_si_from_so] ERROR: {msg}")
         frappe.log_error(msg, "invoicing.create_si_from_so")
         return None
@@ -2711,7 +2711,7 @@ def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
         si_status = row['si_status']
         # Check if there is any other SI with a different customer for this oligo
         other_customer = False
-        for (other_si, other_customer_name, other_si_status) in oligo_to_si_customers.get(oligo, set()):
+        for (other_si, other_customer_name, _) in oligo_to_si_customers.get(oligo, set()):
             if other_si != si_name and other_customer_name != si_customer:
                 other_customer = True
                 break

@@ -77,7 +77,7 @@ class QMDocument(Document):
                     length=naming_patterns[naming_code[self.document_type]]['number_length'])
 
                 # check revision
-                version = self.version or 1
+                # version = self.version or 1
 
             # generate name
             pattern = "{p}{d}-{v}".format(

@@ -118,6 +118,6 @@ def issue_material(company, items):
             "message": {
                 "success": False,
                 "message": "Error",
-                "internal_message": str(frappe.get_traceback())
+                "internal_message": str(e) + "\n" + str(frappe.get_traceback())
             }
         }

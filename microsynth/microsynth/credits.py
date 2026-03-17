@@ -127,11 +127,6 @@ def allocate_credits(sales_invoice_doc):
     if frappe.get_value("Customer", sales_invoice_doc.customer, "customer_credits") == 'blocked':
         return sales_invoice_doc
 
-    if sales_invoice_doc.product_type and sales_invoice_doc.product_type == "Project":
-        credit_type = "Project"
-    else:
-        credit_type = "Standard"
-
     # get list of applicable credit accounts
     if sales_invoice_doc.get('override_credit_accounts'):
         credit_account_ids = [entry.credit_account for entry in sales_invoice_doc.override_credit_accounts]

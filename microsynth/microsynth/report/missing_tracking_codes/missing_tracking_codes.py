@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from microsynth.microsynth.shipping import get_shipping_items_with_tracking
-from microsynth.microsynth.utils import get_sql_list
 
 
 def get_columns(filters):

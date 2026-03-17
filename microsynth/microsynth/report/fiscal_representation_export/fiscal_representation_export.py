@@ -11,10 +11,12 @@ from frappe.utils.pdf import get_pdf
 from PyPDF2 import PdfFileMerger
 from microsynth.microsynth.invoicing import get_microsynth_zugferd_pdf
 
+
 def execute(filters=None):
     columns = get_columns(filters)
     data = get_data(filters)
     return columns, data
+
 
 def get_columns(filters):
     columns = [
@@ -32,6 +34,7 @@ def get_columns(filters):
         {"label": _("Tax Code"), "fieldname": "tax_code", "fieldtype": "Data", "width": 80}
     ]
     return columns
+
 
 def get_data(filters, short=False):
     sql_query = """
@@ -86,8 +89,8 @@ def get_data(filters, short=False):
             credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item"))
 
     data = frappe.db.sql(sql_query, as_dict=True)
-
     return data
+
 
 def pdf_export(filters):
     data = get_data(filters)
@@ -101,7 +104,6 @@ def pdf_export(filters):
                 print_format=settings.pdf_print_format
             )
 
-    return
 
 @frappe.whitelist()
 def async_package_export(filters):
@@ -109,17 +111,14 @@ def async_package_export(filters):
         filters = json.loads(filters)
 
     frappe.enqueue(method=package_export, queue='long', timeout=120, is_async=True, filters=filters)
-    return
 
-"""
-Export the complete sales invoice package with pdf, xml and document overview
-"""
+
 def package_export(filters):
     """
-    run
-    $ bench execute microsynth.microsynth.report.fiscal_representation_export.fiscal_representation_export.package_export --kwargs "{'filters': {'company': 'Microsynth Seqlab GmbH', 'from_date':'2023-01-01', 'to_date':'2023-04-14' }}"
-    """
+    Export the complete sales invoice package with pdf, xml and document overview
 
+    bench execute microsynth.microsynth.report.fiscal_representation_export.fiscal_representation_export.package_export --kwargs "{'filters': {'company': 'Microsynth AG', 'from_date':'2026-02-01', 'to_date':'2026-02-28' }}"
+    """
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
@@ -173,7 +172,6 @@ def package_export(filters):
             dn=d.get("sales_invoice"),
             print_format=settings.pdf_print_format
         )
-
     # bind all pdfs
     # merge_pdfs(path, "AUS", pdf_at, filters.get('from_date'), filters.get('to_date'))
     # merge_pdfs(path, "EU", pdf_ig, filters.get('from_date'), filters.get('to_date'))
@@ -186,7 +184,6 @@ def package_export(filters):
     create_summary_csv(path, "AUS", sum_at, filters.get('from_date'), filters.get('to_date'))
     create_summary_csv(path, "EU", sum_ig, filters.get('from_date'), filters.get('to_date'))
 
-    return
 
 def create_pdf(path, dt, dn, print_format):
     #content_pdf = frappe.get_print(
@@ -201,6 +198,7 @@ def create_pdf(path, dt, dn, print_format):
         file.write(content_pdf)
     return file_name
 
+
 def create_summary_csv(path, code, summary_data, from_date, to_date):
     summary_csv = frappe.render_template("microsynth/microsynth/report/fiscal_representation_export/summary_csv.html", {'data': summary_data} )
     file_name = "UID_{code}_{from_date}_{to_date}.csv".format(code=code, from_date=from_date, to_date=to_date)
@@ -208,6 +206,7 @@ def create_summary_csv(path, code, summary_data, from_date, to_date):
     with open(content_file_name, mode='w') as file:
         file.write(summary_csv)
     return file_name
+
 
 def create_summary_pdf(path, code, data, from_date, to_date):
     summary_html = frappe.render_template("microsynth/microsynth/report/fiscal_representation_export/summary_pdf.html", {'data': data, 'from_date': from_date, 'to_date': to_date} )
@@ -217,6 +216,7 @@ def create_summary_pdf(path, code, data, from_date, to_date):
     with open(content_file_name, mode='wb') as file:
         file.write(pdf)
     return file_name
+
 
 def merge_pdfs(path, code, files, from_date, to_date):
     merger = PdfFileMerger()

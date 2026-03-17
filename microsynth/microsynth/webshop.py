@@ -24,8 +24,7 @@ from microsynth.microsynth.utils import (
     to_bool,
     update_address_links_from_contact,
     send_email_from_template,
-    get_alternative_account,
-    get_print_address
+    get_alternative_account
 )
 from microsynth.microsynth.credits import get_credit_account_balance
 from microsynth.microsynth.seqblatt import process_label_status_change
