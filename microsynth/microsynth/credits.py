@@ -741,10 +741,12 @@ def get_and_check_diff(company, currency, account, my_date, previous_diff):
     return diff
 
 
-def check_credit_balance(from_date, to_date=today()):
+def check_credit_balance(from_date, to_date=None):
     """
     bench execute microsynth.microsynth.credits.check_credit_balance --kwargs "{'from_date': '2023-12-31', 'to_date': '2024-10-15'}"
     """
+    if not to_date:
+        to_date = today()
     from_date = datetime.strptime(from_date, '%Y-%m-%d').date()
     if type(to_date) == str:
         to_date = datetime.strptime(to_date, '%Y-%m-%d').date()
