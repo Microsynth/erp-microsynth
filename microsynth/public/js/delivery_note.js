@@ -12,6 +12,12 @@ frappe.ui.form.on('Delivery Note', {
         locals.prevdoc_checked = false;
         prepare_naming_series(frm);             // common function
 
+        // lock po_no if intercompany order
+        if (frm.doc.is_intercompany) {
+            cur_frm.set_df_property('po_no', 'read_only', 1);
+            cur_frm.set_df_property('po_date', 'read_only', 1);
+        }
+
         // show a warning if is_punchout
         if (frm.doc.docstatus == 0 && frm.doc.is_punchout == 1) {
             frm.dashboard.add_comment( __("Punchout Order! Please do <b>not</b> edit the Items."), 'red', true);
