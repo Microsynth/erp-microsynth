@@ -19,7 +19,7 @@ def get_columns(filters):
         {"label": _("Applicant Name"), "fieldname": "applicant_name", "fieldtype": "Data", "width": 160},
         {"label": _("Applicant Status"), "fieldname": "status", "fieldtype": "Data", "width": 110},
         {"label": _("Requirements Fit Assessments"), "fieldname": "assessments", "fieldtype": "Data", "width": 600, "align": "left"},
-        {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Data", "width": 200},
+        {"label": _("Comments"), "fieldname": "comments", "fieldtype": "Data", "width": 200, "align": "left"}
     ]
 
 
