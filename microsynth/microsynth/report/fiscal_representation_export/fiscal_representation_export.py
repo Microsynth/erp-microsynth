@@ -107,6 +107,9 @@ def pdf_export(filters):
 
 @frappe.whitelist()
 def async_package_export(filters):
+    """
+    bench execute microsynth.microsynth.report.fiscal_representation_export.fiscal_representation_export.async_package_export --kwargs "{'filters': {'company': 'Microsynth AG', 'from_date':'2026-02-01', 'to_date':'2026-02-02' }}"
+    """
     if type(filters) == str:
         filters = json.loads(filters)
 
@@ -117,9 +120,14 @@ def package_export(filters):
     """
     Export the complete sales invoice package with pdf, xml and document overview
 
-    bench execute microsynth.microsynth.report.fiscal_representation_export.fiscal_representation_export.package_export --kwargs "{'filters': {'company': 'Microsynth AG', 'from_date':'2026-02-01', 'to_date':'2026-02-28' }}"
+    bench execute microsynth.microsynth.report.fiscal_representation_export.fiscal_representation_export.package_export --kwargs "{'filters': {'company': 'Microsynth AG', 'from_date':'2026-02-01', 'to_date':'2026-02-03' }}"
     """
     data = get_data(filters)
+    if not data:
+        msg = f"No data found for the given filters: {filters}"
+        print(msg)
+        frappe.log_error(msg, "fiscal_representation_export.package_export")
+        return
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     date = datetime.now()
     path = "{0}/FiscRep_{1}".format(settings.pdf_export_path, date.strftime("%Y-%m-%d_%H-%M"))
