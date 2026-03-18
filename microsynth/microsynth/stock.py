@@ -34,13 +34,14 @@ def get_purchasing_items(company="Microsynth AG"):
 
 
 @frappe.whitelist(methods=["POST"])
-def issue_material(company, items):
+def issue_material(company, user, items):
     """
     API endpoint to create a Material Issue Stock Entry with validation.
 
     Expected JSON:
     {
         "company": "Microsynth AG",
+        "user": "firstname.lastname@microsynth.ch",
         "items": [
             {
                 "item_code": "P012345",
@@ -51,7 +52,7 @@ def issue_material(company, items):
         ]
     }
 
-    bench execute microsynth.microsynth.stock.issue_material --kwargs '{"company": "Microsynth AG", "items": [{"item_code": "P007441", "qty": 2, "warehouse": "Stores - BAL", "batch_no": "HMBJ7023-HMBK0735"}]}'
+    bench execute microsynth.microsynth.stock.issue_material --kwargs '{"company": "Microsynth AG", "user": "firstname.lastname@microsynth.ch", "items": [{"item_code": "P007441", "qty": 2, "warehouse": "Stores - BAL", "batch_no": "HMBJ7023-HMBK0735"}]}'
     """
     try:
         if isinstance(items, str):
@@ -66,6 +67,7 @@ def issue_material(company, items):
         stock_entry = frappe.new_doc("Stock Entry")
         stock_entry.stock_entry_type = "Material Issue"
         stock_entry.company = company
+        stock_entry.owner = user
 
         # Build child rows
         for entry in items:
