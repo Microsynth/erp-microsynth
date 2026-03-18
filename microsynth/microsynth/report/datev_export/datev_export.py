@@ -149,14 +149,12 @@ def pdf_export(filters):
     run
     bench execute microsynth.microsynth.report.datev_export.datev_export.pdf_export --kwargs "{'filters': {'version':'AT', 'company': 'Microsynth Austria GmbH', 'from_date':'2026-02-01', 'to_date':'2026-02-02', 'transactions': 'Debtors' }}"
     """
-    #frappe.log_error(f"Starting PDF export with filters: {filters}", "datev_export.pdf_export")
     data = get_data(filters)
     settings = frappe.get_doc("Microsynth Settings", "Microsynth Settings")
     # Create subfolder PDF_Export_[datetime.now]/[filters.company]/[filters.transactions] and store pdfs there
     base_path = settings.pdf_export_path
     now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     path = "{0}/{1}_{2}_{3}".format(base_path, now_str, filters.get("company"), filters.get("transactions"))
-    frappe.log_error(f"Exporting PDFs to {path}", "datev_export.pdf_export")
     if not os.path.exists(path):
         os.mkdir(path)
 
