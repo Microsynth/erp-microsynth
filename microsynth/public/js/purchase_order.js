@@ -344,7 +344,12 @@ function open_mail_dialog(frm, contact, email) {
         return;
     }
     // Fetch the Email Template from server
-    const email_template_name = "Purchase Order";
+    let email_template_name;
+    if (frm.doc.company == "Microsynth Seqlab GmbH") {
+        email_template_name = "Bestellung Microsynth Seqlab GmbH";
+    } else {
+        email_template_name = "Purchase Order";
+    }
     frappe.call({
         'method': "frappe.client.get",
         'args': {
@@ -361,7 +366,7 @@ function open_mail_dialog(frm, contact, email) {
                 'frm': frm,
                 'subject': "Purchase Order " + frm.doc.name + " from Microsynth",
                 'recipients': email,
-                'cc': "purchase@microsynth.ch",
+                'cc': frm.doc.company == "Microsynth Seqlab GmbH" ? "einkauf@microsynth.seqlab.de" : "purchase@microsynth.ch",
                 'attach_document_print': true,
                 'txt': r.message.response,
                 'check_all_attachments': false,
