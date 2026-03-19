@@ -145,7 +145,7 @@ def get_data(filters):
                 AND `tabMaterial Request`.`docstatus` = 1
                 AND `tabMaterial Request`.`status` != 'Stopped'
                 {conditions}
-            ORDER BY `tabMaterial Request`.`transaction_date` ASC
+            ORDER BY `tabMaterial Request`.`transaction_date`, `tabMaterial Request Item`.`supplier` ASC
         """, filters, as_dict=True)
     elif mode == "To Receive":
         data = frappe.db.sql(f"""
@@ -214,12 +214,12 @@ def get_data(filters):
                     AND `tabMaterial Request`.`docstatus` = 1
                     AND `tabMaterial Request`.`status` != 'Stopped'
                     {conditions}
-            ) AS raw
+            ) AS `raw`
             WHERE
-                raw.received_qty < raw.qty
-                AND raw.ordered_qty > 0
+                `raw`.`received_qty` < `raw`.`qty`
+                AND `raw`.`ordered_qty` > 0
             ORDER BY
-                raw.transaction_date ASC;
+                `raw`.`transaction_date`, `raw`.`schedule_date`, `raw`.`supplier` ASC;
             """, filters, as_dict=True)
     elif mode == "To Order":
         data = frappe.db.sql(f"""
@@ -299,7 +299,7 @@ def get_data(filters):
                 AND `tabItem Request`.`status` = 'Pending'
                 {item_request_conditions}
             ORDER BY
-                `schedule_date` ASC
+                `schedule_date`, `transaction_date`, `supplier` ASC
         """, filters, as_dict=True)
     else:
         frappe.throw(_("Invalid mode"))
