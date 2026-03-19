@@ -1662,6 +1662,7 @@ def get_set_batch_items(purchase_receipt):
         if item.item_code == "P020000":  # skip inbound freight item
             continue
         item_doc = frappe.get_doc("Item", item.item_code)
+        batch_no = item.batch_no
         success = True
         if not item_doc.has_batch_no:
             try:
@@ -1670,6 +1671,8 @@ def get_set_batch_items(purchase_receipt):
             except Exception as err:
                 warnings.append(f"Unable to set 'Has Batch No' on Item {item.item_code}: {err}")
                 success = False
+        elif item_doc.has_batch_no and item_doc.batch_type == "Generic":
+            batch_no = f"[NA]-{item.item_code}"
         if success:
             batch_items.append({
                 "idx": item.idx,
@@ -1677,9 +1680,8 @@ def get_set_batch_items(purchase_receipt):
                 "item_name": item.item_name,
                 "supplier_part_no": item.supplier_part_no,
                 "qty": item.qty,
-                "existing_batch": item.batch_no,
-                "new_batch_id": "",
-                "new_batch_expiry": ""
+                "batch_id": batch_no,
+                "batch_expiry": ""
             })
     return batch_items, warnings
 
