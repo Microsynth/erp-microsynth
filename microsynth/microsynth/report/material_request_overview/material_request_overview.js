@@ -865,7 +865,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             ]
         );
         d.fields_dict.order_preview.$wrapper.html(`
-            <div class="frappe-control input-max-width" style="margin-top:36px;">
+            <div class="frappe-control input-max-width" style="margin-top:12px;">
                 <label class="control-label" style="display:block; margin-bottom:4px;">
                     ${__('You are going to order')}
                 </label>
