@@ -165,6 +165,11 @@ frappe.ui.form.on('Item', {
                 seenSuppliers.add(row.supplier);
             }
         }
+    },
+    has_batch_no(frm) {
+        if (!frm.doc.has_batch_no) {
+            frm.set_value('batch_type', '');
+        }
     }
 });
 
