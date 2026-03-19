@@ -260,38 +260,86 @@ def import_job_applicants(verbose=False):
                 _move_to_error_folder(fname, msg)
                 continue
 
+            new_applicant_name = " ".join(filter(None, [data.get("first_name"), data.get("last_name")]))
+            new_address = f"{data.get('address').strip()}\n{data.get('postal_code').strip()} {data.get('city').strip()}"
+
             # Prevent duplicates (same job + email)
-            if frappe.db.exists(
-                "Job Applicant",
-                {"email_id": data.get("email"), "job_opening": data.get("job_id")},
-            ):
-                msg = f"Duplicate application skipped: {data.get('email')} / {data.get('job_id')}"
+            existing_applicants = frappe.db.get_all("Job Applicant", filters={"email_id": data.get("email"), "job_title": data.get("job_id")}, fields=["name"])
+            if len(existing_applicants) == 1:
+                # Update existing Job Applicant
+                msg = f"Email {data.get('email')} and Job ID {data.get('job_id')} already exists as Job Applicant {existing_applicants[0]['name']}. Going to update with data from {fname}."
+                if verbose:
+                    print(msg)
+                applicant = frappe.get_doc("Job Applicant", existing_applicants[0]['name'])
+                if applicant.status != "Open":
+                    msg = f"Existing Job Applicant {applicant.name} has status '{applicant.status}' which is not 'Open'. Skipping update from {fname}."
+                    if verbose:
+                        print(msg)
+                    frappe.log_error(msg, "Job Applicant Import")
+                    _move_to_error_folder(fname, msg)
+                    continue
+                if applicant.assessments:
+                    msg = f"Existing Job Applicant {applicant.name} has Assessments. Skipping update from {fname}."
+                    if verbose:
+                        print(msg)
+                    frappe.log_error(msg, "Job Applicant Import")
+                    _move_to_error_folder(fname, msg)
+                    continue
+                if applicant.applicant_name != new_applicant_name:
+                    applicant.applicant_name = new_applicant_name
+                if applicant.first_name != data.get("first_name"):
+                    applicant.first_name = data.get("first_name")
+                if applicant.last_name != data.get("last_name"):
+                    applicant.last_name = data.get("last_name")
+                if applicant.email_id != data.get("email"):
+                    applicant.email_id = data.get("email")
+                if applicant.cover_letter != data.get("Mitteilungen"):
+                    applicant.cover_letter = data.get("Mitteilungen")
+                if applicant.phone_number != raw_data.get("Telefon"):
+                    applicant.phone_number = raw_data.get("Telefon")
+                if applicant.address != new_address:
+                    applicant.address = new_address
+                applicant.save()
+                # Add comment to existing applicant about update
+                frappe.get_doc({
+                    'doctype': 'Comment',
+                    'comment_type': 'Comment',
+                    'reference_doctype': applicant.doctype,
+                    'reference_name': applicant.name,
+                    'subject': "Updated from XML import",
+                    'content': f"Existing Job Applicant {applicant.name} was updated with data from {fname} because email and job ID matched, status was still 'Open' and there was no Assessment.",
+                    'status': 'Linked'
+                }).insert(ignore_permissions=True)
+
+            elif len(existing_applicants) > 1:
+                msg = f"Multiple existing Job Applicants found for email {data.get('email')} and Job ID {data.get('job_id')}: {[a.name for a in existing_applicants]}"
                 if verbose:
                     print(msg)
                 frappe.log_error(msg, "Job Applicant Import")
                 _move_to_error_folder(fname, msg)
                 continue
 
-            # Create Job Applicant
-            if verbose:
-                print(f"Creating Job Applicant for: {data.get('first_name')} {data.get('last_name')}, Job: {data.get('job_id')}")
-            applicant = frappe.get_doc({
-                "doctype": "Job Applicant",
-                "applicant_name": " ".join(filter(None, [data.get("first_name"), data.get("last_name")])),
-                "job_title": data.get("job_id"),
-                "company": frappe.db.get_value("Job Opening", data.get("job_id"), "company"),
-                "first_name": data.get("first_name"),
-                "last_name": data.get("last_name"),
-                "email_id": data.get("email"),
-                "phone_number": raw_data.get("Telefon"),
-                "status": "Open",
-                "cover_letter": raw_data.get("Mitteilungen"),
-                "source": "Website Listing",
-            })
-            applicant.address = f"{data.get('address').strip()}\n{data.get('postal_code').strip()} {data.get('city').strip()}"
-            applicant.insert()
-            if verbose:
-                print(f"Inserted Job Applicant: {applicant.name}")
+            elif len(existing_applicants) == 0:
+                # Create Job Applicant
+                if verbose:
+                    print(f"Creating new Job Applicant for: {data.get('first_name')} {data.get('last_name')}, Job: {data.get('job_id')}")
+                applicant = frappe.get_doc({
+                    "doctype": "Job Applicant",
+                    "applicant_name": new_applicant_name,
+                    "job_title": data.get("job_id"),
+                    "company": frappe.db.get_value("Job Opening", data.get("job_id"), "company"),
+                    "first_name": data.get("first_name"),
+                    "last_name": data.get("last_name"),
+                    "email_id": data.get("email"),
+                    "phone_number": raw_data.get("Telefon"),
+                    "status": "Open",
+                    "cover_letter": raw_data.get("Mitteilungen"),
+                    "source": "Website Listing",
+                    "address": new_address
+                })
+                applicant.insert()
+                if verbose:
+                    print(f"Inserted new Job Applicant: {applicant.name}")
 
             # Attach PDFs
             for fieldname in PDF_FIELDS:
