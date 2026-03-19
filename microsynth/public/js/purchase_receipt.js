@@ -131,12 +131,23 @@ function enter_batches(frm) {
                                 options: 'Item',
                                 read_only: 1,
                                 in_list_view: 1,
-                                columns: 3
+                                columns: 1
                             },
                             {
                                 fieldname: 'item_name',
                                 fieldtype: 'Data',
-                                hidden: 1
+                                label: __('Item Name'),
+                                read_only: 1,
+                                in_list_view: 1,
+                                columns: 3
+                            },
+                            {
+                                fieldname: 'supplier_part_no',
+                                fieldtype: 'Data',
+                                label: __('Supplier Part No'),
+                                read_only: 1,
+                                in_list_view: 1,
+                                columns: 2
                             },
                             {
                                 fieldname: 'qty',
@@ -158,7 +169,7 @@ function enter_batches(frm) {
                                 fieldtype: 'Date',
                                 label: __('Expiry Date'),
                                 in_list_view: 1,
-                                columns: 2
+                                columns: 1
                             }
                         ]
                     }
