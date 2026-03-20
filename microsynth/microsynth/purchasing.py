@@ -3206,12 +3206,12 @@ def report_purchase_receipt_drafts(company="Microsynth AG"):
 
     bench execute microsynth.microsynth.purchasing.report_purchase_receipt_drafts --kwargs "{'company': 'Microsynth AG'}"
     """
-    purchase_receipt_drafts = frappe.get_all("Purchase Receipt", filters=[['docstatus', '=', '0'], ['company', '=', company]], fields=['name', 'title', 'owner'])
+    purchase_receipt_drafts = frappe.get_all("Purchase Receipt", filters=[['docstatus', '=', '0'], ['company', '=', company]], fields=['name', 'title', 'creation', 'owner'])
     if len(purchase_receipt_drafts):
         pr_draft_details = ""
         for pr in purchase_receipt_drafts:
             url = f"https://erp.microsynth.local/desk#Form/Purchase%20Receipt/{pr['name']}"
-            pr_draft_details += f"<br><a href={url}>{pr['name']}</a>: {pr['title']}, created by {pr['owner']}"
+            pr_draft_details += f"<br><a href={url}>{pr['name']}</a>: {pr['title']}, created {pr['creation']} by {pr['owner']}"
 
         email_template = frappe.get_doc("Email Template", "Purchase Receipt Drafts to be submitted")
         rendered_content = frappe.render_template(email_template.response, {'pr_draft_details': pr_draft_details})
