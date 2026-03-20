@@ -63,18 +63,14 @@ frappe.query_reports["Material Request Overview"] = {
         // Add double-click handler for 'Comment' column cells
         if (!locals.comment_double_click_handler) {
             locals.comment_double_click_handler = true;
-            console.log("66: Material Request Overview loaded, double click handler set:", locals.comment_double_click_handler);
             cur_page.container.addEventListener("dblclick", function(event) {
-                console.log("Double click event:", event);
                 let target = event.delegatedTarget;
                 if (!target) return;
                 let row = target.getAttribute("data-row-index");
                 let column = target.getAttribute("data-col-index");
                 if (row == null || column == null) return;
-                console.log("74: Double click on row:", row, "column:", column);
                 if (parseInt(column) === 11) {
                     let rowData = frappe.query_report.data[row];
-                    console.log("77: Row data for double-clicked cell:", rowData);
                     if (!rowData || !rowData.material_request) return;
                     if (rowData.request_type === "Item Request") {
                         frappe.msgprint(__('Comments cannot be edited for Item Requests.'), __('Info'));
@@ -605,7 +601,8 @@ function open_confirmation_dialog(selected, report) {
             });
         }
     });
-    d.show();
+    // Prevent dialog from closing when clicking outside
+    d.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 
     function update_order_preview() {
         const qty = cint(d.get_value('qty')) || 0;
@@ -799,7 +796,8 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             });
         }
     });
-    d.show();
+    // Prevent dialog from closing when clicking outside
+    d.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 
     // Fetch Supplier Name if Supplier is set but not Supplier Name
     d.fields_dict.supplier.df.onchange = function () {
