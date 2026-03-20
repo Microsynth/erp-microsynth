@@ -59,9 +59,12 @@ frappe.query_reports["Supplier Items"] = {
     "onload": (report) => {
         hide_chart_buttons();
 
-        report.page.add_inner_button(__('Create new'), function() {
-            create_new_supplier_item();
-        }).addClass("btn-primary");
+        // Only show button if user has write permission on Item doctype
+        if (frappe.perm.has_perm("Item", 0, "write")) {
+            report.page.add_inner_button(__('Create new'), function() {
+                create_new_supplier_item();
+            }).addClass("btn-primary");
+        }
 
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;
