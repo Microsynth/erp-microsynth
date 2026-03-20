@@ -249,8 +249,8 @@ function open_material_request_dialog(selected, frm) {
             });
         }
     });
-
-    d.show();
+    // Prevent dialog from closing when clicking outside
+    d.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 
     // Force wider dialog
     setTimeout(() => {
@@ -472,7 +472,8 @@ function create_new_supplier_item(frm) {
             });
         }
     });
-    dialog.show();
+    // Prevent dialog from closing when clicking outside
+    dialog.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 
     // Trigger auto-fill on open
     frappe.call({

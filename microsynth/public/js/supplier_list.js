@@ -143,5 +143,6 @@ function open_simplified_supplier_creation_dialog() {
             });
         }
     });
-    d.show();
+    // Prevent dialog from closing when clicking outside
+    d.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 }

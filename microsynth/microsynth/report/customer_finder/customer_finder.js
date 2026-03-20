@@ -250,7 +250,8 @@ function open_new_lead_dialog() {
             d.hide();
         }
     });
-    d.show();
+    // Prevent dialog from closing when clicking outside
+    d.$wrapper.modal({ backdrop: 'static', keyboard: false, show: true });
 
     // Force wider dialog
     setTimeout(() => {
