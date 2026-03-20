@@ -5,7 +5,10 @@ frappe.ui.form.on('Supplier Quotation', {
             cur_frm.fields_dict.items.grid.get_field('item_code').get_query =   
                 function(frm, dt, dn) {   
                     return {
-                        'query': "microsynth.microsynth.queries.purchase_items"
+                        'query': "microsynth.microsynth.queries.purchase_items",
+                        'filters': {
+                            'supplier': cur_frm.doc.supplier
+                        }
                     }
                 }; 
         }, 1000);
