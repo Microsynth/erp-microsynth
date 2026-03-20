@@ -16,12 +16,13 @@ def get_columns():
         {"label": _("Web Order ID"), "fieldname": "web_order_id_html", "fieldtype": "Data", "width": 90},
         {"label": _("Punchout"), "fieldname": "is_punchout", "fieldtype": "Check", "width": 55},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 75},
-        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
+        {"label": _("Customer name"), "fieldname": "customer_name", "fieldtype": "Data", "width": 200},
         {"label": _("Invoicing Method"), "fieldname": "invoicing_method", "fieldtype": "Data", "width": 120},
         {"label": _("Contact"), "fieldname": "contact", "fieldtype": "Link", "options": "Contact", "width": 70},
         {"label": _("Contact name"), "fieldname": "contact_name", "fieldtype": "Data", "width": 150},
         {"label": _("Date"), "fieldname": "date", "fieldtype": "Date", "width": 80},
-        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 600}
+        {"label": _("Product Type"), "fieldname": "product_type", "fieldtype": "Data", "width": 100},
+        {"label": _("Comment"), "fieldname": "comment", "fieldtype": "Data", "width": 585}
     ]
 
 @frappe.whitelist()
@@ -42,6 +43,7 @@ def get_data(filters=None):
                 )
                 ELSE ''
             END AS `web_order_id_html`,
+            `tabSales Order`.`product_type` AS `product_type`,
             `tabSales Order`.`is_punchout` AS `is_punchout`,
             `tabSales Order`.`customer` AS `customer`,
             `tabSales Order`.`customer_name` AS `customer_name`,
