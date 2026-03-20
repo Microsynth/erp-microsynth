@@ -691,7 +691,10 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                         return '3002 - Einkauf Laborverbrauch - GOE';
                     }
                     else if (company === 'Microsynth Austria GmbH') {
-                        return '5040 - Wareneinkauf 0 % - WIE';
+                        return '5000 - Materialaufwand 20 % - WIE';
+                    }
+                    else if (company === 'Microsynth France SAS') {
+                        return '6061800 - Fourn. non stock. laboratoire - LYO';
                     }
                     // TODO: Fix permissions for QM User Process Assignment and Default Expense Account to allow fetching these values on the client side.
                     // const qm_process = frappe.db.get_value('QM User Process Assignment', {'user': frappe.session.user, 'company': company}, 'qm_process');
