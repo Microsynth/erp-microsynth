@@ -650,7 +650,6 @@ function open_confirmation_dialog(selected, report) {
 
 
 function open_item_request_dialog(report, item_name, supplier_name, supplier_part_no) {
-    // TODO: Get the first QM Process from the User Settings of the active User (tabQM User Process Assignment) and set the according expense_account as default
     let d = new frappe.ui.Dialog({
         'title': __('New Item Request'),
         'fields': [
@@ -678,10 +677,30 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                             'disabled': 0,
                             'root_type': 'Expense',
                             'is_group': 0,
-                            'company': report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'
+                            'company': report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG',
+                            'account_number': ['in', ['3002', '3100', '5000', '5040', '4200', '4400', '4640', '4404', '4407', '4411', '4413', '4416', '4600', '6100', '6101', '6103', '6104', '6105', '6106', '6107', '6112', '6116', '6130', '6132', '6200', '6400', '6460', '6490', '6500', '6503', '6510', '6511', '6530', '6560', '6600', '6601', '6603', '6604', '6640', '606180', '602000']]
                         }
                     };
-                }
+                },
+                default: (function() {
+                    // Get the first QM Process from the User Settings of the active User (tabQM User Process Assignment) and set the default expense_account according to tabDefault Expense Account.
+                    const company = report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG';
+                    if (!company) return '';
+                    if (!frappe.session.user) return '';
+                    if (company === 'Microsynth Seqlab GmbH') {
+                        return '3002 - Einkauf Laborverbrauch - GOE';
+                    }
+                    else if (company === 'Microsynth Austria GmbH') {
+                        return '5040 - Wareneinkauf 0 % - WIE';
+                    }
+                    // TODO: Fix permissions for QM User Process Assignment and Default Expense Account to allow fetching these values on the client side.
+                    // const qm_process = frappe.db.get_value('QM User Process Assignment', {'user': frappe.session.user, 'company': company}, 'qm_process');
+                    // if (qm_process) {
+                    //     const default_expense_account = frappe.db.get_value('Default Expense Account', {'company': company, 'qm_process': qm_process}, 'default_expense_account');
+                    //     return default_expense_account || '';
+                    // }
+                    return '';
+                })()
             },
             {fieldtype:'Check', label: __('Has Batch Number'), fieldname:'has_batch_no', default: 1},
 
