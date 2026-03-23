@@ -13,14 +13,16 @@ from microsynth.microsynth.report.customer_credits.customer_credits import get_d
 def get_columns():
     return [
         {"label": "Credit Account", "fieldname": "name", "fieldtype": "Link", "options": "Credit Account", "width": 100},
-        {"label": "Account Name", "fieldname": "account_name", "fieldtype": "Data", "width": 220},
+        {"label": "Account Name", "fieldname": "account_name", "fieldtype": "Data", "width": 280},
+        {"label": "Type", "fieldname": "account_type", "fieldtype": "Data", "width": 100},
         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 80},
-        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 220},
+        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 230},
         {"label": "Contact", "fieldname": "contact_person", "fieldtype": "Link", "options": "Contact", "width": 80},
         {"label": "Company", "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 150},
         {"label": "Currency", "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
         {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 85},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 75},
+        {"label": "Created by", "fieldname": "owner", "fieldtype": "Link", "options": "User", "width": 180},
         {"label": "Cancel", "fieldname": "cancel_action", "fieldtype": "HTML", "width": 75},
     ]
 
@@ -48,13 +50,15 @@ def get_data(filters):
         SELECT
             `name`,
             `account_name`,
+            `account_type`,
             `customer`,
             `customer_name`,
             `contact_person`,
             `company`,
             `currency`,
             `expiry_date`,
-            `status`
+            `status`,
+            `owner`
         FROM `tabCredit Account`
         WHERE {where_clause}
         ORDER BY `expiry_date` ASC
@@ -65,6 +69,7 @@ def get_data(filters):
         data.append({
             "name": r.name,
             "account_name": r.account_name,
+            "account_type": r.account_type,
             "customer": r.customer,
             "customer_name": r.customer_name,
             "contact_person": r.contact_person,
@@ -72,6 +77,7 @@ def get_data(filters):
             "currency": r.currency,
             "expiry_date": r.expiry_date,
             "status": r.status,
+            "owner": r.owner,
             "cancel_action": (
                 "<button class='btn btn-danger btn-xs cancel-credit' "
                 f"data-ca='{r.name}' data-exp='{r.expiry_date}'>Cancel</button>"

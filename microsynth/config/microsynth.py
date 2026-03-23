@@ -189,12 +189,6 @@ def get_data():
             "icon": "fa fa-money",
             "items": [
                     {
-                       "type": "doctype",
-                       "name": "Customs Declaration",
-                       "label": _("Customs Declaration"),
-                       "description": _("Customs Declaration")
-                    },
-                    {
                        "type": "report",
                        "name": "Orders on Hold",
                        "label": _("Orders on Hold"),
@@ -221,6 +215,13 @@ def get_data():
                        "label": _("Customer Credits"),
                        "doctype": "Sales Invoice",
                        "is_query_report": True
+                    },
+                    {
+                        "type": "report",
+                        "name": "Expired Credits",
+                        "label": _("Expired Credits"),
+                        "doctype": "Credit Account",
+                        "is_query_report": True
                     },
                     {
                         "type": "report",
@@ -453,6 +454,12 @@ def get_data():
             "label": _("Shipping"),
             "icon": "octicon octicon-file-submodule",
             "items": [
+                    {
+                       "type": "doctype",
+                       "name": "Customs Declaration",
+                       "label": _("Customs Declaration"),
+                       "description": _("Customs Declaration")
+                    },
                     {
                         "type": "page",
                         "name": "tracking_codes",
