@@ -1454,11 +1454,6 @@ def create_si_content_from_so(so_id, debug=False):
     """
     if debug:
         print(f"[create_si_from_so] Starting for SO {so_id}")
-    discount_amount = frappe.db.get_value("Sales Order", so_id, "discount_amount") or 0
-    if discount_amount > 0:
-        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount}. "
-                         f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
-                         f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
     si_content = make_sales_invoice_from_so(so_id)
     if isinstance(si_content, dict):
         if debug: print(f"[create_si_from_so] Sales Invoice content created as dict for SO {so_id}")
@@ -1482,6 +1477,7 @@ def create_si_content_from_so(so_id, debug=False):
         print(f"[create_si_from_so] DN={dn_doc.name}, DN total={dn_doc.total}")
         print(f"[create_si_from_so] Initial SI total={end_customer_si.total}")
 
+    discount_amount = frappe.db.get_value("Sales Order", so_id, "discount_amount") or 0
     # check item counts
     if (end_customer_si.get('oligos') and dn_doc.get('oligos') and len(end_customer_si.oligos) != len(dn_doc.oligos)) or \
         (end_customer_si.get('samples') and dn_doc.get('samples') and len(end_customer_si.samples) != len(dn_doc.samples)) or \
@@ -1489,10 +1485,21 @@ def create_si_content_from_so(so_id, debug=False):
         if debug:
             print("[create_si_from_so] Mismatch in row counts → adjusting SI to match DN")
         end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si, debug=debug)
-
-    # safety check
+        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts do NOT match between SO and DN. "
+                         f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
+                         f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
+    elif discount_amount > 0:
+        end_customer_si.discount_amount = (end_customer_si.discount_amount or 0) + discount_amount
+        end_customer_si.base_discount_amount = (
+            end_customer_si.discount_amount * (end_customer_si.conversion_rate or 1)
+        )
+        end_customer_si.calculate_taxes_and_totals()  # necessary?
+        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts match between SO and DN. "
+                         f"The discount amount is added to the Sales Invoice {end_customer_si.name}. Please check the created Sales Invoice carefully.",
+                         "invoicing.create_si_from_so")
     if debug:
         print(f"[create_si_from_so] SI total={end_customer_si.total}, DN total={dn_doc.total}")
+    # safety check
     if flt(end_customer_si.total, 2) > flt(dn_doc.total, 2):
         frappe.log_error(
             f"Total (before discount) of Sales Invoice {end_customer_si.name} ({end_customer_si.total}) is greater than total (before discount) of Delivery Note {dn_doc.name} ({dn_doc.total}).",
@@ -1548,6 +1555,15 @@ def merge_si_contents(source_si_content, target_si_content):
             'sales_order': item.sales_order,
             'cost_center': item.cost_center
         })
+    # check discount_amount
+    if source_si_doc.discount_amount > 0:
+        frappe.log_error(f"Source Sales Invoice {source_si_doc.name} has a discount amount of {source_si_doc.discount_amount}. "
+                         f"The discount amount is added to the target Sales Invoice {target_si_doc.name}. "
+                         f"Please check the created Sales Invoice carefully.", "invoicing.merge_si_contents")
+        target_si_doc.discount_amount = (target_si_doc.discount_amount or 0) + source_si_doc.discount_amount
+        target_si_doc.base_discount_amount = (
+            target_si_doc.discount_amount * (target_si_doc.conversion_rate or 1)
+        )
     # Recalculate totals after modification
     target_si_doc.calculate_taxes_and_totals()
 
