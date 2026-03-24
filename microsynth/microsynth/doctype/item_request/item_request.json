@@ -72,7 +72,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "no_copy": 1,
-   "options": "Pending\nDone\nRejected",
+   "options": "Draft\nPending\nDone\nRejected\nCancelled",
    "read_only": 1
   },
   {
@@ -211,7 +211,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-11 14:32:35.238517",
+ "modified": "2026-03-24 08:44:14.770354",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Item Request",
