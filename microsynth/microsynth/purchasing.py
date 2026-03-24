@@ -2838,7 +2838,7 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
             issue.posting_time = posting_dt.time()
             issue.remarks = f"UOM migration issue for {item_code}"
 
-            for r in stock_rows:
+            for r in stock_rows:  # stock_rows are created using tabBin and tabBatch
                 issue.append("items", {
                     "item_code": item_code,
                     "qty": r["qty"],
@@ -2846,8 +2846,8 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
                     "batch_no": r["batch_no"],
                     "uom": item.stock_uom,
                     "conversion_factor": 1,
-                    "valuation_rate": r["valuation_rate"],
-                    "allow_zero_valuation_rate": 1
+                    "basic_rate": r["valuation_rate"],
+                    "valuation_rate": r["valuation_rate"]
                 })
             issue.insert()
             issue.submit()
@@ -2914,8 +2914,8 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
                     "batch_no": r["batch_no"],
                     "uom": new_stock_uom,
                     "conversion_factor": 1,
-                    "valuation_rate": r["valuation_rate"],
-                    "allow_zero_valuation_rate": 1
+                    "basic_rate": r["valuation_rate"],
+                    "valuation_rate": r["valuation_rate"]
                 })
             receipt.insert()
             receipt.submit()
