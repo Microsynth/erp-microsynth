@@ -23,6 +23,18 @@ frappe.ui.form.on('Item', {
             }
         }
 
+        // Show "Correct Stock" button only for non-disabled stock items and users with Stock User role
+        if (
+            !frm.doc.__islocal &&
+            frm.doc.disabled === 0 &&
+            frm.doc.is_stock_item &&
+            frappe.user.has_role("Stock User")
+        ) {
+            frm.add_custom_button("Correct Stock", () => {
+                open_correct_stock_dialog(frm);
+            });
+        }
+
         if (frm.doc.storage_locations.length > 0) {
             // Remove previous dashboard comments
             frm.dashboard.clear_comment();
@@ -458,4 +470,121 @@ function refresh_field_states(d) {
     d.get_field("rack").df.read_only = !destination;
 
     d.refresh();
+}
+
+
+function open_correct_stock_dialog(frm) {
+    let d = new frappe.ui.Dialog({
+        'title': "Correct Stock",
+        'fields': [
+            {
+                fieldname: "warehouse",
+                fieldtype: "Link",
+                options: "Warehouse",
+                label: "Warehouse",
+                reqd: 1,
+                default: "Stores - BAL",
+                onchange: () => load_batches()
+            },
+            {
+                fieldname: "stock_uom",
+                fieldtype: "Data",
+                label: "Stock UOM",
+                read_only: 1,
+                default: frm.doc.stock_uom
+            },
+            {
+                fieldname: 'batch_table',
+                fieldtype: 'Table',
+                label: __('Batches'),
+                cannot_add_rows: true,
+                in_place_edit: true,
+                fields: [
+                    {
+                        fieldname: 'batch_no',
+                        fieldtype: 'Data',
+                        label: __('Batch'),
+                        read_only: 1,
+                        in_list_view: 1,
+                        columns: 2
+                    },
+                    {
+                        fieldname: 'current_qty',
+                        fieldtype: 'Float',
+                        precision: 2,
+                        label: __('Current Qty'),
+                        read_only: 1,
+                        in_list_view: 1,
+                        columns: 2
+                    },
+                    {
+                        fieldname: 'new_qty',
+                        fieldtype: 'Float',
+                        precision: 2,
+                        label: __('New Qty'),
+                        in_list_view: 1,
+                        columns: 2
+                    },
+                    {
+                        fieldname: 'original_receipt_date',
+                        fieldtype: 'Date',
+                        label: __('Original Receipt Date'),
+                        in_list_view: 1,
+                        columns: 3
+                    }
+                ]
+            }
+        ],
+        'primary_action_label': "Submit",
+        'primary_action': function(values) {
+            frappe.call({
+                'method': "microsynth.microsynth.stock.correct_stock",
+                'args': {
+                    'item_code': frm.doc.name,
+                    'warehouse': values.warehouse,
+                    'rows': values.batch_table
+                },
+                'freeze': true,
+                'freeze_message': "Correcting stock...",
+                'callback': function(r) {
+                    if (r.exc) {
+                        frappe.msgprint(__("Error correcting stock: ") + r.exc);
+                    } else {
+                        frappe.msgprint(__("Stock corrected successfully."));
+                    }
+                    d.hide();
+                    frm.reload_doc();
+                }
+            });
+        }
+    });
+
+    function load_batches() {
+        frappe.call({
+            'method': "microsynth.microsynth.stock.get_batches_with_qty",
+            'args': {
+                'item_code': frm.doc.name,
+                'warehouse': d.get_value("warehouse")
+            },
+            'callback': function(r) {
+                // Set the data directly on the Table field's df object
+                d.fields_dict.batch_table.df.data = r.message || [];
+
+                // Refresh the grid to display updated data
+                d.fields_dict.batch_table.grid.refresh();
+            }
+        });
+    }
+
+    d.show();
+
+    // Force wider dialog
+    setTimeout(() => {
+        let modals = document.getElementsByClassName('modal-dialog');
+        if (modals.length > 0) {
+            modals[modals.length - 1].style.width = '800px';
+        }
+    }, 300);
+
+    load_batches();
 }

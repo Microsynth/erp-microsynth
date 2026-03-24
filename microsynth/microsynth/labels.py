@@ -373,6 +373,7 @@ def print_purchasing_labels(label_table):
         s.connect((label_printer_ip, label_printer_port))
         for row in label_table:
             row['username'] = username
+            row['original_receipt_date'] = row.get('original_receipt_date', None)
             labels_to_print = int(row.get("labels_to_print") or 0)
             if labels_to_print <= 0:
                 continue

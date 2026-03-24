@@ -1,6 +1,8 @@
 
 import json
 import frappe
+from microsynth.microsynth.utils import user_has_role
+from microsynth.microsynth.labels import print_purchasing_labels
 
 def get_purchasing_items(company="Microsynth AG"):
     """
@@ -123,3 +125,206 @@ def issue_material(company, user, items):
                 "internal_message": str(e) + "\n" + str(frappe.get_traceback())
             }
         }
+
+
+def create_stock_entry(item, warehouse, rows, purpose):
+    doc = frappe.new_doc("Stock Entry")
+    doc.stock_entry_type = purpose
+    doc.company = frappe.defaults.get_user_default("Company")
+
+    for r in rows:
+        doc.append("items", {
+            "item_code": item.name,
+            "qty": r["qty"],
+            "uom": item.stock_uom,
+            "conversion_factor": 1,
+            "basic_rate": r.get("rate", 0),
+            "valuation_rate": r.get("rate", 0),
+            "allow_zero_valuation": 1 if r.get("rate", 0) == 0 else 0,
+            "s_warehouse": warehouse if purpose == "Material Issue" else None,
+            "t_warehouse": warehouse if purpose == "Material Receipt" else None,
+            "batch_no": r["batch_no"]
+        })
+
+    doc.insert()
+    doc.submit()
+    return doc
+
+
+def create_generic_batch(item_code, batch_no):
+    doc = frappe.new_doc("Batch")
+    doc.item = item_code
+    doc.batch_id = batch_no
+    doc.insert(ignore_permissions=True)
+
+
+def get_batch_rate(item_code, batch_no):
+    if batch_no.startswith("[NA]"):
+        return 0
+
+    rate = frappe.db.sql("""
+        SELECT `valuation_rate`
+        FROM `tabPurchase Receipt Item`
+        WHERE
+            `item_code` = %s
+            AND `batch_no` = %s
+            AND `docstatus` = 1
+        ORDER BY `creation` DESC
+        LIMIT 1
+    """, (item_code, batch_no))
+
+    return rate[0][0] if rate else 0
+
+
+def get_shelf_life_date(item, batch_no, original_receipt_date=None):
+    expiry = frappe.db.get_value("Batch", batch_no, "expiry_date")
+    if expiry:
+        return expiry
+
+    if item.shelf_life_in_days:
+        if original_receipt_date:
+            return frappe.utils.add_days(original_receipt_date, item.shelf_life_in_days)
+        else:
+            return frappe.utils.add_days(frappe.utils.nowdate(), item.shelf_life_in_days)
+
+    return None
+
+
+def get_internal_code(name):
+    if len(name) >= 5 and name[-5] == "0":
+        return name[-4:]
+    return ""
+
+
+@frappe.whitelist()
+def get_batches_with_qty(item_code, warehouse):
+    """
+    Get batches for a given item and warehouse along with their current quantities.
+    Creates a generic batch if none exist to allow stock correction.
+
+    bench execute microsynth.microsynth.stock.get_batches_with_qty --kwargs '{"item_code": "P002005", "warehouse": "Stores - BAL"}'
+    """
+    batches = frappe.db.sql("""
+        SELECT
+            `tabBatch`.`name` AS `batch_no`
+        FROM `tabBatch`
+        WHERE `tabBatch`.`item` = %s
+        ORDER BY `tabBatch`.`creation`
+    """, item_code, as_dict=True)
+
+    # Ensure generic batch exists
+    generic_batch = f"[NA]-{item_code}"
+    batch_list = [b.batch_no for b in batches]
+    if generic_batch not in batch_list:
+        batch_list.append(generic_batch)
+
+    result = []
+
+    for batch_no in batch_list:
+        qty = frappe.db.sql("""
+            SELECT IFNULL(SUM(`actual_qty`), 0)
+            FROM `tabStock Ledger Entry`
+            WHERE
+                `item_code` = %s
+                AND `warehouse` = %s
+                AND `batch_no` = %s
+                AND `is_cancelled` = 0
+        """, (item_code, warehouse, batch_no))[0][0]
+
+        result.append({
+            "batch_no": batch_no,
+            "current_qty": qty,
+            "new_qty": qty
+        })
+
+    return result
+
+
+@frappe.whitelist()
+def correct_stock(item_code, warehouse, rows):
+    """
+    Correct stock levels for a given item and warehouse based on provided batch quantities.
+    """
+    # Check that User has Role "Stock User"
+    if not user_has_role(frappe.session.user, "Stock User"):
+        frappe.throw("You do not have permission to perform this action.")
+
+    rows = frappe.parse_json(rows)
+    item = frappe.get_doc("Item", item_code)
+    issue_rows = []
+    receipt_rows = []
+    label_table = []
+    any_change = False
+    generic_batch = f"[NA]-{item_code}"
+
+    for row in rows:
+        batch_no = row["batch_no"]
+
+        current_qty = frappe.db.sql("""
+            SELECT IFNULL(SUM(`actual_qty`), 0)
+            FROM `tabStock Ledger Entry`
+            WHERE
+                `item_code` = %s
+                AND `warehouse` = %s
+                AND `batch_no` = %s
+                AND `is_cancelled` = 0
+        """, (item_code, warehouse, batch_no))[0][0]
+
+        new_qty = float(row["new_qty"])
+        delta = new_qty - current_qty
+
+        if abs(delta) < 0.0001:
+            continue
+
+        if batch_no == generic_batch and not frappe.db.exists("Batch", generic_batch):
+            create_generic_batch(item_code, generic_batch)
+
+        any_change = True
+
+        if delta < 0:
+            if current_qty + delta < 0:
+                frappe.throw(f"Negative stock not allowed for batch {batch_no}")
+
+            issue_rows.append({
+                "batch_no": batch_no,
+                "qty": abs(delta)
+            })
+
+        else:
+            rate = get_batch_rate(item_code, batch_no)
+
+            receipt_rows.append({
+                "batch_no": batch_no,
+                "qty": delta,
+                "rate": rate
+            })
+            # Prepare label row
+            shelf_life_date = get_shelf_life_date(item, batch_no, row.get("original_receipt_date"))
+
+            label_table.append({
+                "labels_to_print": int(delta),
+                "item_code": item.name,
+                "item_name": item.item_name,
+                "shelf_life_date": shelf_life_date,
+                "material_code": item.material_code,
+                "internal_code": get_internal_code(item.name),
+                "batch_no": batch_no
+            })
+
+    if not any_change:
+        return
+
+    issue_doc = None
+    receipt_doc = None
+
+    if issue_rows:
+        issue_doc = create_stock_entry(item, warehouse, issue_rows, "Material Issue")
+
+    if receipt_rows:
+        receipt_doc = create_stock_entry(item, warehouse, receipt_rows, "Material Receipt")
+
+    # Only print if successful
+    if receipt_doc and label_table:
+        print_purchasing_labels(json.dumps(label_table))
+
+    return issue_doc, receipt_doc
