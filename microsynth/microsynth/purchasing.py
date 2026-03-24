@@ -2845,9 +2845,7 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
                     "s_warehouse": r["warehouse"],
                     "batch_no": r["batch_no"],
                     "uom": item.stock_uom,
-                    "conversion_factor": 1,
-                    "basic_rate": r["valuation_rate"],
-                    "valuation_rate": r["valuation_rate"]
+                    "conversion_factor": 1                              # valuation shall be done by integrated mechanism
                 })
             issue.insert()
             issue.submit()
@@ -2906,16 +2904,15 @@ def change_item_uom(item_code, new_stock_uom, dry_run=False, verbose=False):
             receipt.posting_time = posting_dt.time()
             receipt.remarks = f"UOM migration receipt for {old_item_code}"
 
-            for r in stock_rows:
+            for r in issue.items:                                       # base this on the issued material
                 receipt.append("items", {
                     "item_code": old_item_code,
-                    "qty": r["qty"],
-                    "t_warehouse": r["warehouse"],
-                    "batch_no": r["batch_no"],
+                    "qty": r.get("qty"),
+                    "t_warehouse": r.get("s_warehouse"),
+                    "batch_no": r.get("batch_no"),
                     "uom": new_stock_uom,
                     "conversion_factor": 1,
-                    "basic_rate": r["valuation_rate"],
-                    "valuation_rate": r["valuation_rate"]
+                    "basic_rate": r.get("basic_rate")
                 })
             receipt.insert()
             receipt.submit()
