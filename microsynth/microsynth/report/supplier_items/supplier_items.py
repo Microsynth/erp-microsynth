@@ -200,10 +200,12 @@ def create_purchasing_item(data):
 
     # --- Item Default (single entry) ---
     if data.get("company"):
+        company_abbr = frappe.db.get_value("Company", data.get("company"), "abbr") or 'BAL'
         item.append("item_defaults", {
             "company": data.get("company"),
             "expense_account": data.get("expense_account"),
-            "default_supplier": data.get("default_supplier")
+            "default_supplier": data.get("default_supplier"),
+            "default_warehouse": f"Stores - {company_abbr}"  # TODO: What is a better way to determine the default warehouse depending on the company?
         })
 
     # --- Supplier Item (single entry) ---
