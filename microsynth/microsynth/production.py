@@ -99,19 +99,24 @@ def get_customer_from_sales_order(sales_order):
     return customer
 
 
-def check_sales_order_completion(sales_orders):
+def check_sales_order_completion(sales_orders, verbose=False):
     """
     Check if all oligos of the provided orders are completed and generate a delivery note.
 
-    Run
-    bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-23000058', 'SO-BAL-23000051']}"
+    bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-26014525', 'SO-LYO-26000688'], 'verbose': True}"
     """
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
-        #print(f"Processing '{sales_order}' ...")
+        if verbose:
+            print(f"Checking Sales Order '{sales_order}' for completion ...")
 
         if not validate_sales_order(sales_order):
+            if verbose:
+                print(f"Sales Order '{sales_order}' is not valid. Cannot create a Delivery Note.")
             continue
+        else:
+            if verbose:
+                print(f"Sales Order '{sales_order}' is valid. Going to check if it is completed and create a delivery note if so.")
 
         # get open items
         so_open_items = frappe.db.sql("""
@@ -124,20 +129,26 @@ def check_sales_order_completion(sales_orders):
                 AND `tabOligo Link`.`parenttype` = "Sales Order"
                 AND `tabOligo`.`status` = "Open";
         """.format(sales_order=sales_order), as_dict=True)
+        if verbose:
+            print(f"Sales Order '{sales_order}' has {len(so_open_items)} open items.")
 
         if len(so_open_items) == 0:
             # all items are either complete or cancelled
             if has_items_delivered_by_supplier(sales_order):
+                if verbose:
+                    print(f"Sales Order '{sales_order}' has items that are delivered by supplier. Going to skip.")
                 # do not create a DN if any item has the flag delivered_by_supplier set
                 continue
             ## create delivery note (leave on draft: submitted by flushbox after processing)
             dn_content = make_delivery_note(sales_order)
             dn = frappe.get_doc(dn_content)
             if not dn:
-                #print(f"Delivery Note for '{sales_order}' is None.")
+                if verbose:
+                    print(f"Delivery Note for '{sales_order}' is None.")
                 continue
             if not dn.get('oligos'):
-                #print(f"Delivery Note for '{sales_order}' has no Oligos.")
+                if verbose:
+                    print(f"Delivery Note for '{sales_order}' has no Oligos.")
                 continue
             company = frappe.get_value("Sales Order", sales_order, "company")
             dn.naming_series = get_naming_series("Delivery Note", company)
@@ -172,12 +183,24 @@ def check_sales_order_completion(sales_orders):
 
             # if all Oligos are cancelled, there are no items left or only the shipping item -> close the order
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
-                print(f"No items left in {sales_order}. Cannot create a delivery note. Going to close the Sales Order.")
+                if verbose:
+                    print(f"All Oligos in Sales Order '{sales_order}' are cancelled, and there are no items left or only the shipping item. Going to close the Sales Order. {sales_order.is_intercompany=}.")
                 close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
+                if sales_order.is_intercompany:
+                    if not frappe.db.exists("Sales Order", sales_order.po_no):
+                        msg = f"Sales Order '{sales_order}' is an intercompany order, but the linked Sales Order '{sales_order.po_no}' does not exist. "
+                        msg += f"Cannot close the Sales Order '{sales_order.po_no}'. Please check manually."
+                        if verbose:
+                            print(msg)
+                        frappe.log_error(msg, "check_sales_order_completion")
+                    else:
+                        close_or_unclose_sales_orders("""["{0}"]""".format(sales_order.po_no), "Closed")
                 continue
 
             if len(cleaned_oligos) == 0:
-                msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. Please check manually."
+                msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. {sales_order.is_intercompany=}. Please check manually."
+                if verbose:
+                    print(msg)
                 frappe.log_error(msg, "check_sales_order_completion")
                 # Add a comment to the Sales Order
                 new_comment = frappe.get_doc({
@@ -198,6 +221,8 @@ def check_sales_order_completion(sales_orders):
             dn.flags.ignore_missing = True
             dn.insert(ignore_permissions=True)
             frappe.db.commit()
+            if verbose:
+                print(f"Created Delivery Note '{dn.name}' for Sales Order '{sales_order}'.")
 
             # create PDF for delivery note
             try:
@@ -213,10 +238,13 @@ def check_sales_order_completion(sales_orders):
                 # convert byte array and write to binray file
                 output.write((''.join(chr(i) for i in pdf)).encode('charmap'))
                 output.close()
+                if verbose:
+                    print(f"Created PDF for Delivery Note '{dn.name}' at '{settings.pdf_path}/{dn.web_order_id}.pdf'.")
             except Exception as err:
-                frappe.log_error( "Error on pdf creation of {0}: {1}".format(dn.name, err),
-                    "PDF creation failed (production API)" )
-    return
+                msg = f"Error creating PDF for Delivery Note {dn.name} of Sales Order {sales_order}: {err}"
+                if verbose:
+                    print(msg)
+                frappe.log_error(msg, "PDF creation failed (production API)")
 
 
 @frappe.whitelist()
