@@ -176,16 +176,13 @@ def get_batch_rate(item_code, batch_no):
     return rate[0][0] if rate else 0
 
 
-def get_shelf_life_date(item, batch_no, original_receipt_date=None):
+def get_shelf_life_date(item, batch_no):
     expiry = frappe.db.get_value("Batch", batch_no, "expiry_date")
     if expiry:
         return expiry
 
     if item.shelf_life_in_days:
-        if original_receipt_date:
-            return frappe.utils.add_days(original_receipt_date, item.shelf_life_in_days)
-        else:
-            return frappe.utils.add_days(frappe.utils.nowdate(), item.shelf_life_in_days)
+        return frappe.utils.add_days(frappe.utils.nowdate(), item.shelf_life_in_days)
 
     return None
 
@@ -299,7 +296,7 @@ def correct_stock(item_code, warehouse, rows):
                 "rate": rate
             })
             # Prepare label row
-            shelf_life_date = get_shelf_life_date(item, batch_no, row.get("original_receipt_date"))
+            shelf_life_date = get_shelf_life_date(item, batch_no)
 
             label_table.append({
                 "labels_to_print": int(delta),
@@ -325,6 +322,6 @@ def correct_stock(item_code, warehouse, rows):
 
     # Only print if successful
     if receipt_doc and label_table:
-        print_purchasing_labels(json.dumps(label_table))
+        print_purchasing_labels(json.dumps(label_table), is_legacy=True)
 
     return issue_doc, receipt_doc

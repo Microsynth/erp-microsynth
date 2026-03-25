@@ -506,7 +506,7 @@ function open_correct_stock_dialog(frm) {
                         label: __('Batch'),
                         read_only: 1,
                         in_list_view: 1,
-                        columns: 2
+                        columns: 3
                     },
                     {
                         fieldname: 'current_qty',
@@ -515,7 +515,7 @@ function open_correct_stock_dialog(frm) {
                         label: __('Current Qty'),
                         read_only: 1,
                         in_list_view: 1,
-                        columns: 2
+                        columns: 3
                     },
                     {
                         fieldname: 'new_qty',
@@ -524,13 +524,6 @@ function open_correct_stock_dialog(frm) {
                         label: __('New Qty'),
                         in_list_view: 1,
                         columns: 2
-                    },
-                    {
-                        fieldname: 'original_receipt_date',
-                        fieldtype: 'Date',
-                        label: __('Original Receipt Date'),
-                        in_list_view: 1,
-                        columns: 3
                     }
                 ]
             }
@@ -577,14 +570,5 @@ function open_correct_stock_dialog(frm) {
     }
 
     d.show();
-
-    // Force wider dialog
-    setTimeout(() => {
-        let modals = document.getElementsByClassName('modal-dialog');
-        if (modals.length > 0) {
-            modals[modals.length - 1].style.width = '800px';
-        }
-    }, 300);
-
     load_batches();
 }

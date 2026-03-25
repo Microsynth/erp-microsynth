@@ -1,0 +1,23 @@
+#!A1
+#IMS30/22   {# label size: 30 x 22 mm #}
+#N13
+#ER
+
+{%- if row.material_code %}
+#T1.2#J13#YN101//42///{{ row.material_code }}#G
+{%- endif %}
+
+{%- if row.internal_code %}
+#T1.2#J9.4#YN101//42///{{ row.internal_code }}
+{% else %}
+#T1.2#J9.4#YN101//42///{{ row.item_code }}
+{%- endif %}
+
+{% if row.batch_no and row.timestamp %}
+#T15.4#J10#IDM/0R16S36/4///{{ row.item_code }}:{{ row.batch_no }}:{{ row.timestamp }}
+{% endif %}
+
+#T1.2#J6.7#YN101//28///Opening date / initials:#G
+
+#Q1/
+#!P1

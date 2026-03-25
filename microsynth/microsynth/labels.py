@@ -3,6 +3,7 @@
 # For license information, please see license.txt
 
 import re
+import json
 import unicodedata  # part of standard library, no installation required
 import frappe
 import socket
@@ -15,6 +16,7 @@ from microsynth.microsynth.shipping import (
 )
 from microsynth.microsynth.utils import send_email_from_template
 
+
 NOVEXX_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_novexx.html"
 BRADY_PRINTER_TEMPLATE = "microsynth/templates/includes/address_label_brady.html"
 
@@ -24,12 +26,10 @@ def print_raw(ip, port, content):
     s.connect((ip, port))
     s.send(content.encode())
     s.close()  # TODO: Is this necessary? Remove to avoid connection refused errors?
-    return
 
 
 def print_test_label_brady():
     """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
-
     content = ''';###load Microsynth logo###
 M l IMG;01_MIC_Logo_Swiss_black
 
@@ -52,7 +52,6 @@ A 1
 
 def print_test_label_novexx():
     """Test functions are hardcoded to specific printer IPs and are useful only during initial development - delete after finishing development"""
-
     content = '''#!A1
 #IMS105/148
 #N13
@@ -84,13 +83,11 @@ def choose_brady_printer(company):
     Printers have to be set in Sequencing Settings based on company name. The IP and port
     of the printer are specified on the 'Brady Printer' DocType.
     """
-
     # check if there is a user-specific printer
     user = frappe.get_user()
     if frappe.db.exists("User Printer", user.name):
         printer_name = frappe.get_value("User Printer", user.name, "label_printer")
         printer = frappe.get_doc("Brady Printer", printer_name)
-
         return printer
 
     # Austria labels will be handled in by Microsynth AG
@@ -110,7 +107,7 @@ def choose_brady_printer(company):
 def get_label_data(sales_order):
     """
     Returns the data for printing a shipping label from a sales order.
-    run
+
     bench execute microsynth.microsynth.labels.get_label_data --kwargs "{'sales_order': 'SO-BAL-26003620'}"
     """
     if type(sales_order) == str:
@@ -224,7 +221,6 @@ def print_oligo_order_labels(sales_orders):
     """
     Prints the shipping labels from a list of sales order names.
 
-    Run
     bench execute "microsynth.microsynth.labels.print_oligo_order_labels" --kwargs "{'sales_orders': ['SO-BAL-22011340']}"
     """
     create_ups_batch_file(sales_orders)
@@ -358,9 +354,11 @@ def create_ups_batch_file(sales_orders):
 
 
 @frappe.whitelist()
-def print_purchasing_labels(label_table):
-    import json
-    purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
+def print_purchasing_labels(label_table, is_legacy=False):
+    if is_legacy:
+        purchase_label_template = "microsynth/templates/includes/purchase_label_legacy_novexx.html"
+    else:
+        purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
     label_printer_ip = "192.0.1.79"
     label_printer_port = 9100
     user = frappe.get_user().name
@@ -373,7 +371,6 @@ def print_purchasing_labels(label_table):
         s.connect((label_printer_ip, label_printer_port))
         for row in label_table:
             row['username'] = username
-            row['original_receipt_date'] = row.get('original_receipt_date', None)
             labels_to_print = int(row.get("labels_to_print") or 0)
             if labels_to_print <= 0:
                 continue

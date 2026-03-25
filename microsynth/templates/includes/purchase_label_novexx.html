@@ -4,11 +4,7 @@
 #ER
 
 {# Line 1: Receipt date / initials #}
-{%- if row.original_receipt_date %}
-#T1.2#J19.5#YN101//28///Receipt: {{ frappe.utils.formatdate(row.original_receipt_date, 'dd.MM.yyyy') }} {{ row.username }}#G
-{% else %}
 #T1.2#J19.5#YN101//28///Receipt: {{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd.MM.yyyy') }} {{ row.username }}#G
-{%- endif %}
 
 {# Line 2: shelf life #}
 {%- if row.shelf_life_date %}
