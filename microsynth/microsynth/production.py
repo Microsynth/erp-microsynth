@@ -893,3 +893,75 @@ def get_purchasing_items_with_internal_code():
         'message': 'OK',
         'items': items
     }
+
+
+def close_oligo_orders_with_all_oligos_canceled(verbose=False, dry_run=True):
+    """
+    Closes all Sales Orders that meet the following criteria:
+    - Docstatus = 1 (submitted)
+    - Product Type = 'Oligos'
+    - No Delivery Note exists
+    - At least one Oligo linked
+    - All linked Oligos have Status 'Canceled'
+    Args:
+        verbose (bool): Print details of actions
+        dry_run (bool): If True, do not actually close orders
+    Returns:
+        List of closed Sales Orders (or would-be closed if dry_run)
+
+    bench execute microsynth.microsynth.production.close_oligo_orders_with_all_oligos_canceled --kwargs "{'verbose': True, 'dry_run': True}"
+    """
+    closed_orders = []
+    if verbose:
+        print("Starting to check for Sales Orders with all Oligos canceled and no Delivery Note...")
+    # Find all Sales Orders that are submitted, have product_type Oligos, are not Closed, have at least one Oligo, all Oligos canceled, and no Delivery Note
+    query = """
+        SELECT
+            `tabSales Order`.`name`
+        FROM `tabSales Order`
+        WHERE
+            `tabSales Order`.`docstatus` = 1
+            AND `tabSales Order`.`product_type` = 'Oligos'
+            AND `tabSales Order`.`status` != 'Closed'
+
+            -- No Delivery Note exists
+            AND NOT EXISTS (
+                SELECT 1
+                FROM `tabDelivery Note`
+                WHERE
+                    `tabDelivery Note`.`web_order_id` = `tabSales Order`.`web_order_id`
+                    AND `tabDelivery Note`.`docstatus` < 2
+            )
+            -- At least one Oligo Link exists
+            AND EXISTS (
+                SELECT 1
+                FROM `tabOligo Link`
+                WHERE
+                    `tabOligo Link`.`parent` = `tabSales Order`.`name`
+                    AND `tabOligo Link`.`parenttype` = 'Sales Order'
+            )
+            -- All linked Oligos are canceled
+            AND NOT EXISTS (
+                SELECT 1
+                FROM `tabOligo Link`
+                INNER JOIN `tabOligo`
+                    ON `tabOligo`.`name` = `tabOligo Link`.`oligo`
+                WHERE
+                    `tabOligo Link`.`parent` = `tabSales Order`.`name`
+                    AND `tabOligo Link`.`parenttype` = 'Sales Order'
+                    AND `tabOligo`.`status` != 'Canceled'
+            );
+    """
+    results = frappe.db.sql(query, as_dict=True)
+    if verbose:
+        print(f"Found {len(results)} Sales Orders with all Oligos canceled and no Delivery Note.")
+    for row in results:
+        so_name = row['name']
+        if not dry_run:
+            close_or_unclose_sales_orders(f'["{so_name}"]', "Closed")
+        if verbose:
+            print(f"{'Would close' if dry_run else 'Closed'} Sales Order: {so_name}")
+        closed_orders.append(so_name)
+    if verbose:
+        print(f"{'Would close' if dry_run else 'Closed'} {len(closed_orders)} Sales Orders.")
+    return closed_orders
