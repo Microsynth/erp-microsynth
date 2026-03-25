@@ -18,6 +18,7 @@ from microsynth.microsynth.report.customer_credits.customer_credits import (
     build_transactions_with_running_balance,
     get_data as get_customer_credits
 )
+from microsynth.microsynth.webshop import create_deposit_invoice
 
 
 def get_available_credits(customer, company, credit_type):
@@ -283,55 +284,9 @@ def book_credit(sales_invoice, credit_item=None, event=None):
     return jv.name
 
 
-@frappe.whitelist()
-def create_promotion_credit_account(account_name, customer_id, company, webshop_account,
-                                    currency, product_types, expiry_date, description,
-                                    amount, override_item_name=None):
-    """
-    Create a new Enforced (Promotion) Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
-
-    bench execute microsynth.microsynth.credits.create_promotion_credit_account --kwargs "{'account_name': 'Test', 'customer_id': '8003', 'company': 'Microsynth AG', 'webshop_account': '215856', 'currency': 'CHF', 'product_types': ['Oligos', 'Sequencing'], 'expiry_date': '2025-12-31', 'description': 'some description', 'amount': 123.45 }"
-    """
-    from microsynth.microsynth.webshop import create_deposit_invoice
-
-    if isinstance(product_types, str):
-        product_types = json.loads(product_types)
-
-    # Create the Credit Account
-    credit_account_name = create_credit_account(
-        account_name=account_name,
-        account_type="Enforced Credit",
-        customer_id=customer_id,
-        company=company,
-        currency=currency,
-        contact_id=webshop_account,
-        product_types=product_types,
-        product_types_locked=1,
-        expiry_date=expiry_date,
-        description=description,
-        ignore_permissions=True
-    )
-
-    # Create deposit Sales Invoice
-    response = create_deposit_invoice(
-        webshop_account,
-        credit_account_name,
-        amount,
-        currency,
-        override_item_name,
-        company,
-        customer_id,
-        customer_order_number="",
-        ignore_permissions=True,
-        transmit_invoice=False
-    )
-    if not response['success']:
-        frappe.throw(response.get('message'))
-
-    sales_invoice_id = response.get('reference')
+def book_promo_credit_sales_invoice(sales_invoice_id, company, promo_item_code="AC-6600"):
     si_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
     # fetch Item used for advertising/promo/marketing
-    promo_item_code = "AC-6600"
     promo_item = frappe.get_doc("Item", promo_item_code)
 
     expense_account = None
@@ -378,6 +333,53 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
     })
     jv.insert(ignore_permissions=True)
     jv.submit()
+    return jv.name
+
+
+@frappe.whitelist()
+def create_promotion_credit_account(account_name, customer_id, company, webshop_account,
+                                    currency, product_types, expiry_date, description,
+                                    amount, override_item_name=None):
+    """
+    Create a new Enforced (Promotion) Credit Account for the given webshop_account (Contact ID) with the given name, description, company and product types.
+
+    bench execute microsynth.microsynth.credits.create_promotion_credit_account --kwargs "{'account_name': 'Test', 'customer_id': '8003', 'company': 'Microsynth AG', 'webshop_account': '215856', 'currency': 'CHF', 'product_types': ['Oligos', 'Sequencing'], 'expiry_date': '2025-12-31', 'description': 'some description', 'amount': 123.45 }"
+    """
+    if isinstance(product_types, str):
+        product_types = json.loads(product_types)
+
+    # Create the Credit Account
+    credit_account_name = create_credit_account(
+        account_name=account_name,
+        account_type="Enforced Credit",
+        customer_id=customer_id,
+        company=company,
+        currency=currency,
+        contact_id=webshop_account,
+        product_types=product_types,
+        product_types_locked=1,
+        expiry_date=expiry_date,
+        description=description,
+        ignore_permissions=True
+    )
+    # Create deposit Sales Invoice
+    response = create_deposit_invoice(
+        webshop_account,
+        credit_account_name,
+        amount,
+        currency,
+        override_item_name,
+        company,
+        customer_id,
+        customer_order_number="",
+        ignore_permissions=True,
+        transmit_invoice=False
+    )
+    if not response['success']:
+        frappe.throw(response.get('message'))
+
+    sales_invoice_id = response.get('reference')
+    book_promo_credit_sales_invoice(sales_invoice_id, company)
     return sales_invoice_id
 
 
@@ -681,7 +683,6 @@ def get_total_credit_difference(company, currency, account, to_date):
 
     bench execute microsynth.microsynth.credits.get_total_credit_difference --kwargs "{'company': 'Microsynth AG', 'currency': 'CHF', 'account': '2010 - Anzahlungen von Kunden CHF - BAL', 'to_date': '2024-09-23'}"
     """
-
     def get_closing(company, account, to_date):
         from erpnext.accounts.report.general_ledger.general_ledger import get_gl_entries, initialize_gle_map, get_accountwise_gle
         gl_filters=frappe._dict({'company': company, 'from_date': to_date, 'to_date': to_date, 'account': account})
@@ -895,7 +896,6 @@ def change_si_credit_accounts(sales_invoice, new_credit_accounts):
     7. Return new Sales Invoice name.
     """
     if isinstance(new_credit_accounts, str):
-        import json
         new_credit_accounts = json.loads(new_credit_accounts)
 
     si_doc = frappe.get_doc("Sales Invoice", sales_invoice)
