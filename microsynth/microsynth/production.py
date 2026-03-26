@@ -103,7 +103,7 @@ def check_sales_order_completion(sales_orders, verbose=False):
     """
     Check if all oligos of the provided orders are completed and generate a delivery note.
 
-    bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-26014525', 'SO-LYO-26000688'], 'verbose': True}"
+    bench execute "microsynth.microsynth.production.check_sales_order_completion" --kwargs "{'sales_orders':['SO-BAL-26015569'], 'verbose': True}"
     """
     settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
     for sales_order in sales_orders:
@@ -183,22 +183,24 @@ def check_sales_order_completion(sales_orders, verbose=False):
 
             # if all Oligos are cancelled, there are no items left or only the shipping item -> close the order
             if len(keep_items) == 0 or (len(keep_items) == 1 and keep_items[0].item_group == "Shipping"):
+                is_intercompany = frappe.get_value("Sales Order", sales_order, "is_intercompany")
                 if verbose:
-                    print(f"All Oligos in Sales Order '{sales_order}' are cancelled, and there are no items left or only the shipping item. Going to close the Sales Order. {sales_order.is_intercompany=}.")
+                    print(f"All Oligos in Sales Order '{sales_order}' are cancelled, and there are no items left or only the shipping item. Going to close the Sales Order. {is_intercompany=}.")
                 close_or_unclose_sales_orders("""["{0}"]""".format(sales_order), "Closed")
-                if sales_order.is_intercompany:
-                    if not frappe.db.exists("Sales Order", sales_order.po_no):
-                        msg = f"Sales Order '{sales_order}' is an intercompany order, but the linked Sales Order '{sales_order.po_no}' does not exist. "
-                        msg += f"Cannot close the Sales Order '{sales_order.po_no}'. Please check manually."
+                if is_intercompany:
+                    po_no = frappe.get_value("Sales Order", sales_order, "po_no")
+                    if not frappe.db.exists("Sales Order", po_no):
+                        msg = f"Sales Order '{sales_order}' is an intercompany order, but the linked Sales Order '{po_no}' does not exist. "
+                        msg += f"Cannot close the Sales Order '{po_no}'. Please check manually."
                         if verbose:
                             print(msg)
                         frappe.log_error(msg, "check_sales_order_completion")
                     else:
-                        close_or_unclose_sales_orders("""["{0}"]""".format(sales_order.po_no), "Closed")
+                        close_or_unclose_sales_orders("""["{0}"]""".format(po_no), "Closed")
                 continue
 
             if len(cleaned_oligos) == 0:
-                msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. {sales_order.is_intercompany=}. Please check manually."
+                msg = f"All Oligos in {sales_order} are cancelled, but there is more than one Shipping Item left. Going to close the Sales Order. Please check manually."
                 if verbose:
                     print(msg)
                 frappe.log_error(msg, "check_sales_order_completion")
