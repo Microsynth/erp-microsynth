@@ -9,22 +9,24 @@
   "status",
   "location",
   "instrument_class",
+  "category",
   "instrument_manager",
-  "has_service_contract",
   "column_break_2",
   "qm_process",
   "site",
   "regulatory_classification",
+  "subcategory",
   "deputy_instrument_manager",
-  "aquisition_date",
   "section_break_4",
   "serial_no",
   "service_instructions",
   "manufacturer",
   "software_version",
+  "has_service_contract",
   "column_break_8",
   "supplier",
   "supplier_name",
+  "aquisition_date",
   "purchase_invoice",
   "section_break_14",
   "qm_documents",
@@ -173,9 +175,21 @@
    "in_standard_filter": 1,
    "label": "Instrument Class",
    "options": "\nA \u2013 Complex or computerised instrument\nB \u2013 Standard devices with straightforward measurement\nC \u2013 Instrument without measuring function\nF \u2013 Freezer or Fridge\nP \u2013 Pipette\nR \u2013 Measuring reference\nT \u2013 Thermometer\nW \u2013 Balance or Scale"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "QM Instrument Category"
+  },
+  {
+   "fieldname": "subcategory",
+   "fieldtype": "Link",
+   "label": "Subcategory",
+   "options": "QM Instrument Category"
   }
  ],
- "modified": "2026-03-26 11:15:30.711544",
+ "modified": "2026-03-26 12:15:37.928849",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
@@ -205,9 +219,15 @@
    "read": 1,
    "report": 1,
    "role": "Board Member"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User"
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "title_field": "instrument_name",
  "track_changes": 1
 }

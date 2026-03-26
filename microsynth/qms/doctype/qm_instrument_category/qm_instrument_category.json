@@ -1,0 +1,64 @@
+{
+ "creation": "2026-03-26 12:06:57.106782",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "sec_allowed_categories",
+  "allowed_categories"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "allowed_categories",
+   "fieldtype": "Table",
+   "label": "Allowed Categories",
+   "options": "QM Instrument Category Link"
+  },
+  {
+   "fieldname": "sec_allowed_categories",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "modified": "2026-03-26 12:16:45.886884",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "QM Instrument Category",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User"
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
