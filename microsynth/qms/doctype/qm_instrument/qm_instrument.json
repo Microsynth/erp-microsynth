@@ -7,7 +7,6 @@
  "field_order": [
   "instrument_name",
   "status",
-  "location",
   "instrument_class",
   "category",
   "instrument_manager",
@@ -28,6 +27,7 @@
   "supplier_name",
   "aquisition_date",
   "purchase_invoice",
+  "location",
   "section_break_14",
   "qm_documents",
   "naming_series"
@@ -56,7 +56,6 @@
   {
    "fieldname": "location",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Location",
    "options": "Location"
   },
@@ -189,7 +188,7 @@
    "options": "QM Instrument Category"
   }
  ],
- "modified": "2026-03-26 12:15:37.928849",
+ "modified": "2026-03-26 14:51:23.316936",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",

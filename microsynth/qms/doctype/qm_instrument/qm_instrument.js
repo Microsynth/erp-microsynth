@@ -22,6 +22,14 @@ frappe.ui.form.on('QM Instrument', {
             });
         }
 
+        // Add button "Add/Change Location" if user is Purchaser, QAU, System Manager, instrument_manager, or deputy_instrument_manager
+        if (!isLocal && (isPurchaser || isQAU || isManager || isDeputy)) {
+            const button_label = frm.doc.location ? 'Change Location' : 'Add Location';
+            frm.add_custom_button(__(button_label), function() {
+                show_location_dialog(frm);
+            });
+        }
+
         // Add a red button "Block Instrument" if the status is "Active"
         if (!isLocal && status === 'Active') {
             frm.add_custom_button(__('Block Instrument'), function() {
@@ -88,9 +96,147 @@ frappe.ui.form.on('QM Instrument', {
                 }
             };
         };
+
+        // Show storage location path in dashboard if location is set
+        if (frm.doc.location) {
+            const storage_locations = [frm.doc.location];
+
+            const location_promises = storage_locations.map(location => {
+                return frappe.call({
+                    method: "microsynth.microsynth.purchasing.get_location_path_string",
+                    args: { location_name: location },
+                });
+            });
+            // Wait for all calls to finish
+            Promise.all(location_promises).then(results => {
+                const paths = results
+                    .map(r => r.message)
+                    .filter(p => p); // remove empty
+
+                if (!paths.length) return;
+
+                const text = "<b>Location:</b> " + paths.join("<br>");
+
+                // Add permanent green dashboard comment
+                frm.dashboard.add_comment(text, 'green', true);
+            });
+        }
     },
     category: function(frm) {
         // clear subcategory if category is changed
         frm.set_value('subcategory', null);
     }
 });
+
+
+function show_location_dialog(frm) {
+    const dialog_title = frm.doc.location ? __("Change existing Location") : __("Add a Location");
+    const d = new frappe.ui.Dialog({
+        'title': dialog_title,
+        'fields': [
+            {
+                label: __("Subsidiary"),
+                fieldname: "subsidiary",
+                fieldtype: "Link",
+                options: "Location",
+                reqd: true,
+                get_query: () => ({
+                    filters: {
+                        parent_location: ["in", ["", null]]
+                    }
+                }),
+                default: "Balgach",
+                onchange: () => {
+                    // Auto-clear dependents
+                    d.set_value("floor", "");
+                    d.set_value("room", "");
+                    d.set_value("destination", "");
+                    refresh_field_states(d);
+                }
+            },
+            {
+                label: __("Floor"),
+                fieldname: "floor",
+                fieldtype: "Link",
+                options: "Location",
+                reqd: true,
+                get_query: () => {
+                    return d.get_value("subsidiary")
+                        ? { filters: { parent_location: d.get_value("subsidiary") } }
+                        : {};
+                },
+                onchange: () => {
+                    d.set_value("room", "");
+                    d.set_value("destination", "");
+                    refresh_field_states(d);
+                }
+            },
+            {
+                label: __("Room"),
+                fieldname: "room",
+                fieldtype: "Link",
+                options: "Location",
+                reqd: true,
+                get_query: () => {
+                    return d.get_value("floor")
+                        ? { filters: { parent_location: d.get_value("floor") } }
+                        : {};
+                },
+                onchange: () => {
+                    d.set_value("destination", "");
+                    refresh_field_states(d);
+                }
+            },
+            {
+                label: __("Destination"),
+                fieldname: "destination",
+                fieldtype: "Link",
+                options: "Location",
+                reqd: false,
+                get_query: () => {
+                    return d.get_value("room")
+                        ? { filters: { parent_location: d.get_value("room") } }
+                        : {};
+                }
+            }
+        ],
+        'primary_action_label': __("Save"),
+        primary_action(values) {
+            // Determine the most specific selected location
+            let chosen =
+                values.destination ||
+                values.room ||
+                values.floor ||
+                values.subsidiary;
+
+            if (!chosen) {
+                frappe.msgprint(__("No location selected"));
+                return;
+            }
+
+            // Save to field and close dialog
+            frm.set_value("location", chosen);
+            frm.save();
+            d.hide();
+        }
+    });
+    d.show();
+
+    // Initialize states: disable child fields at start
+    refresh_field_states(d);
+}
+
+
+function refresh_field_states(d) {
+    // Retrieve values
+    const subsidiary = d.get_value("subsidiary");
+    const floor = d.get_value("floor");
+    const room = d.get_value("room");
+    const destination = d.get_value("destination");
+
+    // Enable/disable based on hierarchy
+    d.get_field("floor").df.read_only = !subsidiary;
+    d.get_field("room").df.read_only = !floor;
+    d.get_field("destination").df.read_only = !room;
+    d.refresh();
+}

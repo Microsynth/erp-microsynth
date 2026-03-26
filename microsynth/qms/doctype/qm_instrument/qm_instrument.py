@@ -12,13 +12,13 @@ class QMInstrument(Document):
     def validate(self):
         if self.status != 'Unapproved':
             if not self.instrument_class:
-                frappe.throw("Instrument Class is mandatory when leaving status 'Unapproved'.")
+                frappe.throw("Instrument Class is mandatory if status is not 'Unapproved'.")
             if not self.regulatory_classification:
-                frappe.throw("Regulatory Classification is mandatory when leaving status 'Unapproved'.")
+                frappe.throw("Regulatory Classification is mandatory if status is not 'Unapproved'.")
             if not self.has_service_contract:
-                frappe.throw("Has Service Contract is mandatory when leaving status 'Unapproved'.")
+                frappe.throw("Has Service Contract is mandatory if status is not 'Unapproved'.")
             if (self.instrument_class.startswith('A') or self.instrument_class.startswith('B')) and not self.instrument_manager:
-                frappe.throw("Instrument Manager is mandatory for Instrument Class A and B when leaving status 'Unapproved'.")
+                frappe.throw("Instrument Manager is mandatory for Instrument Class A and B if status is not 'Unapproved'.")
         self.validate_subcategory()
 
     def validate_subcategory(self):
