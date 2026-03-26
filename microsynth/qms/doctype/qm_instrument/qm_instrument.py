@@ -9,7 +9,17 @@ import csv
 
 
 class QMInstrument(Document):
-    pass
+
+    def validate(self):
+        if self.status != 'Unapproved':
+            if not self.instrument_class:
+                frappe.throw("Instrument Class is mandatory when leaving status 'Unapproved'.")
+            if not self.regulatory_classification:
+                frappe.throw("Regulatory Classification is mandatory when leaving status 'Unapproved'.")
+            if not self.has_service_contract:
+                frappe.throw("Has Service Contract is mandatory when leaving status 'Unapproved'.")
+            if (self.instrument_class.startswith('A') or self.instrument_class.startswith('B')) and not self.instrument_manager:
+                frappe.throw("Instrument Manager is mandatory for Instrument Class A and B when leaving status 'Unapproved'.")
 
 
 def convert_price_fields(price_chf, price_eur, price_usd):
@@ -67,10 +77,15 @@ def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line
         '5.1 Instrumente': '5.1 Instruments',
         '5.1 Instruments': '5.1 Instruments'
     }
-    category_mapping = {
-        'A': 'A – complex or computerised devices',
-        'B': 'B – standard devices with straightforward measurement',
-        'C': 'C – device without measuring function'
+    instrument_class_mapping = {
+        'A': 'A – Complex or computerised instrument',
+        'B': 'B – Standard device with straightforward measurement',
+        'C': 'C – Instrument without measuring function',
+        'F': 'F – Freezer or Fridge',
+        'P': 'P – Pipette',
+        'R': 'R – Measuring reference',
+        'T': 'T – Thermometer',
+        'W': 'W – Balance or Scale'
     }
     imported_counter = 0
 
@@ -120,7 +135,7 @@ def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line
             if not device_classification:
                 print(f"ERROR: No 'ABC_Kundeneinteilung' in the following line: {line}")
                 continue
-            if device_classification not in category_mapping:
+            if device_classification not in instrument_class_mapping:
                 print(f"ERROR: Unknown 'ABC_Kundeneinteilung' '{device_classification}' in the following line: {line}")
                 continue
             if is_archived:
@@ -135,15 +150,16 @@ def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line
                 if len(suppliers) > 0:
                     supplier = suppliers[0].get('name')
 
-            name = f"QMDE-{int(device_id):0{5}d}"
+            name = f"QMI-{int(device_id):0{5}d}"
             if frappe.db.exists("QM Instrument", name):
                 print(f"ERROR: QM Instrument {name} already exists, going to skip the following line: {line}")
                 continue
 
             qm_instrument = frappe.get_doc({
+                # TODO: Rework
                 'doctype': "QM Instrument",
                 'device_name': device_name,
-                'category': category_mapping[device_classification],
+                'category': instrument_class_mapping[device_classification],
                 'status': 'Unapproved',  # TODO: mandatory, but how to determine?
                 'qm_process': group_mapping[process],
                 'site': location if location in ['Lyon', 'Göttingen', 'Wien'] else 'Balgach',
