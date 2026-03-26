@@ -440,6 +440,7 @@ def oligo_order_packaged(web_order_id):
 def print_delivery_label(delivery_note):
     """
     Print delivery note address label
+    TODO: seems to be dead code
     """
     if frappe.db.exists("Delivery Note", delivery_note):
         dn = frappe.get_doc("Delivery Note", delivery_note)

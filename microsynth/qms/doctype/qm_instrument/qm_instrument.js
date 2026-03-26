@@ -145,7 +145,8 @@ function show_location_dialog(frm) {
                         parent_location: ["in", ["", null]]
                     }
                 }),
-                default: "Balgach",
+                default: frm.doc.site || "Balgach",
+                read_only: frm.doc.site ? true : false,
                 onchange: () => {
                     // Auto-clear dependents
                     d.set_value("floor", "");
