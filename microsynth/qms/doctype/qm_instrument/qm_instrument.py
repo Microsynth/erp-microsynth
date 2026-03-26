@@ -2,10 +2,9 @@
 # Copyright (c) 2025, Microsynth, libracore and contributors and contributors
 # For license information, please see license.txt
 
-from __future__ import unicode_literals
+import csv
 import frappe
 from frappe.model.document import Document
-import csv
 
 
 class QMInstrument(Document):
@@ -20,6 +19,51 @@ class QMInstrument(Document):
                 frappe.throw("Has Service Contract is mandatory when leaving status 'Unapproved'.")
             if (self.instrument_class.startswith('A') or self.instrument_class.startswith('B')) and not self.instrument_manager:
                 frappe.throw("Instrument Manager is mandatory for Instrument Class A and B when leaving status 'Unapproved'.")
+        self.validate_subcategory()
+
+    def validate_subcategory(self):
+        if self.subcategory:
+            allowed_subcategories = get_allowed_subcategory_for_category(
+                doctype="QM Instrument",
+                txt=self.subcategory,
+                searchfield="name",
+                start=0,
+                page_len=20,
+                filters={'category': self.category}
+            )
+            if len(allowed_subcategories) == 0:
+                frappe.throw("Invalid value in 'Subcategory'. Please select from the available values.", "Validation")
+
+
+def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
+    """
+    Return all QM Instrument Categories that are not linked on another QM Instrument Category via QM Instrument Category Link, i.e. that are not used as subcategory in another category.
+    """
+    return frappe.db.sql("""
+        SELECT `name`
+        FROM `tabQM Instrument Category`
+        WHERE `name` LIKE "%{txt}%"
+            AND `name` NOT IN (
+                SELECT `category`
+                FROM `tabQM Instrument Category Link`
+                WHERE `parenttype` = "QM Instrument Category"
+            )
+        """.format(txt=txt)
+    )
+
+
+def get_allowed_subcategory_for_category(doctype, txt, searchfield, start, page_len, filters):
+    """
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.get_allowed_subcategory_for_category --kwargs "{'doctype': 'QM Instrument', 'txt': '', 'searchfield': 'name', 'start': 0, 'page_len': 20, 'filters': {'category': 'Sequencing'}}"
+    """
+    return frappe.db.sql("""
+        SELECT `tabQM Instrument Category Link`.`category` AS `name`
+        FROM `tabQM Instrument Category Link`
+        WHERE `tabQM Instrument Category Link`.`parent` = "{category}"
+            AND `tabQM Instrument Category Link`.`parenttype` = "QM Instrument Category"
+            AND `tabQM Instrument Category Link`.`category` LIKE "%{txt}%"
+        """.format(category=filters.get('category'), txt=txt)
+    )
 
 
 def convert_price_fields(price_chf, price_eur, price_usd):

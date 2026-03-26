@@ -72,5 +72,25 @@ frappe.ui.form.on('QM Instrument', {
                 });
             }, __('Create'));
         }
+
+        // filter for category
+        frm.fields_dict.category.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_instrument.qm_instrument.get_allowed_category',
+            };
+        };
+        // filter for subcategory based on category
+        frm.fields_dict.subcategory.get_query = function(frm) {
+            return {
+                'query': 'microsynth.qms.doctype.qm_instrument.qm_instrument.get_allowed_subcategory_for_category',
+                'filters': {
+                    'category': cur_frm.doc.category
+                }
+            };
+        };
+    },
+    category: function(frm) {
+        // clear subcategory if category is changed
+        frm.set_value('subcategory', null);
     }
 });

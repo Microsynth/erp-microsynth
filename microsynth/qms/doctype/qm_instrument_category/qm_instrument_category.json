@@ -1,4 +1,5 @@
 {
+ "autoname": "field:title",
  "creation": "2026-03-26 12:06:57.106782",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -14,7 +15,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "allowed_categories",
@@ -27,7 +29,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2026-03-26 12:16:45.886884",
+ "modified": "2026-03-26 13:48:44.412038",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument Category",
@@ -58,7 +60,9 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "modified",
- "sort_order": "DESC",
+ "search_fields": "title",
+ "sort_field": "title",
+ "sort_order": "ASC",
+ "title_field": "title",
  "track_changes": 1
 }
