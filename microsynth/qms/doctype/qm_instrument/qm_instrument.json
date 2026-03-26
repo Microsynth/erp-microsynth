@@ -172,10 +172,10 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Instrument Class",
-   "options": "\nA \u2013 Complex or computerised intrument\nB \u2013 Standard devices with straightforward measurement\nC \u2013 Intrument without measuring function\nF \u2013 Freezer or Fridge\nP \u2013 Pipette\nR \u2013 Measuring reference\nT \u2013 Thermometer\nW \u2013 Balance or Scale"
+   "options": "\nA \u2013 Complex or computerised instrument\nB \u2013 Standard devices with straightforward measurement\nC \u2013 Instrument without measuring function\nF \u2013 Freezer or Fridge\nP \u2013 Pipette\nR \u2013 Measuring reference\nT \u2013 Thermometer\nW \u2013 Balance or Scale"
   }
  ],
- "modified": "2026-03-26 10:58:25.995410",
+ "modified": "2026-03-26 11:15:30.711544",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",

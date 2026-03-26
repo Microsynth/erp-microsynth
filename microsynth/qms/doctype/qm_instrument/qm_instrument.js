@@ -23,7 +23,7 @@ frappe.ui.form.on('QM Instrument', {
                 frm.set_value('status', 'Out of order');
                 frm.save();
                 frm.refresh();
-                frappe.msgprint(__('Instrument has been blocked.'));
+                frappe.show_alert(__('Instrument has been set to Status "Out of order".'));
             }).addClass("btn-danger");
         }
 
@@ -35,6 +35,17 @@ frappe.ui.form.on('QM Instrument', {
                     document_name: frm.doc.name
                 });
             }, __('Create'));
+        }
+
+        // Add a green button "Activate" (in status "Out of order") or "Release" (in status "Unapproved") that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Out of order"
+        if (!frm.doc.__islocal && (frm.doc.status === 'Out of order' || frm.doc.status === 'Unapproved') && (isQAU || isManager || isDeputy)) {
+            const buttonLabel = frm.doc.status === 'Out of order' ? 'Activate' : 'Approve and Release';
+            frm.add_custom_button(__(buttonLabel), function() {
+                frm.set_value('status', 'Active');
+                frm.save();
+                frm.refresh();
+                frappe.show_alert(__('Instrument has been set to Status "Active".'));
+            }).addClass("btn-success");
         }
     }
 });
