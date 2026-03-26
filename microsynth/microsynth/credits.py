@@ -18,7 +18,6 @@ from microsynth.microsynth.report.customer_credits.customer_credits import (
     build_transactions_with_running_balance,
     get_data as get_customer_credits
 )
-from microsynth.microsynth.webshop import create_deposit_invoice
 
 
 def get_available_credits(customer, company, credit_type):
@@ -345,6 +344,8 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
 
     bench execute microsynth.microsynth.credits.create_promotion_credit_account --kwargs "{'account_name': 'Test', 'customer_id': '8003', 'company': 'Microsynth AG', 'webshop_account': '215856', 'currency': 'CHF', 'product_types': ['Oligos', 'Sequencing'], 'expiry_date': '2025-12-31', 'description': 'some description', 'amount': 123.45 }"
     """
+    from microsynth.microsynth.webshop import create_deposit_invoice  # avoid circular import, because create_deposit_invoice also imports functions from credits.py
+
     if isinstance(product_types, str):
         product_types = json.loads(product_types)
 
