@@ -8,7 +8,7 @@
   "instrument_name",
   "status",
   "location",
-  "category",
+  "instrument_class",
   "instrument_manager",
   "has_service_contract",
   "column_break_2",
@@ -45,14 +45,6 @@
   {
    "fieldname": "section_break_4",
    "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "category",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Category",
-   "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 device without measuring function",
-   "reqd": 1
   },
   {
    "fieldname": "serial_no",
@@ -136,15 +128,13 @@
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
    "label": "Regulatory Classification",
-   "options": "\nGMP\nnon-GMP",
-   "reqd": 1
+   "options": "\nGMP\nnon-GMP"
   },
   {
    "fieldname": "instrument_manager",
    "fieldtype": "Link",
    "label": "Instrument Manager",
-   "options": "User",
-   "reqd": 1
+   "options": "User"
   },
   {
    "fieldname": "instrument_name",
@@ -157,15 +147,13 @@
    "fieldname": "deputy_instrument_manager",
    "fieldtype": "Link",
    "label": "Deputy Instrument Manager",
-   "options": "User",
-   "reqd": 1
+   "options": "User"
   },
   {
    "fieldname": "has_service_contract",
    "fieldtype": "Select",
    "label": "Has Service Contract",
-   "options": "\nNo\nYes",
-   "reqd": 1
+   "options": "\nNo\nYes"
   },
   {
    "fieldname": "aquisition_date",
@@ -177,9 +165,17 @@
    "fieldname": "software_version",
    "fieldtype": "Data",
    "label": "Software Version"
+  },
+  {
+   "fieldname": "instrument_class",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Instrument Class",
+   "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 device without measuring function\nF \u2013 Freezer or Fridge\nP \u2013 Pipette\nR \u2013 Measuring references\nT \u2013 Thermometer\nW \u2013 Balances or Scales"
   }
  ],
- "modified": "2026-03-16 15:07:51.609576",
+ "modified": "2026-03-26 09:40:42.098489",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
