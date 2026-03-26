@@ -359,7 +359,7 @@ def print_purchasing_labels(label_table, is_legacy=False):
         purchase_label_template = "microsynth/templates/includes/purchase_label_legacy_novexx.html"
     else:
         purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
-    label_printer_ip = "192.0.1.79"
+    label_printer_ip = "192.0.1.73"  # TODO: Make this configurable
     label_printer_port = 9100
     user = frappe.get_user().name
     username = frappe.get_value("User", user, "username")
