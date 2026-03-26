@@ -1,0 +1,109 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2026-03-26 09:54:37.260834",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "status",
+  "entry_type",
+  "column_break_3",
+  "date",
+  "costs",
+  "section_break_6",
+  "description",
+  "naming_series",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nTo Review\nClosed\nCancelled",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "entry_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "\nMaintanance/Service\nCheck-up\n(Re-)Qualification\nVerification/Calibration\nSoftware update\nReview\nDecommissioning\nDisposing\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date of occurence",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "costs",
+   "fieldtype": "Link",
+   "label": "Costs",
+   "options": "Purchase Invoice"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "QMLB-.YY.####",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "QM Log Book",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2026-03-26 10:01:32.748361",
+ "modified_by": "jens.petermann@microsynth.ch",
+ "module": "QMS",
+ "name": "QM Log Book",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
