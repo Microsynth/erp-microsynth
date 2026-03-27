@@ -72,6 +72,7 @@ def get_data(filters=None):
             AND `tabQuotation`.`status` NOT IN ('Ordered', 'Cancelled', 'Lost')
             AND `tabQuotation`.`valid_till` >= '{date.today()}'
             AND `tabQuotation`.`transaction_date` <= DATE_ADD(NOW(), INTERVAL -{filters.get('minimum_age')} DAY)
+            AND (`tabQuotation`.`_user_tags` IS NULL OR `tabQuotation`.`_user_tags` NOT LIKE '%Template%')
             {filter_conditions}
         ORDER BY
             `tabQuotation`.`transaction_date` DESC;
