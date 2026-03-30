@@ -7,7 +7,8 @@
  "field_order": [
   "user",
   "full_name",
-  "label_printer"
+  "label_printer",
+  "purchase_label_printer"
  ],
  "fields": [
   {
@@ -32,9 +33,15 @@
    "in_list_view": 1,
    "label": "Label Printer",
    "options": "Brady Printer"
+  },
+  {
+   "fieldname": "purchase_label_printer",
+   "fieldtype": "Data",
+   "label": "Purchase Label Printer",
+   "options": "Brady Printer"
   }
  ],
- "modified": "2025-04-11 16:44:48.931490",
+ "modified": "2026-03-30 08:45:00.504883",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
