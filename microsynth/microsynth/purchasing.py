@@ -1914,9 +1914,12 @@ def has_available_advances(purchase_invoice_id):
 
 @frappe.whitelist()
 def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=None, supplier_part_no=None, company=None):
+    """
+    bench execute microsynth.microsynth.purchasing.get_purchasing_items --kwargs "{'supplier_part_no': '78205.10', 'company': 'Microsynth AG'}"
+    """
     # List to build WHERE clause conditions
     filters = []
-    values = {}
+    values = {'company': company}
 
     # Filter: partial match on item_name
     if item_name_part:
@@ -1938,19 +1941,6 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         supplier_part_no = supplier_part_no.strip()
         filters.append('`tabItem Supplier`.`supplier_part_no` LIKE %(supplier_part_no)s')
         values['supplier_part_no'] = f'%{supplier_part_no}%'
-
-    if company:
-        values['company'] = company
-        is_default_supplier_case = """
-            CASE
-                WHEN `tabItem Default`.`default_supplier` = `tabItem Supplier`.`supplier`
-                AND (`tabItem Default`.`company` = %(company)s OR `tabItem Default`.`company` IS NULL)
-                THEN 1
-                ELSE 0
-            END
-        """
-    else:
-        is_default_supplier_case = "0"
 
     # Only include active items from 'Purchasing' item group
     filters.append('`tabItem`.`item_group` = "Purchasing"')
@@ -1988,18 +1978,28 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
             `tabItem`.`material_code`,
             `tabItem Supplier`.`supplier` AS `supplier`,
             `tabSupplier`.`supplier_name` AS `supplier_name`,
-            {is_default_supplier_case} AS `is_default_supplier_for_company`,
+            CASE
+                WHEN %(company)s IS NOT NULL AND EXISTS (
+                    SELECT 1
+                    FROM `tabItem Default` d
+                    WHERE
+                        d.parent = `tabItem`.`name`
+                        AND d.default_supplier = `tabItem Supplier`.`supplier`
+                        AND (d.company = %(company)s OR d.company IS NULL)
+                )
+                THEN 1
+                ELSE 0
+            END AS `is_default_supplier_for_company`,
             `tabItem Supplier`.`supplier_part_no` AS `supplier_part_no`,
             `tabItem Supplier`.`substitute_status` AS `substitute_status`,
-            last_po.last_order_date AS last_order_date
+            last_po.`last_order_date` AS `last_order_date`
         FROM `tabItem`
         LEFT JOIN `tabItem Supplier` ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabSupplier` ON `tabSupplier`.`name` = `tabItem Supplier`.`supplier`
-        LEFT JOIN `tabItem Default` ON `tabItem Default`.`parent` = `tabItem`.`name`
         LEFT JOIN (
             SELECT
                 poi.item_code,
-                MAX(po.transaction_date) AS last_order_date
+                MAX(po.transaction_date) AS `last_order_date`
             FROM `tabPurchase Order Item` poi
             INNER JOIN `tabPurchase Order` po
                 ON po.name = poi.parent
@@ -2008,6 +2008,7 @@ def get_purchasing_items(item_name_part=None, material_code=None, supplier_name=
         ) last_po
             ON last_po.item_code = `tabItem`.`name`
         WHERE {where_clause}
+        ORDER BY `is_default_supplier_for_company` DESC, `tabItem`.`name` ASC, `tabItem Supplier`.`supplier` ASC
         LIMIT 10
     """
     items = frappe.db.sql(query, values, as_dict=True)
