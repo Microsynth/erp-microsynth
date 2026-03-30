@@ -30,6 +30,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "entry_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -43,6 +44,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
@@ -62,6 +64,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description",
@@ -103,13 +106,15 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-26 10:40:14.246938",
+ "modified": "2026-03-30 16:20:31.061606",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -119,6 +124,32 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Microsynth User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "QAU",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

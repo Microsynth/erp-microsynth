@@ -70,7 +70,8 @@ doctype_list_js = {
     "Sales Invoice" : "public/js/sales_invoice_list.js",
     "Sales Order" : "public/js/sales_order_list.js",
     "Supplier": "public/js/supplier_list.js",
-    "Material Request": "public/js/material_request_list.js"
+    "Material Request": "public/js/material_request_list.js",
+    "QM Log Book": "public/js/qm_log_book_list.js"
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
