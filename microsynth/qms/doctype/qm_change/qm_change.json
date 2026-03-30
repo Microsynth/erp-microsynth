@@ -296,12 +296,14 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.qm_process",
    "fieldname": "hierarchy_1",
    "fieldtype": "Link",
    "label": "Hierarchy 1",
    "options": "QM Classification Hierarchy"
   },
   {
+   "depends_on": "eval:doc.hierarchy_1",
    "fieldname": "hierarchy_2",
    "fieldtype": "Link",
    "label": "Hierarchy 2",
@@ -316,7 +318,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-02-09 12:31:12.777122",
+ "modified": "2026-03-30 17:03:47.585095",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
