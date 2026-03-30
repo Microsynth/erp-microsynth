@@ -93,15 +93,15 @@ frappe.ui.form.on('QM Instrument', {
         // Add a red button "Archive" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked"
         if (!isLocal && status === 'Blocked' && (isQAU || isManager || isSystemManager)) {
             frm.add_custom_button(__('Archive'), function() {
-                frm.set_value('status', 'Decomissioned');
+                frm.set_value('status', 'Decommissioned');
                 frm.save();
                 frm.refresh();
-                frappe.show_alert(__('Instrument has been set to Status "Decomissioned".'));
+                frappe.show_alert(__('Instrument has been set to Status "Decommissioned".'));
             }).addClass("btn-danger");
         }
 
-        // Add a red button "Dispose" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Decomissioned"
-        if (!isLocal && (status === 'Blocked' || status === 'Decomissioned') && (isQAU || isManager || isSystemManager)) {
+        // Add a red button "Dispose" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Decommissioned"
+        if (!isLocal && (status === 'Blocked' || status === 'Decommissioned') && (isQAU || isManager || isSystemManager)) {
             frm.add_custom_button(__('Dispose'), function() {
                 frm.set_value('status', 'Disposed');
                 frm.save();
@@ -110,9 +110,9 @@ frappe.ui.form.on('QM Instrument', {
             }).addClass("btn-danger");
         }
 
-        // Add a green button "Activate" (in status "Blocked" or "Decomissioned") or "Approve and Release" (in status "Unapproved") that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Unapproved"
-        if (!isLocal && (status === 'Blocked' || status === 'Decomissioned' || status === 'Unapproved') && (isQAU || isManager || isSystemManager)) {
-            const buttonLabel = (status === 'Blocked' || status === 'Decomissioned') ? 'Activate' : 'Approve and Release';
+        // Add a green button "Activate" (in status "Blocked" or "Decommissioned") or "Approve and Release" (in status "Unapproved") that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Unapproved"
+        if (!isLocal && (status === 'Blocked' || status === 'Decommissioned' || status === 'Unapproved') && (isQAU || isManager || isSystemManager)) {
+            const buttonLabel = (status === 'Blocked' || status === 'Decommissioned') ? 'Activate' : 'Approve and Release';
             frm.add_custom_button(__(buttonLabel), function() {
                 frm.set_value('status', 'Active');
                 frm.save();
