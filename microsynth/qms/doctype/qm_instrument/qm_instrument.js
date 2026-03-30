@@ -2,28 +2,71 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('QM Instrument', {
+    onload: function(frm) {
+        frm.set_query('purchase_invoice', function() {
+            if (frm.doc.supplier) {
+                return {
+                    filters: {
+                        docstatus: 1,
+                        supplier: frm.doc.supplier
+                    }
+                };
+            } else {
+                return {
+                    filters: {
+                        docstatus: 1
+                    }
+                };
+            }
+        });
+    },
+
+    supplier: function(frm) {
+        // Clear purchase_invoice when supplier changes
+        frm.set_value('purchase_invoice', null);
+    },
+
+    category: function(frm) {
+        // clear subcategory if category is changed
+        frm.set_value('subcategory', null);
+    },
+
     refresh: function(frm) {
+        apply_permissions(frm, false);  // initial pessimistic state
         const isLocal = frm.doc.__islocal;
         const status = frm.doc.status;
         const user = frappe.session.user;
         const isPurchaser = frappe.user_roles.includes('Purchase User') || frappe.user_roles.includes('Purchase Manager');
         const isQAU = frappe.user_roles.includes('QAU');
-        const isManager = frm.doc.instrument_manager === user;
-        const isDeputy = frm.doc.deputy_instrument_manager === user;
+        const isManager = frm.doc.instrument_manager === user || frm.doc.deputy_instrument_manager === user;
         const isSystemManager = frappe.user_roles.includes('System Manager');
 
-        // Set all fields to read-only if user is not Purchaser, QAU, System Manager, instrument_manager, or deputy_instrument_manager
-        if (!isLocal && !isPurchaser && !isQAU && !isManager && !isDeputy && !isSystemManager) {
-            frm.fields.forEach(field => {
-                if (field.df && field.df.fieldname) {
-                    console.log(`Setting field ${field.df.fieldname} to read-only`);
-                    frm.set_df_property(field.df.fieldname, 'read_only', 1);
+        const site_company_mapping = {
+            "Balgach": "Microsynth AG",
+            "Göttingen": "Microsynth Seqlab GmbH",
+            "Lyon": "Microsynth France SAS",
+            "Wien": "Microsynth Austria GmbH"
+        };
+        const company = site_company_mapping[frm.doc.site];
+
+        if (frm.doc.qm_process && company) {
+            frappe.call({
+                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_qm_process_owner",
+                'args': {
+                    'qm_process': frm.doc.qm_process,
+                    'company': company
+                },
+                'callback': function(r) {
+                    const isProcessOwner = (r.message === frappe.session.user);
+                    if (isProcessOwner) {
+                        apply_permissions(frm, true);  // re-apply with elevated rights
+                    }
                 }
             });
         }
 
-        // Add button "Add/Change Location" if user is Purchaser, QAU, System Manager, instrument_manager, or deputy_instrument_manager
-        if (!isLocal && (isPurchaser || isQAU || isManager || isDeputy)) {
+        // Add button "Add/Change Location" if user is Purchaser, QAU, instrument_manager, or deputy_instrument_manager
+        if (!isLocal && (isPurchaser || isQAU || isManager || isSystemManager)) {
             const button_label = frm.doc.location ? 'Change Location' : 'Add Location';
             frm.add_custom_button(__(button_label), function() {
                 show_location_dialog(frm);
@@ -41,7 +84,7 @@ frappe.ui.form.on('QM Instrument', {
         }
 
         // Add a red button "Archive" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Out of order"
-        if (!isLocal && status === 'Out of order' && (isQAU || isManager || isDeputy)) {
+        if (!isLocal && status === 'Out of order' && (isQAU || isManager || isSystemManager)) {
             frm.add_custom_button(__('Archive'), function() {
                 frm.set_value('status', 'Archived');
                 frm.save();
@@ -51,7 +94,7 @@ frappe.ui.form.on('QM Instrument', {
         }
 
         // Add a red button "Dispose" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Out of order" or "Archived"
-        if (!isLocal && (status === 'Out of order' || status === 'Archived') && (isQAU || isManager || isDeputy)) {
+        if (!isLocal && (status === 'Out of order' || status === 'Archived') && (isQAU || isManager || isSystemManager)) {
             frm.add_custom_button(__('Dispose'), function() {
                 frm.set_value('status', 'Disposed');
                 frm.save();
@@ -61,7 +104,7 @@ frappe.ui.form.on('QM Instrument', {
         }
 
         // Add a green button "Activate" (in status "Out of order" or "Archived") or "Approve and Release" (in status "Unapproved") that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Out of order" or "Unapproved"
-        if (!isLocal && (status === 'Out of order' || status === 'Archived' || status === 'Unapproved') && (isQAU || isManager || isDeputy)) {
+        if (!isLocal && (status === 'Out of order' || status === 'Archived' || status === 'Unapproved') && (isQAU || isManager || isSystemManager)) {
             const buttonLabel = (status === 'Out of order' || status === 'Archived') ? 'Activate' : 'Approve and Release';
             frm.add_custom_button(__(buttonLabel), function() {
                 frm.set_value('status', 'Active');
@@ -121,12 +164,80 @@ frappe.ui.form.on('QM Instrument', {
                 frm.dashboard.add_comment(text, 'green', true);
             });
         }
-    },
-    category: function(frm) {
-        // clear subcategory if category is changed
-        frm.set_value('subcategory', null);
     }
 });
+
+
+function lock_all_fields(frm) {
+    frm.fields.forEach(field => {
+        if (field.df?.fieldname) {
+            frm.set_df_property(field.df.fieldname, 'read_only', 1);
+        }
+    });
+}
+
+function unlock_all_fields(frm) {
+    frm.fields.forEach(field => {
+        if (field.df?.fieldname) {
+            frm.set_df_property(field.df.fieldname, 'read_only', 0);
+        }
+    });
+}
+
+function lock_fields(frm, fields) {
+    fields.forEach(field => {
+        frm.set_df_property(field, 'read_only', 1);
+    });
+}
+
+function apply_permissions(frm, isProcessOwner) {
+    const { __islocal: isLocal, status, instrument_manager, deputy_instrument_manager } = frm.doc;
+    const user = frappe.session.user;
+    const roles = frappe.user_roles;
+
+    const isPurchaser = roles.includes('Purchase User') || roles.includes('Purchase Manager');
+    const isQAU = roles.includes('QAU');
+    const isSystemManager = roles.includes('System Manager');
+    const isManager = [instrument_manager, deputy_instrument_manager].includes(user);
+
+    const isPrivilegedUser = (
+        isPurchaser ||
+        isQAU ||
+        isManager ||
+        isSystemManager ||
+        isProcessOwner
+    );
+
+    const isLockedStatus = (
+        status?.includes('Decommissioned') ||
+        status?.includes('Disposed')
+    );
+
+    // Lock all fields
+    if (
+        (!isLocal && !isPrivilegedUser) ||
+        (isPurchaser && status !== 'Unapproved') ||
+        isLockedStatus
+    ) {
+        lock_all_fields(frm);
+        return;
+    }
+
+    // Start from unlocked, then apply partial locks
+    unlock_all_fields(frm);
+
+    // Partial lock
+    if (isPrivilegedUser && status !== 'Unapproved') {
+        lock_fields(frm, [
+            'serial_no',
+            'manufacturer',
+            'supplier',
+            'purchase_invoice',
+            'aquisition_date',
+            'instrument_class'
+        ]);
+    }
+}
 
 
 function show_location_dialog(frm) {

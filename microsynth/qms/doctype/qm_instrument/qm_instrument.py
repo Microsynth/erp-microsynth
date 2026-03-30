@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2025, Microsynth, libracore and contributors and contributors
+# Copyright (c) 2025, Microsynth, libracore and contributors
 # For license information, please see license.txt
 
 import csv
 import frappe
 from frappe.model.document import Document
+from microsynth.microsynth.purchasing import get_location_path_string
 
 
 class QMInstrument(Document):
@@ -20,6 +21,7 @@ class QMInstrument(Document):
             if (self.instrument_class.startswith('A') or self.instrument_class.startswith('B')) and not self.instrument_manager:
                 frappe.throw("Instrument Manager is mandatory for Instrument Class A and B if status is not 'Unapproved'.")
         self.validate_subcategory()
+        self.validate_site_location()
 
     def validate_subcategory(self):
         if self.subcategory:
@@ -33,6 +35,21 @@ class QMInstrument(Document):
             )
             if len(allowed_subcategories) == 0:
                 frappe.throw("Invalid value in 'Subcategory'. Please select from the available values.", "Validation")
+
+    def validate_site_location(self):
+        if self.site and self.site not in ['Balgach', 'Göttingen', 'Lyon', 'Wien']:
+            frappe.throw("Invalid value in 'Site'. Please select from the available values.", "Validation")
+
+        site_abbreviations = {
+            "Balgach": "BAL",
+            "Göttingen": "GOE",
+            "Lyon": "LYO",
+            "Wien": "WIE"
+        }
+        if self.site and self.location:
+            location_path = get_location_path_string(self.location)
+            if location_path and not location_path.startswith(site_abbreviations.get(self.site, "")):
+                frappe.throw(f"The selected Location '{location_path}' does not match the selected Site '{self.site}'. Please select a Location that is within the selected Site")
 
 
 def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
@@ -97,6 +114,19 @@ def convert_price_fields(price_chf, price_eur, price_usd):
     # prices dict has exactly one item at this point (since checked before)
     # iterating over it and picking the first is safe and efficient
     return next(iter(prices.items()))
+
+
+@frappe.whitelist()
+def get_qm_process_owner(qm_process, company):
+    """
+    Returns the process owner (user) for a given QM Process and Company.
+    """
+    owner = frappe.db.get_value(
+        "QM Process Owner",
+        {"qm_process": qm_process, "company": company},
+        "process_owner"
+    )
+    return owner
 
 
 def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line_length=18):
