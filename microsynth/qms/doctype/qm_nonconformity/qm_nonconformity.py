@@ -391,6 +391,8 @@ def has_change(doc):
 
 
 def get_allowed_classification_for_process(doctype, txt, searchfield, start, page_len, filters):
+    if not 'process' in filters or not filters['process']:
+        return []
     return frappe.db.sql("""
         SELECT `tabQM Classification Hierarchy Link`.`hierarchy` AS `name`
         FROM `tabQM Classification Hierarchy Link`
@@ -403,6 +405,8 @@ def get_allowed_classification_for_process(doctype, txt, searchfield, start, pag
 
 
 def get_allowed_classification_for_hierarchy(doctype, txt, searchfield, start, page_len, filters):
+    if not 'hierarchy' in filters or not filters['hierarchy']:
+        return []
     return frappe.db.sql("""
         SELECT `tabQM Classification Hierarchy Link`.`hierarchy` AS `name`
         FROM `tabQM Classification Hierarchy Link`
