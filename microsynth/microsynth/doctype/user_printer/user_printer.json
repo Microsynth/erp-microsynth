@@ -36,12 +36,12 @@
   },
   {
    "fieldname": "purchase_label_printer",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Purchase Label Printer",
    "options": "Brady Printer"
   }
  ],
- "modified": "2026-03-30 08:45:00.504883",
+ "modified": "2026-03-30 08:55:24.455748",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",
