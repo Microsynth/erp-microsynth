@@ -90,9 +90,9 @@ frappe.ui.form.on('QM Instrument', {
             }).addClass("btn-danger");
         }
 
-        // Add a red button "Archive" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked"
+        // Add a red button "Decommission" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked"
         if (!isLocal && status === 'Blocked' && (isQAU || isManager || isSystemManager)) {
-            frm.add_custom_button(__('Archive'), function() {
+            frm.add_custom_button(__('Decommission'), function() {
                 frm.set_value('status', 'Decommissioned');
                 frm.save();
                 frm.refresh();
@@ -351,7 +351,6 @@ function refresh_field_states(d) {
     const subsidiary = d.get_value("subsidiary");
     const floor = d.get_value("floor");
     const room = d.get_value("room");
-    const destination = d.get_value("destination");
 
     // Enable/disable based on hierarchy
     d.get_field("floor").df.read_only = !subsidiary;
