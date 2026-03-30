@@ -65,6 +65,13 @@ frappe.ui.form.on('QM Instrument', {
             });
         }
 
+        // Add button "View > Log Book" to open the QM Log Book list if the document is not local
+        if (!isLocal) {
+            frm.add_custom_button(__('Log Book'), function() {
+                frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
+            }, __('View'));
+        }
+
         // Add button "Add/Change Location" if user is Purchaser, QAU, instrument_manager, or deputy_instrument_manager
         if (!isLocal && (isPurchaser || isQAU || isManager || isSystemManager)) {
             const button_label = frm.doc.location ? 'Change Location' : 'Add Location';
