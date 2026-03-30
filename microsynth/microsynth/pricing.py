@@ -1442,3 +1442,22 @@ def create_new_reference_prices(csv_file, mapping, dry_run=True, verbose=True):
                                 print(f"[Row {row_num}] Created Item Price for {item_code} ({currency})")
     if verbose:
         print(f"{'Would create' if dry_run else 'Created'} {created_counter} Item Prices in total.")
+
+
+def calculate_cross_rates():
+    """
+    This is a wrapper to calculate cross rates and inverted rates after fetching the ESTV exchange rates.
+
+    This function should be executed by a cronjob around 10 Minutes after fetching ESTV rates:
+    10 1 1 * * cd /home/frappe/frappe-bench && /usr/local/bin/bench --site erp.microsynth.local execute microsynth.microsynth.pricing.calculate_cross_rates
+
+    bench execute microsynth.microsynth.pricing.calculate_cross_rates
+    """
+    from erpnextswiss.scripts.swiss_exchange_rates import add_inverted_rates, add_cross_rates
+
+    add_inverted_rates(currencies=['EUR'])
+    add_cross_rates(from_currency='USD', to_currency='EUR')
+    add_cross_rates(from_currency='GBP', to_currency='EUR')
+    add_cross_rates(from_currency='SEK', to_currency='EUR')
+    add_cross_rates(from_currency='CZK', to_currency='EUR')
+    add_cross_rates(from_currency='PLN', to_currency='EUR')
