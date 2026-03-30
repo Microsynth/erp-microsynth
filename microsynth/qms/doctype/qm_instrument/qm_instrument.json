@@ -99,7 +99,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nUnapproved\nActive\nOut of order\nArchived\nDisposed",
+   "options": "\nUnapproved\nActive\nBlocked\nDecomissioned\nDisposed",
    "reqd": 1
   },
   {
@@ -189,7 +189,7 @@
    "options": "QM Instrument Category"
   }
  ],
- "modified": "2026-03-26 15:32:27.205796",
+ "modified": "2026-03-30 14:50:50.806181",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
