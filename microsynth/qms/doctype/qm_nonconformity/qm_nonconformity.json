@@ -25,6 +25,7 @@
   "references_section",
   "qm_documents",
   "customers",
+  "instruments",
   "creation1_section",
   "created_on",
   "column_break_14",
@@ -459,11 +460,18 @@
    "hidden": 1,
    "label": "In Approval",
    "read_only": 1
+  },
+  {
+   "fieldname": "instruments",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Instruments",
+   "options": "QM Instrument Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-01-21 13:58:00.846392",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-03-31 14:20:06.938642",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",

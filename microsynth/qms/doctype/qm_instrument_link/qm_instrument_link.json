@@ -1,0 +1,38 @@
+{
+ "creation": "2026-03-31 14:00:35.673592",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "qm_instrument",
+  "instrument_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "qm_instrument",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "QM Instrument",
+   "options": "QM Instrument",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "qm_instrument.instrument_name",
+   "fieldname": "instrument_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Instrument Name"
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-03-31 14:02:34.519212",
+ "modified_by": "Administrator",
+ "module": "QMS",
+ "name": "QM Instrument Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
