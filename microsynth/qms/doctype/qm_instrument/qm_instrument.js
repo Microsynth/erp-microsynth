@@ -6,15 +6,15 @@ frappe.ui.form.on('QM Instrument', {
         frm.set_query('purchase_invoice', function() {
             if (frm.doc.supplier) {
                 return {
-                    filters: {
-                        docstatus: 1,
-                        supplier: frm.doc.supplier
+                    'filters': {
+                        'docstatus': 1,
+                        'supplier': frm.doc.supplier
                     }
                 };
             } else {
                 return {
-                    filters: {
-                        docstatus: 1
+                    'filters': {
+                        'docstatus': 1
                     }
                 };
             }
@@ -32,15 +32,6 @@ frappe.ui.form.on('QM Instrument', {
     },
 
     refresh: function(frm) {
-        apply_permissions(frm, false);  // initial pessimistic state
-        const isLocal = frm.doc.__islocal;
-        const status = frm.doc.status;
-        const user = frappe.session.user;
-        const isPurchaser = frappe.user_roles.includes('Purchase User') || frappe.user_roles.includes('Purchase Manager');
-        const isQAU = frappe.user_roles.includes('QAU');
-        const isManager = frm.doc.instrument_manager === user || frm.doc.deputy_instrument_manager === user;
-        const isSystemManager = frappe.user_roles.includes('System Manager');
-
         const site_company_mapping = {
             "Balgach": "Microsynth AG",
             "Göttingen": "Microsynth Seqlab GmbH",
@@ -59,76 +50,17 @@ frappe.ui.form.on('QM Instrument', {
                 'callback': function(r) {
                     const isProcessOwner = (r.message === frappe.session.user);
                     if (isProcessOwner) {
-                        apply_permissions(frm, true);  // re-apply with elevated rights
+                        apply_field_permissions(frm, true);
+                        add_custom_buttons(frm, true);
+                    } else {
+                        apply_field_permissions(frm, false);
+                        add_custom_buttons(frm, false);
                     }
                 }
             });
-        }
-
-        // Add button "View > Log Book" to open the QM Log Book list if the document is not local
-        if (!isLocal) {
-            frm.add_custom_button(__('Log Book'), function() {
-                frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
-            }, __('View'));
-        }
-
-        // Add button "Add/Change Location" if user is Purchaser, QAU, instrument_manager, or deputy_instrument_manager
-        if (!isLocal && (isPurchaser || isQAU || isManager || isSystemManager)) {
-            const button_label = frm.doc.location ? 'Change Location' : 'Add Location';
-            frm.add_custom_button(__(button_label), function() {
-                show_location_dialog(frm);
-            });
-        }
-
-        // Add a red button "Block Instrument" if the status is "Active"
-        if (!isLocal && status === 'Active') {
-            frm.add_custom_button(__('Block Instrument'), function() {
-                frm.set_value('status', 'Blocked');
-                frm.save();
-                frm.refresh();
-                frappe.show_alert(__('Instrument has been set to Status "Blocked".'));
-            }).addClass("btn-danger");
-        }
-
-        // Add a red button "Decommission" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked"
-        if (!isLocal && status === 'Blocked' && (isQAU || isManager || isSystemManager)) {
-            frm.add_custom_button(__('Decommission'), function() {
-                frm.set_value('status', 'Decommissioned');
-                frm.save();
-                frm.refresh();
-                frappe.show_alert(__('Instrument has been set to Status "Decommissioned".'));
-            }).addClass("btn-danger");
-        }
-
-        // Add a red button "Dispose" that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Decommissioned"
-        if (!isLocal && (status === 'Blocked' || status === 'Decommissioned') && (isQAU || isManager || isSystemManager)) {
-            frm.add_custom_button(__('Dispose'), function() {
-                frm.set_value('status', 'Disposed');
-                frm.save();
-                frm.refresh();
-                frappe.show_alert(__('Instrument has been set to Status "Disposed".'));
-            }).addClass("btn-danger");
-        }
-
-        // Add a green button "Activate" (in status "Blocked" or "Decommissioned") or "Approve and Release" (in status "Unapproved") that is only visible for users with the role "QAU" or the (deputy) instrument_manager, and only if the status is "Blocked" or "Unapproved"
-        if (!isLocal && (status === 'Blocked' || status === 'Decommissioned' || status === 'Unapproved') && (isQAU || isManager || isSystemManager)) {
-            const buttonLabel = (status === 'Blocked' || status === 'Decommissioned') ? 'Activate' : 'Approve and Release';
-            frm.add_custom_button(__(buttonLabel), function() {
-                frm.set_value('status', 'Active');
-                frm.save();
-                frm.refresh();
-                frappe.show_alert(__('Instrument has been set to Status "Active".'));
-            }).addClass("btn-success");
-        }
-
-        // Add button Create > Log Book Entry
-        if (!isLocal) {
-            frm.add_custom_button(__('Log Book Entry'), function() {
-                frappe.new_doc('QM Log Book', {
-                    document_type: frm.doc.doctype,
-                    document_name: frm.doc.name
-                });
-            }, __('Create'));
+        } else {
+             apply_field_permissions(frm, false);
+             add_custom_buttons(frm, false);
         }
 
         // filter for category
@@ -149,30 +81,152 @@ frappe.ui.form.on('QM Instrument', {
 
         // Show storage location path in dashboard if location is set
         if (frm.doc.location) {
-            const storage_locations = [frm.doc.location];
-
-            const location_promises = storage_locations.map(location => {
-                return frappe.call({
-                    method: "microsynth.microsynth.purchasing.get_location_path_string",
-                    args: { location_name: location },
-                });
-            });
-            // Wait for all calls to finish
-            Promise.all(location_promises).then(results => {
-                const paths = results
-                    .map(r => r.message)
-                    .filter(p => p); // remove empty
-
-                if (!paths.length) return;
-
-                const text = "<b>Location:</b> " + paths.join("<br>");
-
-                // Add permanent green dashboard comment
-                frm.dashboard.add_comment(text, 'green', true);
+            frappe.call({
+                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_location_path_string",
+                'args': { 'location_name': frm.doc.location },
+            }).then(r => {
+                if (!r.message) return;
+                frm.dashboard.clear_comment();
+                frm.dashboard.add_comment(`<b>Location:</b> ${r.message}`, 'green', true);
             });
         }
     }
 });
+
+
+function get_allowed_transitions(frm, isProcessOwner) {
+    const status = frm.doc.status;
+    const roles = frappe.user_roles;
+    const user = frappe.session.user;
+
+    const is_purchaser = roles.includes('Purchase User') || roles.includes('Purchase Manager');
+    const is_qau = roles.includes('QAU');
+    const is_manager = [frm.doc.instrument_manager, frm.doc.deputy_instrument_manager].includes(user);
+
+    const is_gmp = frm.doc.regulatory_classification === 'GMP';
+    const is_non_gmp_freezer = frm.doc.instrument_class?.startsWith('F') && !is_gmp;
+    const is_non_gmp_a_b_c =
+        (frm.doc.instrument_class?.startsWith('A') ||
+         frm.doc.instrument_class?.startsWith('B') ||
+         frm.doc.instrument_class?.startsWith('C')) && !is_gmp;
+
+    const RULES = [
+        {
+            condition: () => is_qau,
+            transitions: [
+                ['Active', 'Blocked'],
+                ['Blocked', 'Active'],
+                ['Blocked', 'Decommissioned'],
+                ['Active', 'Decommissioned'],
+                ['Decommissioned', 'Disposed'],
+                ['Decommissioned', 'Active'],
+                ['Unapproved', 'Active']
+            ]
+        },
+        {
+            condition: () => (is_manager || isProcessOwner) && is_non_gmp_a_b_c,
+            transitions: [
+                ['Unapproved', 'Active'],
+                ['Decommissioned', 'Active'],
+                ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Decommissioned'],
+                ['Active', 'Decommissioned']
+            ]
+        },
+        {
+            condition: () => (is_manager || isProcessOwner) && is_non_gmp_freezer,
+            transitions: [
+                ['Active', 'Decommissioned'],
+                ['Blocked', 'Active'],
+                ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Decommissioned']
+            ]
+        },
+        {
+            condition: () => is_purchaser,
+            transitions: [['Decommissioned', 'Disposed']]
+        },
+        {
+            condition: () => true,
+            transitions: [['Active', 'Blocked']]
+        }
+    ];
+    const transitions = new Set();
+
+    RULES.forEach(rule => {
+        if (rule.condition()) {
+            rule.transitions.forEach(([f, t]) => {
+                transitions.add(`${f}|${t}`);
+            });
+        }
+    });
+
+    return Array.from(transitions)
+        .map(t => t.split('|'))
+        .filter(([from]) => from === status);
+}
+
+
+function add_custom_buttons(frm, isProcessOwner) {
+    frm.clear_custom_buttons();
+
+    const transitions = get_allowed_transitions(frm, isProcessOwner);
+
+    const labels = {
+        'Blocked': 'Block Instrument',
+        'Active': 'Activate',
+        'Decommissioned': 'Decommission',
+        'Disposed': 'Dispose'
+    };
+    transitions.forEach(([from, to]) => {
+        const label =
+            (from === 'Unapproved' && to === 'Active')
+                ? 'Approve and Release'
+                : labels[to] || to;
+
+        const color =
+            (to === 'Blocked' || to === 'Decommissioned' || to === 'Disposed')
+                ? 'btn-danger'
+                : 'btn-success';
+
+        frm.add_custom_button(__(label), function() {
+            frm.set_value('status', to);
+            frm.save().then(() => {
+                frappe.show_alert(__('Status changed to "{0}"', [to]));
+            });
+        }).addClass(color);
+    });
+
+    const is_purchaser = frappe.user_roles.includes('Purchase User') || frappe.user_roles.includes('Purchase Manager');
+    const is_qau = frappe.user_roles.includes('QAU');
+    const is_manager = frm.doc.instrument_manager === frappe.session.user || frm.doc.deputy_instrument_manager === frappe.session.user;
+
+    if (!frm.doc.__islocal) {
+        // Add button "View > Log Book" to open the QM Log Book list if the document is not local
+        frm.add_custom_button(__('Log Book'), function() {
+            frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
+        }, __('View'));
+
+        // Add button Create > Log Book Entry
+        frm.add_custom_button(__('Log Book Entry'), function() {
+            frappe.new_doc('QM Log Book', {
+                document_type: frm.doc.doctype,
+                document_name: frm.doc.name
+            });
+        }, __('Create'));
+
+        // Add button "Add/Change Location" if user is Purchaser, QAU, instrument_manager or deputy_instrument_manager
+        if ((is_purchaser && frm.doc.status === 'Unapproved')
+            || ((is_qau || is_manager || isProcessOwner)
+                && !['Decommissioned', 'Disposed'].includes(frm.doc.status)))
+            {
+            const button_label = frm.doc.location ? 'Change Location' : 'Add Location';
+            frm.add_custom_button(__(button_label), function() {
+                show_location_dialog(frm);
+            });
+        }
+    }
+}
 
 
 function lock_all_fields(frm) {
@@ -183,13 +237,33 @@ function lock_all_fields(frm) {
     });
 }
 
+
 function unlock_all_fields(frm) {
-    frm.fields.forEach(field => {
-        if (field.df?.fieldname) {
-            frm.set_df_property(field.df.fieldname, 'read_only', 0);
-        }
+    const fields_to_unlock = [
+        'instrument_name',
+        'instrument_class',
+        'category',
+        'instrument_manager',
+        'qm_process',
+        'site',
+        'regulatory_classification',
+        'subcategory',
+        'deputy_instrument_manager',
+        'serial_no',
+        'manufacturer',
+        'software_version',
+        'has_service_contract',
+        'supplier',
+        'acquisition_date',
+        'purchase_invoice',
+        'location',
+        'qm_documents',
+    ];
+    fields_to_unlock.forEach(field => {
+        frm.set_df_property(field, 'read_only', 0);
     });
 }
+
 
 function lock_fields(frm, fields) {
     fields.forEach(field => {
@@ -197,39 +271,33 @@ function lock_fields(frm, fields) {
     });
 }
 
-function apply_permissions(frm, isProcessOwner) {
-    const { __islocal: isLocal, status, instrument_manager, deputy_instrument_manager } = frm.doc;
+
+function apply_field_permissions(frm, isProcessOwner) {
+    const { status, instrument_manager, deputy_instrument_manager } = frm.doc;
+    const is_local = frm.doc.__islocal;
     const user = frappe.session.user;
     const roles = frappe.user_roles;
-
-    const isPurchaser = roles.includes('Purchase User') || roles.includes('Purchase Manager');
-    const isQAU = roles.includes('QAU');
-    const isSystemManager = roles.includes('System Manager');
-    const isManager = [instrument_manager, deputy_instrument_manager].includes(user);
+    const is_qau = roles.includes('QAU');
+    const is_manager = [instrument_manager, deputy_instrument_manager].includes(user);
+    const is_purchaser = (roles.includes('Purchase User') || roles.includes('Purchase Manager')) && !is_qau && !is_manager && !isProcessOwner;
 
     const isPrivilegedUser = (
-        isPurchaser ||
-        isQAU ||
-        isManager ||
-        isSystemManager ||
+        is_purchaser ||
+        is_qau ||
+        is_manager ||
         isProcessOwner
     );
-
-    const isLockedStatus = (
-        status?.includes('Decommissioned') ||
-        status?.includes('Disposed')
-    );
+    const isLockedStatus = ['Decommissioned', 'Disposed'].includes(status);
 
     // Lock all fields
     if (
-        (!isLocal && !isPrivilegedUser) ||
-        (isPurchaser && status !== 'Unapproved') ||
+        (!is_local && !isPrivilegedUser) ||
+        (is_purchaser && status !== 'Unapproved') ||
         isLockedStatus
     ) {
         lock_all_fields(frm);
         return;
     }
-
     // Start from unlocked, then apply partial locks
     unlock_all_fields(frm);
 
@@ -240,7 +308,7 @@ function apply_permissions(frm, isProcessOwner) {
             'manufacturer',
             'supplier',
             'purchase_invoice',
-            'aquisition_date',
+            'acquisition_date',
             'instrument_class'
         ]);
     }
@@ -332,7 +400,6 @@ function show_location_dialog(frm) {
                 frappe.msgprint(__("No location selected"));
                 return;
             }
-
             // Save to field and close dialog
             frm.set_value("location", chosen);
             frm.save();
