@@ -2101,27 +2101,30 @@ def create_material_request(item_code, qty, schedule_date, company, item_name=No
     mr.company = company
     mr.comment = comment
     mr.requested_by = requested_by
-    # get default supplier from Item and its default currency
-    supplier = None
-    supplier_currency = None
-    item_doc = frappe.get_doc("Item", item_code)
-    if len(item_doc.supplier_items) == 1:
-        entry = item_doc.supplier_items[0]
-        supplier = entry.supplier
-        supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-    elif len(item_doc.supplier_items) > 1:
-        for entry in item_doc.supplier_items:
-            if not entry.substitute_status or (entry.substitute_status and entry.substitute_status == "Verified"):
-                supplier = entry.supplier
-                supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-                break
-        if not supplier:
+    if not supplier:
+        # get default supplier from Item and its default currency
+        supplier_currency = None
+        item_doc = frappe.get_doc("Item", item_code)
+        if len(item_doc.supplier_items) == 1:
             entry = item_doc.supplier_items[0]
             supplier = entry.supplier
             supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
-            frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified'. Using first supplier {supplier}.", "purchasing.create_material_request")
+        elif len(item_doc.supplier_items) > 1:
+            for entry in item_doc.supplier_items:
+                if not entry.substitute_status or (entry.substitute_status and entry.substitute_status == "Verified"):
+                    supplier = entry.supplier
+                    supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+                    break
+            if not supplier:
+                entry = item_doc.supplier_items[0]
+                supplier = entry.supplier
+                supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+                frappe.log_error(f"Item {item_code} has multiple suppliers but none marked as 'Verified'. Using first supplier {supplier}.", "purchasing.create_material_request")
+        else:
+            frappe.throw(f"Item {item_code} is not assigned to any Supplier, unable to create a Material Request. Please contact the purchasing department.")
     else:
-        frappe.throw(f"Item {item_code} is not assigned to any Supplier, unable to create a Material Request. Please contact the purchasing department.")
+        supplier_currency = frappe.get_value("Supplier", supplier, "default_currency")
+
     if (not currency or not rate) and supplier_currency:
         currency = supplier_currency
     elif supplier and supplier_currency and currency and supplier_currency != currency:
