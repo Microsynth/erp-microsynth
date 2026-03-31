@@ -995,7 +995,7 @@
    "_comments": null,
    "_liked_by": null,
    "_user_tags": null,
-   "amend": 1,
+   "amend": 0,
    "cancel": 0,
    "create": 0,
    "creation": "2013-05-24 19:29:09",
@@ -1019,7 +1019,7 @@
    "report": 1,
    "role": "Stock User",
    "set_user_permissions": 0,
-   "share": 1,
+   "share": 0,
    "submit": 0,
    "write": 0
   },
