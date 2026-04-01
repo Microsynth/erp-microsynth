@@ -1485,18 +1485,19 @@ def create_si_content_from_so(so_id, debug=False):
         if debug:
             print("[create_si_from_so] Mismatch in row counts → adjusting SI to match DN")
         end_customer_si = adjust_si_to_dn(dn_doc, end_customer_si, debug=debug)
-        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts do NOT match between SO and DN. "
-                         f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
-                         f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
+        if discount_amount > 0:
+            frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts do NOT match between SO and DN. "
+                            f"This case is not implemented in create_si_content_from_so and might lead to an incorrect Sales Invoice total. "
+                            f"Please check the created Sales Invoice carefully.", "invoicing.create_si_content_from_so")
     elif discount_amount > 0:
         end_customer_si.discount_amount = (end_customer_si.discount_amount or 0) + discount_amount
         end_customer_si.base_discount_amount = (
             end_customer_si.discount_amount * (end_customer_si.conversion_rate or 1)
         )
         end_customer_si.calculate_taxes_and_totals()  # necessary?
-        frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts match between SO and DN. "
-                         f"The discount amount is added to the Sales Invoice {end_customer_si.name}. Please check the created Sales Invoice carefully.",
-                         "invoicing.create_si_from_so")
+        # frappe.log_error(f"Sales Order {so_id} has a discount amount of {discount_amount} and Oligos/Samples/Items counts match between SO and DN. "
+        #                  f"The discount amount is added to the Sales Invoice {end_customer_si.name}. Please check the created Sales Invoice carefully.",
+        #                  "invoicing.create_si_from_so")
     if debug:
         print(f"[create_si_from_so] SI total={end_customer_si.total}, DN total={dn_doc.total}")
     # safety check
@@ -1557,9 +1558,10 @@ def merge_si_contents(source_si_content, target_si_content):
         })
     # check discount_amount
     if source_si_doc.discount_amount > 0:
-        frappe.log_error(f"Source Sales Invoice {source_si_doc.name} has a discount amount of {source_si_doc.discount_amount}. "
-                         f"The discount amount is added to the target Sales Invoice {target_si_doc.name}. "
-                         f"Please check the created Sales Invoice carefully.", "invoicing.merge_si_contents")
+        frappe.log_error(f"Source Sales Invoice has a discount amount of {source_si_doc.discount_amount}. "
+                         f"The discount amount is added to the target Sales Invoice. "
+                         f"Please check the created Sales Invoice carefully."
+                         f"\n\n{source_si_doc.as_dict()}\n\n{target_si_doc.as_dict()}", "invoicing.merge_si_contents")
         target_si_doc.discount_amount = (target_si_doc.discount_amount or 0) + source_si_doc.discount_amount
         target_si_doc.base_discount_amount = (
             target_si_doc.discount_amount * (target_si_doc.conversion_rate or 1)
