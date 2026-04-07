@@ -713,6 +713,7 @@ def check_sequencing_delivery_note_duplicates():
         send_email_from_template(email_template, rendered_content)
 
 
+@frappe.whitelist()
 def get_shipping_addresses(webshop_accounts):
     """
     * Accepts a list of webshop accounts (Contact IDs)
@@ -743,7 +744,7 @@ def get_shipping_addresses(webshop_accounts):
     bench execute microsynth.microsynth.seqblatt.get_shipping_addresses --kwargs "{'webshop_accounts': ['215856', '215857']}"
     """
     account_addresses = []
-    for webshop_account in webshop_accounts:
+    for webshop_account in list(set(webshop_accounts)):  # remove duplicates
         if not webshop_account or webshop_account.strip() == "" or not isinstance(webshop_account, str):
             return {
                 "success": False,
