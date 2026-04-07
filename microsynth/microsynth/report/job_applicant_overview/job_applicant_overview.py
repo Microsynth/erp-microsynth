@@ -27,9 +27,9 @@ def get_data(filters):
     conditions = []
     params = {}
 
-    if filters.get("job_title"):
-        conditions.append("`tabJob Opening`.`job_title` = %(job_title)s")
-        params["job_title"] = filters["job_title"]
+    if filters.get("job_opening"):
+        conditions.append("`tabJob Opening`.`name` = %(job_opening)s")
+        params["job_opening"] = filters["job_opening"]
 
     if filters.get("job_subtitle"):
         conditions.append("`tabJob Opening`.`job_subtitle` = %(job_subtitle)s")

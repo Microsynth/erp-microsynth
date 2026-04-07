@@ -5,8 +5,8 @@
 frappe.query_reports["Job Applicant Overview"] = {
     'filters': [
         {
-            fieldname: "job_title",
-            label: "Job Title",
+            fieldname: "job_opening",
+            label: "Job Opening",
             fieldtype: "Link",
             options: "Job Opening"
         },
