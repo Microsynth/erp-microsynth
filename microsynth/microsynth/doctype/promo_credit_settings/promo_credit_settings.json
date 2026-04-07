@@ -1,0 +1,113 @@
+{
+ "creation": "2026-03-31 16:36:00.766193",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "from_date",
+  "credit_percentage",
+  "limit",
+  "expiry_in_days",
+  "column_break_3",
+  "to_date",
+  "item_description",
+  "currency",
+  "section_break_6",
+  "dn_product_types",
+  "items",
+  "sales_managers",
+  "ca_product_types"
+ ],
+ "fields": [
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "limit",
+   "fieldtype": "Currency",
+   "label": "Limit",
+   "options": "currency"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  },
+  {
+   "fieldname": "item_description",
+   "fieldtype": "Data",
+   "label": "Item Description"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Item Link"
+  },
+  {
+   "fieldname": "sales_managers",
+   "fieldtype": "Table",
+   "label": "Sales Managers",
+   "options": "User Link"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "credit_percentage",
+   "fieldtype": "Percent",
+   "label": "Credit Percentage"
+  },
+  {
+   "fieldname": "dn_product_types",
+   "fieldtype": "Table",
+   "label": "Delivery Note Product Types",
+   "options": "Product Type Link"
+  },
+  {
+   "fieldname": "ca_product_types",
+   "fieldtype": "Table",
+   "label": "Credit Account Product Types",
+   "options": "Product Type Link"
+  },
+  {
+   "fieldname": "expiry_in_days",
+   "fieldtype": "Int",
+   "label": "Expiry in days"
+  }
+ ],
+ "issingle": 1,
+ "modified": "2026-03-31 17:21:48.181389",
+ "modified_by": "Administrator",
+ "module": "Microsynth",
+ "name": "Promo Credit Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

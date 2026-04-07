@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate
+from frappe.utils import nowdate, getdate, add_days
 from frappe.utils.data import today
 from frappe.utils import flt, cint, get_link_to_form
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
@@ -381,7 +381,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
 
     sales_invoice_id = response.get('reference')
     book_promo_credit_sales_invoice(sales_invoice_id, company)
-    return sales_invoice_id
+    return credit_account_name
 
 
 def validate_invoice_credit_account(sales_invoice, credit_item, event=None):
@@ -1009,3 +1009,171 @@ def create_so_and_deposit_invoice(quotation_id, credit_account):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "create_so_and_deposit_invoice")
         raise e
+
+
+def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
+    credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+    item_name = promo_credit_settings.item_description
+    promo_credit_limit = promo_credit_settings.limit
+    credit_percentage = promo_credit_settings.credit_percentage
+    contact_person = delivery_note_doc.contact_person
+    # Get all submitted Sales Invoices with contact_person, credit_item and item_name and sum up their base_net_total
+    already_given_promo_credit_total = frappe.db.sql("""
+        SELECT SUM(`tabSales Invoice`.`base_net_total`)
+        FROM `tabSales Invoice`
+        WHERE `tabSales Invoice`.`docstatus` = 1
+            AND `tabSales Invoice`.`contact_person` = %s
+            AND EXISTS (
+                SELECT 1
+                FROM `tabSales Invoice Item`
+                WHERE `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
+                    AND `tabSales Invoice Item`.`item_code` = %s
+                    AND `tabSales Invoice Item`.`item_name` = %s
+            )
+    """, (contact_person, credit_item, item_name))[0][0] or 0
+    # give max credit_percentage of the delivery note base net total as promo credit, but do not exceed the promo credit limit
+    return min(promo_credit_limit - already_given_promo_credit_total, delivery_note_doc.base_net_total * (credit_percentage / 100))
+
+
+def fetch_delivery_note_order_date(delivery_note_doc):
+    """
+    Fetch the order date of the Sales Order linked to the given Delivery Note.
+    If there are none or multiple Sales Orders linked, return None.
+    """
+    sales_order_ids = set()
+    for item in delivery_note_doc.items:
+        if item.against_sales_order:
+            sales_order_ids.add(item.against_sales_order)
+    if len(sales_order_ids) == 1:
+        return frappe.get_value("Sales Order", sales_order_ids.pop(), "transaction_date")
+    else:
+        msg = f"Delivery Note {delivery_note_doc.name} has {len(sales_order_ids)} linked Sales Orders. Cannot determine order date for promo credit conditions check."
+        frappe.log_error(msg, "fetch_delivery_note_order_date")
+        print(msg)
+        return None
+
+
+def check_promo_conditions(delivery_note_doc, promo_credit_settings):
+    if delivery_note_doc.docstatus != 1:
+        return (False, 0)
+    if delivery_note_doc.product_type not in [p.product_type for p in promo_credit_settings.dn_product_types]:
+        return (False, 0)
+    if delivery_note_doc.grand_total <= 0:
+        return (False, 0)
+    if len(delivery_note_doc.items) != 1:
+        return (False, 0)
+    item = delivery_note_doc.items[0]
+    if item.item_code not in [i.item for i in promo_credit_settings.items]:
+        return (False, 0)
+    sales_manager = frappe.get_value("Customer", delivery_note_doc.customer, "account_manager")
+    if not sales_manager:
+        return (False, 0)
+    if not sales_manager in [s.user for s in promo_credit_settings.sales_managers]:
+        return (False, 0)
+    if not delivery_note_doc.company:
+        return (False, 0)
+    if not delivery_note_doc.contact_person:
+        return (False, 0)
+    company_currency = frappe.get_value("Company", delivery_note_doc.company, "default_currency")
+    if not company_currency or company_currency != promo_credit_settings.currency:
+        return (False, 0)
+    order_date = fetch_delivery_note_order_date(delivery_note_doc)
+    if not order_date or order_date < getdate(promo_credit_settings.from_date) or order_date > getdate(promo_credit_settings.to_date):
+        return (False, 0)
+    promo_credit_amount = get_promo_credit_amount(delivery_note_doc, promo_credit_settings)
+    if promo_credit_amount <= 0:
+        return (False, 0)
+    return (True, promo_credit_amount)
+
+
+def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_settings):
+    from microsynth.microsynth.webshop import create_deposit_invoice
+    if promo_credit_amount <= 0:
+        return None
+    existing_credit_account = frappe.db.get_value("Credit Account",
+        filters={
+            "account_type": "Enforced Credit",
+            "company": delivery_note_doc.company,
+            "customer": delivery_note_doc.customer,
+            "currency": delivery_note_doc.currency,
+            "status": "Active",
+            "expiry_date": (">=", nowdate())
+        }
+    )
+    # set the expiry date to today plus the validity period defined in the promo_credit_settings
+    expiry_in_days = promo_credit_settings.expiry_in_days
+    new_expiry_date = add_days(nowdate(), expiry_in_days)
+
+    if existing_credit_account:
+        credit_account_name = existing_credit_account
+        credit_account_doc = frappe.get_doc("Credit Account", credit_account_name)
+        # adjust expiry date if the current expiry date is before new_expiry_date
+        if not credit_account_doc.expiry_date or getdate(credit_account_doc.expiry_date) < new_expiry_date:
+            credit_account_doc.expiry_date = new_expiry_date
+            credit_account_doc.save()
+    else:
+        credit_account_name = create_credit_account(
+            account_name="TODO",  # TODO
+            account_type="Enforced Credit",
+            customer_id=delivery_note_doc.customer,
+            company=delivery_note_doc.company,
+            currency=delivery_note_doc.currency,
+            contact_id=delivery_note_doc.contact_person,
+            product_types=[pt.product_type for pt in promo_credit_settings.ca_product_types],
+            product_types_locked=1,
+            expiry_date=new_expiry_date,
+            description="",  # TODO
+            ignore_permissions=True
+        )
+    result = create_deposit_invoice(
+        webshop_account=delivery_note_doc.contact_person,
+        account_id=credit_account_name,
+        amount=promo_credit_amount,
+        currency=delivery_note_doc.currency,
+        description=promo_credit_settings.item_description,
+        company=delivery_note_doc.company,
+        customer=delivery_note_doc.customer,
+        customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.
+        ignore_permissions=False,
+        transmit_invoice=False
+    )
+    if result.get("success"):
+        sales_invoice_id = result.get("reference")
+        book_promo_credit_sales_invoice(
+            sales_invoice_id,
+            delivery_note_doc.company,
+            "AC-6600"
+        )
+        return sales_invoice_id
+    else:
+        msg = f"Failed to create deposit invoice for promotional credit for Delivery Note {delivery_note_doc.name}: {result.get('internal_message')}"
+        frappe.log_error(msg, "create_promo_credit")
+        print(msg)
+        return None
+
+
+def check_and_create_promo_credit(delivery_note_id):
+    """
+    bench execute microsynth.microsynth.credits.check_and_create_promo_credit --kwargs "{'delivery_note_id': 'DN-GOE-26003858'}"
+    """
+    dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)
+    promo_credit_settings = frappe.get_doc("Promo Credit Settings", "Promo Credit Settings")
+    promo_conditions_met, promo_credit_amount = check_promo_conditions(dn_doc, promo_credit_settings)
+    if promo_conditions_met:
+        sales_invoice_id = create_promo_credit(dn_doc, promo_credit_amount, promo_credit_settings)
+        if sales_invoice_id:
+            return {
+                "success": True,
+                "message": f"Promotional credit of {promo_credit_amount:.2f} {dn_doc.currency} created with Sales Invoice {sales_invoice_id}."
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to create promotional credits for Delivery Note {delivery_note_id}."
+            }
+    else:
+        return {
+            "success": False,
+            "message": f"Delivery Note {delivery_note_id} does not meet the conditions for receiving a promotional credit."
+        }
+    # TODO: notify the contact person
