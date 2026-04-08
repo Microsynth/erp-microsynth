@@ -137,6 +137,12 @@ frappe.ui.form.on('Sales Invoice', {
 
         hide_in_words();
 
+        if (frm.doc.amended_from && frm.doc.docstatus == 0) {
+            // lock company and naming series fields to prevent changes
+            frm.set_df_property("company", "read_only", true);
+            frm.set_df_property("naming_series", "read_only", true);
+        }
+
         var time_out = 500;
         if (frm.doc.items)
         {
