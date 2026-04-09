@@ -772,7 +772,8 @@ def get_shipping_addresses(webshop_accounts):
                 address_id = contact_doc.address
                 break
         if customer_id and contact_id and address_id:
-            shipping_address_lines = create_receiver_address_lines(customer_id, contact_id, address_id)
+            customer_name = frappe.get_value("Customer", customer_id, "customer_name")
+            shipping_address_lines = create_receiver_address_lines(customer_name, contact_id, address_id)
         else:
             return {
                 "success": False,
