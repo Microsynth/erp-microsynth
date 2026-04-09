@@ -798,3 +798,83 @@ def get_shipping_addresses(webshop_accounts):
         "internal_message": None,
         "account_addresses": account_addresses
     }
+
+
+@frappe.whitelist()
+def get_unused_easy_run_label_ranges():
+    """
+    Return ranges of all unused Sequencing Labels for Item Code 3050 where label_id needs to be grouped into barcode_start_range to barcode_start_range.
+    Return example:
+    {
+        "message": {
+            "success": true,
+            "message": "OK",
+            "internal_message": null,
+            "ranges": [
+                {
+                    "contact": "215856",
+                    "registered": false,
+                    "registered_to": null,
+                    "item": "3050",
+                    "barcode_start_range": "642601",
+                    "barcode_end_range": "642700"
+                },
+                {
+                    "contact": "215856",
+                    "registered": true,
+                    "registered_to": "237365",
+                    "item": "3050",
+                    "barcode_start_range": "642801",
+                    "barcode_end_range": "642900"
+                }
+            ]
+        }
+    }
+
+    bench execute microsynth.microsynth.seqblatt.get_unused_easy_run_label_ranges
+    """
+    sql_query = """
+        SELECT
+            `sequencing_label_grouped`.`contact`,
+            `sequencing_label_grouped`.`registered`,
+            `sequencing_label_grouped`.`registered_to`,
+            `sequencing_label_grouped`.`item`,
+            MIN(`sequencing_label_grouped`.`label_id`) AS `barcode_start_range`,
+            MAX(`sequencing_label_grouped`.`label_id`) AS `barcode_end_range`
+        FROM (
+            SELECT
+                `tabSequencing Label`.`contact`,
+                `tabSequencing Label`.`registered`,
+                `tabSequencing Label`.`registered_to`,
+                `tabSequencing Label`.`item`,
+                `tabSequencing Label`.`label_id`,
+                `tabSequencing Label`.`label_id` - ROW_NUMBER() OVER (
+                    PARTITION BY
+                        `tabSequencing Label`.`contact`,
+                        `tabSequencing Label`.`registered`,
+                        `tabSequencing Label`.`registered_to`,
+                        `tabSequencing Label`.`item`
+                    ORDER BY
+                        `tabSequencing Label`.`label_id`
+                ) AS `group_identifier`
+            FROM `tabSequencing Label`
+            WHERE
+                `tabSequencing Label`.`item` = '3050'
+                AND `tabSequencing Label`.`status` = 'unused'
+        ) AS `sequencing_label_grouped`
+        GROUP BY
+            `sequencing_label_grouped`.`contact`,
+            `sequencing_label_grouped`.`registered`,
+            `sequencing_label_grouped`.`registered_to`,
+            `sequencing_label_grouped`.`item`,
+            `sequencing_label_grouped`.`group_identifier`
+        ORDER BY
+            `barcode_start_range`
+        """
+    ranges = frappe.db.sql(sql_query, as_dict=True)
+    return {
+        "success": True,
+        "message": "OK",
+        "internal_message": None,
+        "ranges": ranges
+    }
