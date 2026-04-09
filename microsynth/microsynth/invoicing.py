@@ -479,7 +479,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
 
         for dn in all_invoiceable:
             # TODO process other invoicing methods
-            if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany", "Chorus"]:
+            if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany", "Chorus", "X-Rechnung", "Peppol", "Scientist"]:
                 frappe.log_error("Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), "invoicing.async_create_invoices")
                 continue
 
