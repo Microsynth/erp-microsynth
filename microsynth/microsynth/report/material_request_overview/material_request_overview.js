@@ -245,7 +245,7 @@ function open_search_dialog(report) {
             {fieldtype:'Button', label: __('Clear All Filters'), fieldname:'clear_filters'},
             {fieldtype:'Column Break'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
-            {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type'},
+            {fieldtype:'Data', label: __('Material Code (Microsynth internal)'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type (currently only used by certain departments)'},
             {fieldtype:'HTML', fieldname:'note'},
             {fieldtype:'Section Break'},
             {fieldtype:'HTML', fieldname:'results'}
@@ -702,7 +702,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     return '';
                 })()
             },
-            {fieldtype:'Check', label: __('Has Batch Number'), fieldname:'has_batch_no', default: 1},
+            {fieldtype:'Check', label: __('Enable batch tracking if a batch number is provided'), fieldname:'has_batch_no', default: 1},
 
             {fieldtype:'Column Break'},
 
