@@ -88,10 +88,9 @@ frappe.query_reports["Supplier Items"] = {
 
 function open_edit_dialog(row_data, report) {
     const can_edit_item = frappe.model.can_write('Item');
-    const can_edit_item_price = frappe.model.can_write('Item Price');
 
     resolve_currency(row_data).then(currency => {
-        build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price, currency);
+        build_edit_dialog(row_data, report, can_edit_item, currency);
     });
 }
 
@@ -115,7 +114,7 @@ function resolve_currency(row_data) {
     return Promise.resolve(frappe.defaults.get_default('currency'));
 }
 
-function build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price, currency) {
+function build_edit_dialog(row_data, report, can_edit_item, currency) {
     const dialog_fields = [
         { label: __('Item Name'), fieldname: 'item_name', fieldtype: 'Data', default: row_data.item_name, read_only: !can_edit_item, reqd: true },
         { label: __('Supplier'), fieldname: 'supplier', fieldtype: 'Data', default: row_data.supplier + ': ' + row_data.supplier_name, read_only: true },
@@ -134,16 +133,16 @@ function build_edit_dialog(row_data, report, can_edit_item, can_edit_item_price,
                 }
             }
         },
-        { label: __('Price in {0} for Minimum Qty 1', [currency]), fieldname: 'price_list_rate', fieldtype: 'Currency', options: currency, default: row_data.price_list_rate, read_only: !can_edit_item_price },
+        { label: __('Price in {0} for Minimum Qty 1', [currency]), fieldname: 'price_list_rate', fieldtype: 'Currency', options: currency, default: row_data.price_list_rate, read_only: !can_edit_item },
         { label: __('Pack Size'), fieldname: 'pack_size', fieldtype: 'Float', default: row_data.pack_size, read_only: !can_edit_item },
         { label: __('Lead Time in Days'), fieldname: 'lead_time_days', fieldtype: 'Int', default: row_data.lead_time_days, read_only: !can_edit_item },
-        { label: __('Material Code'), fieldname: 'material_code', fieldtype: 'Data', default: row_data.material_code, read_only: !can_edit_item },
+        { label: __('Material Code'), fieldname: 'material_code', fieldtype: 'Data', description: 'Oligo Modification Code / Slims Content Type', default: row_data.material_code, read_only: !can_edit_item },
 
         { fieldtype: 'Column Break' },
 
         { label: __('Microsynth Item Code'), fieldname: 'item_code', fieldtype: 'Link', options: 'Item', default: row_data.item_code, read_only: true, reqd: true },
         //{ label: __('Supplier Name'), fieldname: 'supplier_name', fieldtype: 'Data', default: row_data.supplier_name, read_only: true },
-        { label: __('Conversion Factor to Stock unit'), fieldname: 'conversion_factor', fieldtype: 'Float', default: row_data.conversion_factor, read_only: !can_edit_item },
+        { label: __('Stock units per Purchase unit'), fieldname: 'conversion_factor', fieldtype: 'Float', default: row_data.conversion_factor, read_only: !can_edit_item },
         { label: __('Safety Stock'), fieldname: 'safety_stock', fieldtype: 'Float', default: row_data.safety_stock, read_only: !can_edit_item },
         { label: __('Minimum Order Quantity'), fieldname: 'min_order_qty', fieldtype: 'Float', default: row_data.min_order_qty, read_only: !can_edit_item },
         { label: __('Pack unit'), fieldname: 'pack_uom', fieldtype: 'Link', options: 'UOM', default: row_data.pack_uom, read_only: !can_edit_item },

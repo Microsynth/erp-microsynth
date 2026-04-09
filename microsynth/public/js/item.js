@@ -59,7 +59,7 @@ frappe.ui.form.on('Item', {
 
                 if (!paths.length) return;
 
-                const text = "<b>Storage Locations:</b><br>" + paths.join("<br>");
+                const text = `<b>Storage Location${paths.length > 1 ? "s" : ""}:</b><br>${paths.join("<br>")}`;
 
                 // Add permanent green dashboard comment
                 frm.dashboard.add_comment(text, 'green', true);
@@ -355,7 +355,7 @@ function add_edit_purchasing_price(frm) {
                         fieldtype: "Data",
                         label: __("Unit"),
                         reqd: 1,
-                        default: frm.doc.purchase_uom
+                        default: frm.doc.purchase_uom || frm.doc.stock_uom
                     },
                     {
                         fieldname: "currency",
