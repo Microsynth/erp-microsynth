@@ -654,7 +654,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, read_only: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'},
             {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
-            {fieldtype:'Currency', label: __('Rate regarding one Purchase unit'), fieldname:'rate', precision: 2},
+            {fieldtype:'Currency', label: __('Price per Purchase unit'), fieldname:'rate', precision: 2},
             {fieldtype:'Float', label: __('Quantity of Purchase units to order'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Float', label: __('Quantity of Stock units per Purchase unit'), fieldname:'conversion_factor', min: 1, precision: 2,
@@ -775,7 +775,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             }
             // currency required if rate is set
             if (values.rate && (!values.currency || values.currency.trim() === '')) {
-                frappe.msgprint(__('Currency is required if Rate is set.'));
+                frappe.msgprint(__('Currency is required if Price is set.'));
                 return;
             }
             frappe.call({
