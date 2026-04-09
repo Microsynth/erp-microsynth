@@ -221,8 +221,11 @@ function add_edit_purchasing_price(frm) {
                     <table class="table table-sm" style="margin-top: 4px;">
                         <thead>
                             <tr>
-                                <th style="width: 120px; padding-left: 0; text-align: right;">
+                                <th style="padding-left: 0; text-align: right;">
                                     ${__("Min Qty")}
+                                </th>
+                                <th style="padding-left: 0; text-align: right;">
+                                    ${__("Unit")}
                                 </th>
                                 <th style="padding-left: 0; text-align: right;">
                                     ${__("Rate")}
@@ -241,9 +244,13 @@ function add_edit_purchasing_price(frm) {
                                 ${frappe.format(row.min_qty, { fieldtype: "Float" })}
                             </td>
                             <td style="padding-left: 0; text-align: right;">
+                                ${row.uom || ""}
+                            </td>
+                            <td style="padding-left: 0; text-align: right;">
                                 <strong>
                                     ${frappe.format(row.price_list_rate, {
-                                        fieldtype: "Float"
+                                        fieldtype: "Float",
+                                        precision: 2,
                                     })}
                                 </strong>
                             </td>
@@ -272,6 +279,29 @@ function add_edit_purchasing_price(frm) {
             }
             existing_html += `</div>`;
 
+            // Compute conversion info: If purchase_uom and stock_uom differ, display conversion text
+            let conversion_info = '';
+            if (frm.doc.purchase_uom && frm.doc.stock_uom && frm.doc.purchase_uom !== frm.doc.stock_uom) {
+                let cf = 1;
+                for (const uom of frm.doc.uoms || []) {
+                    if (uom.uom === frm.doc.purchase_uom) {
+                        cf = uom.conversion_factor;
+                        break;
+                    }
+                }
+                let stock_uom = frm.doc.stock_uom || "";
+                let plural = stock_uom.toLowerCase().endsWith("s") || cf <= 1 ? "" : "s";
+                conversion_info = __(
+                    '1 {0} = {1} {2}{3}',
+                    [
+                        frm.doc.purchase_uom,
+                        cf,
+                        stock_uom,
+                        plural
+                    ]
+                );
+            }
+
             const dialog = new frappe.ui.Dialog({
                 'title': __("Add / Edit Purchasing Price"),
                 'fields': [
@@ -283,10 +313,26 @@ function add_edit_purchasing_price(frm) {
                         default: price_context.price_list
                     },
                     {
+                        fieldtype: "Column Break"
+                    },
+                    {
+                        fieldname: "conversion_info",
+                        fieldtype: "Data",
+                        label: __("Conversion Info"),
+                        read_only: 1,
+                        default: conversion_info  // If purchase_uom and purchase_uom != stock_uom, show conversion from purchase_uom to stock_uom: e.g. "1 box = 10 pieces", else ""
+                    },
+                    {
+                        fieldtype: "Section Break"
+                    },
+                    {
                         fieldname: "existing_prices",
                         fieldtype: "HTML",
                         label: __("Existing Prices"),
                         options: existing_html
+                    },
+                    {
+                        fieldtype: "Section Break"
                     },
                     {
                         fieldname: "min_qty",
@@ -298,9 +344,27 @@ function add_edit_purchasing_price(frm) {
                     {
                         fieldname: "price_list_rate",
                         fieldtype: "Currency",
-                        label: __("Price"),
+                        label: __("Price per Unit"),
                         reqd: 1
+                    },
+                    {
+                        fieldtype: "Column Break"
+                    },
+                    {
+                        fieldname: "uom",
+                        fieldtype: "Data",
+                        label: __("Unit"),
+                        reqd: 1,
+                        default: frm.doc.purchase_uom
+                    },
+                    {
+                        fieldname: "currency",
+                        fieldtype: "Data",
+                        label: __("Currency"),
+                        read_only: 1,
+                        default: price_context.currency
                     }
+
                 ],
                 'primary_action_label': __("Save"),
                 primary_action(values) {
@@ -310,6 +374,7 @@ function add_edit_purchasing_price(frm) {
                             'item_code': frm.doc.name,
                             'price_list': price_context.price_list,
                             'min_qty': values.min_qty,
+                            'uom': values.uom,
                             'price_list_rate': values.price_list_rate
                         },
                         'freeze': true,

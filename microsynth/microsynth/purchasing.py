@@ -2656,6 +2656,7 @@ def get_purchasing_price_context(item_code):
         """
         SELECT
             `tabItem Price`.`min_qty`,
+            `tabItem Price`.`uom`,
             `tabItem Price`.`price_list_rate`
         FROM
             `tabItem Price`
@@ -2677,10 +2678,11 @@ def get_purchasing_price_context(item_code):
 
 
 @frappe.whitelist()
-def add_or_update_item_price(item_code, price_list, min_qty, price_list_rate):
+def add_or_update_item_price(item_code, price_list, min_qty, uom, price_list_rate):
     """
     Add or update an Item Price with:
     - Explicit min_qty
+    - Explicit uom
     - Explicit price_list_rate
     - buying = 1 enforced
     """
@@ -2692,7 +2694,8 @@ def add_or_update_item_price(item_code, price_list, min_qty, price_list_rate):
         {
             "item_code": item_code,
             "price_list": price_list,
-            "min_qty": min_qty
+            "min_qty": min_qty,
+            "uom": uom
         },
         "name",
     )
@@ -2703,6 +2706,7 @@ def add_or_update_item_price(item_code, price_list, min_qty, price_list_rate):
         doc.item_code = item_code
         doc.price_list = price_list
         doc.min_qty = min_qty
+        doc.uom = uom
 
     doc.price_list_rate = price_list_rate
     doc.buying = 1

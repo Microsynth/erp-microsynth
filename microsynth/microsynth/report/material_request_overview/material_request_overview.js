@@ -502,7 +502,7 @@ function open_confirmation_dialog(selected, report) {
     if (selected.purchase_uom && selected.stock_uom && selected.purchase_uom !== selected.stock_uom) {
         const cf = selected.conversion_factor || 1;
         let stock_uom = selected.stock_uom || "";
-        let plural = stock_uom.toLowerCase().endsWith("s") ? "" : "(s)";
+        let plural = stock_uom.toLowerCase().endsWith("s") || cf <= 1 ? "" : "s";
         conversion_info = __(
             '1 {0} = {1} {2}{3}',
             [
