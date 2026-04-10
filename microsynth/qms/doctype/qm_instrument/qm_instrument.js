@@ -63,6 +63,17 @@ frappe.ui.form.on('QM Instrument', {
              add_custom_buttons(frm, false);
         }
 
+        if (!frm.doc.__islocal) {
+            // display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
+        }
+
         // filter for category
         frm.fields_dict.category.get_query = function(frm) {
             return {
