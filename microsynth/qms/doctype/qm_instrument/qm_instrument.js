@@ -90,6 +90,12 @@ frappe.ui.form.on('QM Instrument', {
                 frm.dashboard.add_comment(`<b>Location:</b> ${r.message}`, 'green', true);
             });
         }
+
+        // remove dashboard doc (+) buttons since the creation of QM Log Book entries does not work correctly when using the (+) button in the dashboard
+        var new_btns = document.getElementsByClassName("btn-new");
+        for (var i = 0; i < new_btns.length; i++) {
+            new_btns[i].style.visibility = "hidden";
+        }
     }
 });
 

@@ -1,8 +1,18 @@
 // Copyright (c) 2026, Microsynth
 // For license information, please see license.txt
 
+
 frappe.ui.form.on('QM Log Book', {
     refresh: function(frm) {
+
+        if (frappe.route_options) {
+            if (frappe.route_options.document_type) {
+                frm.set_value('document_type', frappe.route_options.document_type);
+            }
+            if (frappe.route_options.document_name) {
+                frm.set_value('document_name', frappe.route_options.document_name);
+            }
+        }
         if (frm.doc.__islocal && !frm.doc.document_name) {
             frm.dashboard.add_comment(__("Please create this Log Book Entry from the QM Instrument."), "red", true);
         }
