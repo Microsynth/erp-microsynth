@@ -296,6 +296,8 @@ function lock_all_fields(frm) {
             frm.set_df_property(field.df.fieldname, 'read_only', 1);
         }
     });
+    cur_frm.get_field("qm_documents").grid.fields_map['qm_document'].read_only = 1;
+    cur_frm.get_field("qm_documents").grid.fields_map['title'].read_only = 1;
 }
 
 
