@@ -40,6 +40,8 @@ frappe.ui.form.on('QM Instrument', {
         };
         const company = site_company_mapping[frm.doc.site];
 
+        frm.dashboard.clear_comment();
+
         if (frm.doc.qm_process && company) {
             frappe.call({
                 'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_qm_process_owner",
@@ -97,7 +99,6 @@ frappe.ui.form.on('QM Instrument', {
                 'args': { 'location_name': frm.doc.location },
             }).then(r => {
                 if (!r.message) return;
-                frm.dashboard.clear_comment();
                 frm.dashboard.add_comment(`<b>Location:</b> ${r.message}`, 'green', true);
             });
         }
@@ -106,6 +107,49 @@ frappe.ui.form.on('QM Instrument', {
         var new_btns = document.getElementsByClassName("btn-new");
         for (var i = 0; i < new_btns.length; i++) {
             new_btns[i].style.visibility = "hidden";
+        }
+
+        // If the instrument class is A, a (Re-)Qualification is required every 2 years
+        // If the instrument class is F, a Verification is required each year and a Calibration every 5 years
+        // If the instrument class if T or W, a Verification is required each year
+        // If the instrument is overdue, show an red alert in the dashboard
+        // If the instrument is due the next 30 days, show an orange alert in the dashboard
+        if (!frm.doc.__islocal && frm.doc.instrument_class && ['A', 'F', 'T', 'W'].includes(frm.doc.instrument_class.charAt(0))) {
+            frappe.call({
+                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_due_qualifications",
+                'args': {
+                    'instrument_name': frm.doc.name,
+                    'instrument_class': frm.doc.instrument_class,
+                    'acquisition_date': frm.doc.acquisition_date
+                },
+                'callback': function(r) {
+                    const qualifications = r.message || [];
+                    console.log(qualifications);
+
+                    qualifications.forEach(q => {
+                        const due_date = q.due_date;
+                        const qualification_type = q.qualification_type;
+
+                        if (due_date) {
+                            const days_diff = frappe.datetime.get_diff(due_date, frappe.datetime.get_today());
+
+                            if (days_diff < 0) {
+                                frm.dashboard.add_comment(
+                                    `<b>${qualification_type} overdue since ${due_date}</b>`,
+                                    'red',
+                                    true
+                                );
+                            } else if (days_diff <= 30) {
+                                frm.dashboard.add_comment(
+                                    `<b>${qualification_type} due on ${due_date}</b>`,
+                                    'orange',
+                                    true
+                                );
+                            }
+                        }
+                    });
+                }
+            });
         }
     }
 });

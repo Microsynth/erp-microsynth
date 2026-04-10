@@ -3,8 +3,9 @@
 # For license information, please see license.txt
 
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 import frappe
+from frappe.utils import getdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
 from microsynth.microsynth.purchasing import get_location_path_string, get_or_create_single_location
@@ -164,6 +165,52 @@ def get_qm_process_owner(qm_process, company):
     return owner
 
 
+@frappe.whitelist()
+def get_due_qualifications(instrument_name, instrument_class, acquisition_date):
+    """
+    Returns a list of due qualification/verification/calibration events for the given instrument.
+    Each item: {qualification_type, due_date}
+    """
+    def get_last_entry_date(entry_type):
+        return frappe.db.get_value(
+            "QM Log Book",
+            {
+                "document_type": "QM Instrument",
+                "document_name": instrument_name,
+                "entry_type": entry_type,
+                "docstatus": 1
+            },
+            "date",
+            order_by="date desc"
+        )
+
+    def to_date(value):
+        return getdate(value) if value else None
+
+    def get_due_date(entry_type, interval_days):
+        last_date = get_last_entry_date(entry_type)
+        base_date = to_date(last_date) or acquisition_date
+        return (base_date + timedelta(days=interval_days)).strftime("%Y-%m-%d")
+
+    # ensure acquisition_date is a date object
+    acquisition_date = to_date(acquisition_date)
+    iclass = instrument_class[0] if instrument_class else None
+
+    rules = {
+        'A': [("(Re-)Qualification", 2 * 365)],
+        'F': [("Verification", 365), ("Calibration", 5 * 365)],
+        'T': [("Verification", 365)],
+        'W': [("Verification", 365)],
+    }
+    return [
+        {
+            "qualification_type": entry_type,
+            "due_date": get_due_date(entry_type, days)
+        }
+        for entry_type, days in rules.get(iclass, [])
+    ]
+
+
 def get_or_create_location(site, floor, room, fridge_freezer):
     """
     Returns the final Location ID/name (creates any missing lower-level locations except site).
@@ -223,7 +270,8 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
         'document_name': qm_instrument,
         'entry_type': entry_type,
         'description': description,
-        'date': date
+        'date': date,
+        'status': "Closed"
     })
     logbook_entry.insert()
     logbook_entry.submit()
