@@ -31,6 +31,7 @@
   "references_section",
   "qm_documents",
   "customers",
+  "instruments",
   "classification_section",
   "regulatory_classification",
   "device_classification",
@@ -315,10 +316,17 @@
    "fieldtype": "Select",
    "label": "Device Classification",
    "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 devices without measuring function"
+  },
+  {
+   "fieldname": "instruments",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Instruments",
+   "options": "QM Instrument Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-30 17:03:47.585095",
+ "modified": "2026-04-10 09:54:01.926731",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",
