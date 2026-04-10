@@ -42,6 +42,8 @@
   {
    "fieldname": "qm_process",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Process",
    "options": "QM Process",
    "reqd": 1
@@ -100,6 +102,8 @@
    "default": "Unapproved",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "\nUnapproved\nActive\nBlocked\nDecommissioned\nDisposed",
    "reqd": 1
@@ -117,6 +121,8 @@
   {
    "fieldname": "site",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Site",
    "options": "\nBalgach\nG\u00f6ttingen\nLyon\nWien",
    "reqd": 1
@@ -131,6 +137,8 @@
   {
    "fieldname": "regulatory_classification",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Regulatory Classification",
    "options": "\nGMP\nnon-GMP"
   },
@@ -144,6 +152,7 @@
    "fieldname": "instrument_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Name",
    "reqd": 1
   },
@@ -175,12 +184,16 @@
   {
    "fieldname": "category",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Category",
    "options": "QM Instrument Category"
   },
   {
    "fieldname": "subcategory",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Subcategory",
    "options": "QM Instrument Category"
   },
@@ -199,7 +212,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2026-04-10 09:38:28.184936",
+ "modified": "2026-04-10 09:58:15.207027",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
