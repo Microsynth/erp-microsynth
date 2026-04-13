@@ -28,6 +28,14 @@ frappe.ui.form.on('QM Log Book', {
                 }
             });
         }
+
+        if (frm.doc.status === "Closed") {
+            // Remove Cancel button
+            setTimeout(() => {
+                frm.page.wrapper.find('.btn-secondary').hide();
+            }, 100);
+        }
+
         if (frm.doc.document_type === "QM Instrument" && frm.doc.status === "To Review") {
             if (frappe.user_roles.includes('QAU')) {
                 allow_write_access(frm);
@@ -62,6 +70,10 @@ frappe.ui.form.on('QM Log Book', {
                 });
             }
         }
+
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
     }
 });
 
