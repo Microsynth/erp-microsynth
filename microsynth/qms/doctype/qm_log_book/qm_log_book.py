@@ -27,6 +27,11 @@ class QMLogBook(Document):
             self.save()
             frappe.db.commit()
 
+    def on_cancel(self):
+        self.status = "Cancelled"
+        self.save()
+        frappe.db.commit()
+
 
 @frappe.whitelist()
 def is_user_process_owner(log_book_id, user):

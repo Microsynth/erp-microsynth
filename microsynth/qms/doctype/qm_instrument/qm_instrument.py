@@ -272,10 +272,12 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
         'entry_type': entry_type,
         'description': description,
         'date': date,
-        'status': "Closed"  # TODO: Why is it automatically changed back to "To Review"?
+        'status': "Closed"
     })
     logbook_entry.insert()
     logbook_entry.submit()
+    logbook_entry.status = "Closed"
+    logbook_entry.save()
     return get_url_to_form(logbook_entry.doctype, logbook_entry.name)
 
 
