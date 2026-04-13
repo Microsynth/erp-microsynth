@@ -5,7 +5,7 @@
 import csv
 from datetime import datetime, timedelta
 import frappe
-from frappe.utils import getdate
+from frappe.utils import get_url_to_form, getdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
 from microsynth.microsynth.purchasing import get_location_path_string, get_or_create_single_location
@@ -255,6 +255,7 @@ def get_or_create_location(site, floor, room, fridge_freezer):
     return fridge_freezer_location
 
 
+@frappe.whitelist()
 def create_logbook_entry(qm_instrument, entry_type, description, date):
     """
     Creates a QM Log Book entry for a given QM Instrument.
@@ -271,10 +272,11 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
         'entry_type': entry_type,
         'description': description,
         'date': date,
-        'status': "Closed"
+        'status': "Closed"  # TODO: Why is it automatically changed back to "To Review"?
     })
     logbook_entry.insert()
     logbook_entry.submit()
+    return get_url_to_form(logbook_entry.doctype, logbook_entry.name)
 
 
 def import_qm_instruments(input_filepath, expected_line_length=23):

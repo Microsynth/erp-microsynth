@@ -252,8 +252,28 @@ function add_custom_buttons(frm, isProcessOwner) {
 
         frm.add_custom_button(__(label), function() {
             frm.set_value('status', to);
+
             frm.save().then(() => {
-                frappe.show_alert(__('Status changed to "{0}"', [to]));
+                if (frm.doc.instrument_class?.startsWith('A') && frm.doc.regulatory_classification === 'GMP' && to === 'Blocked') {
+                    frappe.call({
+                        'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.create_logbook_entry",
+                        'args': {
+                            'qm_instrument': frm.doc.name,
+                            'entry_type': 'Other',
+                            'description': 'Instrument was blocked.',
+                            'date': frappe.datetime.get_today()
+                        },
+                        'callback': function(r) {
+                            if (r.message) {
+                                frappe.show_alert(__('Status changed to "{0}" and Log Book entry {1} created', [to, r.message]), 'success');
+                            } else {
+                                frappe.show_alert(__('Status changed to "{0}" but failed to create Log Book entry', [to]), 'error');
+                            }
+                        }
+                    });
+                } else {
+                    frappe.show_alert(__('Status changed to "{0}"', [to]));
+                }
             });
         }).addClass(color);
     });
