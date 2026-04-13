@@ -92,17 +92,6 @@ frappe.ui.form.on('QM Instrument', {
             };
         };
 
-        // Show storage location path in dashboard if location is set
-        if (frm.doc.location) {
-            frappe.call({
-                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_location_path_string",
-                'args': { 'location_name': frm.doc.location },
-            }).then(r => {
-                if (!r.message) return;
-                frm.dashboard.add_comment(`<b>Location:</b> ${r.message}`, 'green', true);
-            });
-        }
-
         // remove dashboard doc (+) buttons since the creation of QM Log Book entries does not work correctly when using the (+) button in the dashboard
         var new_btns = document.getElementsByClassName("btn-new");
         for (var i = 0; i < new_btns.length; i++) {
