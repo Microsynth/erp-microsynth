@@ -190,6 +190,7 @@ function get_allowed_transitions(frm, isProcessOwner) {
                 ['Unapproved', 'Active'],
                 ['Decommissioned', 'Active'],
                 ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Active'],
                 ['Blocked', 'Decommissioned'],
                 ['Active', 'Decommissioned']
             ]
