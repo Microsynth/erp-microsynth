@@ -70,7 +70,7 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     """
     Return the customer credits for the specified credit accounts. Excludes unpaid deposits.
     Run
-    bench execute microsynth.microsynth.credits.get_applicable_customer_credits --kwargs "{ 'customer': '36453968', 'company': 'Microsynth AG', 'credit_accounts': [ 'CA-000363' ] }"
+    bench execute microsynth.microsynth.credits.get_applicable_customer_credits --kwargs "{ 'customer': '35444224', 'company': 'Microsynth Austria GmbH', 'credit_accounts': [ 'CA-001022' ] }"
     """
     raw_customer_credits = get_customer_credits({'customer': customer, 'company': company, 'credit_accounts': credit_accounts, 'exclude_unpaid_deposits': True})
 
@@ -81,7 +81,7 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
         if 'outstanding' in credit and flt(credit['outstanding']) >= 0.01:
             if credit['account_type'] == "Enforced Credit":
                 enforced_credits.append(credit)
-            else:
+            elif credit['credit_account'] in credit_accounts:
                 standard_credits.append(credit)
 
     return enforced_credits + standard_credits
