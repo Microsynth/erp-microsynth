@@ -109,7 +109,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-10 10:26:37.117311",
+ "modified": "2026-04-13 17:02:04.635499",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",
@@ -142,7 +142,6 @@
    "write": 1
   },
   {
-   "amend": 1,
    "cancel": 1,
    "create": 1,
    "email": 1,
