@@ -85,10 +85,11 @@ def get_data(filters):
         LEFT JOIN `tabUOM Conversion Detail`
             ON `tabUOM Conversion Detail`.`parent` = `tabItem`.`name`
             AND `tabUOM Conversion Detail`.`uom` = `tabItem`.`purchase_uom`
-        LEFT JOIN `tabItem Supplier`
-            ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabItem Default`
             ON `tabItem Default`.`parent` = `tabItem`.`name`
+        LEFT JOIN `tabItem Supplier`
+            ON `tabItem Supplier`.`parent` = `tabItem`.`name`
+            AND `tabItem Supplier`.`supplier` = `tabItem Default`.`default_supplier`
         LEFT JOIN `tabLocation Link` ON
             `tabLocation Link`.`parent` = `tabItem`.`name`
             AND `tabLocation Link`.`parentfield` = 'storage_locations'
