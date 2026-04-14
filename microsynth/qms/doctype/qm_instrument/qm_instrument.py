@@ -211,6 +211,17 @@ def get_due_qualifications(instrument_name, instrument_class, acquisition_date):
     ]
 
 
+@frappe.whitelist()
+def is_gmp(qm_instrument):
+    """
+    Returns True if the given QM Instrument is GMP relevant, i.e. if it has regulatory classification "GMP" and is not disposed.
+    """
+    result = frappe.db.get_value("QM Instrument", qm_instrument, ["regulatory_classification"])
+    if result:
+        return result == "GMP"
+    return False
+
+
 def get_or_create_location(site, floor, room, fridge_freezer):
     """
     Returns the final Location ID/name (creates any missing lower-level locations except site).
