@@ -283,7 +283,7 @@ def create_logbook_entry(qm_instrument, entry_type, description, date):
 
 def import_qm_instruments(input_filepath, expected_line_length=23):
     """
-    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/260408_TestImport_Instruments.csv'}"
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/260414_TestImport_Instruments.csv'}"
     """
     def parse_date(value):
         try:
@@ -398,7 +398,7 @@ def import_qm_instruments(input_filepath, expected_line_length=23):
                         subcategory_cache[category] = [
                             sub[0] for sub in get_allowed_subcategory_for_category(
                                 doctype="QM Instrument",
-                                txt=subcategory,
+                                txt="",
                                 searchfield="name",
                                 start=0,
                                 page_len=20,
