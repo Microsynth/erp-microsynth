@@ -1013,7 +1013,7 @@ def create_so_and_deposit_invoice(quotation_id, credit_account):
 
 def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
     credit_item = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
-    item_name = promo_credit_settings.item_description
+    item_name = promo_credit_settings.credit_item_name
     promo_credit_limit = promo_credit_settings.limit
     credit_percentage = promo_credit_settings.credit_percentage
     contact_person = delivery_note_doc.contact_person
@@ -1113,7 +1113,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
             credit_account_doc.save()
     else:
         credit_account_name = create_credit_account(
-            account_name="TODO",  # TODO
+            account_name=promo_credit_settings.credit_account_name,
             account_type="Enforced Credit",
             customer_id=delivery_note_doc.customer,
             company=delivery_note_doc.company,
@@ -1122,7 +1122,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
             product_types=[pt.product_type for pt in promo_credit_settings.ca_product_types],
             product_types_locked=1,
             expiry_date=new_expiry_date,
-            description="",  # TODO
+            description=promo_credit_settings.credit_account_description,
             ignore_permissions=True
         )
     result = create_deposit_invoice(
@@ -1130,7 +1130,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         account_id=credit_account_name,
         amount=promo_credit_amount,
         currency=delivery_note_doc.currency,
-        description=promo_credit_settings.item_description,
+        description=promo_credit_settings.credit_item_name,
         company=delivery_note_doc.company,
         customer=delivery_note_doc.customer,
         customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.

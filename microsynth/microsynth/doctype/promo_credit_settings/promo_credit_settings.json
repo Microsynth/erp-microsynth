@@ -7,11 +7,13 @@
   "from_date",
   "credit_percentage",
   "limit",
-  "expiry_in_days",
+  "credit_account_name",
+  "credit_item_name",
   "column_break_3",
   "to_date",
-  "item_description",
+  "expiry_in_days",
   "currency",
+  "credit_account_description",
   "section_break_6",
   "dn_product_types",
   "items",
@@ -38,11 +40,6 @@
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date"
-  },
-  {
-   "fieldname": "item_description",
-   "fieldtype": "Data",
-   "label": "Item Description"
   },
   {
    "fieldname": "section_break_6",
@@ -87,11 +84,26 @@
    "fieldname": "expiry_in_days",
    "fieldtype": "Int",
    "label": "Expiry in days"
+  },
+  {
+   "fieldname": "credit_account_name",
+   "fieldtype": "Data",
+   "label": "Credit Account Name"
+  },
+  {
+   "fieldname": "credit_item_name",
+   "fieldtype": "Data",
+   "label": "Credit Item Name"
+  },
+  {
+   "fieldname": "credit_account_description",
+   "fieldtype": "Data",
+   "label": "Credit Account Description"
   }
  ],
  "issingle": 1,
- "modified": "2026-03-31 17:21:48.181389",
- "modified_by": "Administrator",
+ "modified": "2026-04-14 09:55:50.470479",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Promo Credit Settings",
  "owner": "Administrator",
