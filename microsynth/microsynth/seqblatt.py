@@ -789,6 +789,8 @@ def get_shipping_addresses(webshop_accounts):
             "salutation": contact_doc.salutation,
             "title": contact_doc.designation,
             "full_name": contact_doc.full_name,
+            "email": contact_doc.email_id,
+            "email_cc": [email.get("email_id") for email in contact_doc.get("email_ids") if email.get("email_id") != contact_doc.email_id],
             "shipping_address_lines": shipping_address_lines
         })
 
