@@ -3222,3 +3222,68 @@ def report_purchase_receipt_drafts(company="Microsynth AG"):
         email_template = frappe.get_doc("Email Template", "Purchase Receipt Drafts to be submitted")
         rendered_content = frappe.render_template(email_template.response, {'pr_draft_details': pr_draft_details})
         send_email_from_template(email_template, rendered_content)
+
+
+def backfill_item_price_uom(dry_run=True, verbose=True):
+    """
+    Populate missing UOM in Item Price records using:
+    - purchase_uom (preferred)
+    - stock_uom (fallback)
+
+    Only considers Items in Item Group "Purchasing".
+
+    :param dry_run: If True, no changes are written to DB
+    :param verbose: If True, prints detailed output
+
+    bench execute microsynth.microsynth.purchasing.backfill_item_price_uom --kwargs "{'dry_run': True, 'verbose': True}"
+    """
+    # Step 1: Get all relevant Items
+    items = frappe.get_all(
+        "Item",
+        filters={"item_group": "Purchasing"},
+        fields=["name", "purchase_uom", "stock_uom"]
+    )
+    if verbose:
+        print(f"Found {len(items)} items in 'Purchasing' group")
+
+    updated = 0
+    skipped = 0
+
+    for item in items:
+        uom = item.purchase_uom or item.stock_uom
+
+        if not uom:
+            if verbose:
+                print(f"[SKIP] Item {item.name}: no purchase_uom and no stock_uom")
+            skipped += 1
+            continue
+
+        # Step 2: Find Item Prices without UOM
+        prices = frappe.get_all(
+            "Item Price",
+            filters={
+                "item_code": item.name,
+                "uom": ["in", ["", None]]
+            },
+            fields=["name", "price_list", "min_qty", "price_list_rate", "item_code", "currency"]
+        )
+        if not prices:
+            if verbose:
+                print(f"[SKIP] Item {item.name}: no Item Price records with missing UOM")
+            skipped += 1
+            continue
+
+        for price in prices:
+            if verbose:
+                print(f"[UPDATE] Item Price {price.name} of Item {price.item_code} with rate {price.price_list_rate} {price.currency} and min qty {price.min_qty}: set uom = {uom}")
+            if not dry_run:
+                frappe.db.set_value("Item Price", price.name, "uom", uom)
+            updated += 1
+
+    if not dry_run:
+        frappe.db.commit()
+
+    print("---- Summary ----")
+    print(f"Updated Item Prices: {updated}")
+    print(f"Skipped Items: {skipped}")
+    print(f"Dry Run: {dry_run}")
