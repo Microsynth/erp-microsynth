@@ -300,7 +300,7 @@ def create_ups_batch_file(sales_orders):
     bench execute "microsynth.microsynth.labels.create_ups_batch_file" --kwargs "{'sales_orders': ['SO-BAL-24045626']}"
     """
     lines_to_write = []
-    world_ship_lines = ["Contact Name,Company or Name,Country,Address 1,City,Postal Code,Telephone,Consignee Email,Packaging Type,Weight,Length,Width,Height,Description of Goods,Service,Reference 1,Anzahl Pakete\n"]
+    world_ship_lines = ["Contact_Name,Company_or_Name,Country,Address_1,City,Postal_Code,Telephone,Consignee_Email,Packaging_Type,Weight,Length,Width,Height,Description_of_Goods,Service,Reference_1,Anzahl_Pakete,Transportkosten,Steuern_Zoll\n"]
     for o in sales_orders:
         sales_order = frappe.get_doc("Sales Order", o)
         label_data = get_label_data(sales_order)
@@ -348,7 +348,7 @@ def create_ups_batch_file(sales_orders):
         address_line1 = sanitize_text(address.address_line1.replace(',', ''))[:35]
         city = sanitize_text(address.city.replace(',', ''))[:30]
         lines_to_write.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},,,{city},,{address.pincode.replace(',', '')[:10]},{phone},,,{sales_order.contact_email[:50]},2,,{weight},36,25,2,,Nukleotides,,,,{'65' if is_express else '11'},,,,,,,,{sales_order.web_order_id.replace(',', '')[:35]},,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n")
-        world_ship_lines.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},{city},{address.pincode.replace(',', '')[:10]},{phone},{sales_order.contact_email[:50]},CP,{weight},36,25,2,Nukleotides,{'SV' if is_express else 'ST'},{sales_order.web_order_id.replace(',', '')[:35]},1\n")
+        world_ship_lines.append(f"{contact_display},{customer_name},{country_code.upper()},{address_line1},{city},{address.pincode.replace(',', '')[:10]},{phone},{sales_order.contact_email[:50]},CP,0.1,36,25,2,Nukleotides,{'SV' if is_express else 'ST'},{sales_order.web_order_id.replace(',', '')[:35]},1,SHP,SHP\n")
 
     if len(lines_to_write) > 0:
         with open(f"/mnt/erp_share/UPS_batch_files/{datetime.now().strftime('%Y-%m-%d_%H-%M')}_ups_batch.csv", mode='w') as file:  # TODO: Move file path to Microsynth Settings
