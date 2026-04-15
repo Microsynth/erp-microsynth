@@ -20,7 +20,8 @@ class QMLogBook(Document):
     def on_submit(self):
         if self.document_type and self.document_name and self.document_type == "QM Instrument":
             instrument_doc = frappe.get_doc(self.document_type, self.document_name)
-            if instrument_doc.regulatory_classification == "GMP":
+            if instrument_doc.instrument_class.startswith('A') or instrument_doc.instrument_class.startswith('B') \
+                or (instrument_doc.instrument_class.startswith('F') and instrument_doc.regulatory_classification == 'GMP'):
                 self.status = "To Review"
             else:
                 self.status = "Closed"
