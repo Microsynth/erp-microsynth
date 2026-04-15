@@ -198,7 +198,7 @@ def get_due_qualifications(instrument_name, instrument_class, acquisition_date):
 
     rules = {
         'A': [("(Re-)Qualification", 2 * 365)],
-        'F': [("Verification", 365), ("Calibration", 5 * 365)],
+        'P': [("Verification", 365), ("Calibration", 5 * 365)],
         'T': [("Verification", 365)],
         'W': [("Verification", 365)],
     }
