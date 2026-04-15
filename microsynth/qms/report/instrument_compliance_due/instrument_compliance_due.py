@@ -3,6 +3,15 @@
 
 import frappe
 
+# Time interval constants (single source of truth)
+REQUALIFICATION_INTERVAL_MONTHS = 24
+VERIFICATION_INTERVAL_MONTHS = 12
+CALIBRATION_INTERVAL_YEARS = 5
+
+REQUALIFICATION_LOOKAHEAD_WEEKS = 6
+VERIFICATION_LOOKAHEAD_WEEKS = 24
+CALIBRATION_LOOKAHEAD_WEEKS = 24
+
 
 def get_columns():
     return [
@@ -25,17 +34,26 @@ def get_columns():
 
 def get_conditions(filters):
     requirement = filters.get("requirement_type")
+
     if requirement == "Requalification in next 6 weeks":
-        return "AND `requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL 6 WEEK)"
+        return f"""AND `requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK)"""
+
     if requirement == "Verification in next 24 weeks":
-        return "AND `requirement_type` = 'Verification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK)"
+        return f"""AND `requirement_type` = 'Verification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {VERIFICATION_LOOKAHEAD_WEEKS} WEEK)"""
+
     if requirement == "Calibration in next 24 weeks":
-        return "AND `requirement_type` = 'Calibration' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK)"
+        return f"""AND `requirement_type` = 'Calibration' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {CALIBRATION_LOOKAHEAD_WEEKS} WEEK)"""
+
     if requirement == "Overdue":
         return "AND `due_date` < CURDATE()"
     # default
-    return """ AND ((`requirement_type` = 'Requalification' AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL 6 WEEK))
-                    OR (`requirement_type` IN ('Verification','Calibration') AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK))) """
+    return f""" AND (
+        (`requirement_type` = 'Requalification'
+            AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {REQUALIFICATION_LOOKAHEAD_WEEKS} WEEK))
+        OR
+        (`requirement_type` IN ('Verification','Calibration')
+            AND `due_date` <= DATE_ADD(CURDATE(), INTERVAL {VERIFICATION_LOOKAHEAD_WEEKS} WEEK))
+    )"""
 
 
 def get_data(filters):
@@ -85,7 +103,7 @@ def get_data(filters):
                     WHEN `class_letter` = 'A' THEN 'Requalification'
                     WHEN `class_letter` IN ('T','W') THEN 'Verification'
                     WHEN `class_letter` = 'P'
-                         AND DATE_ADD(`last_calibration_date`, INTERVAL 5 YEAR) <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK)
+                        AND DATE_ADD(`last_calibration_date`, INTERVAL {CALIBRATION_INTERVAL_YEARS} YEAR) <= DATE_ADD(CURDATE(), INTERVAL {CALIBRATION_LOOKAHEAD_WEEKS} WEEK)
                     THEN 'Calibration'
                     ELSE 'Verification'
                 END AS `requirement_type`,
@@ -95,17 +113,17 @@ def get_data(filters):
                     WHEN `class_letter` = 'A' THEN `last_requalification_date`
                     WHEN `class_letter` IN ('T','W') THEN `last_verification_date`
                     WHEN `class_letter` = 'P'
-                         AND DATE_ADD(`last_calibration_date`, INTERVAL 5 YEAR) <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK)
+                        AND DATE_ADD(`last_calibration_date`, INTERVAL {CALIBRATION_INTERVAL_YEARS} YEAR) <= DATE_ADD(CURDATE(), INTERVAL {CALIBRATION_LOOKAHEAD_WEEKS} WEEK)
                     THEN `last_calibration_date`
                     ELSE `last_verification_or_calibration_date`
                 END AS `last_activity_date`,
 
                 -- due_date
                 CASE
-                    WHEN `class_letter` = 'A' THEN DATE_ADD(`last_requalification_date`, INTERVAL 24 MONTH)
-                    WHEN `class_letter` IN ('T','W') THEN DATE_ADD(`last_verification_date`, INTERVAL 12 MONTH)
-                    WHEN `class_letter` = 'P' AND DATE_ADD(`last_calibration_date`, INTERVAL 5 YEAR) <= DATE_ADD(CURDATE(), INTERVAL 24 WEEK) THEN DATE_ADD(`last_calibration_date`, INTERVAL 5 YEAR)
-                    ELSE DATE_ADD(`last_verification_or_calibration_date`, INTERVAL 12 MONTH)
+                    WHEN `class_letter` = 'A' THEN DATE_ADD(`last_requalification_date`, INTERVAL {REQUALIFICATION_INTERVAL_MONTHS} MONTH)
+                    WHEN `class_letter` IN ('T','W') THEN DATE_ADD(`last_verification_date`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
+                    WHEN `class_letter` = 'P' AND DATE_ADD(`last_calibration_date`, INTERVAL {CALIBRATION_INTERVAL_YEARS} YEAR) <= DATE_ADD(CURDATE(), INTERVAL {CALIBRATION_LOOKAHEAD_WEEKS} WEEK) THEN DATE_ADD(`last_calibration_date`, INTERVAL {CALIBRATION_INTERVAL_YEARS} YEAR)
+                    ELSE DATE_ADD(`last_verification_or_calibration_date`, INTERVAL {VERIFICATION_INTERVAL_MONTHS} MONTH)
                 END AS `due_date`
             FROM `instrument_base`
         )
