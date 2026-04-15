@@ -228,7 +228,7 @@ function add_edit_purchasing_price(frm) {
                                     ${__("Unit")}
                                 </th>
                                 <th style="padding-left: 0; text-align: right;">
-                                    ${__("Rate")}
+                                    ${__("Price per Unit")}
                                 </th>
                                 <th style="padding-left: 0; text-align: right;">
                                     ${__("Currency")}
