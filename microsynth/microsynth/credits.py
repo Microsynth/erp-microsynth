@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 import frappe
 from frappe import _
-from frappe.utils import nowdate, getdate, add_days
+from frappe.utils import nowdate, getdate, add_days, formatdate
 from frappe.utils.data import today
 from frappe.utils import flt, cint, get_link_to_form
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, make_sales_return)
@@ -381,7 +381,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
 
     sales_invoice_id = response.get('reference')
     book_promo_credit_sales_invoice(sales_invoice_id, company)
-    return credit_account_name
+    return sales_invoice_id
 
 
 def validate_invoice_credit_account(sales_invoice, credit_item, event=None):
@@ -1162,6 +1162,23 @@ def check_and_create_promo_credit(delivery_note_id):
     if promo_conditions_met:
         sales_invoice_id = create_promo_credit(dn_doc, promo_credit_amount, promo_credit_settings)
         if sales_invoice_id:
+            # Notify the contact person using an Email Template
+            email_template = frappe.get_doc("Email Template", "Oligo Bonus Credit available")
+            rendered_content = frappe.render_template(email_template.response, {
+                'full_name': dn_doc.contact_display,
+                'order_id': dn_doc.web_order_id or dn_doc.name,
+                'promo_credit_amount': f"{promo_credit_amount:.2f}",
+                'currency': dn_doc.currency,
+                'expiry_date': formatdate(add_days(nowdate(), promo_credit_settings.expiry_in_days), "dd.MM.yyyy")
+            })
+            recipient_email = frappe.get_value("Contact", dn_doc.contact_person, "email_id")
+            if not recipient_email:
+                msg = f"Contact Person {dn_doc.contact_person} for Delivery Note {delivery_note_id} has no email address. Cannot send promo credit notification email."
+                frappe.log_error(msg, "check_and_create_promo_credit")
+                print(msg)
+            else:
+                #print(f"Sending promo credit notification email to {recipient_email} for Delivery Note {delivery_note_id} and Sales Invoice {sales_invoice_id}:\n{rendered_content}")
+                send_email_from_template(email_template, rendered_content, recipients=recipient_email)
             return {
                 "success": True,
                 "message": f"Promotional credit of {promo_credit_amount:.2f} {dn_doc.currency} created with Sales Invoice {sales_invoice_id}."
@@ -1176,4 +1193,3 @@ def check_and_create_promo_credit(delivery_note_id):
             "success": False,
             "message": f"Delivery Note {delivery_note_id} does not meet the conditions for receiving a promotional credit."
         }
-    # TODO: notify the contact person
