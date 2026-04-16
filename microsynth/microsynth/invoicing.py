@@ -1846,6 +1846,10 @@ def transmit_sales_invoice(sales_invoice_id):
                 fid = a['name']
             frappe.db.commit()
 
+            # TODO: If there is the credit item on the sales invoice, remove " for the services provided" from the message.
+            # credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+            # has_credit_item = any(item.item_code == credit_item_code for item in sales_invoice.items)
+
             if sales_invoice.language == "de":
                 subject = f"Ihre Rechnung {sales_invoice.name}"
                 message = f"Sehr geehrte Microsynth Kundin, sehr geehrter Microsynth Kunde,<br><br>\
