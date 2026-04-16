@@ -1056,6 +1056,9 @@ def fetch_delivery_note_order_date(delivery_note_doc):
 def check_promo_conditions(delivery_note_doc, promo_credit_settings):
     if delivery_note_doc.docstatus != 1:
         return (False, 0)
+    order_date = fetch_delivery_note_order_date(delivery_note_doc)
+    if not order_date or order_date < getdate(promo_credit_settings.from_date) or order_date > getdate(promo_credit_settings.to_date):
+        return (False, 0)
     if delivery_note_doc.product_type not in [p.product_type for p in promo_credit_settings.dn_product_types]:
         return (False, 0)
     if delivery_note_doc.grand_total <= 0:
@@ -1076,9 +1079,6 @@ def check_promo_conditions(delivery_note_doc, promo_credit_settings):
         return (False, 0)
     company_currency = frappe.get_value("Company", delivery_note_doc.company, "default_currency")
     if not company_currency or company_currency != promo_credit_settings.currency:
-        return (False, 0)
-    order_date = fetch_delivery_note_order_date(delivery_note_doc)
-    if not order_date or order_date < getdate(promo_credit_settings.from_date) or order_date > getdate(promo_credit_settings.to_date):
         return (False, 0)
     promo_credit_amount = get_promo_credit_amount(delivery_note_doc, promo_credit_settings)
     if promo_credit_amount <= 0:
@@ -1205,6 +1205,10 @@ def check_and_create_promo_credit(delivery_note):
 
 
 def delivery_note_on_submit(delivery_note, event):
-    if delivery_note.product_type != "Labels":
-        return
-    check_and_create_promo_credit(delivery_note)
+    try:
+        if delivery_note.product_type != "Labels":
+            return
+        check_and_create_promo_credit(delivery_note)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "delivery_note_on_submit")
+        print(f"Error in delivery_note_on_submit for Delivery Note {delivery_note.name}: {str(e)}")
