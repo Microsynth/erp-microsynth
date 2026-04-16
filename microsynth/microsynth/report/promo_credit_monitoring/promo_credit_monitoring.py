@@ -7,8 +7,8 @@ from frappe.utils import getdate, nowdate
 
 # Promo Campaign configuration
 PROMO_CAMPAIGNS = {
-    "Oligo Bonus Credit – Prepaid Labels": {
-        "item_name": "Oligo Bonus Credit – Prepaid Labels",  # Sales Invoice Item.item_name
+    "Oligo Bonus Credit – Prepaid Labels – Germany 26": {
+        "item_name": "Oligo Bonus Credit – Prepaid Labels – Germany 26",  # Sales Invoice Item.item_name
         "product_type": "Oligos"
     }
 }
@@ -16,15 +16,17 @@ PROMO_CAMPAIGNS = {
 
 def get_columns():
     return [
-        {"label": "Person ID", "fieldname": "person_id", "fieldtype": "Link", "options": "Contact", "width": 120},
-        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 180},
-        {"label": "Credit Account", "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 140},
-        {"label": "Customer ID", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 120},
-        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 180},
-        {"label": "Given Promo Credits", "fieldname": "given_credits", "fieldtype": "Currency", "width": 140},
-        {"label": "Used Promo Credits", "fieldname": "used_credits", "fieldtype": "Currency", "width": 140},
-        {"label": "Remaining Valid Promo Credits", "fieldname": "remaining_valid_credits", "fieldtype": "Currency", "width": 180},
-        {"label": "Sales (Period)", "fieldname": "sales_amount", "fieldtype": "Currency", "width": 140},
+        {"label": "Person ID", "fieldname": "person_id", "fieldtype": "Link", "options": "Contact", "width": 80},
+        {"label": "Full Name", "fieldname": "full_name", "fieldtype": "Data", "width": 150},
+        {"label": "Credit Account", "fieldname": "credit_account", "fieldtype": "Link", "options": "Credit Account", "width": 100},
+        {"label": "CA Status", "fieldname": "status", "fieldtype": "Data", "width": 80},
+        {"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 85},
+        {"label": "Customer ID", "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 90},
+        {"label": "Customer Name", "fieldname": "customer_name", "fieldtype": "Data", "width": 240},
+        {"label": "Given Promo Credits", "fieldname": "given_credits", "fieldtype": "Currency", "options": "currency", "width": 135},
+        {"label": "Used Promo Credits", "fieldname": "used_credits", "fieldtype": "Currency", "options": "currency", "width": 130},
+        {"label": "Remaining Valid Promo Credits", "fieldname": "remaining_valid_credits", "fieldtype": "Currency", "options": "currency", "width": 190},
+        {"label": "Sales (Period)", "fieldname": "sales_amount", "fieldtype": "Currency", "options": "currency", "width": 120},
     ]
 
 
@@ -79,8 +81,11 @@ def get_data(filters):
             `tabSales Invoice`.`customer`,
             `tabSales Invoice`.`customer_name`,
             `tabCredit Account`.`contact_person`,
+            `tabCredit Account`.`status`,
+            `tabCredit Account`.`expiry_date`,
             `tabSales Invoice`.`contact_display`,
-            SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`
+            SUM(`tabSales Invoice Item`.`net_amount`) AS `amount`,
+            `tabCredit Account`.`currency`
         FROM `tabSales Invoice`
         INNER JOIN `tabSales Invoice Item`
             ON `tabSales Invoice Item`.`parent` = `tabSales Invoice`.`name`
@@ -113,7 +118,8 @@ def get_data(filters):
             SUM(
                 IF(`tabSales Invoice`.`is_return` = 1, 1, -1)
                 * `tabSales Invoice Customer Credit`.`allocated_amount`
-            ) AS `amount`
+            ) AS `amount`,
+            `tabSales Invoice`.`currency`
         FROM `tabSales Invoice Customer Credit`
         INNER JOIN `tabSales Invoice`
             ON `tabSales Invoice Customer Credit`.`parent` = `tabSales Invoice`.`name`
@@ -132,7 +138,8 @@ def get_data(filters):
     sales_rows = frappe.db.sql(f"""
         SELECT
             `tabSales Invoice`.`contact_person`,
-            SUM(`tabSales Invoice`.`net_total`) AS `sales_amount`
+            SUM(`tabSales Invoice`.`total`) AS `sales_amount`,
+            `tabSales Invoice`.`currency`
         FROM `tabSales Invoice`
         WHERE
             `tabSales Invoice`.`docstatus` = 1
@@ -168,12 +175,15 @@ def get_data(filters):
             "person_id": d.contact_person,
             "full_name": d.contact_display,
             "credit_account": d.credit_account,
+            "status": d.status,
+            "expiry_date": d.expiry_date,
             "customer": d.customer,
             "customer_name": d.customer_name,
             "given_credits": given,
             "used_credits": used,
             "remaining_valid_credits": remaining_valid,
-            "sales_amount": sales_amount
+            "sales_amount": sales_amount,
+            "currency": d.currency
         })
     return data
 

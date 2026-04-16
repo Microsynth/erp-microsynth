@@ -9,8 +9,8 @@ frappe.query_reports["Promo Credit Monitoring"] = {
             "label": "Promo Campaign",
             "fieldtype": "Select",
             "reqd": 1,
-            "default": "Oligo Bonus Credit – Prepaid Labels",
-            "options": "\nOligo Bonus Credit – Prepaid Labels"
+            "default": "Oligo Bonus Credit – Prepaid Labels – Germany 26",
+            "options": "\nOligo Bonus Credit – Prepaid Labels – Germany 26"
         },
         {
             "fieldname": "person_id",

@@ -1152,11 +1152,20 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         return None
 
 
-def check_and_create_promo_credit(delivery_note_id):
+def check_and_create_promo_credit(delivery_note):
     """
     bench execute microsynth.microsynth.credits.check_and_create_promo_credit --kwargs "{'delivery_note_id': 'DN-GOE-26003858'}"
     """
-    dn_doc = frappe.get_doc("Delivery Note", delivery_note_id)
+    from frappe.model.document import Document
+    if isinstance(delivery_note, Document):
+        dn_doc = delivery_note
+    elif isinstance(delivery_note, str):
+        dn_doc = frappe.get_doc("Delivery Note", delivery_note)
+    elif isinstance(delivery_note, dict) and delivery_note.get("name"):
+        dn_doc = frappe.get_doc("Delivery Note", delivery_note.get("name"))
+    else:
+        raise ValueError("Invalid argument for delivery_note. Must be a Document, name, or dict with 'name'.")
+
     promo_credit_settings = frappe.get_doc("Promo Credit Settings", "Promo Credit Settings")
     promo_conditions_met, promo_credit_amount = check_promo_conditions(dn_doc, promo_credit_settings)
     if promo_conditions_met:
@@ -1173,11 +1182,11 @@ def check_and_create_promo_credit(delivery_note_id):
             })
             recipient_email = frappe.get_value("Contact", dn_doc.contact_person, "email_id")
             if not recipient_email:
-                msg = f"Contact Person {dn_doc.contact_person} for Delivery Note {delivery_note_id} has no email address. Cannot send promo credit notification email."
+                msg = f"Contact Person {dn_doc.contact_person} for Delivery Note {dn_doc.name} has no email address. Cannot send promo credit notification email."
                 frappe.log_error(msg, "check_and_create_promo_credit")
                 print(msg)
             else:
-                #print(f"Sending promo credit notification email to {recipient_email} for Delivery Note {delivery_note_id} and Sales Invoice {sales_invoice_id}:\n{rendered_content}")
+                #print(f"Sending promo credit notification email to {recipient_email} for Delivery Note {dn_doc.name} and Sales Invoice {sales_invoice_id}:\n{rendered_content}")
                 send_email_from_template(email_template, rendered_content, recipients=recipient_email)
             return {
                 "success": True,
@@ -1186,10 +1195,16 @@ def check_and_create_promo_credit(delivery_note_id):
         else:
             return {
                 "success": False,
-                "message": f"Failed to create promotional credits for Delivery Note {delivery_note_id}."
+                "message": f"Failed to create promotional credits for Delivery Note {dn_doc.name}."
             }
     else:
         return {
             "success": False,
-            "message": f"Delivery Note {delivery_note_id} does not meet the conditions for receiving a promotional credit."
+            "message": f"Delivery Note {dn_doc.name} does not meet the conditions for receiving a promotional credit."
         }
+
+
+def delivery_note_on_submit(delivery_note, event):
+    if delivery_note.product_type != "Labels":
+        return
+    check_and_create_promo_credit(delivery_note)
