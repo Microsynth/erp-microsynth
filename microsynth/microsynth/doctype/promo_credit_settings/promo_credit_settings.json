@@ -97,13 +97,13 @@
   },
   {
    "fieldname": "credit_account_description",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Credit Account Description"
   }
  ],
  "issingle": 1,
- "modified": "2026-04-14 16:11:02.522650",
- "modified_by": "Administrator",
+ "modified": "2026-04-16 08:34:56.131446",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Promo Credit Settings",
  "owner": "Administrator",
