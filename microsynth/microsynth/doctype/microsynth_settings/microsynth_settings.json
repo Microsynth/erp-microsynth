@@ -209,7 +209,7 @@
   {
    "fieldname": "website_applications_path",
    "fieldtype": "Data",
-   "label": "Website Applications Path"
+   "label": "Website Job Applicants Path"
   },
   {
    "fieldname": "default_expense_accounts_section",
@@ -224,7 +224,7 @@
   }
  ],
  "issingle": 1,
- "modified": "2026-02-16 14:36:13.519034",
+ "modified": "2026-04-16 11:46:34.320165",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Microsynth Settings",
