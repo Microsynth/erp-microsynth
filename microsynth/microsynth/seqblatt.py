@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2022, Microsynth AG, libracore (https://www.libracore.com) and contributors
 # For license information, please see license.txt
-#
 # For more details, refer to https://github.com/Microsynth/erp-microsynth/
-#
 
-import traceback
-import frappe
-from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
-from frappe.utils import get_url_to_form
+import time
 import json
+import traceback
 from datetime import datetime
+
+import frappe
+from frappe.utils import get_url_to_form
+from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier, get_customer
 from microsynth.microsynth.shipping import create_receiver_address_lines
@@ -880,3 +881,231 @@ def get_unused_easy_run_label_ranges():
         "internal_message": None,
         "ranges": ranges
     }
+
+
+### The following functions are alternative implementations of the same logic as get_unused_easy_run_label_ranges but implemented in Python without SQL window functions.
+### TODO: Remove after demonstration, testing and comparison.
+
+def get_unused_easy_run_label_ranges_simple():
+    """
+    Same as get_unused_easy_run_label_ranges but implemented in Python without SQL window functions.
+    Should return the same result but is expected to be much slower. Used for testing and comparison.
+
+    bench execute microsynth.microsynth.seqblatt.get_unused_easy_run_label_ranges_simple
+    """
+    rows = frappe.db.sql("""
+        SELECT
+            `contact`,
+            `registered`,
+            `registered_to`,
+            `item`,
+            `label_id`
+        FROM `tabSequencing Label`
+        WHERE
+            `item` = '3050'
+            AND `status` = 'unused'
+        ORDER BY
+            `contact`,
+            `registered`,
+            `registered_to`,
+            `item`,
+            `label_id`
+    """, as_dict=True)
+
+    # normalize types (important!)
+    for row in rows:
+        row["label_id"] = int(row["label_id"])
+        row["registered"] = int(row["registered"]) if row["registered"] is not None else 0
+        row["registered_to"] = row["registered_to"] or None
+
+    ranges = []
+    current = None
+
+    for row in rows:
+        key = (
+            row["contact"],
+            row["registered"],
+            row["registered_to"],
+            row["item"]
+        )
+        if current is None:
+            current = {"key": key, "start": row["label_id"], "end": row["label_id"]}
+            continue
+
+        # same group + consecutive?
+        if key == current["key"] and row["label_id"] == current["end"] + 1:
+            current["end"] = row["label_id"]
+        else:
+            ranges.append({
+                "contact": current["key"][0],
+                "registered": current["key"][1],
+                "registered_to": current["key"][2],
+                "item": current["key"][3],
+                "barcode_start_range": current["start"],
+                "barcode_end_range": current["end"]
+            })
+            current = {"key": key, "start": row["label_id"], "end": row["label_id"]}
+
+    # append last range
+    if current:
+        ranges.append({
+            "contact": current["key"][0],
+            "registered": current["key"][1],
+            "registered_to": current["key"][2],
+            "item": current["key"][3],
+            "barcode_start_range": current["start"],
+            "barcode_end_range": current["end"]
+        })
+
+    return {
+        "success": True,
+        "message": "OK",
+        "internal_message": None,
+        "ranges": ranges
+    }
+
+
+def get_unused_easy_run_label_ranges_very_simple():
+    """
+    Extremely naive and slow implementation.
+    Repeatedly scans and removes elements.
+    Only for demonstration / benchmarking.
+    """
+    rows = frappe.db.sql("""
+        SELECT
+            `contact`,
+            `registered`,
+            `registered_to`,
+            `item`,
+            `label_id`
+        FROM `tabSequencing Label`
+        WHERE
+            `item` = '3050'
+            AND `status` = 'unused'
+        ORDER BY
+            `contact`,
+            `registered`,
+            `registered_to`,
+            `item`,
+            `label_id`
+    """, as_dict=True)
+
+    # normalize
+    for r in rows:
+        r["label_id"] = int(r["label_id"])
+        r["registered"] = int(r["registered"]) if r["registered"] is not None else 0
+        r["registered_to"] = r["registered_to"] or None
+
+    ranges = []
+
+    while rows:
+        first = rows.pop(0)
+        key = (
+            first["contact"],
+            first["registered"],
+            first["registered_to"],
+            first["item"]
+        )
+        start = first["label_id"]
+        end = start
+        i = 0
+        while i < len(rows):
+            r = rows[i]
+
+            r_key = (
+                r["contact"],
+                r["registered"],
+                r["registered_to"],
+                r["item"]
+            )
+            if r_key == key and r["label_id"] == end + 1:
+                end = r["label_id"]
+                rows.pop(i)
+                i = 0  # restart scan
+            else:
+                i += 1
+
+        ranges.append({
+            "contact": key[0],
+            "registered": key[1],
+            "registered_to": key[2],
+            "item": key[3],
+            "barcode_start_range": start,
+            "barcode_end_range": end
+        })
+
+    return {
+        "success": True,
+        "message": "OK",
+        "internal_message": None,
+        "ranges": ranges
+    }
+
+
+def compare_easy_run_label_range_methods(include_unefficient=True, validate=True):
+    """
+    Compare SQL vs Python implementation for label range grouping.
+
+    bench execute microsynth.microsynth.seqblatt.compare_easy_run_label_range_methods --kwargs "{'include_unefficient': False, 'validate': True}"
+    """
+    # 1. SQL (window function)
+    start_sql = time.perf_counter()
+    sql_result = get_unused_easy_run_label_ranges()
+    duration_sql = time.perf_counter() - start_sql
+    print(f"Efficient SQL: {duration_sql:.6f} seconds")
+
+    # 2. Python (simple)
+    start_py = time.perf_counter()
+    py_result = get_unused_easy_run_label_ranges_simple()
+    duration_py = time.perf_counter() - start_py
+    print(f"Efficient Python: {duration_py:.6f} seconds")
+
+    if include_unefficient:
+        # 3. Python (very simple)
+        start_py_very_simple = time.perf_counter()
+        py_result_very_simple = get_unused_easy_run_label_ranges_very_simple()
+        duration_py_very_simple = time.perf_counter() - start_py_very_simple
+        print(f"Non-efficient Python: {duration_py_very_simple:.6f} seconds")
+
+    # 4. Validation
+    start_validation = time.perf_counter()
+    is_equal_sql_py = None
+    is_equal_sql_slow = None
+
+    if validate:
+        def normalize(ranges):
+            def s(val):
+                return val or ""
+
+            return sorted([
+                (
+                    s(r["contact"]),
+                    int(r["registered"]) if r["registered"] is not None else 0,
+                    s(r["registered_to"]),
+                    s(r["item"]),
+                    int(r["barcode_start_range"]),
+                    int(r["barcode_end_range"]),
+                )
+                for r in ranges
+            ])
+
+        sql_norm = normalize(sql_result["ranges"])
+        py_norm = normalize(py_result["ranges"])
+        if include_unefficient:
+            slow_norm = normalize(py_result_very_simple["ranges"])
+            is_equal_sql_slow = sql_norm == slow_norm
+
+        is_equal_sql_py = sql_norm == py_norm
+
+        if not is_equal_sql_py or (include_unefficient and not is_equal_sql_slow):
+            print("[COMPARE] ❌ Mismatch detected!")
+            print("SQL (first 5):", sql_norm[:5])
+            print("PY efficient (first 5):", py_norm[:5])
+            if include_unefficient:
+                print("PY slow (first 5):", slow_norm[:5])
+
+    duration_validation = time.perf_counter() - start_validation
+    print(f"Validation: {duration_validation:.6f} seconds")
+    print(f"Results identical SQL vs Efficient Python: {is_equal_sql_py}")
+    if include_unefficient:
+        print(f"Results identical SQL vs Slow Python: {is_equal_sql_slow}")
