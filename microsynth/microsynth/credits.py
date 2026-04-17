@@ -1057,7 +1057,7 @@ def check_promo_conditions(delivery_note_doc, promo_credit_settings):
     if delivery_note_doc.docstatus != 1:
         return (False, 0)
     order_date = fetch_delivery_note_order_date(delivery_note_doc)
-    if not order_date or order_date < getdate(promo_credit_settings.from_date) or order_date > getdate(promo_credit_settings.to_date):
+    if not order_date or not promo_credit_settings.from_date or not promo_credit_settings.to_date or order_date < getdate(promo_credit_settings.from_date) or order_date > getdate(promo_credit_settings.to_date):
         return (False, 0)
     if delivery_note_doc.product_type not in [p.product_type for p in promo_credit_settings.dn_product_types]:
         return (False, 0)
