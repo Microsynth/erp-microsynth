@@ -102,7 +102,7 @@
   }
  ],
  "issingle": 1,
- "modified": "2026-04-16 08:34:56.131446",
+ "modified": "2026-04-17 09:42:43.198473",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "Promo Credit Settings",
@@ -124,6 +124,10 @@
    "read": 1,
    "role": "Sales Manager Extended",
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",
