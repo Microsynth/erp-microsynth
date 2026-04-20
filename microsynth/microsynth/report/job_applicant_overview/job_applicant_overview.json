@@ -7,7 +7,7 @@
  "doctype": "Report",
  "idx": 0,
  "is_standard": "Yes",
- "modified": "2025-07-28 09:20:34.599376",
+ "modified": "2026-04-20 10:33:21.968370",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Job Applicant Overview",
@@ -21,7 +21,13 @@
    "role": "HR User"
   },
   {
+   "role": "HR User Subsidiary"
+  },
+  {
    "role": "System Manager"
+  },
+  {
+   "role": "Board Member"
   }
  ]
 }
