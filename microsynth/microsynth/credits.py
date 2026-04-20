@@ -1134,7 +1134,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         company=delivery_note_doc.company,
         customer=delivery_note_doc.customer,
         customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.
-        ignore_permissions=False,
+        ignore_permissions=True,
         transmit_invoice=False
     )
     if result.get("success"):
