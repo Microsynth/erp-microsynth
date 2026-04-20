@@ -156,13 +156,15 @@ def get_allowed_subcategory_for_category(doctype, txt, searchfield, start, page_
 def get_qm_process_owner(qm_process, company):
     """
     Returns the process owner (user) for a given QM Process and Company.
+
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.get_qm_process_owner --kwargs "{'qm_process': '3.2 Sequencing', 'company': 'Microsynth AG'}"
     """
-    owner = frappe.db.get_value(
+    owners = frappe.db.get_all(
         "QM Process Owner",
-        {"qm_process": qm_process, "company": company},
-        "process_owner"
+        filters={"qm_process": qm_process, "company": company},
+        fields=["process_owner"]
     )
-    return owner
+    return [owner["process_owner"] for owner in owners]
 
 
 @frappe.whitelist()

@@ -50,7 +50,7 @@ frappe.ui.form.on('QM Instrument', {
                     'company': company
                 },
                 'callback': function(r) {
-                    const isProcessOwner = (r.message === frappe.session.user);
+                    const isProcessOwner = r.message.includes(frappe.session.user);
                     if (isProcessOwner) {
                         apply_field_permissions(frm, true);
                         add_custom_buttons(frm, true);
