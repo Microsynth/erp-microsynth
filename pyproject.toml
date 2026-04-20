@@ -1,0 +1,21 @@
+[project]
+name = "microsynth"
+authors = [
+    { name = "Microsynth AG, libracore AG and contributors", email = "info@microsynth.ch"}
+]
+description = "Microsynth ERP Applications"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    # dependencies
+    "frappe>=15.0",
+    "tqdm",
+    "PyPDF2==2.12.1",
+    "factur-x>=2.3"
+]
+
+[project.urls]
+Homepage = "https://github.com/Microsynth/erp-microsynth"
+Repository = "https://github.com/Microsynth/erp-microsynth.git"
+"Bug Reports" = ""

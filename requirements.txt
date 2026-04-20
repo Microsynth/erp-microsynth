@@ -1,3 +1,0 @@
-frappe
-PyPDF2
-factur-x>=2.3
