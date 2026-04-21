@@ -2959,7 +2959,6 @@ def change_item_uom_and_has_batch_no(item_code, new_stock_uom=None, new_has_batc
             )
             old_item.save()
 
-
         # 6. Create new item with new Stock UOM
         log("Creating new Item with new Stock UOM")
         if not dry_run:
@@ -2968,6 +2967,8 @@ def change_item_uom_and_has_batch_no(item_code, new_stock_uom=None, new_has_batc
             new_item.name = old_item_code
             new_item.item_code = old_item_code
             new_item.stock_uom = target_stock_uom
+            if old_item.stock_uom == old_item.purchase_uom and target_stock_uom != old_item.stock_uom:
+                new_item.purchase_uom = target_stock_uom  # keep them in sync if they were identical before, otherwise keep original purchase_uom
             new_item.has_batch_no = target_has_batch_no
             new_item.disabled = 0
             new_item.end_of_life = None
