@@ -92,7 +92,10 @@ def disable_hot_config_in_dev():
         print("Set Flushbox settings...")
         flushbox_settings = frappe.get_doc("Flushbox Settings", "Flushbox Settings")
         flushbox_settings.pdf_path = (flushbox_settings.pdf_path or "").replace("/erp_share/", "/erp_share_test/")
-        flushbox_settings.save()
+        try:
+            flushbox_settings.save()
+        except Exception as err:
+            print(err)
 
         print("Set Batch Invoice Processing Settings ...")
         batch_invoice_processing_settings = frappe.get_doc("Batch Invoice Processing Settings", "Batch Invoice Processing Settings")
