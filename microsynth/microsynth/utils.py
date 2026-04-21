@@ -2731,6 +2731,12 @@ def item_before_save(item, event):
                     break
             if not supplier_item_exists:
                 frappe.throw(f"Default Supplier {item_default.default_supplier} in Item Defaults of Company {item_default.company} is not present in Supplier Items table.")
+    # If there is only one Supplier in item.supplier_items, set it as default_supplier in item.item_defaults for all companies if not already set.
+    if len(item.supplier_items) == 1:
+        single_supplier = item.supplier_items[0].supplier
+        for item_default in item.item_defaults:
+            if not item_default.default_supplier:
+                item_default.default_supplier = single_supplier
 
 
 @frappe.whitelist()
