@@ -60,7 +60,7 @@ def get_data(filters=None):
         LEFT JOIN `tabItem Default` ON `tabItem Default`.`parent` = `tabItem`.`name`
         WHERE `tabItem`.`disabled` = 0
             {filter_conditions}
-        ORDER BY `tabItem`.`name` ASC;
+        ORDER BY `tabItem`.`creation` DESC;
     """, as_dict=True)
 
     return data

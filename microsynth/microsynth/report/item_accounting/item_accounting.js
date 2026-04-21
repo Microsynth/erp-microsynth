@@ -17,7 +17,7 @@ frappe.query_reports["Item Accounting"] = {
             "fieldtype": "Link",
             "label": "Item Group",
             "options": "Item Group",
-            "default": "Financial Accounting"
+            "default": "Purchasing"
         }
     ],
     "onload": (report) => {
