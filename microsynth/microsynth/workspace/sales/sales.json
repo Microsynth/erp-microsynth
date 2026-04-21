@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"jwvTXlZ2dS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales</span>\",\"col\":12}},{\"id\":\"44yLKJzAaC\",\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":4}},{\"id\":\"reHMrgpwwA\",\"type\":\"card\",\"data\":{\"card_name\":\"Orders\",\"col\":4}}]",
+ "content": "[{\"id\":\"jwvTXlZ2dS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales</span>\",\"col\":12}},{\"id\":\"44yLKJzAaC\",\"type\":\"card\",\"data\":{\"card_name\":\"Quotation\",\"col\":4}},{\"id\":\"reHMrgpwwA\",\"type\":\"card\",\"data\":{\"card_name\":\"Orders\",\"col\":4}},{\"id\":\"nloytSSDDL\",\"type\":\"card\",\"data\":{\"card_name\":\"CRM\",\"col\":4}},{\"id\":\"rN7_tVSWyH\",\"type\":\"card\",\"data\":{\"card_name\":\"Pricing\",\"col\":4}}]",
  "creation": "2026-04-21 12:06:33.616720",
  "custom_blocks": [],
  "docstatus": 0,
@@ -90,9 +90,117 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pricing",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Price List",
+   "link_count": 0,
+   "link_to": "Price List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Pricing Configurator",
+   "link_count": 0,
+   "link_to": "Pricing Configurator",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Compare Price Lists",
+   "link_count": 0,
+   "link_to": "Compare Price Lists",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "CRM",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Customer Finder",
+   "link_count": 0,
+   "link_to": "Customer Finder",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contact",
+   "link_count": 0,
+   "link_to": "Contact",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contact Merger",
+   "link_count": 0,
+   "link_to": "contact_merger",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Find Notes",
+   "link_count": 0,
+   "link_to": "Find Notes",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Quotation Tracker",
+   "link_count": 0,
+   "link_to": "Quotation Tracker",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-21 12:08:36.385084",
+ "modified": "2026-04-21 12:31:04.719488",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Sales",
