@@ -1102,7 +1102,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
     )
     # set the expiry date to today plus the validity period defined in the promo_credit_settings
     expiry_in_days = promo_credit_settings.expiry_in_days
-    new_expiry_date = add_days(nowdate(), expiry_in_days)
+    new_expiry_date = getdate(add_days(nowdate(), expiry_in_days))
 
     if existing_credit_account:
         credit_account_name = existing_credit_account
