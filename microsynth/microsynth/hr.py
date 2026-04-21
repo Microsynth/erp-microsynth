@@ -70,6 +70,8 @@ def map_job_applicant_to_employee(source_name, target_doc=None):
         target.status = "Active"
         target.company = job_offer.company or source.company
         target.designation = job_offer.designation
+        target.cell_number = source.phone_number
+        target.personal_email = source.email_id
         return target
 
     job_offer = frappe.get_doc("Job Offer", source_name)
