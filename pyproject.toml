@@ -18,4 +18,3 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/Microsynth/erp-microsynth"
 Repository = "https://github.com/Microsynth/erp-microsynth.git"
-"Bug Reports" = ""
