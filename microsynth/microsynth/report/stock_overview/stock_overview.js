@@ -16,6 +16,7 @@ frappe.query_reports["Stock Overview"] = {
             "fieldtype": "Link",
             "options": "Warehouse",
             "reqd": 1,
+            "default": "Stores - BAL",
             "get_query": function () {
                 let company = frappe.query_report.get_filter_value("company");
 
