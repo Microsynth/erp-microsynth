@@ -106,6 +106,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "\nUnapproved\nActive\nBlocked\nDecommissioned\nDisposed",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -212,7 +213,7 @@
    "reqd": 1
   }
  ],
- "modified": "2026-04-10 14:32:26.494083",
+ "modified": "2026-04-22 17:07:01.468842",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument",
