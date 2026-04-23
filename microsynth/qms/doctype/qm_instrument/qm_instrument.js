@@ -174,6 +174,15 @@ function get_allowed_transitions(frm, isProcessOwner) {
             ]
         },
         {
+            condition: () => (is_manager || isProcessOwner) && is_gmp,
+            transitions: [
+                ['Active', 'Blocked'],
+                ['Active', 'Decommissioned'],
+                ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Decommissioned'],
+            ]
+        },
+        {
             condition: () => (is_manager || isProcessOwner) && is_non_gmp_a_b_c,
             transitions: [
                 ['Unapproved', 'Active'],
