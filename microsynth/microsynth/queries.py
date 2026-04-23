@@ -3,6 +3,7 @@
 
 import frappe
 
+@frappe.whitelist()
 def purchase_items(doctype, txt, searchfield, start, page_len, filters):
     """
     This is an item query that filters based on item code, item name and supplier item numbers
