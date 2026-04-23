@@ -293,7 +293,7 @@ def correct_stock(item_code, warehouse, rows):
             receipt_rows.append({
                 "batch_no": batch_no,
                 "qty": delta,
-                "rate": rate
+                "rate": rate or 0.01
             })
             # Prepare label row
             shelf_life_date = get_shelf_life_date(item, batch_no)
