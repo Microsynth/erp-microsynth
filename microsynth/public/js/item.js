@@ -625,11 +625,13 @@ function open_correct_stock_dialog(frm) {
                 'warehouse': d.get_value("warehouse")
             },
             'callback': function(r) {
-                // Set the data directly on the Table field's df object
-                d.fields_dict.batch_table.df.data = r.message || [];
-
-                // Refresh the grid to display updated data
-                d.fields_dict.batch_table.grid.refresh();
+                let table_field = d.fields_dict.batch_table;
+                // set data properly
+                table_field.df.data = r.message || [];
+                // tell frappe this is new data
+                table_field.grid.df.data = table_field.df.data;
+                // fully rebuild grid
+                table_field.grid.refresh(true);
             }
         });
     }
