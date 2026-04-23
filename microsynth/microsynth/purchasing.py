@@ -442,7 +442,6 @@ def create_po_from_open_mr(filters):
         taxes_template = frappe.get_doc("Purchase Taxes and Charges Template", po_doc.taxes_and_charges)
         for tax_row in taxes_template.taxes:
             po_doc.append("taxes", tax_row)
-    #frappe.log_error(f"{po_doc.as_dict()}", "purchasing.create_po_from_open_mr")
     po_doc.insert()
 
     # Deduplicate lists
@@ -2785,264 +2784,254 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     frappe.only_for("System Manager")
 
-    if not dry_run:
-        frappe.db.begin()
-    try:
-        if not item_code:
-            frappe.throw("item_code is required.")
+    if not item_code:
+        frappe.throw("item_code is required.")
 
-        if frappe.db.exists("Item", f"x{item_code}"):
-            frappe.throw("Migration already (partially) executed. Please fix manually if still needed.")
+    if frappe.db.exists("Item", f"x{item_code}"):
+        frappe.throw("Migration already (partially) executed. Please fix manually if still needed.")
 
-        posting_dt = now_datetime()
+    posting_dt = now_datetime()
 
-        # 1. Load & validate Item
+    # 1. Load & validate Item
+    item_doc = frappe.get_doc("Item", item_code)
+
+    if batch_type is not None and item_doc.batch_type != batch_type and not dry_run:
+        item_doc.batch_type = batch_type
+        item_doc.save()
         item_doc = frappe.get_doc("Item", item_code)
 
-        if batch_type is not None and not dry_run:
-            item_doc.batch_type = batch_type
+    target_stock_uom = new_stock_uom or item_doc.stock_uom
+    target_has_batch_no = new_has_batch_no if new_has_batch_no is not None else item_doc.has_batch_no
 
-        target_stock_uom = new_stock_uom or item_doc.stock_uom
-        target_has_batch_no = new_has_batch_no if new_has_batch_no is not None else item_doc.has_batch_no
+    if expected_current_stock_uom and item_doc.stock_uom != expected_current_stock_uom:
+        if item_doc.stock_uom and target_stock_uom and item_doc.stock_uom == target_stock_uom:
+            log(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
+        else:
+            frappe.throw(f"Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}.")
 
-        if expected_current_stock_uom and item_doc.stock_uom != expected_current_stock_uom:
-            if item_doc.stock_uom and target_stock_uom and item_doc.stock_uom == target_stock_uom:
-                log(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
-            else:
-                frappe.throw(f"Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}.")
+    if expected_current_has_batch_no is not None and item_doc.has_batch_no != expected_current_has_batch_no:
+        if item_doc.has_batch_no == target_has_batch_no:
+            log(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
+        else:
+            frappe.throw(f"Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}.")
 
-        if expected_current_has_batch_no is not None and item_doc.has_batch_no != expected_current_has_batch_no:
-            if item_doc.has_batch_no == target_has_batch_no:
-                log(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
-            else:
-                frappe.throw(f"Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}.")
+    if target_stock_uom == item_doc.stock_uom and target_has_batch_no == item_doc.has_batch_no:
+        log("No changes necessary. Skipping.")
+        return
 
-        if target_stock_uom == item_doc.stock_uom and target_has_batch_no == item_doc.has_batch_no:
-            log("No changes necessary. Skipping.")
+    if not item_doc.is_stock_item:
+        frappe.throw("Only Stock Items can be migrated.")
+
+    if item_doc.disabled:
+        frappe.throw("Item is disabled.")
+
+    if item_doc.stock_uom == target_stock_uom and item_doc.has_batch_no == target_has_batch_no:
+        log(f"Item already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
+        return
+
+    if target_stock_uom and not frappe.db.exists("UOM", target_stock_uom):
+        frappe.throw(f"UOM {target_stock_uom} does not exist.")
+
+    if item_doc.has_serial_no:
+        frappe.throw("Serial-numbered items are NOT supported by this migration script.")
+    log(f"Item {item_code} validated (current has_batch_no={item_doc.has_batch_no}, target_has_batch_no={target_has_batch_no}, stock_uom={item_doc.stock_uom}, target_stock_uom={target_stock_uom})")
+
+    # 2. Collect stock data
+    stock_rows = []
+    affected_batches = set()
+
+    bins = frappe.get_all("Bin", filters=[['item_code', '=', item_code]], fields=['name', 'item_code', 'warehouse', 'actual_qty', 'valuation_rate'])
+    log(f"Found {len(bins)} Bin entries for Item {item_code}.")
+
+    for b in bins:
+        if b['actual_qty'] < 0:
+            frappe.throw(f"Negative stock {b['actual_qty']} for Item {item_code} in Warehouse {b['warehouse']}")
+        if not b['actual_qty']:
+            continue  # skip zero stock
+        batches = get_batches(item_code=b['item_code'], warehouse=b['warehouse'], qty=b['actual_qty'], throw=False)
+        if not batches:
+            # insert item record without batch reference
+            stock_rows.append({
+                "warehouse": b['warehouse'],
+                "batch_no": None,
+                "qty": b['actual_qty'],
+                "valuation_rate": b['valuation_rate']
+            })
+        else:
+            affected_batches.update({bat['batch_id'] for bat in batches})
+            for bat in batches:
+                if bat['qty'] > 0:
+                    # insert item with bat['qty'], bat['batch_id']
+                    stock_rows.append({
+                        "warehouse": b['warehouse'],
+                        "batch_no": bat['batch_id'] if target_has_batch_no else None,
+                        "qty": bat['qty'],
+                        "valuation_rate": b['valuation_rate']
+                    })
+
+    if not stock_rows:
+        # Check for non-Cancelled Material Requests and Purchase Orders
+        material_requests = frappe.get_all("Material Request Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
+        purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
+        if material_requests or purchase_orders:
+            log(f"WARNING: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
             return
-
-        if not item_doc.is_stock_item:
-            frappe.throw("Only Stock Items can be migrated.")
-
-        if item_doc.disabled:
-            frappe.throw("Item is disabled.")
-
-        if item_doc.stock_uom == target_stock_uom and item_doc.has_batch_no == target_has_batch_no:
-            log(f"Item already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
-            return
-
-        if target_stock_uom and not frappe.db.exists("UOM", target_stock_uom):
-            frappe.throw(f"UOM {target_stock_uom} does not exist.")
-
-        if item_doc.has_serial_no:
-            frappe.throw("Serial-numbered items are NOT supported by this migration script.")
-        log(f"Item {item_code} validated (current has_batch_no={item_doc.has_batch_no}, target_has_batch_no={target_has_batch_no}, stock_uom={item_doc.stock_uom}, target_stock_uom={target_stock_uom})")
-
-        # 2. Collect stock data
-        stock_rows = []
-        affected_batches = set()
-
-        bins = frappe.get_all("Bin", filters=[['item_code', '=', item_code]], fields=['name', 'item_code', 'warehouse', 'actual_qty', 'valuation_rate'])
-        log(f"Found {len(bins)} Bin entries for Item {item_code}.")
-
-        for b in bins:
-            if b['actual_qty'] < 0:
-                frappe.throw(f"Negative stock {b['actual_qty']} for Item {item_code} in Warehouse {b['warehouse']}")
-            if not b['actual_qty']:
-                continue  # skip zero stock
-            batches = get_batches(item_code=b['item_code'], warehouse=b['warehouse'], qty=b['actual_qty'], throw=False)
-            if not batches:
-                # insert item record without batch reference
-                stock_rows.append({
-                    "warehouse": b['warehouse'],
-                    "batch_no": None,
-                    "qty": b['actual_qty'],
-                    "valuation_rate": b['valuation_rate']
-                })
-            else:
-                affected_batches.update({bat['batch_id'] for bat in batches})
-                for bat in batches:
-                    if bat['qty'] > 0:
-                        # insert item with bat['qty'], bat['batch_id']
-                        stock_rows.append({
-                            "warehouse": b['warehouse'],
-                            "batch_no": bat['batch_id'] if target_has_batch_no else None,
-                            "qty": bat['qty'],
-                            "valuation_rate": b['valuation_rate']
-                        })
-
-        if not stock_rows:
-            # Check for non-Cancelled Material Requests and Purchase Orders
-            material_requests = frappe.get_all("Material Request Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
-            purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
-            if material_requests or purchase_orders:
-                log(f"WARNING: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
-                return
-            log("No stock exists. Safe direct UOM/has_batch_no change.")
-            if not dry_run:
-                item_doc.stock_uom = target_stock_uom
-                if target_has_batch_no is not None:
-                    item_doc.has_batch_no = target_has_batch_no
-                item_doc.save()
-                frappe.db.commit()
-            return
-
-        log(f"Collected {len(stock_rows)} stock rows")
-
-        # 3. Resolve company from warehouses
-        companies = set()
-
-        for r in stock_rows:
-            company = frappe.db.get_value("Warehouse", r["warehouse"], "company")
-            if not company:
-                frappe.throw(f"Warehouse {r['warehouse']} has no company")
-            companies.add(company)
-
-        if len(companies) != 1:
-            frappe.throw(
-                f"Multiple companies detected: {', '.join(companies)}"
-            )
-        company = companies.pop()
-        log(f"Using company: {company}")
-
-        # 4. Material Issue (remove old stock)
-        log("Preparing Material Issue")
-        cost_center = frappe.db.get_value("Company", company, "cost_center")
-
+        log("No stock exists. Safe direct UOM/has_batch_no change.")
         if not dry_run:
-            issue = frappe.new_doc("Stock Entry")
-            issue.stock_entry_type = "Material Issue"
-            issue.company = company
-            issue.posting_date = posting_dt.date()
-            issue.posting_time = posting_dt.time()
-            issue.remarks = f"UOM migration issue for {item_code}"
-
-            for r in stock_rows:  # stock_rows are created using tabBin and tabBatch
-                issue.append("items", {
-                    "item_code": item_code,
-                    "qty": r["qty"],
-                    "s_warehouse": r["warehouse"],
-                    "cost_center": cost_center,  # seems to be mandatory
-                    "batch_no": r.get("batch_no"),
-                    "uom": item_doc.stock_uom,
-                    "conversion_factor": 1  # valuation shall be done by integrated mechanism
-                })
-            issue.insert()
-            issue.submit()
-
-        # 5. Rename & disable old item
-        old_item_code = item_code
-        temp_item_code = f"x{item_code}"
-        log(f"Renaming Item {old_item_code} → {temp_item_code}")
-
-        if not dry_run:
-            frappe.rename_doc(
-                "Item",
-                old_item_code,
-                temp_item_code,
-                merge=False,
-                ignore_permissions=True
-            )
-            old_item = frappe.get_doc("Item", temp_item_code)
-            old_item.disabled = 1
-            old_item.add_comment(
-                "Comment",
-                f"Disabled due to Stock UOM / has_batch_no migration from {item_doc.stock_uom} to {target_stock_uom} and/or has_batch_no change, see new Item {old_item_code}"
-            )
-            old_item.save()
-
-        # 6. Create new item with new Stock UOM
-        log("Creating new Item with new Stock UOM")
-        if not dry_run:
-            old_item = frappe.get_doc("Item", temp_item_code)
-            new_item = frappe.copy_doc(old_item)
-            new_item.name = old_item_code
-            new_item.item_code = old_item_code
-            new_item.stock_uom = target_stock_uom
-            if old_item.stock_uom == old_item.purchase_uom and target_stock_uom != old_item.stock_uom:
-                new_item.purchase_uom = target_stock_uom  # keep them in sync if they were identical before, otherwise keep original purchase_uom
-            new_item.has_batch_no = target_has_batch_no
-            new_item.disabled = 0
-            new_item.end_of_life = None
-            new_item.barcode = []
-            new_item.uoms = []
-            for uom_row in old_item.get("uoms"):
-                new_item.append("uoms", {
-                    "uom": uom_row.uom if uom_row.uom != old_item.stock_uom else target_stock_uom,
-                    "conversion_factor": uom_row.conversion_factor
-                })
-            new_item.insert(ignore_permissions=True)
-
-            # Update affected Batch records to point to new Item
-            for batch_id in affected_batches:
-                log(f"Updating Batch {batch_id} to point to new Item {old_item_code}")
-                frappe.db.set_value("Batch", batch_id, "item", old_item_code)
-            frappe.db.commit()  # necessary according to Lars
-
-        # 7. Material Receipt (restore stock)
-        log("Preparing Material Receipt")
-        if not dry_run:
-            receipt = frappe.new_doc("Stock Entry")
-            receipt.stock_entry_type = "Material Receipt"
-            receipt.company = company
-            receipt.posting_date = posting_dt.date()
-            receipt.posting_time = posting_dt.time()
-            receipt.remarks = f"UOM migration receipt for {old_item_code}"
-
-            for r in stock_rows:  # TODO: replace stock_rows with issue.items?
-                if target_has_batch_no:
-                    batch_no = r.get("batch_no") or f"[NA]-{item_code}"
-                    if batch_no and not frappe.db.exists("Batch", batch_no):
-                        log(f"Creating missing Batch '{batch_no}'.")
-                        batch_doc = frappe.get_doc({
-                            "doctype": "Batch",
-                            "batch_id": batch_no,
-                            "item": item_code
-                        })
-                        batch_doc.insert(ignore_permissions=True)
-                else:
-                    batch_no = None
-                receipt.append("items", {
-                    "item_code": item_code,
-                    "qty": r.get("qty"),
-                    "t_warehouse": r.get("s_warehouse"),
-                    "cost_center": r.get("cost_center"),
-                    "batch_no": batch_no,
-                    "uom": target_stock_uom,
-                    "conversion_factor": 1,
-                    "basic_rate": r.get("basic_rate") or r.get("valuation_rate") or 0  # TODO: Only use valuation_rate?
-                })
-            receipt.insert()
-            # TODO: frappe.exceptions.ValidationError: Valuation rate not found for the Item P014610, which is required to do accounting entries for Stock Entry MAT-STE-2026-00506.
-            # If the item is transacting as a zero valuation rate item in the Stock Entry, please mention that in the Stock Entry Item table.
-            # Otherwise, please create an incoming stock transaction for the item or mention valuation rate in the Item record, and then try submiting / cancelling this entry.
-            receipt.submit()
-
-        # 8. Move Item Prices from old to new item
-        log("Move Item Prices from old to new item")
-        item_prices = frappe.get_all(
-            "Item Price",
-            filters={"item_code": temp_item_code},
-            fields=["*"]
-        )
-        for ip in item_prices:
-            log(f" - Moving Item Price {ip.name} for Price List {ip.price_list}, min_qty {ip.min_qty} from Item {temp_item_code} to {old_item_code}")
-            if not dry_run:
-                ip_doc = frappe.get_doc("Item Price", ip.name)
-                ip_doc.item_code = old_item_code
-                if ip_doc.uom == item_doc.stock_uom:
-                    ip_doc.uom = target_stock_uom
-                ip_doc.save()
-
-        if not dry_run:
+            item_doc.stock_uom = target_stock_uom
+            if target_has_batch_no is not None:
+                item_doc.has_batch_no = target_has_batch_no
             item_doc.save()
             frappe.db.commit()
-            log("UOM/Batch migration completed successfully")
+        return
 
-    except Exception:
+    log(f"Collected {len(stock_rows)} stock rows")
+
+    # 3. Resolve company from warehouses
+    companies = set()
+
+    for r in stock_rows:
+        company = frappe.db.get_value("Warehouse", r["warehouse"], "company")
+        if not company:
+            frappe.throw(f"Warehouse {r['warehouse']} has no company")
+        companies.add(company)
+
+    if len(companies) != 1:
+        frappe.throw(
+            f"Multiple companies detected: {', '.join(companies)}"
+        )
+    company = companies.pop()
+    log(f"Using company: {company}")
+
+    # 4. Material Issue (remove old stock)
+    log("Preparing Material Issue")
+    cost_center = frappe.db.get_value("Company", company, "cost_center")
+
+    if not dry_run:
+        issue = frappe.new_doc("Stock Entry")
+        issue.stock_entry_type = "Material Issue"
+        issue.company = company
+        issue.posting_date = posting_dt.date()
+        issue.posting_time = posting_dt.time()
+        issue.remarks = f"UOM migration issue for {item_code}"
+
+        for r in stock_rows:  # stock_rows are created using tabBin and tabBatch
+            issue.append("items", {
+                "item_code": item_code,
+                "qty": r["qty"],
+                "s_warehouse": r["warehouse"],
+                "cost_center": cost_center,  # seems to be mandatory
+                "batch_no": r.get("batch_no"),
+                "uom": item_doc.stock_uom,
+                "conversion_factor": 1  # valuation shall be done by integrated mechanism
+            })
+        issue.insert()
+        issue.submit()
+
+    # 5. Rename & disable old item
+    old_item_code = item_code
+    temp_item_code = f"x{item_code}"
+    log(f"Renaming Item {old_item_code} → {temp_item_code}")
+
+    if not dry_run:
+        frappe.rename_doc(
+            "Item",
+            old_item_code,
+            temp_item_code,
+            merge=False,
+            ignore_permissions=True
+        )
+        old_item = frappe.get_doc("Item", temp_item_code)
+        old_item.disabled = 1
+        old_item.add_comment(
+            "Comment",
+            f"Disabled due to Stock UOM / has_batch_no migration from {item_doc.stock_uom} to {target_stock_uom} and/or has_batch_no change, see new Item {old_item_code}"
+        )
+        old_item.save()
+
+    # 6. Create new item with new Stock UOM
+    log("Creating new Item with new Stock UOM")
+    if not dry_run:
+        old_item = frappe.get_doc("Item", temp_item_code)
+        new_item = frappe.copy_doc(old_item)
+        new_item.name = old_item_code
+        new_item.item_code = old_item_code
+        new_item.stock_uom = target_stock_uom
+        if old_item.stock_uom == old_item.purchase_uom and target_stock_uom != old_item.stock_uom:
+            new_item.purchase_uom = target_stock_uom  # keep them in sync if they were identical before, otherwise keep original purchase_uom
+        new_item.has_batch_no = target_has_batch_no
+        new_item.disabled = 0
+        new_item.end_of_life = None
+        new_item.barcode = []
+        new_item.uoms = []
+        for uom_row in old_item.get("uoms"):
+            new_item.append("uoms", {
+                "uom": uom_row.uom if uom_row.uom != old_item.stock_uom else target_stock_uom,
+                "conversion_factor": uom_row.conversion_factor
+            })
+        new_item.insert(ignore_permissions=True)
+
+        # Update affected Batch records to point to new Item
+        for batch_id in affected_batches:
+            log(f"Updating Batch {batch_id} to point to new Item {old_item_code}")
+            frappe.db.set_value("Batch", batch_id, "item", old_item_code)
+        frappe.db.commit()  # necessary according to Lars
+
+    # 7. Material Receipt (restore stock)
+    log("Preparing Material Receipt")
+    if not dry_run:
+        receipt = frappe.new_doc("Stock Entry")
+        receipt.stock_entry_type = "Material Receipt"
+        receipt.company = company
+        receipt.posting_date = posting_dt.date()
+        receipt.posting_time = posting_dt.time()
+        receipt.remarks = f"UOM migration receipt for {old_item_code}"
+
+        for r in stock_rows:
+            if target_has_batch_no:
+                batch_no = r.get("batch_no") or f"[NA]-{item_code}"
+                if batch_no and not frappe.db.exists("Batch", batch_no):
+                    log(f"Creating missing Batch '{batch_no}'.")
+                    batch_doc = frappe.get_doc({
+                        "doctype": "Batch",
+                        "batch_id": batch_no,
+                        "item": item_code
+                    })
+                    batch_doc.insert(ignore_permissions=True)
+            else:
+                batch_no = None
+            receipt.append("items", {
+                "item_code": item_code,
+                "qty": r.get("qty"),
+                "t_warehouse": r.get("s_warehouse") or r.get("warehouse"),  # TODO: stock_rows have no s_warehouse
+                "cost_center": r.get("cost_center") or cost_center,  # TODO: stock_rows have no cost_center
+                "batch_no": batch_no,
+                "uom": target_stock_uom,
+                "conversion_factor": 1,
+                "basic_rate": r.get("basic_rate") or r.get("valuation_rate") or 0.01  # TODO: stock_rows have no basic_rate
+            })
+        receipt.insert()
+        receipt.submit()
+
+    # 8. Move Item Prices from old to new item
+    log("Move Item Prices from old to new item")
+    item_prices = frappe.get_all(
+        "Item Price",
+        filters={"item_code": temp_item_code},
+        fields=["*"]
+    )
+    for ip in item_prices:
+        log(f" - Moving Item Price {ip.name} for Price List {ip.price_list}, min_qty {ip.min_qty} from Item {temp_item_code} to {old_item_code}")
         if not dry_run:
-            frappe.db.rollback()
-        raise
+            ip_doc = frappe.get_doc("Item Price", ip.name)
+            ip_doc.item_code = old_item_code
+            if ip_doc.uom == item_doc.stock_uom:
+                ip_doc.uom = target_stock_uom
+            ip_doc.save()
+
+    if not dry_run:
+        frappe.db.commit()
+        log("UOM/Batch migration completed successfully")
 
 
 def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, dry_run=True, verbose=True):
@@ -3050,7 +3039,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     Batch processing for change_item_uom_and_has_batch_no using a CSV file with columns:
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
-    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Items from '{input_filepath}' ...")
