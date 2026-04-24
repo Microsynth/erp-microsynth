@@ -374,7 +374,8 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
         customer_id,
         customer_order_number="",
         ignore_permissions=True,
-        transmit_invoice=False
+        transmit_invoice=False,
+        allow_recharge=True
     )
     if not response['success']:
         frappe.throw(response.get('message'))
