@@ -122,10 +122,10 @@ def check_classification(nc):
         if nc.criticality_classification != 'N/A':
             frappe.throw("Only N/A is allowed as Criticality Classification of an OOS. Please change the Classification.")
     elif nc.nc_type == 'Track & Trend':
-        if nc.criticality_classification != 'N/A':
-            frappe.throw("Only N/A is allowed as Criticality Classification of Track & Trend. Please change the Classification.")
-    elif nc.nc_type not in ['OOS', 'Track & Trend'] and nc.criticality_classification == 'N/A':
-        frappe.throw("The Criticality Classification N/A is only allowed for OOS and Track & Trend. Please change the Classification.")
+        if nc.criticality_classification != 'non-critical':
+            frappe.throw("Only non-critical is allowed as Criticality Classification of Track & Trend. Please change the Classification.")
+    elif nc.nc_type not in ['OOS'] and nc.criticality_classification == 'N/A':
+        frappe.throw("The Criticality Classification N/A is only allowed for OOS. Please change the Classification.")
 
 
 @frappe.whitelist()
