@@ -41,5 +41,8 @@ frappe.query_reports["Stock Overview"] = {
             "fieldtype": "Link",
             "options": "Item"
         }
-    ]
+    ],
+    "onload": function (report) {
+        hide_chart_buttons();
+    }
 };
