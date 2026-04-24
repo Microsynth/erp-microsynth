@@ -744,26 +744,63 @@ function set_status(status) {
 }
 
 function close(frm) {
-    frappe.confirm(
-        'Are you sure you want to close this Nonconformity?',
-        // If user clicks "Yes"
-        function () {
+    // Check if user has role QAU. If yes, ask for Approval Password, validate it, clear closure fields if necessary, set closure fields (date, user, signature) and close the NC.
+    if (frappe.user.has_role('QAU')) {
+        frappe.prompt({
+            fieldtype: 'Password',
+            label: 'Approval Password',
+            fieldname: 'approval_password'
+        }, function(values){
             frappe.call({
-                'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
+                'method': 'microsynth.qms.signing.sign',
                 'args': {
-                    'doc': frm.doc.name,
-                    'user': frappe.session.user
+                    'dt': "QM Nonconformity",
+                    'dn': frm.doc.name,
+                    'user': frappe.session.user,
+                    'password': values.approval_password,
+                    'target_field': 'signature',
+                    'submit': false
                 },
-                'callback': function(response) {
-                    cur_frm.reload_doc();
+                "callback": function(response) {
+                    if (response.message) {
+                        frappe.call({
+                            'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
+                            'args': {
+                                'doc': frm.doc.name,
+                                'user': frappe.session.user
+                            },
+                            'callback': function(response) {
+                                cur_frm.reload_doc();
+                            }
+                        });
+                    } else {
+                        frappe.show_alert(__('Incorrect approval password. Nonconformity has not been closed.'), 5, 'red');
+                    }
                 }
             });
-        },
-        // If user clicks "No"
-        function () {
-            // Do nothing
-        }
-    );
+        }, __('Approval Required'), __('Approve'));
+    } else {
+        frappe.confirm(
+            'Are you sure you want to close this Nonconformity?',
+            // If user clicks "Yes"
+            function () {
+                frappe.call({
+                    'method': 'microsynth.qms.doctype.qm_nonconformity.qm_nonconformity.close',
+                    'args': {
+                        'doc': frm.doc.name,
+                        'user': frappe.session.user
+                    },
+                    'callback': function(response) {
+                        cur_frm.reload_doc();
+                    }
+                });
+            },
+            // If user clicks "No"
+            function () {
+                // Do nothing
+            }
+        );
+    }
 }
 
 function calculate_risk_classification(occ_prob, impact, after_actions) {

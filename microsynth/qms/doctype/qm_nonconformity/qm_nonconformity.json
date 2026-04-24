@@ -430,7 +430,6 @@
    "allow_on_submit": 1,
    "fieldname": "signature",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Signature",
    "read_only": 1
   },
@@ -472,7 +471,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-22 11:55:35.365365",
+ "modified": "2026-04-24 11:34:15.402645",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",

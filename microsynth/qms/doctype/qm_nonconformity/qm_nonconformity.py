@@ -202,8 +202,8 @@ def close(doc, user):
     # pull selected document
     qm_nc = frappe.get_doc("QM Nonconformity", doc)
     if qm_nc.created_by == user or user_has_role(user, "QAU"):
-        # remove deprecated closing signature
-        if hasattr(qm_nc, 'signature'):
+        # remove deprecated closing signature if exists and user does not have role QAU (only QAU need to sign closure, and if the user has role QAU, the fresh signature should not be removed)
+        if hasattr(qm_nc, 'signature') and qm_nc.signature and not user_has_role(user, "QAU"):
             qm_nc.signature = None
         # set closing user and (current) date
         qm_nc.closed_by = user
