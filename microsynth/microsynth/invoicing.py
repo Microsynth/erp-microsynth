@@ -2824,3 +2824,73 @@ def create_cn_and_invoice_draft(sales_invoice_id):
             "invoice_draft_id": None,
             "message": str(e)
         }
+
+
+@frappe.whitelist()
+def change_customer_company(sales_invoice_name, new_customer, new_company):
+    doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
+
+    if doc.docstatus != 0:
+        frappe.throw(_("Only Draft Sales Invoices can be modified."))
+
+    old_customer = doc.customer
+    old_company = doc.company
+
+    if old_customer == new_customer and old_company == new_company:
+        return {
+            "name": doc.name,
+            "customer": doc.customer,
+            "company": doc.company,
+            "message": _("No changes needed, customer and company are the same.")
+        }
+
+    original_contact_person = doc.contact_person
+
+    # Clear references to previous documents
+    for item in doc.items:
+        item.sales_order = None
+        item.delivery_note = None
+
+    doc.taxes = []
+
+    for item in doc.items:
+        item.income_account = None
+        item.expense_account = None
+
+    # Set new values
+    doc.customer = new_customer
+    doc.company = new_company
+
+    doc.set_missing_values()
+    doc.calculate_taxes_and_totals()
+
+    # Restore contact person after potential overrides
+    doc.contact_person = original_contact_person
+
+    # Ensure mandatory taxes template exists
+    if not doc.taxes_and_charges:
+        frappe.throw(_("Sales Taxes and Charges Template is required after changing Customer/Company."))
+
+    doc.save()
+
+    if doc.contact_person and doc.contact_person != original_contact_person:
+        frappe.log_error(f"Contact Person {original_contact_person} was overwritten to {doc.contact_person} when changing customer/company for Sales Invoice {sales_invoice_name}. Restoring original contact person.", "invoicing.change_customer_company")
+        doc.contact_person = original_contact_person
+        doc.save()
+
+    # Add comment (audit trail)
+    doc.add_comment(
+        "Comment",
+        _("Customer/Company changed") +
+        "<br>" +
+        _("Customer") + f": {old_customer} → {new_customer}" +
+        "<br>" +
+        _("Company") + f": {old_company} → {new_company}"
+    )
+
+    return {
+        "name": doc.name,
+        "customer": doc.customer,
+        "company": doc.company,
+        "message": _("Customer and/or company updated successfully.")
+    }

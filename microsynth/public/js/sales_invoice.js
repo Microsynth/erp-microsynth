@@ -1051,91 +1051,69 @@ function change_customer_company(frm) {
     // Remove references to Delivery Notes and Sales Orders from items: frm.doc.items.forEach(item => { item.sales_order = null; item.delivery_note = null; });
     // Reset Contact Person to original value (avoid system overrides)
     // Add a comment to the Sales Invoice documenting the change (with old and new Customer and Company)
-    if (frm.__changing_customer_company) {
-        return;
-    }
-    frm.__changing_customer_company = true;
     const current_customer = frm.doc.customer;
     const current_company = frm.doc.company;
-    const original_contact_person = frm.doc.contact_person;
+
     const dialog = new frappe.ui.Dialog({
-        title: __('Change Customer / Company'),
-        fields: [
+        'title': __('Change Customer / Company'),
+        'fields': [
+            { 'fieldtype': 'HTML', 'fieldname': 'warning_html' },
             {
-                fieldtype: 'HTML',
-                fieldname: 'warning_html'
-            },
-            {
-                label: __('Customer'),
-                fieldname: 'new_customer',
-                fieldtype: 'Link',
-                options: 'Customer',
-                default: current_customer,
-                reqd: 1
-            },
-            {
-                label: __('Company'),
-                fieldname: 'new_company',
-                fieldtype: 'Link',
-                options: 'Company',
-                default: current_company,
-                reqd: 1
-            }
-        ],
-        primary_action_label: __('Yes, change'),
-        primary_action(values) {
-            frappe.throw("Not yet implemented");
-            const new_customer = values.new_customer;
-            const new_company = values.new_company;
-
-            // Clear references in items
-            (frm.doc.items || []).forEach(item => {
-                item.sales_order = null;
-                item.delivery_note = null;
-            });
-            // Set new values
-            frm.set_value('customer', new_customer);
-            frm.set_value('company', new_company);
-
-            // Restore original contact person (avoid auto override)
-            frm.set_value('contact_person', original_contact);
-            frm.refresh_field('items');
-
-            // Save first, then add comment
-            frm.save().then(() => {
-                return frappe.call({
-                    'method': 'frappe.client.insert',
-                    'args': {
-                        'doc': {
-                            'doctype': 'Comment',
-                            'comment_type': 'Comment',
-                            'reference_doctype': frm.doc.doctype,
-                            'reference_name': frm.doc.name,
-                            'content':
-                                __('Customer/Company changed') +
-                                '<br>' +
-                                __('Customer') + ': ' + current_customer + ' → ' + new_customer +
-                                '<br>' +
-                                __('Company') + ': ' + current_company + ' → ' + new_company
+                'label': __('Customer'),
+                'fieldname': 'new_customer',
+                'fieldtype': 'Link',
+                'options': 'Customer',
+                'default': current_customer,
+                'reqd': 1,
+                'get_query': function() {
+                    return {
+                        filters: {
+                            'disabled': 0
                         }
                     }
-                });
-            }).then(() => {
-                frm.reload_doc();
+                }
+            },
+            {
+                'label': __('Company'),
+                'fieldname': 'new_company',
+                'fieldtype': 'Link',
+                'options': 'Company',
+                'default': current_company,
+                'reqd': 1
+            }
+        ],
+        'primary_action_label': __('Yes, change'),
+        'primary_action'(values) {
+            if (
+                values.new_customer === current_customer &&
+                values.new_company === current_company
+            ) {
+                frappe.msgprint(__('No changes made.'));
+                return;
+            }
+            dialog.hide();
+            frappe.dom.freeze(__('Updating...'));
+
+            frappe.call({
+                'method': 'microsynth.microsynth.invoicing.change_customer_company',
+                'args': {
+                    'sales_invoice_name': frm.doc.name,
+                    'new_customer': values.new_customer,
+                    'new_company': values.new_company
+                },
+                'callback': function () {
+                    frm.reload_doc();
+                }
+            }).always(function () {
+                frappe.dom.unfreeze();
             });
-            dialog.hide();
-            frm.__changing_customer_company = false;
         },
-        secondary_action_label: __('No'),
-        secondary_action() {
-            frappe.throw("Currently, a reload is required to close the dialog without errors.");
-            // TODO: Why do I get "Uncaught InternalError: too much recursion" when clicking the No button and how to avoid it?
-            dialog.hide();
-            frm.__changing_customer_company = false;
+        'secondary_action_label': __('No'),
+        'secondary_action'() {
+            return;
         }
     });
 
-    // Inject warning message
     dialog.fields_dict.warning_html.$wrapper.html(`
         <div class="alert alert-warning">
             <strong>${__('Warning')}:</strong><br>
