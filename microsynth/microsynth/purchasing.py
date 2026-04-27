@@ -2826,7 +2826,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         frappe.throw("Item is disabled.")
 
     if item_doc.stock_uom == target_stock_uom and item_doc.has_batch_no == target_has_batch_no:
-        log(f"Item already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
+        log(f"Item {item_code} already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
         return
 
     if target_stock_uom and not frappe.db.exists("UOM", target_stock_uom):
@@ -2885,7 +2885,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             frappe.db.commit()
         return
 
-    log(f"Collected {len(stock_rows)} stock rows")
+    log(f"Collected {len(stock_rows)} stock row(s) for Item {item_code} across {len(set(r['warehouse'] for r in stock_rows))} warehouse(s) and {len(affected_batches)} batch(es).")
 
     # 3. Resolve company from warehouses
     companies = set()
@@ -2901,7 +2901,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             f"Multiple companies detected: {', '.join(companies)}"
         )
     company = companies.pop()
-    log(f"Using company: {company}")
+    log(f"Using company {company}")
 
     # 4. Material Issue (remove old stock)
     log("Preparing Material Issue")
@@ -2927,6 +2927,8 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             })
         issue.insert()
         issue.submit()
+        # TODO: ERROR processing Item P014765: frappe.exceptions.ValidationError:
+        # Warehouse Stores - GOE is not linked to any account, please mention the account in the warehouse record or set default inventory account in company Microsynth Seqlab GmbH.
 
     # 5. Rename & disable old item
     old_item_code = item_code
@@ -2950,7 +2952,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         old_item.save()
 
     # 6. Create new item with new Stock UOM
-    log("Creating new Item with new Stock UOM")
+    log(f"Creating new Item {old_item_code} with new Stock UOM {target_stock_uom} and has_batch_no={target_has_batch_no}")
     if not dry_run:
         old_item = frappe.get_doc("Item", temp_item_code)
         new_item = frappe.copy_doc(old_item)
@@ -3040,6 +3042,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
     bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
+    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Items from '{input_filepath}' ...")
