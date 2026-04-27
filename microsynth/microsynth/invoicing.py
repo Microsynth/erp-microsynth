@@ -47,14 +47,16 @@ from microsynth.microsynth.utils import (
     replace_none,
     send_email_from_template,
     get_sql_list,
-    get_customer_from_company
+    get_customer_from_company,
+    exact_copy_sales_invoice
 )
 from microsynth.microsynth.credits import (
     allocate_credits,
     get_total_credit,
     get_credit_accounts,
     get_applicable_customer_credits,
-    get_credit_account_balance
+    get_credit_account_balance,
+    create_full_return
 )
 from microsynth.microsynth.jinja import get_destination_classification
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
@@ -2792,3 +2794,33 @@ def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
                         so_doc.update_status("Closed")
                 except Exception as e:
                     print(f"Error creating invoice for {customer}, Sales Order {so_id}: {traceback.format_exc()}\n{e}")
+
+
+@frappe.whitelist()
+def create_cn_and_invoice_draft(sales_invoice_id):
+    """
+    Creates and submits a credit note for the given Sales Invoice.
+    Creates a new Sales Invoice with the exact_copy_sales_invoice function (docstatus = 0, inserted).
+    Returns the name of the created Sales Invoice draft.
+    """
+    try:
+        credit_note_id = create_full_return(sales_invoice_id)
+        invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
+        invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
+        invoice_draft_doc.prev_invoice_returned = 1
+        invoice_draft_doc.calculate_taxes_and_totals()
+        invoice_draft_doc.save()
+        return {
+            "success": True,
+            "credit_note_id": credit_note_id,
+            "invoice_draft_id": invoice_draft_id,
+            "message": f"Credit note {credit_note_id} created and submitted, invoice draft {invoice_draft_id} created for Sales Invoice {sales_invoice_id}."
+        }
+    except Exception as e:
+        frappe.log_error(f"Error creating credit note and invoice draft for Sales Invoice {sales_invoice_id}: {traceback.format_exc()}\n{e}")
+        return {
+            "success": False,
+            "credit_note_id": None,
+            "invoice_draft_id": None,
+            "message": str(e)
+        }
