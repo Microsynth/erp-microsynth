@@ -12,7 +12,8 @@ from erpnext.accounts.doctype.sales_invoice.sales_invoice import (SalesInvoice, 
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (get_alternative_account,
                                          get_alternative_income_account,
-                                         send_email_from_template)
+                                         send_email_from_template,
+                                         has_webshop_service)
 from microsynth.microsynth.doctype.credit_account.credit_account import create_credit_account
 from microsynth.microsynth.report.customer_credits.customer_credits import (
     build_transactions_with_running_balance,
@@ -1088,12 +1089,19 @@ def check_promo_conditions(delivery_note_doc, promo_credit_settings):
 
 def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_settings):
     from microsynth.microsynth.webshop import create_deposit_invoice
-    if promo_credit_amount <= 0:
+    if promo_credit_amount < 0.01:
         return None
+
+    if 'Oligos' in [p.product_type for p in promo_credit_settings.ca_product_types]:
+        has_InvoiceByDefaultCompany = has_webshop_service(delivery_note_doc.customer, "InvoiceByDefaultCompany")
+        company = delivery_note_doc.company if has_InvoiceByDefaultCompany else "Microsynth AG"
+    else:
+        company = delivery_note_doc.company
+
     existing_credit_account = frappe.db.get_value("Credit Account",
         filters={
             "account_type": "Enforced Credit",
-            "company": delivery_note_doc.company,
+            "company": company,
             "customer": delivery_note_doc.customer,
             "currency": delivery_note_doc.currency,
             "status": "Active",
@@ -1116,7 +1124,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
             account_name=promo_credit_settings.credit_account_name,
             account_type="Enforced Credit",
             customer_id=delivery_note_doc.customer,
-            company=delivery_note_doc.company,
+            company=company,
             currency=delivery_note_doc.currency,
             contact_id=delivery_note_doc.contact_person,
             product_types=[pt.product_type for pt in promo_credit_settings.ca_product_types],
@@ -1131,7 +1139,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         amount=promo_credit_amount,
         currency=delivery_note_doc.currency,
         description=promo_credit_settings.credit_item_name,
-        company=delivery_note_doc.company,
+        company=company,
         customer=delivery_note_doc.customer,
         customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.
         ignore_permissions=True,
@@ -1141,7 +1149,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         sales_invoice_id = result.get("reference")
         book_promo_credit_sales_invoice(
             sales_invoice_id,
-            delivery_note_doc.company,
+            company,
             "AC-6600"
         )
         return sales_invoice_id
@@ -1154,7 +1162,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
 
 def check_and_create_promo_credit(delivery_note):
     """
-    bench execute microsynth.microsynth.credits.check_and_create_promo_credit --kwargs "{'delivery_note_id': 'DN-GOE-26003858'}"
+    bench execute microsynth.microsynth.credits.check_and_create_promo_credit --kwargs "{'delivery_note': 'DN-GOE-26003858'}"
     """
     from frappe.model.document import Document
     if isinstance(delivery_note, Document):
