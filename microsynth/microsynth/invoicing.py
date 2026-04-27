@@ -2848,28 +2848,43 @@ def change_customer_company(sales_invoice_name, new_customer, new_company):
 
     # Clear references to previous documents
     for item in doc.items:
-        item.sales_order = None
-        item.delivery_note = None
-
-    doc.taxes = []
-
-    for item in doc.items:
+        item.sales_order = ""
+        item.so_detail = ""
+        item.delivery_note = ""
+        item.dn_detail = ""
         item.income_account = None
         item.expense_account = None
+
+        if old_company != new_company:
+            item.cost_center = None
+            item.warehouse = None
+
+    doc.taxes = []
+    doc.taxes_and_charges = None
+
+    if old_company != new_company:
+        doc.cost_center = None
+        doc.debit_to = None
 
     # Set new values
     doc.customer = new_customer
     doc.company = new_company
 
+    # frappe.log_error(f"Taxes: {doc.taxes}, Taxes and Charges: {doc.taxes_and_charges}, Cost Center: {doc.cost_center}, Debit To: {doc.debit_to}", "invoicing.change_customer_company")
     doc.set_missing_values()
+    doc.set_taxes()
     doc.calculate_taxes_and_totals()
+    # doc.run_method("set_missing_values")
+    # doc.run_method("set_taxes")
+    # doc.run_method("calculate_taxes_and_totals")
+    # frappe.log_error(f"After fetching values - Taxes: {doc.taxes}, Taxes and Charges: {doc.taxes_and_charges}, Cost Center: {doc.cost_center}, Debit To: {doc.debit_to}", "invoicing.change_customer_company")
 
     # Restore contact person after potential overrides
     doc.contact_person = original_contact_person
 
     # Ensure mandatory taxes template exists
     if not doc.taxes_and_charges:
-        frappe.throw(_("Sales Taxes and Charges Template is required after changing Customer/Company."))
+        frappe.throw(_("Unable to fetch required Sales Taxes and Charges Template after changing Customer/Company."))
 
     doc.save()
 
