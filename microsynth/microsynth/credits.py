@@ -1150,7 +1150,7 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         book_promo_credit_sales_invoice(
             sales_invoice_id,
             company,
-            "AC-6600"
+            promo_credit_settings.expense_account_item,
         )
         return sales_invoice_id
     else:
