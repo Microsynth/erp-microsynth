@@ -35,6 +35,7 @@ from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import prepare_data as prepare_zugferd_data
 
 from microsynth.microsynth.purchasing import create_pi_from_si
+from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (
     get_physical_path,
@@ -2828,6 +2829,9 @@ def create_cn_and_invoice_draft(sales_invoice_id):
 
 @frappe.whitelist()
 def change_customer_company(sales_invoice_name, new_customer, new_company):
+    """
+    bench execute microsynth.microsynth.invoicing.change_customer_company --kwargs "{'sales_invoice_name': 'SI-GOE-23002450', 'new_customer': '8003', 'new_company': 'Microsynth Austria GmbH'}"
+    """
     doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
 
     if doc.docstatus != 0:
@@ -2859,9 +2863,6 @@ def change_customer_company(sales_invoice_name, new_customer, new_company):
             item.cost_center = None
             item.warehouse = None
 
-    doc.taxes = []
-    doc.taxes_and_charges = None
-
     if old_company != new_company:
         doc.cost_center = None
         doc.debit_to = None
@@ -2870,15 +2871,28 @@ def change_customer_company(sales_invoice_name, new_customer, new_company):
     doc.customer = new_customer
     doc.company = new_company
 
-    # frappe.log_error(f"Taxes: {doc.taxes}, Taxes and Charges: {doc.taxes_and_charges}, Cost Center: {doc.cost_center}, Debit To: {doc.debit_to}", "invoicing.change_customer_company")
-    doc.set_missing_values()
-    doc.set_taxes()
-    doc.calculate_taxes_and_totals()
-    # doc.run_method("set_missing_values")
-    # doc.run_method("set_taxes")
-    # doc.run_method("calculate_taxes_and_totals")
-    # frappe.log_error(f"After fetching values - Taxes: {doc.taxes}, Taxes and Charges: {doc.taxes_and_charges}, Cost Center: {doc.cost_center}, Debit To: {doc.debit_to}", "invoicing.change_customer_company")
+    category = "Material" if doc.get('product_type') in ["Oligos", "Material"] else "Service"
+    if doc.get('oligos') and len(doc.get('oligos')) > 0:
+        category = "Material"
 
+    taxes = find_dated_tax_template(
+        company=doc.company,
+        customer=doc.customer,
+        shipping_address=doc.shipping_address_name,
+        category=category,
+        date=doc.posting_date
+    )
+    doc.taxes_and_charges = taxes
+    tax_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+    doc.taxes = []
+    for t in tax_template.taxes:
+        doc.append("taxes", {
+            'charge_type': t.charge_type,
+            'account_head': t.account_head,
+            'description': t.description,
+            'cost_center': t.cost_center,
+            'rate': t.rate,
+        })
     # Restore contact person after potential overrides
     doc.contact_person = original_contact_person
 
