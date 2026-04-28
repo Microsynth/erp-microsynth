@@ -548,7 +548,7 @@ function open_correct_stock_dialog(frm) {
                 options: "Warehouse",
                 label: "Warehouse",
                 reqd: 1,
-                default: "Stores - BAL",
+                default: "Stores - BAL",  // TODO: set based on user
                 onchange: () => load_batches()
             },
             {
