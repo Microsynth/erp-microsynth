@@ -244,8 +244,11 @@ frappe.ui.form.on('QM Nonconformity', {
             frm.add_custom_button(__("Request Corrective Action"), function () {
                 request_qm_action("Corrective Action");
             }).addClass("btn-primary");
-        }
 
+            frm.add_custom_button(__("Request Effectiveness Check"), function() {
+                request_qm_action("NC Effectiveness Check");
+            }).addClass("btn-primary");
+        }
 
         // Add button to create a Change Request
         if (["Completed"].includes(frm.doc.status)
