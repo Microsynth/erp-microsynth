@@ -505,6 +505,8 @@ function display_mr_owners_and_storage_locations(frm) {
                                     comment_html += `</tr>`;
                                 });
                                 comment_html += `</tbody></table></div>`;
+                                // Remove existing comments to avoid duplicates
+                                frm.dashboard.clear_comments();
                                 // Add dashboard comment/banner
                                 frm.dashboard.add_comment(comment_html, 'blue', true);
                             });
