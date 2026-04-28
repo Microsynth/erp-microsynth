@@ -2989,7 +2989,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         receipt.posting_time = posting_dt.time()
         receipt.remarks = f"UOM migration receipt for {old_item_code}"
 
-        for r in stock_rows:
+        for r in issue.items:  # base this on the issued material according to Lars
             if target_has_batch_no:
                 batch_no = r.get("batch_no") or f"[NA]-{item_code}"
                 if batch_no and not frappe.db.exists("Batch", batch_no):
@@ -3005,12 +3005,12 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             receipt.append("items", {
                 "item_code": item_code,
                 "qty": r.get("qty"),
-                "t_warehouse": r.get("s_warehouse") or r.get("warehouse"),  # TODO: stock_rows have no s_warehouse
-                "cost_center": r.get("cost_center") or cost_center,  # TODO: stock_rows have no cost_center
+                "t_warehouse": r.get("s_warehouse"),
+                "cost_center": r.get("cost_center"),
                 "batch_no": batch_no,
                 "uom": target_stock_uom,
                 "conversion_factor": 1,
-                "basic_rate": r.get("basic_rate") or r.get("valuation_rate") or 0.01  # TODO: stock_rows have no basic_rate
+                "basic_rate": r.get("basic_rate") or 0.01
             })
         receipt.insert()
         receipt.submit()
@@ -3042,7 +3042,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
     bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
-    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': False, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Items from '{input_filepath}' ...")
@@ -3068,7 +3068,7 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
                 print("No changes specified. Skipping.")
                 continue
             if new_has_batch_no == 0 and batch_type in ("Generic", "Standard"):
-                print(f"Input conflict: Cannot set has_batch_no to 0 while batch_type is {batch_type}. Skipping.")
+                print(f"ERROR: Input conflict: Cannot set has_batch_no to 0 while batch_type is {batch_type}. Skipping.")
                 continue
             try:
                 change_item_uom_and_has_batch_no(
