@@ -22,6 +22,10 @@ class CreditAccount(Document):
         if is_existing and original.account_type != "Legacy" and self.account_type == "Legacy":
             frappe.throw("Changing Account Type to Legacy is not allowed.")
 
+        # Do not allow empty Product Types
+        if not self.product_types or len(self.product_types) == 0:
+            frappe.throw("At least one Product Type must be set.")
+
         # Ensure that once there are transactions, certain fields cannot be changed
         if is_existing and (self.has_transactions or original.has_transactions):
             if self.customer != original.customer:
