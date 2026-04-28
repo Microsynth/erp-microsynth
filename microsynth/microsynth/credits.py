@@ -78,9 +78,11 @@ def get_applicable_customer_credits(customer, company, credit_accounts):
     enforced_credits = []
     standard_credits = []
 
-    for credit in reversed(raw_customer_credits):  # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
+    for credit in reversed(raw_customer_credits):                   # raw_customer_credits are sorted newest to oldest. We want to allocate oldest credits first.
         if 'outstanding' in credit and flt(credit['outstanding']) >= 0.01:
-            if credit['credit_account'] in credit_accounts:
+            if credit['account_type'] == "Enforced Credit":
+                enforced_credits.append(credit)
+            elif credit['credit_account'] in credit_accounts:
                 standard_credits.append(credit)
 
     return enforced_credits + standard_credits
@@ -143,9 +145,13 @@ def allocate_credits(sales_invoice_doc):
         credit_account_ids = get_credit_accounts(sales_order_ids.pop())
 
     # get applicable customer credits
-    raw_customer_credits = get_available_credit_accounts(sales_invoice_doc.company, sales_invoice_doc.currency, sales_invoice_doc.customer, product_types=[sales_invoice_doc.product_type])
-    customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, [entry['name'] for entry in raw_customer_credits])
-    # print(f"Raw customer credits: {raw_customer_credits=}\n\nApplicable customer credits for Sales Invoice '{sales_invoice_doc.name}': {customer_credits=}")
+    raw_customer_credits = get_applicable_customer_credits(sales_invoice_doc.customer, sales_invoice_doc.company, credit_account_ids)
+    # ensure to only alllocate Active Credit Accounts
+    customer_credits = [
+        credit
+        for credit in raw_customer_credits
+        if credit.get('credit_account_status') != 'Disabled'
+    ]
     # # total_customer_credit is needed only for the print format --> refactor later
     # total_customer_credit = get_total_credit(sales_invoice_doc.customer, sales_invoice_doc.company, credit_type)
 
@@ -806,7 +812,7 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
     """
     Returns active, non-expired Credit Accounts for the given company, currency, and customer.
     If product_types is provided, it filters by them.
-    If a Credit Account has no Product Types, it is not available.
+    If a Credit Account has no Product Types, it is returned even when product_types is given.
 
     bench execute microsynth.microsynth.credits.get_available_credit_accounts --kwargs "{'company': 'Microsynth Austria GmbH', 'currency': 'EUR', 'customer': '840931', 'product_types': ['Oligos', 'Project']}"
     """
@@ -824,17 +830,13 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
         "`tabCredit Account`.`status` = 'Active'",
         "(`tabCredit Account`.`expiry_date` IS NULL OR `tabCredit Account`.`expiry_date` = '' OR `tabCredit Account`.`expiry_date` >= %(today)s)"
     ]
+    # Apply special filter only if product_types provided
     if product_types:
-        having_clause = """
-            HAVING SUM(
-                CASE
-                    WHEN `tabProduct Type Link`.`product_type` IN %(product_types)s THEN 1
-                    ELSE 0
-                END
-            ) > 0
-        """
-    else:
-        having_clause = "HAVING COUNT(`tabProduct Type Link`.`product_type`) > 0"
+        # Match product types OR include accounts with no product types at all
+        conditions.append(
+            "(`tabProduct Type Link`.`product_type` IN %(product_types)s "
+            "OR `tabProduct Type Link`.`product_type` IS NULL)"
+        )
     if account_type:
         conditions.append("`tabCredit Account`.`account_type` = %(account_type)s")
 
@@ -863,7 +865,6 @@ def get_available_credit_accounts(company, currency, customer, product_types=Non
             `tabCredit Account`.`account_name`,
             `tabCredit Account`.`account_type`,
             `tabCredit Account`.`expiry_date`
-        {having_clause}
         ORDER BY
             `tabCredit Account`.`account_type`,
             `tabCredit Account`.`expiry_date`,
