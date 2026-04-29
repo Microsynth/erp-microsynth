@@ -2717,6 +2717,9 @@ def overwrite_item_defaults(item):
 
 
 def item_before_save(item, event):
+    user = frappe.session.user
+    if user_has_role(user, "Purchase Item Manager") and not item.item_group == "Purchasing" and not user_has_role(user, "Sales Item Manager"):
+         frappe.throw("As a <b>Purchase Item Manager</b>, you are only allowed to edit Items of the Item Group <b>Purchasing</b>.")
     update_item_defaults(item)
     if item.stock_uom == "Carton":
         frappe.throw("Carton is not a valid stock unit. Please consider using 'Box' instead.")
