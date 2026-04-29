@@ -309,7 +309,8 @@ def update_supplier_item(data):
                                                  "uom": data.get("purchase_uom") or item.purchase_uom or data.get("stock_uom") or item.stock_uom,
                                                  "currency": data.get("currency"),
                                                  "price_list": price_list},
-                                        fields=["name"])
+                                        fields=["name"],
+                                        ignore_permissions=True)
         if len(item_prices) == 1:
             price = frappe.get_doc("Item Price", item_prices[0].get("name"))
             if abs(price.price_list_rate - data["price_list_rate"]) > 0.0001:
@@ -328,7 +329,7 @@ def update_supplier_item(data):
             price.currency = data.get("currency")
             price.min_qty = 1
             price.uom = data.get("purchase_uom") or item.purchase_uom or data.get("stock_uom") or item.stock_uom
-            price.insert()
+            price.insert(ignore_permissions=True)
 
     # Update Supplier Item child table entry and default_supplier of the given company if necessary
     if data.get("supplier_part_no") or supplier:
