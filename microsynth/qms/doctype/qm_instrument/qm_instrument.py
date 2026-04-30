@@ -120,6 +120,17 @@ class QMInstrument(Document):
         """, as_dict=True)
         return changes
 
+    def print_due_label(self):
+        """
+        Print a label for the due qualifications/verification/calibrations of this instrument to stick on the instrument.
+        """
+        due_events = get_due_qualifications(self.name, self.instrument_class, self.acquisition_date)
+        label = f"QM Instrument: {self.instrument_name} ({self.name})\n"
+        for event in due_events:
+            label += f"{event['qualification_type']} due: {event['due_date']}\n"
+        # TODO: print the label
+        return label
+
 
 def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
     """

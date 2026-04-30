@@ -305,6 +305,14 @@ function add_custom_buttons(frm, isProcessOwner) {
                 show_location_dialog(frm);
             });
         }
+
+        // Add button "Print Label"
+        if ((is_qau || is_manager || isProcessOwner) && frm.doc.status !== 'Disposed') {
+            frm.add_custom_button(__('Print Label'), function() {
+                frappe.msgprint(__('Not yet implemented'));
+                //window.open(`/api/method/microsynth.qms.doctype.qm_instrument.qm_instrument.print_label?instrument_name=${frm.doc.name}`, '_blank');
+            });
+        }
     }
 }
 
