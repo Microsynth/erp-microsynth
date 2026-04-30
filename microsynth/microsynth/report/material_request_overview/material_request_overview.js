@@ -588,7 +588,8 @@ function open_confirmation_dialog(selected, report) {
                     'schedule_date': values.schedule_date,
                     'company': values.company,
                     'comment': values.comment || '',
-                    'supplier': values.supplier
+                    'supplier': values.supplier,
+                    'requested_by': frappe.session.user,
                 },
                 callback(r) {
                     if (!r.exc && r.message) {
