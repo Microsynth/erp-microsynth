@@ -2927,8 +2927,6 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             })
         issue.insert()
         issue.submit()
-        # TODO: ERROR processing Item P014765: frappe.exceptions.ValidationError:
-        # Warehouse Stores - GOE is not linked to any account, please mention the account in the warehouse record or set default inventory account in company Microsynth Seqlab GmbH.
 
     # 5. Rename & disable old item
     old_item_code = item_code
@@ -2947,7 +2945,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         old_item.disabled = 1
         old_item.add_comment(
             "Comment",
-            f"Disabled due to Stock UOM / has_batch_no migration from {item_doc.stock_uom} to {target_stock_uom} and/or has_batch_no change, see new Item {old_item_code}"
+            f"Disabled due to Stock UOM / `has_batch_no` migration from {item_doc.stock_uom} to {target_stock_uom} and/or `has_batch_no` change, see new Item {old_item_code}"
         )
         old_item.save()
 
@@ -3041,8 +3039,8 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     Batch processing for change_item_uom_and_has_batch_no using a CSV file with columns:
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
-    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
-    bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': False, 'verbose': True}"
+    sudo bench --site erp-test.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
+    sudo bench --site erp.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Items from '{input_filepath}' ...")
