@@ -2776,7 +2776,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         - Placeholder batches ([NA]-<item_code>) may group stock artificially
         - Only supports single-company items (based on warehouses)
 
-    bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P001034', 'new_stock_uom': 'Bottle', 'new_has_batch_no': 1, 'dry_run': False, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P020001', 'new_stock_uom': 'Bottle', 'dry_run': True, 'verbose': True}"
     """
     def log(msg):
         if verbose:
@@ -2872,7 +2872,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     if not stock_rows:
         # Check for non-Cancelled Material Requests and Purchase Orders
         material_requests = frappe.get_all("Material Request Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
-        purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
+        purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2], ['qty', '>', 0]], fields=["name"])
         if material_requests or purchase_orders:
             log(f"WARNING: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
             return
@@ -3039,8 +3039,8 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     Batch processing for change_item_uom_and_has_batch_no using a CSV file with columns:
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
-    sudo bench --site erp-test.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-22_oligo_items_to_change.csv', 'dry_run': False, 'verbose': True}"
-    sudo bench --site erp.microsynth.local execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-01_Oligo_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
         print(f"INFO: Items from '{input_filepath}' ...")
