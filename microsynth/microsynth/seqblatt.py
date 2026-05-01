@@ -13,7 +13,7 @@ from frappe.utils import get_url_to_form
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 from microsynth.microsynth.naming_series import get_naming_series
-from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier, get_customer
+from microsynth.microsynth.utils import validate_sales_order, has_items_delivered_by_supplier, get_customer, get_sql_list
 from microsynth.microsynth.shipping import create_receiver_address_lines
 
 
@@ -234,7 +234,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         # Batch enable Customers (only fetch and modify disabled ones)
         disabled_customers = []
         if customers_to_enable:
-            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", list(customers_to_enable)], "disabled": 1}, fields=["name"])
+            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", get_sql_list(list(customers_to_enable))], "disabled": 1}, fields=["name"])
             for c in disabled_customers_to_enable:
                 customer_doc = frappe.get_doc("Customer", c.name)
                 customer_doc.disabled = 0
