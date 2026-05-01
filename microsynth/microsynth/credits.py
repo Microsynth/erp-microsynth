@@ -373,7 +373,7 @@ def create_promotion_credit_account(account_name, customer_id, company, webshop_
         customer_order_number="",
         ignore_permissions=True,
         transmit_invoice=False,
-        allow_recharge=True
+        allow_recharge=False
     )
     if not response['success']:
         frappe.throw(response.get('message'))
@@ -1141,7 +1141,8 @@ def create_promo_credit(delivery_note_doc, promo_credit_amount, promo_credit_set
         customer=delivery_note_doc.customer,
         customer_order_number=delivery_note_doc.name,  # TODO: What to provide as po_no for the deposit invoice? It is mandatory, but could be e.g. an empty string.
         ignore_permissions=True,
-        transmit_invoice=False
+        transmit_invoice=False,
+        allow_recharge=True
     )
     if result.get("success"):
         sales_invoice_id = result.get("reference")
