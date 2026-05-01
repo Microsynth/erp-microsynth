@@ -58,8 +58,8 @@ def import_log_book_entries(verbose=False):
     At the BASE_PATH, the system expects to find one .txt file and folders "Archive" and "Errors". The method will move processed files to "Archive" and files with errors to "Errors".
     The .txt file is expected to have the following format:
 
-    ID	Date of Occurrence	Type	Description	Target Status Instrument	Filename
-    QMI-00001	12.12.2022	Verification	The thermometer was successfully verified by CGr. Additional verification comment: No Comment 06	Active	CoA_QMI-00001_Verification_260420_v01.pdf
+    ID	Date of Occurrence	Type	Description	Target Status Logbook Entry	Target Status Instrument	Filename
+    QMI-01500	19.08.2025	Calibration	Calibration of the pipette was performed by external ISO/IEC accredited service provider	Closed	NA	19G98658.pdf
 
     The .pdf file is expected to be in the same folder and will be attached to the QM Log Book entry to be created.
     The method will create a QM Log Book entry for each row in the .txt file (except the header) and link it to the corresponding QM Instrument.
@@ -67,9 +67,9 @@ def import_log_book_entries(verbose=False):
 
     bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries --kwargs "{'verbose': True}"
     """
-    BASE_PATH = "" #frappe.get_value("... Settings", "... Settings", "TODO")
+    BASE_PATH = '/mnt/erp_share/Quality_Management/certificates_to_import' #frappe.get_value("... Settings", "... Settings", "TODO")
     if not BASE_PATH:
-        frappe.throw("... Settings: ... path is not set")
+        frappe.throw("... Settings: Certificate import path is not set")
     ARCHIVE_FOLDER = "Archive"
     ERROR_FOLDER = "Errors"
 
@@ -128,26 +128,31 @@ def import_log_book_entries(verbose=False):
 
             for line in lines[1:]:
                 parts = line.split("\t")
-                if len(parts) < 6:
+                if len(parts) < 7:
                     raise Exception(f"Invalid row: {line}")
 
-                instrument_id, date_str, entry_type, description, target_status, pdf_name = parts
+                instrument_id, date_str, entry_type, description, target_status_logbook_entry, target_status_instrument, pdf_name = parts
 
                 if not frappe.db.exists("QM Instrument", instrument_id):
-                    raise Exception(f"Instrument {instrument_id} not found")
+                    raise Exception(f"Instrument '{instrument_id}' not found")
+
+                if target_status_logbook_entry not in ["Closed", "To Review", "Draft"]:
+                    raise Exception(f"Invalid Target Status for Log Book Entry: '{target_status_logbook_entry}'")
 
                 date = _parse_date(date_str)
 
                 # Create log book entry
                 doc = frappe.get_doc({
                     "doctype": "QM Log Book",
-                    "status": "Draft",
+                    "status": target_status_logbook_entry,
                     "entry_type": entry_type,
                     "date": date,
                     "description": description,
                     "document_type": "QM Instrument",
                     "document_name": instrument_id
                 }).insert()
+                if target_status_logbook_entry in ["Closed", "To Review"]:
+                    doc.submit()
 
                 if verbose:
                     print(f"Created {doc.name}")
@@ -160,9 +165,9 @@ def import_log_book_entries(verbose=False):
                     _attach_file(doc, pdf_path)
 
                 # Update QM Instrument status
-                if target_status:
+                if target_status_instrument and target_status_instrument.lower() != "na":
                     instrument_doc = frappe.get_doc("QM Instrument", instrument_id)
-                    instrument_doc.status = target_status
+                    instrument_doc.status = target_status_instrument
                     instrument_doc.save()
 
             # Archive
@@ -175,8 +180,8 @@ def import_log_book_entries(verbose=False):
 
             for line in lines[1:]:
                 parts = line.split("\t")
-                if len(parts) >= 6:
-                    pdf_name = parts[5]
+                if len(parts) >= 7:
+                    pdf_name = parts[6].strip()
                     pdf_path = _safe_join(BASE_PATH, pdf_name)
                     if os.path.isfile(pdf_path):
                         shutil.move(pdf_path, _safe_join(archive_dir, pdf_name))
