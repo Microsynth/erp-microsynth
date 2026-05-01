@@ -1540,25 +1540,28 @@ def merge_si_contents(source_si_content, target_si_content):
         target_si_doc = target_si_content
 
     # append Oligos
-    for oligo in source_si_doc.oligos:
-        target_si_doc.append("oligos", {
-            'oligo': oligo.oligo
-        })
+    if source_si_doc.get('oligos'):
+        for oligo in source_si_doc.oligos:
+            target_si_doc.append("oligos", {
+                'oligo': oligo.oligo
+            })
     # append Samples
-    for sample in source_si_doc.samples:
-        target_si_doc.append("samples", {
-            'sample': sample.sample
-        })
+    if source_si_doc.get('samples'):
+        for sample in source_si_doc.samples:
+            target_si_doc.append("samples", {
+                'sample': sample.sample
+            })
     # append Items
-    for item in source_si_doc.items:
-        target_si_doc.append("items", {
-            'item_code': item.item_code,
-            'item_name': item.item_name,
-            'qty': item.qty,
-            'rate': item.rate,
-            'sales_order': item.sales_order,
-            'cost_center': item.cost_center
-        })
+    if source_si_doc.get('items'):
+        for item in source_si_doc.items:
+            target_si_doc.append("items", {
+                'item_code': item.item_code,
+                'item_name': item.item_name,
+                'qty': item.qty,
+                'rate': item.rate,
+                'sales_order': item.sales_order,
+                'cost_center': item.cost_center
+            })
     # check discount_amount
     if source_si_doc.discount_amount > 0:
         frappe.log_error(f"Source Sales Invoice has a discount amount of {source_si_doc.discount_amount}. "
