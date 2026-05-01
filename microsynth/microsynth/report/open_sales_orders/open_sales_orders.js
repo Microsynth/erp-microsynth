@@ -15,7 +15,7 @@ frappe.query_reports["Open Sales Orders"] = {
             "fieldname": "to_date",
             "label": __("To date"),
             "fieldtype": "Date",
-            "default": frappe.datetime.add_days(frappe.datetime.get_today(), -21)
+            "default": frappe.datetime.add_days(frappe.datetime.get_today(), -31)
         },
         {
             "fieldname": "company",
