@@ -67,9 +67,9 @@ def import_log_book_entries(verbose=False):
 
     bench execute microsynth.qms.doctype.qm_log_book.qm_log_book.import_log_book_entries --kwargs "{'verbose': True}"
     """
-    BASE_PATH = '/mnt/erp_share/Quality_Management/certificates_to_import' #frappe.get_value("... Settings", "... Settings", "TODO")
+    BASE_PATH = frappe.get_value("Microsynth Settings", "Microsynth Settings", "certificate_import_path")  # or '/mnt/erp_share/Quality_Management/certificates_to_import'
     if not BASE_PATH:
-        frappe.throw("... Settings: Certificate import path is not set")
+        frappe.throw("Microsynth Settings: Certificate import path is not set")
     ARCHIVE_FOLDER = "Archive"
     ERROR_FOLDER = "Errors"
 
