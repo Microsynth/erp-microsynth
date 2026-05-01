@@ -2015,7 +2015,10 @@ Your administration team<br><br>{footer}"
 
             # create journal entry to close original invoice against intercompany account
             create_intercompany_booking(sales_invoice)
-            create_intercompany_booking(purchase_invoice)
+            if purchase_invoice:
+                create_intercompany_booking(purchase_invoice)
+            else:
+                frappe.log_error(f"Failed to create Purchase Invoice from Sales Invoice {sales_invoice.name} for intercompany transfer. No intercompany booking created on the purchase invoice side.", "invoicing.transmit_sales_invoice")
 
             # create and transmit SI-LYO
             # find DN-BAL (po_no of DN-BAL should be ID of SO-LYO)
@@ -2540,6 +2543,9 @@ def create_intercompany_booking(invoice):
     ToDo: validate process when a intercompany invoice is cancelled or returned (!)
 
     """
+    if not invoice or invoice.doctype not in ["Sales Invoice", "Purchase Invoice"]:
+        frappe.log_error(f"Invalid argument: create_intercompany_booking called with invalid or missing invoice ({invoice}).", "invoicing.create_intercompany_booking")
+        return
     jv = frappe.get_doc({
         'doctype': "Journal Entry",
         'posting_date': invoice.posting_date,
