@@ -49,6 +49,9 @@ def get_conditions(filters):
     if filters.get("regulatory_classification"):
         conditions += " AND `tabQM Instrument`.`regulatory_classification` = %(regulatory_classification)s"
 
+    if filters.get("site"):
+        conditions += " AND `tabQM Instrument`.`site` = %(site)s"
+
     if filters.get("qm_process"):
         conditions += " AND `tabQM Instrument`.`qm_process` = %(qm_process)s"
 

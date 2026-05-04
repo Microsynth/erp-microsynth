@@ -26,7 +26,14 @@ frappe.query_reports["Log Book Review Required"] = {
             "fieldname": "regulatory_classification",
             "label": "Regulatory Classification",
             "fieldtype": "Select",
-            "options": "\nGMP\nnon-GMP"
+            "options": "\nGMP\nnon-GMP",
+            "default": "non-GMP"
+        },
+        {
+            "fieldname": "site",
+            "label": "Site",
+            "fieldtype": "Select",
+            "options": "\nBalgach\nGöttingen\nLyon\nWien"
         },
         {
             "fieldname": "qm_process",
@@ -50,8 +57,8 @@ frappe.query_reports["Log Book Review Required"] = {
         if (report.page && !report.page.btn_review_all) {
             report.page.btn_review_all = report.page.add_inner_button(__('Review all'), function() {
                 const filters = report.get_filter_values(true);
-                if (!filters.qm_process) {
-                    frappe.msgprint(__('Please select a QM Process before clicking on Review all.'));
+                if (!filters.site || !filters.qm_process) {
+                    frappe.msgprint(__('Please select a Site, a QM Process and non-GMP as Regulatory Classification before clicking on Review all.'));
                     return;
                 }
                 if (!filters.regulatory_classification || filters.regulatory_classification === "GMP") {
