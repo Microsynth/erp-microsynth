@@ -359,16 +359,53 @@ def create_ups_batch_file(sales_orders):
                 ws_file.write(ws_line)
 
 
+def prepare_brady_rows(row, username, is_legacy, receipt_date):
+    row["material_code_line"] = row.get("material_code") or ""
+    row["internal_or_item_code"] = row.get("internal_code") or row.get("item_code")
+
+    # Normal mode (non-legacy)
+    if not is_legacy:
+        row["receipt_line"] = f"Receipt: {receipt_date} {username}"
+        row["shelf_life_line"] = (
+            f"Shelf life: {frappe.utils.formatdate(row.get('shelf_life_date'), 'dd.MM.yyyy')}"
+            if row.get("shelf_life_date")
+            else "Shelf life: on product"
+        )
+    # Legacy mode
+    else:
+        # No receipt / shelf life lines
+        row["receipt_line"] = ""
+        row["shelf_life_line"] = ""
+
+    # DataMatrix content
+    item = row.get("item_code", "")
+    batch = row.get("batch_no", "")
+    timestamp = row.get("timestamp", "")
+    datamatrix = f"{item}:{batch}:{timestamp}".rstrip(":")  # remove trailing colons because they are problematic in JScript datamatrix
+    row["datamatrix_content"] = (
+        f"{datamatrix}"
+        if datamatrix else ""
+    )
+
+
 @frappe.whitelist()
-def print_purchasing_labels(label_table, is_legacy=False):
-    if is_legacy:
+def print_purchasing_labels(label_table, is_legacy=False, use_brady=False):
+    """
+    bench execute microsynth.microsynth.labels.print_purchasing_labels --kwargs "{'label_table': [{'labels_to_print':1,'item_code':'P001015','item_name':'Cap A 4.0 L 89','shelf_life_date':'2029-05-03','material_code':'Cap A','internal_code':'1015','batch_no':'HMBK8790','serial_no':'','idx':1}], 'is_legacy': False, 'use_brady': True}"
+    """
+    # Template selection
+    if use_brady:
+        purchase_label_template = "microsynth/templates/includes/purchase_label_brady.html"
+    elif is_legacy:
         purchase_label_template = "microsynth/templates/includes/purchase_label_legacy_novexx.html"
     else:
         purchase_label_template = "microsynth/templates/includes/purchase_label_novexx.html"
-    label_printer_ip = "192.0.1.73"
+
+    label_printer_ip = "192.0.1.73"  # change to 192.0.1.85 for Brady printer
     label_printer_port = 9100
     user = frappe.get_user().name
     username = frappe.get_value("User", user, "username")
+    receipt_date = frappe.utils.formatdate(frappe.utils.nowdate(), "dd.MM.yyyy")
 
     # check if there is a user-specific printer
     if frappe.db.exists("User Printer", user):
@@ -390,12 +427,16 @@ def print_purchasing_labels(label_table, is_legacy=False):
             for _ in range(labels_to_print):
                 # add an individual timestamp to each label including milliseconds
                 row['timestamp'] = datetime.now().strftime("%y%m%d%H%M%S%f")[:-3]
+                if use_brady:
+                    prepare_brady_rows(row, username, is_legacy, receipt_date)
                 # Render the label
-                content = frappe.render_template(
-                    purchase_label_template,
-                    {"row": row}
-                )
-                s.send(content.encode())
+                content = frappe.render_template(purchase_label_template, {"row": row})
+                # Send to printer
+                if use_brady:
+                    s.sendall((content + "\n").encode("utf-8"))
+                else:
+                    pass
+                    s.send(content.encode())
         s.close()
     except Exception as err:
         frappe.log_error(frappe.get_traceback(), "print_purchasing_labels")

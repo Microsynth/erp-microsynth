@@ -1,0 +1,21 @@
+m m
+J
+S 0,0.5,22,24,30
+
+; === Top lines (normal mode) ===
+T 1,2,0,3,pt 7;{{ row.receipt_line }}
+T 1,5,0,3,pt 7;{{ row.shelf_life_line }}
+
+; === Material code ===
+T 1,8.4,0,3,pt 9;{{ row.material_code_line }}
+
+; === Internal or item code ===
+T 1,12,0,3,pt 9;{{ row.internal_or_item_code }}
+
+; === DataMatrix ===
+B 19,6,0,DATAMATRIX,0.3;{{ row.datamatrix_content }}
+
+; === Opening line ===
+T 1,14.5,0,3,pt 7;Opening date / initials:
+
+A 1
