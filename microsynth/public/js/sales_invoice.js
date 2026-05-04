@@ -759,32 +759,40 @@ function check_prevdoc_rates(frm) {
 
 function open_mail_dialog(frm){
     if (frm.doc.docstatus != 1) {
-        frappe.show_alert('Cannot email invoice because it is not submitted.');
+        frappe.show_alert(__('Cannot email invoice because it is not submitted.'));
     } else if (!frm.doc.invoice_to){
-        frappe.show_alert('Please enter an Invoice To Contact with a valid email address before opening the mail dialog.');
+        frappe.show_alert(__('Please enter an Invoice To Contact with a valid email address before opening the mail dialog.'));
     } else {
         frappe.call({
-            'method': 'microsynth.microsynth.utils.get_email_ids',
+            'method': 'microsynth.microsynth.invoicing.prepare_email_sending',
             'args': {
-                'contact': frm.doc.invoice_to
+                'sales_invoice_id': frm.doc.name
             },
+            'freeze': true,
+            'freeze_message': __("Preparing email..."),
             'callback': function(response) {
                 if (response.message){
-
-                    new frappe.erpnextswiss.MailComposer({
-                        'doc': cur_frm.doc,
-                        'frm': cur_frm,
-                        'subject': "Sales Invoice " + cur_frm.doc.name,
-                        'recipients': response.message,
-                        'cc': "info@microsynth.ch",
-                        'attach_document_print': true,
-                        'txt': "",
-                        'check_all_attachments': false,
-                        'replace_template': true
-                    });
-                    // note: once the mail is sent, a communication record is created and this will trigger setting the invoice_sent_on (see hooks.py, doc_events Communication on_insert)
+                    // refresh the document to get the newly attached PDF before opening the mail dialog
+                    cur_frm.reload_doc();
+                    setTimeout(() => {
+                        if (response.message.attachment_count > 1) {
+                            frappe.show_alert(__('Multiple attachments found. Please check the attachments before sending.'));
+                        }
+                        new frappe.erpnextswiss.MailComposer({
+                            'doc': cur_frm.doc,
+                            'frm': cur_frm,
+                            'subject': __("Sales Invoice") + " " + cur_frm.doc.name,
+                            'recipients': response.message.email_ids,
+                            'cc': "info@microsynth.ch",
+                            'attach_document_print': false,
+                            'txt': "",
+                            'check_all_attachments': response.message.attachment_count == 1,
+                            'replace_template': true
+                        });
+                        // note: once the mail is sent, a communication record is created and this will trigger setting the invoice_sent_on (see hooks.py, doc_events Communication on_insert)
+                    }, 300);
                 } else {
-                    frappe.show_alert('Contact ' + frm.doc.invoice_to + ' has no email IDs. Please go to this Contact and add at least one email address.');
+                    frappe.show_alert(__('Unexpected error: could not prepare email sending. Please contact IT App.'));
                 }
             }
         });

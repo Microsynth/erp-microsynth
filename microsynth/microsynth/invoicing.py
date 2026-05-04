@@ -49,7 +49,8 @@ from microsynth.microsynth.utils import (
     send_email_from_template,
     get_sql_list,
     get_customer_from_company,
-    exact_copy_sales_invoice
+    exact_copy_sales_invoice,
+    get_email_ids
 )
 from microsynth.microsynth.credits import (
     allocate_credits,
@@ -2931,4 +2932,60 @@ def change_customer_company(sales_invoice_name, new_customer, new_company):
         "customer": doc.customer,
         "company": doc.company,
         "message": _("Customer and/or company updated successfully.")
+    }
+
+
+def check_and_attach_zugferd_pdf(sales_invoice_id):
+    """
+    Takes a Sales Invoice ID
+    Checks if it has an Attachment with the name {sales_invoice_id}.pdf.
+    If yes, removes the existing attachment.
+    Creates the Microsynth ZugFeRD PDF for the Sales Invoice and attaches it to the Sales Invoice with the name {sales_invoice_id}.pdf.
+    """
+    sales_invoice_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+    # Create PDF and attach to Sales Invoice
+    pdf_content = get_microsynth_zugferd_pdf(sales_invoice_id)
+    if not pdf_content:
+        frappe.throw(_("Failed to generate PDF for Sales Invoice."))
+    # Check if there is already an attachment with the same name. If yes, remove it.
+    existing_attachment = frappe.get_all("File", filters={"attached_to_doctype": "Sales Invoice", "attached_to_name": sales_invoice_doc.name, "file_name": f"{sales_invoice_doc.name}.pdf"})
+    if existing_attachment:
+        frappe.delete_doc("File", existing_attachment[0].name)
+    attachment = frappe.get_doc({
+        "doctype": "File",
+        "file_name": f"{sales_invoice_doc.name}.pdf",
+        "attached_to_doctype": "Sales Invoice",
+        "attached_to_name": sales_invoice_doc.name,
+        "content": pdf_content,
+        "is_private": 1
+    })
+    attachment.insert()
+
+
+@frappe.whitelist()
+def prepare_email_sending(sales_invoice_id):
+    """
+    Prepares the sending of the given Sales Invoice by email:
+    1) Checks if the Sales Invoice exists and is submitted. If not, throws an error.
+    2) Checks if the Sales Invoice has an invoice_to contact. If not, throws an error.
+    3) Create and attach the PDF of the Sales Invoice.
+    4) Get the email ids of the invoice_to contact using utils.get_email_ids. If no email id is found, throws an error.
+    Return:
+    - number of attached files (frontend will show a warning and uncheck check_all_attachments if > 1)
+    - list of email ids to which the invoice will be sent
+    """
+    sales_invoice_doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+    if sales_invoice_doc.docstatus != 1:
+        frappe.throw(_("Sales Invoice must be submitted to be sent by email."))
+    if not sales_invoice_doc.invoice_to:
+        frappe.throw(_("Sales Invoice must have an 'Invoice To' contact to be sent by email."))
+    check_and_attach_zugferd_pdf(sales_invoice_id)
+    # Get email ids of invoice_to contact
+    email_ids = get_email_ids(sales_invoice_doc.invoice_to)
+    if not email_ids:
+        frappe.throw(f"Contact {sales_invoice_doc.invoice_to} does not have an email address. Please go to this Contact and add at least one email address. Email sending aborted.")
+    attachment_count = frappe.db.count("File", filters={"attached_to_doctype": "Sales Invoice", "attached_to_name": sales_invoice_doc.name})
+    return {
+        "attachment_count": attachment_count,
+        "email_ids": email_ids
     }
