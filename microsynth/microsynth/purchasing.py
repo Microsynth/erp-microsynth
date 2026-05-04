@@ -3420,3 +3420,42 @@ def backfill_item_price_uom(dry_run=True, verbose=True):
     print(f"Updated Item Prices: {updated}")
     print(f"Skipped Items: {skipped}")
     print(f"Dry Run: {dry_run}")
+
+
+def purchase_receipt_before_submit(doc, event):
+    """
+    Prevent submitting a Purchase Receipt that leads to total Item quantity higher than the Item quantity on the linked Purchase Order.
+    """
+    for item in doc.items:
+        if not item.purchase_order or not item.item_code:
+            continue
+
+        po_qty = frappe.db.get_value(
+            "Purchase Order Item",
+            {
+                "parent": item.purchase_order,
+                "item_code": item.item_code
+            },
+            "qty"
+        ) or 0
+
+        # Sum of already submitted Purchase Receipts for this PO Item
+        received_qty = frappe.db.sql(
+            """
+            SELECT SUM(`received_qty`)
+            FROM `tabPurchase Receipt Item`
+            WHERE
+                `purchase_order` = %s
+                AND `item_code` = %s
+                AND `docstatus` = 1
+            """,
+            (item.purchase_order, item.item_code)
+        )[0][0] or 0
+
+        # Total received qty if this receipt is submitted
+        total_received = received_qty + item.received_qty
+
+        if total_received > po_qty:
+            frappe.throw(
+                f"Cannot submit Purchase Receipt {doc.name} because it would lead to total received quantity {total_received} higher than ordered quantity {po_qty} for Item {item.item_code} in Purchase Order {item.purchase_order}. Please use the button <b>View > Related Documents</b> to check."
+            )
