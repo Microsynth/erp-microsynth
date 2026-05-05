@@ -11,6 +11,7 @@ from frappe.core.doctype.user.user import test_password_strength
 from frappe.utils.password import get_decrypted_password, set_encrypted_password
 
 class Signature(Document):
+    @frappe.whitelist()
     def change_approval_password(self, new_pw, retype_new_pw, old_pw=None):
         # compare new PWs
         if new_pw != retype_new_pw:
@@ -44,6 +45,7 @@ class Signature(Document):
         return {'success': True}
 
 
+    @frappe.whitelist()
     def reset_approval_password(self, resetting_user):
         if resetting_user != frappe.session.user:
             frappe.throw(f"{resetting_user=} != {frappe.session.user=}. Please tell the IT App group how you did this.")

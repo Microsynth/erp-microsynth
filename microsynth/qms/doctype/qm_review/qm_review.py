@@ -30,6 +30,7 @@ class QMReview(Document):
         return
 
 
+    @frappe.whitelist()
     def reject(self):
         # invalidate document
         update_status(self.document_name, "Invalid")

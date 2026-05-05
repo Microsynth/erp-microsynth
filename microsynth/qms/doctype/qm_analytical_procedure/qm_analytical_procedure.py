@@ -16,6 +16,7 @@ class QMAnalyticalProcedure(Document):
         self.save()
         frappe.db.commit()
 
+    @frappe.whitelist()
     def get_advanced_dashboard(self):
         html = frappe.render_template("microsynth/qms/doctype/qm_analytical_procedure/advanced_dashboard.html",
             {

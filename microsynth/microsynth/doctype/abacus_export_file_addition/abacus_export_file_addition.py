@@ -190,6 +190,7 @@ class AbacusExportFileAddition(Document):
         return transactions
 
     # prepare transfer file
+    @frappe.whitelist()
     def render_transfer_file(self, restrict_currencies=None):
         data = {
             'transactions': self.prepare_transactions()

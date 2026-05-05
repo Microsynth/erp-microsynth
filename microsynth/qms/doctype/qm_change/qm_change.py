@@ -15,10 +15,12 @@ class QMChange(Document):
         self.status = "Created"
         self.save()
 
+    @frappe.whitelist()
     def set_in_approval(self, in_approval):
         self.in_approval = in_approval
         self.save()
 
+    @frappe.whitelist()
     def get_classification_wizard(self, visible):
         html = frappe.render_template("microsynth/qms/doctype/qm_change/classification_wizard.html",
             {
@@ -27,6 +29,7 @@ class QMChange(Document):
             })
         return html
 
+    @frappe.whitelist()
     def get_advanced_dashboard(self):
         assessments = frappe.db.sql(f"""
             SELECT
@@ -72,6 +75,7 @@ class QMChange(Document):
             })
         return html
 
+    @frappe.whitelist()
     def fill_impact_table(self):
         impacts = frappe.db.get_all("QM Change Impact", fields=['name'])
         if len(self.impact) < 1:
@@ -83,12 +87,14 @@ class QMChange(Document):
             self.save()
             frappe.db.commit()
 
+    @frappe.whitelist()
     def are_all_impacts_answered(self):
         for potential_impact in self.impact:
             if not potential_impact.impact_answer:
                 return False
         return True
 
+    @frappe.whitelist()
     def has_impact(self):
         for potential_impact in self.impact:
             if potential_impact.impact_answer == 'yes':

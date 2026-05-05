@@ -18,6 +18,7 @@ from microsynth.qms.doctype.qm_action.qm_action import assign_and_notify
 
 
 class QMNonconformity(Document):
+    @frappe.whitelist()
     def get_classification_wizard(self, visible):
         user_language = frappe.get_value("User", frappe.session.user, "language")
         html = frappe.render_template("microsynth/qms/doctype/qm_nonconformity/classification_wizard.html",
@@ -29,6 +30,7 @@ class QMNonconformity(Document):
         return html
 
 
+    @frappe.whitelist()
     def set_in_approval(self, in_approval):
         self.in_approval = in_approval
         self.save()

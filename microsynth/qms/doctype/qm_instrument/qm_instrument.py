@@ -54,6 +54,7 @@ class QMInstrument(Document):
             if location_path and not location_path.startswith(site_abbreviations.get(self.site, "")):
                 frappe.throw(f"The selected Location '{location_path}' does not match the selected Site '{self.site}'. Please select a Location that is within the selected Site")
 
+    @frappe.whitelist()
     def get_advanced_dashboard(self):
         html = frappe.render_template("microsynth/qms/doctype/qm_instrument/advanced_dashboard.html",
             {
@@ -120,6 +121,8 @@ class QMInstrument(Document):
         """, as_dict=True)
         return changes
 
+    #TODO: check usage of this method and whether it needs to be whitelisted
+    @frappe.whitelist()
     def print_due_label(self):
         """
         Print a label for the due qualifications/verification/calibrations of this instrument to stick on the instrument.
