@@ -944,6 +944,21 @@ def get_higher_versions(base_name, current_version):
     return newer_docs
 
 
+def get_valid_version(base_name):
+    """
+    Find the QM Document with the same base_name prefix and the highest version with status Valid.
+    """
+    valid_docs = frappe.db.sql(f"""
+        SELECT `name`, `title`
+        FROM `tabQM Document`
+        WHERE `name` LIKE "{base_name}-%"
+            AND `status` = 'Valid'
+        ORDER BY `version` DESC
+        LIMIT 1;
+        """, as_dict=True)
+    return valid_docs[0] if valid_docs else None
+
+
 def find_duplicate_valid_documents():
     """
     Find duplicate valid QM Documents ignoring the version.

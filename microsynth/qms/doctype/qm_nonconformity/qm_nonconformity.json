@@ -86,7 +86,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Created'",
+   "collapsible_depends_on": "eval:doc.status=='Created' || doc.criticality_classification || doc.rational_for_classification || doc.regulatory_classification",
    "fieldname": "classification_section",
    "fieldtype": "Section Break",
    "label": "Classification"
@@ -116,7 +116,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Planning'||doc.status=='Plan Approval'",
+   "collapsible_depends_on": "eval:doc.status=='Planning'||doc.status=='Plan Approval'||doc.action_plan_summary||doc.plan_approval",
    "depends_on": "eval: doc.nc_type!='OOS' && doc.nc_type!='Track & Trend'",
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
@@ -146,7 +146,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Investigation'",
+   "collapsible_depends_on": "eval:doc.status=='Investigation' || doc.root_cause",
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\"",
    "fieldname": "root_cause_analysis_section",
    "fieldtype": "Section Break",
@@ -155,7 +155,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Investigation'",
+   "collapsible_depends_on": "eval:doc.status=='Investigation' || doc.occurrence_probability || doc.risk_analysis || doc.impact || doc.risk_classification",
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\" && doc.criticality_classification == \"critical\"",
    "fieldname": "risk_analysis_section",
    "fieldtype": "Section Break",
@@ -191,7 +191,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Implementation'",
+   "collapsible_depends_on": "eval:doc.status=='Implementation'||doc.occurrence_probability_after_actions||doc.risk_analysis_after_actions||doc.impact_after_actions||doc.risk_classification_after_actions",
    "depends_on": "eval:doc.nc_type != \"OOS\" && doc.nc_type != \"Track & Trend\" && doc.nc_type != \"Event\" && doc.criticality_classification == \"critical\"",
    "fieldname": "risk_analysis_after_actions_section",
    "fieldtype": "Section Break",
@@ -295,6 +295,7 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.created_on || doc.created_by",
    "fieldname": "creation1_section",
    "fieldtype": "Section Break",
    "label": "Creation"
@@ -327,6 +328,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
+   "collapsible_depends_on": "eval:(doc.qm_documents && doc.qm_documents.length)\n  || (doc.customers && doc.customers.length)\n  || (doc.instruments && doc.instruments.length)",
    "fieldname": "references_section",
    "fieldtype": "Section Break",
    "label": "References"
@@ -348,7 +350,7 @@
   {
    "allow_on_submit": 1,
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Completed'",
+   "collapsible_depends_on": "eval:doc.status=='Completed'||doc.closed_on||doc.closed_by||doc.closure_comments",
    "depends_on": "eval:doc.status!='Draft'&&doc.status!='Created'",
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
@@ -428,7 +430,6 @@
    "allow_on_submit": 1,
    "fieldname": "signature",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Signature",
    "read_only": 1
   },
@@ -470,8 +471,8 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-31 14:20:06.938642",
- "modified_by": "Administrator",
+ "modified": "2026-04-24 11:34:15.402645",
+ "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Nonconformity",
  "owner": "Administrator",

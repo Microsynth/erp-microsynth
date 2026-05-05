@@ -257,6 +257,13 @@ def get_data():
                         "is_query_report": True
                     },
                     {
+                        "type": "report",
+                        "name": "Stock Overview",
+                        "label": _("Stock Overview"),
+                        "doctype": "Item",
+                        "is_query_report": True
+                    },
+                    {
                         "type": "doctype",
                         "name": "Supplier",
                         "label": _("Supplier"),

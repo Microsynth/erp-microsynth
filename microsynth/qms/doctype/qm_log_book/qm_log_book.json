@@ -13,6 +13,12 @@
   "costs",
   "document_name",
   "section_break_6",
+  "closed_on",
+  "column_break_10",
+  "closed_by",
+  "column_break_13",
+  "closure_signature",
+  "section_break_12",
   "description",
   "naming_series",
   "amended_from"
@@ -36,7 +42,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "\nMaintanance/Service\nCheck-up\n(Re-)Qualification\nVerification/Calibration\nSoftware update\nReview\nDecommissioning\nDisposing\nOther",
+   "options": "\nMaintanance/Service\n(Re-)Qualification\nVerification\nCalibration\nSoftware update\nOther",
    "reqd": 1
   },
   {
@@ -61,7 +67,8 @@
   },
   {
    "fieldname": "section_break_6",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Closure"
   },
   {
    "allow_on_submit": 1,
@@ -91,6 +98,7 @@
    "default": "QM Instrument",
    "fieldname": "document_type",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Document Type",
    "options": "DocType",
    "read_only": 1,
@@ -99,14 +107,50 @@
   {
    "fieldname": "document_name",
    "fieldtype": "Dynamic Link",
-   "label": "Document Name",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Instrument ID",
    "options": "document_type",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "closed_on",
+   "fieldtype": "Date",
+   "label": "Closed on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "closed_by",
+   "fieldtype": "Link",
+   "label": "Closed by",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "closure_signature",
+   "fieldtype": "Data",
+   "label": "Closure Signature",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-30 16:20:31.061606",
+ "modified": "2026-04-14 17:24:10.174592",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",
@@ -139,7 +183,6 @@
    "write": 1
   },
   {
-   "amend": 1,
    "cancel": 1,
    "create": 1,
    "email": 1,

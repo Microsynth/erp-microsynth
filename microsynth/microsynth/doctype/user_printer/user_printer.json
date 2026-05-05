@@ -15,6 +15,7 @@
    "fieldname": "user",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "User",
    "options": "User",
    "reqd": 1,
@@ -24,6 +25,7 @@
    "fetch_from": "user.full_name",
    "fieldname": "full_name",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Full Name",
    "read_only": 1
   },
@@ -31,17 +33,20 @@
    "fieldname": "label_printer",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Label Printer",
    "options": "Brady Printer"
   },
   {
    "fieldname": "purchase_label_printer",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Purchase Label Printer",
    "options": "Brady Printer"
   }
  ],
- "modified": "2026-03-30 08:55:24.455748",
+ "modified": "2026-04-30 16:06:55.249930",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "Microsynth",
  "name": "User Printer",

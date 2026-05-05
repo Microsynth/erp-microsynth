@@ -40,6 +40,8 @@ frappe.ui.form.on('QM Instrument', {
         };
         const company = site_company_mapping[frm.doc.site];
 
+        frm.dashboard.clear_comment();
+
         if (frm.doc.qm_process && company) {
             frappe.call({
                 'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_qm_process_owner",
@@ -48,7 +50,7 @@ frappe.ui.form.on('QM Instrument', {
                     'company': company
                 },
                 'callback': function(r) {
-                    const isProcessOwner = (r.message === frappe.session.user);
+                    const isProcessOwner = r.message.includes(frappe.session.user);
                     if (isProcessOwner) {
                         apply_field_permissions(frm, true);
                         add_custom_buttons(frm, true);
@@ -61,6 +63,17 @@ frappe.ui.form.on('QM Instrument', {
         } else {
              apply_field_permissions(frm, false);
              add_custom_buttons(frm, false);
+        }
+
+        if (!frm.doc.__islocal) {
+            // display an advanced dashboard
+            frappe.call({
+                'method': 'get_advanced_dashboard',
+                'doc': frm.doc,
+                'callback': function (r) {
+                    cur_frm.set_df_property('overview', 'options', r.message);
+                }
+            });
         }
 
         // filter for category
@@ -79,15 +92,52 @@ frappe.ui.form.on('QM Instrument', {
             };
         };
 
-        // Show storage location path in dashboard if location is set
-        if (frm.doc.location) {
+        // remove dashboard doc (+) buttons since the creation of QM Log Book entries does not work correctly when using the (+) button in the dashboard
+        var new_btns = document.getElementsByClassName("btn-new");
+        for (var i = 0; i < new_btns.length; i++) {
+            new_btns[i].style.visibility = "hidden";
+        }
+
+        // If the instrument class is A, a (Re-)Qualification is required every 2 years
+        // If the instrument class is F, a Verification is required each year and a Calibration every 5 years
+        // If the instrument class if T or W, a Verification is required each year
+        // If the instrument is overdue, show an red alert in the dashboard
+        // If the instrument is due the next 30 days, show an orange alert in the dashboard
+        if (!frm.doc.__islocal && frm.doc.instrument_class && ['A', 'F', 'T', 'W'].includes(frm.doc.instrument_class.charAt(0))) {
             frappe.call({
-                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_location_path_string",
-                'args': { 'location_name': frm.doc.location },
-            }).then(r => {
-                if (!r.message) return;
-                frm.dashboard.clear_comment();
-                frm.dashboard.add_comment(`<b>Location:</b> ${r.message}`, 'green', true);
+                'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.get_due_qualifications",
+                'args': {
+                    'instrument_name': frm.doc.name,
+                    'instrument_class': frm.doc.instrument_class,
+                    'acquisition_date': frm.doc.acquisition_date
+                },
+                'callback': function(r) {
+                    const qualifications = r.message || [];
+                    console.log(qualifications);
+
+                    qualifications.forEach(q => {
+                        const due_date = q.due_date;
+                        const qualification_type = q.qualification_type;
+
+                        if (due_date) {
+                            const days_diff = frappe.datetime.get_diff(due_date, frappe.datetime.get_today());
+
+                            if (days_diff < 0) {
+                                frm.dashboard.add_comment(
+                                    `<b>${qualification_type} overdue since ${due_date}</b>`,
+                                    'red',
+                                    true
+                                );
+                            } else if (days_diff <= 30) {
+                                frm.dashboard.add_comment(
+                                    `<b>${qualification_type} due on ${due_date}</b>`,
+                                    'orange',
+                                    true
+                                );
+                            }
+                        }
+                    });
+                }
             });
         }
     }
@@ -124,11 +174,21 @@ function get_allowed_transitions(frm, isProcessOwner) {
             ]
         },
         {
+            condition: () => (is_manager || isProcessOwner) && is_gmp,
+            transitions: [
+                ['Active', 'Blocked'],
+                ['Active', 'Decommissioned'],
+                ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Decommissioned'],
+            ]
+        },
+        {
             condition: () => (is_manager || isProcessOwner) && is_non_gmp_a_b_c,
             transitions: [
                 ['Unapproved', 'Active'],
                 ['Decommissioned', 'Active'],
                 ['Decommissioned', 'Disposed'],
+                ['Blocked', 'Active'],
                 ['Blocked', 'Decommissioned'],
                 ['Active', 'Decommissioned']
             ]
@@ -191,8 +251,28 @@ function add_custom_buttons(frm, isProcessOwner) {
 
         frm.add_custom_button(__(label), function() {
             frm.set_value('status', to);
+
             frm.save().then(() => {
-                frappe.show_alert(__('Status changed to "{0}"', [to]));
+                if (frm.doc.instrument_class?.startsWith('A') && frm.doc.regulatory_classification === 'GMP' && to === 'Blocked') {
+                    frappe.call({
+                        'method': "microsynth.qms.doctype.qm_instrument.qm_instrument.create_logbook_entry",
+                        'args': {
+                            'qm_instrument': frm.doc.name,
+                            'entry_type': 'Other',
+                            'description': 'Instrument was blocked.',
+                            'date': frappe.datetime.get_today()
+                        },
+                        'callback': function(r) {
+                            if (r.message) {
+                                frappe.show_alert(__('Status changed to "{0}" and Log Book entry {1} created', [to, r.message]), 'success');
+                            } else {
+                                frappe.show_alert(__('Status changed to "{0}" but failed to create Log Book entry', [to]), 'error');
+                            }
+                        }
+                    });
+                } else {
+                    frappe.show_alert(__('Status changed to "{0}"', [to]));
+                }
             });
         }).addClass(color);
     });
@@ -225,6 +305,14 @@ function add_custom_buttons(frm, isProcessOwner) {
                 show_location_dialog(frm);
             });
         }
+
+        // Add button "Print Label"
+        if ((is_qau || is_manager || isProcessOwner) && frm.doc.status !== 'Disposed') {
+            frm.add_custom_button(__('Print Label'), function() {
+                frappe.msgprint(__('Not yet implemented'));
+                //window.open(`/api/method/microsynth.qms.doctype.qm_instrument.qm_instrument.print_label?instrument_name=${frm.doc.name}`, '_blank');
+            });
+        }
     }
 }
 
@@ -235,6 +323,8 @@ function lock_all_fields(frm) {
             frm.set_df_property(field.df.fieldname, 'read_only', 1);
         }
     });
+    cur_frm.get_field("qm_documents").grid.fields_map['qm_document'].read_only = 1;
+    cur_frm.get_field("qm_documents").grid.fields_map['title'].read_only = 1;
 }
 
 

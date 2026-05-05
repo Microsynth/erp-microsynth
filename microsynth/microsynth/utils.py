@@ -2717,6 +2717,9 @@ def overwrite_item_defaults(item):
 
 
 def item_before_save(item, event):
+    user = frappe.session.user
+    if user_has_role(user, "Purchase Item Manager") and not item.item_group == "Purchasing" and not user_has_role(user, "Sales Item Manager"):
+         frappe.throw("As a <b>Purchase Item Manager</b>, you are only allowed to edit Items of the Item Group <b>Purchasing</b>.")
     update_item_defaults(item)
     if item.stock_uom == "Carton":
         frappe.throw("Carton is not a valid stock unit. Please consider using 'Box' instead.")
@@ -2731,6 +2734,12 @@ def item_before_save(item, event):
                     break
             if not supplier_item_exists:
                 frappe.throw(f"Default Supplier {item_default.default_supplier} in Item Defaults of Company {item_default.company} is not present in Supplier Items table.")
+    # If there is only one Supplier in item.supplier_items, set it as default_supplier in item.item_defaults for all companies if not already set.
+    if len(item.supplier_items) == 1:
+        single_supplier = item.supplier_items[0].supplier
+        for item_default in item.item_defaults:
+            if not item_default.default_supplier:
+                item_default.default_supplier = single_supplier
 
 
 @frappe.whitelist()

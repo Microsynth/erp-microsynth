@@ -3,9 +3,12 @@
 # For license information, please see license.txt
 
 import csv
+from datetime import datetime, timedelta
 import frappe
+from frappe.utils import get_url_to_form, getdate
 from frappe.model.document import Document
-from microsynth.microsynth.purchasing import get_location_path_string
+from microsynth.qms.doctype.qm_document.qm_document import get_valid_version
+from microsynth.microsynth.purchasing import get_location_path_string, get_or_create_single_location
 
 
 class QMInstrument(Document):
@@ -51,6 +54,83 @@ class QMInstrument(Document):
             if location_path and not location_path.startswith(site_abbreviations.get(self.site, "")):
                 frappe.throw(f"The selected Location '{location_path}' does not match the selected Site '{self.site}'. Please select a Location that is within the selected Site")
 
+    def get_advanced_dashboard(self):
+        html = frappe.render_template("microsynth/qms/doctype/qm_instrument/advanced_dashboard.html",
+            {
+                'doc': self,
+                'changes': self.get_qm_changes(),
+                'qm_documents': self.get_qm_documents()
+            })
+        return html
+
+    def get_qm_documents(self):
+        """
+        Fetch a list of all QM Documents that are linked on this QM Instrument.
+        If the linked QM Document has status "Valid", it is added to the list.
+        If the linked QM Document does not have status "Valid", the method tries to find a valid version of this document by looking for documents with the same name without the version number at the end.
+        If there is exactly one valid version, this version is added to the list.
+        If there are multiple valid versions, an error is logged.
+        If there are no valid versions, the method looks for all versions of this document with docstatus 1 and adds the one with the highest version number to the list (if there are any).
+        If there are no versions with docstatus 1, nothing is added to the list.
+        """
+        relating_docs = []
+        for doc in self.qm_documents:
+            if frappe.get_value("QM Document", doc.qm_document, "status") == "Valid":
+                relating_docs.append(doc.qm_document)
+            else:
+                # try to find the valid version
+                without_version = doc.qm_document.split("-")[0]
+                valid_docs = frappe.db.sql(f"""
+                    SELECT `tabQM Document`.`name`
+                    FROM `tabQM Document`
+                    WHERE `tabQM Document`.`name` LIKE '{without_version}%'
+                        AND `tabQM Document`.`status` = 'Valid';
+                    """, as_dict=True)
+                if len(valid_docs) == 1:
+                    relating_docs.append(valid_docs[0]['name'])
+                elif len(valid_docs) > 1:
+                    frappe.log_error(f"There seem to be {len(valid_docs)} Valid versions of QM Document LIKE '{without_version}%'.", "qm_document.get_overview")
+                else:
+                    # no valid version -> take the highest version
+                    all_versions = frappe.db.sql(f"""
+                    SELECT `tabQM Document`.`name`
+                    FROM `tabQM Document`
+                    WHERE `tabQM Document`.`name` LIKE '{without_version}%'
+                        AND `tabQM Document`.`docstatus` = 1
+                    ORDER BY `tabQM Document`.`version` DESC;
+                    """, as_dict=True)
+                    if len(all_versions) > 0:
+                        relating_docs.append(all_versions[0]['name'])
+                    else:
+                        #frappe.log_error(f"There seem to be no QM Documents LIKE '{without_version}%' with docstatus 1.", "qm_document.get_overview")
+                        continue
+        return relating_docs
+
+    def get_qm_changes(self):
+        """
+        Fetch a list of all QM Changes that are not cancelled and that link to the given instrument_id using the table "QM Instrument Link"
+        """
+        changes = frappe.db.sql(f"""
+            SELECT `tabQM Change`.`name`, `tabQM Change`.`cc_type`, `tabQM Change`.`title`, `tabQM Change`.`status`, `tabQM Change`.`creation`
+            FROM `tabQM Change`
+            JOIN `tabQM Instrument Link` ON `tabQM Instrument Link`.`parent` = `tabQM Change`.`name` AND `tabQM Instrument Link`.`parenttype` = "QM Change"
+            WHERE `tabQM Instrument Link`.`qm_instrument` = "{self.name}"
+                AND `tabQM Change`.`status` != "Cancelled"
+            ORDER BY `tabQM Change`.`creation` DESC;
+        """, as_dict=True)
+        return changes
+
+    def print_due_label(self):
+        """
+        Print a label for the due qualifications/verification/calibrations of this instrument to stick on the instrument.
+        """
+        due_events = get_due_qualifications(self.name, self.instrument_class, self.acquisition_date)
+        label = f"QM Instrument: {self.instrument_name} ({self.name})\n"
+        for event in due_events:
+            label += f"{event['qualification_type']} due: {event['due_date']}\n"
+        # TODO: print the label
+        return label
+
 
 def get_allowed_category(doctype, txt, searchfield, start, page_len, filters):
     """
@@ -83,73 +163,171 @@ def get_allowed_subcategory_for_category(doctype, txt, searchfield, start, page_
     )
 
 
-def convert_price_fields(price_chf, price_eur, price_usd):
-    """
-    Takes three price strings (CHF, EUR, USD), validates and converts one into (price, currency).
-
-    Returns:
-        tuple (currency: str, price: float) if valid
-        (None, None) if invalid with printed warning
-    """
-    prices = {}
-
-    for currency, value in [('CHF', price_chf), ('EUR', price_eur), ('USD', price_usd)]:
-        try:
-            float_value = float(value)
-        except (TypeError, ValueError):
-            if value:  # print only if value is non-empty
-                print(f"Invalid number for {currency}: {value}")
-            float_value = 0.0
-        if float_value > 0:
-            prices[currency] = float_value
-
-    if len(prices) == 0:
-        #print("No valid price > 0 provided.")
-        return None, None
-
-    if len(prices) > 1:
-        print(f"WARNING: Multiple prices > 0 found: {prices}")
-        return None, None
-
-    # prices dict has exactly one item at this point (since checked before)
-    # iterating over it and picking the first is safe and efficient
-    return next(iter(prices.items()))
-
-
 @frappe.whitelist()
 def get_qm_process_owner(qm_process, company):
     """
     Returns the process owner (user) for a given QM Process and Company.
+
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.get_qm_process_owner --kwargs "{'qm_process': '3.2 Sequencing', 'company': 'Microsynth AG'}"
     """
-    owner = frappe.db.get_value(
+    owners = frappe.db.get_all(
         "QM Process Owner",
-        {"qm_process": qm_process, "company": company},
-        "process_owner"
+        filters={"qm_process": qm_process, "company": company},
+        fields=["process_owner"]
     )
-    return owner
+    return [owner["process_owner"] for owner in owners]
 
 
-def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line_length=18):
+@frappe.whitelist()
+def get_due_qualifications(instrument_name, instrument_class, acquisition_date):
     """
-    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2025-09-09_Geraeteliste.csv'}"
+    Returns a list of due qualification/verification/calibration events for the given instrument.
+    Each item: {qualification_type, due_date}
     """
-    group_mapping = {
-        '3.1 DNA/RNA Synthese': '3.1 DNA/RNA Synthesis',
-        '3.2 Balgach': '3.2 Sequencing',
-        '3.2 Lyon': '3.2 Sequencing',
-        '3.2 Seqlab': '3.2 Sequencing',
-        '3.2 Wien': '3.2 Sequencing',
-        '3.2 Sequencing': '3.2 Sequencing',
-        '3.3 DNA/RNA Isolation': '3.3 Isolation',
-        '3.3 Isolation': '3.3 Isolation',
-        '3.4 Genotyping': '3.4 Genotyping',
-        '3.5 Real Time PCR': '3.5 PCR',
-        '3.5 PCR': '3.5 PCR',
-        '3.6 Library Prep': 'TODO',
-        '3.6 NGS': '3.6 NGS',
-        '3.7 NGS': '3.6 NGS',
-        '5.1 Instrumente': '5.1 Instruments',
-        '5.1 Instruments': '5.1 Instruments'
+    def get_last_entry_date(entry_type):
+        return frappe.db.get_value(
+            "QM Log Book",
+            {
+                "document_type": "QM Instrument",
+                "document_name": instrument_name,
+                "entry_type": entry_type,
+                "docstatus": 1
+            },
+            "date",
+            order_by="date desc"
+        )
+
+    def to_date(value):
+        return getdate(value) if value else None
+
+    def get_due_date(entry_type, interval_days):
+        last_date = get_last_entry_date(entry_type)
+        base_date = to_date(last_date) or acquisition_date
+        return (base_date + timedelta(days=interval_days)).strftime("%Y-%m-%d")
+
+    # ensure acquisition_date is a date object
+    acquisition_date = to_date(acquisition_date)
+    iclass = instrument_class[0] if instrument_class else None
+
+    rules = {
+        'A': [("(Re-)Qualification", 2 * 365)],
+        'P': [("Verification", 365), ("Calibration", 5 * 365)],
+        'T': [("Verification", 365)],
+        'W': [("Verification", 365)],
+    }
+    return [
+        {
+            "qualification_type": entry_type,
+            "due_date": get_due_date(entry_type, days)
+        }
+        for entry_type, days in rules.get(iclass, [])
+    ]
+
+
+@frappe.whitelist()
+def is_gmp(qm_instrument):
+    """
+    Returns True if the given QM Instrument is GMP relevant, i.e. if it has regulatory classification "GMP" and is not disposed.
+    """
+    result = frappe.db.get_value("QM Instrument", qm_instrument, ["regulatory_classification"])
+    if result:
+        return result == "GMP"
+    return False
+
+
+def get_or_create_location(site, floor, room, fridge_freezer):
+    """
+    Returns the final Location ID/name (creates any missing lower-level locations except site).
+
+    Hierarchy: All Locations → Site → Floor → Room → Fridge/Freezer
+    """
+    if not site:
+        frappe.throw("Site is required to determine location.")
+
+    # Site (must exist)
+    site_location = frappe.db.exists("Location", {"location_name": site})
+    if not site_location:
+        frappe.throw(f"Site location '{site}' not found under 'All Locations'.")
+
+    if not floor:
+        return site_location
+
+    # Floor (create if missing)
+    floor_location = get_or_create_single_location(
+        location_name=floor,
+        parent_location=site_location,
+        is_group=True
+    )
+    if not room:
+        return floor_location
+
+    # Room (create if missing)
+    room_location = get_or_create_single_location(
+        location_name=room,
+        parent_location=floor_location,
+        is_group=True
+    )
+    if not fridge_freezer:
+        return room_location
+
+    # Fridge / Freezer (create if missing, leaf node)
+    fridge_freezer_location = get_or_create_single_location(
+        location_name=fridge_freezer,
+        parent_location=room_location,
+        is_group=False
+    )
+    return fridge_freezer_location
+
+
+@frappe.whitelist()
+def create_logbook_entry(qm_instrument, entry_type, description, date):
+    """
+    Creates a QM Log Book entry for a given QM Instrument.
+
+    :param qm_instrument: Name of the QM Instrument
+    :param entry_type: Type of the logbook entry (e.g. "Requalification")
+    :param description: Description of the logbook entry
+    :param date: Date of the logbook entry (in format "YYYY-MM-DD")
+    """
+    logbook_entry = frappe.get_doc({
+        'doctype': "QM Log Book",
+        'document_type': "QM Instrument",
+        'document_name': qm_instrument,
+        'entry_type': entry_type,
+        'description': description,
+        'date': date,
+        'status': "Closed"
+    })
+    logbook_entry.insert()
+    logbook_entry.submit()
+    logbook_entry.status = "Closed"
+    logbook_entry.save()
+    return get_url_to_form(logbook_entry.doctype, logbook_entry.name)
+
+
+def import_qm_instruments(input_filepath, expected_line_length=23):
+    """
+    bench execute microsynth.qms.doctype.qm_instrument.qm_instrument.import_qm_instruments --kwargs "{'input_filepath': '/mnt/erp_share/JPe/260414_TestImport_Instruments.csv'}"
+    """
+    def parse_date(value):
+        try:
+            return datetime.strptime(value, "%d.%m.%Y").strftime("%Y-%m-%d")
+        except Exception:
+            return None
+
+    def clean(value, lower=False):
+        if not value:
+            return None
+        value = value.strip()
+        if not value or value.lower() == "na":
+            return None
+        return value.lower() if lower else value
+
+    site_company_mapping = {
+        'Lyon': 'Microsynth France SAS',
+        'Göttingen': 'Microsynth Seqlab GmbH',
+        'Wien': 'Microsynth Austria GmbH',
+        'Balgach': 'Microsynth AG'
     }
     instrument_class_mapping = {
         'A': 'A – Complex or computerised instrument',
@@ -161,6 +339,13 @@ def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line
         'T': 'T – Thermometer',
         'W': 'W – Balance or Scale'
     }
+    qm_processes = {p['name'] for p in frappe.db.get_all("QM Process", fields=["name"])}
+    users = {u['name'].lower() for u in frappe.db.get_all("User", fields=["name"])}
+    suppliers = {s['name'] for s in frappe.db.get_all("Supplier", fields=["name"])}
+    raw_categories = get_allowed_category(doctype="QM Instrument", txt="", searchfield="name", start=0, page_len=100, filters={})
+    allowed_categories = {row[0] for row in raw_categories}
+    subcategory_cache = {}
+
     imported_counter = 0
 
     with open(input_filepath) as file:
@@ -171,97 +356,195 @@ def import_qm_instruments(input_filepath, company='Microsynth AG', expected_line
             if len(line) != expected_line_length:
                 print(f"ERROR: Line '{line}' has length {len(line)}, but expected length {expected_line_length}. Going to continue.")
                 continue
+
             # parse values
-            device_id = line[0].strip()  # remove leading and trailing whitespaces
-            device_name = line[1].strip()
-            acquisition_date = line[2].strip()
-            serial_number = line[3].strip()
-            # critical_parameters = line[4].strip()
-            location = line[5].strip()
-            service_instructions = line[6].strip()
-            manufacturer = line[7].strip()
-            supplier_name = line[8].strip()
-            # function_control = line[9].strip()
-            process = line[10].strip()
-            price_chf = line[11].strip()
-            price_eur = line[12].strip()
-            price_usd = line[13].strip()
-            device_classification = line[14].strip()
-            # requalification_date = line[15].strip()
-            # quattek_nr = line[16].strip()
-            is_archived = line[17].strip()
+            instrument_id = clean(line[0])
+            instrument_name = clean(line[1])
+            category = clean(line[2])
+            subcategory = clean(line[3])
+            process = clean(line[4])
+            site = clean(line[5])
+            floor = clean(line[6])
+            room = clean(line[7])
+            freezer_fridge = clean(line[8])
+            instrument_class = clean(line[9])
+            regulatory_classification = clean(line[10])
+            status = clean(line[11])
+            instrument_manager = clean(line[12], lower=True)
+            deputy_instrument_manager = clean(line[13], lower=True)
+            serial_number = clean(line[14])
+            manufacturer = clean(line[15])
+            supplier = clean(line[16])
+            acquisition_date = clean(line[17])
+            software_version = clean(line[18])
+            has_service_contract = clean(line[19])
+            instrument_sop = clean(line[20])
+            last_requalification_date = clean(line[21])
+            logbook_description = clean(line[22])
+
             # validation
-            if not device_id:
-                print(f"ERROR: No 'GeräteNr.' in the following line: {line}")
-                continue
-            if not device_name:
-                print(f"ERROR: No 'Gerätename' in the following line: {line}")
-                continue
-            if not location or len(location) < 2:
-                print(f"ERROR: No 'Standort' in the following line: {line}")
-                continue
-            if not process or len(process) < 2:
-                print(f"ERROR: No 'Gruppe' in the following line: {line}")
-                continue
-            if process not in group_mapping:
-                print(f"ERROR: Unknown 'Gruppe' '{process}' in the following line: {line}")
-                continue
-            if not device_classification:
-                print(f"ERROR: No 'ABC_Kundeneinteilung' in the following line: {line}")
-                continue
-            if device_classification not in instrument_class_mapping:
-                print(f"ERROR: Unknown 'ABC_Kundeneinteilung' '{device_classification}' in the following line: {line}")
-                continue
-            if is_archived:
+            mandatory_fields = {
+                "instrument_id": instrument_id,
+                "instrument_name": instrument_name,
+                "site": site,
+                "process": process,
+                "instrument_class": instrument_class,
+                "regulatory_classification": regulatory_classification,
+                "status": status,
+                "instrument_manager": instrument_manager,
+                "acquisition_date": acquisition_date
+            }
+            # check that all mandatory fields have a non-empty value
+            invalid_fields = [name for name, value in mandatory_fields.items() if not value]
+
+            if invalid_fields:
+                print(f"ERROR: Missing/invalid fields {invalid_fields} in line: {line}")
                 continue
 
-            if price_eur or price_chf or price_usd:
-                pass
-
-            supplier = None
-            if supplier_name:
-                suppliers = frappe.get_all("Supplier", filters={'supplier_name': supplier_name}, fields=['name'])
-                if len(suppliers) > 0:
-                    supplier = suppliers[0].get('name')
-
-            name = f"QMI-{int(device_id):0{5}d}"
+            try:
+                name = f"QMI-{int(instrument_id):05d}"
+            except Exception:
+                print(f"ERROR: Invalid instrument_id '{instrument_id}' in line: {line}")
+                continue
             if frappe.db.exists("QM Instrument", name):
                 print(f"ERROR: QM Instrument {name} already exists, going to skip the following line: {line}")
                 continue
 
+            if subcategory:
+                if not category:
+                    print(f"ERROR: Subcategory is provided but Category is missing for the following line: {line}.")
+                    continue
+                else:
+                    if category not in allowed_categories:
+                        print(f"ERROR: Category '{category}' is not a valid category in the following line: {line}.")
+                        continue
+                    if category not in subcategory_cache:
+                        subcategory_cache[category] = [
+                            sub[0] for sub in get_allowed_subcategory_for_category(
+                                doctype="QM Instrument",
+                                txt="",
+                                searchfield="name",
+                                start=0,
+                                page_len=20,
+                                filters={'category': category}
+                            )
+                        ]
+                    if subcategory not in subcategory_cache[category]:
+                        print(f"ERROR: Subcategory '{subcategory}' is not a valid subcategory for Category '{category}' in the following line: {line}.")
+                        continue
+
+            if process not in qm_processes:
+                print(f"ERROR: QM Process '{process}' does not exist in the system for the following line: {line}.")
+                continue
+
+            if site not in site_company_mapping:
+                print(f"ERROR: Invalid Site '{site}' in the following line: {line}.")
+                continue
+
+            if freezer_fridge and not room:
+                print(f"ERROR: Freezer/Fridge is provided but Room is missing for the following line: {line}.")
+                continue
+            if room and (not floor):
+                print(f"ERROR: Room is provided but Floor is missing for the following line: {line}.")
+                continue
+
+            if instrument_class not in instrument_class_mapping:
+                print(f"ERROR: Invalid Instrument Classification '{instrument_class}' in the following line: {line}")
+                continue
+
+            if regulatory_classification not in ['GMP', 'non-GMP']:
+                print(f"ERROR: Invalid Regulatory Classification '{regulatory_classification}' in the following line: {line}")
+                continue
+
+            if status not in ['Unapproved', 'Active', 'Blocked', 'Decommissioned', 'Disposed']:
+                print(f"ERROR: Invalid Status '{status}' in the following line: {line}")
+                continue
+
+            if instrument_manager not in users:
+                print(f"ERROR: Instrument Manager '{instrument_manager}' does not exist in the system for the following line: {line}.")
+                continue
+            if deputy_instrument_manager and deputy_instrument_manager not in users:
+                print(f"ERROR: Deputy Instrument Manager '{deputy_instrument_manager}' does not exist in the system for the following line: {line}.")
+                continue
+
+            if supplier and supplier not in suppliers:
+                print(f"ERROR: Supplier '{supplier}' does not exist in the system for the following line: {line}.")
+                continue
+
+            if instrument_sop and not last_requalification_date:
+                print(f"ERROR: Instrument SOP is provided but Last Requalification Date is missing for the following line: {line}.")
+                continue
+
+            if last_requalification_date and not instrument_sop:
+                print(f"ERROR: Last Requalification Date is provided but Instrument SOP is missing for the following line: {line}.")
+                continue
+
+            # get or create location
+            location = None
+            if site:
+                try:
+                    location = get_or_create_location(site, floor, room, freezer_fridge)
+                except Exception as e:
+                    print(f"ERROR: Failed to get or create location for the following line: {line}. Exception: {e}")
+                    continue
+
+            # reformat dates from dd.mm.yyyy to yyyy-mm-dd
+            acquisition_date = parse_date(acquisition_date)
+            if not acquisition_date:
+                print(f"ERROR: Invalid acquisition date in the following line: {line}.")
+                continue
+            last_requalification_date = parse_date(last_requalification_date) if last_requalification_date else None
+
+            # create QM Instrument
             qm_instrument = frappe.get_doc({
-                # TODO: Rework
                 'doctype': "QM Instrument",
-                'device_name': device_name,
-                'category': instrument_class_mapping[device_classification],
-                'status': 'Unapproved',  # TODO: mandatory, but how to determine?
-                'qm_process': group_mapping[process],
-                'site': location if location in ['Lyon', 'Göttingen', 'Wien'] else 'Balgach',
+                'instrument_name': instrument_name,
+                'category': category,
+                'subcategory': subcategory,
+                'qm_process': process,
+                'site': site,
+                'location': location,
+                'instrument_class': instrument_class_mapping[instrument_class],
+                'regulatory_classification': regulatory_classification,
+                'status': status,
+                'instrument_manager': instrument_manager,
+                'deputy_instrument_manager': deputy_instrument_manager,
                 'serial_no': serial_number,
-                'service_instructions': service_instructions,
                 'manufacturer': manufacturer,
-                'supplier': supplier
+                'supplier': supplier,
+                'acquisition_date': acquisition_date,
+                'software_version': software_version,
+                'has_service_contract': 'Yes' if has_service_contract and has_service_contract.lower() in {'yes','y','true','1'} else 'No'
             })
             qm_instrument.name = name
             # disable automatic name generation
             qm_instrument.flags.name_set = True
             qm_instrument.insert()
 
-            currency, price = convert_price_fields(price_chf, price_eur, price_usd)
+            if instrument_sop:
+                # try to find valid version of the SOP
+                valid_sop_version = get_valid_version(instrument_sop)
+                if valid_sop_version:
+                    qm_instrument.append("qm_documents", {
+                        "qm_document": valid_sop_version.get('name'),
+                        "title": valid_sop_version.get('title') or instrument_sop
+                    })
+                else:
+                    print(f"WARNING: No valid version found for Instrument SOP '{instrument_sop}' in the following line: {line}. Going to link the provided SOP without checking for its validity.")
+                    qm_instrument.append("qm_documents", {
+                        "qm_document": instrument_sop,
+                        "title": frappe.get_value("QM Document", instrument_sop, "title") or instrument_sop
+                    })
+                qm_instrument.save()
 
-            if acquisition_date or price:
-                price_str = f" for {price} {currency}." if price else "."
-                acq_str = f" on {acquisition_date}" if acquisition_date else ""
-                new_comment = frappe.get_doc({
-                    'doctype': 'Comment',
-                    'comment_type': "Comment",
-                    'subject': qm_instrument.name,
-                    'content': f"This device was purchased{acq_str}{price_str}",
-                    'reference_doctype': "QM Instrument",
-                    'status': "Linked",
-                    'reference_name': qm_instrument.name
-                })
-                new_comment.insert(ignore_permissions=True)
+            if last_requalification_date and logbook_description:
+                create_logbook_entry(
+                    qm_instrument=qm_instrument.name,
+                    entry_type="(Re-)Qualification",
+                    description=logbook_description,
+                    date=last_requalification_date
+                )
             imported_counter += 1
+            print(f"Successfully imported QM Instrument '{qm_instrument.name}' from the following line: {line}.")
 
     print(f"Successfully imported {imported_counter} QM Instruments.")

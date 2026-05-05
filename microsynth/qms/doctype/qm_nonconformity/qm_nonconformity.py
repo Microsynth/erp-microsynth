@@ -122,10 +122,10 @@ def check_classification(nc):
         if nc.criticality_classification != 'N/A':
             frappe.throw("Only N/A is allowed as Criticality Classification of an OOS. Please change the Classification.")
     elif nc.nc_type == 'Track & Trend':
-        if nc.criticality_classification != 'N/A':
-            frappe.throw("Only N/A is allowed as Criticality Classification of Track & Trend. Please change the Classification.")
-    elif nc.nc_type not in ['OOS', 'Track & Trend'] and nc.criticality_classification == 'N/A':
-        frappe.throw("The Criticality Classification N/A is only allowed for OOS and Track & Trend. Please change the Classification.")
+        if nc.criticality_classification != 'non-critical':
+            frappe.throw("Only non-critical is allowed as Criticality Classification of Track & Trend. Please change the Classification.")
+    elif nc.nc_type not in ['OOS'] and nc.criticality_classification == 'N/A':
+        frappe.throw("The Criticality Classification N/A is only allowed for OOS. Please change the Classification.")
 
 
 @frappe.whitelist()
@@ -202,8 +202,8 @@ def close(doc, user):
     # pull selected document
     qm_nc = frappe.get_doc("QM Nonconformity", doc)
     if qm_nc.created_by == user or user_has_role(user, "QAU"):
-        # remove deprecated closing signature
-        if hasattr(qm_nc, 'signature'):
+        # remove deprecated closing signature if exists and user does not have role QAU (only QAU need to sign closure, and if the user has role QAU, the fresh signature should not be removed)
+        if hasattr(qm_nc, 'signature') and qm_nc.signature and not user_has_role(user, "QAU"):
             qm_nc.signature = None
         # set closing user and (current) date
         qm_nc.closed_by = user

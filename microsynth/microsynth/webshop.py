@@ -4031,7 +4031,7 @@ def get_default_shipping_address(webshop_address_id):
 
 
 @frappe.whitelist()
-def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False, transmit_invoice=True):
+def create_deposit_invoice(webshop_account, account_id, amount, currency, description, company, customer, customer_order_number, ignore_permissions=False, transmit_invoice=True, allow_recharge=False):
     """
     Create a Sales Invoice to deposit customer credits.
 
@@ -4050,6 +4050,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
     * Credits will be available as soon as the payment of the Sales Invoice is received
     * ERP validates that the company, customer and currency matches the account currency
     * The description will be used to name the item. if not set (null) the standard text "Primers and Sequencing" will be shown on the Sales Invoice
+    * If allow_recharge is set to True, the deposit invoice can be created even if the Enforced or Legacy Credit Account already has transactions.
 
     bench execute microsynth.microsynth.webshop.create_deposit_invoice --kwargs "{'webshop_account': '215856', 'account_id': 'CA-000003', 'amount': 1000.00, 'currency': 'CHF', 'description': 'Primers', 'company': 'Microsynth AG', 'customer': '8003', 'customer_order_number': 'PO-12345'}"
     """
@@ -4064,7 +4065,7 @@ def create_deposit_invoice(webshop_account, account_id, amount, currency, descri
             frappe.throw(f"The given Customer '{customer}' does not match the customer '{credit_account_doc.customer}' of Credit Account '{account_id}'.")
         if credit_account_doc.currency != currency:
             frappe.throw(f"The given Currency '{currency}' does not match the currency '{credit_account_doc.currency}' of Credit Account '{account_id}'.")
-        if credit_account_doc.has_transactions and credit_account_doc.account_type in ['Enforced Credit', 'Legacy']:
+        if credit_account_doc.has_transactions and credit_account_doc.account_type in ['Enforced Credit', 'Legacy'] and not allow_recharge:
             frappe.throw(f"Not allowed to create a deposit invoice for a Credit Account of type 'Legacy' or 'Enforced Credit' that already has transactions.")
 
         # Fetch credit item from Microsynth Settings

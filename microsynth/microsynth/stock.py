@@ -1,6 +1,7 @@
 
 import json
 import frappe
+from frappe.utils import flt
 from microsynth.microsynth.utils import user_has_role
 from microsynth.microsynth.labels import print_purchasing_labels
 
@@ -130,7 +131,9 @@ def issue_material(company, user, items):
 def create_stock_entry(item, warehouse, rows, purpose):
     doc = frappe.new_doc("Stock Entry")
     doc.stock_entry_type = purpose
-    doc.company = frappe.defaults.get_user_default("Company")
+    doc.company = frappe.db.get_value("Warehouse", warehouse, "company")
+    if not doc.company:
+        frappe.throw(f"Warehouse {warehouse} does not have a company assigned.")
 
     for r in rows:
         doc.append("items", {
@@ -139,13 +142,12 @@ def create_stock_entry(item, warehouse, rows, purpose):
             "uom": item.stock_uom,
             "conversion_factor": 1,
             "basic_rate": r.get("rate", 0),
-            "valuation_rate": r.get("rate", 0),
-            "allow_zero_valuation": 1 if r.get("rate", 0) == 0 else 0,
+            "allow_zero_valuation": 0,
             "s_warehouse": warehouse if purpose == "Material Issue" else None,
             "t_warehouse": warehouse if purpose == "Material Receipt" else None,
-            "batch_no": r["batch_no"]
+            "batch_no": r["batch_no"],
+            "remarks": f"Stock correction for batch {r['batch_no']}"
         })
-
     doc.insert()
     doc.submit()
     return doc
@@ -241,9 +243,22 @@ def get_batches_with_qty(item_code, warehouse):
 def correct_stock(item_code, warehouse, rows):
     """
     Correct stock levels for a given item and warehouse based on provided batch quantities.
+    TODO: Make it work for non-batched Items as well.
+
+    rows (List[Dict]):
+    [
+        {
+            "batch_no": str,
+            "current_qty": float,  # informational only (not trusted)
+            "new_qty": float       # required, target quantity
+        },
+        ...
+    ]
+
+    bench execute microsynth.microsynth.stock.correct_stock --kwargs '{"item_code": "P002005", "warehouse": "Stores - BAL", "rows": [{"batch_no": "[NA]-P002005", "current_qty": 0, "new_qty": 10}]}'
     """
     # Check that User has Role "Stock User"
-    if not user_has_role(frappe.session.user, "Stock User"):
+    if "Stock User" not in frappe.get_roles():
         frappe.throw("You do not have permission to perform this action.")
 
     rows = frappe.parse_json(rows)
@@ -251,32 +266,42 @@ def correct_stock(item_code, warehouse, rows):
     issue_rows = []
     receipt_rows = []
     label_table = []
-    any_change = False
     generic_batch = f"[NA]-{item_code}"
 
     for row in rows:
-        batch_no = row["batch_no"]
+        batch_no = row.get("batch_no")
+        if not batch_no:
+            frappe.throw("Batch number is required")
 
-        current_qty = frappe.db.sql("""
-            SELECT IFNULL(SUM(`actual_qty`), 0)
+        result = frappe.db.sql("""
+            SELECT IFNULL(SUM(`actual_qty`), 0) AS qty
             FROM `tabStock Ledger Entry`
             WHERE
-                `item_code` = %s
-                AND `warehouse` = %s
-                AND `batch_no` = %s
+                `item_code` = %(item_code)s
+                AND `warehouse` = %(warehouse)s
+                AND `batch_no` = %(batch_no)s
                 AND `is_cancelled` = 0
-        """, (item_code, warehouse, batch_no))[0][0]
+        """, {
+            "item_code": item_code,
+            "warehouse": warehouse,
+            "batch_no": batch_no
+        }, as_dict=True)
 
-        new_qty = float(row["new_qty"])
+        current_qty = result[0].qty if result else 0
+
+        try:
+            new_qty = float(row.get("new_qty") or 0)
+        except Exception:
+            frappe.throw(f"Invalid quantity for batch {row.get('batch_no')}")
         delta = new_qty - current_qty
 
-        if abs(delta) < 0.0001:
+        delta = flt(new_qty - current_qty, precision=6)
+
+        if not delta:
             continue
 
         if batch_no == generic_batch and not frappe.db.exists("Batch", generic_batch):
             create_generic_batch(item_code, generic_batch)
-
-        any_change = True
 
         if delta < 0:
             if current_qty + delta < 0:
@@ -288,12 +313,12 @@ def correct_stock(item_code, warehouse, rows):
             })
 
         else:
-            rate = get_batch_rate(item_code, batch_no)
+            rate = get_batch_rate(item_code, batch_no)  # TODO: Does it really work?
 
             receipt_rows.append({
                 "batch_no": batch_no,
                 "qty": delta,
-                "rate": rate
+                "rate": rate or 0.01
             })
             # Prepare label row
             shelf_life_date = get_shelf_life_date(item, batch_no)
@@ -308,7 +333,7 @@ def correct_stock(item_code, warehouse, rows):
                 "batch_no": batch_no
             })
 
-    if not any_change:
+    if not issue_rows and not receipt_rows:
         return
 
     issue_doc = None
@@ -324,4 +349,4 @@ def correct_stock(item_code, warehouse, rows):
     if receipt_doc and label_table:
         print_purchasing_labels(json.dumps(label_table), is_legacy=True)
 
-    return issue_doc, receipt_doc
+    return issue_doc.name if issue_doc else None, receipt_doc.name if receipt_doc else None

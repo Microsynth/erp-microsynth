@@ -35,6 +35,7 @@ from erpnextswiss.erpnextswiss.finance import get_exchange_rate
 from erpnextswiss.erpnextswiss.zugferd.zugferd_xml import prepare_data as prepare_zugferd_data
 
 from microsynth.microsynth.purchasing import create_pi_from_si
+from microsynth.microsynth.taxes import find_dated_tax_template
 from microsynth.microsynth.naming_series import get_naming_series
 from microsynth.microsynth.utils import (
     get_physical_path,
@@ -47,14 +48,16 @@ from microsynth.microsynth.utils import (
     replace_none,
     send_email_from_template,
     get_sql_list,
-    get_customer_from_company
+    get_customer_from_company,
+    exact_copy_sales_invoice
 )
 from microsynth.microsynth.credits import (
     allocate_credits,
     get_total_credit,
     get_credit_accounts,
     get_applicable_customer_credits,
-    get_credit_account_balance
+    get_credit_account_balance,
+    create_full_return
 )
 from microsynth.microsynth.jinja import get_destination_classification
 from microsynth.microsynth.report.invoiceable_services.invoiceable_services import get_data as get_invoiceable_services
@@ -479,7 +482,7 @@ def async_create_invoices(mode, company, customer, is_monthly_collective_run=Fal
 
         for dn in all_invoiceable:
             # TODO process other invoicing methods
-            if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany", "Chorus"]:
+            if dn.get('invoicing_method') not in  ["Email", "Post", "Intercompany", "Chorus", "X-Rechnung", "Peppol", "Scientist"]:
                 frappe.log_error("Cannot invoice {0}: \nThe invoicing method '{1}' is not implemented for collective billing".format(dn.get('delivery_note'), dn.get('invoicing_method')), "invoicing.async_create_invoices")
                 continue
 
@@ -1846,6 +1849,10 @@ def transmit_sales_invoice(sales_invoice_id):
                 fid = a['name']
             frappe.db.commit()
 
+            # TODO: If there is the credit item on the sales invoice, remove " for the services provided" from the message.
+            # credit_item_code = frappe.get_value("Microsynth Settings", "Microsynth Settings", "credit_item")
+            # has_credit_item = any(item.item_code == credit_item_code for item in sales_invoice.items)
+
             if sales_invoice.language == "de":
                 subject = f"Ihre Rechnung {sales_invoice.name}"
                 message = f"Sehr geehrte Microsynth Kundin, sehr geehrter Microsynth Kunde,<br><br>\
@@ -2788,3 +2795,131 @@ def invoice_intercompany_oligos_without_other_invoice(dry_run=False):
                         so_doc.update_status("Closed")
                 except Exception as e:
                     print(f"Error creating invoice for {customer}, Sales Order {so_id}: {traceback.format_exc()}\n{e}")
+
+
+@frappe.whitelist()
+def create_cn_and_invoice_draft(sales_invoice_id):
+    """
+    Creates and submits a credit note for the given Sales Invoice.
+    Creates a new Sales Invoice with the exact_copy_sales_invoice function (docstatus = 0, inserted).
+    Returns the name of the created Sales Invoice draft.
+    """
+    try:
+        credit_note_id = create_full_return(sales_invoice_id)
+        invoice_draft_id = exact_copy_sales_invoice(sales_invoice_id)
+        invoice_draft_doc = frappe.get_doc("Sales Invoice", invoice_draft_id)
+        invoice_draft_doc.prev_invoice_returned = 1
+        invoice_draft_doc.calculate_taxes_and_totals()
+        invoice_draft_doc.save()
+        return {
+            "success": True,
+            "credit_note_id": credit_note_id,
+            "invoice_draft_id": invoice_draft_id,
+            "message": f"Credit note {credit_note_id} created and submitted, invoice draft {invoice_draft_id} created for Sales Invoice {sales_invoice_id}."
+        }
+    except Exception as e:
+        frappe.log_error(f"Error creating credit note and invoice draft for Sales Invoice {sales_invoice_id}: {traceback.format_exc()}\n{e}")
+        return {
+            "success": False,
+            "credit_note_id": None,
+            "invoice_draft_id": None,
+            "message": str(e)
+        }
+
+
+@frappe.whitelist()
+def change_customer_company(sales_invoice_name, new_customer, new_company):
+    """
+    bench execute microsynth.microsynth.invoicing.change_customer_company --kwargs "{'sales_invoice_name': 'SI-GOE-23002450', 'new_customer': '8003', 'new_company': 'Microsynth Austria GmbH'}"
+    """
+    doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
+
+    if doc.docstatus != 0:
+        frappe.throw(_("Only Draft Sales Invoices can be modified."))
+
+    old_customer = doc.customer
+    old_company = doc.company
+
+    if old_customer == new_customer and old_company == new_company:
+        return {
+            "name": doc.name,
+            "customer": doc.customer,
+            "company": doc.company,
+            "message": _("No changes needed, customer and company are the same.")
+        }
+
+    original_contact_person = doc.contact_person
+
+    # Clear references to previous documents
+    for item in doc.items:
+        item.sales_order = ""
+        item.so_detail = ""
+        item.delivery_note = ""
+        item.dn_detail = ""
+        item.income_account = None
+        item.expense_account = None
+
+        if old_company != new_company:
+            item.cost_center = None
+            item.warehouse = None
+
+    if old_company != new_company:
+        doc.cost_center = None
+        doc.debit_to = None
+
+    # Set new values
+    doc.customer = new_customer
+    doc.company = new_company
+
+    category = "Material" if doc.get('product_type') in ["Oligos", "Material"] else "Service"
+    if doc.get('oligos') and len(doc.get('oligos')) > 0:
+        category = "Material"
+
+    taxes = find_dated_tax_template(
+        company=doc.company,
+        customer=doc.customer,
+        shipping_address=doc.shipping_address_name,
+        category=category,
+        date=doc.posting_date
+    )
+    doc.taxes_and_charges = taxes
+    tax_template = frappe.get_doc("Sales Taxes and Charges Template", taxes)
+    doc.taxes = []
+    for t in tax_template.taxes:
+        doc.append("taxes", {
+            'charge_type': t.charge_type,
+            'account_head': t.account_head,
+            'description': t.description,
+            'cost_center': t.cost_center,
+            'rate': t.rate,
+        })
+    # Restore contact person after potential overrides
+    doc.contact_person = original_contact_person
+
+    # Ensure mandatory taxes template exists
+    if not doc.taxes_and_charges:
+        frappe.throw(_("Unable to fetch required Sales Taxes and Charges Template after changing Customer/Company."))
+
+    doc.save()
+
+    if doc.contact_person and doc.contact_person != original_contact_person:
+        frappe.log_error(f"Contact Person {original_contact_person} was overwritten to {doc.contact_person} when changing customer/company for Sales Invoice {sales_invoice_name}. Restoring original contact person.", "invoicing.change_customer_company")
+        doc.contact_person = original_contact_person
+        doc.save()
+
+    # Add comment (audit trail)
+    doc.add_comment(
+        "Comment",
+        _("Customer/Company changed") +
+        "<br>" +
+        _("Customer") + f": {old_customer} → {new_customer}" +
+        "<br>" +
+        _("Company") + f": {old_company} → {new_company}"
+    )
+
+    return {
+        "name": doc.name,
+        "customer": doc.customer,
+        "company": doc.company,
+        "message": _("Customer and/or company updated successfully.")
+    }

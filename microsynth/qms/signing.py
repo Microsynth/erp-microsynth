@@ -36,6 +36,8 @@ def sign(dt, dn, user, password, target_field=None, submit=True):
         frappe.throw( _("Approval password is not set! Please go to Signature and set the approval password."), _("Authentication failed") )
         return False
 
+    submit = submit in [True, "true", "True", 1, "1"]  # convert submit to boolean
+
     # check password
     if password == approval_password:
         # password correct

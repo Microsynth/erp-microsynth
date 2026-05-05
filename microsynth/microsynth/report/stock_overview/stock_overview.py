@@ -16,7 +16,7 @@ def get_columns():
         {"label": "Safety Stock", "fieldname": "safety_stock", "fieldtype": "Float", "precision": 2, "width": 95},
         {"label": "Lead Time [d]", "fieldname": "lead_time_days", "fieldtype": "Int", "width": 100},
         {"label": "Avg Consumption / month", "fieldname": "avg_consumption", "fieldtype": "Float", "precision": 2, "width": 170},
-        {"label": "To Order (3 months)", "fieldname": "to_order", "fieldtype": "Float", "precision": 2, "width": 130}
+        {"label": "To Order (3 months)", "fieldname": "to_order", "fieldtype": "Float", "precision": 2, "width": 140}
     ]
 
 

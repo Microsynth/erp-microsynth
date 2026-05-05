@@ -41,11 +41,29 @@ frappe.ui.form.on('Sales Invoice', {
             'description': __('Custom Email shortcut')
         });
 
-        // Custom email dialog
+        if (frm.doc.docstatus == 0 && frm.doc.items) {
+            const has_prevdocs = (frm.doc.items || []).some(item => item.sales_order || item.delivery_note);
+            if (has_prevdocs) {
+                frm.set_df_property('customer', 'read_only', true);
+                frm.set_df_property('contact_person', 'read_only', true);
+                frm.add_custom_button(__("Change Customer / Company"), function() {
+                    change_customer_company(frm);
+                });
+            }
+            frm.set_df_property('web_order_id', 'read_only', true);
+        }
+
         if (frm.doc.docstatus == 1) {
+            // Custom email dialog
             frm.add_custom_button(__("Email"), function() {
                 open_mail_dialog(frm);
             }, __("Create"));
+
+            if (!frm.doc.is_return && frm.doc.outstanding_amount > 0) {
+                frm.add_custom_button(__("Credit Note + Changed Invoice"), function() {
+                    create_cn_and_invoice_draft(frm);
+                }, __("Create"));
+            }
         }
         if (!frm.doc.__islocal) {
             frm.add_custom_button(__("Accounting Note"), function() {
@@ -136,6 +154,12 @@ frappe.ui.form.on('Sales Invoice', {
         }
 
         hide_in_words();
+
+        if (frm.doc.amended_from && frm.doc.docstatus == 0) {
+            // lock company and naming series fields to prevent changes
+            frm.set_df_property("company", "read_only", true);
+            frm.set_df_property("naming_series", "read_only", true);
+        }
 
         var time_out = 500;
         if (frm.doc.items)
@@ -436,6 +460,30 @@ function full_return(frm) {
         })
     }, () => {
         frappe.show_alert('Did not create a Return / Credit Note');
+    });
+}
+
+
+function create_cn_and_invoice_draft(frm) {
+    // Calls a server method that creates and submits a credit note,
+    // creates a new Sales Invoice with the exact_copy_sales_invoice function (docstatus = 0, inserted) and returns its name.
+    // Opens the new Sales invoice.
+    frappe.call({
+        'method': "microsynth.microsynth.invoicing.create_cn_and_invoice_draft",
+        'args': {
+            'sales_invoice_id': frm.doc.name
+        },
+        'freeze': true,
+        'freeze_message': __("Creating credit note and new invoice draft..."),
+        'callback': function(r) {
+            if (r.message && r.message.success && r.message.invoice_draft_id) {
+                frappe.set_route("Form", "Sales Invoice", r.message.invoice_draft_id);
+            } else if (r.message && !r.message.success && r.message.message) {
+                frappe.msgprint(__(r.message.message), __("Error"));
+            } else {
+                frappe.msgprint(__("An unknown error occurred while creating the Credit Note and new Sales Invoice Draft. Please contact IT App."), __("Error"));
+            }
+        }
     });
 }
 
@@ -993,4 +1041,85 @@ function open_change_credit_accounts_dialog(frm) {
             d.show();
         }
     });
+}
+
+
+function change_customer_company(frm) {
+    // Show a dialog with a warning "Warning: Changing the Customer and/or Company will remove all references to previous documents (Sales Orders, Delivery Notes). Do you want to continue?"
+    // and a field to select a new Customer and a new Company (pre-filled with current values, but changeable). The dialog has two buttons "Yes, change" and "No, keep current Customer and Company".
+    // If confirmed:
+    // Remove references to Delivery Notes and Sales Orders from items: frm.doc.items.forEach(item => { item.sales_order = null; item.delivery_note = null; });
+    // Reset Contact Person to original value (avoid system overrides)
+    // Add a comment to the Sales Invoice documenting the change (with old and new Customer and Company)
+    const current_customer = frm.doc.customer;
+    const current_company = frm.doc.company;
+
+    const dialog = new frappe.ui.Dialog({
+        'title': __('Change Customer / Company'),
+        'fields': [
+            { 'fieldtype': 'HTML', 'fieldname': 'warning_html' },
+            {
+                'label': __('Customer'),
+                'fieldname': 'new_customer',
+                'fieldtype': 'Link',
+                'options': 'Customer',
+                'default': current_customer,
+                'reqd': 1,
+                'get_query': function() {
+                    return {
+                        filters: {
+                            'disabled': 0
+                        }
+                    }
+                }
+            },
+            {
+                'label': __('Company'),
+                'fieldname': 'new_company',
+                'fieldtype': 'Link',
+                'options': 'Company',
+                'default': current_company,
+                'reqd': 1
+            }
+        ],
+        'primary_action_label': __('Yes, change'),
+        'primary_action'(values) {
+            if (
+                values.new_customer === current_customer &&
+                values.new_company === current_company
+            ) {
+                frappe.msgprint(__('No changes made.'));
+                return;
+            }
+            dialog.hide();
+            frappe.dom.freeze(__('Updating...'));
+
+            frappe.call({
+                'method': 'microsynth.microsynth.invoicing.change_customer_company',
+                'args': {
+                    'sales_invoice_name': frm.doc.name,
+                    'new_customer': values.new_customer,
+                    'new_company': values.new_company
+                },
+                'callback': function () {
+                    frm.reload_doc();
+                }
+            }).always(function () {
+                frappe.dom.unfreeze();
+            });
+        },
+        'secondary_action_label': __('No'),
+        'secondary_action'() {
+            return;
+        }
+    });
+
+    dialog.fields_dict.warning_html.$wrapper.html(`
+        <div class="alert alert-warning">
+            <strong>${__('Warning')}:</strong><br>
+            ${__('Changing the Customer and/or Company will remove all references to previous documents (Sales Orders, Delivery Notes). Do you want to continue?')}
+        </div>
+    `);
+
+    dialog.show();
 }

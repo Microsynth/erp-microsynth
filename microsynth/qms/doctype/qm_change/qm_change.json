@@ -31,6 +31,7 @@
   "references_section",
   "qm_documents",
   "customers",
+  "instruments",
   "classification_section",
   "regulatory_classification",
   "device_classification",
@@ -136,6 +137,7 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval:(doc.qm_documents && doc.qm_documents.length)||(doc.customers && doc.customers.length)||(doc.instruments && doc.instruments.length)",
    "fieldname": "references_section",
    "fieldtype": "Section Break",
    "label": "References"
@@ -156,6 +158,7 @@
   },
   {
    "collapsible": 1,
+   "collapsible_depends_on": "eval:doc.created_on||doc.created_by",
    "fieldname": "creation1_section",
    "fieldtype": "Section Break",
    "label": "Creation"
@@ -180,7 +183,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Completed'",
+   "collapsible_depends_on": "eval:doc.status=='Completed'||doc.closure_comments",
    "fieldname": "closure_section",
    "fieldtype": "Section Break",
    "label": "Closure"
@@ -193,7 +196,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Trial'",
+   "collapsible_depends_on": "eval:doc.status=='Trial'||doc.summary_test_trial_results",
    "fieldname": "section_tests_trials",
    "fieldtype": "Section Break",
    "label": "Tests & Trials"
@@ -235,7 +238,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Assessment & Classification'",
+   "collapsible_depends_on": "eval:doc.status=='Assessment & Classification'||doc.regulatory_classification||doc.device_classification||doc.impact||doc.risk_classification||doc.impact_description",
    "fieldname": "classification_section",
    "fieldtype": "Section Break",
    "label": "Classification"
@@ -275,7 +278,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval:doc.status=='Planning'",
+   "collapsible_depends_on": "eval:doc.status=='Planning'||doc.action_plan_summary",
    "fieldname": "planning_section",
    "fieldtype": "Section Break",
    "label": "Planning"
@@ -315,10 +318,17 @@
    "fieldtype": "Select",
    "label": "Device Classification",
    "options": "\nA \u2013 complex or computerised devices\nB \u2013 standard devices with straightforward measurement\nC \u2013 devices without measuring function"
+  },
+  {
+   "fieldname": "instruments",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Instruments",
+   "options": "QM Instrument Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-03-30 17:03:47.585095",
+ "modified": "2026-04-22 14:32:01.297980",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Change",

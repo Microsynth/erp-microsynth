@@ -1,4 +1,5 @@
 {
+ "allow_rename": 1,
  "autoname": "field:title",
  "creation": "2026-03-26 12:06:57.106782",
  "doctype": "DocType",
@@ -29,7 +30,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2026-03-26 13:48:44.412038",
+ "modified": "2026-04-10 14:11:37.540511",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Instrument Category",

@@ -245,7 +245,7 @@ function open_search_dialog(report) {
             {fieldtype:'Button', label: __('Clear All Filters'), fieldname:'clear_filters'},
             {fieldtype:'Column Break'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name_part'},
-            {fieldtype:'Data', label: __('Material Code'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type'},
+            {fieldtype:'Data', label: __('Material Code (Microsynth internal)'), fieldname:'material_code', description: 'Oligo Modification Code / Slims Content Type (currently only used by certain departments)'},
             {fieldtype:'HTML', fieldname:'note'},
             {fieldtype:'Section Break'},
             {fieldtype:'HTML', fieldname:'results'}
@@ -502,7 +502,7 @@ function open_confirmation_dialog(selected, report) {
     if (selected.purchase_uom && selected.stock_uom && selected.purchase_uom !== selected.stock_uom) {
         const cf = selected.conversion_factor || 1;
         let stock_uom = selected.stock_uom || "";
-        let plural = stock_uom.toLowerCase().endsWith("s") ? "" : "(s)";
+        let plural = stock_uom.toLowerCase().endsWith("s") || cf <= 1 ? "" : "s";
         conversion_info = __(
             '1 {0} = {1} {2}{3}',
             [
@@ -588,7 +588,8 @@ function open_confirmation_dialog(selected, report) {
                     'schedule_date': values.schedule_date,
                     'company': values.company,
                     'comment': values.comment || '',
-                    'supplier': values.supplier
+                    'supplier': values.supplier,
+                    'requested_by': frappe.session.user,
                 },
                 callback(r) {
                     if (!r.exc && r.message) {
@@ -654,7 +655,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             {fieldtype:'Link', label: __('Company'), fieldname:'company', options: 'Company', reqd: 1, read_only: 1, default: report.get_filter_value('company') || frappe.defaults.get_default('company') || 'Microsynth AG'},
             {fieldtype:'Link', label: __('Existing Supplier'), fieldname:'supplier', options: 'Supplier'},
             {fieldtype:'Data', label: __('Item Name'), fieldname:'item_name', reqd: 1, default: item_name || ''},
-            {fieldtype:'Currency', label: __('Rate regarding one Purchase unit'), fieldname:'rate', precision: 2},
+            {fieldtype:'Currency', label: __('Price per Purchase unit'), fieldname:'rate', precision: 2},
             {fieldtype:'Float', label: __('Quantity of Purchase units to order'), fieldname:'qty', reqd: 1, min: 0.01, precision: 2,
                 description: 'How many purchase units are requested?'},
             {fieldtype:'Float', label: __('Quantity of Stock units per Purchase unit'), fieldname:'conversion_factor', min: 1, precision: 2,
@@ -702,7 +703,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
                     return '';
                 })()
             },
-            {fieldtype:'Check', label: __('Has Batch Number'), fieldname:'has_batch_no', default: 1},
+            {fieldtype:'Check', label: __('Enable batch tracking if a batch number is provided'), fieldname:'has_batch_no', default: 1},
 
             {fieldtype:'Column Break'},
 
@@ -775,7 +776,7 @@ function open_item_request_dialog(report, item_name, supplier_name, supplier_par
             }
             // currency required if rate is set
             if (values.rate && (!values.currency || values.currency.trim() === '')) {
-                frappe.msgprint(__('Currency is required if Rate is set.'));
+                frappe.msgprint(__('Currency is required if Price is set.'));
                 return;
             }
             frappe.call({

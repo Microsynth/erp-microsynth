@@ -7,11 +7,14 @@
   "from_date",
   "credit_percentage",
   "limit",
-  "expiry_in_days",
+  "credit_account_name",
+  "credit_item_name",
+  "expense_account_item",
   "column_break_3",
   "to_date",
-  "item_description",
+  "expiry_in_days",
   "currency",
+  "credit_account_description",
   "section_break_6",
   "dn_product_types",
   "items",
@@ -38,11 +41,6 @@
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date"
-  },
-  {
-   "fieldname": "item_description",
-   "fieldtype": "Data",
-   "label": "Item Description"
   },
   {
    "fieldname": "section_break_6",
@@ -87,10 +85,32 @@
    "fieldname": "expiry_in_days",
    "fieldtype": "Int",
    "label": "Expiry in days"
+  },
+  {
+   "fieldname": "credit_account_name",
+   "fieldtype": "Data",
+   "label": "Credit Account Name"
+  },
+  {
+   "fieldname": "credit_item_name",
+   "fieldtype": "Data",
+   "label": "Credit Item Name"
+  },
+  {
+   "fieldname": "credit_account_description",
+   "fieldtype": "Small Text",
+   "label": "Credit Account Description"
+  },
+  {
+   "description": "Item to take the Default Expense Account for the Journal Entry to book the credit invoice",
+   "fieldname": "expense_account_item",
+   "fieldtype": "Link",
+   "label": "Expense Account Item",
+   "options": "Item"
   }
  ],
  "issingle": 1,
- "modified": "2026-03-31 17:21:48.181389",
+ "modified": "2026-04-27 15:07:41.575280",
  "modified_by": "Administrator",
  "module": "Microsynth",
  "name": "Promo Credit Settings",
@@ -105,6 +125,17 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Sales Manager Extended",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Board Member"
   }
  ],
  "sort_field": "modified",

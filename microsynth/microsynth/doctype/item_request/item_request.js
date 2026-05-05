@@ -196,7 +196,7 @@ function open_material_request_dialog(selected, frm) {
             { fieldtype: 'Data', label: __('Supplier Item Code'), fieldname: 'supplier_part_no', read_only: 1, default: selected.supplier_part_no },
             { fieldtype: 'Data', label: __('Supplier Name'), fieldname: 'supplier_name', read_only: 1, default: selected.supplier_name },
             { fieldtype: 'Data', label: __('Material Code'), fieldname: 'material_code', read_only: 1, default: selected.material_code },
-            { fieldtype: 'Currency', label: __('Rate'), fieldname: 'rate', default: frm.doc.rate || 0 },
+            { fieldtype: 'Currency', label: __('Price Rate'), fieldname: 'rate', default: frm.doc.rate || 0 },
             { fieldtype: 'Link', label: __('Company'), fieldname: 'company', reqd: 1, options: 'Company', default: frm.doc.company },
             { fieldtype: 'Section Break' },
             { fieldtype: 'Small Text', label: __('Comment'), fieldname: 'comment', default: frm.doc.comment || '' }

@@ -85,10 +85,11 @@ def get_data(filters):
         LEFT JOIN `tabUOM Conversion Detail`
             ON `tabUOM Conversion Detail`.`parent` = `tabItem`.`name`
             AND `tabUOM Conversion Detail`.`uom` = `tabItem`.`purchase_uom`
-        LEFT JOIN `tabItem Supplier`
-            ON `tabItem Supplier`.`parent` = `tabItem`.`name`
         LEFT JOIN `tabItem Default`
             ON `tabItem Default`.`parent` = `tabItem`.`name`
+        LEFT JOIN `tabItem Supplier`
+            ON `tabItem Supplier`.`parent` = `tabItem`.`name`
+            AND `tabItem Supplier`.`supplier` = `tabItem Default`.`default_supplier`
         LEFT JOIN `tabLocation Link` ON
             `tabLocation Link`.`parent` = `tabItem`.`name`
             AND `tabLocation Link`.`parentfield` = 'storage_locations'
@@ -149,7 +150,9 @@ def execute(filters=None):
 
 @frappe.whitelist()
 def create_purchasing_item(data):
-
+    """
+    bench execute "microsynth.microsynth.report.supplier_items.supplier_items.create_purchasing_item" --kwargs "{'data': {'item_code': 'P001036', 'item_name': 'Deblock, 3% DCA in Dichlormethan', 'pack_size': 4, 'pack_uom': 'L', 'stock_uom': 'Bottle', 'purchase_uom': 'Bottle', 'conversion_factor': 1, 'supplier': 'S-01527', 'supplier_part_no': 'ToBeDefined', 'company': 'Microsynth AG', 'expense_account': '4200 - Aufwand Chemikalien 3.1  DNA/RNA - BAL'}}"
+    """
     if isinstance(data, str):
         data = json.loads(data)
 
@@ -301,7 +304,13 @@ def update_supplier_item(data):
     # Update price_list_rate (Item Price) only if it changed
     if "price_list_rate" in data and supplier and data.get("currency"):
         price_list = frappe.db.get_value("Supplier", supplier, "default_price_list")
-        item_prices = frappe.db.get_all("Item Price", filters={"item_code": item_code, "min_qty": 1, "currency": data.get("currency"), "price_list": price_list}, fields=["name"])
+        item_prices = frappe.db.get_all("Item Price",
+                                        filters={"item_code": item_code, "min_qty": 1,
+                                                 "uom": data.get("purchase_uom") or item.purchase_uom or data.get("stock_uom") or item.stock_uom,
+                                                 "currency": data.get("currency"),
+                                                 "price_list": price_list},
+                                        fields=["name"],
+                                        ignore_permissions=True)
         if len(item_prices) == 1:
             price = frappe.get_doc("Item Price", item_prices[0].get("name"))
             if abs(price.price_list_rate - data["price_list_rate"]) > 0.0001:
@@ -319,9 +328,10 @@ def update_supplier_item(data):
             price.price_list_rate = data["price_list_rate"]
             price.currency = data.get("currency")
             price.min_qty = 1
-            price.insert()
+            price.uom = data.get("purchase_uom") or item.purchase_uom or data.get("stock_uom") or item.stock_uom
+            price.insert(ignore_permissions=True)
 
-    # Update Supplier Item child table entry
+    # Update Supplier Item child table entry and default_supplier of the given company if necessary
     if data.get("supplier_part_no") or supplier:
         # Find the Supplier Item child row
         supplier_item = None
@@ -334,8 +344,6 @@ def update_supplier_item(data):
         # Create new row if none exists
         if not supplier_item:
             supplier_item = item.append("supplier_items", {})
-            if supplier:
-                supplier_item.supplier = supplier
         # Update fields
         if "supplier_part_no" in data:
             supplier_item.supplier_part_no = data["supplier_part_no"]
@@ -343,6 +351,10 @@ def update_supplier_item(data):
             supplier_item.supplier = supplier
         if "substitute_status" in data:
             supplier_item.substitute_status = data["substitute_status"]
-
+        if supplier_item.supplier and supplier_item.substitute_status not in ["Potential", "Discontinued", "Blocked"]:
+            for default in item.get("item_defaults"):
+                if data.get("company") and default.company == data.get("company"):
+                    default.default_supplier = supplier_item.supplier
+                    break
     item.save()
     return item.name
