@@ -283,9 +283,9 @@ function add_custom_buttons(frm, isProcessOwner) {
 
     if (!frm.doc.__islocal) {
         // Add button "View > Log Book" to open the QM Log Book list if the document is not local
-        frm.add_custom_button(__('Log Book'), function() {
-            frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
-        }, __('View'));
+        // frm.add_custom_button(__('Log Book'), function() {
+        //     frappe.set_route('List', 'QM Log Book', { 'document_type': frm.doc.doctype, 'document_name': frm.doc.name });
+        // }, __('View'));
 
         // Add button Create > Log Book Entry
         frm.add_custom_button(__('Log Book Entry'), function() {
