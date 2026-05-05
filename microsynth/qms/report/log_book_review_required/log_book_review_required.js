@@ -14,7 +14,7 @@ frappe.query_reports["Log Book Review Required"] = {
             "fieldname": "entry_type",
             "label": "Log Book Entry Type",
             "fieldtype": "Select",
-            "options": "\nMaintanance/Service\n(Re-)Qualification\nVerification\nCalibration\nSoftware update\nOther"
+            "options": "\nMaintanance\nService\nFunction Control\nCrash/Error\n(Re-)Qualification\nVerification\nCalibration\nSoftware\nOther"
         },
         {
             "fieldname": "instrument_class",

@@ -42,7 +42,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "\nMaintanance/Service\n(Re-)Qualification\nVerification\nCalibration\nSoftware update\nOther",
+   "options": "\nMaintanance\nService\nFunction Control\nCrash/Error\n(Re-)Qualification\nVerification\nCalibration\nSoftware\nOther",
    "reqd": 1
   },
   {
@@ -150,7 +150,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2026-04-14 17:24:10.174592",
+ "modified": "2026-05-05 15:42:30.107416",
  "modified_by": "jens.petermann@microsynth.ch",
  "module": "QMS",
  "name": "QM Log Book",
