@@ -234,7 +234,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         # Batch enable Customers (only fetch and modify disabled ones)
         disabled_customers = []
         if customers_to_enable:
-            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": [ "in", [ f'"{x}"' for x in customers_to_enable ] ], "disabled": 1}, fields=["name"])
+            disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", get_sql_list(list(customers_to_enable))], "disabled": 1}, fields=["name"])
             for c in disabled_customers_to_enable:
                 customer_doc = frappe.get_doc("Customer", c.name)
                 customer_doc.disabled = 0
