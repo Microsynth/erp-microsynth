@@ -3440,20 +3440,26 @@ def purchase_receipt_before_submit(doc, event):
         ) or 0
 
         # Sum of already submitted Purchase Receipts for this PO Item
-        received_qty = frappe.db.sql(
+        already_received_qty = frappe.db.sql(
             """
-            SELECT SUM(`received_qty`)
-            FROM `tabPurchase Receipt Item`
+            SELECT
+                SUM(`tabPurchase Receipt Item`.`received_qty`)
+            FROM
+                `tabPurchase Receipt Item`
+            JOIN
+                `tabPurchase Receipt`
+                ON `tabPurchase Receipt`.`name` = `tabPurchase Receipt Item`.`parent`
             WHERE
-                `purchase_order` = %s
-                AND `item_code` = %s
-                AND `docstatus` = 1
+                `tabPurchase Receipt Item`.`purchase_order` = %s
+                AND `tabPurchase Receipt Item`.`item_code` = %s
+                AND `tabPurchase Receipt`.`docstatus` = 1
+                AND `tabPurchase Receipt`.`name` != %s
             """,
-            (item.purchase_order, item.item_code)
+            (item.purchase_order, item.item_code, doc.name)
         )[0][0] or 0
 
         # Total received qty if this receipt is submitted
-        total_received = received_qty + item.received_qty
+        total_received = already_received_qty + item.received_qty
 
         if total_received > po_qty:
             frappe.throw(
