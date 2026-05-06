@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Microsynth, libracore and contributors
+// Copyright (c) 2023-2026, Microsynth, libracore and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
@@ -41,19 +41,19 @@ frappe.query_reports["Pricing Configurator"] = {
         });
         report.page.add_inner_button(__('Populate from reference'), function () {
            populate_from_reference();
-        });
+        }, __("Populate"));
         report.page.add_inner_button(__('Populate with factor'), function () {
            populate_with_factor();
-        });
+        }, __("Populate"));
         report.page.add_inner_button(__('Price List'), function () {
             frappe.set_route("Form", "Price List", frappe.query_report.filters[0].value);
-        });
+        }, __("Jump to"));
         report.page.add_inner_button(__('Customers'), function () {
            frappe.set_route("List", "Customer", {"default_price_list": frappe.query_report.filters[0].value, "disabled": 0});
-        });
+        }, __("Jump to"));
         report.page.add_inner_button(__("Standing Quotations"), function() {
             frappe.set_route("List", "Standing Quotation", {"price_list": frappe.query_report.filters[0].value});
-        });
+        }, __("Jump to"));
         if (!locals.double_click_handler) {
             locals.double_click_handler = true;
 
