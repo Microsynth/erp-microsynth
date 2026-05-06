@@ -166,7 +166,6 @@ jenv = {
 # }
 doc_events = {
     "Customer": {
-        "before_save": "microsynth.microsynth.utils.customer_before_save",
         "validate": "microsynth.microsynth.shipping.validate_customer_shipping_currencies"
     },
     "Contact": {

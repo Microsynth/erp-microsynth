@@ -2716,29 +2716,6 @@ def overwrite_item_defaults(item):
     item.save()
 
 
-def has_open_sequencing_labels(customer_id):
-    """
-    Returns whether there are Sequencing Labels in Status unused or submitted for the given customer_id.
-
-    bench execute microsynth.microsynth.utils.has_open_sequencing_labels --kwargs "{'customer_id': '37765217'}"
-    """
-    if not customer_id:
-        frappe.throw("Please provide a valid Customer ID.")
-    open_labels = frappe.db.sql(f"""
-                    SELECT `name`
-                    FROM `tabSequencing Label`
-                    WHERE `customer` = '{customer_id}'
-                        AND `status` in ('unused', 'submitted')
-                """, as_dict=True)
-    return len(open_labels) > 0
-
-
-def customer_before_save(customer, event):
-    if customer.disabled:
-        if has_open_sequencing_labels(customer.name):
-            frappe.throw("Customer cannot be disabled because there are <b>open Sequencing Labels</b> for this Customer. Please check using the Label Manager and consider to move the Sequencing Labels to another Customer before disabling this Customer.")
-
-
 def item_before_save(item, event):
     user = frappe.session.user
     if user_has_role(user, "Purchase Item Manager") and not item.item_group == "Purchasing" and not user_has_role(user, "Sales Item Manager"):
