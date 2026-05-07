@@ -277,7 +277,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         }
 
     except Exception as err:
-        msg = f"Error setting {labels=} to {target_status}: {err}\n\n{disabled_customers=}"
+        msg = f"Error setting labels to '{target_status}':\n{labels=}\n\n {err}\n\n{disabled_customers=}"
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", f"process_label_status_change")
         return {'success': False, 'message': msg, 'labels': None}
 
