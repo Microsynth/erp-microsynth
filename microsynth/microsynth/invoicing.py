@@ -2950,7 +2950,7 @@ def check_and_attach_zugferd_pdf(sales_invoice_id):
     # Check if there is already an attachment with the same name. If yes, remove it.
     existing_attachment = frappe.get_all("File", filters={"attached_to_doctype": "Sales Invoice", "attached_to_name": sales_invoice_doc.name, "file_name": f"{sales_invoice_doc.name}.pdf"})
     if existing_attachment:
-        frappe.delete_doc("File", existing_attachment[0].name)
+        frappe.delete_doc("File", existing_attachment[0].name, ignore_permissions=True)
     attachment = frappe.get_doc({
         "doctype": "File",
         "file_name": f"{sales_invoice_doc.name}.pdf",
