@@ -20,6 +20,8 @@
   "closure_signature",
   "section_break_12",
   "description",
+  "references_section",
+  "qm_nonconformities",
   "naming_series",
   "amended_from"
  ],
@@ -147,11 +149,23 @@
    "fieldtype": "Data",
    "label": "Closure Signature",
    "read_only": 1
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qm_nonconformities",
+   "fieldtype": "Table",
+   "label": "QM Nonconformities",
+   "options": "QM Nonconformity Link"
   }
  ],
  "is_submittable": 1,
- "modified": "2026-05-05 15:42:30.107416",
- "modified_by": "jens.petermann@microsynth.ch",
+ "modified": "2026-05-07 12:06:23.250332",
+ "modified_by": "Administrator",
  "module": "QMS",
  "name": "QM Log Book",
  "owner": "Administrator",
