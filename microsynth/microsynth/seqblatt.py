@@ -154,6 +154,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         return {'success': False, 'message': "Please provide at least one Label", 'labels': None}
 
     success = True
+    disabled_customers = []
 
     try:
         # Normalize and deduplicate
@@ -232,7 +233,6 @@ def process_label_status_change(labels, target_status, required_current_statuses
             labels_to_process.append(erp_label)
 
         # Batch enable Customers (only fetch and modify disabled ones)
-        disabled_customers = []
         if customers_to_enable:
             disabled_customers_to_enable = frappe.get_all("Customer", filters={"name": ["in", list(customers_to_enable)], "disabled": 1}, fields=["name"])
             for c in disabled_customers_to_enable:
@@ -277,7 +277,7 @@ def process_label_status_change(labels, target_status, required_current_statuses
         }
 
     except Exception as err:
-        msg = f"Error setting labels to {target_status}: {err}"
+        msg = f"Error setting {labels=} to {target_status}: {err}\n\n{disabled_customers=}"
         frappe.log_error(f"{msg}\n\n{traceback.format_exc()}", f"process_label_status_change")
         return {'success': False, 'message': msg, 'labels': None}
 
