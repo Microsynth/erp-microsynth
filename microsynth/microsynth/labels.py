@@ -4,6 +4,7 @@
 
 import re
 import json
+import traceback
 import unicodedata  # part of standard library, no installation required
 import frappe
 import socket
@@ -386,6 +387,51 @@ def prepare_brady_rows(row, username, is_legacy, receipt_date):
         f"{datamatrix}"
         if datamatrix else ""
     )
+
+
+@frappe.whitelist()
+def print_instrument_label(qm_instrument_id, acquisition_date):
+    """
+    bench execute "microsynth.microsynth.labels.print_instrument_label" --kwargs "{'qm_instrument_id': 'QMI-00001', 'acquisition_date': '2026-05-07'}"
+    """
+    try:
+        user = frappe.get_user().name
+
+        # check if there is a user-specific printer
+        if frappe.db.exists("User Printer", user):
+            printer_name = frappe.get_value("User Printer", user, "purchase_label_printer")
+            printer = frappe.get_doc("Brady Printer", printer_name)
+        else:
+            return {
+                "success": False,
+                "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+            }
+
+        label_data = {
+            'qm_instrument_id': qm_instrument_id,
+            'acquisition_date': acquisition_date,
+            'datamatrix_content': qm_instrument_id
+        }
+        content = frappe.render_template("microsynth/templates/includes/instrument_label_brady.html", label_data)
+
+        if printer:
+            print_raw(printer.ip, printer.port, content)
+            return {
+                "success": True,
+                "message": f"Label for QM Instrument {qm_instrument_id} printed successfully on printer {printer.name}."
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Found no Brady printer for user '{user}'. Please contact IT App."
+            }
+    except Exception as err:
+        msg = f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
+        frappe.log_error(f"{msg}\n{traceback.format_exc()}", "labels.print_instrument_label")
+        return {
+            "success": False,
+            "message": f"Error printing label for QM Instrument '{qm_instrument_id}': {err}"
+        }
 
 
 @frappe.whitelist()
