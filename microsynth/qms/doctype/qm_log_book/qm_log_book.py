@@ -10,6 +10,7 @@ from datetime import datetime
 from frappe import _
 import frappe
 from frappe.model.document import Document
+from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications
 
 
 SITE_COMPANY_MAP = {
@@ -39,10 +40,20 @@ class QMLogBook(Document):
         frappe.db.commit()
 
 
+def get_next_due_date(log_book_entry_id):
+    log_book = frappe.get_doc("QM Log Book", log_book_entry_id)
+    qm_instrument = frappe.get_doc(log_book.document_type, log_book.document_name)
+    due_events = get_due_qualifications(qm_instrument.name, qm_instrument.instrument_class, qm_instrument.acquisition_date)
+    for event in due_events:
+        if event['qualification_type'] == log_book.entry_type:
+            return event['due_date']
+    return None
+
+
 @frappe.whitelist()
 def is_user_process_owner(log_book_id, user):
     log_book = frappe.get_doc("QM Log Book", log_book_id)
-    instrument_doc = frappe.get_doc(log_book.document_type, log_book.document_name, "qm_process")
+    instrument_doc = frappe.get_doc(log_book.document_type, log_book.document_name)
     company = SITE_COMPANY_MAP.get(instrument_doc.site)
     qm_process = instrument_doc.qm_process
     if company and qm_process:

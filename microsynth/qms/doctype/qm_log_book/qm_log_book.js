@@ -36,6 +36,10 @@ frappe.ui.form.on('QM Log Book', {
             }, 100);
         }
 
+        // remove Menu > Duplicate
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+
         // Remove option Menu > New QM Log Book as log book entries should only be created via the "Create > Log Book Entry" button on the linked document (e.g. QM Instrument)
         var target ="span[data-label='" + __("New QM Log Book") + "']";
         $(target).parent().parent().remove();
@@ -75,9 +79,24 @@ frappe.ui.form.on('QM Log Book', {
             }
         }
 
-        // remove Menu > Duplicate
-        var target ="span[data-label='" + __("Duplicate") + "']";
-        $(target).parent().parent().remove();
+        if (frm.doc.status === "To Review" || frm.doc.status === "Closed") {
+            // show button "Print Label"
+            frm.add_custom_button('Print Label', function() {
+                frappe.call({
+                    'method': "microsynth.microsynth.labels.print_instrument_certification_label",
+                    'args': {
+                        'qm_log_book_entry_id': frm.doc.name
+                    },
+                    'callback': function(r) {
+                        if (r.message && r.message.success) {
+                            frappe.msgprint(r.message.message);
+                        } else {
+                            frappe.msgprint((r.message ? r.message.message : __('An error occurred while printing the label.')), 'Error');
+                        }
+                    }
+                });
+            });
+        }
     }
 });
 
