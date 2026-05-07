@@ -40,6 +40,12 @@ frappe.ui.form.on('QM Instrument', {
         };
         const company = site_company_mapping[frm.doc.site];
 
+        // remove Menu > Duplicate and Menu > New QM Instrument
+        var target ="span[data-label='" + __("Duplicate") + "']";
+        $(target).parent().parent().remove();
+        var new_target ="span[data-label='" + __("New QM Instrument") + "']";
+        $(new_target).parent().parent().remove();
+
         frm.dashboard.clear_comment();
 
         if (frm.doc.qm_process && company) {

@@ -36,6 +36,10 @@ frappe.ui.form.on('QM Log Book', {
             }, 100);
         }
 
+        // Remove option Menu > New QM Log Book as log book entries should only be created via the "Create > Log Book Entry" button on the linked document (e.g. QM Instrument)
+        var target ="span[data-label='" + __("New QM Log Book") + "']";
+        $(target).parent().parent().remove();
+
         if (frm.doc.document_type === "QM Instrument" && frm.doc.status === "To Review" && frm.doc.docstatus === 1) {
             if (frappe.user_roles.includes('QAU')) {
                 allow_write_access(frm);
