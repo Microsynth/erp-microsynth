@@ -11,6 +11,7 @@ from frappe import _
 import frappe
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications
+from microsynth.microsynth.labels import print_instrument_certification_label
 
 
 SITE_COMPANY_MAP = {
@@ -153,7 +154,7 @@ def import_log_book_entries(verbose=False):
                 date = _parse_date(date_str)
 
                 # Create log book entry
-                doc = frappe.get_doc({
+                log_book_doc = frappe.get_doc({
                     "doctype": "QM Log Book",
                     "status": target_status_logbook_entry,
                     "entry_type": entry_type,
@@ -163,23 +164,26 @@ def import_log_book_entries(verbose=False):
                     "document_name": instrument_id
                 }).insert()
                 if target_status_logbook_entry in ["Closed", "To Review"]:
-                    doc.submit()
+                    log_book_doc.submit()
 
                 if verbose:
-                    print(f"Created {doc.name}")
+                    print(f"Created {log_book_doc.name}")
 
                 # Attach PDF
                 if pdf_name:
                     pdf_path = _safe_join(BASE_PATH, pdf_name)
                     if not os.path.isfile(pdf_path):
                         raise Exception(f"Missing PDF: {pdf_name}")
-                    _attach_file(doc, pdf_path)
+                    _attach_file(log_book_doc, pdf_path)
 
                 # Update QM Instrument status
                 if target_status_instrument and target_status_instrument.lower() != "na":
                     instrument_doc = frappe.get_doc("QM Instrument", instrument_id)
                     instrument_doc.status = target_status_instrument
                     instrument_doc.save()
+
+                # Print label
+                print_instrument_certification_label(log_book_doc.name)
 
             # Archive
             archive_root = _safe_join(BASE_PATH, ARCHIVE_FOLDER)
