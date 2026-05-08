@@ -1016,9 +1016,9 @@ def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
     promo_credit_limit = promo_credit_settings.limit
     credit_percentage = promo_credit_settings.credit_percentage
     contact_person = delivery_note_doc.contact_person
-    # Get all submitted Sales Invoices with contact_person, credit_item and item_name and sum up their base_net_total
+    # Get all submitted Sales Invoices with contact_person, credit_item and item_name and sum up their net_total
     already_given_promo_credit_total = frappe.db.sql("""
-        SELECT SUM(`tabSales Invoice`.`base_net_total`)
+        SELECT SUM(`tabSales Invoice`.`net_total`)
         FROM `tabSales Invoice`
         WHERE `tabSales Invoice`.`docstatus` = 1
             AND `tabSales Invoice`.`contact_person` = %s
@@ -1030,8 +1030,8 @@ def get_promo_credit_amount(delivery_note_doc, promo_credit_settings):
                     AND `tabSales Invoice Item`.`item_name` = %s
             )
     """, (contact_person, credit_item, item_name))[0][0] or 0
-    # give max credit_percentage of the delivery note base net total as promo credit, but do not exceed the promo credit limit
-    return min(promo_credit_limit - already_given_promo_credit_total, delivery_note_doc.base_net_total * (credit_percentage / 100))
+    # give max credit_percentage of the delivery note net total as promo credit, but do not exceed the promo credit limit
+    return min(promo_credit_limit - already_given_promo_credit_total, delivery_note_doc.net_total * (credit_percentage / 100))
 
 
 def fetch_delivery_note_order_date(delivery_note_doc):
