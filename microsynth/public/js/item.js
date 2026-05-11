@@ -552,6 +552,9 @@ function open_correct_stock_dialog(frm) {
                 onchange: () => load_batches()
             },
             {
+                fieldtype: "Column Break"
+            },
+            {
                 fieldname: "stock_uom",
                 fieldtype: "Data",
                 label: "Stock UOM",
@@ -559,19 +562,34 @@ function open_correct_stock_dialog(frm) {
                 default: frm.doc.stock_uom
             },
             {
+                fieldtype: "Section Break"
+            },
+            {
                 fieldname: 'batch_table',
                 fieldtype: 'Table',
                 label: __('Batches'),
-                cannot_add_rows: true,
                 in_place_edit: true,
                 fields: [
                     {
                         fieldname: 'batch_no',
                         fieldtype: 'Data',
                         label: __('Batch'),
-                        read_only: 1,
                         in_list_view: 1,
-                        columns: 3
+                        columns: 2
+                    },
+                    {
+                        fieldname: 'manufacturing_date',
+                        fieldtype: 'Date',
+                        label: __('Manufacturing Date'),
+                        in_list_view: 1,
+                        columns: 2
+                    },
+                    {
+                        fieldname: 'expiry_date',
+                        fieldtype: 'Date',
+                        label: __('Expiry Date'),
+                        in_list_view: 1,
+                        columns: 2
                     },
                     {
                         fieldname: 'current_qty',
@@ -580,7 +598,7 @@ function open_correct_stock_dialog(frm) {
                         label: __('Current Qty'),
                         read_only: 1,
                         in_list_view: 1,
-                        columns: 3
+                        columns: 2
                     },
                     {
                         fieldname: 'new_qty',
@@ -638,4 +656,12 @@ function open_correct_stock_dialog(frm) {
 
     d.show();
     load_batches();
+
+    // Force wider dialog
+    setTimeout(() => {
+        let modals = document.getElementsByClassName('modal-dialog');
+        if (modals.length > 0) {
+            modals[modals.length - 1].style.width = '800px';
+        }
+    }, 400);
 }
