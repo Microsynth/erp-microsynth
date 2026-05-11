@@ -5,10 +5,12 @@
 from __future__ import unicode_literals
 import os
 import shutil
+import traceback
 from datetime import datetime
-
+import socket
 from frappe import _
 import frappe
+from frappe.utils import formatdate
 from frappe.model.document import Document
 from microsynth.qms.doctype.qm_instrument.qm_instrument import get_due_qualifications
 from microsynth.microsynth.labels import print_instrument_certification_label
@@ -61,6 +63,62 @@ def is_user_process_owner(log_book_id, user):
         process_owners = frappe.get_all("QM Process Owner", filters={"company": company, "qm_process": qm_process}, fields=["process_owner"])
         return any(owner.process_owner == user for owner in process_owners)
     return False
+
+
+def print_raw(ip, port, content):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((ip, port))
+    s.send(content.encode())
+    s.close()
+
+
+@frappe.whitelist()
+def print_instrument_certification_label(qm_log_book_entry_id):
+    """
+    bench execute "microsynth.qms.doctype.qm_log_book.qm_log_book.print_instrument_certification_label" --kwargs "{'qm_log_book_entry_id': 'QMLB-260003'}"
+    """
+    try:
+        user = frappe.get_user().name
+
+        # check if there is a user-specific printer
+        if frappe.db.exists("User Printer", user):
+            printer_name = "BAL-Purch" # TODO: frappe.get_value("User Printer", user, "instr_cert_label_printer")
+            printer = frappe.get_doc("Brady Printer", printer_name)
+        else:
+            return {
+                "success": False,
+                "message": f"No user-specific printer found for user '{user}'. Please contact IT App."
+            }
+        qm_log_book_doc = frappe.get_doc("QM Log Book", qm_log_book_entry_id)
+        qm_instrument_id = qm_log_book_doc.document_name
+        raw_next_due_date = get_next_due_date(qm_log_book_entry_id)
+        next_due_date = formatdate(raw_next_due_date, "dd.MM.yyyy")
+        label_data = {
+            'entry_type': qm_log_book_doc.entry_type,
+            'qm_instrument_id': qm_instrument_id,
+            'date': qm_log_book_doc.date.strftime("%d.%m.%Y") if qm_log_book_doc.date else "",
+            'due_date': next_due_date,
+            'datamatrix_content': qm_instrument_id
+        }
+        content = frappe.render_template("microsynth/templates/includes/instrument_certification_label_brady.html", label_data)
+        if printer:
+            print_raw(printer.ip, printer.port, content)
+            return {
+                "success": True,
+                "message": f"{qm_log_book_doc.entry_type} label for QM Instrument {qm_instrument_id} printed successfully on printer {printer.name}."
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Found no Brady printer for user '{user}'. Please contact IT App."
+            }
+    except Exception as err:
+        msg = f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
+        frappe.log_error(f"{msg}\n{traceback.format_exc()}", "labels.print_instrument_certification_label")
+        return {
+            "success": False,
+            "message": f"Error printing {qm_log_book_doc.entry_type} label for QM Instrument '{qm_instrument_id}': {err}"
+        }
 
 
 @frappe.whitelist()

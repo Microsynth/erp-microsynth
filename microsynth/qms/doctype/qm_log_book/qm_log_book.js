@@ -83,7 +83,7 @@ frappe.ui.form.on('QM Log Book', {
             // show button "Print Label"
             frm.add_custom_button('Print Label', function() {
                 frappe.call({
-                    'method': "microsynth.microsynth.labels.print_instrument_certification_label",
+                    'method': "microsynth.qms.doctype.qm_log_book.qm_log_book.print_instrument_certification_label",
                     'args': {
                         'qm_log_book_entry_id': frm.doc.name
                     },
