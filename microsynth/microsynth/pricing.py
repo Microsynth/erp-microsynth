@@ -1,10 +1,13 @@
 # Copyright (c) 2023, Microsynth
 # For license information, please see license.txt
 
-import frappe
-from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate, get_rate_or_none
-from datetime import datetime, timedelta
 import csv
+import json
+from datetime import datetime, timedelta
+
+import frappe
+from frappe.utils import flt
+from microsynth.microsynth.report.pricing_configurator.pricing_configurator import set_rate, get_rate_or_none
 
 
 def change_reference_rate(reference_price_list_name, item_code, min_qty, reference_rate, new_reference_rate, user):
@@ -1461,3 +1464,263 @@ def calculate_cross_rates():
     add_cross_rates(from_currency='SEK', to_currency='EUR')
     add_cross_rates(from_currency='CZK', to_currency='EUR')
     add_cross_rates(from_currency='PLN', to_currency='EUR')
+
+
+def change_item_prices_for_sales_manager(sales_manager, item_code, new_rate, currency, output_file_path, blacklist_price_lists=None, dry_run=False):
+    """
+    Safely change Item Prices for a given sales manager and item code across all their customers' price lists, with safety checks and logging for potential rollback.
+    Returns a structured change log that can later be used for rollback.
+
+    bench execute microsynth.microsynth.pricing.change_item_prices_for_sales_manager --kwargs "{'sales_manager': '...', 'item_code': '1234', 'new_rate': 1234.56, 'currency': 'EUR', 'output_file_path': '/path/to/output/file.json', 'blacklist_price_lists': ['Sales Prices EUR', 'Standard Oligo/Seq 10pct EUR'], 'dry_run': True}"
+    """
+    blacklist_price_lists = blacklist_price_lists or []
+
+    result = {
+        "timestamp": datetime.now().isoformat(),
+        "sales_manager": sales_manager,
+        "blacklist_price_lists": blacklist_price_lists,
+        "item_code": item_code,
+        "currency": currency,
+        "new_rate": flt(new_rate),
+        "dry_run": dry_run,
+        "changes": [],
+        "errors": [],
+        "skipped": []
+    }
+    # Determine candidate price lists
+    conditions = ""
+    values = {
+        "sales_manager": sales_manager
+    }
+
+    if blacklist_price_lists:
+        conditions += """ AND `tabCustomer`.`default_price_list` NOT IN %(blacklist)s """
+        values["blacklist"] = tuple(blacklist_price_lists)
+
+    price_lists = frappe.db.sql("""
+        SELECT DISTINCT
+            `tabCustomer`.`default_price_list` AS `price_list`
+        FROM `tabCustomer`
+        INNER JOIN `tabPrice List`
+            ON `tabPrice List`.`name` = `tabCustomer`.`default_price_list`
+        WHERE
+            `tabCustomer`.`disabled` = 0
+            AND `tabPrice List`.`enabled` = 1
+            AND `tabCustomer`.`account_manager` = %(sales_manager)s
+            AND `tabCustomer`.`default_price_list` IS NOT NULL
+            {conditions}
+        ORDER BY `tabCustomer`.`default_price_list`
+    """.format(conditions=conditions), values, as_dict=True)
+
+    # Process each price list
+    for row in price_lists:
+        price_list = row.price_list
+        # Ensure price list is exclusive to this manager
+        foreign_customers = frappe.db.sql("""
+            SELECT
+                `name`,
+                `customer_name`,
+                `account_manager`,
+                `territory`
+            FROM `tabCustomer`
+            WHERE
+                `disabled` = 0
+                AND `default_price_list` = %s
+                AND IFNULL(`account_manager`, '') != %s
+        """, (price_list, sales_manager), as_dict=True)
+
+        if foreign_customers:
+            result["errors"].append({
+                "price_list": price_list,
+                "reason": "shared_price_list",
+                "customers": foreign_customers
+            })
+            continue
+
+        item_prices = frappe.get_all(
+            "Item Price",
+            filters={
+                "price_list": price_list,
+                "item_code": item_code,
+                "currency": currency
+            },
+            fields=[
+                "name",
+                "item_code",
+                "item_name",
+                "min_qty",
+                "price_list_rate",
+                "currency",
+                "price_list",
+                "modified"
+            ],
+            order_by="min_qty ASC"
+        )
+        for item_price in item_prices:
+            current_rate = flt(item_price.price_list_rate)
+            requested_rate = flt(new_rate)
+
+            # Only allow lowering prices
+            if current_rate < requested_rate:
+                result["skipped"].append({
+                    "price_list": price_list,
+                    "item_price": item_price.name,
+                    "reason": "current_rate_lower_than_requested",
+                    "current_rate": current_rate,
+                    "requested_rate": requested_rate
+                })
+                continue
+
+            # Prepare change record for logging and later rollback
+            change_record = {
+                "item_price": item_price.name,
+                "price_list": price_list,
+                "item_code": item_code,
+                "item_name": item_price.item_name,
+                "min_qty": item_price.min_qty,
+                "currency": currency,
+                "old_rate": current_rate,
+                "new_rate": requested_rate,
+                "modified_before_change": item_price.modified
+            }
+
+            if not dry_run:
+                # Update the Item Price with the new rate
+                item_price_doc = frappe.get_doc("Item Price", item_price.name)
+                item_price_doc.price_list_rate = requested_rate
+                item_price_doc.save()
+
+            result["changes"].append(change_record)
+
+    if not dry_run:
+        frappe.db.commit()
+    # write change log to json file for potential rollback
+    if not dry_run:
+        with open(output_file_path, "w") as f:
+            json.dump(result, f, indent=4, default=str)
+
+
+def rollback_item_price_changes(change_log_json_file, dry_run=False):
+    """
+    Roll back changes created by function change_item_prices_for_sales_manager.
+
+    Safety features:
+    - verifies Item Price still exists
+    - verifies identifying attributes still match
+    - verifies current rate still matches expected changed rate
+    - avoids overwriting unrelated later modifications
+
+    bench execute microsynth.microsynth.pricing.rollback_item_price_changes --kwargs "{'change_log_json_file': '/path/to/change_log.json', 'dry_run': True}"
+    """
+    rollback_result = {
+        "timestamp": datetime.now().isoformat(),
+        "rolled_back": [],
+        "errors": [],
+        "skipped": [],
+        "dry_run": dry_run
+    }
+
+    with open(change_log_json_file, "r") as f:
+        change_log = json.load(f)
+
+    for change in change_log.get("changes", []):
+        item_price_name = change["item_price"]
+
+        current = frappe.db.get_value(
+            "Item Price",
+            item_price_name,
+            [
+                "name",
+                "item_code",
+                "item_name",
+                "price_list",
+                "currency",
+                "min_qty",
+                "price_list_rate",
+                "modified"
+            ],
+            as_dict=True
+        )
+        # Ensure Item Price still exists
+        if not current:
+            rollback_result["errors"].append({
+                "item_price": item_price_name,
+                "reason": "missing_item_price"
+            })
+            continue
+
+        # Validate identifying attributes
+        validation_errors = []
+
+        if current.item_code != change["item_code"]:
+            validation_errors.append({
+                "field": "item_code",
+                "expected": change["item_code"],
+                "actual": current.item_code
+            })
+
+        if current.price_list != change["price_list"]:
+            validation_errors.append({
+                "field": "price_list",
+                "expected": change["price_list"],
+                "actual": current.price_list
+            })
+
+        if current.currency != change["currency"]:
+            validation_errors.append({
+                "field": "currency",
+                "expected": change["currency"],
+                "actual": current.currency
+            })
+
+        current_min_qty = flt(current.min_qty)
+        expected_min_qty = flt(change.get("min_qty"))
+
+        if current_min_qty != expected_min_qty:
+            validation_errors.append({
+                "field": "min_qty",
+                "expected": expected_min_qty,
+                "actual": current_min_qty
+            })
+        if validation_errors:
+            rollback_result["errors"].append({
+                "item_price": item_price_name,
+                "reason": "identity_mismatch",
+                "details": validation_errors
+            })
+            continue
+
+        # Verify current rate still equals changed rate
+        current_rate = flt(current.price_list_rate)
+        expected_current_rate = flt(change["new_rate"])
+
+        if current_rate != expected_current_rate:
+            rollback_result["skipped"].append({
+                "item_price": item_price_name,
+                "reason": "rate_changed_after_original_update",
+                "expected_rate": expected_current_rate,
+                "actual_rate": current_rate
+            })
+            continue
+
+        # Rollback
+        if not dry_run:
+            item_price_doc = frappe.get_doc("Item Price", item_price_name)
+            item_price_doc.price_list_rate = flt(change["old_rate"])
+            item_price_doc.save()
+
+        rollback_result["rolled_back"].append({
+            "item_price": item_price_name,
+            "item_code": current.item_code,
+            "item_name": current.item_name,
+            "price_list": current.price_list,
+            "currency": current.currency,
+            "min_qty": current.min_qty,
+            "restored_rate": flt(change["old_rate"]),
+            "previous_rate": current_rate
+        })
+
+    if not dry_run:
+        frappe.db.commit()
+
+    return rollback_result
