@@ -2776,7 +2776,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         - Placeholder batches ([NA]-<item_code>) may group stock artificially
         - Only supports single-company items (based on warehouses)
 
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P014765', 'new_stock_uom': 'Tube', 'dry_run': False, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uom_and_has_batch_no --kwargs "{'item_code': 'P014125', 'new_stock_uom': 'Kit', 'dry_run': False, 'verbose': True}"
     """
     def log(msg):
         if verbose:
@@ -2796,7 +2796,8 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
     item_doc = frappe.get_doc("Item", item_code)
 
     if item_doc.disabled:
-        frappe.throw("Item is disabled.")
+        print(f"ERROR: Item {item_code} is disabled. Skipping.")
+        return
 
     if batch_type is not None and item_doc.batch_type != batch_type and not dry_run:
         item_doc.batch_type = batch_type
@@ -2808,25 +2809,28 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
 
     if expected_current_stock_uom and item_doc.stock_uom != expected_current_stock_uom:
         if item_doc.stock_uom and target_stock_uom and item_doc.stock_uom == target_stock_uom:
-            log(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
+            print(f"WARNING: Item {item_code} has stock_uom {item_doc.stock_uom} equals {target_stock_uom=}, but expected Item to have stock_uom {expected_current_stock_uom}.")
         else:
-            frappe.throw(f"Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}.")
+            print(f"ERROR: Item {item_code} has stock_uom {item_doc.stock_uom}, expected {expected_current_stock_uom}, target_stock_uom={target_stock_uom}. Skipping.")
+            return
 
     if expected_current_has_batch_no is not None and item_doc.has_batch_no != expected_current_has_batch_no:
         if item_doc.has_batch_no == target_has_batch_no:
-            log(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
+            print(f"WARNING: Item {item_code} has has_batch_no {item_doc.has_batch_no} equals target_has_batch_no={target_has_batch_no}, but expected Item to have has_batch_no {expected_current_has_batch_no}.")
         else:
-            frappe.throw(f"Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}.")
+            print(f"ERROR: Item {item_code} has has_batch_no {item_doc.has_batch_no}, expected {expected_current_has_batch_no}, target_has_batch_no={target_has_batch_no}. Skipping.")
+            return
 
     if target_stock_uom == item_doc.stock_uom and target_has_batch_no == item_doc.has_batch_no:
-        log("No changes necessary. Skipping.")
+        print(f"Item {item_code}: No changes necessary. Skipping.")
         return
 
     if not item_doc.is_stock_item:
-        frappe.throw("Item has not 'Maintain Stock' (is_stock_item) set. Only Stock Items can be migrated.")
+        print(f"ERROR: Item {item_code} has not 'Maintain Stock' (is_stock_item) set. Only Stock Items can be migrated. Skipping.")
+        return
 
     if item_doc.stock_uom == target_stock_uom and item_doc.has_batch_no == target_has_batch_no:
-        log(f"Item {item_code} already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
+        print(f"WARNING: Item {item_code} already uses the target configuration stock_uom={target_stock_uom}, has_batch_no={target_has_batch_no}. Skipping.")
         return
 
     if target_stock_uom and not frappe.db.exists("UOM", target_stock_uom):
@@ -2874,7 +2878,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
         material_requests = frappe.get_all("Material Request Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2]], fields=["name"])
         purchase_orders = frappe.get_all("Purchase Order Item", filters=[["item_code", "=", item_code], ["docstatus", "<", 2], ['qty', '>', 0]], fields=["name"])
         if material_requests or purchase_orders:
-            log(f"WARNING: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
+            print(f"ERROR: No stock exists for Item {item_code}, but there are {len(material_requests)} Material Request Items and {len(purchase_orders)} Purchase Order Items. Please solve manually. Skipping.")
             return
         log("No stock exists. Safe direct UOM/has_batch_no change.")
         if not dry_run:
@@ -3035,7 +3039,7 @@ def change_item_uom_and_has_batch_no(item_code, expected_current_stock_uom=None,
             try:
                 ip_doc.save()
             except Exception as e:
-                log(f"ERROR: Failed to save Item Price {ip_doc.name}: {e}")
+                print(f"ERROR: Failed to save Item Price {ip_doc.name}: {e}")
 
     if not dry_run:
         frappe.db.commit()
@@ -3047,11 +3051,10 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
     Batch processing for change_item_uom_and_has_batch_no using a CSV file with columns:
     item_code	item_name	 purchase_uom 	 conversion_factor 	stock_uom	new_stock_uom	 pack_size    	 pack_uom       	has_batch_no	new_has_batch_no	batch_type
 
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-04-20_Seqlab_items_to_change.csv', 'dry_run': True, 'verbose': True}"
-    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/home/libracore/Desktop/Genetic_Analysis_items_to_change.csv', 'dry_run': True, 'verbose': True}"
+    sudo bench execute microsynth.microsynth.purchasing.change_item_uoms_and_has_batch_nos --kwargs "{'input_filepath': '/mnt/erp_share/JPe/2026-05-07_Sanger_items_to_change.csv', 'dry_run': True, 'verbose': True}"
     """
     with open(input_filepath, newline='', encoding='utf-8') as file:
-        print(f"INFO: Items from '{input_filepath}' ...")
+        print(f"INFO: Update Items from '{input_filepath}' ...")
         csv_reader = csv.reader((l.replace('\0', '') for l in file), delimiter=";")  # replace NULL bytes (throwing an error)
         next(csv_reader)  # skip header
         for line in csv_reader:
@@ -3069,9 +3072,11 @@ def change_item_uoms_and_has_batch_nos(input_filepath, expected_line_length=11, 
             if new_stock_uom == "Carton":
                 new_stock_uom = "Box"  # rename since Carton should only be used for purchase_uom, not stock_uom
 
-            print(f"\nProcessing Item {item_code}:")
+            if verbose:
+                print(f"\nProcessing Item {item_code}:")
             if (not new_stock_uom or new_stock_uom == stock_uom) and (new_has_batch_no is None or new_has_batch_no == has_batch_no) and not batch_type:
-                print("No changes specified. Skipping.")
+                if verbose:
+                    print("No changes specified. Skipping.")
                 continue
             if new_has_batch_no == 0 and batch_type in ("Generic", "Standard"):
                 print(f"ERROR: Input conflict: Cannot set has_batch_no to 0 while batch_type is {batch_type}. Skipping.")
