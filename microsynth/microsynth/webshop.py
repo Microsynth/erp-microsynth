@@ -1128,6 +1128,7 @@ def get_quotation_dto(quotation):
         'billing_contact': billing_contact,
         'billing_address': quotation.customer_address,
         'billing_address_lines': billing_address_lines,
+        'special_production': True if quotation.special_production else False,
         'oligos': oligo_dtos,
         'samples': sample_dtos,
         'items': quotation_items,
